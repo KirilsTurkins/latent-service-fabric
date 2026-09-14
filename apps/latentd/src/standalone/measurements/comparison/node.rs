@@ -42,14 +42,15 @@ impl Node {
         threads: RuntimeThreads,
         origin: Instant,
     ) -> Result<Self> {
-        Self::start_configured(
+        // One benchmark startup owner, outside the invocation measurement path.
+        Box::pin(Self::start_configured(
             2 + u64::from(plan.count()) * 2,
             configuration(directory),
             fixture,
             control,
             threads,
             origin,
-        )
+        ))
         .await
     }
 

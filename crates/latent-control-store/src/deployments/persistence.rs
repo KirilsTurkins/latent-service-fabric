@@ -43,6 +43,8 @@ pub(super) struct Payload {
     pub control: Option<ControlPayload>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     publication_pins: Option<Vec<StoredPublicationPin>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capability_bindings: Option<Vec<super::bindings::model::StoredBinding>>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -130,7 +132,7 @@ impl Record {
                 .keys()
                 .map(|id| (id.clone(), self.payload.generation))
                 .collect()),
-            (2 | 3 | 4 | 5, Some(stored)) if stored.len() == deployments.len() => {
+            (2..=6, Some(stored)) if stored.len() == deployments.len() => {
                 let mut versions = BTreeMap::new();
                 for entry in stored {
                     let id = DeploymentId(entry.id.clone());
@@ -267,8 +269,9 @@ pub(super) fn load(
     }
     let record: Record = json::from_slice(&bytes).map_err(|_| corrupt())?;
     let checksum = payload_checksum(&record.payload, config.max_state_bytes, work)?;
-    if !matches!(record.format_version, 1..=5)
-        || (record.format_version == 5) != record.payload.publication_pins.is_some()
+    if !matches!(record.format_version, 1..=6)
+        || (record.format_version >= 5) != record.payload.publication_pins.is_some()
+        || (record.format_version == 6) != record.payload.capability_bindings.is_some()
         || (record.format_version < 5
             && (matches!(record.format_version, 3 | 4) != record.payload.control.is_some()
                 || (record.format_version == 4)

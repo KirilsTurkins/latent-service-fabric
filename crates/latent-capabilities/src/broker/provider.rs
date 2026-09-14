@@ -51,6 +51,24 @@ pub struct ProviderRegistration {
 pub struct ProviderReference {
     pub(super) entry: Arc<Provider>,
 }
+impl ProviderReference {
+    #[must_use]
+    pub fn capability(&self) -> &str {
+        &self.entry.capability
+    }
+    #[must_use]
+    pub fn profile(&self) -> &str {
+        &self.entry.profile
+    }
+    #[must_use]
+    pub fn configuration_digest(&self) -> &str {
+        &self.entry.digest
+    }
+    #[must_use]
+    pub fn configuration_epoch(&self) -> u64 {
+        self.entry.epoch
+    }
+}
 impl ProviderRegistration {
     #[must_use]
     pub fn reference(&self) -> ProviderReference {

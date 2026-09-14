@@ -30,6 +30,10 @@ fn present<'de, D: serde::Deserializer<'de>, T: Deserialize<'de>>(
 }
 
 impl GrantRestriction {
+    pub fn canonical_bytes(&self, capability: &str) -> Result<Vec<u8>, PlatformError> {
+        self.validate(capability)?;
+        serde_json::to_vec(self).map_err(|_| invalid())
+    }
     pub fn parse(bytes: &[u8], capability: &str) -> Result<Self, PlatformError> {
         super::preflight(bytes)?;
         let value: Self = serde_json::from_slice(bytes).map_err(|_| invalid())?;

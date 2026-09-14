@@ -2,7 +2,9 @@
 
 #![forbid(unsafe_code)]
 
+mod binding;
 mod compatibility;
+pub use binding::BoundedBindingCompiler;
 #[doc(hidden)]
 pub use compatibility::Analysis;
 pub use compatibility::{

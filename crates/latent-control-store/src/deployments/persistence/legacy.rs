@@ -24,6 +24,7 @@ pub(super) fn encode(
         })
         .collect::<Result<Vec<_>, PlatformError>>()?;
     let payload = Payload {
+        capability_bindings: None,
         generation: catalog.generation.0,
         generated_at_unix_millis: catalog.generated_at_unix_millis,
         deployments,

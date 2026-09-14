@@ -1,6 +1,7 @@
 //! Embedded, tenant-safe deployment catalog and immutable route publication.
 
 mod admission_fence;
+pub mod bindings;
 mod compiler;
 mod mutations;
 mod observation;
@@ -120,7 +121,8 @@ pub struct DirectoryDeploymentRepository {
     admission: Option<Arc<dyn AdmissionAuthority>>,
     runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
     lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
-    current: RwLock<PublishedCatalog>,
+    current: Arc<RwLock<PublishedCatalog>>,
+    binding_generations: bindings::Generations,
     rollout_limits: crate::rollouts::RolloutLimits,
     operation_budget: Arc<crate::deployment_operations::budget::Budget>,
     rollout_budget: Arc<rollouts::table::MetadataBudget>,
@@ -424,6 +426,9 @@ impl DirectoryDeploymentRepository {
             let rollout_budget =
                 rollouts::table::MetadataBudget::new(rollout_limits.maximum_metadata_bytes);
             let mut restored = persistence::load(&root, config, &mut work)?;
+            let binding_data = restored
+                .as_mut()
+                .and_then(|record| record.payload.capability_bindings.take());
             let mut control = restored
                 .as_mut()
                 .and_then(|record| record.payload.control.take());
@@ -510,7 +515,11 @@ impl DirectoryDeploymentRepository {
                     ));
                 }
             }
-            let (catalog, mut bytes) = catalog.into_parts();
+            let (mut catalog, mut bytes) = catalog.into_parts();
+            if let Some(data) = binding_data {
+                catalog.bindings = bindings::restore(&catalog, data, artifacts.as_ref()).await?;
+                (catalog, bytes) = persistence::encode(catalog, config, &mut work)?.into_parts();
+            }
             recovery_admission::check(true, || {
                 catalog.check_admission_mode(admission.as_ref(), lifecycle.as_ref())
             })
@@ -574,13 +583,14 @@ impl DirectoryDeploymentRepository {
                 runtime_profile,
                 lifecycle,
                 generation: AtomicU64::new(generation.0),
-                current: RwLock::new(PublishedCatalog {
+                current: Arc::new(RwLock::new(PublishedCatalog {
                     transaction,
                     routes: Arc::new(catalog),
                     rollouts: rollout_table,
                     operations,
                     confirmed: false,
-                }),
+                })),
+                binding_generations: bindings::Generations::default(),
                 rollout_limits,
                 operation_budget,
                 rollout_budget,
@@ -642,6 +652,7 @@ impl DirectoryDeploymentRepository {
     /// Acquires an immutable read view without waiting on a writer.
     pub fn pin(&self) -> Result<PinnedRouteResolver, PlatformError> {
         let catalog = self.invocation_catalog()?;
+        self.binding_generations.retain(&catalog.routes)?;
         Ok(PinnedRouteResolver {
             catalog: Arc::clone(&catalog.routes),
             config: self.config,

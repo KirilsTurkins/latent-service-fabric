@@ -1,5 +1,7 @@
 //! Explicit control comparison; parser arenas are dropped on return.
+mod binding;
 mod report;
+pub use binding::{compile_host_binding, compile_local_binding, CheckedBinding};
 #[cfg(test)]
 mod tests;
 mod types;

@@ -380,16 +380,19 @@ impl CapabilitySession {
                 counted: AtomicBool::new(false),
             },
         });
-        self.core
-            .owner
-            .policies
-            .with_current(&decision, &mut |_, _| {
-                self.core.check()?;
-                row.lifetime.counted.store(true, Ordering::Release);
-                self.core.stats.handles.fetch_add(1, Ordering::AcqRel);
-                state.slots[slot] = Some(Arc::clone(&row));
-                Ok(())
-            })?;
+        self.core.plan.with_routes(&mut || {
+            self.core.owner.policies.with_current_dependencies(
+                &decision,
+                &self.core.plan.dependencies,
+                &mut |_, _| {
+                    self.core.check()?;
+                    row.lifetime.counted.store(true, Ordering::Release);
+                    self.core.stats.handles.fetch_add(1, Ordering::AcqRel);
+                    state.slots[slot] = Some(Arc::clone(&row));
+                    Ok(())
+                },
+            )
+        })?;
         Ok(id)
     }
     /// Closing a handle never refunds work or responses which still retain it.

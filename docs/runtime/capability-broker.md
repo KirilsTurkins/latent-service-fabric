@@ -23,9 +23,9 @@ Compilation parses restrictions once and pins immutable policy rows, the exact
 tenant/service/revision, route generation and publication eligibility. Plans
 contain no running guest, connection, service thread or provider pool.
 `CapabilityPlanSource` is the trusted bounded lookup boundary for those plans.
-The coherent control snapshot, concrete provider selection and configuration
-path are [#207](https://github.com/KirilsTurkins/latent-service-fabric/issues/207);
-this broker adds no competing route journal or temporary configuration format.
+The [exact binding compiler](capability-bindings.md) publishes plans with the
+existing deployment/route catalog and CAS, including current local-provider
+revision and publication dependencies. It adds no competing route journal.
 
 `WasmtimeHostServices.capabilities` explicitly installs an
 `Arc<ActivationCapabilityRuntime>`. A managed factory requires its exact catalog
@@ -57,7 +57,7 @@ guessing an ID or reusing a previous cell's handle grants no access.
 Both bind and every new dispatch evaluate the intersection of actual imports,
 deployment restrictions, current tenant policy, trusted principal and provider
 configuration. Currentness is rechecked at the final guarded start. The fence
-order is broker, provider, session, policy, catalog, publisher authority, then
+order is broker, provider, session, local-route snapshot, policy, catalog, publisher authority, then
 the original budget ledger. Ledger methods never acquire an authority fence.
 Hot paths use bounded try-lock/try-read operations and perform no policy parsing,
 filesystem access or blocking control-writer acquisition. No fence crosses

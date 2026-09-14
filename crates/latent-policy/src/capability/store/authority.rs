@@ -68,6 +68,26 @@ pub struct SealedPolicyDecision<'a> {
     ceiling: CapabilityCeiling,
 }
 impl PolicyStore {
+    /// Control-plane publication fence, distinct from the no-I/O call-start
+    /// boundary. Bounded catalog staging may run here; ordinary reads/calls also
+    /// take a read fence and policy mutations use nonblocking admission.
+    pub fn with_current_snapshots(
+        &self,
+        snapshots: &[&PolicySnapshot],
+        action: &mut dyn FnMut() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if snapshots.len() > 4096 {
+            return Err(capacity());
+        }
+        let _fence = self.owner.fence.try_read().map_err(|_| unavailable())?;
+        for snapshot in snapshots {
+            if !Arc::ptr_eq(&self.owner, &snapshot.owner) {
+                return Err(denied());
+            }
+            snapshot.check()?;
+        }
+        action()
+    }
     pub fn snapshot(
         &self,
         tenant: &TenantId,
@@ -125,14 +145,38 @@ impl PolicyStore {
             CapabilityCeiling,
         ) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
+        self.with_current_dependencies(decision, &[], action)
+    }
+    /// Same final-start fence, including exact local-provider publications from
+    /// the trusted binding compiler. Reuse the catalog rechecker instead of
+    /// recursively acquiring a publisher's potentially non-reentrant fence.
+    pub fn with_current_dependencies(
+        &self,
+        decision: &SealedPolicyDecision<'_>,
+        dependencies: &[ReleaseUseEligibility],
+        action: &mut dyn FnMut(
+            &EvaluationInput<'_>,
+            CapabilityCeiling,
+        ) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if dependencies.len() > 11 {
+            return Err(capacity());
+        }
         if !Arc::ptr_eq(&self.owner, &decision.snapshot.owner) {
             return Err(denied());
         }
         let _fence = self.owner.fence.try_read().map_err(|_| unavailable())?;
         decision.snapshot.check()?;
         decision.publication.check_for_catalog(&self.catalog)?;
+        for dependency in dependencies {
+            dependency.check_for_catalog(&self.catalog)?;
+            dependency.authorize_tenant(&decision.snapshot.tenant)?;
+        }
         decision.publication.with_current(&mut |checker| {
             checker.check_eligibility(decision.publication)?;
+            for dependency in dependencies {
+                checker.check_eligibility(dependency)?;
+            }
             decision.snapshot.check()?;
             action(&decision.input, decision.ceiling)
         })

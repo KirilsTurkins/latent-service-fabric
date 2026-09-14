@@ -4,6 +4,7 @@ use latent_policy::capability::ResourceTarget;
 use std::{sync::atomic::Ordering, time::Duration};
 pub(super) mod fixture;
 use fixture::*;
+mod route_fence;
 
 fn output() -> CapabilityCallCost {
     CapabilityCallCost::new(32)

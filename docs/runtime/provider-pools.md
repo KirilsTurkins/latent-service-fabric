@@ -8,8 +8,9 @@ The registry uses the node's supplied Tokio control handle and the existing
 [asynchronous I/O owner](async-host-io.md). It creates one shared control task,
 with no service-specific runtime, thread, listener, retry loop or timer.
 
-This is the common provider infrastructure. Production configuration and coherent
-plan installation are [#207](https://github.com/KirilsTurkins/latent-service-fabric/issues/207).
+This is the common provider infrastructure. The [exact binding compiler](capability-bindings.md)
+publishes configured plans with the deployment catalog. Concrete production
+configuration remains part of each provider adapter.
 HTTP, blob, secrets and event protocol adapters remain their separate Phase 3
 tickets. Ordinary standalone startup still exposes its existing built-in imports;
 declaring a capability does not construct a client or enable an external provider.

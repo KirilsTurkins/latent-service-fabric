@@ -20,6 +20,26 @@ fn every_selected_host_contract_is_inspectable_without_a_provider_or_execution()
             &[Box::<str>::from(spec.interface)]
         );
         assert!(bundle.blob("component.wasm").unwrap().len() < 16 * 1024);
+        let binding = latent_packaging::compile_host_binding(
+            &bundle,
+            spec.interface,
+            latent_packaging::PackageComparisonLimits::default(),
+        )
+        .unwrap();
+        assert_eq!(binding.consumer().package(), bundle.layout().digest());
+        assert_eq!(binding.interface(), spec.interface);
+        assert!(!binding.operations().is_empty());
+        assert!(binding.provider().is_none());
+        assert_eq!(
+            binding.host_abi(),
+            Some(&artifact_blob_digest(spec.wit.as_bytes()))
+        );
+        assert!(latent_packaging::compile_host_binding(
+            &bundle,
+            "other:missing/api@1.0.0",
+            latent_packaging::PackageComparisonLimits::default(),
+        )
+        .is_err());
     }
 }
 

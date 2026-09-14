@@ -147,6 +147,21 @@ impl OwnedCapabilityResponse {
     }
 }
 impl ProviderCall {
+    /// The exact local revision and operation compiled for this accepted call.
+    /// This owned descriptor grants no independent execution authority: a child
+    /// must retain this call's admission, cancellation and descendant budget.
+    pub fn local_target(&self) -> Result<latent_routing::ResolvedRevision, PlatformError> {
+        self.check()?;
+        let work = self.work.as_ref().expect("affine call");
+        let mut target = work.session.plan.bindings[work.row.binding]
+            .local_target
+            .as_ref()
+            .ok_or_else(denied)?
+            .clone();
+        target.target.function.0.clone_from(&work.row.operation);
+        Ok(target)
+    }
+
     pub(super) fn provider_matches(&self, provider: &super::ProviderReference) -> bool {
         let work = self.work.as_ref().expect("affine call");
         Arc::ptr_eq(
@@ -297,6 +312,10 @@ impl CapabilitySession {
         self.core.check()?;
         Ok(response)
     }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "affine reservations and the final start fence form one call admission boundary"
+    )]
     fn start_call(
         &self,
         handle: GuestCapabilityHandle,
@@ -375,33 +394,36 @@ impl CapabilitySession {
                 _slot: call_slot,
             },
         };
-        self.core
-            .owner
-            .policies
-            .with_current(&decision, &mut |_, ceiling| {
-                self.core.check()?;
-                let now = self.core.owner.clock.monotonic_now();
-                let policy_deadline = now
-                    .checked_add(Duration::from_millis(ceiling.wall_time_millis))
-                    .ok_or_else(capacity)?;
-                work.deadline = self
-                    .core
-                    .deadline
-                    .monotonic()
-                    .map_or(policy_deadline, |d| d.min(policy_deadline));
-                if now >= work.deadline {
-                    return Err(error(
-                        PlatformErrorCode::DeadlineExceeded,
-                        "capability-call-deadline",
-                    ));
-                }
-                if let Some(reservation) = budget_reservation.take() {
-                    reservation.commit().map_err(|e| e.to_platform_error())?;
-                }
-                work.lifetime.active = true;
-                self.core.stats.calls.fetch_add(1, Ordering::AcqRel);
-                Ok(())
-            })?;
+        self.core.plan.with_routes(&mut || {
+            self.core.owner.policies.with_current_dependencies(
+                &decision,
+                &self.core.plan.dependencies,
+                &mut |_, ceiling| {
+                    self.core.check()?;
+                    let now = self.core.owner.clock.monotonic_now();
+                    let policy_deadline = now
+                        .checked_add(Duration::from_millis(ceiling.wall_time_millis))
+                        .ok_or_else(capacity)?;
+                    work.deadline = self
+                        .core
+                        .deadline
+                        .monotonic()
+                        .map_or(policy_deadline, |d| d.min(policy_deadline));
+                    if now >= work.deadline {
+                        return Err(error(
+                            PlatformErrorCode::DeadlineExceeded,
+                            "capability-call-deadline",
+                        ));
+                    }
+                    if let Some(reservation) = budget_reservation.take() {
+                        reservation.commit().map_err(|e| e.to_platform_error())?;
+                    }
+                    work.lifetime.active = true;
+                    self.core.stats.calls.fetch_add(1, Ordering::AcqRel);
+                    Ok(())
+                },
+            )
+        })?;
         Ok(ProviderCall { work: Some(work) })
     }
 }

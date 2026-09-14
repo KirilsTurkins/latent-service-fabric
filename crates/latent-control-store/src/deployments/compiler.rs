@@ -33,6 +33,7 @@ pub(super) use records::{DesiredDeployments, ObjectVersions, RecordIndex, Revisi
 pub(super) type PublicationPins = BTreeMap<latent_core::DeploymentId, latent_core::PublicationId>;
 
 pub(super) struct CompiledCatalog {
+    pub bindings: super::bindings::BindingCatalog,
     pub deployments: DesiredDeployments,
     pub versions: ObjectVersions,
     pub generation: RouteGeneration,
@@ -174,6 +175,7 @@ pub(super) async fn compile_versioned_inner(
         runtime_profile,
         lifecycle,
         pins,
+        true,
     )
     .await
     .and_then(|catalog| super::persistence::encode(catalog, config, work));
@@ -245,6 +247,45 @@ pub(super) async fn compile_catalog_with_pins(
         runtime_profile,
         lifecycle,
         pins,
+        true,
+    )
+    .await;
+    finish_compilation(&result, work);
+    result
+}
+
+/// Compile routes for an explicit binding replacement without reserving a
+/// second, immediately discarded set of inherited binding plans.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "same bounded compiler inputs as route updates"
+)]
+pub(super) async fn compile_catalog_for_bindings(
+    deployments: DesiredDeployments,
+    versions: ObjectVersions,
+    generation: RouteGeneration,
+    generated_at_unix_millis: u64,
+    artifacts: &dyn ArtifactRepository,
+    config: DirectoryDeploymentRepositoryConfig,
+    previous: &CompiledCatalog,
+    work: &mut Work,
+    runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
+    lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+) -> Result<CompiledCatalog, PlatformError> {
+    let result = compile_catalog_inner(
+        deployments,
+        versions,
+        generation,
+        generated_at_unix_millis,
+        artifacts,
+        config,
+        Some(previous),
+        work,
+        false,
+        runtime_profile,
+        lifecycle,
+        None,
+        false,
     )
     .await;
     finish_compilation(&result, work);
@@ -326,6 +367,7 @@ async fn compile_catalog_inner(
     runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
     lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
     pins: Option<&PublicationPins>,
+    inherit_bindings: bool,
 ) -> Result<CompiledCatalog, PlatformError> {
     count!(work, compiler_calls, 1);
     work.generation(generation.0);
@@ -760,7 +802,8 @@ async fn compile_catalog_inner(
         let packed = packing::assemble(&records, compatible, work)?;
         let paging_index = DeploymentIndex::build(&records, &versions, config, metadata_budget)?;
         charge(&mut metadata_budget, paging_index.retained_bytes())?;
-        let catalog = CompiledCatalog {
+        let mut catalog = CompiledCatalog {
+            bindings: super::bindings::BindingCatalog::default(),
             deployments,
             versions,
             generation,
@@ -776,6 +819,10 @@ async fn compile_catalog_inner(
             candidates: packed.candidates,
             reuse: memo.finish(config, &mut metadata_budget),
         };
+        if inherit_bindings {
+            catalog.bindings = super::bindings::inherit(&catalog, previous, artifacts).await?;
+        }
+        charge(&mut metadata_budget, catalog.bindings.retained_bytes())?;
         Ok(catalog)
     }
     .await;
