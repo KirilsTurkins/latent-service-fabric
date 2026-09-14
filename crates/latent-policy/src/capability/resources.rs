@@ -113,7 +113,7 @@ pub enum ResourceConstraint {
 
 /// A normalized host-side operation target. Guest labels are not evidence that
 /// a provider will perform its I/O against this target.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceTarget<'a> {
     Context,
     Clock,

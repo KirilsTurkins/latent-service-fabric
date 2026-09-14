@@ -34,6 +34,8 @@ latent-artifacts = { path = "../latent-artifacts" }
 latent-audit = { path = "../latent-audit" }
 latent-component-bindings = { path = "../latent-component-bindings" }
 latent-core = { path = "../latent-core" }
+latent-capabilities = { path = "../latent-capabilities" }
+latent-policy = { path = "../latent-policy" }
 latent-executor = { path = "../latent-executor" }
 latent-manifest = { path = "../latent-manifest" }
 latent-telemetry = { path = "../latent-telemetry" }
@@ -51,6 +53,7 @@ rustix = { version = "=1.1.4", features = ["process", "thread", "fs", "pipe", "m
 seccompiler = "=0.5.0"
 
 [dev-dependencies]
+tempfile.workspace = true
 wasm-encoder.workspace = true
 wit-parser = { version = "=0.252.0", default-features = false, features = ["std"] }
 latent-activation = { path = "../latent-activation" }

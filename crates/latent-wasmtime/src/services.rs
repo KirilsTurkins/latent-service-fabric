@@ -12,6 +12,8 @@ use crate::StructuredLogSink;
 pub struct WasmtimeHostServices {
     pub clock: Arc<dyn ActivationClock>,
     pub log_sink: Option<Arc<dyn StructuredLogSink>>,
+    /// Explicit managed capability mode; requires the exact catalog owner.
+    pub capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
 }
 
 impl Default for WasmtimeHostServices {
@@ -19,6 +21,7 @@ impl Default for WasmtimeHostServices {
         Self {
             clock: Arc::new(SystemActivationClock),
             log_sink: None,
+            capabilities: None,
         }
     }
 }

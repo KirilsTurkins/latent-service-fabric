@@ -91,6 +91,10 @@ impl StandaloneNode {
     )]
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
         self.supply_chain.retire();
+        self.capabilities.retire();
+        if let Some(factory) = &self.factory {
+            factory.retire_capabilities();
+        }
         if let Some(policies) = &self.policies {
             policies.handle().retire();
         }

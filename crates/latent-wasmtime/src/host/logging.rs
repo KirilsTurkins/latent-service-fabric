@@ -204,12 +204,30 @@ impl InvocationLogBuffer {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn write(
         &mut self,
         context: &ActivationHostContext,
         level: log::Level,
         message: String,
         fields: &[log::Field],
+    ) -> Result<bool, log::LogError> {
+        self.write_authorized(
+            context,
+            level,
+            message,
+            fields,
+            &super::capabilities::HostCapabilities::default(),
+        )
+    }
+
+    pub(crate) fn write_authorized(
+        &mut self,
+        context: &ActivationHostContext,
+        level: log::Level,
+        message: String,
+        fields: &[log::Field],
+        capabilities: &super::capabilities::HostCapabilities,
     ) -> Result<bool, log::LogError> {
         if message.len() > MAX_LOG_MESSAGE_BYTES {
             return Err(log::LogError::InvalidField("message-too-large".to_owned()));
@@ -240,6 +258,11 @@ impl InvocationLogBuffer {
                 u64::try_from(encoded_bytes).map_err(|_| log::LogError::BudgetExhausted)?,
             )
             .map_err(|_| log::LogError::BudgetExhausted)?;
+        // Exact encoded LogBytes are already reserved on the original ledger.
+        // The broker additionally owns transient input memory before encoding.
+        let _call = capabilities
+            .log(level, encoded_bytes)
+            .map_err(|_| log::LogError::Unavailable)?;
         let mut encoded = BoundedEncoding {
             bytes: Vec::with_capacity(encoded_bytes),
             maximum: encoded_bytes,
@@ -369,7 +392,9 @@ impl log::Host for HostState {
         fields: Vec<log::Field>,
     ) -> Result<bool, log::LogError> {
         let started = Instant::now();
-        let result = self.logs.write(&self.context, level, message, &fields);
+        let result =
+            self.logs
+                .write_authorized(&self.context, level, message, &fields, &self.capabilities);
         self.record_host_call(started);
         result
     }

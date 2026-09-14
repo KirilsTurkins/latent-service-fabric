@@ -9,7 +9,9 @@ use crate::lifecycle::ActivationTerminalState;
 use crate::Metadata;
 
 mod incoming;
+mod reservation_group;
 mod runtime_usage;
+pub use reservation_group::BudgetReservationGroup;
 
 pub use incoming::IncomingDeadline;
 

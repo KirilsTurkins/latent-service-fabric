@@ -22,6 +22,7 @@ latent-artifacts = { path = "../../crates/latent-artifacts" }
 latent-audit = { path = "../../crates/latent-audit" }
 latent-control-store = { path = "../../crates/latent-control-store" }
 latent-core = { path = "../../crates/latent-core" }
+latent-capabilities = { path = "../../crates/latent-capabilities" }
 latent-executor = { path = "../../crates/latent-executor" }
 latent-manifest = { path = "../../crates/latent-manifest" }
 latent-node = { path = "../../crates/latent-node" }

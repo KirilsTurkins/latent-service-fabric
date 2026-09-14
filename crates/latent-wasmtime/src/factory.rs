@@ -57,6 +57,14 @@ impl WasmtimeComponentEngineFactory {
         self.shared.cache_accounting_snapshot()
     }
 
+    /// Close capability admission and release the configured plan source.
+    /// Actual provider jobs and typed lowering buffers keep their own charges.
+    pub fn retire_capabilities(&self) {
+        if let Some(owner) = &self.shared.capabilities {
+            owner.retire();
+        }
+    }
+
     /// Retains diagnostic counters without preventing consuming shutdown.
     #[must_use]
     pub fn prepared_runtime_observer(&self) -> crate::PreparedRuntimeObserver {
@@ -173,6 +181,17 @@ impl WasmtimeComponentEngineFactory {
             config.hostcall_fuel = config.hostcall_fuel.min(80 * 1024);
         }
         config.validate()?;
+        if let Some(capabilities) = &services.capabilities {
+            let owner = lifecycle.as_ref().ok_or_else(|| {
+                platform_error(
+                    PlatformErrorCode::PermissionDenied,
+                    "capability broker requires a catalog owner",
+                    false,
+                )
+            })?;
+            capabilities.check_catalog(owner)?;
+            capabilities.check_clock(&services.clock)?;
+        }
         config.execution_isolation_profile.validate_owners(
             mode,
             admission.is_some(),
@@ -284,6 +303,7 @@ impl WasmtimeComponentEngineFactory {
     /// a trusted host callback must retain an external factory owner until join,
     /// because synchronous destruction cannot join its own thread.
     pub fn shutdown(self) -> Result<(), PlatformError> {
+        self.retire_capabilities();
         let Self { shared, .. } = self;
         let mut shared = Arc::try_unwrap(shared).map_err(|_| {
             platform_error(

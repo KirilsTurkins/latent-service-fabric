@@ -7,6 +7,7 @@ use latent_core::{
 use wasmtime::{ResourceLimiter, StoreLimits, StoreLimitsBuilder};
 
 pub(crate) mod accounting;
+pub(crate) mod capabilities;
 mod clock;
 mod context;
 mod logging;
@@ -193,6 +194,7 @@ pub(crate) struct HostState {
     clock_origin: Instant,
     last_monotonic_nanos: u64,
     host_call_timing: HostCallTiming,
+    pub(crate) capabilities: capabilities::HostCapabilities,
 }
 
 /// In-guest host-import time. This is intentionally reported separately from
@@ -232,6 +234,7 @@ impl HostState {
             clock_origin,
             last_monotonic_nanos: 0,
             host_call_timing: HostCallTiming::default(),
+            capabilities: capabilities::HostCapabilities::default(),
         }
     }
 
