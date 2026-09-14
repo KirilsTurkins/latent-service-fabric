@@ -4,10 +4,10 @@ use latent_http::{
     HttpAddressPolicy, HttpDestination, HttpLimits, HttpProviderConfig, HttpResolution,
 };
 use latent_policy::capability::HttpOrigin;
-use latent_secrets::vault::{
+use latent_secrets::{SecretPurpose, SecretSource, SecretSpec};
+use latent_vault::{
     VaultConfig, VaultEncoding, VaultLimits, VaultReference, VAULT_SECRETS_PROFILE,
 };
-use latent_secrets::{SecretPurpose, SecretSource, SecretSpec};
 
 pub const FIRST_TOKEN: &str = "lsf-public-vault-reader-a";
 pub const SECOND_TOKEN: &str = "lsf-public-vault-reader-b";

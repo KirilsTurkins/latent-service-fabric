@@ -69,7 +69,7 @@ pub(super) async fn fetch(
         return Err(SecretError::Unavailable);
     }
     drop(response);
-    let value = crate::vault::json::decode(&body, reference, limits.maximum_value_bytes)?;
+    let value = crate::json::decode(&body, reference, limits.maximum_value_bytes)?;
     call.io().checkpoint()?;
     let now = inner.clock.sample();
     inner.expiry[index].check(now)?;

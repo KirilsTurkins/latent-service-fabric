@@ -3,13 +3,13 @@ mod cache;
 mod read;
 mod remote;
 use super::{memory, Result, SecretError, VaultConfig};
-use crate::SecretClock;
 use latent_capabilities::broker::{
     pools::{InstalledProvider, ProviderMetadata, ProviderPools, ProviderSetup},
     secrets::{ProviderCredential, SECRETS_CAPABILITY},
     ProviderConfiguration, ProviderReference,
 };
 use latent_http::protocol::ProtocolTransport;
+use latent_secrets::SecretClock;
 use sha2::{Digest, Sha256};
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},

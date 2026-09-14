@@ -1,4 +1,4 @@
-//! Linux protected local generations and bounded Vault KV-v2 reads. Guests receive only explicitly
+//! Linux operator-owned secret generations. Guests receive only explicitly
 //! granted values; provider authentication bindings never implement guest reads.
 #![forbid(unsafe_code)]
 
@@ -18,6 +18,3 @@ pub use config::{SecretLimits, SecretPurpose, SecretSource, SecretSpec};
 pub use provider::{LocalSecretProvider, LOCAL_SECRETS_PROFILE};
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub use store::{LocalSecretStore, SecretClock, SecretSnapshot, SystemSecretClock};
-
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-pub mod vault;

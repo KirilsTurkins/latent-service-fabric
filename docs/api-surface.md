@@ -121,6 +121,7 @@ separate facts.
 | `latent-capabilities` | Sealed activation plans/sessions, policy/audit dispatch, affine I/O and shared provider pools. Configured service, HTTP, blob and secret ports require exact current grants. |
 | `latent-http` | `HttpProvider`, bounded destination/DNS/TLS/header configuration and buffered async HTTP; [profile and composition](runtime/outbound-http.md). |
 | `latent-secrets` | `LocalSecretStore`, `LocalSecretProvider`, finite protected reloads, per-use raw read authorization and opaque provider credential bindings. |
+| `latent-vault` | `VaultSecretProvider`, exact KV-v2 references, bounded shared plaintext/cache owners and checked disclosure; [profile and composition](runtime/vault-secrets.md). |
 | `latent-protected-files` | Shared bootstrap file policy and strict descriptor-anchored secret roots. |
 | `latent-testkit` | Deterministic async/process/resource helpers and invariant/conformance probes. |
 

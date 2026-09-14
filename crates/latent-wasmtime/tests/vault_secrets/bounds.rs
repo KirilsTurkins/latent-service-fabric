@@ -139,7 +139,7 @@ async fn replacement_requires_a_fresh_plan_and_keeps_old_owners_until_drain() {
         operation_id: "replace-vault-binding", expected_revision: expected,
         document: Some(&serde_json::to_vec(&serde_json::json!({
             "formatVersion":1,"tenant":"tests","capability":component::CAP,
-            "providerProfile":latent_secrets::vault::VAULT_SECRETS_PROFILE,
+            "providerProfile":latent_vault::VAULT_SECRETS_PROFILE,
             "configurationDigest":reference.configuration_digest(),"configurationEpoch":2,
             "restriction":{"operations":[]}
         })).unwrap()),

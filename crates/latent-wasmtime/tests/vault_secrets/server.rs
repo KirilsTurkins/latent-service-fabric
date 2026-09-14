@@ -22,7 +22,7 @@ impl Reply {
     }
 }
 pub struct Server {
-    pub config: latent_secrets::vault::VaultConfig,
+    pub config: latent_vault::VaultConfig,
     pub event: Arc<Notify>,
     pub release: Arc<Notify>,
     stop: Option<oneshot::Sender<()>>,

@@ -1907,10 +1907,8 @@ dependencies = [
 name = "latent-secrets"
 version = "0.1.0-alpha.3"
 dependencies = [
- "base64 0.22.1",
  "latent-capabilities",
  "latent-core",
- "latent-http",
  "latent-policy",
  "latent-protected-files",
  "rustix",
@@ -1918,7 +1916,6 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "tempfile",
- "time",
  "tokio",
  "zeroize",
 ]
@@ -2001,6 +1998,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-vault"
+version = "0.1.0-alpha.3"
+dependencies = [
+ "base64 0.22.1",
+ "latent-capabilities",
+ "latent-core",
+ "latent-http",
+ "latent-policy",
+ "latent-secrets",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "time",
+ "zeroize",
+]
+
+[[package]]
 name = "latent-wasmtime"
 version = "0.1.0-alpha.3"
 dependencies = [
@@ -2026,6 +2040,7 @@ dependencies = [
  "latent-scheduler",
  "latent-secrets",
  "latent-telemetry",
+ "latent-vault",
  "libc",
  "memmap2",
  "rcgen",

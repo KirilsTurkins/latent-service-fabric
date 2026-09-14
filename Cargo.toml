@@ -23,6 +23,7 @@ members = [
     "crates/latent-capabilities",
     "crates/latent-protected-files",
     "crates/latent-secrets",
+    "crates/latent-vault",
     "crates/latent-http",
     "crates/latent-blobs",
     "crates/latent-commit",

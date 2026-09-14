@@ -22,7 +22,7 @@ mod support;
 mod transport;
 use fixture::*;
 use latent_capabilities::broker::secrets::{SecretError, SecretInvoker};
-use latent_secrets::vault::VaultSecretProvider;
+use latent_vault::VaultSecretProvider;
 
 fn marker(first: u8, version: u8, length: u64) -> u64 {
     (u64::from(first) << 32) | (u64::from(version) << 16) | length

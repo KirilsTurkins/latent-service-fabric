@@ -1,5 +1,4 @@
 use super::{Result, SecretError};
-use crate::config::text;
 use latent_http::{HttpProviderConfig, HttpResolution};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -149,4 +148,8 @@ impl VaultConfig {
             format!("{}:{}", o.host, o.port)
         }
     }
+}
+
+pub(crate) fn text(value: &str, maximum: usize) -> bool {
+    !value.is_empty() && value.len() <= maximum && value.bytes().all(|b| (0x21..=0x7e).contains(&b))
 }

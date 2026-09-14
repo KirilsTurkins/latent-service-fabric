@@ -1,6 +1,6 @@
 # Vault KV-v2 secrets
 
-The Linux x86_64 `vault-kv-v2-secrets-v1` adapter in `latent-secrets::vault`
+The Linux x86_64 `vault-kv-v2-secrets-v1` adapter in `latent-vault`
 implements `latent:secrets/reader@0.1.0`. It returns an explicitly selected
 KV-v2 string field, its numeric version as a decimal string, media type, and
 optional expiry. UTF-8 and explicitly configured canonical base64 decoding
@@ -143,7 +143,7 @@ cleanup. CI reuses its already-built Cargo test harness. The fixture is not a
 production Vault configuration or a benchmark.
 
 ```sh
-cargo test --locked -p latent-secrets --lib
+cargo test --locked -p latent-vault --lib
 cargo test --locked -p latent-wasmtime --test local_secrets --test vault_secrets
 python3 tools/run_vault_secret_tests.py
 ```
@@ -153,3 +153,7 @@ versions, cache expiry, local rotation, remotely revoked tokens, TLS identity,
 cancellation, outage and healthy reuse, dormant deployments and audit redaction.
 Finite synthetic TLS tests cover malformed/oversized bodies, value limits,
 evicted-but-retained owners, out-of-order replies and provider epoch replacement.
+
+The adapter has its own workspace crate so the dependency graph remains acyclic:
+Vault composes the HTTP transport and local credential store, while HTTP can
+continue to test its protected credentials against `latent-secrets`.

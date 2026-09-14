@@ -1,5 +1,5 @@
 use super::{memory, Arc, AtomicBool, Ordering, Result, SecretError};
-use crate::vault::VaultLimits;
+use crate::VaultLimits;
 use latent_core::ClockSample;
 use std::time::{Duration, Instant};
 use zeroize::Zeroizing;
