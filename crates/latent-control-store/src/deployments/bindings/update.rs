@@ -132,6 +132,21 @@ impl DirectoryDeploymentRepository {
         )?;
         Ok(generation)
     }
+    /// Read the coherent versions required by a subsequent binding update.
+    /// These comparison values grant no authority and are rechecked at commit.
+    pub fn binding_version(&self) -> Result<(RouteGeneration, u64), PlatformError> {
+        let current = self
+            .current
+            .try_read()
+            .map_err(|_| super::error(PlatformErrorCode::Unavailable, "binding-version-busy"))?;
+        if !current.confirmed {
+            return Err(super::error(
+                PlatformErrorCode::Unavailable,
+                "binding-version-unconfirmed",
+            ));
+        }
+        Ok((current.routes.generation, current.transaction))
+    }
     /// Counts are diagnostics, not live authority or a clean security verdict.
     #[must_use]
     pub fn binding_inventory(&self) -> (RouteGeneration, usize, usize, usize) {

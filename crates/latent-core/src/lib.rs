@@ -19,7 +19,7 @@ pub use budget::{
     BudgetFinalization, BudgetProfile, BudgetReservation, BudgetReservationGroup,
     ChildBudgetDelegation, ChildBudgetOwner, ClockSample, DelegationLimits,
     DescendantBudgetSnapshot, EffectiveActivationBudget, EffectiveDeadline, IncomingDeadline,
-    ResourceBudget,
+    ResourceBudget, RuntimeMemoryReservation,
 };
 pub use clock::{ActivationClock, SystemActivationClock};
 pub use deadline_diagnostic_observer::{

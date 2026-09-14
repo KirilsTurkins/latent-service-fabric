@@ -9,6 +9,7 @@ use latent_artifacts::{
 use latent_core::{ArtifactReference, BoxFuture};
 use latent_manifest::{JsonManifestCodec, ManifestCodec};
 use std::task::{Context, Poll, Waker};
+mod service;
 
 fn ready<T>(mut future: BoxFuture<'_, T>) -> T {
     match future
@@ -33,6 +34,9 @@ fn context(id: &str, generation: u64) -> ReleaseMutationContext {
     }
 }
 fn publish(fixture: &Fixture, label: &str) -> ManagedPublicationReceipt {
+    publish_scoped(fixture, label, "a")
+}
+fn publish_scoped(fixture: &Fixture, label: &str, tenant: &str) -> ManagedPublicationReceipt {
     // Catalog admission/authority tests, not a claim of guest execution. The
     // same valid empty component bytes are shared by both immutable associations.
     let component_bytes = wasm_encoder::Component::new().finish();
@@ -43,10 +47,10 @@ fn publish(fixture: &Fixture, label: &str) -> ManagedPublicationReceipt {
     )))
     .unwrap();
     value["component"]["digest"] = digest.0.clone().into();
-    value["metadata"]["tenant"] = "a".into();
-    value["metadata"]["name"] = "a/echo".into();
-    value["component"]["world"] = "a:echo/service@0.1.0".into();
-    value["exports"] = serde_json::json!(["a:echo/api@0.1.0"]);
+    value["metadata"]["tenant"] = tenant.into();
+    value["metadata"]["name"] = format!("{tenant}/echo").into();
+    value["component"]["world"] = format!("{tenant}:echo/service@0.1.0").into();
+    value["exports"] = serde_json::json!([format!("{tenant}:echo/api@0.1.0")]);
     let manifest = JsonManifestCodec::default()
         .decode_capsule(&serde_json::to_vec(&value).unwrap())
         .unwrap();
@@ -64,8 +68,10 @@ fn publish(fixture: &Fixture, label: &str) -> ManagedPublicationReceipt {
         contracts: vec![],
         component_bytes,
     };
+    let mut publication_context = context(label, 0);
+    publication_context.scope = LifecycleScope::Tenant(TenantId(tenant.into()));
     ready(fixture.catalog.publish_managed(
-        context(label, 0),
+        publication_context,
         ManagedPublicationUpload::Local(artifact),
         &mut |_| Ok(()),
     ))

@@ -140,7 +140,11 @@ impl StoredBinding {
             .map_err(|_| invalid())?;
         if matches!(manifest.mode, BindingMode::Inline | BindingMode::Remote)
             || (manifest.mode != BindingMode::Auto && !self.allowed_modes.contains(&manifest.mode))
-            || manifest.consumer.contract != manifest.provider.contract
+            || (manifest.consumer.contract != manifest.provider.contract
+                && !(manifest.consumer.contract.0
+                    == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY
+                    && manifest.mode == BindingMode::IsolatedLocal
+                    && self.allowed_modes == [BindingMode::IsolatedLocal]))
         {
             return Err(invalid());
         }
@@ -165,4 +169,45 @@ pub(super) fn token(value: &str) -> bool {
         && value
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || b"-_.:/@".contains(&b))
+}
+
+#[cfg(test)]
+mod invocation_tests {
+    use super::*;
+    #[test]
+    fn different_provider_contract_recovers_only_as_an_explicit_service_adapter() {
+        let mut definition = BindingDefinition {
+            manifest: JsonManifestCodec::default().decode_binding(br#"{
+                "apiVersion":"latent.dev/v1alpha1","kind":"Binding",
+                "metadata":{"name":"call","tenant":"a"},
+                "spec":{"consumer":{"service":"caller","contract":"latent:service/invoke@0.1.0"},
+                        "provider":{"service":"callee","contract":"tests:local/api@1.0.0"},"mode":"isolated-local"}}
+            "#).unwrap(),
+            provider_binding_id:"installed".into(), allowed_modes:vec![BindingMode::IsolatedLocal],
+            restriction_json:br#"{"operations":[]}"#.to_vec(),
+        };
+        let stored = StoredBinding::encode(definition.clone(), BindingLimits::default()).unwrap();
+        let serialized = latent_manifest::__serde_json::to_vec(&stored).unwrap();
+        let recovered: StoredBinding =
+            latent_manifest::__serde_json::from_slice(&serialized).unwrap();
+        assert_eq!(
+            recovered.decode(BindingLimits::default()).unwrap().manifest,
+            definition.manifest
+        );
+        for (mode, allowed) in [
+            (BindingMode::Auto, vec![BindingMode::IsolatedLocal]),
+            (BindingMode::Host, vec![BindingMode::Host]),
+            (
+                BindingMode::IsolatedLocal,
+                vec![BindingMode::Host, BindingMode::IsolatedLocal],
+            ),
+        ] {
+            let mut invalid = definition.clone();
+            invalid.manifest.mode = mode;
+            invalid.allowed_modes = allowed;
+            assert!(StoredBinding::encode(invalid, BindingLimits::default()).is_err());
+        }
+        definition.manifest.consumer.contract.0 = "latent:clock/monotonic@0.1.0".into();
+        assert!(StoredBinding::encode(definition, BindingLimits::default()).is_err());
+    }
 }

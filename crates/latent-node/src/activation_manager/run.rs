@@ -130,36 +130,54 @@ impl Inner {
         if let Some(failure) = transport.failure() {
             return Err(failure);
         }
-        let permit = self.resolve_and_admit(&mut envelope, lifecycle, &token)?;
+        let child_control = lifecycle.child_control.take();
+        let permit = if child_control.is_some() {
+            None
+        } else {
+            Some(
+                self.resolve_and_admit(&mut envelope, lifecycle, &token, None)?
+                    .0,
+            )
+        };
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
-        lifecycle.advance(ActivationPhase::Queued, Metadata::new())?;
+        if permit.is_some() {
+            lifecycle.advance(ActivationPhase::Queued, Metadata::new())?;
+        }
         let expiry = budget.deadline().monotonic();
         // Keep the original admission reservation and deadline while code is
         // prepared. A cold request does not occupy an execution cell.
         let (key, ready) = self
             .prepare_ready(&envelope, &token, &budget, &transport)
             .await?;
-        let control = Arc::new(ActivationControl::new(
-            lifecycle.registration(),
-            transport.clone(),
-            budget.profile() == latent_core::BudgetProfile::Phase3,
-        ));
-        if budget.profile() == latent_core::BudgetProfile::Phase3 {
-            budget.enable_descendants(permit.delegation_limits(), control.clone())?;
-        }
-        let scheduled = stage(
-            self.dependencies
-                .scheduler
-                .enqueue(AdmittedSchedulingRequest {
-                    permit,
-                    cancellation: control.clone(),
-                }),
-            &token,
-            expiry,
-            &self.clock,
-            &transport,
-        )
-        .await?;
+        let control = child_control.unwrap_or_else(|| {
+            Arc::new(ActivationControl::new(
+                lifecycle.registration(),
+                transport.clone(),
+                budget.profile() == latent_core::BudgetProfile::Phase3,
+            ))
+        });
+        let scheduled = if let Some(permit) = permit {
+            if budget.profile() == latent_core::BudgetProfile::Phase3 {
+                budget.enable_descendants(permit.delegation_limits(), control.clone())?;
+            }
+            stage(
+                self.dependencies
+                    .scheduler
+                    .enqueue(AdmittedSchedulingRequest {
+                        permit,
+                        cancellation: control.clone(),
+                    }),
+                &token,
+                expiry,
+                &self.clock,
+                &transport,
+            )
+            .await?
+        } else {
+            // Nested calls reserve one existing cell synchronously. No child
+            // can queue behind a parent which holds the capacity it needs.
+            lifecycle.scheduled.take().expect("admitted child cell")
+        };
         lifecycle.assigned = true;
         // An implementation cannot substitute another reservation or target.
         if scheduled.permit().admission().activation_id() != &envelope.activation_id
@@ -256,12 +274,13 @@ impl Inner {
         Ok(map_execution_outcome(report.outcome, &cell_id, disposition))
     }
 
-    fn resolve_and_admit(
+    pub(super) fn resolve_and_admit(
         &self,
         envelope: &mut ActivationEnvelope,
         lifecycle: &mut Lifecycle,
         token: &CancellationToken,
-    ) -> Result<AdmissionPermit, PlatformError> {
+        child: Option<super::local_service::ChildAdmission>,
+    ) -> Result<(AdmissionPermit, Option<latent_core::ChildBudgetOwner>), PlatformError> {
         // A single immutable catalog view supplies both revision selection and
         // policy, even if a deployment changes while this invocation is queued.
         let catalog = self.dependencies.catalog.pin()?;
@@ -271,6 +290,9 @@ impl Inner {
                 PlatformErrorCode::IncompatibleContract,
                 "resolved activation does not match its pinned target",
             ));
+        }
+        if let Some(child) = &child {
+            child.check_target(&resolved)?;
         }
         lifecycle.resolved = Some(resolved.clone());
         envelope.resolved_revision = Some(resolved.clone());
@@ -312,11 +334,30 @@ impl Inner {
             lifecycle.incoming_deadline.as_ref(),
             self.clock.as_ref(),
         )?;
-        let budget = ActivationBudget::with_profile(
-            permit.effective_budget().clone(),
-            permit.budget_profile(),
-        )
-        .map_err(|error| error.to_platform_error())?;
+        let child_owner = child
+            .map(|child| {
+                if permit.budget_profile() != latent_core::BudgetProfile::Phase3 {
+                    return Err(error(
+                        PlatformErrorCode::PermissionDenied,
+                        "local service requires Phase 3 admission",
+                    ));
+                }
+                child.delegation.accept(
+                    permit.effective_budget(),
+                    child.control,
+                    self.clock.monotonic_now(),
+                )
+            })
+            .transpose()?;
+        let budget = if let Some(child) = &child_owner {
+            child.accounting().clone()
+        } else {
+            ActivationBudget::with_profile(
+                permit.effective_budget().clone(),
+                permit.budget_profile(),
+            )
+            .map_err(|error| error.to_platform_error())?
+        };
         if let Some(observer) = self.clock.deadline_diagnostic_observer() {
             observer.record_for_activation(
                 &envelope.activation_id.0,
@@ -334,6 +375,6 @@ impl Inner {
         lifecycle.resolved.clone_from(&envelope.resolved_revision);
         lifecycle.budget = Some(budget.clone());
         lifecycle.advance(ActivationPhase::Admitted, Metadata::new())?;
-        Ok(permit)
+        Ok((permit, child_owner))
     }
 }

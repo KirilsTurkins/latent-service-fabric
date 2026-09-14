@@ -1,7 +1,9 @@
 //! Explicit control comparison; parser arenas are dropped on return.
 mod binding;
+mod invocation;
 mod report;
 pub use binding::{compile_host_binding, compile_local_binding, CheckedBinding};
+pub use invocation::{check_invocation_target, CheckedInvocationTarget};
 #[cfg(test)]
 mod tests;
 mod types;

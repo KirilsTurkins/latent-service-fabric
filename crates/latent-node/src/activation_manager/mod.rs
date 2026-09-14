@@ -2,6 +2,7 @@
 
 mod control;
 mod lifecycle;
+mod local_service;
 mod observation;
 mod preparation;
 mod probes;
@@ -152,6 +153,7 @@ struct Inner {
     config: LocalActivationManagerConfig,
     dependencies: LocalActivationDependencies,
     clock: Arc<dyn ActivationClock>,
+    ids: Arc<dyn ActivationIdSource>,
     requests: ActivationRequestBuilder,
     journal: LocalActivationJournal,
     cancellations: ActivationCancellationRegistry,
@@ -185,7 +187,7 @@ impl LocalActivationManager {
         }
         let requests = ActivationRequestBuilder::with_profile(
             config.requests,
-            services.ids,
+            services.ids.clone(),
             dependencies.admission.quotas().budget_profile(),
         )?;
         let journal = LocalActivationJournal::new(config.journal, Arc::clone(&services.clock))?;
@@ -218,6 +220,7 @@ impl LocalActivationManager {
                 config,
                 dependencies,
                 clock: services.clock,
+                ids: services.ids,
                 requests,
                 journal,
                 cancellations,

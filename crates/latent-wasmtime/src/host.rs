@@ -13,6 +13,7 @@ mod context;
 mod logging;
 mod owned_context;
 pub(crate) mod policy;
+pub(crate) mod service;
 pub(crate) use logging::InvocationLogBuffer;
 pub use logging::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
 
@@ -27,6 +28,7 @@ pub(crate) use request_context::validate_request_context;
 struct PendingMemoryGrowth {
     bytes: usize,
     previous_peak_memory_bytes: usize,
+    reservation: Option<latent_core::RuntimeMemoryReservation>,
 }
 
 #[derive(Debug)]
@@ -36,6 +38,7 @@ pub(crate) struct TrackingLimiter {
     current_memory_bytes: usize,
     peak_memory_bytes: usize,
     pending_memory_growth: Option<PendingMemoryGrowth>,
+    budget: Option<latent_core::ActivationBudget>,
 }
 
 impl TrackingLimiter {
@@ -58,11 +61,19 @@ impl TrackingLimiter {
             current_memory_bytes: 0,
             peak_memory_bytes: 0,
             pending_memory_growth: None,
+            budget: None,
         }
     }
 
     pub(crate) fn peak_memory_bytes(&self) -> u64 {
         u64::try_from(self.peak_memory_bytes).unwrap_or(u64::MAX)
+    }
+    pub(crate) fn confirm_memory_growth(&mut self) {
+        if let Some(pending) = self.pending_memory_growth.take() {
+            if let Some(reservation) = pending.reservation {
+                reservation.confirm();
+            }
+        }
     }
 
     #[cfg(test)]
@@ -79,7 +90,7 @@ impl ResourceLimiter for TrackingLimiter {
         maximum: Option<usize>,
     ) -> wasmtime::Result<bool> {
         // A later limiter callback means the previous permitted growth completed.
-        self.pending_memory_growth = None;
+        self.confirm_memory_growth();
 
         let growth = desired.saturating_sub(current);
         let aggregate = self
@@ -95,12 +106,22 @@ impl ResourceLimiter for TrackingLimiter {
 
         let allowed = self.limits.memory_growing(current, desired, maximum)?;
         if allowed {
+            let reservation = self
+                .budget
+                .as_ref()
+                .map(|budget| {
+                    budget
+                        .reserve_runtime_memory(aggregate as u64)
+                        .map_err(|error| wasmtime::Error::msg(error.to_platform_error().message))
+                })
+                .transpose()?;
             let previous_peak_memory_bytes = self.peak_memory_bytes;
             self.current_memory_bytes = aggregate;
             self.peak_memory_bytes = self.peak_memory_bytes.max(aggregate);
             self.pending_memory_growth = Some(PendingMemoryGrowth {
                 bytes: growth,
                 previous_peak_memory_bytes,
+                reservation,
             });
         }
         Ok(allowed)
@@ -224,9 +245,13 @@ impl HostState {
             accounting.budget().clone(),
             sink,
         );
+        let mut limiter = TrackingLimiter::with_config(maximum_memory_bytes, config);
+        if accounting.budget().profile() == latent_core::BudgetProfile::Phase3 {
+            limiter.budget = Some(accounting.budget().clone());
+        }
         Self {
             context,
-            limiter: TrackingLimiter::with_config(maximum_memory_bytes, config),
+            limiter,
             logs,
             accounting,
             context_policy,
@@ -242,6 +267,7 @@ impl HostState {
         &mut self,
         fuel: u64,
     ) -> wasmtime::Result<crate::bindings::latent::context::context::ResourceBudget> {
+        self.limiter.confirm_memory_growth();
         self.accounting
             .observe_runtime(fuel, self.limiter.peak_memory_bytes())
             .map_err(|error| wasmtime::Error::msg(error.message))?;

@@ -18,7 +18,10 @@ pub(super) fn inspect_interface(
     for (name, function) in &interface.functions {
         a.node(1)?;
         a.name(name)?;
-        if function.kind != FunctionKind::Freestanding {
+        if !matches!(
+            function.kind,
+            FunctionKind::Freestanding | FunctionKind::AsyncFreestanding
+        ) {
             a.issue(Level::Unsupported, Code::UnsupportedType, &[name]);
         }
         for parameter in &function.params {

@@ -35,6 +35,14 @@ undergo bounded cycle and depth checking. The compiler pins the provider's exact
 publication, revision and deployment identity rather than selecting it again
 from a mutable service route at call time.
 
+The [local service invocation profile](local-service-invocation.md) explicitly
+binds canonical `latent:service/invoke@0.1.0` to one checked application export.
+It separately proves both surfaces and limits dispatch to the pinned target's
+function table. This adapter uses explicit `isolated-local` mode, requires an
+exact service/publication policy and supports authorized cross-tenant targets.
+It does not relax equality for other direct bindings. The configured graph uses
+the actual target tenant when checking cycles and depth.
+
 ## Publication and live authority
 
 `prepare_binding_update` captures the existing route generation and control
@@ -54,20 +62,20 @@ publication revocation still deny new use. A local provider deployment removal
 or revision/publication change also invalidates its older plans. Desired binding
 history remains available when a provider becomes unavailable.
 
-Both bind and final call start hold the local-route fence and recheck all
-consumer/provider publications inside the same catalog admission fence. This
+Both bind and final call start hold the local-route fence and recheck the
+consumer and selected provider publication inside the same catalog admission fence. This
 supports non-reentrant publisher authorities. No start fence crosses provider
 I/O or an await. Work accepted before cutover retains its original resource and
 cleanup ownership. `ProviderCall::local_target` exposes the exact compiled target
 and the handle's operation to the trusted local adapter; the returned descriptor
-is not an independent grant. Descendant admission and guest local invocation
-are implemented by #208/#209, including fresh child eligibility and bounded
-progress or prompt rejection under cell saturation.
+is not an independent grant. [Descendant admission](descendant-budgets.md) and
+[guest local invocation](local-service-invocation.md) include fresh child
+eligibility and prompt rejection under fixed-cell saturation.
 
 The generic `RouteSnapshot.bindings` projection and legacy `resolve_binding`
 interface remain descriptive/unavailable: they cannot express this operation's
 sealed authority. Live plans reside in the same internal immutable catalog as
-routes. Standalone provider configuration/management and concrete guest adapters
+routes. Standalone provider configuration/management and other guest adapters
 remain their separate Phase 3 work; enabling policy CRUD alone does not install
 these plans or enable external capabilities.
 

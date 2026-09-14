@@ -4,7 +4,10 @@ use super::{
 };
 use crate::deployments::compiler::{CompiledCatalog, RevisionRecord};
 use latent_artifacts::{ArtifactRepository, ReleaseUseEligibility};
-use latent_capabilities::broker::CapabilityBindingSpec;
+use latent_capabilities::broker::{
+    CapabilityBindingSpec, InvocationBindingTarget, LOCAL_SERVICE_INVOCATION_PROFILE,
+    SERVICE_INVOCATION_CAPABILITY,
+};
 use latent_core::{ContractId, FunctionId, Metadata, PlatformError, PlatformErrorCode};
 use latent_manifest::BindingMode;
 use latent_packaging::{PackageBundle, PackageComparisonLimits};
@@ -15,6 +18,7 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
+mod invocation;
 
 pub(super) async fn compile(
     catalog: &CompiledCatalog,
@@ -38,6 +42,7 @@ pub(super) async fn compile(
     if catalog.records.len() > limits.maximum_deployments {
         return Err(capacity());
     }
+    invocation::configured_graph(catalog, &definitions, &owner)?;
     if owner.retained_bytes()
         + data
             .iter()
@@ -147,6 +152,7 @@ fn graph(definitions: &[BindingDefinition], limit: usize) -> Result<(), Platform
             if d.manifest.metadata.tenant.as_ref() == tenant
                 && &d.manifest.consumer.service == service
                 && d.allowed_modes.contains(&BindingMode::IsolatedLocal)
+                && d.manifest.consumer.contract.0 != SERVICE_INVOCATION_CAPABILITY
                 && matches!(
                     d.manifest.mode,
                     BindingMode::Auto | BindingMode::IsolatedLocal
@@ -186,7 +192,11 @@ fn selected<'a>(
     let mut matches = owner.providers.iter().filter(|p| {
         Some(&p.tenant) == m.metadata.tenant.as_ref()
             && p.service == m.provider.service
-            && p.reference.capability() == m.provider.contract.0
+            && (p.reference.capability() == m.provider.contract.0
+                || (m.consumer.contract.0 == SERVICE_INVOCATION_CAPABILITY
+                    && p.reference.capability() == SERVICE_INVOCATION_CAPABILITY
+                    && p.reference.profile() == LOCAL_SERVICE_INVOCATION_PROFILE
+                    && p.local_deployment.is_some()))
             && d.allowed_modes.contains(&p.mode())
             && (m.mode == BindingMode::Auto || m.mode == p.mode())
             && m.provider
@@ -314,56 +324,56 @@ async fn plan(
         ));
     }
     let publication = eligibility(catalog, record)?;
+    let comparison = PackageComparisonLimits::default();
     let consumer = bundle(record, owner, artifacts).await?;
     let surface = consumer.surface().ok_or_else(denied)?;
     let mut imports = Vec::new();
     let mut dependencies = Vec::new();
     let mut local = Vec::new();
     let mut local_targets = Vec::new();
+    let mut invocation_targets = Vec::new();
     for interface in surface.imports() {
-        let mut matches = definitions.iter().filter(|d| {
-            let m = &d.manifest;
-            m.metadata.tenant == record.deployment.metadata.tenant
-                && m.consumer.service == record.deployment.service
-                && m.consumer.contract.0 == interface.as_ref()
-                && m.consumer
-                    .route
-                    .as_ref()
-                    .is_none_or(|r| r == &record.deployment.id.0)
-        });
-        let d = matches.next().ok_or_else(denied)?;
-        if matches.next().is_some() {
-            return Err(invalid());
-        }
+        let d = definition(record, definitions, interface)?;
         let provider = selected(d, owner)?;
+        let is_invocation = interface.as_ref() == SERVICE_INVOCATION_CAPABILITY
+            && provider.reference.profile() == LOCAL_SERVICE_INVOCATION_PROFILE;
         let proof = if let Some(id) = &provider.local_deployment {
             let target = catalog.record_by_id(id).ok_or_else(denied)?;
-            if target.deployment.metadata.tenant != record.deployment.metadata.tenant
+            if (!is_invocation
+                && target.deployment.metadata.tenant != record.deployment.metadata.tenant)
                 || target.deployment.service != provider.service
             {
                 return Err(denied());
             }
             dependencies.push(eligibility(catalog, target)?);
             let provider_bundle = bundle(target, owner, artifacts).await?;
-            let proof = latent_packaging::compile_local_binding(
-                &consumer,
-                &provider_bundle,
-                interface,
-                &d.manifest.provider.contract.0,
-                PackageComparisonLimits::default(),
-            )?;
             local.push(super::source::LocalTarget::new(target));
             let mut resolved = revision(target, catalog.generation);
             resolved.target.contract = d.manifest.provider.contract.clone();
             resolved.target.route = Some(target.deployment.id.0.clone());
-            local_targets.push(resolved);
-            proof
+            if is_invocation {
+                let target_proof = latent_packaging::check_invocation_target(
+                    &provider_bundle,
+                    &d.manifest.provider.contract.0,
+                    comparison,
+                )?;
+                invocation_targets.push(InvocationBindingTarget::new(
+                    resolved,
+                    target_proof.functions(),
+                )?);
+                latent_packaging::compile_host_binding(&consumer, interface, comparison)?
+            } else {
+                local_targets.push(resolved);
+                latent_packaging::compile_local_binding(
+                    &consumer,
+                    &provider_bundle,
+                    interface,
+                    &d.manifest.provider.contract.0,
+                    comparison,
+                )?
+            }
         } else {
-            latent_packaging::compile_host_binding(
-                &consumer,
-                interface,
-                PackageComparisonLimits::default(),
-            )?
+            latent_packaging::compile_host_binding(&consumer, interface, comparison)?
         };
         let (policies, restriction) = grant(record, d, interface)?;
         imports.push(Import {
@@ -390,12 +400,13 @@ async fn plan(
             targets: local.into_boxed_slice(),
         }) as Arc<dyn latent_capabilities::broker::CapabilityRouteFence>
     });
-    owner.broker.compile_routed_plan(
+    owner.broker.compile_invocation_plan(
         &revision(record, catalog.generation),
         &specs,
         &publication,
         &dependencies,
         &local_targets,
+        &invocation_targets,
         fence,
         deadline,
     )
@@ -439,3 +450,25 @@ fn grant(
 
 #[cfg(test)]
 mod tests;
+
+fn definition<'a>(
+    record: &RevisionRecord,
+    definitions: &'a [BindingDefinition],
+    interface: &str,
+) -> Result<&'a BindingDefinition, PlatformError> {
+    let mut matches = definitions.iter().filter(|d| {
+        let m = &d.manifest;
+        m.metadata.tenant == record.deployment.metadata.tenant
+            && m.consumer.service == record.deployment.service
+            && m.consumer.contract.0 == interface
+            && m.consumer
+                .route
+                .as_ref()
+                .is_none_or(|r| r == &record.deployment.id.0)
+    });
+    let d = matches.next().ok_or_else(denied)?;
+    if matches.next().is_some() {
+        return Err(invalid());
+    }
+    Ok(d)
+}

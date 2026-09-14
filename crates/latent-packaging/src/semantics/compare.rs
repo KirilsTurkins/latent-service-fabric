@@ -78,6 +78,7 @@ pub(super) fn worlds(
         compare.asynchronous = false;
     }
     for (name, expected) in &declared.exports {
+        compare.asynchronous = true;
         compare.interface(*expected, compiled.exports[name])?;
     }
     Ok(compare.examined)

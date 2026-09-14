@@ -65,6 +65,7 @@ pub(super) struct SessionCore {
     pub owner: Arc<Inner>,
     pub plan: Arc<CompiledCapabilityPlan>,
     pub activation_id: ActivationId,
+    pub root_activation_id: ActivationId,
     pub principal: InvocationPrincipal,
     pub budget: ActivationBudget,
     pub deadline: latent_core::EffectiveDeadline,
@@ -230,6 +231,9 @@ impl ActivationCapabilityBroker {
             owner: Arc::clone(&self.inner),
             plan,
             activation_id: ActivationId(checked_text(&request.activation.activation_id.0)?),
+            root_activation_id: ActivationId(checked_text(
+                &request.activation.root_activation_id.0,
+            )?),
             principal: InvocationPrincipal {
                 subject: checked_text(&actor.subject)?,
                 kind: actor.kind,
@@ -383,7 +387,7 @@ impl CapabilitySession {
         self.core.plan.with_routes(&mut || {
             self.core.owner.policies.with_current_dependencies(
                 &decision,
-                &self.core.plan.dependencies,
+                self.core.plan.dependencies_for(index),
                 &mut |_, _| {
                     self.core.check()?;
                     row.lifetime.counted.store(true, Ordering::Release);

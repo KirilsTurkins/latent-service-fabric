@@ -150,6 +150,7 @@ impl SharedRuntime {
         let preparation_observer = PreparationObserver::new(config.maximum_concurrent_preparations);
         let uncached_prepared = Arc::new(Mutex::new(None));
         let preparation_context = Arc::new(PreparationContext {
+            capabilities: services.capabilities.as_ref().map(Arc::downgrade),
             native_aot,
             admission,
             lifecycle,
@@ -1036,6 +1037,7 @@ fn invocation_accounting(
     timing: &mut Phase0InvocationTiming,
 ) -> (BudgetConsumption, Option<PlatformError>) {
     let remaining_fuel = store.get_fuel().unwrap_or(0);
+    store.data_mut().limiter.confirm_memory_growth();
     let peak_memory = store.data().limiter.peak_memory_bytes();
     let accounting_error = store
         .data_mut()
@@ -1047,11 +1049,7 @@ fn invocation_accounting(
         elapsed_micros: host_call_micros,
     } = store.data().host_call_timing();
     let consumption = BudgetConsumption {
-        cpu_fuel: store
-            .data()
-            .accounting
-            .initial_fuel()
-            .saturating_sub(remaining_fuel),
+        cpu_fuel: store.data().accounting.native_fuel_consumed(remaining_fuel),
         peak_memory_bytes: store.data().limiter.peak_memory_bytes(),
         wall_time_micros,
         log_bytes: store.data().logs.bytes(),

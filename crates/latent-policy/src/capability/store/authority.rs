@@ -170,7 +170,16 @@ impl PolicyStore {
         decision.publication.check_for_catalog(&self.catalog)?;
         for dependency in dependencies {
             dependency.check_for_catalog(&self.catalog)?;
-            dependency.authorize_tenant(&decision.snapshot.tenant)?;
+            // A service-call decision explicitly authorizes its scoped target
+            // publication. It never authorizes a different foreign dependency
+            // or transfers the consumer's identity to the target tenant.
+            let explicit_service = decision.input.capability == "latent:service/invoke@0.1.0"
+                && decision.input.operation == "call"
+                && matches!(decision.input.resource, ResourceTarget::Service { publication, .. }
+                    if publication == dependency.publication().as_str());
+            if !explicit_service {
+                dependency.authorize_tenant(&decision.snapshot.tenant)?;
+            }
         }
         decision.publication.with_current(&mut |checker| {
             checker.check_eligibility(decision.publication)?;

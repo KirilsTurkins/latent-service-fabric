@@ -3,13 +3,14 @@ use super::{
 };
 use latent_artifacts::{LifecycleAuthorityHandle, ReleaseUseEligibility};
 use latent_executor::{ExecutionCancellation, ExecutionRequest};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, OnceLock, RwLock};
 
 /// One configured authority plus a trusted immutable-plan source. The full
 /// control-plane source is implemented by #207; no second route journal exists.
 pub struct ActivationCapabilityRuntime {
     broker: Arc<ActivationCapabilityBroker>,
     plans: RwLock<Option<Arc<dyn CapabilityPlanSource>>>,
+    local_services: OnceLock<Arc<dyn super::LocalServiceInvoker>>,
 }
 impl ActivationCapabilityRuntime {
     #[must_use]
@@ -20,11 +21,23 @@ impl ActivationCapabilityRuntime {
         Self {
             broker,
             plans: RwLock::new(Some(plans)),
+            local_services: OnceLock::new(),
         }
     }
     #[must_use]
     pub fn broker(&self) -> &Arc<ActivationCapabilityBroker> {
         &self.broker
+    }
+    /// Configure one node-owned adapter during composition. Implementations
+    /// must hold only a weak manager reference to avoid backend/runtime cycles.
+    pub fn install_local_services(
+        &self,
+        invoker: Arc<dyn super::LocalServiceInvoker>,
+    ) -> Result<(), PlatformError> {
+        self.local_services.set(invoker).map_err(|_| denied())
+    }
+    pub fn local_services(&self) -> Result<Arc<dyn super::LocalServiceInvoker>, PlatformError> {
+        self.local_services.get().cloned().ok_or_else(denied)
     }
     pub fn check_catalog(&self, owner: &LifecycleAuthorityHandle) -> Result<(), PlatformError> {
         if !self.broker.catalog_owner_matches(owner) {

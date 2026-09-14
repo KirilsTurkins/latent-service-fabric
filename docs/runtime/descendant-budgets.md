@@ -115,8 +115,10 @@ Wasmtime reports its own guest fuel and memory separately from settled descendan
 usage; host/provider counters are authoritative on the shared ledger. An adapter
 that resumes a parent after a child must checkpoint native fuel before delegation
 and adjust the fuel watermark on resumption so child usage cannot be spent again
-or counted as the parent's own instructions. Real guest local calls and that
-resumption boundary are part of #209.
+or counted as the parent's own instructions. The delivered
+[local service adapter](local-service-invocation.md) implements this boundary.
+Pending Phase 3 guest memory growth reserves aggregate capacity before allocation;
+confirmation records the peak, while failed growth refunds only its pending claim.
 
 ## Validation
 

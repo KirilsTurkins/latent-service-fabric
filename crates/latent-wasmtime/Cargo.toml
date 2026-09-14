@@ -30,12 +30,14 @@ harness = false
 
 [dependencies]
 blake3.workspace = true
+latent-activation = { path = "../latent-activation" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-audit = { path = "../latent-audit" }
 latent-component-bindings = { path = "../latent-component-bindings" }
 latent-core = { path = "../latent-core" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }
+latent-routing = { path = "../latent-routing" }
 latent-executor = { path = "../latent-executor" }
 latent-manifest = { path = "../latent-manifest" }
 latent-telemetry = { path = "../latent-telemetry" }
@@ -53,12 +55,13 @@ rustix = { version = "=1.1.4", features = ["process", "thread", "fs", "pipe", "m
 seccompiler = "=0.5.0"
 
 [dev-dependencies]
+latent-admission = { path = "../latent-admission" }
+latent-control-store = { path = "../latent-control-store" }
+latent-packaging = { path = "../latent-packaging" }
 tempfile.workspace = true
 wasm-encoder.workspace = true
 wit-parser = { version = "=0.252.0", default-features = false, features = ["std"] }
-latent-activation = { path = "../latent-activation" }
 latent-node = { path = "../latent-node" }
-latent-routing = { path = "../latent-routing" }
 latent-scheduler = { path = "../latent-scheduler" }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 

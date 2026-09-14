@@ -77,6 +77,55 @@ fn accept(pending: ChildBudgetDelegation, sample: ClockSample) -> ChildBudgetOwn
 }
 
 #[test]
+fn pending_native_growth_and_children_share_one_memory_ceiling() {
+    let (parent, _, sample) = root(DelegationLimits::default());
+    parent.observe_peak_memory(100).unwrap();
+    let growth = parent.reserve_runtime_memory(600).unwrap();
+    assert_eq!(parent.remaining_at(sample.monotonic()).memory_bytes, 400);
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        100
+    );
+    let pending = reserve(&parent, &request(100, 800, 0), sample).unwrap();
+    assert_eq!(pending.grant().budget.memory_bytes, 400);
+    let child = accept(pending, sample);
+    assert_eq!(parent.remaining_at(sample.monotonic()).memory_bytes, 0);
+    drop(growth); // The native allocation failed; no invented observed peak.
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        100
+    );
+    assert_eq!(parent.remaining_at(sample.monotonic()).memory_bytes, 500);
+    assert!(parent.reserve_runtime_memory(601).is_err());
+    parent.reserve_runtime_memory(600).unwrap().confirm();
+    child.accounting().observe_peak_memory(200).unwrap();
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        800
+    );
+    let _ = child.finish(None, sample.monotonic());
+    assert_eq!(parent.remaining_at(sample.monotonic()).memory_bytes, 400);
+}
+
+#[test]
+fn native_growth_settlement_does_not_change_a_frozen_parent_report() {
+    for confirmed in [false, true] {
+        let (parent, _, sample) = root(DelegationLimits::default());
+        let growth = parent.reserve_runtime_memory(700).unwrap();
+        assert!(parent.reserve_runtime_memory(1).is_err());
+        let report = parent.finalize_at(None, sample.monotonic());
+        assert_eq!(report.consumption().peak_memory_bytes, 700);
+        if confirmed {
+            growth.confirm();
+        } else {
+            drop(growth);
+        }
+        assert_eq!(parent.finalize_at(None, sample.monotonic()), report);
+        assert!(parent.reserve_runtime_memory(1).is_err());
+    }
+}
+
+#[test]
 fn child_reservations_retire_only_after_execution_and_retained_provider_owners() {
     let (parent, _, sample) = root(DelegationLimits::default());
     parent.observe_peak_memory(100).unwrap();

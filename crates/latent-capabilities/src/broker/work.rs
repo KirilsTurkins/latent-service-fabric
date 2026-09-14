@@ -147,6 +147,94 @@ impl OwnedCapabilityResponse {
     }
 }
 impl ProviderCall {
+    /// Require the physical host mode before running an in-process host adapter.
+    /// A direct local interface binding is not permission to run its host twin.
+    pub fn require_host_mode(&self) -> Result<(), PlatformError> {
+        self.check()?;
+        let work = self.work.as_ref().expect("affine call");
+        let binding = &work.session.plan.bindings[work.row.binding];
+        if binding.local_target.is_some() || binding.invocation_target.is_some() {
+            return Err(denied());
+        }
+        Ok(())
+    }
+
+    /// Resolve only the target whose exact Service resource was authorized by
+    /// this affine call. Neither this descriptor nor a guest target is a permit.
+    pub fn local_invocation_target(
+        &self,
+        requested: &latent_routing::InvocationTarget,
+    ) -> Result<latent_routing::ResolvedRevision, PlatformError> {
+        self.check()?;
+        let work = self.work.as_ref().expect("affine call");
+        let target = work.session.plan.bindings[work.row.binding]
+            .invocation_target
+            .as_ref()
+            .ok_or_else(denied)?
+            .resolve(requested)?;
+        match &work.row.resource {
+            latent_policy::capability::ResourceRequest::Service {
+                service,
+                publication,
+            } if service == &target.target.service.0
+                && target
+                    .publication
+                    .as_ref()
+                    .is_some_and(|id| id.as_str() == publication)
+                && work.row.operation == "call" =>
+            {
+                Ok(target)
+            }
+            _ => Err(denied()),
+        }
+    }
+
+    /// Trusted source identity for a child, deliberately without caller claims
+    /// or administrator privileges. The target tenant remains a separate check.
+    #[must_use]
+    pub fn local_invocation_principal(
+        &self,
+        tenant: latent_core::TenantId,
+    ) -> latent_core::InvocationPrincipal {
+        let session = &self.work.as_ref().expect("affine call").session;
+        let source = &session.plan.target;
+        latent_core::InvocationPrincipal {
+            subject: format!(
+                "service:{}:{}:{}:{}",
+                source.tenant.0.len(),
+                source.tenant.0,
+                source.service.0.len(),
+                source.service.0
+            ),
+            kind: latent_core::PrincipalKind::Service,
+            tenant: Some(tenant),
+            service: Some(source.service.clone()),
+            claims: latent_core::Metadata::new(),
+        }
+    }
+
+    #[must_use]
+    pub fn root_activation_id(&self) -> &latent_core::ActivationId {
+        &self
+            .work
+            .as_ref()
+            .expect("affine call")
+            .session
+            .root_activation_id
+    }
+    pub fn check_local_node(
+        &self,
+        clock: &Arc<dyn latent_core::ActivationClock>,
+        publication: &latent_artifacts::ReleaseUseEligibility,
+    ) -> Result<(), PlatformError> {
+        self.check()?;
+        let owner = &self.work.as_ref().expect("affine call").session.owner;
+        if !Arc::ptr_eq(&owner.clock, clock) {
+            return Err(denied());
+        }
+        publication.check_for_catalog(&owner.catalog)
+    }
+
     /// The exact local revision and operation compiled for this accepted call.
     /// This owned descriptor grants no independent execution authority: a child
     /// must retain this call's admission, cancellation and descendant budget.
@@ -201,7 +289,8 @@ impl ProviderCall {
     pub(super) fn same_session(&self, session: &Arc<SessionCore>) -> bool {
         Arc::ptr_eq(&self.work.as_ref().expect("affine call").session, session)
     }
-    pub(super) fn maximum_output_bytes(&self) -> usize {
+    #[must_use]
+    pub fn maximum_output_bytes(&self) -> usize {
         self.work
             .as_ref()
             .expect("affine call")
@@ -397,7 +486,7 @@ impl CapabilitySession {
         self.core.plan.with_routes(&mut || {
             self.core.owner.policies.with_current_dependencies(
                 &decision,
-                &self.core.plan.dependencies,
+                self.core.plan.dependencies_for(row.binding),
                 &mut |_, ceiling| {
                     self.core.check()?;
                     let now = self.core.owner.clock.monotonic_now();
