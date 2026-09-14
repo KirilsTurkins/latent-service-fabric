@@ -226,6 +226,28 @@ fn query(scope: AuditScope) -> AuditQueryRequest {
         maximum_bytes: 65536,
     }
 }
+#[cfg(unix)]
+fn reserve_critical_when_idle(
+    handle: &AuditHandle,
+    attempt: &AuditOperationAttempt,
+) -> AuditCriticalReservation {
+    // Reservation is deliberately nonblocking. The journal worker can briefly
+    // hold its state lock even when the test has submitted no other work.
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        match handle.try_reserve_critical(attempt) {
+            Ok(reservation) => return reservation,
+            Err(error)
+                if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                    && error.message == "audit-busy"
+                    && Instant::now() < deadline =>
+            {
+                std::thread::yield_now();
+            }
+            Err(error) => panic!("critical reservation failed: {error:?}"),
+        }
+    }
+}
 fn stop(handle: &AuditHandle, worker: &mut AuditWorker) {
     handle.close();
     assert!(worker
@@ -250,9 +272,7 @@ fn durable_attempt_outcome_reopen_and_page_lease() {
     let directory = Directory::new();
     let path = directory.0.join("audit");
     let (handle, mut worker) = open(&path, AuditLimits::default()).unwrap();
-    let mut candidate = handle
-        .try_reserve_critical(&attempt())
-        .unwrap()
+    let mut candidate = reserve_critical_when_idle(&handle, &attempt())
         .begin()
         .blocking_wait()
         .unwrap();
@@ -294,9 +314,7 @@ fn abandoned_before_and_after_start_have_distinct_durable_outcomes() {
     for started in [false, true] {
         let directory = Directory::new();
         let (handle, mut worker) = open(directory.0.join("audit"), AuditLimits::default()).unwrap();
-        let mut candidate = handle
-            .try_reserve_critical(&attempt())
-            .unwrap()
+        let mut candidate = reserve_critical_when_idle(&handle, &attempt())
             .begin()
             .blocking_wait()
             .unwrap();
@@ -359,9 +377,7 @@ fn acknowledged_record_missing_is_corruption_not_a_new_epoch() {
     let directory = Directory::new();
     let path = directory.0.join("audit");
     let (handle, mut worker) = open(&path, AuditLimits::default()).unwrap();
-    let candidate = handle
-        .try_reserve_critical(&attempt())
-        .unwrap()
+    let candidate = reserve_critical_when_idle(&handle, &attempt())
         .begin()
         .blocking_wait()
         .unwrap();
@@ -396,9 +412,7 @@ fn close_retains_live_attempt_and_accepts_its_prepaid_known_outcome() {
     let directory = Directory::new();
     let path = directory.0.join("audit");
     let (handle, mut worker) = open(&path, AuditLimits::default()).unwrap();
-    let mut candidate = handle
-        .try_reserve_critical(&attempt())
-        .unwrap()
+    let mut candidate = reserve_critical_when_idle(&handle, &attempt())
         .begin()
         .blocking_wait()
         .unwrap();
@@ -773,9 +787,7 @@ fn oversized_terminal_envelope_falls_back_to_owned_unknown_and_shutdown_finishes
         },
     )
     .unwrap();
-    let mut active = handle
-        .try_reserve_critical(&source)
-        .unwrap()
+    let mut active = reserve_critical_when_idle(&handle, &source)
         .begin()
         .blocking_wait()
         .unwrap();
