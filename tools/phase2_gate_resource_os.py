@@ -27,6 +27,32 @@ def load_sampler_descriptor(root, entry, target, read):
     return 1
 
 
+def clock_lease_descriptor(root, entry, target, read, ledger):
+    """Recognize only the fixed authority's bounded, sequential renewal I/O."""
+    expected = {
+        str(ledger): (0, True),
+        str(ledger / "floor.pending.json"): (1, False),
+        str(ledger / "INITIALIZED"): (0, False),
+    }.get(target)
+    if expected is None:
+        return 0
+    fields = [line.split(":", 1)[1].strip()
+              for line in read(root / "fdinfo" / entry.name).splitlines()
+              if line.startswith("flags:")]
+    require(len(fields) == 1 and re.fullmatch(r"[0-7]{1,12}", fields[0]) is not None,
+            "proc-clock-flags")
+    access, directory = expected
+    opened = os.stat(entry.path)
+    named = os.stat(target, follow_symlinks=False)
+    require(int(fields[0], 8) & 0o3 == access
+            and os.readlink(entry.path) == target
+            and (opened.st_dev, opened.st_ino) == (named.st_dev, named.st_ino)
+            and (stat.S_ISDIR(opened.st_mode) if directory else
+                 stat.S_ISREG(opened.st_mode) and 0 <= opened.st_size <= 4096),
+            "proc-clock-descriptor")
+    return 1
+
+
 def checkpoint(deadline=None, cancellation=None):
     if cancellation is not None:
         cancellation.check()
@@ -85,8 +111,9 @@ def fixture_inventory(root, deadline=None, cancellation=None):
 
 
 class Probe:
-    def __init__(self, process, executable, expected_digest, deadline):
+    def __init__(self, process, executable, expected_digest, deadline, ledger):
         self.process = process
+        self.ledger = ledger.resolve(strict=True)
         self.pid = process.owner.process.pid
         before = self.stat()
         require(int(before[2]) == self.pid and int(before[3]) == self.pid,
@@ -138,7 +165,7 @@ class Probe:
 
         status = dict(line.split(":", 1) for line in read(root / "status").splitlines())
         io = dict(line.split(":", 1) for line in read(root / "io").splitlines())
-        sockets, descriptors, sampler_descriptors = set(), 0, 0
+        sockets, descriptors, sampler_descriptors, clock_descriptors = set(), 0, 0, 0
         with os.scandir(root / "fd") as entries:
             for entry in entries:
                 descriptors += 1
@@ -147,7 +174,10 @@ class Probe:
                 target = os.readlink(entry.path)
                 require(len(target) <= 4096, "proc-link-bound")
                 sampler_descriptors += load_sampler_descriptor(root, entry, target, read)
+                clock_descriptors += clock_lease_descriptor(root, entry, target, read, self.ledger)
                 require(sampler_descriptors <= limits["transientLoadFds"], "proc-sampler-bound")
+                require(clock_descriptors <= limits["transientClockFds"]
+                        and sampler_descriptors + clock_descriptors <= 1, "proc-clock-bound")
                 match = re.fullmatch(r"socket:\[([0-9]{1,20})\]", target)
                 if match:
                     sockets.add(match[1])
@@ -180,6 +210,7 @@ class Probe:
             "readBytes": io["read_bytes"].strip(), "writeBytes": io["write_bytes"].strip(),
             "threads": int(status["Threads"]), "tasks": tasks, "fdCount": descriptors,
             "loadSamplerFdCount": sampler_descriptors,
+            "clockLeaseFdCount": clock_descriptors,
             "socketCount": len(sockets), "listeningTcpSockets": len(listening),
             "descendants": len(children), "procBytesRead": 4 * 1024 * 1024 - remaining,
         }

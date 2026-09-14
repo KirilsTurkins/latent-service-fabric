@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run or validate phase2-dormant-32-r2; no build, install, registry or retries."""
+"""Run or validate phase2-dormant-32-r3; no build, install, registry or retries."""
 from __future__ import annotations
 
 import argparse

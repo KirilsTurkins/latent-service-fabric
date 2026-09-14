@@ -1,6 +1,6 @@
 # Phase 2 resource profile
 
-`phase2-dormant-32-r2` is a fixed Linux resource experiment for gate #158.
+`phase2-dormant-32-r3` is a fixed Linux resource experiment for gate #158.
 A profile definition
 is not a passing result. The gate remains pending until its retained evidence
 has been reviewed alongside the other Phase 2 checks.
@@ -98,10 +98,16 @@ and descendant count must match the warm baseline across all twelve samples.
 The raw `fdCount` is preserved. `loadSamplerFdCount` separately identifies at
 most one read-only `/proc/pressure/cpu` or `/proc/pressure/memory` descriptor
 held by the fixed load sampler. Its exact link and Linux access flags must be
-observed consistently. Only that count is subtracted for the retained-descriptor
-comparison; another file, writable descriptor, or additional sampler descriptor
-cannot be hidden by this accounting. This corrects the collector's assumption
-that a quiet invocation inventory stops the node's periodic pressure reads.
+observed consistently. `clockLeaseFdCount` identifies the same fixed control
+owner's admission clock renewal: the exact private `supply-chain` directory
+(read-only), its `floor.pending.json` (write-only, at most 4096 bytes), or its
+`INITIALIZED` marker (read-only, at most 4096 bytes). The opened descriptor and
+named object must agree on device/inode, type, link and access mode. The two
+counts together may not exceed one because renewal and pressure reads are
+sequential. Only these positively identified counts are subtracted for the
+retained-descriptor comparison. The authority lock, unrelated files, sockets,
+additional descriptors and changed objects remain subject to the original
+checks. Quiet invocation inventory does not suspend these periodic operations.
 No missing observation is converted to zero. A raced, inaccessible or
 oversized proc observation fails the experiment instead of extending its bounds.
 

@@ -163,7 +163,8 @@ def run(client, binary, directory, fixture, metadata, result):
     result["configurationDigest"] = digest(config_value)
     node = connect(client, binary, directory, config, metadata["tenant"], 1)
     try:
-        probe = Probe(node, binary, result["build"]["nodeSha256"], client.deadline)
+        probe = Probe(node, binary, result["build"]["nodeSha256"], client.deadline,
+                      directory / "data" / "supply-chain")
         result["process"] = probe.identity
         packages = metadata["packages"]
         input_path = client.directory / "invoke.json"

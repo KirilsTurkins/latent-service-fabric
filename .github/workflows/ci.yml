@@ -167,7 +167,7 @@ jobs:
           LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/publication-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite publication-fixture
           python3 tools/run_publication_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/publication-inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/publication-receipt.json"
           LSF_PHASE2_RESOURCE_FIXTURE_ROOT="${fixture_root}/resource-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite resource-fixture
-          python3 -m unittest tools.tests.test_phase2_gate_resource
+          python3 -m unittest tools.tests.test_phase2_gate_resource tools.tests.test_phase2_resource_clock
           LSF_GATE_FIXTURE_ROOT="${fixture_root}" python3 - <<'PY'
           import hashlib, json, os, pathlib, subprocess
           root = pathlib.Path.cwd()

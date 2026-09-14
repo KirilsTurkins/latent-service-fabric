@@ -107,7 +107,8 @@ def complete_receipt():
             "processId": 42, "startTimeTicks": "100", "observedMonotonicNanos": str(1000000000 + i * 60000000),
             "rssBytes": str(1000000 + i * 4096), "kernelHighWaterRssBytes": str(2000000 + i * 4096),
             "cpuUserTicks": "10", "cpuSystemTicks": "10", "readBytes": "1024", "writeBytes": "2048",
-            "threads": 8, "tasks": 8, "fdCount": 12, "loadSamplerFdCount": 0, "socketCount": 3,
+            "threads": 8, "tasks": 8, "fdCount": 12, "loadSamplerFdCount": 0,
+            "clockLeaseFdCount": 0, "socketCount": 3,
             "listeningTcpSockets": 1, "descendants": 0, "procBytesRead": 512}}
             for i, phase in enumerate(phase for phase in PHASES for _ in range(3))],
         "catalog": {"peakReleases": 32, "peakDeployments": 16,
