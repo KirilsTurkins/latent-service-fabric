@@ -37,3 +37,5 @@ mod transport_cleanup_pool;
 
 #[path = "activation_lifecycle/canary.rs"]
 mod canary;
+#[path = "activation_lifecycle/inbound.rs"]
+mod inbound;

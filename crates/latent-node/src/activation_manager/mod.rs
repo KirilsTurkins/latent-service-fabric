@@ -1,6 +1,7 @@
 //! One lifecycle owner from accepted identity through terminal publication.
 
 mod control;
+mod inbound;
 mod lifecycle;
 mod local_service;
 mod observation;
@@ -38,6 +39,7 @@ use crate::{
     LocalActivationJournalConfig,
 };
 use control::{error, CatchPanic};
+pub use inbound::InboundActivationReservation;
 use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
@@ -146,6 +148,42 @@ impl Future for ActivationHandle {
     type Output = ActivationReceipt;
     fn poll(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
         self.completion.as_mut().poll(context)
+    }
+}
+
+fn handle(
+    inner: Arc<Inner>,
+    envelope: ActivationEnvelope,
+    lifecycle: Lifecycle,
+) -> ActivationHandle {
+    let activation_id = envelope.activation_id.clone();
+    let transport_stop = lifecycle.transport_stop.clone();
+    let completion = Box::pin(async move {
+        let mut lifecycle = lifecycle;
+        let result = CatchPanic::new(inner.drive(envelope, &mut lifecycle)).await;
+        let outcome = match result {
+            Ok(outcome) => outcome,
+            Err(()) => failure_for_platform_error(
+                error(
+                    PlatformErrorCode::Internal,
+                    "activation execution or cleanup panicked",
+                ),
+                BudgetConsumption::default(),
+            ),
+        };
+        let resolved_revision = lifecycle.resolved.clone();
+        let activation_id = lifecycle.activation_id().clone();
+        let outcome = lifecycle.complete(outcome);
+        ActivationReceipt {
+            activation_id,
+            resolved_revision,
+            outcome,
+        }
+    });
+    ActivationHandle {
+        activation_id,
+        completion,
+        transport_stop,
     }
 }
 
@@ -266,34 +304,7 @@ impl LocalActivationManager {
             deadline,
         );
         lifecycle.begin_observation(self.inner.observations.as_ref(), &envelope);
-        let inner = Arc::clone(&self.inner);
-        let completion = Box::pin(async move {
-            let mut lifecycle = lifecycle;
-            let result = CatchPanic::new(inner.drive(envelope, &mut lifecycle)).await;
-            let outcome = match result {
-                Ok(outcome) => outcome,
-                Err(()) => failure_for_platform_error(
-                    error(
-                        PlatformErrorCode::Internal,
-                        "activation execution or cleanup panicked",
-                    ),
-                    BudgetConsumption::default(),
-                ),
-            };
-            let resolved_revision = lifecycle.resolved.clone();
-            let activation_id = lifecycle.activation_id().clone();
-            let outcome = lifecycle.complete(outcome);
-            ActivationReceipt {
-                activation_id,
-                resolved_revision,
-                outcome,
-            }
-        });
-        Ok(ActivationHandle {
-            activation_id,
-            completion,
-            transport_stop,
-        })
+        Ok(handle(self.inner.clone(), envelope, lifecycle))
     }
 
     pub fn status(

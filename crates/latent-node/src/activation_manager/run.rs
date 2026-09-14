@@ -133,6 +133,8 @@ impl Inner {
         let child_control = lifecycle.child_control.take();
         let permit = if child_control.is_some() {
             None
+        } else if let Some(permit) = lifecycle.inbound_permit.take() {
+            Some(permit)
         } else {
             Some(
                 self.resolve_and_admit(&mut envelope, lifecycle, &token, None)?
@@ -281,6 +283,17 @@ impl Inner {
         token: &CancellationToken,
         child: Option<super::local_service::ChildAdmission>,
     ) -> Result<(AdmissionPermit, Option<latent_core::ChildBudgetOwner>), PlatformError> {
+        self.resolve_and_admit_input(envelope, lifecycle, token, child, None)
+    }
+
+    pub(super) fn resolve_and_admit_input(
+        &self,
+        envelope: &mut ActivationEnvelope,
+        lifecycle: &mut Lifecycle,
+        token: &CancellationToken,
+        child: Option<super::local_service::ChildAdmission>,
+        maximum_inbound_bytes: Option<usize>,
+    ) -> Result<(AdmissionPermit, Option<latent_core::ChildBudgetOwner>), PlatformError> {
         // A single immutable catalog view supplies both revision selection and
         // policy, even if a deployment changes while this invocation is queued.
         let catalog = self.dependencies.catalog.pin()?;
@@ -318,12 +331,13 @@ impl Inner {
             revision: resolved.clone(),
             requested_budget: envelope.budget.clone(),
             deadline_unix_millis: envelope.deadline_unix_millis,
-            payload_bytes: u64::try_from(envelope.input.len()).map_err(|_| {
-                error(
-                    PlatformErrorCode::ResourceExhausted,
-                    "activation input size overflow",
-                )
-            })?,
+            payload_bytes: u64::try_from(maximum_inbound_bytes.unwrap_or(envelope.input.len()))
+                .map_err(|_| {
+                    error(
+                        PlatformErrorCode::ResourceExhausted,
+                        "activation input size overflow",
+                    )
+                })?,
             priority: envelope.priority,
             attributes: Metadata::new(),
         };
