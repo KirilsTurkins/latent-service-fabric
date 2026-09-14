@@ -5,8 +5,9 @@
 configured `IoRuntime` provides finite admission, byte accounting and streams on
 the caller's existing runtime. It creates no executor, thread, socket, worker,
 retry loop or service-specific resource. Dormant deployments own none of these
-leases. Provider pools and concrete protocol adapters remain separate work in
-#206 and #211–#217; declaring an import does not install a provider.
+leases. The [shared provider registry and pools](provider-pools.md) build on this
+ownership. Concrete protocol adapters remain separate work in #211–#217;
+declaring an import does not install a provider.
 
 ## Admission and the original activation owner
 

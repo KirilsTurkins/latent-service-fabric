@@ -15,6 +15,7 @@ pub mod io;
 mod limits;
 mod ownership;
 mod plan;
+pub mod pools;
 mod provider;
 mod runtime;
 mod session;
@@ -44,6 +45,7 @@ struct Inner {
     limits: CapabilityBrokerLimits,
     counters: Arc<Counters>,
     sessions: Mutex<Vec<Weak<session::SessionCore>>>,
+    pool_registered: std::sync::atomic::AtomicBool,
 }
 impl ActivationCapabilityBroker {
     pub fn new(
@@ -64,6 +66,7 @@ impl ActivationCapabilityBroker {
                 live: RwLock::new(true),
                 limits,
                 counters: Arc::new(Counters::new(limits)),
+                pool_registered: std::sync::atomic::AtomicBool::new(false),
                 sessions: Mutex::new(
                     std::iter::repeat_with(Weak::new)
                         .take(limits.maximum_sessions)

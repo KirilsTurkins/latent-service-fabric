@@ -21,6 +21,9 @@ The [bounded asynchronous I/O substrate](async-host-io.md) now adds affine queue
 buffer and stream ownership on the existing runtime. Cancellation retains charges
 for actual work and delayed consumers; waiting never refunds an execution cell.
 Its real async guest conformance fixture does not expand the production import set.
+The [shared provider pools](provider-pools.md) add configured client reuse,
+tenant/provider fairness, credential epochs, connection limits and bounded
+worker/cleanup shutdown. They run on the node's existing control runtime.
 
 The delivered [durable capability policy owner](capability-policies.md) provides
 bounded rules, scoped revisions, provider-binding metadata and authenticated
@@ -30,8 +33,8 @@ install the remaining guest providers.
 
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
-[standalone node](../reference/standalone-node.md). Phase 3 plans the shared
-provider installation and plan compilation, HTTP/blob/secrets/events providers, local child calls, random
+[standalone node](../reference/standalone-node.md). Phase 3 continues with production
+provider configuration and plan compilation, HTTP/blob/secrets/events providers, local child calls, random
 and custom metrics, application ingress and web/SSR integration. Transactional
 state/effects, cluster transport and durable workflow suspension remain later
 phases; declared WIT alone makes none of them callable.

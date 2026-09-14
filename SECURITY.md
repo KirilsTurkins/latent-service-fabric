@@ -64,6 +64,11 @@ queue, running-work, buffer and stream charges through actual cleanup. It requir
 a finite original Store deadline and checks authority after queueing. Cancellation
 does not refund a blocking worker or retained consumer, and incomplete ownership
 prevents cell reuse. This substrate does not install additional WASI providers.
+The [shared provider registry](docs/runtime/provider-pools.md) adds immutable
+credential epochs, tenant/provider queue fairness and finite connection, worker
+and cleanup pools on the configured node runtime. Retired epochs and unfinished
+physical resources retain their quotas; a timeout or dropped job waiter does not
+prove closure. Provider credentials are excluded from public pool observations.
 
 General external capability providers, transactional state/effects, and cluster
 mTLS remain later work. They add trust boundaries when implemented. See the
