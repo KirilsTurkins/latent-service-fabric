@@ -104,8 +104,9 @@ intents.
 
 The Phase 3 provider tickets own their protocol-specific immediate-operation
 semantics: outbound HTTP #211, S3-compatible immutable blobs #214 and JetStream
-events #217. Shared asynchronous ownership and cancellation behavior belongs to
-#205. The integrated failure/uncertainty matrix belongs to #238 and the Phase 3
+events #217. The [shared asynchronous ownership substrate](../runtime/async-host-io.md)
+implements #205's bounded waiting, buffering and cancellation lifetime. The
+integrated failure/uncertainty matrix belongs to #238 and the Phase 3
 completion review to #240.
 
 Phase 4 remains responsible for the application transaction/outbox records,

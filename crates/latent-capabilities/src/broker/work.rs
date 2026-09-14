@@ -176,7 +176,16 @@ impl ProviderCall {
     pub fn is_cancelled(&self) -> bool {
         self.check().is_err()
     }
-    fn check(&self) -> Result<(), PlatformError> {
+    pub(super) fn same_session(&self, session: &Arc<SessionCore>) -> bool {
+        Arc::ptr_eq(&self.work.as_ref().expect("affine call").session, session)
+    }
+    pub(super) fn maximum_output_bytes(&self) -> usize {
+        self.work
+            .as_ref()
+            .expect("affine call")
+            .maximum_output_bytes
+    }
+    pub(super) fn check(&self) -> Result<(), PlatformError> {
         let work = self.work.as_ref().expect("affine call");
         work.session.check()?;
         if work.session.owner.clock.monotonic_now() >= work.deadline {

@@ -131,7 +131,10 @@ call, cancels between calls, rejects foreign/missing owners before Store creatio
 and checks resource reclamation. Neither suite requires external language
 toolchains or a load campaign.
 
-Async execution, bounded shared provider pools, production plan compilation and
-concrete external providers remain their subsequent Phase 3 tickets. This
+The [bounded asynchronous I/O substrate](async-host-io.md) adds queue ownership,
+fixed-capacity buffers, stream backpressure and waiting/cleanup observations.
+Its canonical async guest tests use a test-only provider. Bounded shared provider
+pools, production plan compilation and concrete external providers remain their
+subsequent Phase 3 tickets. This
 boundary does not claim hostile multitenant qualification, durable outboxes,
 transactions or universal exactly-once external effects.

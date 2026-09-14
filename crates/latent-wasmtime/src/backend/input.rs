@@ -76,10 +76,9 @@ impl WasmtimeBackend {
         };
         timing.backend_total_micros = elapsed_micros(started);
         self.lock_timings().insert(activation_id.0, timing);
-        if capability_observer.is_some_and(|observer| !observer.is_quiescent()) {
-            ExecutionReport::quarantine(outcome, "capability work or lowering ownership remains")
-        } else {
-            ExecutionReport::reusable(outcome)
+        match capability_observer {
+            Some(observer) => observer.after_store_dropped(outcome),
+            None => ExecutionReport::reusable(outcome),
         }
     }
 }

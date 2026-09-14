@@ -34,6 +34,7 @@ pub(super) struct Stats {
     pub closed: AtomicBool,
     pub handles: AtomicUsize,
     pub calls: AtomicUsize,
+    pub waiting: AtomicUsize,
     pub results: AtomicUsize,
     _metadata: Charge,
 }
@@ -89,7 +90,7 @@ impl CapabilitySessionObserver {
     }
     #[must_use]
     pub fn live_calls(&self) -> usize {
-        self.stats.calls.load(Ordering::Acquire)
+        self.stats.calls.load(Ordering::Acquire) + self.stats.waiting.load(Ordering::Acquire)
     }
     #[must_use]
     pub fn retained_results(&self) -> usize {
@@ -105,6 +106,23 @@ impl CapabilitySessionObserver {
             && self.live_calls() == 0
             && self.retained_results() == 0
             && self.retained_handles() == 0
+    }
+    /// The embedder calls this after destroying the guest future and Store.
+    /// Queue owners, blocking jobs, streams and lowering/consumer leases all
+    /// prevent reuse; a timeout response or finalized ledger is insufficient.
+    #[must_use]
+    pub fn after_store_dropped(
+        &self,
+        outcome: Result<latent_executor::GuestOutcome, PlatformError>,
+    ) -> latent_executor::ExecutionReport {
+        if self.is_quiescent() {
+            latent_executor::ExecutionReport::reusable(outcome)
+        } else {
+            latent_executor::ExecutionReport::quarantine(
+                outcome,
+                "capability work or lowering ownership remains",
+            )
+        }
     }
 }
 fn check_envelope(
@@ -204,6 +222,7 @@ impl ActivationCapabilityBroker {
             closed: AtomicBool::new(false),
             handles: AtomicUsize::new(0),
             calls: AtomicUsize::new(0),
+            waiting: AtomicUsize::new(0),
             results: AtomicUsize::new(0),
             _metadata: stats_metadata,
         });

@@ -59,6 +59,12 @@ Descriptive explanations and historical receipts grant no execution permission.
 Uncertain persistence retires the live owner until verified reopen. Provider
 installation and actual budget reservation remain separate broker boundaries.
 
+The [asynchronous I/O ownership substrate](docs/runtime/async-host-io.md) retains
+queue, running-work, buffer and stream charges through actual cleanup. It requires
+a finite original Store deadline and checks authority after queueing. Cancellation
+does not refund a blocking worker or retained consumer, and incomplete ownership
+prevents cell reuse. This substrate does not install additional WASI providers.
+
 General external capability providers, transactional state/effects, and cluster
 mTLS remain later work. They add trust boundaries when implemented. See the
 [security architecture](docs/architecture/security.md) and
