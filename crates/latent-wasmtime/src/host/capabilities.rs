@@ -10,6 +10,7 @@ pub(crate) struct HostCapabilities {
     pub(super) blobs: super::blob::table::Table,
     pub(super) streams: super::streaming_http::table::Table,
     lowering: Vec<ProviderCall>,
+    secret_lowering: Vec<latent_capabilities::broker::secrets::SecretLowering>,
     pooled_lowering: Vec<latent_capabilities::broker::pools::PoolCall>,
     pub(super) session: Option<CapabilitySession>,
 }
@@ -19,6 +20,7 @@ impl HostCapabilities {
             streams: super::streaming_http::table::Table::default(),
             blobs: super::blob::table::Table::default(),
             lowering: Vec::new(),
+            secret_lowering: Vec::new(),
             pooled_lowering: Vec::new(),
             session,
         }
@@ -126,6 +128,12 @@ impl HostCapabilities {
             .as_ref()
             .ok_or(latent_capabilities::broker::http::HttpError::PermissionDenied)?;
         invoker.start(session, request)
+    }
+    pub(super) fn retain_secret_lowering(
+        &mut self,
+        owner: latent_capabilities::broker::secrets::SecretLowering,
+    ) {
+        self.secret_lowering.push(owner);
     }
     pub(super) fn retain_pool_lowering(
         &mut self,

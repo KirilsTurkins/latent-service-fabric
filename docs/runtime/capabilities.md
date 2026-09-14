@@ -12,7 +12,9 @@ implements canonical async `latent:service/invoke@0.1.0`. The configured
 `latent:http/streaming@0.3.0` with owned upload/body/chunk resources. Other platform
 capability packages remain contracts for subsequent implementation. The Linux
 [local blob provider](local-blobs.md) implements `latent:blob/blob@0.2.0` with
-scoped durable references and owned read chunks.
+scoped durable references and owned read chunks. The configured
+[local secret provider](local-secrets.md) implements `latent:secrets/reader@0.1.0`
+with protected sources, atomic rotation and separate opaque provider credentials.
 Completion of [Phase 2](../phase-2-completion.md) adds package delivery,
 currentness, native caching and rollout control; it does not expand this guest
 import set. The [Phase 3 backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
@@ -47,7 +49,7 @@ permission or exposing credential-bearing selectors.
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
 [standalone node](../reference/standalone-node.md). Phase 3 continues with production
-standalone provider configuration, S3 blobs, secrets/events providers, random
+standalone provider configuration, S3 blobs, Vault secrets and event providers, random
 and custom metrics, application ingress and web/SSR integration. Transactional
 state/effects, cluster transport and durable workflow suspension remain later
 phases; declared WIT alone makes none of them callable.

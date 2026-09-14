@@ -145,5 +145,15 @@ recovery. Guest tests cover repeated warm-cell execution, denial, revoked plans,
 missing providers, traps, cancellation and original-ledger finalization. Required
 audit tests check both provider evidence and secret redaction. No load benchmark
 or general hostile-multitenant qualification is implied by these functional tests.
-Streaming HTTP remains the separate ABI/provider work in
-[#212](https://github.com/KirilsTurkins/latent-service-fabric/issues/212).
+The delivered [streaming HTTP provider](streaming-http.md) supplies the separate
+resource-based interface.
+
+## Opaque local credentials
+
+`install_with_secret_references` accepts explicit tenant/provider/origin-bound
+[local secret references](local-secrets.md). One protected header per destination
+is resolved from the current material generation during request construction.
+Guest headers cannot override it, and HTTP authorization never grants a raw
+secret read. A material reload changes future headers; an already constructed
+request may finish with its selected value. Existing redirect stripping and
+finite header limits remain in force.

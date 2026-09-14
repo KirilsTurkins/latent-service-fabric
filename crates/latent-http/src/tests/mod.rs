@@ -5,6 +5,7 @@ mod http;
 mod ownership;
 mod redirects;
 mod responses;
+mod secret_references;
 mod streaming;
 mod tls;
 mod validation;

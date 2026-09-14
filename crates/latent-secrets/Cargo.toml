@@ -1,0 +1,28 @@
+[package]
+name = "latent-secrets"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Bounded protected local secret generations and explicit capability disclosure."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+latent-capabilities = { path = "../latent-capabilities" }
+latent-policy = { path = "../latent-policy" }
+latent-protected-files = { path = "../latent-protected-files" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+zeroize = { version = "=1.9.0", features = ["alloc"] }
+
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
+rustix = { version = "=1.1.4", features = ["fs", "process"] }
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }

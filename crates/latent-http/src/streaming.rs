@@ -71,7 +71,28 @@ impl StreamingHttpProvider {
                 epoch,
                 expected_epoch,
                 config,
-                credentials,
+                crate::credentials::CredentialInput::Inline(credentials),
+                Some(limits),
+            )?,
+        })
+    }
+    pub fn install_with_secret_references(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: HttpProviderConfig,
+        limits: HttpStreamLimits,
+        references: Vec<crate::HttpCredentialReference>,
+    ) -> Result<Self, HttpError> {
+        Ok(Self {
+            provider: HttpProvider::install_profile(
+                pools,
+                logical_id,
+                epoch,
+                expected_epoch,
+                config,
+                crate::credentials::CredentialInput::References(references),
                 Some(limits),
             )?,
         })
@@ -100,6 +121,7 @@ impl StreamingHttpInvoker for StreamingHttpProvider {
             return Err(HttpError::InvalidRequest.into());
         }
         let destination = destination::parse(&request.metadata.url, &inner.config)?;
+        inner.check_credential_tenant(session.tenant(), destination.index)?;
         let size = headers::validate(
             &request.metadata,
             &inner.config.destinations[destination.index],

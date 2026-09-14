@@ -126,6 +126,33 @@ pub(crate) fn build_with_body(
             Ok::<_, HttpError>(())
         })?;
     }
+    if credentials_allowed {
+        for reference in &inner.credential_references {
+            if reference.destination == destination.index {
+                reference
+                    .binding
+                    .with_current_value(&mut |bytes| {
+                        if bytes.is_empty() || bytes.len() > 4096 {
+                            return Err(
+                                latent_capabilities::broker::secrets::SecretError::Unavailable,
+                            );
+                        }
+                        let text = std::str::from_utf8(bytes).map_err(|_| {
+                            latent_capabilities::broker::secrets::SecretError::Unavailable
+                        })?;
+                        if !headers::valid_value(text) {
+                            return Err(
+                                latent_capabilities::broker::secrets::SecretError::Unavailable,
+                            );
+                        }
+                        add(&reference.name, text, true).map_err(|_| {
+                            latent_capabilities::broker::secrets::SecretError::Unavailable
+                        })
+                    })
+                    .map_err(|_| HttpError::PermissionDenied)?;
+            }
+        }
+    }
     // Generated fields and configured credentials use the same closed grammar.
     if result.headers().iter().any(|(name, value)| {
         !headers::valid_name(name.as_str()) || std::str::from_utf8(value.as_bytes()).is_err()

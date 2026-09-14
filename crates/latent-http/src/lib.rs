@@ -12,7 +12,7 @@ mod streaming;
 pub use config::{
     HttpAddressPolicy, HttpDestination, HttpLimits, HttpProviderConfig, HttpResolution,
 };
-pub use credentials::HttpCredential;
+pub use credentials::{HttpCredential, HttpCredentialReference};
 use latent_capabilities::broker::http::HttpError;
 pub use provider::{HttpProvider, HTTP_PROVIDER_PROFILE};
 pub use streaming::{HttpStreamLimits, StreamingHttpProvider, STREAMING_HTTP_PROVIDER_PROFILE};

@@ -1,5 +1,5 @@
 use crate::{
-    credentials::{self, HashWriter, HttpCredential},
+    credentials::{self, CredentialInput, HashWriter, HttpCredential, HttpCredentialReference},
     destination,
     dns::Resolver,
     headers,
@@ -25,6 +25,7 @@ pub struct HttpProvider {
 }
 pub(crate) struct Inner {
     pub config: HttpProviderConfig,
+    pub credential_references: Vec<HttpCredentialReference>,
     pub streaming: Option<crate::streaming::HttpStreamLimits>,
     pub installed: InstalledProvider,
     pub tls: Arc<rustls::ClientConfig>,
@@ -47,7 +48,25 @@ impl HttpProvider {
             epoch,
             expected_epoch,
             config,
-            credentials,
+            CredentialInput::Inline(credentials),
+            None,
+        )
+    }
+    pub fn install_with_secret_references(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: HttpProviderConfig,
+        references: Vec<HttpCredentialReference>,
+    ) -> Result<Self, HttpError> {
+        Self::install_profile(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            CredentialInput::References(references),
             None,
         )
     }
@@ -57,10 +76,17 @@ impl HttpProvider {
         epoch: u64,
         expected_epoch: u64,
         config: HttpProviderConfig,
-        credentials: &[HttpCredential<'_>],
+        credentials: CredentialInput<'_, '_>,
         streaming: Option<crate::streaming::HttpStreamLimits>,
     ) -> Result<Self, HttpError> {
         config.validate()?;
+        let (credentials, references) = match credentials {
+            CredentialInput::Inline(values) => (values, Vec::new()),
+            CredentialInput::References(values) => (&[][..], values),
+        };
+        if references.capacity() > 16 {
+            return Err(HttpError::InvalidRequest);
+        }
         let (capability, profile, operation) = profile(&config, streaming)?;
         let configuration = pools.reserve_protocol_metadata(
             65536
@@ -68,6 +94,7 @@ impl HttpProvider {
                 + 3 * config.extra_roots.iter().map(Vec::capacity).sum::<usize>(),
         )?;
         let _encoding = pools.reserve_protocol_metadata(8192)?;
+        credentials::validate_references(&references, logical_id, &config)?;
         let encoded = credentials::encode(credentials, config.destinations.len())?;
         for credential in credentials {
             if config.destinations[credential.destination]
@@ -88,6 +115,7 @@ impl HttpProvider {
         // Public content identity excludes credentials. Their opaque installed
         // epoch separately fences rotations; publishing a secret hash would
         // permit offline guessing of weak credentials.
+        credentials::hash_references(&mut hash, &references)?;
         let digest = format!("sha256:{:x}", hash.0.finalize());
         let mut roots = rustls::RootCertStore::empty();
         if config.public_roots {
@@ -141,6 +169,7 @@ impl HttpProvider {
         Ok(Self {
             inner: Arc::new(Inner {
                 config,
+                credential_references: references,
                 streaming,
                 installed,
                 tls: Arc::new(tls),
@@ -165,6 +194,8 @@ impl OutboundHttpInvoker for HttpProvider {
             return Err(HttpError::PermissionDenied);
         }
         let destination = destination::parse(&request.url, &self.inner.config)?;
+        self.inner
+            .check_credential_tenant(session.tenant(), destination.index)?;
         let size = headers::validate(
             &request,
             &self.inner.config.destinations[destination.index],
@@ -193,6 +224,20 @@ impl OutboundHttpInvoker for HttpProvider {
     }
 }
 impl Inner {
+    pub fn check_credential_tenant(
+        &self,
+        tenant: &latent_core::TenantId,
+        index: usize,
+    ) -> Result<(), HttpError> {
+        if self
+            .credential_references
+            .iter()
+            .any(|r| r.destination == index && r.binding.scope().tenant != *tenant)
+        {
+            return Err(HttpError::PermissionDenied);
+        }
+        Ok(())
+    }
     pub fn client(&self, index: usize) -> Result<Arc<ProviderClient<Network>>, HttpError> {
         self.pools
             .client(

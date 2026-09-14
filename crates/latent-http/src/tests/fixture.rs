@@ -92,7 +92,7 @@ pub struct Fixture {
     _catalog: DirectoryArtifactRepository,
     pub publication: ReleaseUseEligibility,
     pub revision: ResolvedRevision,
-    pub _dir: TempDir,
+    pub directory: TempDir,
 }
 impl Fixture {
     pub fn new(config: HttpProviderConfig) -> Self {
@@ -203,7 +203,7 @@ impl Fixture {
             1,
             0,
             config,
-            credentials,
+            crate::credentials::CredentialInput::Inline(credentials),
             streaming_limits,
         )
         .unwrap();
@@ -274,7 +274,7 @@ impl Fixture {
             _catalog: catalog,
             publication,
             revision,
-            _dir: dir,
+            directory: dir,
         }
     }
     pub fn session(&self, millis: u64) -> (CapabilitySession, Control) {

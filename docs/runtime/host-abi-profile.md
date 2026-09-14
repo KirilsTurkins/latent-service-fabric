@@ -18,7 +18,7 @@ error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-re
 | `latent:random/random@0.1.0` | supported | unavailable, #219 |
 | `latent:blob/blob@0.1.0` | supported, legacy | unavailable |
 | `latent:blob/blob@0.2.0` | supported, async owned chunks | configured Linux [local blob adapter](local-blobs.md); S3 remains #214 |
-| `latent:secrets/reader@0.1.0` | supported | unavailable, #215/#216 |
+| `latent:secrets/reader@0.1.0` | supported, synchronous WIT with cooperative host waits | configured [local secret provider](local-secrets.md); Vault remains #216 |
 | `latent:events/publisher@0.2.0` | supported | unavailable, #217 |
 | `latent:http/streaming@0.3.0` | supported, async owned resources | configured [streaming HTTP adapter](streaming-http.md) |
 | `latent:http/client@0.2.0` | supported, async import | configured [bounded HTTP adapter](outbound-http.md) |
@@ -28,7 +28,7 @@ error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-re
 An inspected package has no provider authority. Wasmtime preparation rejects a
 required provider that has no installed owner. The generated Phase 3 host/guest
 bindings contain types and registration helpers; the production linker supplies
-context, log and clock, plus service invocation, buffered/streaming HTTP and local blobs when their node-owned
+context, log and clock, plus service invocation, buffered/streaming HTTP, local blobs and local secrets when their node-owned
 adapters are installed. Activations must supply their exact prepared
 imports and pass current eligibility/descriptor checks.
 
@@ -55,8 +55,8 @@ uncertainty after possible dispatch. Events report broker stream/sequence and
 acknowledgement, including duplicate status, or an explicit uncertain outcome.
 Neither implies a transaction, consumer processing or automatic retry authority.
 
-HTTP/service/blob operations select freestanding async imports. Synchronous guest
-imports may eventually use a cooperative async host bridge. Neither form makes
+HTTP/service/blob operations select freestanding async imports. Local secret reads use their existing synchronous WIT with a cooperative async
+host bridge. Neither form makes
 waiting activations free: stores, cells, handles, buffers and reservations stay
 owned until completion or affirmative cleanup.
 
