@@ -17,7 +17,7 @@ web and SDK work without claiming it has shipped.
 | `latent:random` | Declared; budgeted cryptographic randomness is Phase 3. |
 | `latent:blob` | Implemented configured Linux [immutable blobs](runtime/local-blobs.md) at 0.2.0; S3 remains Phase 3 work. |
 | `latent:http` | Implemented configured [buffered](runtime/outbound-http.md) and [streaming](runtime/streaming-http.md) providers. |
-| `latent:secrets` | Implemented configured [protected local references](runtime/local-secrets.md), rotation and opaque credentials; Vault remains Phase 3 work. |
+| `latent:secrets` | Implemented configured [protected local references](runtime/local-secrets.md), rotation and opaque credentials, plus the [Vault KV-v2 provider](runtime/vault-secrets.md). |
 | `latent:telemetry` | Declared; guest custom metrics with cardinality policy are Phase 3. |
 | `latent:service` | Implemented configured [local invocation](runtime/local-service-invocation.md) with conserved descendant budgets. |
 | `latent:events` | Declared; real provider publication is Phase 3, while transactional durable event intents require Phase 4. |
