@@ -23,7 +23,7 @@ wasm-tools validate "${OUTPUT}/wit/value-types.wasm"
 
 while IFS= read -r package; do
     name="$(basename "${package}")"
-    if [[ "${name}" == "runtime" || "${name}" == "runtime-phase3" || "${name}" == "runtime-phase3-streaming" ]]; then
+    if [[ "${name}" == "runtime" || "${name}" == "runtime-phase3" || "${name}" == "runtime-phase3-streaming" || "${name}" == "runtime-phase3-blobs" ]]; then
         continue
     fi
     wasm-tools component wit "${package}" --json > "${OUTPUT}/wit/platform-${name}.json"
@@ -35,6 +35,8 @@ python3 tools/stage_runtime_wit.py "${OUTPUT}/phase3-wit" --source wit/platform/
 wasm-tools component wit "${OUTPUT}/phase3-wit" --json > "${OUTPUT}/wit/platform-runtime-phase3.json"
 python3 tools/stage_runtime_wit.py "${OUTPUT}/streaming-wit" --source wit/platform/runtime-phase3-streaming
 wasm-tools component wit "${OUTPUT}/streaming-wit" --json > "${OUTPUT}/wit/platform-runtime-phase3-streaming.json"
+python3 tools/stage_runtime_wit.py "${OUTPUT}/blob-wit" --source wit/platform/runtime-phase3-blobs
+wasm-tools component wit "${OUTPUT}/blob-wit" --json > "${OUTPUT}/wit/platform-runtime-phase3-blobs.json"
 
 while IFS= read -r package; do
     relative="${package#"${ROOT}/"}"

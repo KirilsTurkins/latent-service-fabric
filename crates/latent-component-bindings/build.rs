@@ -23,6 +23,7 @@ fn main() -> io::Result<()> {
     let echo_wit = output.join("echo-wit");
     let phase3_wit = output.join("phase3-wit");
     let streaming_wit = output.join("streaming-wit");
+    let blob_wit = output.join("blob-wit");
 
     stage_runtime_world(&platform_wit, &runtime_wit, "runtime")?;
     stage_runtime_world(&platform_wit, &phase3_wit, "runtime-phase3")?;
@@ -32,6 +33,8 @@ fn main() -> io::Result<()> {
     write_phase3_bindings(&output, &phase3_wit)?;
     stage_runtime_world(&platform_wit, &streaming_wit, "runtime-phase3-streaming")?;
     write_streaming_bindings(&output, &streaming_wit)?;
+    stage_runtime_world(&platform_wit, &blob_wit, "runtime-phase3-blobs")?;
+    write_blob_bindings(&output, &blob_wit)?;
 
     println!(
         "cargo:rerun-if-changed={}",
@@ -74,6 +77,7 @@ fn stage_runtime_world(platform_wit: &Path, destination: &Path, world: &str) -> 
             || package.file_name() == OsStr::new("runtime")
             || package.file_name() == OsStr::new("runtime-phase3")
             || package.file_name() == OsStr::new("runtime-phase3-streaming")
+            || package.file_name() == OsStr::new("runtime-phase3-blobs")
         {
             continue;
         }
@@ -233,6 +237,31 @@ fn write_streaming_bindings(output: &Path, wit: &Path) -> io::Result<()> {
             r#"wit_bindgen::generate!({{
         path: {path},
         world: "latent:platform/capsule@0.3.0",
+        generate_all,
+    }});"#
+        ),
+    )
+}
+
+fn write_blob_bindings(output: &Path, wit: &Path) -> io::Result<()> {
+    let path = format!("{:?}", wit.to_string_lossy());
+    fs::write(
+        output.join("blob_host.rs"),
+        format!(
+            r#"wasmtime::component::bindgen!({{
+        path: {path},
+        world: "latent:platform/capsule@0.4.0",
+        imports: {{ default: async }},
+        exports: {{ default: async }},
+    }});"#
+        ),
+    )?;
+    fs::write(
+        output.join("blob_guest.rs"),
+        format!(
+            r#"wit_bindgen::generate!({{
+        path: {path},
+        world: "latent:platform/capsule@0.4.0",
         generate_all,
     }});"#
         ),

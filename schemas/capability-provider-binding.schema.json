@@ -28,6 +28,7 @@
         "latent:clock/wall@0.1.0",
         "latent:random/random@0.1.0",
         "latent:blob/blob@0.1.0",
+        "latent:blob/blob@0.2.0",
         "latent:secrets/reader@0.1.0",
         "latent:events/publisher@0.2.0",
         "latent:http/client@0.2.0",
@@ -426,6 +427,42 @@
               },
               "resources": {
                 "$ref": "capability-policy.schema.json#/$defs/service"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:blob/blob@0.2.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "create",
+                    "open",
+                    "write",
+                    "read",
+                    "seal",
+                    "close",
+                    "chunk-bytes"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/blob"
               }
             }
           }

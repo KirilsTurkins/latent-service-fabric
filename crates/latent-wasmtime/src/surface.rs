@@ -12,6 +12,7 @@ use crate::config::WasmtimeConfig;
 use crate::containment::platform_error;
 use crate::values::validate_signature;
 
+pub(crate) mod blob;
 pub(crate) mod streaming;
 
 pub const CONTEXT_IMPORT: &str = "latent:context/context@0.1.0";
@@ -58,10 +59,13 @@ pub(crate) struct Providers {
     pub local_services: bool,
     pub http: bool,
     pub streaming_http: bool,
+    pub blobs: bool,
 }
 impl Providers {
     fn supports(self, name: &str) -> bool {
-        (self.local_services && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
+        (self.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
+            || (self.local_services
+                && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
             || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
             || (self.streaming_http
                 && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
@@ -123,7 +127,10 @@ pub(crate) fn validate_with_providers(
                     retain(entry_bytes, &mut retained_bytes, config)?;
                     let (params, results) = signature(
                         &function,
-                        (providers.local_services || providers.http || providers.streaming_http)
+                        (providers.local_services
+                            || providers.http
+                            || providers.streaming_http
+                            || providers.blobs)
                             && function.async_(),
                         config,
                         &mut remaining,
@@ -193,7 +200,7 @@ fn validate_imports(
     let mut imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
-        let specification = latent_core::PHASE3_HOST_ABI_V3
+        let specification = latent_core::PHASE3_HOST_ABI_CURRENT
             .interface(name)
             .ok_or_else(|| incompatible("component imports an unsupported host capability"))?;
         if specification.binding == latent_core::HostInterfaceBinding::Provider
@@ -234,7 +241,11 @@ fn validate_imports(
                         &resources,
                     )?;
                     if !specification.resource_types().is_empty() {
-                        streaming::validate(name, &function, &interface, engine)?;
+                        match specification.interface {
+                            latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
+                            latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            _ => return Err(incompatible("unsupported host resource interface")),
+                        }
                     }
                 }
                 ComponentItem::Type(ty) => {

@@ -98,7 +98,7 @@ impl CapabilityPolicy {
                 || !unique(&rule.services, |value| identifier(value))
                 || !unique(&rule.publications, |value| publication(value))
                 || !unique(&rule.operations, |value| operation(&rule.capability, value))
-                || latent_core::PHASE3_HOST_ABI_V3
+                || latent_core::PHASE3_HOST_ABI_CURRENT
                     .interface(&rule.capability)
                     .is_none()
                 || !rule.resources.compatible(&rule.capability)

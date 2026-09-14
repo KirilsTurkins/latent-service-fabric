@@ -217,7 +217,10 @@ impl ResourceConstraint {
                     Self::Http { .. },
                     "latent:http/client@0.2.0" | "latent:http/streaming@0.3.0"
                 )
-                | (Self::Blob { .. }, "latent:blob/blob@0.1.0")
+                | (
+                    Self::Blob { .. },
+                    "latent:blob/blob@0.1.0" | "latent:blob/blob@0.2.0"
+                )
                 | (Self::Secrets { .. }, "latent:secrets/reader@0.1.0")
                 | (Self::Events { .. }, "latent:events/publisher@0.2.0")
                 | (Self::Telemetry { .. }, "latent:telemetry/custom@0.1.0")

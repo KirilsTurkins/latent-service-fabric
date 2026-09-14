@@ -23,6 +23,11 @@ pub mod host {
         include!(concat!(env!("OUT_DIR"), "/streaming_host.rs"));
     }
 
+    /// Bounded immutable-blob resources and explicit storage outcomes.
+    pub mod blob {
+        include!(concat!(env!("OUT_DIR"), "/blob_host.rs"));
+    }
+
     /// Host bindings for the maintained echo integration fixture.
     pub mod echo {
         include!(concat!(env!("OUT_DIR"), "/echo_host.rs"));
@@ -47,4 +52,10 @@ pub mod phase3_guest {
 pub mod streaming_guest {
     //! Explicitly owned HTTP streams; no provider or authority is installed here.
     include!(concat!(env!("OUT_DIR"), "/streaming_guest.rs"));
+}
+
+#[cfg(target_arch = "wasm32")]
+pub mod blob_guest {
+    //! Immutable blob handles and owned bounded range results.
+    include!(concat!(env!("OUT_DIR"), "/blob_guest.rs"));
 }

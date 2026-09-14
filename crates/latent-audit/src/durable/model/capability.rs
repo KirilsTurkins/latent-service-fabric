@@ -163,7 +163,7 @@ impl AuditCapabilityContext {
                 return Err(invalid());
             }
         }
-        latent_core::PHASE3_HOST_ABI_V3
+        latent_core::PHASE3_HOST_ABI_CURRENT
             .interface(&self.capability)
             .ok_or_else(invalid)?;
         codec::token(&self.operation, 64)?;

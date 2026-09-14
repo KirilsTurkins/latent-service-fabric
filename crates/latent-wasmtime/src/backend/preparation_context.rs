@@ -126,6 +126,15 @@ impl PreparationContext {
                 )
             })?;
         }
+        if let Some(invoker) = self.blobs() {
+            crate::host::blob::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind blob import",
+                    false,
+                )
+            })?;
+        }
         let pre = linker.instantiate_pre(component).map_err(|error| {
             platform_error(
                 PlatformErrorCode::IncompatibleContract,
@@ -137,6 +146,9 @@ impl PreparationContext {
             )
         })?;
         Ok(pre)
+    }
+    pub(super) fn blobs(&self) -> Option<Arc<dyn latent_capabilities::broker::blob::BlobInvoker>> {
+        self.capabilities.as_ref()?.upgrade()?.blobs().ok()
     }
     pub(super) fn streaming_http(
         &self,

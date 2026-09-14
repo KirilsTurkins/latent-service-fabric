@@ -170,7 +170,9 @@ fn surfaces(
     }
     for (name, id) in &old.imports {
         if let Some(candidate) = new.imports.get(name) {
-            walk.resources = name == "latent:http/streaming@0.3.0";
+            walk.resources = latent_core::PHASE3_HOST_ABI_CURRENT
+                .interface(name)
+                .is_some_and(|profile| !profile.resource_types().is_empty());
             walk.interface(*id, *candidate, name, false)?;
             walk.resources = false;
         }

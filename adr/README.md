@@ -89,3 +89,9 @@ profile to V3 with exact owned HTTP upload/body/chunk resources, finite transfer
 and resident-byte accounting, and explicit EOF/cancellation semantics. The
 [streaming profile](../docs/runtime/streaming-http.md) preserves V1/V2 contracts
 and the separate authorization and dormant-resource boundaries.
+
+[ADR-0033](0033-use-scoped-durable-local-blobs-with-owned-chunks.md) extends the
+profile to V4 with immutable local blobs, original tenant/session authority,
+owned chunks and a durable publication boundary. The [local storage
+contract](../docs/runtime/local-blobs.md) defines finite inventory, explicit
+retention, no-follow filesystem access and cancellation/recovery ownership.

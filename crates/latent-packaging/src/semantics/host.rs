@@ -1,10 +1,10 @@
 use super::{compare::Comparison, incompatible, SemanticLimits};
-use latent_core::{PlatformError, PHASE3_HOST_ABI_V3};
+use latent_core::{PlatformError, PHASE3_HOST_ABI_CURRENT};
 use std::collections::{BTreeMap, BTreeSet};
 use wit_parser::{InterfaceId, Resolve};
 
 pub(super) fn recognizes(name: &str) -> bool {
-    PHASE3_HOST_ABI_V3.interface(name).is_some()
+    PHASE3_HOST_ABI_CURRENT.interface(name).is_some()
 }
 
 pub(super) fn validate(
@@ -15,7 +15,7 @@ pub(super) fn validate(
     let mut trusted = Resolve::default();
     let mut loaded = BTreeSet::new();
     for name in imports.keys() {
-        let specification = PHASE3_HOST_ABI_V3
+        let specification = PHASE3_HOST_ABI_CURRENT
             .interface(name)
             .ok_or_else(|| incompatible("unsupported-host-import"))?;
         // Semantic inspection recognizes the exact ABI without installing or
@@ -33,7 +33,7 @@ pub(super) fn validate(
     // visits. A caller cannot reset the comparison budget by adding interfaces.
     let mut comparison = Comparison::new(resolve, &trusted, limits);
     for (name, id) in imports {
-        let specification = PHASE3_HOST_ABI_V3
+        let specification = PHASE3_HOST_ABI_CURRENT
             .interface(name)
             .ok_or_else(|| incompatible("unsupported-host-import"))?;
         let interface = trusted

@@ -1,6 +1,43 @@
 use super::*;
 
 #[tokio::test]
+async fn dropping_job_waiter_stops_but_does_not_refund_a_blocked_worker() {
+    let setup = Setup::new(single());
+    let (session, _control) = setup.session("job-waiter");
+    let observer = session.observer();
+    let call = setup.call(&session).await;
+    let waiter = call.io().job_waiter();
+    let (entered, started) = tokio::sync::oneshot::channel();
+    let (release, blocked) = std::sync::mpsc::sync_channel(1);
+    let job = setup
+        .pools
+        .spawn_blocking(call, move |call| {
+            entered.send(()).unwrap();
+            blocked.recv_timeout(Duration::from_secs(2)).unwrap();
+            assert!(call.io().checkpoint().is_err());
+            drop(call);
+        })
+        .unwrap();
+    started.await.unwrap();
+    let mut response = Box::pin(waiter.wait(job.wait()));
+    pending(response.as_mut());
+    drop(response);
+    drop(session);
+    let retained = setup
+        .pools
+        .shutdown(Instant::now() + Duration::from_millis(30))
+        .await
+        .unwrap();
+    assert_eq!(retained.workers, 1);
+    assert_eq!(retained.running_requests, 1);
+    assert!(!retained.is_clean());
+    assert!(!observer.is_quiescent());
+    release.send(()).unwrap();
+    clean(&setup.pools).await;
+    assert!(observer.is_quiescent());
+}
+
+#[tokio::test]
 async fn delayed_result_consumers_keep_pool_capacity_and_the_original_session() {
     let setup = Setup::new(single());
     let (session, _control) = setup.session("retained-result");
