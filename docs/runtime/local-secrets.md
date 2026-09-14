@@ -10,7 +10,7 @@ Installation is an explicit trusted Rust composition step using `latent-secrets`
 the existing [provider pools](provider-pools.md), and
 `ActivationCapabilityRuntime::install_secrets`. Ordinary standalone startup does
 not infer secret sources from imports. Standalone provider configuration and
-management remain the separate Phase 3 delivery in #221; Vault is #216.
+management remain the separate Phase 3 delivery in #226; Vault is #216.
 
 ## Sources and filesystem trust
 
