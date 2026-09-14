@@ -1553,14 +1553,22 @@ dependencies = [
 name = "latent-blobs"
 version = "0.1.0-alpha.3"
 dependencies = [
+ "getrandom 0.4.3",
+ "latent-artifacts",
  "latent-capabilities",
  "latent-core",
+ "latent-http",
  "latent-policy",
+ "quick-xml",
+ "ring",
  "rustix",
  "serde",
  "serde_json",
  "sha2 0.10.9",
  "tempfile",
+ "time",
+ "tokio",
+ "zeroize",
 ]
 
 [[package]]
@@ -2017,13 +2025,16 @@ dependencies = [
  "latent-telemetry",
  "libc",
  "memmap2",
+ "rcgen",
  "rustix",
+ "rustls",
  "seccompiler",
  "serde",
  "serde_json",
  "sha2 0.10.9",
  "tempfile",
  "tokio",
+ "tokio-rustls",
  "wasm-encoder 0.252.0",
  "wasmtime",
  "wit-parser 0.252.0",
@@ -2611,6 +2622,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.42.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41b1177fdf999d2321d3fb46ff47159d9c1fb9ad66a4879f8c50a0b504615e9b"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]

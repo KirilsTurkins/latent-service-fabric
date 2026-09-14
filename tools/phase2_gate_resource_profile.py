@@ -9,7 +9,7 @@ from tools.phase2_operator_process import require
 from tools.phase2_operator_scenario import NODE_ID, TOKEN
 
 PROFILE = {
-    "id": "phase2-dormant-32-r2", "preparation": "portable", "releases": 32,
+    "id": "phase2-dormant-32-r3", "preparation": "portable", "releases": 32,
     "deployments": 16, "referencedReleases": 2, "invocations": 32,
     "maximumControls": 256, "deadlineSeconds": 300, "shutdownSeconds": 10,
     "osSamples": 12, "samplesPerPhase": 3, "sampleIntervalMillis": 50,
@@ -19,7 +19,7 @@ PROFILE = {
     "maximumBinaryBytes": 536870912,
     "proc": {"fileBytes": 65536, "fds": 4096, "tasks": 256,
              "networkBytes": 1048576, "networkRows": 8192, "sampleSeconds": 2,
-             "transientLoadFds": 1},
+             "transientLoadFds": 1, "transientClockFds": 1},
 }
 PHASES = ("baseline", "dormant", "reclaimed", "unrouted")
 ZERO_ROWS = (
@@ -234,14 +234,18 @@ def validate_receipt(value):
     baseline = samples[0]
     fixed = ("threads", "tasks", "socketCount", "listeningTcpSockets", "descendants")
     def retained_fds(observed):
-        # HostLoad periodically opens one PSI file, even with no activations.
-        # Preserve both raw counts; only the positively identified read-only
-        # fixed sampler descriptor is separate from retained topology.
+        # The same fixed control owner sequentially renews the durable clock
+        # lease and reads PSI, even with no activations. Preserve raw counts;
+        # only positively identified descriptors are separate from retention.
         transient = integer(observed["loadSamplerFdCount"])
+        clock = integer(observed["clockLeaseFdCount"])
         total = integer(observed["fdCount"])
         require(transient <= PROFILE["proc"]["transientLoadFds"] and transient < total,
                 "receipt-sampler-bound")
-        return total - transient
+        require(clock <= PROFILE["proc"]["transientClockFds"]
+                and transient + clock <= 1 and transient + clock < total,
+                "receipt-clock-bound")
+        return total - transient - clock
 
     baseline_fds = retained_fds(baseline["os"])
     first_rows = baseline["inventory"]["topology"]["entries"]

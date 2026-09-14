@@ -11,6 +11,7 @@ use std::{
 };
 mod fixture;
 mod lifecycle;
+mod maintenance;
 mod protocol;
 mod shutdown;
 use fixture::*;

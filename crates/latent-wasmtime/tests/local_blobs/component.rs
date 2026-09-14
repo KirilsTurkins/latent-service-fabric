@@ -15,11 +15,14 @@ const OPS: [&str; 7] = [
     "seal",
     "close",
 ];
+pub fn bytes() -> Vec<u8> {
+    bytes_for(CONTRACT)
+}
 #[expect(
     clippy::too_many_lines,
     reason = "Finite encoded guest instructions remain in canonical ABI execution order."
 )]
-pub fn bytes() -> Vec<u8> {
+pub fn bytes_for(contract: &str) -> Vec<u8> {
     let mut component = Component::new();
     let spec = latent_core::PHASE3_HOST_ABI_CURRENT.interface(CAP).unwrap();
     let mut types = ComponentTypeSection::new();
@@ -126,7 +129,7 @@ pub fn bytes() -> Vec<u8> {
     instances.export_items([("run", ComponentExportKind::Func, 7)]);
     component.section(&instances);
     let mut exports = ComponentExportSection::new();
-    exports.export(CONTRACT, ComponentExportKind::Instance, 1, None);
+    exports.export(contract, ComponentExportKind::Instance, 1, None);
     component.section(&exports);
     component.finish()
 }

@@ -94,17 +94,18 @@ impl ExecutionCancellation for Control {
         Some(self.probe.clone())
     }
 }
-pub struct Fixture {
+pub struct Fixture<P = LocalBlobProvider> {
     _factory: WasmtimeComponentEngineFactory,
     pub backend: WasmtimeBackend,
     pub prepared: PreparedComponent,
-    catalog: Arc<DirectoryArtifactRepository>,
+    pub catalog: Arc<DirectoryArtifactRepository>,
     pub policies: Arc<PolicyStore>,
     pub broker: Arc<ActivationCapabilityBroker>,
     _runtime: Arc<ActivationCapabilityRuntime>,
     _clock: Arc<Clock>,
     pub revision: ResolvedRevision,
-    pub provider: LocalBlobProvider,
+    pub provider: P,
+    pub ceiling: latent_core::ResourceBudget,
     pub plan: Arc<CompiledCapabilityPlan>,
     pub publication: ReleaseUseEligibility,
     pub pools: Arc<ProviderPools>,
@@ -112,16 +113,45 @@ pub struct Fixture {
     directory: tempfile::TempDir,
 }
 impl Fixture {
-    #[expect(
-        clippy::too_many_lines,
-        reason = "compose the real catalog, grants, provider and fresh Store with explicit owner lifetimes"
-    )]
     pub async fn new() -> Self {
         let mut ceiling = support::budget();
         ceiling.outbound_requests = 8;
         ceiling.blob_read_bytes = 65536;
         ceiling.blob_write_bytes = 65536;
         ceiling.wall_time_limit_millis = Some(5000);
+        Self::with_provider(
+            ceiling,
+            ProviderPoolLimits::default(),
+            "linux-immutable-blobs-v1",
+            |path, pools| async move {
+                let store = LocalBlobStore::open(
+                    &path.join("blobs"),
+                    "private",
+                    LocalBlobLimits {
+                        maximum_chunk_bytes: 4,
+                        ..LocalBlobLimits::default()
+                    },
+                )
+                .unwrap();
+                let provider = LocalBlobProvider::install(pools, "blobs", 1, 0, store).unwrap();
+                let reference = provider.reference();
+                (provider, reference)
+            },
+        )
+        .await
+    }
+}
+impl<P: blob::BlobInvoker + Clone + 'static> Fixture<P> {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "compose the real catalog, grants, provider and fresh Store with explicit owner lifetimes"
+    )]
+    pub async fn with_provider<F: std::future::Future<Output = (P, ProviderReference)>>(
+        ceiling: latent_core::ResourceBudget,
+        pool_limits: ProviderPoolLimits,
+        profile: &str,
+        make: impl FnOnce(std::path::PathBuf, Arc<ProviderPools>) -> F,
+    ) -> Self {
         let directory = tempfile::TempDir::new().unwrap();
         let catalog = Arc::new(
             DirectoryArtifactRepository::open(
@@ -132,7 +162,7 @@ impl Fixture {
         );
         let mut artifact = support::artifact_bytes(component::bytes(), &[component::CONTRACT]);
         artifact.contracts = super::packages::artifact(&super::packages::capsule()).contracts;
-        artifact.manifest.execution.resource_budget_ceiling = ceiling;
+        artifact.manifest.execution.resource_budget_ceiling = ceiling.clone();
         artifact.manifest.imports.push(ContractImport {
             contract: ContractId(component::CAP.into()),
             optional: false,
@@ -187,24 +217,18 @@ impl Fixture {
                 broker.clone(),
                 io.clone(),
                 tokio::runtime::Handle::current(),
-                ProviderPoolLimits::default(),
+                pool_limits,
             )
             .unwrap(),
         );
-        let store = LocalBlobStore::open(
-            &directory.path().join("blobs"),
-            "private",
-            LocalBlobLimits {
-                maximum_chunk_bytes: 4,
-                ..LocalBlobLimits::default()
-            },
-        )
-        .unwrap();
-        let provider = LocalBlobProvider::install(pools.clone(), "blobs", 1, 0, store).unwrap();
+        let (provider, provider_reference) = make(directory.path().to_owned(), pools.clone()).await;
         install(
             &policies,
             &publication,
-            provider.reference().configuration_digest(),
+            provider_reference.configuration_digest(),
+            profile,
+            ceiling.wall_time_limit_millis.unwrap_or(5000),
+            "tests",
         );
         let revision = ResolvedRevision {
             target: latent_routing::InvocationTarget {
@@ -225,7 +249,7 @@ impl Fixture {
                 &revision,
                 &[CapabilityBindingSpec {
                     definition_digest: None,
-                    provider: &provider.reference(),
+                    provider: &provider_reference,
                     imported_operations: &[
                         "create".into(),
                         "open".into(),
@@ -281,15 +305,12 @@ impl Fixture {
             pools,
             io,
             directory,
+            ceiling,
         }
     }
     pub fn request(&self, id: &str, method: u32, handle: u64) -> (ExecutionRequest, Control) {
         let id = ActivationId(id.into());
-        let mut grant = support::budget();
-        grant.outbound_requests = 8;
-        grant.blob_read_bytes = 65536;
-        grant.blob_write_bytes = 65536;
-        grant.wall_time_limit_millis = Some(5000);
+        let grant = self.ceiling.clone();
         let budget = ActivationBudget::with_profile(
             EffectiveActivationBudget::admit_profile_at(
                 latent_core::BudgetProfile::Phase3,
@@ -336,6 +357,20 @@ impl Fixture {
             .unwrap();
         (session, control)
     }
+    #[allow(
+        dead_code,
+        reason = "the shared S3 fixture prepares a second tenant publication"
+    )]
+    pub async fn prepared_for(&self, revision: &ResolvedRevision) -> PreparedComponent {
+        let mut key = self._factory.preparation_key(revision.release.clone());
+        key.publication = revision.publication.clone();
+        self.backend
+            .prepare_ready_from_repository(self.catalog.clone(), key)
+            .await
+            .unwrap()
+            .descriptor()
+            .clone()
+    }
     pub fn revoke(&self) {
         self.policies
             .mutate(
@@ -371,6 +406,7 @@ impl Fixture {
             self.io.snapshot(),
             self.pools.snapshot().unwrap(),
             self.broker.snapshot(),
+            self.backend.resource_snapshot().stores_created,
         );
         let mut resources = support::budget();
         resources.outbound_requests = 8;
@@ -412,7 +448,7 @@ impl Fixture {
         assert_eq!(self.io.snapshot(), before.0);
         assert_eq!(self.pools.snapshot().unwrap(), before.1);
         assert_eq!(self.broker.snapshot(), before.2);
-        assert_eq!(self.backend.resource_snapshot().stores_created, 0);
+        assert_eq!(self.backend.resource_snapshot().stores_created, before.3);
         self.idle();
     }
     pub fn idle(&self) {
@@ -433,29 +469,36 @@ impl Fixture {
         );
     }
 }
-fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &str) {
+pub fn install(
+    store: &PolicyStore,
+    publication: &ReleaseUseEligibility,
+    digest: &str,
+    profile: &str,
+    wall_millis: u64,
+    tenant: &str,
+) {
     for (id, kind, value) in [
         (
             "p",
             RecordKind::Policy,
-            json!({"formatVersion":1,"tenant":"tests","rules":[{
+            json!({"formatVersion":1,"tenant":tenant,"rules":[{
                 "id":"allow", "effect":"allow","principals":[{"kind":"service","subject":"generic-test"}],
                 "services":["generic"], "publications":[publication.publication().as_str()], "capability":component::CAP,
                 "operations":["create","open","write","read","seal"], "resources":{"kind":"blob","namespaces":["private"]},
-                "ceiling":{"operations":1,"inputBytes":65536,"outputBytes":65536,"wallTimeMillis":5000}
+                "ceiling":{"operations":1,"inputBytes":131072,"outputBytes":65536,"wallTimeMillis":wall_millis}
             }]}),
         ),
         (
             "binding",
             RecordKind::ProviderBinding,
-            json!({"formatVersion":1,"tenant":"tests","capability":component::CAP,
-            "providerProfile":"linux-immutable-blobs-v1","configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
+            json!({"formatVersion":1,"tenant":tenant,"capability":component::CAP,
+            "providerProfile":profile,"configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
         ),
     ] {
         store
             .mutate(
                 MutationRequest {
-                    tenant: "tests",
+                    tenant,
                     actor: "operator",
                     id,
                     kind,

@@ -12,11 +12,16 @@ pub fn budget_json() -> Value {
         "outboundRequests":8,"stateReadBytes":0,"stateWriteBytes":0,"blobReadBytes":65536,"blobWriteBytes":65536,"logBytes":0,"effectCount":0})
 }
 pub fn capsule() -> PackageBundle {
+    capsule_for("tests")
+}
+pub fn capsule_for(tenant: &str) -> PackageBundle {
+    let contract = format!("{tenant}:local-blobs/api@1.0.0");
     build(
         "local-blobs",
-        component::bytes(),
-        include_str!("../../../../examples/local-blobs/wit/blob-probe.wit"),
-        component::CONTRACT,
+        component::bytes_for(&contract),
+        &include_str!("../../../../examples/local-blobs/wit/blob-probe.wit")
+            .replace("tests:", &format!("{tenant}:")),
+        &contract,
         vec![function(
             "run",
             true,
@@ -50,7 +55,7 @@ fn build(
     functions: Vec<Value>,
     caller: bool,
 ) -> PackageBundle {
-    let package = format!("tests:{name}");
+    let package = contract.split('/').next().unwrap();
     let world = format!("{package}/service@1.0.0");
     let mut interface = json!({"id":contract,"functions":functions,"documentation":null});
     interface["digest"] =

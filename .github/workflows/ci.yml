@@ -137,6 +137,11 @@ jobs:
           python-version: 3.13.5
       - name: Fetch the pinned operator workflow registry
         run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
+      - name: Fetch the pinned S3 conformance server
+        run: docker pull quay.io/minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2
+      - name: Validate S3 blobs with the existing test harness
+        timeout-minutes: 5
+        run: python3 tools/run_s3_blob_tests.py --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
       - name: Validate capability policy CLI lifecycle
         timeout-minutes: 3
         run: python3 tools/run_capability_policy_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd"
@@ -162,7 +167,7 @@ jobs:
           LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/publication-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite publication-fixture
           python3 tools/run_publication_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/publication-inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/publication-receipt.json"
           LSF_PHASE2_RESOURCE_FIXTURE_ROOT="${fixture_root}/resource-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite resource-fixture
-          python3 -m unittest tools.tests.test_phase2_gate_resource
+          python3 -m unittest tools.tests.test_phase2_gate_resource tools.tests.test_phase2_resource_clock
           LSF_GATE_FIXTURE_ROOT="${fixture_root}" python3 - <<'PY'
           import hashlib, json, os, pathlib, subprocess
           root = pathlib.Path.cwd()

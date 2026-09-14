@@ -7,8 +7,10 @@ mod dns;
 mod execute;
 mod headers;
 mod network;
+pub mod protocol;
 mod provider;
 mod streaming;
+mod tls;
 pub use config::{
     HttpAddressPolicy, HttpDestination, HttpLimits, HttpProviderConfig, HttpResolution,
 };

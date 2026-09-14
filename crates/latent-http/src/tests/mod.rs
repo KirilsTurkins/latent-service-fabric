@@ -3,6 +3,7 @@ mod dns;
 mod fixture;
 mod http;
 mod ownership;
+mod protocol;
 mod redirects;
 mod responses;
 mod secret_references;
