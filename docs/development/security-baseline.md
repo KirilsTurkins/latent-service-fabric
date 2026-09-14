@@ -45,6 +45,20 @@ The job has a 15-minute outer deadline. Scanner installation, advisory-database 
 
 There is currently no checked-in RustSec exception list. If a future advisory cannot be removed immediately, #282 requires any exception mechanism to identify the exact finding/package, rationale, owner, and expiry; this slice intentionally does not introduce a blanket ignore path.
 
+## Rustls handshake boundary update
+
+[RUSTSEC-2026-0285](https://github.com/RustSec/advisory-db/blob/main/crates/rustls/RUSTSEC-2026-0285.md),
+published on 2026-09-14, affects Rustls 0.23.13 through 0.23.44. The outbound HTTP
+and OCI clients previously pinned 0.23.44 and now pin the reviewed
+[0.23.45 patch](https://github.com/rustls/rustls/releases/tag/v%2F0.23.45).
+`Cargo.lock` selects the same patched version for the shared TLS dependency graph.
+
+The upstream finding concerns accepting TLS 1.3 handshake messages at the wrong
+encryption level. The handshake transcript remains authenticated; this update
+is not evidence of an LSF interception exploit. Rebuild node and client binaries
+and validate actual TLS success/rejection and HTTP/OCI cancellation behavior.
+The advisory gate must pass with the updated lockfile; no suppression is added.
+
 ## Remaining #282 work
 
 The following remain required before #282 can close:
