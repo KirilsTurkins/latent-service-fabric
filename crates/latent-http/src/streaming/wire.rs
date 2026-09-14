@@ -26,6 +26,7 @@ pub(crate) struct Receiver {
 pub(crate) enum RequestBody {
     Buffered(Full<Bytes>),
     Streaming(Receiver),
+    Protocol(crate::protocol::ProtocolBody),
 }
 pub(crate) fn channel(length: Option<u64>) -> (Sender, RequestBody) {
     let state = Arc::new(Mutex::new(State::default()));
@@ -94,6 +95,7 @@ impl Body for RequestBody {
     ) -> Poll<Option<Result<Frame<Bytes>, Infallible>>> {
         match self.get_mut() {
             Self::Buffered(body) => Pin::new(body).poll_frame(cx),
+            Self::Protocol(body) => Pin::new(body).poll_frame(cx),
             Self::Streaming(receiver) => {
                 let mut state = receiver
                     .state
@@ -117,6 +119,7 @@ impl Body for RequestBody {
     fn is_end_stream(&self) -> bool {
         match self {
             Self::Buffered(body) => body.is_end_stream(),
+            Self::Protocol(body) => body.is_end_stream(),
             Self::Streaming(receiver) => {
                 let state = receiver
                     .state
@@ -129,6 +132,7 @@ impl Body for RequestBody {
     fn size_hint(&self) -> SizeHint {
         match self {
             Self::Buffered(body) => body.size_hint(),
+            Self::Protocol(body) => body.size_hint(),
             Self::Streaming(receiver) => receiver
                 .remaining
                 .map_or_else(SizeHint::default, SizeHint::with_exact),

@@ -27,6 +27,13 @@ pub(crate) struct Answers {
     count: usize,
 }
 impl Answers {
+    pub(crate) fn from_static(addresses: &[IpAddr]) -> Result<Self, HttpError> {
+        let mut result = Self::empty();
+        for address in addresses {
+            result.add(*address)?;
+        }
+        Ok(result)
+    }
     fn empty() -> Self {
         Self {
             addresses: [None; 8],

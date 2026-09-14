@@ -22,11 +22,13 @@ pub use protocol::ProviderMetadata;
 mod client;
 mod control;
 mod limits;
+mod maintenance;
 pub use admission::{PoolAdmission, PoolCall, PoolReady};
 pub use client::{ConnectionReservation, PooledConnection, ProviderClient};
 pub use control::{CleanupFuture, CleanupResult, ProviderJob};
 use limits::{Charge, Kind, Quotas};
 pub use limits::{ProviderPoolLimits, ProviderPoolSnapshot};
+pub use maintenance::{MaintenanceRequest, ProviderMaintenance};
 
 /// Trusted, already validated provider settings. The authority digest identifies
 /// public configuration only: never hash credentials into a public descriptor.

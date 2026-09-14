@@ -98,3 +98,7 @@ pub mod local;
 /// Capability-governed adapter on the configured shared blocking owner.
 #[cfg(target_os = "linux")]
 pub mod provider;
+
+/// Authenticated, version-pinned S3 blobs with a finite private cleanup inventory.
+#[cfg(target_os = "linux")]
+pub mod s3;

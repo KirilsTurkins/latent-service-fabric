@@ -1,7 +1,7 @@
 use super::{
     busy, capacity, denied, invalid, limits, Any, Arc, AtomicUsize, Charge, Epoch, ErasedClient,
-    Inner, InstalledProvider, Instant, Kind, Mutex, Ordering, PlatformError, PoolCall,
-    ProviderPools, Weak,
+    Inner, InstalledProvider, Instant, Kind, MaintenanceRequest, Mutex, Ordering, PlatformError,
+    PoolCall, ProviderPools, Weak,
 };
 use crate::broker::io::IoLease;
 use std::{collections::VecDeque, time::Duration};
@@ -154,6 +154,7 @@ impl<T: Send + 'static> ProviderClient<T> {
             physical: Some(physical),
             client: Arc::clone(self),
             activation: Some(call.io.lease()),
+            maintenance: None,
         }))
     }
     /// Reserve before a socket/dial task is allocated. One dial per client and
@@ -163,6 +164,22 @@ impl<T: Send + 'static> ProviderClient<T> {
         call: &PoolCall,
     ) -> Result<ConnectionReservation<T>, PlatformError> {
         call.check_client(&self.core)?;
+        self.reserve_owned(Some(call.io.lease()), None)
+    }
+    /// Recovery connections retain their finite operator request until the
+    /// actual resource is destroyed. They cannot become an idle guest client.
+    pub fn reserve_maintenance_connection(
+        self: &Arc<Self>,
+        request: &MaintenanceRequest,
+    ) -> Result<ConnectionReservation<T>, PlatformError> {
+        request.check_client(&self.core)?;
+        self.reserve_owned(None, Some(request.clone()))
+    }
+    fn reserve_owned(
+        self: &Arc<Self>,
+        activation: Option<IoLease>,
+        maintenance: Option<MaintenanceRequest>,
+    ) -> Result<ConnectionReservation<T>, PlatformError> {
         let owner = self.core.owner.upgrade().ok_or_else(denied)?;
         let _state = owner.state.try_lock().map_err(|_| busy())?;
         owner.check()?;
@@ -187,7 +204,8 @@ impl<T: Send + 'static> ProviderClient<T> {
         backoff.dialing = true;
         Ok(ConnectionReservation {
             client: Arc::clone(self),
-            activation: Some(call.io.lease()),
+            activation,
+            maintenance,
             lifetime: Some(ConnectionLifetime {
                 client: Arc::clone(&self.core),
                 failed: false,
@@ -239,11 +257,19 @@ pub struct ConnectionReservation<T: Send + 'static> {
     client: Arc<ProviderClient<T>>,
     lifetime: Option<ConnectionLifetime>,
     activation: Option<IoLease>,
+    maintenance: Option<MaintenanceRequest>,
     success: bool,
 }
 impl<T: Send + 'static> ConnectionReservation<T> {
     pub fn connected(mut self, value: T) -> Result<PooledConnection<T>, PlatformError> {
-        self.activation.as_ref().expect("dial owner").checkpoint()?;
+        if let Some(activation) = &self.activation {
+            activation.checkpoint()?;
+        } else {
+            self.maintenance
+                .as_ref()
+                .expect("operator dial owner")
+                .checkpoint()?;
+        }
         self.success = true;
         Ok(PooledConnection {
             physical: Some(Physical {
@@ -252,6 +278,7 @@ impl<T: Send + 'static> ConnectionReservation<T> {
             }),
             client: Arc::clone(&self.client),
             activation: self.activation.take(),
+            maintenance: self.maintenance.take(),
         })
     }
 }
@@ -290,6 +317,7 @@ pub struct PooledConnection<T: Send + 'static> {
     physical: Option<Physical<T>>,
     client: Arc<ProviderClient<T>>,
     activation: Option<IoLease>,
+    maintenance: Option<MaintenanceRequest>,
 }
 impl<T: Send + 'static> PooledConnection<T> {
     pub(super) fn belongs_to(&self, owner: &Arc<Inner>) -> bool {
@@ -305,6 +333,9 @@ impl<T: Send + 'static> PooledConnection<T> {
     /// Only a protocol adapter that has verified a reusable connection may park
     /// it. Expired/cancelled activations and retired epochs cannot populate idle.
     pub fn park(mut self) -> Result<(), PlatformError> {
+        if self.maintenance.is_some() {
+            return Err(denied());
+        }
         self.activation
             .as_ref()
             .expect("active connection")

@@ -62,28 +62,56 @@ pub(crate) async fn connect(
     tls: &Arc<rustls::ClientConfig>,
     maximum_headers: usize,
 ) -> Result<PooledConnection<Network>, HttpError> {
-    if let Some(mut connection) = client.checkout(call)? {
+    connect_for(
+        pools,
+        client,
+        crate::protocol::ProtocolScope::Invocation(call),
+        destination,
+        answers,
+        tls,
+        maximum_headers,
+    )
+    .await
+}
+pub(crate) async fn connect_for(
+    pools: &ProviderPools,
+    client: &Arc<ProviderClient<Network>>,
+    scope: crate::protocol::ProtocolScope<'_>,
+    destination: &HttpDestination,
+    answers: &Answers,
+    tls: &Arc<rustls::ClientConfig>,
+    maximum_headers: usize,
+) -> Result<PooledConnection<Network>, HttpError> {
+    let reused = match scope {
+        crate::protocol::ProtocolScope::Invocation(call) => client.checkout(call)?,
+        crate::protocol::ProtocolScope::Maintenance(_) => None,
+    };
+    if let Some(mut connection) = reused {
         let valid = matches!(connection.resource(), Network::Http(http) if http.driver.is_some() && answers.contains(canonical(http.peer.ip())) && destination.addresses.permits(http.peer.ip()));
         if valid {
             return Ok(connection);
         }
         drop(connection);
     }
-    let reservation = client.reserve_connection(call)?;
+    let reservation = match scope {
+        crate::protocol::ProtocolScope::Invocation(call) => client.reserve_connection(call)?,
+        crate::protocol::ProtocolScope::Maintenance(request) => {
+            client.reserve_maintenance_connection(request)?
+        }
+    };
     // Rustls caps handshake messages at 64 KiB. This separate shared charge
     // covers its finite record/handshake state and Hyper's fixed header buffers;
     // request/body storage has its own actual owner. It is not a total RSS claim.
     let memory = pools.reserve_protocol_metadata(256 * 1024)?;
     let mut connected = None;
     for ip in answers.iter() {
-        call.io().checkpoint()?;
+        scope.checkpoint()?;
         if !destination.addresses.permits(ip) {
             return Err(HttpError::PermissionDenied);
         }
         // No HTTP bytes exist yet; only these finite approved peers are tried.
-        if let Ok(stream) = call
-            .io()
-            .wait_for(bounded_tcp_connect(SocketAddr::new(
+        if let Ok(stream) = scope
+            .wait(bounded_tcp_connect(SocketAddr::new(
                 ip,
                 destination.origin.port,
             )))
@@ -110,9 +138,8 @@ pub(crate) async fn connect(
         let name = rustls::pki_types::ServerName::try_from(destination.origin.host.clone())
             .map_err(|_| HttpError::InvalidUrl)?;
         let connector = TlsConnector::from(Arc::clone(tls));
-        let stream = call
-            .io()
-            .wait_for(connector.connect_with(name, stream, |connection| {
+        let stream = scope
+            .wait(connector.connect_with(name, stream, |connection| {
                 connection.set_buffer_limit(Some(16384));
             }))
             .await?
@@ -142,9 +169,8 @@ pub(crate) async fn connect(
         .allow_spaces_after_header_name_in_responses(false)
         .allow_obsolete_multiline_headers_in_responses(false)
         .ignore_invalid_headers_in_responses(false);
-    let (sender, driver) = call
-        .io()
-        .wait_for(builder.handshake(hyper_util::rt::TokioIo::new(tracked)))
+    let (sender, driver) = scope
+        .wait(builder.handshake(hyper_util::rt::TokioIo::new(tracked)))
         .await?
         .map_err(|_| HttpError::ConnectionFailed)?;
     reservation

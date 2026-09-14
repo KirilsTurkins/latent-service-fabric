@@ -13,7 +13,7 @@ use std::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(super) struct Identity {
+pub(crate) struct Identity {
     pub device: u64,
     pub inode: u64,
     pub size: u64,
@@ -32,7 +32,7 @@ impl Identity {
         })
     }
 }
-pub(super) struct Directory {
+pub(crate) struct Directory {
     pub file: File,
     parent: Option<(Arc<Directory>, OsString)>,
     identity: (u64, u64),
@@ -265,6 +265,16 @@ impl Directory {
             AtFlags::empty()
         };
         fs::unlinkat(&self.file, name, flags).map_err(errno)
+    }
+    /// Replace one verified private regular sidecar atomically. Its caller must
+    /// sync this directory and retain uncertainty if that durability fence fails.
+    pub(crate) fn replace(&self, source: &str, target: &str, maximum: u64) -> Result<()> {
+        let source_file = self.open_file(source, false, false, maximum)?;
+        if self.present(target)? {
+            self.open_file(target, false, false, maximum)?;
+        }
+        self.file_matches(source, &source_file, maximum)?;
+        fs::renameat(&self.file, source, &self.file, target).map_err(errno)
     }
 }
 fn safe_directory(m: &Metadata, private: bool) -> Result<()> {

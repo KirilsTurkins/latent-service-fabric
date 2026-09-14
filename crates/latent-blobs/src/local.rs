@@ -1,7 +1,7 @@
 //! Durable immutable data under one explicitly configured, privately owned root.
 //! These synchronous primitives belong on a bounded shared blocking owner.
 //! Public references are data; capability adapters supply current tenant authority.
-mod fs;
+pub(crate) mod fs;
 mod model;
 mod read;
 mod reclaim;

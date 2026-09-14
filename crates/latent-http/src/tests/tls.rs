@@ -1,5 +1,5 @@
 use super::*;
-fn certificate() -> (Vec<u8>, tokio_rustls::TlsAcceptor) {
+pub(super) fn certificate() -> (Vec<u8>, tokio_rustls::TlsAcceptor) {
     let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
     let der = cert.cert.der().clone();
     let key = rustls::pki_types::PrivatePkcs8KeyDer::from(cert.signing_key.serialize_der());
