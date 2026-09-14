@@ -46,6 +46,10 @@ pub enum SecretSource {
     },
 }
 pub enum SecretPurpose {
+    TlsProviderCredential {
+        provider_id: String,
+        destination: latent_capabilities::broker::secrets::TlsCredentialDestination,
+    },
     GuestValue,
     ProviderCredential {
         provider_id: String,
@@ -113,6 +117,16 @@ pub(crate) fn validate_specs(
             SecretSource::Environment { key }
                 if environment_key(key) && key.capacity() <= 128 && allowlist.contains(key) => {}
             _ => return Err(SecretError::PermissionDenied),
+        }
+        if let SecretPurpose::TlsProviderCredential {
+            provider_id,
+            destination,
+        } = &spec.purpose
+        {
+            if !text(provider_id, 128) || provider_id.capacity() > 128 {
+                return Err(SecretError::PermissionDenied);
+            }
+            destination.validate()?;
         }
         if let SecretPurpose::ProviderCredential {
             provider_id,

@@ -126,6 +126,15 @@ impl PreparationContext {
                 )
             })?;
         }
+        if let Some(publisher) = self.events() {
+            crate::host::events::install(&mut linker, publisher).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind event import",
+                    false,
+                )
+            })?;
+        }
         if let Some(invoker) = self.secrets() {
             crate::host::secrets::install(&mut linker, invoker).map_err(|_| {
                 platform_error(
@@ -155,6 +164,11 @@ impl PreparationContext {
             )
         })?;
         Ok(pre)
+    }
+    pub(super) fn events(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::events::EventPublisher>> {
+        self.capabilities.as_ref()?.upgrade()?.events().ok()
     }
     pub(super) fn secrets(
         &self,

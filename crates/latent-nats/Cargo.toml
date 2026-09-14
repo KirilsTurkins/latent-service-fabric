@@ -1,0 +1,25 @@
+[package]
+name = "latent-nats"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Bounded authenticated JetStream publication with explicit uncertain outcomes."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+latent-capabilities = { path = "../latent-capabilities" }
+latent-policy = { path = "../latent-policy" }
+getrandom = "=0.4.3"
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tokio = { workspace = true, features = ["net", "io-util"] }
+tokio-rustls = { version = "=0.26.5", default-features = false, features = ["ring", "tls12"] }
+webpki-roots = "=1.0.9"
+zeroize = { version = "=1.9.0", features = ["alloc"] }

@@ -61,10 +61,12 @@ pub(crate) struct Providers {
     pub streaming_http: bool,
     pub blobs: bool,
     pub secrets: bool,
+    pub events: bool,
 }
 impl Providers {
     fn supports(self, name: &str) -> bool {
-        (self.secrets && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
+        (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
+            || (self.secrets && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
             || (self.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
             || (self.local_services
                 && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
