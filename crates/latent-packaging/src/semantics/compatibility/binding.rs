@@ -4,7 +4,7 @@ use super::{
     PackageComparisonLimits, Walker,
 };
 use crate::PackageBundle;
-use latent_core::{ArtifactBlobDigest, PlatformError, PHASE3_HOST_ABI_V2};
+use latent_core::{ArtifactBlobDigest, PlatformError, PHASE3_HOST_ABI_V3};
 use std::collections::BTreeMap;
 
 /// Sealed immutable ABI facts. A control compiler must separately establish
@@ -58,7 +58,7 @@ pub fn compile_host_binding(
     preflight(consumer, &lock, limits, &mut 0, &mut 0, &mut analysis)?;
     let (source, surface) = resolved(consumer, &lock, limits.semantics)?;
     let imported = *surface.imports.get(interface).ok_or_else(incompatible)?;
-    let spec = PHASE3_HOST_ABI_V2
+    let spec = PHASE3_HOST_ABI_V3
         .interface(interface)
         .ok_or_else(incompatible)?;
     // validate_capsule already checks this association. Rechecking the selected
@@ -172,6 +172,7 @@ fn exact_interface(
         left,
         right,
         analysis,
+        resources: false,
     }
     .interface(imported, exported, interface, false)
 }

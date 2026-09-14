@@ -18,6 +18,11 @@ pub mod host {
         include!(concat!(env!("OUT_DIR"), "/phase3_host.rs"));
     }
 
+    /// Owned HTTP resources under the separate V3 compatibility profile.
+    pub mod streaming {
+        include!(concat!(env!("OUT_DIR"), "/streaming_host.rs"));
+    }
+
     /// Host bindings for the maintained echo integration fixture.
     pub mod echo {
         include!(concat!(env!("OUT_DIR"), "/echo_host.rs"));
@@ -36,4 +41,10 @@ pub mod guest {
 pub mod phase3_guest {
     //! Guest bindings for the exact Phase 3 ABI. Provider availability is separate.
     include!(concat!(env!("OUT_DIR"), "/phase3_guest.rs"));
+}
+
+#[cfg(target_arch = "wasm32")]
+pub mod streaming_guest {
+    //! Explicitly owned HTTP streams; no provider or authority is installed here.
+    include!(concat!(env!("OUT_DIR"), "/streaming_guest.rs"));
 }

@@ -615,3 +615,29 @@ fn runtime_passes_the_tighter_store_deadline_without_minting_another_ledger() {
     assert_eq!(call.deadline(), deadline.monotonic().unwrap());
     assert!(call.budget_accounting().is_same_instance(&control.budget));
 }
+
+#[test]
+fn resource_table_metadata_outlives_slots_without_pinning_a_provider_call() {
+    let f = Fixture::new(CapabilityBrokerLimits {
+        maximum_handles_per_session: 2,
+        ..CapabilityBrokerLimits::default()
+    });
+    let (request, control) = f.request("table-owner");
+    let session = f.session(&request, &control);
+    let observer = session.observer();
+    let baseline = f.broker.snapshot().metadata_bytes;
+    let table = session.reserve_resource_table(8192).unwrap();
+    assert_eq!(f.broker.snapshot().metadata_bytes, baseline + 8192);
+    assert_eq!(f.broker.snapshot().calls, 0);
+    let handle = session.bind(CAP, "read", resource()).unwrap();
+    assert!(session.reserve_resource_table(1).is_err());
+    drop(call(&session, handle).unwrap());
+    session.close_handle(handle).unwrap();
+    assert_eq!(f.broker.snapshot().calls, 0);
+    drop(session);
+    assert!(!observer.is_quiescent());
+    assert_eq!(observer.retained_handles(), 1);
+    drop(table);
+    assert!(observer.is_quiescent());
+    assert_eq!(f.broker.snapshot().sessions, 0);
+}

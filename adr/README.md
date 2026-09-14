@@ -54,7 +54,7 @@ supersedes only ADR-0019's one-component/one-publication rule. It separates
 tenant-scoped immutable publication and lifecycle authority from component/code
 deduplication, preserving legacy component fields and requiring explicit
 selectors, bounded migration and independent currentness. Implementation remains
-assigned to #265–#267 in [RFC-0002](../rfcs/0002-tenant-scoped-publication-identity.md).
+assigned to #265â€“#267 in [RFC-0002](../rfcs/0002-tenant-scoped-publication-identity.md).
 
 [ADR-0028](0028-retain-activation-ownership-across-asynchronous-waits.md) follows
 ADR-0006 by defining ownership while active guests await providers or descendant
@@ -83,3 +83,9 @@ forms, immediate-operation error semantics and prepared/native identity. Real
 generated-binding checks enforce shape agreement; provider installation and
 activation authority remain separate, as specified in
 [RFC-0005](../rfcs/0005-phase3-host-abi-profiles.md).
+
+[ADR-0032](0032-use-bounded-owned-resources-for-streaming-http.md) extends the host
+profile to V3 with exact owned HTTP upload/body/chunk resources, finite transfer
+and resident-byte accounting, and explicit EOF/cancellation semantics. The
+[streaming profile](../docs/runtime/streaming-http.md) preserves V1/V2 contracts
+and the separate authorization and dormant-resource boundaries.

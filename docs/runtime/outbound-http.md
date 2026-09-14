@@ -1,5 +1,7 @@
 # Policy-scoped outbound HTTP
 
+For owned incremental bodies, use the separately versioned [streaming HTTP](streaming-http.md) profile.
+
 `latent-http::HttpProvider` implements the buffered canonical async
 `latent:http/client@0.2.0` import for GET, HEAD, POST, PUT, PATCH, DELETE and
 OPTIONS. The versioned provider profile is `bounded-http-v1`. It uses the existing

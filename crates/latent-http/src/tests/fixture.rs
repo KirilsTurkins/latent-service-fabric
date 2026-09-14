@@ -83,6 +83,8 @@ pub const CAP: &str = HTTP_CAPABILITY;
 pub struct Fixture {
     pub broker: Arc<ActivationCapabilityBroker>,
     pub provider: HttpProvider,
+    pub streaming: Option<StreamingHttpProvider>,
+    capability: &'static str,
     pub io: Arc<IoRuntime>,
     pub pools: Arc<ProviderPools>,
     pub plan: Arc<CompiledCapabilityPlan>,
@@ -96,16 +98,46 @@ impl Fixture {
     pub fn new(config: HttpProviderConfig) -> Self {
         Self::configured(config, &[], ProviderPoolLimits::default(), None)
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one explicit catalog, policy, broker and pool composition"
-    )]
     pub fn configured(
         config: HttpProviderConfig,
         credentials: &[HttpCredential<'_>],
         pool_limits: ProviderPoolLimits,
         audit: Option<latent_audit::AuditHandle>,
     ) -> Self {
+        Self::configured_inner(config, credentials, pool_limits, audit, None)
+    }
+    pub fn streaming(config: HttpProviderConfig, limits: HttpStreamLimits) -> Self {
+        Self::configured_inner(
+            config,
+            &[],
+            ProviderPoolLimits::default(),
+            None,
+            Some(limits),
+        )
+    }
+    #[expect(clippy::too_many_lines, reason = "shared explicit fixture composition")]
+    pub(super) fn configured_inner(
+        config: HttpProviderConfig,
+        credentials: &[HttpCredential<'_>],
+        pool_limits: ProviderPoolLimits,
+        audit: Option<latent_audit::AuditHandle>,
+        streaming_limits: Option<HttpStreamLimits>,
+    ) -> Self {
+        let cap = if streaming_limits.is_some() {
+            latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY
+        } else {
+            CAP
+        };
+        let operation = if streaming_limits.is_some() {
+            "open"
+        } else {
+            "send"
+        };
+        let profile = if streaming_limits.is_some() {
+            STREAMING_HTTP_PROVIDER_PROFILE
+        } else {
+            HTTP_PROVIDER_PROFILE
+        };
         let dir = TempDir::new().unwrap();
         let catalog = DirectoryArtifactRepository::open(
             dir.path().join("artifacts"),
@@ -165,16 +197,27 @@ impl Fixture {
             .iter()
             .map(|d| d.origin.clone())
             .collect();
-        let provider =
-            HttpProvider::install(pools.clone(), "http", 1, 0, config, credentials).unwrap();
+        let provider = HttpProvider::install_profile(
+            pools.clone(),
+            "http",
+            1,
+            0,
+            config,
+            credentials,
+            streaming_limits,
+        )
+        .unwrap();
+        let streaming = streaming_limits.map(|_| StreamingHttpProvider {
+            provider: provider.clone(),
+        });
         let reference = provider.reference();
         let policy = json!({"formatVersion":1,"tenant":"a","rules":[{
             "id":"allow","effect":"allow","principals":[{"kind":"user","subject":"alice"}],
-            "services":["echo"],"publications":[publication.publication().as_str()],"capability":CAP,
-            "operations":["send"],"resources":{"kind":"http","origins":origins,"methods":["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"],"paths":["/allowed"],"pathPrefixes":["/allowed/"]},
-            "requireAudit":required,"ceiling":{"operations":32,"inputBytes":1_048_576,"outputBytes":1_048_576,"wallTimeMillis":30000}
+            "services":["echo"],"publications":[publication.publication().as_str()],"capability":cap,
+            "operations":[operation],"resources":{"kind":"http","origins":origins,"methods":["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"],"paths":["/allowed"],"pathPrefixes":["/allowed/"]},
+            "requireAudit":required,"ceiling":{"operations":32,"inputBytes":32_000_000,"outputBytes":32_000_000,"wallTimeMillis":30000}
         }]});
-        let binding = json!({"formatVersion":1,"tenant":"a","capability":CAP,"providerProfile":HTTP_PROVIDER_PROFILE,"configurationDigest":reference.configuration_digest(),"configurationEpoch":1,"restriction":{"operations":[]}});
+        let binding = json!({"formatVersion":1,"tenant":"a","capability":cap,"providerProfile":profile,"configurationDigest":reference.configuration_digest(),"configurationEpoch":1,"restriction":{"operations":[]}});
         for (id, kind, value) in [
             ("p", RecordKind::Policy, policy),
             ("binding", RecordKind::ProviderBinding, binding),
@@ -206,7 +249,7 @@ impl Fixture {
                         b"http-fixture-binding-v1",
                     )),
                     provider: &reference,
-                    imported_operations: &["send".into()],
+                    imported_operations: &[operation.into()],
                     policy_ids: &["p".into()],
                     provider_binding_id: "binding",
                     deployment_restriction_json: br#"{"operations":[]}"#,
@@ -222,6 +265,8 @@ impl Fixture {
         Self {
             broker,
             provider,
+            streaming,
+            capability: cap,
             io,
             pools,
             plan,
@@ -329,8 +374,8 @@ impl Fixture {
                 metadata: Metadata::new(),
             },
             imports: vec![BoundImport {
-                capability: CapabilityId(CAP.into()),
-                contract: CAP.into(),
+                capability: CapabilityId(self.capability.into()),
+                contract: self.capability.into(),
                 opaque_handle: "not-authority".into(),
             }],
             budget: grant,

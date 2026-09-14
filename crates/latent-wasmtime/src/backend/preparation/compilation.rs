@@ -176,6 +176,7 @@ impl super::super::PreparationContext {
             surface::Providers {
                 local_services: self.local_services().is_some(),
                 http: self.http().is_some(),
+                streaming_http: self.streaming_http().is_some(),
             },
         )?;
         let metadata_bytes = input

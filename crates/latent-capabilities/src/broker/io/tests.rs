@@ -477,3 +477,5 @@ async fn retiring_the_broker_wakes_existing_queues_and_denies_new_waiters() {
     drop(call);
     assert_eq!(io.snapshot(), IoSnapshot::default());
 }
+
+mod transfer;

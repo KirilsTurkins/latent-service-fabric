@@ -8,6 +8,10 @@
 
 ## Summary
 
+This RFC records the V2 selection. [ADR-0032](../adr/0032-use-bounded-owned-resources-for-streaming-http.md)
+and the [current profile reference](../docs/runtime/host-abi-profile.md) describe
+the delivered V3 streaming extension and current provider availability.
+
 `lsf-host-abi-phase3-v2` recognizes exact, bounded Phase 3 host interfaces during
 package inspection. Recognition does not install a provider or grant execution.
 The runtime still installs only context, log and the two clock interfaces.

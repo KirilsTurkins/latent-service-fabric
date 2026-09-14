@@ -150,11 +150,16 @@ fn surfaces(
         left,
         right,
         analysis: a,
+        resources: false,
     };
     // Inspect both complete public surfaces before allowing a breaking decision:
     // a removed/added function with unsupported shape cannot hide behind a diff.
     for (resolve, surface) in [(left, old), (right, new)] {
-        for (name, id) in surface.imports.iter().chain(&surface.exports) {
+        for (name, id) in &surface.imports {
+            walk.analysis.name(name)?;
+            types::inspect_host_interface(resolve, *id, walk.analysis)?;
+        }
+        for (name, id) in &surface.exports {
             walk.analysis.name(name)?;
             types::inspect_interface(resolve, *id, walk.analysis)?;
         }
@@ -165,7 +170,9 @@ fn surfaces(
     }
     for (name, id) in &old.imports {
         if let Some(candidate) = new.imports.get(name) {
+            walk.resources = name == "latent:http/streaming@0.3.0";
             walk.interface(*id, *candidate, name, false)?;
+            walk.resources = false;
         }
     }
     for (name, id) in &old.exports {
@@ -186,6 +193,7 @@ struct Walker<'a, 'b> {
     left: &'a Resolve,
     right: &'a Resolve,
     analysis: &'b mut Analysis,
+    resources: bool,
 }
 impl Walker<'_, '_> {
     fn interface(

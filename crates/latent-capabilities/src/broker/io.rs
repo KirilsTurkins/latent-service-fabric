@@ -22,10 +22,12 @@ mod limits;
 mod memory;
 pub use memory::IoMemory;
 mod stream;
+mod transfer;
 pub use buffer::IoBuffer;
 use limits::{Charge, Counters, Kind};
 pub use limits::{IoLimits, IoSnapshot};
 pub use stream::{IoStreamReader, IoStreamTerminal, IoStreamWriter};
+pub use transfer::{IoInputChunk, IoOutputChunk, IoTransfer, IoTransferBuffer, IoTransferOptions};
 
 const OPERATION_METADATA: usize = 2048;
 const CANCEL_POLL: Duration = Duration::from_millis(10);
@@ -99,6 +101,7 @@ impl IoRuntime {
                 slot: None,
                 queue: Some(queue),
                 output_issued: 0,
+                transfer_issued: false,
             }),
             runtime: Arc::clone(&self.inner),
             deadline,
@@ -141,6 +144,7 @@ struct Execution {
     slot: Option<OwnedSemaphorePermit>,
     queue: Option<Charge>,
     output_issued: usize,
+    transfer_issued: bool,
 }
 enum Authority {
     Waiting(WaitingCall),

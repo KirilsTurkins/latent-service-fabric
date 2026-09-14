@@ -6,7 +6,7 @@ configured `IoRuntime` provides finite admission, byte accounting and streams on
 the caller's existing runtime. It creates no executor, thread, socket, worker,
 retry loop or service-specific resource. Dormant deployments own none of these
 leases. The [shared provider registry and pools](provider-pools.md) build on this
-ownership. Concrete protocol adapters remain separate work in #211–#217;
+ownership. Concrete protocol adapters remain separate work in #211â€“#217;
 declaring an import does not install a provider.
 
 ## Admission and the original activation owner
@@ -155,3 +155,21 @@ WIT contract is changed here.
 Run `cargo test -p latent-capabilities --lib --locked` and
 `cargo test -p latent-wasmtime --test broker --locked`. These tests need no load
 campaign, external registry, language guest toolchain or persistent provider.
+
+## Explicit bulk-transfer allowance
+
+[Streaming HTTP](streaming-http.md) uses an explicit `CapabilityStreamBudget`.
+The broker checks inline metadata plus cumulative input/output allowances at
+initial and final policy admission. Only that accepted call can issue one
+`IoTransfer`; dropping it cannot reset its counters. Input chunks own their
+actual vector capacity, and output chunks reserve both resident storage and one
+canonical lowering copy. The independent finite chunk/stream/result ceilings
+remain in force. Dropping a transfer cannot refund a retained chunk or its
+original activation owner. Ordinary buffered results retain their existing
+cumulative inline-output ceiling.
+
+Store resource tables reserve their backing metadata independently from a
+provider call. Empty table slots therefore do not pin a running provider permit;
+the table reservation still blocks a clean Store reclamation claim until actual
+destruction. The guest adapter moves real resource owners out of busy entries
+across waits and denies stale restoration after cancellation or resource Drop.

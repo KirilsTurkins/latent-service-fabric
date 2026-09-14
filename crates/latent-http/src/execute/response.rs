@@ -5,7 +5,7 @@ use http_body_util::BodyExt;
 use latent_capabilities::broker::io::IoBuffer;
 use std::io::Read;
 
-pub(super) fn validate(headers: &HeaderMap, limits: HttpLimits) -> Result<(), HttpError> {
+pub(crate) fn validate(headers: &HeaderMap, limits: HttpLimits) -> Result<(), HttpError> {
     if headers.len() > limits.maximum_headers {
         return Err(HttpError::ResponseTooLarge);
     }
@@ -212,7 +212,7 @@ async fn decode(
         tokio::task::yield_now().await;
     }
 }
-fn append(buffer: &mut IoBuffer, bytes: &[u8]) -> Result<(), HttpError> {
+pub(crate) fn append(buffer: &mut IoBuffer, bytes: &[u8]) -> Result<(), HttpError> {
     if bytes.len() > buffer.capacity() - buffer.bytes().len() {
         return Err(HttpError::ResponseTooLarge);
     }
@@ -220,7 +220,7 @@ fn append(buffer: &mut IoBuffer, bytes: &[u8]) -> Result<(), HttpError> {
     buffer.advance_written(bytes.len())?;
     Ok(())
 }
-fn connection_named(headers: &HeaderMap, name: &str) -> Result<bool, HttpError> {
+pub(crate) fn connection_named(headers: &HeaderMap, name: &str) -> Result<bool, HttpError> {
     let mut found = false;
     for value in headers.get_all("connection") {
         for token in value

@@ -50,7 +50,7 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
             validator.validate(empty)  # Legal data; evaluator tests prove default deny.
 
     def test_policy_operation_table_matches_each_frozen_wit_interface(self):
-        matrix = json.loads((ROOT / "wit/host-abi-phase3-v2.json").read_text(encoding="utf-8"))
+        matrix = json.loads((ROOT / "wit/host-abi-phase3-v3.json").read_text(encoding="utf-8"))
         rust = (ROOT / "crates/latent-policy/src/capability.rs").read_text(encoding="utf-8")
         actual = {cap: set(re.findall(r'"([a-z0-9-]+)"', operations))
                   for cap, operations in re.findall(r'"(latent:[^\"]+)"\s*=>\s*&\[(.*?)\]', rust, re.S)}

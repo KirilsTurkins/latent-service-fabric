@@ -18,6 +18,7 @@ use zeroize::Zeroizing;
 pub struct CapabilityCallCost {
     pub maximum_output_bytes: usize,
     typed_input_bytes: usize,
+    stream_budget: Option<super::CapabilityStreamBudget>,
     typed_request_digest: Option<super::CapabilityRequestDigest>,
     charges: [Option<(BudgetDimension, u64)>; 9],
 }
@@ -27,9 +28,17 @@ impl CapabilityCallCost {
         Self {
             maximum_output_bytes,
             typed_input_bytes: 0,
+            stream_budget: None,
             typed_request_digest: None,
             charges: [None; 9],
         }
+    }
+    /// Explicit streaming calls authorize total bytes separately from the small
+    /// inline/lowering window. Only an affine I/O transfer can spend this budget.
+    #[must_use]
+    pub const fn with_stream_budget(mut self, budget: super::CapabilityStreamBudget) -> Self {
+        self.stream_budget = Some(budget);
+        self
     }
     /// Trusted typed adapters count their actual payload before encoding or
     /// copying it and retain the affine call until that payload is destroyed.
@@ -126,6 +135,7 @@ struct Work {
     id: u64,
     deadline: Instant,
     maximum_output_bytes: usize,
+    stream_budget: Option<super::CapabilityStreamBudget>,
     input_bytes: Charge,
     output_bytes: Charge,
     result: Charge,
@@ -150,12 +160,17 @@ impl Work {
         {
             return Err(denied());
         }
-        let decision = core.decision(
+        let dimensions = super::stream_budget::policy_bytes(
+            self.input_size,
+            self.maximum_output_bytes,
+            self.stream_budget,
+        )?;
+        let decision = core.decision_with_streaming(
             row.binding,
             &row.operation,
             row.resource.target(),
-            self.input_size as u64,
-            self.maximum_output_bytes as u64,
+            dimensions,
+            self.stream_budget.is_some(),
         )?;
         if !decision.requires_audit() {
             return Err(denied());
@@ -276,6 +291,9 @@ impl OwnedCapabilityResponse {
     }
 }
 impl ProviderCall {
+    pub(super) fn stream_budget(&self) -> Option<super::CapabilityStreamBudget> {
+        self.work.as_ref().expect("affine call").stream_budget
+    }
     pub(super) fn session_core(&self) -> Arc<SessionCore> {
         Arc::clone(&self.work.as_ref().expect("affine call").session)
     }
@@ -504,6 +522,7 @@ impl ProviderCall {
         let Work {
             audit,
             required_audit: _,
+            stream_budget: _,
             input_size,
             pending_budget: _,
             input,
@@ -672,6 +691,10 @@ impl CapabilitySession {
             .ok_or_else(capacity)?;
         if input_size > limits.maximum_input_bytes
             || cost.maximum_output_bytes > limits.maximum_output_bytes
+            || cost.stream_budget.is_some_and(|stream| {
+                stream.input_bytes() > limits.maximum_stream_input_bytes
+                    || stream.output_bytes() > limits.maximum_stream_output_bytes
+            })
             || self.core.stats.calls.load(Ordering::Acquire) >= limits.maximum_calls_per_session
         {
             return Err(capacity());
@@ -692,12 +715,17 @@ impl CapabilitySession {
                 4096
             },
         )?;
-        let decision = self.core.decision(
+        let dimensions = super::stream_budget::policy_bytes(
+            input_size,
+            cost.maximum_output_bytes,
+            cost.stream_budget,
+        )?;
+        let decision = self.core.decision_with_streaming(
             row.binding,
             operation,
             resource,
-            input_size as u64,
-            cost.maximum_output_bytes as u64,
+            dimensions,
+            cost.stream_budget.is_some(),
         )?;
         let required_audit = decision.requires_audit();
         if required_audit
@@ -747,6 +775,7 @@ impl CapabilitySession {
             id,
             deadline: self.core.owner.clock.monotonic_now(),
             maximum_output_bytes: cost.maximum_output_bytes,
+            stream_budget: cost.stream_budget,
             input_bytes,
             output_bytes,
             result,

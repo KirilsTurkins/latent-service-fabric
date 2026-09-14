@@ -31,6 +31,7 @@
         "latent:secrets/reader@0.1.0",
         "latent:events/publisher@0.2.0",
         "latent:http/client@0.2.0",
+        "latent:http/streaming@0.3.0",
         "latent:telemetry/custom@0.1.0",
         "latent:service/invoke@0.1.0"
       ]
@@ -323,6 +324,43 @@
                 "items": {
                   "enum": [
                     "send"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/http"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:http/streaming@0.3.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "open",
+                    "write",
+                    "finish",
+                    "read",
+                    "chunk-bytes",
+                    "trailers",
+                    "abort-upload",
+                    "abort-body"
                   ]
                 }
               },

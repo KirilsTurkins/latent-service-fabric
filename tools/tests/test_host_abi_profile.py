@@ -16,7 +16,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class HostAbiProfileTests(unittest.TestCase):
     def test_frozen_matrix_matches_exact_sources_world_and_pinned_generators(self):
-        path = ROOT / "wit/host-abi-phase3-v2.json"
+        for version, world_directory in [(2, "runtime-phase3"), (3, "runtime-phase3-streaming")]:
+            with self.subTest(version=version):
+                self.check_matrix(version, world_directory)
+
+    def check_matrix(self, version, world_directory):
+        path = ROOT / f"wit/host-abi-phase3-v{version}.json"
         self.assertLess(path.stat().st_size, 16 * 1024)
         matrix = json.loads(path.read_text(encoding="utf-8"))
         schema = json.loads((ROOT / "schemas/host-abi-profile.schema.json").read_text(encoding="utf-8"))
@@ -42,7 +47,7 @@ class HostAbiProfileTests(unittest.TestCase):
             digest.update(bytes([item["binding"] == "provider", item["asynchronous"]]))
             frame(source)
         self.assertEqual(matrix["digest"], "sha256:" + digest.hexdigest())
-        world = (ROOT / "wit/platform/runtime-phase3/world.wit").read_text(encoding="utf-8")
+        world = (ROOT / f"wit/platform/{world_directory}/world.wit").read_text(encoding="utf-8")
         self.assertEqual(names, set(re.findall(r"^\s*import ([^;]+);", world, re.MULTILINE)))
         self.assertIn("package " + matrix["world"].replace("/capsule", "") + ";", world)
         dependencies = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]["dependencies"]

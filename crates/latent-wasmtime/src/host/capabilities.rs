@@ -7,13 +7,15 @@ use latent_policy::capability::ResourceTarget;
 pub(crate) struct HostCapabilities {
     // Destroy typed-result reservations before closing/destroying the session.
     // They remain charged through canonical lowering and component post-return.
+    pub(super) streams: super::streaming_http::table::Table,
     lowering: Vec<ProviderCall>,
     pooled_lowering: Vec<latent_capabilities::broker::pools::PoolCall>,
-    session: Option<CapabilitySession>,
+    pub(super) session: Option<CapabilitySession>,
 }
 impl HostCapabilities {
     pub(crate) fn new(session: Option<CapabilitySession>) -> Self {
         Self {
+            streams: super::streaming_http::table::Table::default(),
             lowering: Vec::new(),
             pooled_lowering: Vec::new(),
             session,

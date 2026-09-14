@@ -89,7 +89,7 @@ impl WasmtimeConfig {
                 "execution-isolation-profile".into(),
                 self.execution_isolation_profile.name().into(),
             );
-            let abi = latent_core::PHASE3_HOST_ABI_V2;
+            let abi = latent_core::PHASE3_HOST_ABI_V3;
             fields.insert("host-abi-profile".into(), abi.id.into());
             fields.insert(
                 "host-abi-digest".into(),

@@ -1,7 +1,6 @@
 //! A pool entry owns the real socket and HTTP driver. No task is detached.
+use crate::streaming::wire::RequestBody;
 use crate::{destination::canonical, dns::Answers, HttpDestination, HttpError};
-use bytes::Bytes;
-use http_body_util::Full;
 use latent_capabilities::broker::{
     io::IoMemory,
     pools::{PoolCall, PooledConnection, ProviderClient, ProviderMetadata, ProviderPools},
@@ -23,7 +22,7 @@ use tokio::{
 use tokio_rustls::{client::TlsStream, TlsConnector};
 
 type Driver =
-    hyper::client::conn::http1::Connection<hyper_util::rt::TokioIo<TrackedStream>, Full<Bytes>>;
+    hyper::client::conn::http1::Connection<hyper_util::rt::TokioIo<TrackedStream>, RequestBody>;
 pub(crate) enum Network {
     Dns(DnsConnection),
     Http(Box<HttpConnection>),
@@ -37,7 +36,7 @@ pub(crate) enum DnsSocket {
     Tcp(TcpStream),
 }
 pub(crate) struct HttpConnection {
-    pub sender: hyper::client::conn::http1::SendRequest<Full<Bytes>>,
+    pub sender: hyper::client::conn::http1::SendRequest<RequestBody>,
     pub driver: Option<Driver>,
     pub peer: SocketAddr,
     pub wrote: Arc<AtomicBool>,

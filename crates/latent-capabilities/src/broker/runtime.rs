@@ -11,6 +11,7 @@ pub struct ActivationCapabilityRuntime {
     broker: Arc<ActivationCapabilityBroker>,
     plans: RwLock<Option<Arc<dyn CapabilityPlanSource>>>,
     local_services: OnceLock<Arc<dyn super::LocalServiceInvoker>>,
+    streaming_http: OnceLock<Arc<dyn super::streaming_http::StreamingHttpInvoker>>,
     http: OnceLock<Arc<dyn super::http::OutboundHttpInvoker>>,
 }
 impl ActivationCapabilityRuntime {
@@ -24,6 +25,7 @@ impl ActivationCapabilityRuntime {
             plans: RwLock::new(Some(plans)),
             local_services: OnceLock::new(),
             http: OnceLock::new(),
+            streaming_http: OnceLock::new(),
         }
     }
     #[must_use]
@@ -49,6 +51,17 @@ impl ActivationCapabilityRuntime {
     }
     pub fn http(&self) -> Result<Arc<dyn super::http::OutboundHttpInvoker>, PlatformError> {
         self.http.get().cloned().ok_or_else(denied)
+    }
+    pub fn install_streaming_http(
+        &self,
+        invoker: Arc<dyn super::streaming_http::StreamingHttpInvoker>,
+    ) -> Result<(), PlatformError> {
+        self.streaming_http.set(invoker).map_err(|_| denied())
+    }
+    pub fn streaming_http(
+        &self,
+    ) -> Result<Arc<dyn super::streaming_http::StreamingHttpInvoker>, PlatformError> {
+        self.streaming_http.get().cloned().ok_or_else(denied)
     }
     pub fn check_catalog(&self, owner: &LifecycleAuthorityHandle) -> Result<(), PlatformError> {
         if !self.broker.catalog_owner_matches(owner) {

@@ -8,6 +8,11 @@ on:
       - Cargo.lock
       - '**/Cargo.toml'
       - rust-toolchain.toml
+      - wit/platform/**
+      - crates/latent-wasmtime/src/host/**
+      - crates/latent-wasmtime/src/surface.rs
+      - crates/latent-wasmtime/src/surface/**
+      - crates/latent-component-bindings/**
       - .cargo/audit.toml
       - .github/workflows/security-rustsec.yml
       - tools/tests/test_security_rustsec_workflow.py
@@ -20,6 +25,11 @@ on:
       - Cargo.lock
       - '**/Cargo.toml'
       - rust-toolchain.toml
+      - wit/platform/**
+      - crates/latent-wasmtime/src/host/**
+      - crates/latent-wasmtime/src/surface.rs
+      - crates/latent-wasmtime/src/surface/**
+      - crates/latent-component-bindings/**
       - .cargo/audit.toml
       - .github/workflows/security-rustsec.yml
       - tools/tests/test_security_rustsec_workflow.py
