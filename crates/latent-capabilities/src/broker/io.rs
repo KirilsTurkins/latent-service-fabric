@@ -102,6 +102,7 @@ impl IoRuntime {
             stop: AtomicBool::new(false),
             waiting: AtomicUsize::new(0),
             cleaning: AtomicBool::new(false),
+            owner: Mutex::new(None),
             changed: Notify::new(),
             _metadata: metadata,
             _slot: slot,
@@ -149,6 +150,7 @@ struct Operation {
     stop: AtomicBool,
     waiting: AtomicUsize,
     cleaning: AtomicBool,
+    owner: Mutex<Option<Arc<dyn Send + Sync>>>,
     changed: Notify,
     _metadata: Charge,
     _slot: Charge,
@@ -284,6 +286,33 @@ pub struct IoAdmission {
     queue_deadline: Instant,
 }
 impl IoAdmission {
+    pub(super) fn retain_owner(&self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
+        let mut current = self
+            .operation
+            .as_ref()
+            .expect("affine admission")
+            .owner
+            .try_lock()
+            .map_err(|_| super::busy())?;
+        if current.is_some() {
+            return Err(denied());
+        }
+        *current = Some(owner);
+        Ok(())
+    }
+    pub(super) fn queue_deadline(&self) -> Instant {
+        self.queue_deadline
+    }
+    pub(super) fn checkpoint(&self) -> Result<(), PlatformError> {
+        self.operation.as_ref().expect("affine admission").check()
+    }
+    pub(super) async fn stopped(&self) -> PlatformError {
+        self.operation
+            .as_ref()
+            .expect("affine admission")
+            .stopped()
+            .await
+    }
     pub fn input(
         &self,
         capacity: usize,
@@ -384,7 +413,17 @@ impl Drop for IoReady {
 pub struct IoCall {
     operation: Arc<Operation>,
 }
+/// Internal physical-work lease. No constructor can mint another activation.
+pub(super) struct IoLease(Arc<Operation>);
+impl IoLease {
+    pub fn checkpoint(&self) -> Result<(), PlatformError> {
+        self.0.check()
+    }
+}
 impl IoCall {
+    pub(super) fn lease(&self) -> IoLease {
+        IoLease(Arc::clone(&self.operation))
+    }
     /// Yield on the caller's existing runtime, retaining this call and all its
     /// original activation/cell ownership. Cancellation drops only this waiting
     /// future; a detached blocking worker must separately own its actual lease.

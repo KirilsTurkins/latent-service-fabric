@@ -343,8 +343,8 @@ pub fn publish(
     value["component"]["digest"] = digest.0.clone().into();
     value["metadata"]["tenant"] = tenant.into();
     value["metadata"]["name"] = format!("{tenant}/echo").into();
-    value["component"]["world"] = "a:echo/service@0.1.0".into();
-    value["exports"] = json!(["a:echo/api@0.1.0"]);
+    value["component"]["world"] = format!("{tenant}:echo/service@0.1.0").into();
+    value["exports"] = json!([format!("{tenant}:echo/api@0.1.0")]);
     let artifact = CapsuleArtifact {
         descriptor: ArtifactDescriptor {
             reference: ArtifactReference(format!("local://tests/{label}")),

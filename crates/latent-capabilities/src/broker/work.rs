@@ -147,6 +147,13 @@ impl OwnedCapabilityResponse {
     }
 }
 impl ProviderCall {
+    pub(super) fn provider_matches(&self, provider: &super::ProviderReference) -> bool {
+        let work = self.work.as_ref().expect("affine call");
+        Arc::ptr_eq(
+            &work.session.plan.bindings[work.row.binding].provider,
+            &provider.entry,
+        )
+    }
     /// The original runtime-owned ledger, never an independently minted grant.
     /// Retaining this handle does not make ledger finalization a cleanup proof.
     /// `CapabilityCallCost` reserves and commits actual provider charges before
