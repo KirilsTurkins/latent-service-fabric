@@ -2,7 +2,7 @@ use super::*;
 use latent_artifacts::ArtifactRepository;
 use latent_policy::capability::ResourceTarget;
 use std::{sync::atomic::Ordering, time::Duration};
-mod fixture;
+pub(super) mod fixture;
 use fixture::*;
 
 fn output() -> CapabilityCallCost {

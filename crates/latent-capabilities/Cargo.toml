@@ -18,6 +18,7 @@ latent-executor = { path = "../latent-executor" }
 latent-policy = { path = "../latent-policy" }
 latent-routing = { path = "../latent-routing" }
 zeroize = { version = "=1.9.0", features = ["alloc"] }
+tokio = { workspace = true, features = ["sync", "time"] }
 
 [dev-dependencies]
 tempfile.workspace = true

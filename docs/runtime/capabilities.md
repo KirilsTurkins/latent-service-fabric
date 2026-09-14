@@ -17,6 +17,11 @@ handle and call ownership and can gate the four built-in imports in explicit
 managed embeddings. General providers, standalone plan compilation and
 application hosting remain in progress.
 
+The [bounded asynchronous I/O substrate](async-host-io.md) now adds affine queue,
+buffer and stream ownership on the existing runtime. Cancellation retains charges
+for actual work and delayed consumers; waiting never refunds an execution cell.
+Its real async guest conformance fixture does not expand the production import set.
+
 The delivered [durable capability policy owner](capability-policies.md) provides
 bounded rules, scoped revisions, provider-binding metadata and authenticated
 apply/get/list/revoke/explain control. Sealed decisions recheck policy and

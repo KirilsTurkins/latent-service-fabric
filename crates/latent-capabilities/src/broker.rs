@@ -11,12 +11,14 @@ use latent_core::{ActivationClock, PlatformError, PlatformErrorCode};
 use latent_policy::capability::PolicyStore;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
+pub mod io;
 mod limits;
 mod ownership;
 mod plan;
 mod provider;
 mod runtime;
 mod session;
+mod waiting;
 mod work;
 
 pub use limits::{CapabilityBrokerLimits, CapabilityBrokerSnapshot};

@@ -8,6 +8,8 @@ mod fixture;
 #[allow(dead_code)]
 mod support;
 use fixture::*;
+#[path = "broker/async_io.rs"]
+mod async_io;
 
 #[tokio::test]
 async fn real_guest_calls_use_fresh_sessions_on_the_same_warm_cell() {
