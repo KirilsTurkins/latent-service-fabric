@@ -82,6 +82,19 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         self.assertEqual({v["if"]["properties"]["capability"]["const"]:
                           set(v["then"]["properties"]["operations"]["items"]["enum"]) for v in constraints}, expected)
 
+    def test_identifiers_and_paths_reject_trailing_newlines_and_dot_segments(self):
+        policy = self.validator("capability-policy")
+        self.assertFalse(policy.is_valid({"formatVersion": 1, "tenant": "acme\n", "rules": []}))
+        resource = self.validator("capability-policy-resource")
+        self.assertFalse(resource.is_valid({"kind": "secrets", "reference": "key\n"}))
+        request = {"kind": "http", "origin": {"scheme": "https", "host": "example.test", "port": 443},
+                   "method": "GET", "path": "/api/"}
+        resource.validate(request)
+        for path in ("/api\n", "/.", "/../", "/a/../b", "/a/./b", "/percent%2f", "/query?q=1", "/caf\u00e9"):
+            self.assertFalse(resource.is_valid({**request, "path": path}), path)
+        for path in ("/", "/api/", "/a..", "/api/item"):
+            resource.validate({**request, "path": path})
+
 
 if __name__ == "__main__":
     unittest.main()

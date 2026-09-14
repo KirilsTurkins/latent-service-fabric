@@ -38,6 +38,9 @@ actual publication ID; a component digest cannot stand in for it.
 No matching allow means deny. A matching deny overrides every allow. Multiple
 matching allows intersect their ceilings. Each independently required policy
 must allow the operation; policies are never combined into a union of authority.
+Values within one selector are alternatives; different selectors all have to
+match. Service and publication lists form a cross-product, so use separate rules
+when only particular service/publication pairs should be allowed.
 An unavailable, retired, stale or unsupported authority cannot authorize execution.
 Zero operation or wall-time allowance denies admission. Zero input/output bytes
 permits only an operation requiring zero of that resource.

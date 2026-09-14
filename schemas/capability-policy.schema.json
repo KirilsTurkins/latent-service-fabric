@@ -29,17 +29,17 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 256,
-      "pattern": "^[A-Za-z0-9_.:/@-]+$"
+      "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
     },
     "publication": {
       "type": "string",
-      "pattern": "^publication:sha256:[0-9a-f]{64}$",
+      "pattern": "^publication:sha256:[0-9a-f]{64}$(?![\\s\\S])",
       "minLength": 83,
       "maxLength": 83
     },
     "digest": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$",
+      "pattern": "^sha256:[0-9a-f]{64}$(?![\\s\\S])",
       "minLength": 71,
       "maxLength": 71
     },
@@ -94,7 +94,7 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 253,
-          "pattern": "^[a-z0-9.:-]+$"
+          "pattern": "^[a-z0-9.:-]+$(?![\\s\\S])"
         },
         "port": {
           "type": "integer",
@@ -203,7 +203,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 253,
-                "pattern": "^[a-z0-9.:-]+$"
+                "pattern": "^[a-z0-9.:-]+$(?![\\s\\S])"
               },
               "port": {
                 "type": "integer",
@@ -237,7 +237,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 2048,
-            "pattern": "^/(?!.*(?:^|/)\\.{1,2}(?:/|$))[^\\x00-\\x20\\x7f%\\\\?#]*$"
+            "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))/(?!.*[%\\\\?#])[\\x21-\\x7e]*$(?![\\s\\S])"
           }
         },
         "pathPrefixes": {
@@ -250,10 +250,10 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 2048,
-                "pattern": "^/(?!.*(?:^|/)\\.{1,2}(?:/|$))[^\\x00-\\x20\\x7f%\\\\?#]*$"
+                "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))/(?!.*[%\\\\?#])[\\x21-\\x7e]*$(?![\\s\\S])"
               },
               {
-                "pattern": "/$"
+                "pattern": "/$(?![\\s\\S])"
               }
             ]
           }
@@ -279,7 +279,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256,
-            "pattern": "^[A-Za-z0-9_.:/@-]+$"
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
           }
         }
       }
@@ -303,7 +303,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256,
-            "pattern": "^[A-Za-z0-9_.:/@-]+$"
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
           }
         }
       }
@@ -327,7 +327,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256,
-            "pattern": "^[A-Za-z0-9_:/@-]+(?:\\.[A-Za-z0-9_:/@-]+)*$"
+            "pattern": "^[A-Za-z0-9_:/@-]+(?:\\.[A-Za-z0-9_:/@-]+)*$(?![\\s\\S])"
           }
         }
       }
@@ -351,7 +351,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256,
-            "pattern": "^[A-Za-z0-9_.:/@-]+$"
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
           }
         }
       }
@@ -376,7 +376,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256,
-            "pattern": "^[A-Za-z0-9_.:/@-]+$"
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
           }
         },
         "publications": {
@@ -385,7 +385,7 @@
           "uniqueItems": true,
           "items": {
             "type": "string",
-            "pattern": "^publication:sha256:[0-9a-f]{64}$",
+            "pattern": "^publication:sha256:[0-9a-f]{64}$(?![\\s\\S])",
             "minLength": 83,
             "maxLength": 83
           }
@@ -441,7 +441,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256,
-            "pattern": "^[A-Za-z0-9_.:/@-]+$"
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
           }
         },
         "resources": {
@@ -542,7 +542,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256,
-            "pattern": "^[A-Za-z0-9_.:/@-]+$"
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
           }
         },
         "resources": {
