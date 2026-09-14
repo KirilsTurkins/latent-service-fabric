@@ -24,6 +24,18 @@ pub struct HostInterfaceSpec {
     pub asynchronous: bool,
 }
 
+impl HostInterfaceSpec {
+    /// Only this exact pinned host interface admits owned resource handles.
+    /// Its immutable source and profile identity bind their complete shapes.
+    #[must_use]
+    pub fn resource_types(&self) -> &'static [&'static str] {
+        match self.interface {
+            "latent:http/streaming@0.3.0" => &["upload", "body", "chunk"],
+            _ => &[],
+        }
+    }
+}
+
 /// Immutable host ABI profile shared by inspection and execution preparation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HostAbiProfile {
@@ -175,6 +187,34 @@ pub const PHASE3_HOST_ABI_V2: HostAbiProfile = HostAbiProfile {
     interfaces: &PHASE3_V2_INTERFACES,
 };
 
+const PHASE3_V3_INTERFACES: [HostInterfaceSpec; 12] = [
+    PHASE3_V2_INTERFACES[0],
+    PHASE3_V2_INTERFACES[1],
+    PHASE3_V2_INTERFACES[2],
+    PHASE3_V2_INTERFACES[3],
+    PHASE3_V2_INTERFACES[4],
+    PHASE3_V2_INTERFACES[5],
+    PHASE3_V2_INTERFACES[6],
+    PHASE3_V2_INTERFACES[7],
+    PHASE3_V2_INTERFACES[8],
+    PHASE3_V2_INTERFACES[9],
+    PHASE3_V2_INTERFACES[10],
+    HostInterfaceSpec {
+        interface: "latent:http/streaming@0.3.0",
+        package: "latent:http",
+        binding: HostInterfaceBinding::Provider,
+        wit: include_str!("../../../wit/platform/http-v3/package.wit"),
+        asynchronous: true,
+    },
+];
+
+/// Extends V2 with one explicitly owned HTTP resource interface. V1/V2 source
+/// identities remain frozen; provider installation and permission are separate.
+pub const PHASE3_HOST_ABI_V3: HostAbiProfile = HostAbiProfile {
+    id: "lsf-host-abi-phase3-v3",
+    interfaces: &PHASE3_V3_INTERFACES,
+};
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -236,6 +276,27 @@ mod tests {
         ] {
             assert!(PHASE3_HOST_ABI_V2.interface(unsupported).is_none());
         }
+    }
+
+    #[test]
+    fn v3_preserves_v2_and_limits_resources_to_the_exact_streaming_interface() {
+        for previous in PHASE3_HOST_ABI_V2.interfaces() {
+            assert_eq!(
+                PHASE3_HOST_ABI_V3.interface(previous.interface),
+                Some(previous)
+            );
+            assert!(previous.resource_types().is_empty());
+        }
+        let streaming = PHASE3_HOST_ABI_V3
+            .interface("latent:http/streaming@0.3.0")
+            .unwrap();
+        assert_eq!(streaming.resource_types(), &["upload", "body", "chunk"]);
+        assert!(streaming.asynchronous);
+        assert_eq!(streaming.binding, HostInterfaceBinding::Provider);
+        assert!(PHASE3_HOST_ABI_V2.interface(streaming.interface).is_none());
+        assert!(PHASE3_HOST_ABI_V3
+            .interface("latent:http/streaming@0.2.0")
+            .is_none());
     }
 
     #[test]

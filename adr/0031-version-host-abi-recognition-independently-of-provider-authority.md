@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-09-13
+- **Current profile/resource extension:** [ADR-0032](0032-use-bounded-owned-resources-for-streaming-http.md)
 - **RFC:** [RFC-0005](../rfcs/0005-phase3-host-abi-profiles.md)
 
 ## Context

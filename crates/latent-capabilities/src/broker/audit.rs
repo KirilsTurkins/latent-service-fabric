@@ -21,6 +21,10 @@ use std::{
 #[derive(Debug, Clone, Copy)]
 pub struct CapabilityRequestDigest(pub(super) [u8; 32]);
 impl CapabilityRequestDigest {
+    /// Bind additional typed metadata without exposing the original request.
+    pub fn with_context(self, context: &[u8]) -> Result<Self, PlatformError> {
+        Self::from_parts(&[b"lsf-typed-request-context-v1", &self.0, context])
+    }
     pub fn from_parts(parts: &[&[u8]]) -> Result<Self, PlatformError> {
         if parts.len() > 256 {
             return Err(super::capacity());

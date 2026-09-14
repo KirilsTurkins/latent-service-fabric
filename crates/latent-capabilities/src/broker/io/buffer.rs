@@ -83,6 +83,20 @@ impl IoBuffer {
             .ok_or_else(invalid)?;
         Ok(())
     }
+    /// Used only by the sealed transfer owner after spending its independently
+    /// authorized cumulative output. It never exposes a movable `IoBuffer` to callers.
+    pub(super) fn retain_for_transfer(mut self) -> Result<Self, PlatformError> {
+        self.operation.check()?;
+        if self.charge.kind != Kind::Staged || self.stream.is_some() {
+            return Err(invalid());
+        }
+        self.charge = self
+            .operation
+            .runtime
+            .counters
+            .acquire(Kind::Result, self.capacity())?;
+        Ok(self)
+    }
     /// Transfer, without copying, into retained-output accounting. Reserving the
     /// result side first prevents a refund gap on saturation or cancellation.
     pub fn retain(mut self) -> Result<Self, PlatformError> {

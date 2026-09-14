@@ -25,6 +25,9 @@ pub mod pools;
 mod provider;
 mod runtime;
 mod session;
+mod stream_budget;
+pub mod streaming_http;
+pub use stream_budget::CapabilityStreamBudget;
 mod waiting;
 mod work;
 
@@ -43,7 +46,10 @@ pub use provider::{
     ProviderBudgetRequirement, ProviderConfiguration, ProviderReference, ProviderRegistration,
 };
 pub use runtime::ActivationCapabilityRuntime;
-pub use session::{CapabilitySession, CapabilitySessionObserver, GuestCapabilityHandle};
+pub use session::{
+    CapabilitySession, CapabilitySessionObserver, GuestCapabilityHandle,
+    SessionResourceTableReservation,
+};
 pub use work::{CapabilityCallCost, CapabilityDispatch, OwnedCapabilityResponse, ProviderCall};
 
 use ownership::{Charge, Counters, Kind};

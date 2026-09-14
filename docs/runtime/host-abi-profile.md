@@ -1,11 +1,11 @@
 # Host ABI compatibility profiles
 
-`lsf-host-abi-phase3-v2` is the current generic recognition profile in
-`latent-core`. The [frozen matrix](../../wit/host-abi-phase3-v2.json) records its
+`lsf-host-abi-phase3-v3` is the current generic recognition profile in
+`latent-core`. The [frozen matrix](../../wit/host-abi-phase3-v3.json) records its
 exact interface identities, source hashes, function forms and installed bindings.
 [ADR-0031](../../adr/0031-version-host-abi-recognition-independently-of-provider-authority.md)
 and [RFC-0005](../../rfcs/0005-phase3-host-abi-profiles.md) define its ownership,
-error and compatibility contract.
+error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-resources-for-streaming-http.md) adds the exact streaming resource extension.
 
 ## Recognition and availability
 
@@ -19,6 +19,7 @@ error and compatibility contract.
 | `latent:blob/blob@0.1.0` | supported | unavailable, #213/#214 |
 | `latent:secrets/reader@0.1.0` | supported | unavailable, #215/#216 |
 | `latent:events/publisher@0.2.0` | supported | unavailable, #217 |
+| `latent:http/streaming@0.3.0` | supported, async owned resources | configured [streaming HTTP adapter](streaming-http.md) |
 | `latent:http/client@0.2.0` | supported, async import | configured [bounded HTTP adapter](outbound-http.md) |
 | `latent:telemetry/custom@0.1.0` | supported | unavailable, #220 |
 | `latent:service/invoke@0.1.0` | supported, async import | configured [isolated local adapter](local-service-invocation.md) |
@@ -26,7 +27,7 @@ error and compatibility contract.
 An inspected package has no provider authority. Wasmtime preparation rejects a
 required provider that has no installed owner. The generated Phase 3 host/guest
 bindings contain types and registration helpers; the production linker supplies
-context, log and clock, plus service invocation and HTTP when their node-owned
+context, log and clock, plus service invocation, buffered HTTP and streaming HTTP when their node-owned
 adapters are installed. Activations must supply their exact prepared
 imports and pass current eligibility/descriptor checks.
 
@@ -41,7 +42,9 @@ one finite work allowance across all required interfaces.
 
 The v1 four-interface profile remains defined. Existing context/log/clock bytes
 and versions are unchanged. The legacy aggregate world at 0.1.0 and its Rust
-bindings remain available; the new aggregate at 0.2.0 selects v2. Binding staging
+bindings remain available; the aggregate at 0.2.0 selects v2. The separate
+0.3.0 aggregate selects V3 and includes both HTTP package versions. V1/V2
+sources and identities remain unchanged. Binding staging
 loads only the referenced package versions to preserve generated module names.
 
 HTTP and events use explicit 0.2.0 package versions because their errors and
@@ -55,15 +58,15 @@ imports may eventually use a cooperative async host bridge. Neither form makes
 waiting activations free: stores, cells, handles, buffers and reservations stay
 owned until completion or affirmative cleanup.
 
-The local service and buffered HTTP profiles additionally select freestanding async application
+The local service, buffered HTTP and streaming HTTP profiles additionally select freestanding async application
 exports so callers can wait for the canonical async import. Exact source, binary
 and contract metadata must agree, and production preparation requires an installed async
-adapter. The frozen host WIT and digest remain unchanged. Component Model
-resources, futures, streams, flags, maps, fixed lists and error-context remain
-rejected. Blob handles are opaque numeric
-activation tokens; #204 owns their sealed lifecycle before a provider can be
-installed. State and timer remain later-phase contracts. Streaming HTTP requires
-an explicit subsequent ABI extension in #205/#212.
+adapter. The frozen host WIT and digest remain unchanged. V3 additionally accepts exact upload/body/chunk own/borrow resources only in
+`latent:http/streaming@0.3.0`. Application exports still use the bounded value
+codec. Other resource identities, implicit futures/streams, maps, fixed lists
+and error-context remain rejected. Blob tokens retain their separate lifecycle;
+state and timer remain later-phase contracts. See the [streaming ownership and
+limits](streaming-http.md).
 
 ## Cache identity and security
 
@@ -88,7 +91,7 @@ an advisory reachability review. ABI compatibility does not establish a stronger
 External-capsule deployment enforcement belongs to #280; fixed external guest
 execution hosts remain unavailable.
 
-Normal CI parses both worlds, compiles native/Wasm generated bindings and tests
+Normal CI parses all three worlds, compiles native/Wasm generated bindings and tests
 real component/linker compatibility, wrong shapes/versions, missing providers,
 forged/stale descriptors, comparison limits and schema/source/generator parity.
 The fixtures allocate no dormant application resources and provide no provider

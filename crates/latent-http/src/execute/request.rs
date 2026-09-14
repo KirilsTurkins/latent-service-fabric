@@ -7,7 +7,7 @@ use http::{
 use http_body_util::Full;
 use latent_capabilities::broker::CapabilityRequestDigest;
 
-pub(super) fn digest(
+pub(crate) fn digest(
     request: &HttpRequest,
     destination: &Destination,
 ) -> Result<CapabilityRequestDigest, HttpError> {
@@ -35,21 +35,42 @@ pub(super) fn digest(
     }
     CapabilityRequestDigest::from_parts(&parts).map_err(Into::into)
 }
-pub(super) fn build(
+pub(crate) fn build(
     inner: &Inner,
     request: &mut HttpRequest,
     destination: &Destination,
     memory: Arc<IoMemory>,
     credentials_allowed: bool,
-) -> Result<Request<Full<bytes::Bytes>>, HttpError> {
-    let path = &destination.url[url::Position::BeforePath..url::Position::AfterQuery];
-    let uri = path.parse::<Uri>().map_err(|_| HttpError::InvalidUrl)?;
-    let mut result = Request::new(Full::new(bytes::Bytes::from_owner(
+) -> Result<Request<crate::streaming::wire::RequestBody>, HttpError> {
+    let body = crate::streaming::wire::RequestBody::Buffered(Full::new(bytes::Bytes::from_owner(
         crate::network::OwnedRequestBody {
             bytes: request.body.take().unwrap_or_default(),
             _memory: memory,
         },
     )));
+    let length = http_body::Body::size_hint(&body).exact();
+    build_with_body(
+        inner,
+        request,
+        destination,
+        body,
+        length,
+        "gzip, deflate",
+        credentials_allowed,
+    )
+}
+pub(crate) fn build_with_body(
+    inner: &Inner,
+    request: &HttpRequest,
+    destination: &Destination,
+    body: crate::streaming::wire::RequestBody,
+    length: Option<u64>,
+    encoding: &str,
+    credentials_allowed: bool,
+) -> Result<Request<crate::streaming::wire::RequestBody>, HttpError> {
+    let path = &destination.url[url::Position::BeforePath..url::Position::AfterQuery];
+    let uri = path.parse::<Uri>().map_err(|_| HttpError::InvalidUrl)?;
+    let mut result = Request::new(body);
     *result.method_mut() = request
         .method
         .as_str()
@@ -57,9 +78,6 @@ pub(super) fn build(
         .map_err(|_| HttpError::InvalidRequest)?;
     *result.uri_mut() = uri;
     *result.version_mut() = http::Version::HTTP_11;
-    let length = http_body::Body::size_hint(result.body())
-        .exact()
-        .ok_or(HttpError::InvalidRequest)?;
     let mut count = 0usize;
     let mut bytes = 0usize;
     let mut add = |name: &str, value: &str, sensitive| -> Result<(), HttpError> {
@@ -83,9 +101,12 @@ pub(super) fn build(
     };
     let authority = &destination.url[url::Position::BeforeHost..url::Position::AfterPort];
     add("host", authority, false)?;
-    // Known body length prevents implicit Transfer-Encoding or framing inference.
-    add("content-length", &length.to_string(), false)?;
-    add("accept-encoding", "gzip, deflate", false)?;
+    if let Some(length) = length {
+        add("content-length", &length.to_string(), false)?;
+    } else {
+        add("transfer-encoding", "chunked", false)?;
+    }
+    add("accept-encoding", encoding, false)?;
     for header in &request.headers {
         add(&header.name, &header.value, false)?;
     }

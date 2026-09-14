@@ -81,16 +81,11 @@ impl From<PlatformError> for HttpError {
 /// Header names and values are encoded as alternating NUL-terminated UTF-8
 /// fields in charged fixed-capacity storage. No uncharged owned header map is
 /// returned to the guest adapter; canonical lowering has its own call reserve.
-pub struct HttpResponse {
-    status: u16,
-    headers: IoBuffer,
-    body: IoBuffer,
+pub struct HttpHeaderBlock {
+    data: IoBuffer,
 }
-impl HttpResponse {
-    pub fn new(status: u16, headers: IoBuffer, body: IoBuffer) -> Result<Self, HttpError> {
-        if !(200..=599).contains(&status) {
-            return Err(HttpError::ConnectionFailed);
-        }
+impl HttpHeaderBlock {
+    pub fn new(headers: IoBuffer) -> Result<Self, HttpError> {
         let bytes = headers.bytes();
         if !bytes.is_empty() && !bytes.ends_with(&[0]) {
             return Err(HttpError::ConnectionFailed);
@@ -114,21 +109,11 @@ impl HttpResponse {
             }
         }
         Ok(Self {
-            status,
-            headers: headers.retain()?,
-            body: body.retain()?,
+            data: headers.retain()?,
         })
     }
-    #[must_use]
-    pub fn status(&self) -> u16 {
-        self.status
-    }
-    #[must_use]
-    pub fn body(&self) -> &[u8] {
-        self.body.bytes()
-    }
-    pub fn headers(&self) -> impl Iterator<Item = (&str, &str)> {
-        let mut fields = self.headers.bytes().split_inclusive(|b| *b == 0);
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &str)> {
+        let mut fields = self.data.bytes().split_inclusive(|b| *b == 0);
         std::iter::from_fn(move || {
             let name = fields.next()?;
             let value = fields.next().expect("validated header pair");
@@ -138,11 +123,60 @@ impl HttpResponse {
             ))
         })
     }
+}
+pub struct HttpResponseHead {
+    status: u16,
+    headers: HttpHeaderBlock,
+}
+impl HttpResponseHead {
+    pub fn new(status: u16, headers: IoBuffer) -> Result<Self, HttpError> {
+        if !(200..=599).contains(&status) {
+            return Err(HttpError::ConnectionFailed);
+        }
+        Ok(Self {
+            status,
+            headers: HttpHeaderBlock::new(headers)?,
+        })
+    }
+    #[must_use]
+    pub fn status(&self) -> u16 {
+        self.status
+    }
+    pub fn headers(&self) -> impl Iterator<Item = (&str, &str)> {
+        self.headers.iter()
+    }
     #[must_use]
     pub fn body_media_type(&self) -> Option<&str> {
         self.headers()
             .find(|(name, _)| *name == "content-type")
             .map(|(_, value)| value)
+    }
+}
+pub struct HttpResponse {
+    head: HttpResponseHead,
+    body: IoBuffer,
+}
+impl HttpResponse {
+    pub fn new(status: u16, headers: IoBuffer, body: IoBuffer) -> Result<Self, HttpError> {
+        Ok(Self {
+            head: HttpResponseHead::new(status, headers)?,
+            body: body.retain()?,
+        })
+    }
+    #[must_use]
+    pub fn status(&self) -> u16 {
+        self.head.status()
+    }
+    #[must_use]
+    pub fn body(&self) -> &[u8] {
+        self.body.bytes()
+    }
+    pub fn headers(&self) -> impl Iterator<Item = (&str, &str)> {
+        self.head.headers()
+    }
+    #[must_use]
+    pub fn body_media_type(&self) -> Option<&str> {
+        self.head.body_media_type()
     }
 }
 /// Result data drops before the original operation. Hosts retain `owner` through

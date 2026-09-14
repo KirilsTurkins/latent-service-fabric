@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Policy-scoped buffered HTTP with owned bounded DNS, TLS and connection pools."
+description = "Policy-scoped buffered and streaming HTTP with owned bounded DNS, TLS and connection pools."
 
 [lints]
 workspace = true

@@ -70,12 +70,14 @@ pub(super) fn worlds(
             .imports
             .get(name)
             .ok_or_else(|| incompatible("component-world-identity-mismatch"))?;
-        let profile = latent_core::PHASE3_HOST_ABI_V2
+        let profile = latent_core::PHASE3_HOST_ABI_V3
             .interface(name)
             .ok_or_else(|| incompatible("unsupported-host-import"))?;
         compare.asynchronous = profile.asynchronous;
+        compare.resources = profile.resource_types();
         compare.import_subset(*expected, *actual)?;
         compare.asynchronous = false;
+        compare.resources = &[];
     }
     for (name, expected) in &declared.exports {
         compare.asynchronous = true;
@@ -90,6 +92,7 @@ pub(super) struct Comparison<'a> {
     limits: SemanticLimits,
     examined: usize,
     asynchronous: bool,
+    resources: &'static [&'static str],
 }
 
 impl<'a> Comparison<'a> {
@@ -100,6 +103,7 @@ impl<'a> Comparison<'a> {
             limits,
             examined: 0,
             asynchronous: false,
+            resources: &[],
         }
     }
 
@@ -108,8 +112,10 @@ impl<'a> Comparison<'a> {
         left: InterfaceId,
         right: InterfaceId,
         asynchronous: bool,
+        resources: &'static [&'static str],
     ) -> Result<(), PlatformError> {
         self.asynchronous = asynchronous;
+        self.resources = resources;
         self.interface(left, right)
     }
 

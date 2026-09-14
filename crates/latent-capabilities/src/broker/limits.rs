@@ -16,6 +16,9 @@ pub struct CapabilityBrokerLimits {
     pub maximum_buffer_bytes: usize,
     pub maximum_input_bytes: usize,
     pub maximum_output_bytes: usize,
+    /// Cumulative per-call transfers; these do not reserve whole bodies in memory.
+    pub maximum_stream_input_bytes: u64,
+    pub maximum_stream_output_bytes: u64,
 }
 impl Default for CapabilityBrokerLimits {
     fn default() -> Self {
@@ -32,6 +35,8 @@ impl Default for CapabilityBrokerLimits {
             maximum_buffer_bytes: 32 * 1024 * 1024,
             maximum_input_bytes: 64 * 1024,
             maximum_output_bytes: 64 * 1024,
+            maximum_stream_input_bytes: 16 * 1024 * 1024,
+            maximum_stream_output_bytes: 16 * 1024 * 1024,
         }
     }
 }
@@ -55,7 +60,9 @@ impl CapabilityBrokerLimits {
                 return Err(invalid());
             }
         }
-        if self.maximum_handles_per_session > self.maximum_handles
+        if self.maximum_stream_input_bytes > 63 * 1024 * 1024
+            || self.maximum_stream_output_bytes > 63 * 1024 * 1024
+            || self.maximum_handles_per_session > self.maximum_handles
             || self.maximum_calls_per_session > self.maximum_calls
             || self.maximum_input_bytes + self.maximum_output_bytes > self.maximum_buffer_bytes
         {

@@ -213,7 +213,10 @@ impl ResourceConstraint {
                 )
                 | (Self::Random, "latent:random/random@0.1.0")
                 | (Self::Log { .. }, "latent:log/log@0.1.0")
-                | (Self::Http { .. }, "latent:http/client@0.2.0")
+                | (
+                    Self::Http { .. },
+                    "latent:http/client@0.2.0" | "latent:http/streaming@0.3.0"
+                )
                 | (Self::Blob { .. }, "latent:blob/blob@0.1.0")
                 | (Self::Secrets { .. }, "latent:secrets/reader@0.1.0")
                 | (Self::Events { .. }, "latent:events/publisher@0.2.0")

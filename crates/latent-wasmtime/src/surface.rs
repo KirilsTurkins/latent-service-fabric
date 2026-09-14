@@ -12,6 +12,8 @@ use crate::config::WasmtimeConfig;
 use crate::containment::platform_error;
 use crate::values::validate_signature;
 
+pub(crate) mod streaming;
+
 pub const CONTEXT_IMPORT: &str = "latent:context/context@0.1.0";
 pub const LOG_IMPORT: &str = "latent:log/log@0.1.0";
 pub const MONOTONIC_CLOCK_IMPORT: &str = "latent:clock/monotonic@0.1.0";
@@ -55,11 +57,14 @@ fn lookup_function<'a, T>(
 pub(crate) struct Providers {
     pub local_services: bool,
     pub http: bool,
+    pub streaming_http: bool,
 }
 impl Providers {
     fn supports(self, name: &str) -> bool {
         (self.local_services && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
             || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
+            || (self.streaming_http
+                && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
     }
 }
 pub(crate) fn validate_with_providers(
@@ -118,7 +123,8 @@ pub(crate) fn validate_with_providers(
                     retain(entry_bytes, &mut retained_bytes, config)?;
                     let (params, results) = signature(
                         &function,
-                        (providers.local_services || providers.http) && function.async_(),
+                        (providers.local_services || providers.http || providers.streaming_http)
+                            && function.async_(),
                         config,
                         &mut remaining,
                     )?;
@@ -187,7 +193,7 @@ fn validate_imports(
     let mut imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
-        let specification = latent_core::PHASE3_HOST_ABI_V2
+        let specification = latent_core::PHASE3_HOST_ABI_V3
             .interface(name)
             .ok_or_else(|| incompatible("component imports an unsupported host capability"))?;
         if specification.binding == latent_core::HostInterfaceBinding::Provider
@@ -204,15 +210,37 @@ fn validate_imports(
                 "host capabilities must be imported interfaces",
             ));
         };
+        let mut resources = Vec::new();
+        for (resource_name, item) in interface.exports(engine) {
+            if let ComponentItem::Resource(resource) = item.ty {
+                if !specification.resource_types().contains(&resource_name)
+                    || resources.len() >= 3
+                    || resources.contains(&resource)
+                {
+                    return Err(incompatible("unsupported host resource identity"));
+                }
+                resources.push(resource);
+            }
+        }
         for (name, item) in interface.exports(engine) {
             take_name(name, config, remaining)?;
             match item.ty {
                 ComponentItem::ComponentFunc(function) => {
-                    signature(&function, specification.asynchronous, config, remaining)?;
+                    signature_with_resources(
+                        &function,
+                        specification.asynchronous,
+                        config,
+                        remaining,
+                        &resources,
+                    )?;
+                    if !specification.resource_types().is_empty() {
+                        streaming::validate(name, &function, &interface, engine)?;
+                    }
                 }
                 ComponentItem::Type(ty) => {
-                    check_types(&[ty], config, remaining)?;
+                    check_host_types(&[ty], config, remaining, &resources)?;
                 }
+                ComponentItem::Resource(resource) if resources.contains(&resource) => {}
                 _ => {
                     return Err(incompatible(
                         "unsupported item in host capability interface",
@@ -298,6 +326,15 @@ fn signature(
     config: &WasmtimeConfig,
     remaining: &mut usize,
 ) -> Result<(Vec<Type>, Vec<Type>), PlatformError> {
+    signature_with_resources(function, asynchronous, config, remaining, &[])
+}
+fn signature_with_resources(
+    function: &ComponentFunc,
+    asynchronous: bool,
+    config: &WasmtimeConfig,
+    remaining: &mut usize,
+    resources: &[wasmtime::component::ResourceType],
+) -> Result<(Vec<Type>, Vec<Type>), PlatformError> {
     if function.async_() != asynchronous {
         return Err(incompatible(
             "Component Model function kind does not match the host/export profile",
@@ -313,8 +350,8 @@ fn signature(
     let results = function.results().collect::<Vec<_>>();
     // Use the same fuel that the store will receive. Increasing it later to
     // accommodate host imports would invalidate the lifted-allocation proof.
-    check_types(&params, config, remaining)?;
-    check_types(&results, config, remaining)?;
+    check_host_types(&params, config, remaining, resources)?;
+    check_host_types(&results, config, remaining, resources)?;
     Ok((params, results))
 }
 
@@ -324,6 +361,24 @@ fn check_types(
     remaining: &mut usize,
 ) -> Result<(), PlatformError> {
     let plan = validate_signature(types, config.value_codec_limits, config.hostcall_fuel)?;
+    *remaining = remaining
+        .checked_sub(plan.examined_type_nodes)
+        .ok_or_else(exhausted)?;
+    Ok(())
+}
+
+fn check_host_types(
+    types: &[Type],
+    config: &WasmtimeConfig,
+    remaining: &mut usize,
+    resources: &[wasmtime::component::ResourceType],
+) -> Result<(), PlatformError> {
+    let plan = crate::values::validate_host_signature(
+        types,
+        config.value_codec_limits,
+        config.hostcall_fuel,
+        resources,
+    )?;
     *remaining = remaining
         .checked_sub(plan.examined_type_nodes)
         .ok_or_else(exhausted)?;

@@ -74,6 +74,23 @@ impl Encoder<'_> {
         primitive.into()
     }
 
+    fn handle(&mut self, handle: &wit_parser::Handle) -> u32 {
+        let (id, own) = match handle {
+            wit_parser::Handle::Own(id) => (*id, true),
+            wit_parser::Handle::Borrow(id) => (*id, false),
+        };
+        let Value::Type(resource) = self.value(Type::Id(id)) else {
+            panic!("named fixture resource")
+        };
+        let index = self.host.type_count();
+        if own {
+            self.host.ty().defined_type().own(resource);
+        } else {
+            self.host.ty().defined_type().borrow(resource);
+        }
+        index
+    }
+
     fn defined(&mut self, id: TypeId) -> Value {
         if let Some(value) = self.types.get(&id) {
             return *value;
@@ -81,7 +98,18 @@ impl Encoder<'_> {
         // This encoder only consumes small acyclic fixture sources. Production
         // parser, arena and comparison budgets are independently exercised.
         let def = &self.resolve.types[id];
+        if matches!(def.kind, TypeDefKind::Resource) {
+            let index = self.host.type_count();
+            self.host.export(
+                def.name.as_deref().expect("named fixture resource"),
+                ComponentTypeRef::Type(TypeBounds::SubResource),
+            );
+            let value = Value::Type(index);
+            self.types.insert(id, value);
+            return value;
+        }
         let index = match &def.kind {
+            TypeDefKind::Handle(handle) => self.handle(handle),
             TypeDefKind::Type(ty) => {
                 let value = self.value(*ty);
                 match value {

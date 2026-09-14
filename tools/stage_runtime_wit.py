@@ -28,7 +28,7 @@ def dependencies(source: Path, platform_wit: Path) -> list[Path]:
     """
     available = {}
     for package in sorted(path for path in platform_wit.iterdir() if path.is_dir()):
-        if package.name in {"runtime", "runtime-phase3"} or package.resolve() == source:
+        if package.name in {"runtime", "runtime-phase3", "runtime-phase3-streaming"} or package.resolve() == source:
             continue
         text = source_text(package)
         identity = PACKAGE.search(text)

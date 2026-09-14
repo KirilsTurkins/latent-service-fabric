@@ -8,7 +8,8 @@ invocation must bind exactly its prepared imports. No WASI filesystem,
 environment, network, process, or other ambient authority is installed. The
 configured [local service adapter](local-service-invocation.md) additionally
 implements canonical async `latent:service/invoke@0.1.0`. The configured
-[outbound HTTP adapter](outbound-http.md) implements `latent:http/client@0.2.0`. Other platform
+[outbound HTTP adapter](outbound-http.md) implements `latent:http/client@0.2.0`; [streaming HTTP](streaming-http.md) adds
+`latent:http/streaming@0.3.0` with owned upload/body/chunk resources. Other platform
 capability packages remain contracts for subsequent implementation.
 Completion of [Phase 2](../phase-2-completion.md) adds package delivery,
 currentness, native caching and rollout control; it does not expand this guest
@@ -44,7 +45,7 @@ permission or exposing credential-bearing selectors.
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
 [standalone node](../reference/standalone-node.md). Phase 3 continues with production
-standalone provider configuration, streaming HTTP, blob/secrets/events providers, random
+standalone provider configuration, blob/secrets/events providers, random
 and custom metrics, application ingress and web/SSR integration. Transactional
 state/effects, cluster transport and durable workflow suspension remain later
 phases; declared WIT alone makes none of them callable.
@@ -76,7 +77,7 @@ a Phase 4 transaction/outbox receipt.
 The shared async ownership work in #205 and concrete HTTP/blob/event providers in
 #211, #214 and #217 must preserve those distinctions in typed results and cleanup.
 #238 owns integrated adversarial uncertainty/resource-retirement evidence and
-#240 reviews that evidence at the Phase 3 gate. The buffered HTTP provider is implemented; blob and event adapters retain their
+#240 reviews that evidence at the Phase 3 gate. Buffered and streaming HTTP providers are implemented; blob and event adapters retain their
 separate delivery tickets.
 
 ## Context disclosure

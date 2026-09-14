@@ -6,8 +6,9 @@ configured `IoRuntime` provides finite admission, byte accounting and streams on
 the caller's existing runtime. It creates no executor, thread, socket, worker,
 retry loop or service-specific resource. Dormant deployments own none of these
 leases. The [shared provider registry and pools](provider-pools.md) build on this
-ownership. Concrete protocol adapters remain separate work in #211–#217;
-declaring an import does not install a provider.
+ownership. [Buffered HTTP](outbound-http.md) and [streaming HTTP](streaming-http.md)
+install concrete adapters on this substrate; the other providers are tracked
+separately. Declaring an import does not install a provider.
 
 ## Admission and the original activation owner
 
@@ -141,17 +142,40 @@ waitable-set suspension through `func_wrap_concurrent`. It deliberately delays
 both the provider and response consumer, reuses compiled code with fresh Stores,
 and verifies cancellation, shutdown and the production cleanup predicate.
 
-The product linker still installs only its four existing built-in interfaces.
-This change adds no WASIp3 HTTP/filesystem provider or native WIT stream/future
-value surface; the new stream is an affine Rust ownership API. Therefore the
-WASIp3 adapters implicated by [RUSTSEC-2026-0268](https://rustsec.org/advisories/RUSTSEC-2026-0268.html)
-and the WASI filesystem adapter in [RUSTSEC-2026-0269](https://rustsec.org/advisories/RUSTSEC-2026-0269.html)
-are not newly installed. Both list 47.0.4 as a patched baseline. Future concrete
-adapters must repeat this reachability review and preserve the pre-allocation
-bounds. Passing a test-only async import is not a permanent applicability
-exemption or hostile-multitenant qualification. No engine/AOT identity or public
-WIT contract is changed here.
+The original #205 substrate introduced an affine Rust stream API without
+installing guest-facing providers. The current runtime can additionally install
+bounded local-service, buffered HTTP and streaming HTTP adapters through trusted
+ports. Streaming HTTP adds explicit owned resources in the V3 profile; it does
+not install WASIp3 built-in streams or WASI filesystem imports.
+
+The WASIp3 adapters implicated by
+[RUSTSEC-2026-0268](https://rustsec.org/advisories/RUSTSEC-2026-0268.html) and the
+WASI filesystem adapter in
+[RUSTSEC-2026-0269](https://rustsec.org/advisories/RUSTSEC-2026-0269.html) remain
+outside these installed imports. Both list 47.0.4 as a patched baseline. Each
+concrete adapter must repeat this reachability review and preserve allocation
+bounds. A test-only async import is not a permanent applicability exemption or
+hostile-multitenant qualification. See the [host ABI profile](host-abi-profile.md)
+for current interface and engine/AOT identity requirements.
 
 Run `cargo test -p latent-capabilities --lib --locked` and
 `cargo test -p latent-wasmtime --test broker --locked`. These tests need no load
 campaign, external registry, language guest toolchain or persistent provider.
+
+## Explicit bulk-transfer allowance
+
+[Streaming HTTP](streaming-http.md) uses an explicit `CapabilityStreamBudget`.
+The broker checks inline metadata plus cumulative input/output allowances at
+initial and final policy admission. Only that accepted call can issue one
+`IoTransfer`; dropping it cannot reset its counters. Input chunks own their
+actual vector capacity, and output chunks reserve both resident storage and one
+canonical lowering copy. The independent finite chunk/stream/result ceilings
+remain in force. Dropping a transfer cannot refund a retained chunk or its
+original activation owner. Ordinary buffered results retain their existing
+cumulative inline-output ceiling.
+
+Store resource tables reserve their backing metadata independently from a
+provider call. Empty table slots therefore do not pin a running provider permit;
+the table reservation still blocks a clean Store reclamation claim until actual
+destruction. The guest adapter moves real resource owners out of busy entries
+across waits and denies stale restoration after cancellation or resource Drop.

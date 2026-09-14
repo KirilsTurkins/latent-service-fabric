@@ -148,3 +148,96 @@ async fn required_audit_keeps_provider_receipts_and_redacts_secrets() {
         f.clean().await;
     }
 }
+
+#[tokio::test]
+async fn streamed_required_audit_commits_metadata_and_known_header_without_claiming_body_completion(
+) {
+    use latent_capabilities::broker::streaming_http::{StreamingHttpInvoker, StreamingHttpRequest};
+    let journal = Journal::new(16);
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        let wire = read_request(&mut stream).await;
+        assert!(wire.ends_with(b"private-payload"));
+        stream
+            .write_all(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 8\r\n\r\nshort")
+            .await
+            .unwrap();
+    });
+    let mut config = config(port);
+    config.destinations[0].redirect_destinations.clear();
+    let f = Fixture::configured_inner(
+        config,
+        &[HttpCredential {
+            destination: 0,
+            name: "authorization",
+            value: "private-credential",
+        }],
+        latent_capabilities::broker::pools::ProviderPoolLimits::default(),
+        Some(journal.handle.clone()),
+        Some(HttpStreamLimits {
+            maximum_input_bytes: 1024,
+            maximum_output_bytes: 1024,
+            maximum_chunk_bytes: 16,
+            maximum_outstanding_chunks: 1,
+        }),
+    );
+    let (session, _) = f.session(5000);
+    let mut metadata = request(port, HttpMethod::Post);
+    metadata.url.push_str("?private=query");
+    metadata.idempotency_key = Some("private-key".into());
+    let mut upload = f
+        .streaming
+        .as_ref()
+        .unwrap()
+        .start(
+            &session,
+            StreamingHttpRequest {
+                metadata,
+                body_length: Some(15),
+            },
+        )
+        .unwrap()
+        .await
+        .unwrap();
+    upload.write(b"private-payload".to_vec()).await.unwrap();
+    let mut body = upload.finish().await.unwrap();
+    assert_eq!(body.head().status(), 403);
+    loop {
+        match body.read(16).await {
+            Ok(Some(chunk)) => drop(chunk),
+            Ok(None) => panic!("truncated response must fail"),
+            Err(_) => break,
+        }
+    }
+    drop(body);
+    drop(session);
+    server.await.unwrap();
+    journal.drained().await;
+    let page = journal.query("a").await;
+    assert_eq!(page.records().len(), 2);
+    let encoded = serde_json::to_string(page.records()).unwrap();
+    for secret in [
+        "private-payload",
+        "private-credential",
+        "private=query",
+        "private-key",
+    ] {
+        assert!(!encoded.contains(secret));
+    }
+    let AuditRecordData::Outcome { conclusion, .. } = &page.records()[1].data else {
+        panic!("outcome")
+    };
+    let record = conclusion.identities.capability.as_ref().unwrap();
+    assert_eq!(
+        record.capability,
+        latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY
+    );
+    assert_eq!(
+        record.provider_outcome,
+        Some(AuditProviderOutcome::HttpResponseReceived)
+    );
+    drop(page);
+    f.clean().await;
+}

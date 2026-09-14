@@ -117,6 +117,15 @@ impl PreparationContext {
                 )
             })?;
         }
+        if let Some(invoker) = self.streaming_http() {
+            crate::host::streaming_http::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind streaming HTTP import",
+                    false,
+                )
+            })?;
+        }
         let pre = linker.instantiate_pre(component).map_err(|error| {
             platform_error(
                 PlatformErrorCode::IncompatibleContract,
@@ -128,6 +137,11 @@ impl PreparationContext {
             )
         })?;
         Ok(pre)
+    }
+    pub(super) fn streaming_http(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::streaming_http::StreamingHttpInvoker>> {
+        self.capabilities.as_ref()?.upgrade()?.streaming_http().ok()
     }
     pub(super) fn http(
         &self,

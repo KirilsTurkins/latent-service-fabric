@@ -48,7 +48,7 @@
       "type": "boolean"
     },
     "hostAbiProfile": {
-      "const": "lsf-host-abi-phase3-v2"
+      "enum": ["lsf-host-abi-phase3-v2", "lsf-host-abi-phase3-v3"]
     },
     "wasmtimeVersion": {
       "const": "47.0.4"

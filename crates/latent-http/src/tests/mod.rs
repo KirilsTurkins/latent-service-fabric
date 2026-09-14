@@ -5,6 +5,7 @@ mod http;
 mod ownership;
 mod redirects;
 mod responses;
+mod streaming;
 mod tls;
 mod validation;
 use crate::*;

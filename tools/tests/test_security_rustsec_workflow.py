@@ -29,6 +29,9 @@ class RustSecWorkflowTests(unittest.TestCase):
             self.assertIn("rust-toolchain.toml", paths)
             self.assertIn(".cargo/audit.toml", paths)
             self.assertNotIn("**/*.md", paths)
+            self.assertIn("wit/platform/**", paths)
+            self.assertIn("crates/latent-wasmtime/src/host/**", paths)
+            self.assertIn("crates/latent-wasmtime/src/surface/**", paths)
 
     def test_scheduled_and_manual_runs_explicitly_cover_both_maintained_refs(self) -> None:
         job = self.workflow["jobs"]["maintained-branches"]

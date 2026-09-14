@@ -14,8 +14,8 @@ use latent_capabilities::broker::{
 use latent_core::BudgetDimension;
 use latent_policy::capability::ResourceTarget;
 use std::sync::{atomic::Ordering, Arc};
-mod request;
-mod response;
+pub(crate) mod request;
+pub(crate) mod response;
 
 /// Field order also protects an unpolled or cancelled invocation: owned typed
 /// input and its selector drop before their original staged-byte reservation.

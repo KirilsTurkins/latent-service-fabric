@@ -8,7 +8,7 @@ The workflow uses [`cargo-audit`](https://github.com/rustsec/rustsec/tree/main/c
 
 The scan is deliberately independent of the ordinary docs/full CI profile:
 
-- pull requests into `development` run it only when `Cargo.lock`, a `Cargo.toml`, the Rust toolchain, an audit configuration, or this baseline's workflow/test/documentation surfaces change;
+- pull requests into `development` run it only when `Cargo.lock`, a `Cargo.toml`, the Rust toolchain, an audit configuration, platform WIT, installed Wasmtime host imports/surface validation, component binding generation, or this baseline's workflow/test/documentation surfaces change;
 - pushes to `development` and `release` use the same dependency-sensitive selection;
 - the weekly schedule and manual dispatch explicitly scan **both** maintained branches, even when their lockfiles have not changed.
 

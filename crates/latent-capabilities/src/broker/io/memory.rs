@@ -11,7 +11,7 @@ pub struct IoMemory {
     _operation: Arc<Operation>,
 }
 impl IoMemory {
-    fn reserve(
+    pub(super) fn reserve(
         operation: &Arc<Operation>,
         bytes: usize,
         metadata: usize,

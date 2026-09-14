@@ -25,6 +25,7 @@ pub struct HttpProvider {
 }
 pub(crate) struct Inner {
     pub config: HttpProviderConfig,
+    pub streaming: Option<crate::streaming::HttpStreamLimits>,
     pub installed: InstalledProvider,
     pub tls: Arc<rustls::ClientConfig>,
     pub resolver: Resolver,
@@ -40,7 +41,27 @@ impl HttpProvider {
         config: HttpProviderConfig,
         credentials: &[HttpCredential<'_>],
     ) -> Result<Self, HttpError> {
+        Self::install_profile(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            credentials,
+            None,
+        )
+    }
+    pub(crate) fn install_profile(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: HttpProviderConfig,
+        credentials: &[HttpCredential<'_>],
+        streaming: Option<crate::streaming::HttpStreamLimits>,
+    ) -> Result<Self, HttpError> {
         config.validate()?;
+        let (capability, profile, operation) = profile(&config, streaming)?;
         let configuration = pools.reserve_protocol_metadata(
             65536
                 + usize::from(config.public_roots) * 256 * 1024
@@ -59,6 +80,10 @@ impl HttpProvider {
         }
         let mut hash = HashWriter(Sha256::new());
         hash.0.update(b"lsf-bounded-http-v1\0");
+        if let Some(limits) = streaming {
+            hash.0.update(b"streaming-identity-v1\0");
+            serde_json::to_writer(&mut hash, &limits).map_err(|_| HttpError::InvalidRequest)?;
+        }
         serde_json::to_writer(&mut hash, &config).map_err(|_| HttpError::InvalidRequest)?;
         // Public content identity excludes credentials. Their opaque installed
         // epoch separately fences rotations; publishing a secret hash would
@@ -93,19 +118,19 @@ impl HttpProvider {
         tls.enable_early_data = false;
         tls.cert_decompressors.clear();
         tls.key_log = Arc::new(rustls::NoKeyLog);
-        let restriction = serde_json::to_vec(&serde_json::json!({"operations":["send"],"resources":{"kind":"http","origins":config.destinations.iter().map(|d| &d.origin).collect::<Vec<_>>(),"methods":["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"],"paths":[],"pathPrefixes":["/"]}})).map_err(|_| HttpError::InvalidRequest)?;
+        let restriction = serde_json::to_vec(&serde_json::json!({"operations":[operation],"resources":{"kind":"http","origins":config.destinations.iter().map(|d| &d.origin).collect::<Vec<_>>(),"methods":["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"],"paths":[],"pathPrefixes":["/"]}})).map_err(|_| HttpError::InvalidRequest)?;
         let installed = pools.install(
             ProviderSetup {
                 logical_id,
                 credentials: &encoded,
                 authority: ProviderConfiguration {
-                    capability: HTTP_CAPABILITY,
-                    profile: HTTP_PROVIDER_PROFILE,
+                    capability,
+                    profile,
                     configuration_digest: &digest,
                     configuration_epoch: epoch,
                     restriction_json: &restriction,
                     minimum_call_charges: &[ProviderBudgetRequirement {
-                        operation: "send",
+                        operation,
                         dimension: BudgetDimension::OutboundRequests,
                         minimum: 1,
                     }],
@@ -116,6 +141,7 @@ impl HttpProvider {
         Ok(Self {
             inner: Arc::new(Inner {
                 config,
+                streaming,
                 installed,
                 tls: Arc::new(tls),
                 resolver: Resolver::new(),
@@ -135,7 +161,7 @@ impl OutboundHttpInvoker for HttpProvider {
         session: &CapabilitySession,
         request: HttpRequest,
     ) -> Result<HttpInvocation, HttpError> {
-        if !session.uses_provider(&self.reference())? {
+        if self.inner.streaming.is_some() || !session.uses_provider(&self.reference())? {
             return Err(HttpError::PermissionDenied);
         }
         let destination = destination::parse(&request.url, &self.inner.config)?;
@@ -183,4 +209,29 @@ fn invalid() -> PlatformError {
         retryable: false,
         details: Vec::new(),
     }
+}
+
+fn profile(
+    config: &HttpProviderConfig,
+    streaming: Option<crate::streaming::HttpStreamLimits>,
+) -> Result<(&'static str, &'static str, &'static str), HttpError> {
+    let selected = if let Some(limits) = streaming {
+        limits.validate()?;
+        if config.limits.maximum_redirects != 0
+            || config
+                .destinations
+                .iter()
+                .any(|d| !d.redirect_destinations.is_empty())
+        {
+            return Err(HttpError::InvalidRequest);
+        }
+        (
+            latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY,
+            crate::streaming::STREAMING_HTTP_PROVIDER_PROFILE,
+            "open",
+        )
+    } else {
+        (HTTP_CAPABILITY, HTTP_PROVIDER_PROFILE, "send")
+    };
+    Ok(selected)
 }

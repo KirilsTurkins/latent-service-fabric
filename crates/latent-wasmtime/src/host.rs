@@ -15,6 +15,7 @@ mod logging;
 mod owned_context;
 pub(crate) mod policy;
 pub(crate) mod service;
+pub(crate) mod streaming_http;
 pub(crate) use logging::InvocationLogBuffer;
 pub use logging::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
 

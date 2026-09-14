@@ -102,6 +102,18 @@ pub struct CapabilitySession {
     // borrows an already-owned operation; it cannot reopen or prolong authority.
     close_on_drop: bool,
 }
+/// Store-owned resource-table backing storage, independent of provider permits.
+/// It counts as a retained host handle until actual table destruction.
+pub struct SessionResourceTableReservation {
+    core: Arc<SessionCore>,
+    _metadata: Charge,
+    _slot: Charge,
+}
+impl Drop for SessionResourceTableReservation {
+    fn drop(&mut self) {
+        self.core.stats.handles.fetch_sub(1, Ordering::AcqRel);
+    }
+}
 /// Compact tenant-scoped accounting only; no plan, provider or guest Store.
 #[derive(Clone)]
 pub struct CapabilitySessionObserver {
@@ -327,6 +339,23 @@ impl SessionCore {
         input_bytes: u64,
         output_bytes: u64,
     ) -> Result<SealedPolicyDecision<'a>, PlatformError> {
+        self.decision_with_streaming(
+            binding,
+            operation,
+            resource,
+            (input_bytes, output_bytes),
+            false,
+        )
+    }
+    pub(super) fn decision_with_streaming<'a>(
+        &'a self,
+        binding: usize,
+        operation: &'a str,
+        resource: ResourceTarget<'a>,
+        dimensions: (u64, u64),
+        streaming: bool,
+    ) -> Result<SealedPolicyDecision<'a>, PlatformError> {
+        let (input_bytes, output_bytes) = dimensions;
         self.check()?;
         let binding = &self.plan.bindings[binding];
         let remaining_time = self
@@ -355,8 +384,18 @@ impl SessionCore {
                 configuration_epoch: binding.provider.epoch,
                 remaining: CapabilityCeiling {
                     operations: 1,
-                    input_bytes: self.owner.limits.maximum_input_bytes as u64,
-                    output_bytes: self.owner.limits.maximum_output_bytes as u64,
+                    input_bytes: self.owner.limits.maximum_input_bytes as u64
+                        + if streaming {
+                            self.owner.limits.maximum_stream_input_bytes
+                        } else {
+                            0
+                        },
+                    output_bytes: self.owner.limits.maximum_output_bytes as u64
+                        + if streaming {
+                            self.owner.limits.maximum_stream_output_bytes
+                        } else {
+                            0
+                        },
                     wall_time_millis: remaining_time,
                 },
                 input_bytes,
@@ -367,6 +406,30 @@ impl SessionCore {
     }
 }
 impl CapabilitySession {
+    pub fn reserve_resource_table(
+        &self,
+        bytes: usize,
+    ) -> Result<SessionResourceTableReservation, PlatformError> {
+        if bytes == 0 || bytes > 65536 {
+            return Err(capacity());
+        }
+        let _state = self.core.state.try_lock().map_err(|_| busy())?;
+        self.core.check()?;
+        if self.core.stats.handles.load(Ordering::Acquire)
+            >= self.core.owner.limits.maximum_handles_per_session
+        {
+            return Err(capacity());
+        }
+        let slot = self.core.owner.counters.acquire(Kind::Handle, 1)?;
+        let metadata = self.core.owner.counters.acquire(Kind::Metadata, bytes)?;
+        self.core.stats.handles.fetch_add(1, Ordering::AcqRel);
+        Ok(SessionResourceTableReservation {
+            core: Arc::clone(&self.core),
+            _metadata: metadata,
+            _slot: slot,
+        })
+    }
+
     pub(super) fn with_work_scope<T>(
         core: Arc<SessionCore>,
         inspect: impl FnOnce(&Self) -> T,

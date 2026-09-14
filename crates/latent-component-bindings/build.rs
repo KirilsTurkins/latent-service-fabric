@@ -22,6 +22,7 @@ fn main() -> io::Result<()> {
     let runtime_wit = output.join("runtime-wit");
     let echo_wit = output.join("echo-wit");
     let phase3_wit = output.join("phase3-wit");
+    let streaming_wit = output.join("streaming-wit");
 
     stage_runtime_world(&platform_wit, &runtime_wit, "runtime")?;
     stage_runtime_world(&platform_wit, &phase3_wit, "runtime-phase3")?;
@@ -29,6 +30,8 @@ fn main() -> io::Result<()> {
     write_host_bindings(&output, &runtime_wit, &echo_wit)?;
     write_guest_bindings(&output, &runtime_wit)?;
     write_phase3_bindings(&output, &phase3_wit)?;
+    stage_runtime_world(&platform_wit, &streaming_wit, "runtime-phase3-streaming")?;
+    write_streaming_bindings(&output, &streaming_wit)?;
 
     println!(
         "cargo:rerun-if-changed={}",
@@ -70,6 +73,7 @@ fn stage_runtime_world(platform_wit: &Path, destination: &Path, world: &str) -> 
         if !package.file_type()?.is_dir()
             || package.file_name() == OsStr::new("runtime")
             || package.file_name() == OsStr::new("runtime-phase3")
+            || package.file_name() == OsStr::new("runtime-phase3-streaming")
         {
             continue;
         }
@@ -208,4 +212,29 @@ fn write_phase3_bindings(output: &Path, wit: &Path) -> io::Result<()> {
 "#
     );
     fs::write(output.join("phase3_guest.rs"), guest)
+}
+
+fn write_streaming_bindings(output: &Path, wit: &Path) -> io::Result<()> {
+    let path = format!("{:?}", wit.to_string_lossy());
+    fs::write(
+        output.join("streaming_host.rs"),
+        format!(
+            r#"wasmtime::component::bindgen!({{
+        path: {path},
+        world: "latent:platform/capsule@0.3.0",
+        imports: {{ default: async }},
+        exports: {{ default: async }},
+    }});"#
+        ),
+    )?;
+    fs::write(
+        output.join("streaming_guest.rs"),
+        format!(
+            r#"wit_bindgen::generate!({{
+        path: {path},
+        world: "latent:platform/capsule@0.3.0",
+        generate_all,
+    }});"#
+        ),
+    )
 }

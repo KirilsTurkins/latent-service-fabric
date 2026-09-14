@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use latent_core::{PlatformError, PHASE3_HOST_ABI_V2};
+use latent_core::{PlatformError, PHASE3_HOST_ABI_V3};
 use latent_wasmtime::ExecutionIsolationProfile;
 use serde::Serialize;
 
@@ -88,7 +88,7 @@ pub(super) fn check(settings: &NodeSettings) -> Result<ExecutionProfileReport, P
             "trusted-local"
         },
         protected_credential_file: settings.credentials_from_protected_file,
-        host_abi_profile: PHASE3_HOST_ABI_V2.id,
+        host_abi_profile: PHASE3_HOST_ABI_V3.id,
         wasmtime_version: latent_wasmtime::WASMTIME_VERSION,
         target: settings.wasmtime.target_triple.clone(),
         compiler: if settings.isolated_aot.is_some() {

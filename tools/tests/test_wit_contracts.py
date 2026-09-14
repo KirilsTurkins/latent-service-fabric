@@ -160,14 +160,16 @@ class WitContractTests(unittest.TestCase):
     def test_versioned_runtime_worlds_stage_only_their_selected_package_versions(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             for world, http, events, count in [("runtime", "http", "events", 12),
-                                               ("runtime-phase3", "http-v2", "events-v2", 10)]:
+                                               ("runtime-phase3", "http-v2", "events-v2", 10),
+                                               ("runtime-phase3-streaming", "http-v2", "events-v2", 11)]:
                 destination = Path(temporary) / world
                 stager.stage(destination, ROOT / "wit/platform" / world)
                 deps = {path.name for path in (destination / "deps").iterdir()}
                 self.assertEqual(len(deps), count)
                 self.assertEqual(deps & {"http", "http-v2"}, {http})
                 self.assertEqual(deps & {"events", "events-v2"}, {events})
-                self.assertFalse(deps & {"runtime", "runtime-phase3"})
+                self.assertFalse(deps & {"runtime", "runtime-phase3", "runtime-phase3-streaming"})
+                self.assertEqual("http-v3" in deps, world == "runtime-phase3-streaming")
 
 
 if __name__ == "__main__":
