@@ -550,7 +550,11 @@ impl StandaloneNode {
             ));
         }
         let backend = Arc::new(factory.create_backend_instance());
-        let quotas = LocalQuotaProvider::new(settings.admission.clone())?;
+        let quotas = LocalQuotaProvider::with_profile(
+            settings.admission.clone(),
+            settings.budget_profile,
+            settings.delegation_limits,
+        )?;
         let scheduler = Arc::new(LocalScheduler::new(
             settings.scheduler.clone(),
             quotas.clone(),

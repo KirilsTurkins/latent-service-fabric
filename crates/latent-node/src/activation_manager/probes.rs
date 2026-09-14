@@ -8,23 +8,29 @@ use crate::{CancellationHandle, CancellationRegistration, CancellationToken};
 
 use super::transport_stop::TransportStop;
 
+#[cfg(test)]
+mod tests;
+
 /// One bounded probe shared by the scheduler and backend. Transport observation
 /// never installs the registry's explicit-cancellation publication winner.
 pub(super) struct ActivationControl {
     token: CancellationToken,
     cancellation: CancellationHandle,
     transport: Arc<TransportStop>,
+    terminal: Option<tokio::sync::watch::Sender<bool>>,
 }
 
 impl ActivationControl {
     pub(super) fn new(
         registration: &CancellationRegistration,
         transport: Arc<TransportStop>,
+        phase3: bool,
     ) -> Self {
         Self {
             token: registration.token(),
             cancellation: registration.handle(),
             transport,
+            terminal: phase3.then(|| tokio::sync::watch::channel(false).0),
         }
     }
 
@@ -56,6 +62,29 @@ impl ExecutionCancellationProbe for ActivationControl {
 
     fn reason(&self) -> Option<String> {
         self.reason()
+    }
+}
+
+impl latent_core::BudgetCancellationProbe for ActivationControl {
+    fn is_cancelled(&self) -> bool {
+        self.stopped()
+    }
+    fn cancelled(&self) -> BoxFuture<'_, ()> {
+        Box::pin(async move {
+            let mut terminal = self.terminal.as_ref().expect("Phase 3 owner").subscribe();
+            tokio::select! {
+                biased;
+                _ = terminal.wait_for(|stopped| *stopped) => {},
+                () = self.token.cancelled() => {},
+                () = self.transport.disconnect() => {},
+            }
+        })
+    }
+    fn mark_terminal(&self) {
+        self.terminal
+            .as_ref()
+            .expect("Phase 3 owner")
+            .send_replace(true);
     }
 }
 

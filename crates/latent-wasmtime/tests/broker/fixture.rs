@@ -100,6 +100,9 @@ pub struct Fixture {
 }
 impl Fixture {
     pub async fn new() -> Self {
+        Self::with_budget(support::budget()).await
+    }
+    pub async fn with_budget(ceiling: latent_core::ResourceBudget) -> Self {
         let directory = tempfile::TempDir::new().unwrap();
         let catalog = Arc::new(
             DirectoryArtifactRepository::open(
@@ -109,6 +112,7 @@ impl Fixture {
             .unwrap(),
         );
         let mut artifact = support::artifact_bytes(component::bytes(), &[component::CONTRACT]);
+        artifact.manifest.execution.resource_budget_ceiling = ceiling;
         artifact.manifest.imports.push(ContractImport {
             contract: ContractId(component::CAP.into()),
             optional: false,

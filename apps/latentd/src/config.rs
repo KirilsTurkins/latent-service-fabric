@@ -2,6 +2,7 @@
 
 mod aot;
 mod audit;
+mod budgets;
 mod capability_policies;
 mod derive;
 mod engine;
@@ -24,6 +25,7 @@ use latent_core::{PlatformError, PlatformErrorCode};
 
 pub use aot::{AotCacheConfig, AotImageConfig, AotProcessConfig, IsolatedAotConfig};
 pub use audit::AuditConfig;
+pub use budgets::BudgetConfig;
 pub use capability_policies::CapabilityPolicyConfig;
 pub use latent_wasmtime::ExecutionIsolationProfile;
 pub use model::{
@@ -54,6 +56,8 @@ pub struct NodeSettings {
     pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
+    pub(crate) budget_profile: latent_core::BudgetProfile,
+    pub(crate) delegation_limits: latent_core::DelegationLimits,
     pub(crate) scheduler: latent_scheduler::LocalSchedulerConfig,
     pub(crate) wasmtime: latent_wasmtime::WasmtimeConfig,
     pub(crate) runtime_profile: std::sync::Arc<latent_manifest::RuntimeCompatibilityProfile>,

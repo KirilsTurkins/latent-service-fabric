@@ -126,12 +126,22 @@ impl ActivationIdSource for SystemActivationIdSource {
 pub struct ActivationRequestBuilder {
     limits: ActivationRequestLimits,
     ids: Arc<dyn ActivationIdSource>,
+    profile: latent_core::BudgetProfile,
 }
 
 impl ActivationRequestBuilder {
     pub fn new(
         limits: ActivationRequestLimits,
         ids: Arc<dyn ActivationIdSource>,
+    ) -> Result<Self, PlatformError> {
+        Self::with_profile(limits, ids, latent_core::BudgetProfile::Phase1)
+    }
+
+    /// The trusted node selects the profile; request metadata cannot enable it.
+    pub fn with_profile(
+        limits: ActivationRequestLimits,
+        ids: Arc<dyn ActivationIdSource>,
+        profile: latent_core::BudgetProfile,
     ) -> Result<Self, PlatformError> {
         if limits.maximum_identifier_bytes == 0
             || limits.maximum_context_bytes == 0
@@ -142,7 +152,11 @@ impl ActivationRequestBuilder {
                 "invalid-activation-request-limits",
             ));
         }
-        Ok(Self { limits, ids })
+        Ok(Self {
+            limits,
+            ids,
+            profile,
+        })
     }
 
     #[must_use]
@@ -151,7 +165,7 @@ impl ActivationRequestBuilder {
     }
 
     pub fn build(&self, request: ActivationRequest) -> Result<ActivationEnvelope, PlatformError> {
-        validation::validate(&request, self.limits)?;
+        validation::validate(&request, self.limits, self.profile)?;
         let activation_id = if let Some(id) = request.activation_id {
             id
         } else {

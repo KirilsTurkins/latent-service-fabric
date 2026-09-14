@@ -109,6 +109,8 @@ struct State {
 
 struct Inner {
     policy: NodeAdmissionPolicy,
+    budget_profile: latent_core::BudgetProfile,
+    delegation_limits: latent_core::DelegationLimits,
     state: Mutex<State>,
 }
 
@@ -137,10 +139,26 @@ impl LocalQuotaProvider {
     }
 
     pub fn new(policy: NodeAdmissionPolicy) -> Result<Self, PlatformError> {
-        policy.validate()?;
+        Self::with_profile(
+            policy,
+            latent_core::BudgetProfile::Phase1,
+            latent_core::DelegationLimits::default(),
+        )
+    }
+
+    /// One immutable node-selected budget profile on the existing quota owner.
+    pub fn with_profile(
+        policy: NodeAdmissionPolicy,
+        budget_profile: latent_core::BudgetProfile,
+        delegation_limits: latent_core::DelegationLimits,
+    ) -> Result<Self, PlatformError> {
+        policy.validate_profile(budget_profile)?;
+        delegation_limits.validate()?;
         Ok(Self {
             inner: Arc::new(Inner {
                 policy,
+                budget_profile,
+                delegation_limits,
                 state: Mutex::new(State::default()),
             }),
         })
@@ -149,6 +167,16 @@ impl LocalQuotaProvider {
     #[must_use]
     pub fn policy(&self) -> &NodeAdmissionPolicy {
         &self.inner.policy
+    }
+
+    #[must_use]
+    pub fn budget_profile(&self) -> latent_core::BudgetProfile {
+        self.inner.budget_profile
+    }
+
+    #[must_use]
+    pub fn delegation_limits(&self) -> latent_core::DelegationLimits {
+        self.inner.delegation_limits
     }
 
     pub fn usage(&self) -> Result<QuotaUsage, PlatformError> {

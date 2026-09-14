@@ -3,7 +3,7 @@
 use std::time::Instant;
 
 use latent_core::{
-    ActivationBudget, ActivationClock, BudgetDimension, BudgetError, ClockSample,
+    ActivationBudget, ActivationClock, BudgetDimension, BudgetError, BudgetProfile, ClockSample,
     EffectiveActivationBudget, EffectiveDeadline, PlatformError, PlatformErrorCode, ResourceBudget,
 };
 use latent_executor::{ExecutionCancellation, ExecutionRequest};
@@ -33,9 +33,11 @@ impl InvocationAccounting {
         if request.budget != request.activation.budget {
             return Err(invalid("execution-budget-grant-mismatch"));
         }
-        request
-            .budget
-            .validate_phase1_request()
+        let profile = cancellation
+            .budget_accounting()
+            .map_or(BudgetProfile::Phase1, ActivationBudget::profile);
+        profile
+            .validate_request(&request.budget)
             .map_err(|error| error.to_platform_error())?;
         let (budget, deadline) = if let Some(budget) = cancellation.budget_accounting() {
             if budget.granted() != &request.budget {
@@ -54,14 +56,14 @@ impl InvocationAccounting {
             {
                 // Only a genuinely tighter explicit request needs conversion.
                 // The ordinary path preserves the original precise deadline.
-                deadline = grant(request, Some(&deadline), clock)?.deadline;
+                deadline = grant(profile, request, Some(&deadline), clock)?.deadline;
             }
             if let Some(supplied) = cancellation.effective_deadline() {
                 tighten(&mut deadline, supplied);
             }
             (budget.clone(), deadline)
         } else {
-            let grant = grant(request, cancellation.effective_deadline(), clock)?;
+            let grant = grant(profile, request, cancellation.effective_deadline(), clock)?;
             let deadline = grant.deadline.clone();
             (ActivationBudget::new(grant), deadline)
         };
@@ -157,6 +159,7 @@ impl InvocationAccounting {
 }
 
 fn grant(
+    profile: BudgetProfile,
     request: &ExecutionRequest,
     original: Option<&EffectiveDeadline>,
     clock: &dyn ActivationClock,
@@ -175,7 +178,8 @@ fn grant(
             .and_then(EffectiveDeadline::unix_millis)
             .is_none_or(|current| *requested < current)
     });
-    let mut grant = EffectiveActivationBudget::admit_at(
+    let mut grant = EffectiveActivationBudget::admit_profile_at(
+        profile,
         &request.budget,
         &request.budget,
         &request.budget,

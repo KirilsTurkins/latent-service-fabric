@@ -24,6 +24,7 @@ use super::lifecycle::Lifecycle;
 use super::probes::ActivationControl;
 use super::Inner;
 
+#[derive(Clone)]
 struct ExecutionControl {
     probe: Arc<ActivationControl>,
     accounting: ActivationBudget,
@@ -35,15 +36,34 @@ impl ExecutionCancellation for ExecutionControl {
     }
     fn is_cancelled(&self) -> bool {
         self.probe.stopped()
+            || (self.accounting.profile() == latent_core::BudgetProfile::Phase3
+                && self.accounting.descendant_is_cancelled())
     }
     fn reason(&self) -> Option<String> {
-        self.probe.reason()
+        self.probe.reason().or_else(|| {
+            (self.accounting.profile() == latent_core::BudgetProfile::Phase3
+                && self.accounting.descendant_is_cancelled())
+            .then(|| "activation ancestor stopped".to_owned())
+        })
     }
     fn probe(&self) -> Option<Arc<dyn ExecutionCancellationProbe>> {
-        Some(self.probe.clone())
+        if self.accounting.profile() == latent_core::BudgetProfile::Phase3 {
+            Some(Arc::new(self.clone()))
+        } else {
+            Some(self.probe.clone())
+        }
     }
     fn budget_accounting(&self) -> Option<&ActivationBudget> {
         Some(&self.accounting)
+    }
+}
+
+impl ExecutionCancellationProbe for ExecutionControl {
+    fn is_cancelled(&self) -> bool {
+        ExecutionCancellation::is_cancelled(self)
+    }
+    fn reason(&self) -> Option<String> {
+        ExecutionCancellation::reason(self)
     }
 }
 
@@ -122,7 +142,11 @@ impl Inner {
         let control = Arc::new(ActivationControl::new(
             lifecycle.registration(),
             transport.clone(),
+            budget.profile() == latent_core::BudgetProfile::Phase3,
         ));
+        if budget.profile() == latent_core::BudgetProfile::Phase3 {
+            budget.enable_descendants(permit.delegation_limits(), control.clone())?;
+        }
         let scheduled = stage(
             self.dependencies
                 .scheduler
@@ -288,7 +312,11 @@ impl Inner {
             lifecycle.incoming_deadline.as_ref(),
             self.clock.as_ref(),
         )?;
-        let budget = ActivationBudget::new(permit.effective_budget().clone());
+        let budget = ActivationBudget::with_profile(
+            permit.effective_budget().clone(),
+            permit.budget_profile(),
+        )
+        .map_err(|error| error.to_platform_error())?;
         if let Some(observer) = self.clock.deadline_diagnostic_observer() {
             observer.record_for_activation(
                 &envelope.activation_id.0,
