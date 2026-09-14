@@ -584,6 +584,13 @@ impl StandaloneNode {
                 ..LocalActivationServices::default()
             },
         )?;
+        if settings.budget_profile == latent_core::BudgetProfile::Phase3 {
+            if let Some(capabilities) = &catalogs.capabilities {
+                capabilities.install_local_services(
+                    manager.local_service_invoker(settings.admission.budget_ceiling.clone())?,
+                )?;
+            }
+        }
         Ok(Self {
             transport: None,
             audit: None,

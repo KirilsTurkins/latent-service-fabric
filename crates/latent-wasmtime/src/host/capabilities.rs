@@ -41,6 +41,20 @@ impl HostCapabilities {
         input: &[u8],
         cost: CapabilityCallCost,
     ) -> Result<Option<ProviderCall>, PlatformError> {
+        let call = self.dispatch_typed(capability, operation, resource, input, cost)?;
+        if let Some(call) = &call {
+            call.require_host_mode()?;
+        }
+        Ok(call)
+    }
+    fn dispatch_typed(
+        &self,
+        capability: &str,
+        operation: &str,
+        resource: ResourceTarget<'_>,
+        input: &[u8],
+        cost: CapabilityCallCost,
+    ) -> Result<Option<ProviderCall>, PlatformError> {
         let Some(session) = &self.session else {
             return Ok(None);
         };
@@ -51,6 +65,44 @@ impl HostCapabilities {
         let call = call?;
         closed?;
         Ok(Some(call))
+    }
+    pub(super) fn local_tenant(&self) -> Result<latent_core::TenantId, PlatformError> {
+        self.session
+            .as_ref()
+            .map(|session| session.tenant().clone())
+            .ok_or_else(super::service::denied)
+    }
+    pub(super) fn local_call(
+        &self,
+        requested: &latent_routing::InvocationTarget,
+        input: &[u8],
+        typed_bytes: usize,
+        output_bytes: usize,
+    ) -> Result<ProviderCall, PlatformError> {
+        let session = self.session.as_ref().ok_or_else(super::service::denied)?;
+        let target = session.local_invocation_target(requested)?;
+        let resource = ResourceTarget::Service {
+            service: &target.target.service.0,
+            publication: target
+                .publication
+                .as_ref()
+                .expect("compiled scoped target")
+                .as_str(),
+        };
+        let call = self
+            .dispatch_typed(
+                latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY,
+                "call",
+                resource,
+                input,
+                CapabilityCallCost::new(output_bytes).with_typed_input_bytes(typed_bytes),
+            )?
+            .ok_or_else(super::service::denied)?;
+        call.local_invocation_target(requested)?;
+        Ok(call)
+    }
+    pub(super) fn retain_lowering(&mut self, call: ProviderCall) {
+        self.lowering.push(call);
     }
     pub(super) fn log(
         &self,

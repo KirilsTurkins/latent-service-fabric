@@ -62,9 +62,13 @@ versions, partial source declarations and extra members fail closed.
 
 The selected type forms are primitives, transparent aliases, records, variants,
 enums, tuples, lists, options and results. Only HTTP `send` and service `call` use
-freestanding async imports. Guest async exports, Component Model resources,
-borrow/own handles, futures, streams, error-context, flags, maps and fixed lists
-remain rejected by semantic comparison. Syntax recognized by the engine is not
+freestanding async imports. The #209
+[local service profile](../docs/runtime/local-service-invocation.md) additionally
+selects freestanding async application exports with exact function-kind metadata
+and an installed node adapter. This application profile leaves the frozen host
+WIT unchanged. Component Model resources, borrow/own handles, futures, streams,
+error-context, flags, maps and fixed lists remain rejected by semantic comparison.
+Syntax recognized by the engine is not
 automatically an admitted capability. #205 and #212 must version any additional
 forms they select; this profile does not claim streaming HTTP delivery.
 

@@ -51,11 +51,12 @@ fn lookup_function<'a, T>(
     Some(&functions[index].1)
 }
 
-pub(crate) fn validate(
+pub(crate) fn validate_with_local_services(
     component: &Component,
     engine: &Engine,
     artifact: &CapsuleArtifact,
     config: &WasmtimeConfig,
+    local_service_available: bool,
 ) -> Result<Surface, PlatformError> {
     let component_type = component.component_type();
     let mut remaining = config.value_codec_limits.max_type_nodes;
@@ -68,6 +69,7 @@ pub(crate) fn validate(
         config,
         &mut remaining,
         &mut retained_bytes,
+        local_service_available,
     )?;
 
     let declared_exports = artifact
@@ -101,19 +103,14 @@ pub(crate) fn validate(
             take_name(name, config, &mut remaining)?;
             match item.ty {
                 ComponentItem::ComponentFunc(function) => {
-                    let value_bytes = function
-                        .params()
-                        .len()
-                        .checked_add(function.results().len())
-                        .and_then(|count| count.checked_mul(std::mem::size_of::<Type>()))
-                        .ok_or_else(exhausted)?;
-                    let entry_bytes = value_bytes
-                        .checked_add(contract.len())
-                        .and_then(|bytes| bytes.checked_add(name.len()))
-                        .and_then(|bytes| bytes.checked_add(4096))
-                        .ok_or_else(exhausted)?;
+                    let entry_bytes = retained_function_bytes(&function, contract, name)?;
                     retain(entry_bytes, &mut retained_bytes, config)?;
-                    let (params, results) = signature(&function, false, config, &mut remaining)?;
+                    let (params, results) = signature(
+                        &function,
+                        local_service_available && function.async_(),
+                        config,
+                        &mut remaining,
+                    )?;
                     let (_, index) = component
                         .get_export(Some(&interface_index), name)
                         .ok_or_else(|| incompatible("component function index is unavailable"))?;
@@ -174,6 +171,7 @@ fn validate_imports(
     config: &WasmtimeConfig,
     remaining: &mut usize,
     retained_bytes: &mut usize,
+    local_service_available: bool,
 ) -> Result<BTreeSet<String>, PlatformError> {
     let mut imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
@@ -181,7 +179,10 @@ fn validate_imports(
         let specification = latent_core::PHASE3_HOST_ABI_V2
             .interface(name)
             .ok_or_else(|| incompatible("component imports an unsupported host capability"))?;
-        if specification.binding == latent_core::HostInterfaceBinding::Provider {
+        if specification.binding == latent_core::HostInterfaceBinding::Provider
+            && !(local_service_available
+                && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
+        {
             // Recognition is data-only. The current runtime installs only the
             // built-ins below; a label or a package manifest cannot install I/O.
             return Err(incompatible(
@@ -423,4 +424,23 @@ fn exhausted() -> PlatformError {
         "component interface exceeds its configured bound",
         false,
     )
+}
+
+fn retained_function_bytes(
+    function: &ComponentFunc,
+    contract: &str,
+    name: &str,
+) -> Result<usize, PlatformError> {
+    let value_bytes = function
+        .params()
+        .len()
+        .checked_add(function.results().len())
+        .and_then(|count| count.checked_mul(std::mem::size_of::<Type>()))
+        .ok_or_else(exhausted)?;
+    let bytes = value_bytes
+        .checked_add(contract.len())
+        .and_then(|bytes| bytes.checked_add(name.len()))
+        .and_then(|bytes| bytes.checked_add(4096))
+        .ok_or_else(exhausted)?;
+    Ok(bytes)
 }

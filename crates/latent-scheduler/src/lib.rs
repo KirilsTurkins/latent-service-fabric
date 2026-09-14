@@ -154,6 +154,21 @@ pub struct PlacementDecision {
 }
 
 pub trait ActivationScheduler: Send + Sync {
+    /// One bounded dispatch attempt with normal admission and queue ordering.
+    /// Descendants use this while ancestors retain cells: no waiter may remain
+    /// after rejection. Schedulers without that guarantee fail closed.
+    fn try_enqueue(
+        &self,
+        _request: AdmittedSchedulingRequest,
+    ) -> Result<ScheduledActivation, PlatformError> {
+        Err(PlatformError {
+            code: latent_core::PlatformErrorCode::Unavailable,
+            message: "immediate scheduling is unavailable".to_owned(),
+            retryable: false,
+            details: Vec::new(),
+        })
+    }
+
     fn enqueue(
         &self,
         request: AdmittedSchedulingRequest,

@@ -19,6 +19,8 @@ use wasmtime::component::{Component, InstancePre, Linker};
 use wasmtime::Engine;
 
 pub(super) struct PreparationContext {
+    pub(super) capabilities:
+        Option<std::sync::Weak<latent_capabilities::broker::ActivationCapabilityRuntime>>,
     pub(super) native_aot: Option<Arc<crate::aot::cache::NativeAotService>>,
     pub(super) runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
     pub(super) admission: Option<Arc<dyn AdmissionAuthority>>,
@@ -94,6 +96,18 @@ impl PreparationContext {
                 false,
             )
         })?;
+        if let Some(invoker) = self.local_services() {
+            crate::host::service::install(&mut linker, invoker).map_err(|error| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    &format!(
+                        "failed to bind local service import: {}",
+                        bounded_error(&error)
+                    ),
+                    false,
+                )
+            })?;
+        }
         let pre = linker.instantiate_pre(component).map_err(|error| {
             platform_error(
                 PlatformErrorCode::IncompatibleContract,
@@ -105,6 +119,11 @@ impl PreparationContext {
             )
         })?;
         Ok(pre)
+    }
+    pub(super) fn local_services(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::LocalServiceInvoker>> {
+        self.capabilities.as_ref()?.upgrade()?.local_services().ok()
     }
 
     pub(super) fn validate_key(

@@ -16,6 +16,7 @@ pub(crate) struct InvocationAccounting {
     deadline: EffectiveDeadline,
     initial_fuel: u64,
     last_remaining_fuel: u64,
+    observed_native_fuel: u64,
     confirmed_peak_memory: u64,
 }
 
@@ -94,6 +95,7 @@ impl InvocationAccounting {
             deadline,
             initial_fuel,
             last_remaining_fuel: initial_fuel,
+            observed_native_fuel: 0,
             confirmed_peak_memory: 0,
         })
     }
@@ -106,6 +108,16 @@ impl InvocationAccounting {
     }
     pub(crate) fn initial_fuel(&self) -> u64 {
         self.initial_fuel
+    }
+    /// A native counter adjustment after child delegation is not guest work.
+    /// Call only after observing the previous counter and successfully setting
+    /// the Store counter to the original ledger's current remaining capacity.
+    pub(crate) fn reset_fuel_watermark(&mut self, remaining: u64) {
+        self.last_remaining_fuel = remaining;
+    }
+    pub(crate) fn native_fuel_consumed(&self, remaining: u64) -> u64 {
+        self.observed_native_fuel
+            .saturating_add(self.last_remaining_fuel.saturating_sub(remaining))
     }
 
     /// Call at store-aware host checkpoints and once after execution. Memory
@@ -134,6 +146,7 @@ impl InvocationAccounting {
         // Both ledger dimensions commit together. Failed observations leave
         // both watermarks unchanged, so a valid retry charges exactly once.
         self.last_remaining_fuel = remaining_fuel;
+        self.observed_native_fuel += fuel;
         self.confirmed_peak_memory = self.confirmed_peak_memory.max(confirmed_peak_memory);
         Ok(())
     }

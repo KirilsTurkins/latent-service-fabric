@@ -5,7 +5,10 @@ impl ActivationBudget {
     pub(super) fn reserve_child_memory(&self, bytes: u64) -> Result<(), BudgetError> {
         let mut state = self.lock_state();
         Self::ensure_mutable(&state)?;
-        let occupied = state.own_memory_peak + state.child_reserved_memory;
+        let occupied = state
+            .own_memory_peak
+            .max(state.pending_runtime_memory.unwrap_or(0))
+            + state.child_reserved_memory;
         let limit = self.granted().memory_bytes;
         if bytes > limit - occupied {
             return Err(BudgetError::Exhausted {
@@ -24,7 +27,9 @@ impl ActivationBudget {
         bytes: u64,
     ) -> Result<(), BudgetError> {
         let limit = self.granted().memory_bytes;
-        if bytes > limit.saturating_sub(state.child_reserved_memory) {
+        if bytes.max(state.pending_runtime_memory.unwrap_or(0))
+            > limit.saturating_sub(state.child_reserved_memory)
+        {
             return Err(BudgetError::Exhausted {
                 dimension: BudgetDimension::MemoryBytes,
                 limit,

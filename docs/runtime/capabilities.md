@@ -1,12 +1,14 @@
 # Activation-scoped capabilities
 
-The generic Wasmtime backend implements four imports: `latent:context/context`,
+The generic Wasmtime backend supplies four built-in imports: `latent:context/context`,
 `latent:log/log`, `latent:clock/monotonic`, and `latent:clock/wall`, all at version
 `0.1.0`. They are explicit Component Model imports supplied to a fresh store for
 each activation. Preparation verifies the component's declared surface, and an
 invocation must bind exactly its prepared imports. No WASI filesystem,
 environment, network, process, or other ambient authority is installed. The
-remaining platform capability packages are contracts for later implementation.
+configured [local service adapter](local-service-invocation.md) additionally
+implements canonical async `latent:service/invoke@0.1.0`. Other platform
+capability packages remain contracts for subsequent implementation.
 Completion of [Phase 2](../phase-2-completion.md) adds package delivery,
 currentness, native caching and rollout control; it does not expand this guest
 import set. The [Phase 3 backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
@@ -14,8 +16,10 @@ now includes the delivered [versioned host ABI profile](host-abi-profile.md).
 Package inspection recognizes its exact provider contracts and selected async
 imports, while preparation rejects providers without installed owners. The [sealed activation broker](capability-broker.md) now implements session,
 handle and call ownership and can gate the four built-in imports in explicit
-managed embeddings. General providers, standalone plan compilation and
-application hosting remain in progress.
+managed embeddings. [Exact plan compilation](capability-bindings.md) and
+conserved [descendant budgets](descendant-budgets.md) support local child calls.
+Other providers, standalone provider management and application hosting remain
+in progress.
 
 The [bounded asynchronous I/O substrate](async-host-io.md) now adds affine queue,
 buffer and stream ownership on the existing runtime. Cancellation retains charges

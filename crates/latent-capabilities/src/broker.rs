@@ -11,8 +11,10 @@ use latent_core::{ActivationClock, PlatformError, PlatformErrorCode};
 use latent_policy::capability::PolicyStore;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
+mod invocation;
 pub mod io;
 mod limits;
+mod local_service;
 mod ownership;
 mod plan;
 pub mod pools;
@@ -22,7 +24,13 @@ mod session;
 mod waiting;
 mod work;
 
+pub use invocation::{
+    InvocationBindingTarget, LOCAL_SERVICE_INVOCATION_PROFILE, SERVICE_INVOCATION_CAPABILITY,
+};
 pub use limits::{CapabilityBrokerLimits, CapabilityBrokerSnapshot};
+pub use local_service::{
+    LocalServiceCompletion, LocalServiceInvocation, LocalServiceInvoker, LocalServiceRequest,
+};
 pub use plan::{
     CapabilityBindingSpec, CapabilityPlanSource, CapabilityRouteFence, CompiledCapabilityPlan,
 };

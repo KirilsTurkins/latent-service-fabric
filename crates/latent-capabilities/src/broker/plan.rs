@@ -23,6 +23,7 @@ pub(super) struct Binding {
     pub policies: PolicySnapshot,
     pub deployment: GrantRestriction,
     pub local_target: Option<ResolvedRevision>,
+    pub invocation_target: Option<super::InvocationBindingTarget>,
 }
 pub(super) struct Target {
     pub tenant: TenantId,
@@ -82,6 +83,23 @@ impl CompiledCapabilityPlan {
             dependency.check_for_catalog(&self.owner.catalog)?;
         }
         Ok(())
+    }
+    pub(super) fn dependencies_for(&self, binding: usize) -> &[ReleaseUseEligibility] {
+        let binding = &self.bindings[binding];
+        let target = binding.local_target.as_ref().or_else(|| {
+            binding
+                .invocation_target
+                .as_ref()
+                .map(|target| &target.revision)
+        });
+        match target.and_then(|target| {
+            self.dependencies
+                .iter()
+                .find(|dependency| target.publication.as_ref() == Some(dependency.publication()))
+        }) {
+            Some(dependency) => std::slice::from_ref(dependency),
+            None => &[],
+        }
     }
     pub(super) fn check_current(&self) -> Result<(), PlatformError> {
         self.publication.check_for_catalog(&self.owner.catalog)?;
@@ -177,13 +195,48 @@ impl ActivationCapabilityBroker {
         route_fence: Option<Arc<dyn CapabilityRouteFence>>,
         deadline: Instant,
     ) -> Result<Arc<CompiledCapabilityPlan>, PlatformError> {
+        self.compile_invocation_plan(
+            revision,
+            imports,
+            publication,
+            dependencies,
+            local_targets,
+            &[],
+            route_fence,
+            deadline,
+        )
+    }
+
+    /// Adds the explicit local service adapter profile. Each imported service
+    /// dispatcher selects one checked application target; it never falls back
+    /// to arbitrary catalog lookup or direct interface substitution.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "separate bounded ABI, publication and route compiler inputs"
+    )]
+    pub fn compile_invocation_plan(
+        &self,
+        revision: &ResolvedRevision,
+        imports: &[CapabilityBindingSpec<'_>],
+        publication: &ReleaseUseEligibility,
+        dependencies: &[ReleaseUseEligibility],
+        local_targets: &[ResolvedRevision],
+        invocation_targets: &[super::InvocationBindingTarget],
+        route_fence: Option<Arc<dyn CapabilityRouteFence>>,
+        deadline: Instant,
+    ) -> Result<Arc<CompiledCapabilityPlan>, PlatformError> {
         let live = self.inner.live.try_read().map_err(|_| busy())?;
         if !*live {
             return Err(denied());
         }
         if imports.len() > 11
             || dependencies.len() > 11
-            || local_targets.len() > imports.len()
+            || local_targets.len() + invocation_targets.len() > imports.len()
+            || invocation_targets.len() > 1
+            || (!invocation_targets.is_empty()
+                && local_targets
+                    .iter()
+                    .any(|target| target.target.contract.0 == super::SERVICE_INVOCATION_CAPABILITY))
             || (!dependencies.is_empty() && route_fence.is_none())
             || revision.route_generation.0 == 0
             || !token(&revision.revision.0)
@@ -198,8 +251,20 @@ impl ActivationCapabilityBroker {
         publication.check_for_catalog(&self.inner.catalog)?;
         for dependency in dependencies {
             dependency.check_for_catalog(&self.inner.catalog)?;
-            dependency.authorize_tenant(&revision.target.tenant)?;
+            if !invocation_targets
+                .iter()
+                .any(|target| target.permits_dependency(dependency))
+            {
+                dependency.authorize_tenant(&revision.target.tenant)?;
+            }
         }
+        super::invocation::validate_targets(
+            revision,
+            imports,
+            dependencies,
+            invocation_targets,
+            route_fence.is_some(),
+        )?;
         validate_local_targets(
             revision,
             imports,
@@ -214,7 +279,12 @@ impl ActivationCapabilityBroker {
             ));
         }
         let slot = self.inner.counters.acquire(Kind::Plan, 1)?;
-        let bytes = metadata_bytes(&self.inner, imports, dependencies, local_targets.len())?;
+        let bytes = metadata_bytes(
+            &self.inner,
+            imports,
+            dependencies,
+            local_targets.len() + invocation_targets.len() * 2,
+        )?;
         let metadata = self.inner.counters.acquire(Kind::Metadata, bytes)?;
         let mut bindings: Vec<Binding> = Vec::with_capacity(imports.len());
         for import in imports {
@@ -227,34 +297,20 @@ impl ActivationCapabilityBroker {
             {
                 return Err(denied());
             }
-            let imported = GrantRestriction {
-                operations: import.imported_operations.to_vec(),
-                resources: None,
-                ceiling: None,
-            };
-            imported.validate(&provider.capability)?;
-            let deployment =
-                GrantRestriction::parse(import.deployment_restriction_json, &provider.capability)?;
-            let policies = self.inner.policies.snapshot(
-                &revision.target.tenant,
-                import.policy_ids,
-                import.provider_binding_id,
-                deadline,
-            )?;
-            policies.check_provider_configuration(
-                &provider.capability,
-                &provider.profile,
-                &provider.digest,
-                provider.epoch,
-            )?;
+            let (operations, policies, deployment) =
+                binding_authority(&self.inner, import, &revision.target.tenant, deadline)?;
             bindings.push(Binding {
                 provider: Arc::clone(provider),
-                operations: imported.operations,
+                operations,
                 policies,
                 deployment,
                 local_target: local_targets
                     .iter()
                     .find(|t| t.target.contract.0 == provider.capability)
+                    .cloned(),
+                invocation_target: invocation_targets
+                    .iter()
+                    .find(|_| provider.capability == super::SERVICE_INVOCATION_CAPABILITY)
                     .cloned(),
             });
         }
@@ -352,4 +408,34 @@ fn metadata_bytes(
             .ok_or_else(super::capacity)?;
     }
     Ok(bytes)
+}
+
+fn binding_authority(
+    owner: &Inner,
+    import: &CapabilityBindingSpec<'_>,
+    tenant: &TenantId,
+    deadline: Instant,
+) -> Result<(Vec<String>, PolicySnapshot, GrantRestriction), PlatformError> {
+    let provider = &import.provider.entry;
+    let imported = GrantRestriction {
+        operations: import.imported_operations.to_vec(),
+        resources: None,
+        ceiling: None,
+    };
+    imported.validate(&provider.capability)?;
+    let deployment =
+        GrantRestriction::parse(import.deployment_restriction_json, &provider.capability)?;
+    let policies = owner.policies.snapshot(
+        tenant,
+        import.policy_ids,
+        import.provider_binding_id,
+        deadline,
+    )?;
+    policies.check_provider_configuration(
+        &provider.capability,
+        &provider.profile,
+        &provider.digest,
+        provider.epoch,
+    )?;
+    Ok((imported.operations, policies, deployment))
 }

@@ -161,7 +161,11 @@ fn validate_function(
     types: &mut types::Budget,
     limits: SemanticLimits,
 ) -> Result<(), PlatformError> {
-    if actual.kind != FunctionKind::Freestanding || described.asynchronous {
+    if !matches!(
+        actual.kind,
+        FunctionKind::Freestanding | FunctionKind::AsyncFreestanding
+    ) || described.asynchronous != (actual.kind == FunctionKind::AsyncFreestanding)
+    {
         return Err(incompatible("unsupported-contract-function-kind"));
     }
     if actual.name != described.name

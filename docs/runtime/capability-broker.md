@@ -135,7 +135,9 @@ The [bounded asynchronous I/O substrate](async-host-io.md) adds queue ownership,
 fixed-capacity buffers, stream backpressure and waiting/cleanup observations.
 Its canonical async guest tests use a test-only provider. The [shared provider
 pools](provider-pools.md) add immutable configuration epochs, fair queues,
-connection reuse and bounded worker/cleanup ownership. Production plan
-compilation and concrete external providers remain their subsequent Phase 3 tickets. This
+connection reuse and bounded worker/cleanup ownership. The delivered
+[plan compiler](capability-bindings.md) and [local service adapter](local-service-invocation.md)
+support fresh child activations with exact publication authority. Concrete
+external providers remain their subsequent Phase 3 tickets. This
 boundary does not claim hostile multitenant qualification, durable outboxes,
 transactions or universal exactly-once external effects.

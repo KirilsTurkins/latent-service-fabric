@@ -21,12 +21,13 @@ error and compatibility contract.
 | `latent:events/publisher@0.2.0` | supported | unavailable, #217 |
 | `latent:http/client@0.2.0` | supported, async import | unavailable, #211 |
 | `latent:telemetry/custom@0.1.0` | supported | unavailable, #220 |
-| `latent:service/invoke@0.1.0` | supported, async import | unavailable, #209 |
+| `latent:service/invoke@0.1.0` | supported, async import | configured [isolated local adapter](local-service-invocation.md) |
 
 An inspected package has no provider authority. Wasmtime preparation rejects a
 required provider that has no installed owner. The generated Phase 3 host/guest
-bindings contain types and registration helpers; the production linker still
-installs only context, log and clock. Activations must supply their exact prepared
+bindings contain types and registration helpers; the production linker supplies
+context, log and clock, plus service invocation when its node-owned adapter is
+installed. Activations must supply their exact prepared
 imports and pass current eligibility/descriptor checks.
 
 The complete source interface must match authoritative WIT. A compiler may prune
@@ -54,8 +55,12 @@ imports may eventually use a cooperative async host bridge. Neither form makes
 waiting activations free: stores, cells, handles, buffers and reservations stay
 owned until completion or affirmative cleanup.
 
-Component Model resources, futures, streams, async guest exports, flags, maps,
-fixed lists and error-context remain rejected. Blob handles are opaque numeric
+The local service profile additionally selects freestanding async application
+exports so callers can wait for the canonical async import. Exact source, binary
+and contract metadata must agree, and production preparation requires the local
+adapter. The frozen host WIT and digest remain unchanged. Component Model
+resources, futures, streams, flags, maps, fixed lists and error-context remain
+rejected. Blob handles are opaque numeric
 activation tokens; #204 owns their sealed lifecycle before a provider can be
 installed. State and timer remain later-phase contracts. Streaming HTTP requires
 an explicit subsequent ABI extension in #205/#212.

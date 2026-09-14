@@ -12,6 +12,7 @@ mod descendants;
 mod incoming;
 mod profile;
 mod reservation_group;
+mod runtime_memory;
 mod runtime_usage;
 pub use descendants::{
     BudgetCancellationProbe, ChildBudgetDelegation, ChildBudgetOwner, DelegationLimits,
@@ -19,6 +20,7 @@ pub use descendants::{
 };
 pub use profile::BudgetProfile;
 pub use reservation_group::BudgetReservationGroup;
+pub use runtime_memory::RuntimeMemoryReservation;
 
 pub use incoming::IncomingDeadline;
 
@@ -763,6 +765,7 @@ struct AccountingState {
     finalized: Option<BudgetFinalization>,
     outstanding_reservations: u64,
     own_memory_peak: u64,
+    pending_runtime_memory: Option<u64>,
     child_reserved_memory: u64,
     child_observed_memory: u64,
     child_consumption: BudgetConsumption,
@@ -924,7 +927,10 @@ impl ActivationBudget {
         }
         let mut snapshot = state.consumption.clone();
         if self.profile() == BudgetProfile::Phase3 {
-            snapshot.peak_memory_bytes = state.own_memory_peak + state.child_reserved_memory;
+            snapshot.peak_memory_bytes = state
+                .own_memory_peak
+                .max(state.pending_runtime_memory.unwrap_or(0))
+                + state.child_reserved_memory;
         }
         snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
             now.saturating_duration_since(self.inner.started_at),
@@ -1044,9 +1050,12 @@ impl ActivationBudget {
             Self::committed_consumption(&state)
         };
         if phase3 {
-            consumption.peak_memory_bytes = consumption
-                .peak_memory_bytes
-                .max(state.own_memory_peak + state.child_reserved_memory);
+            consumption.peak_memory_bytes = consumption.peak_memory_bytes.max(
+                state
+                    .own_memory_peak
+                    .max(state.pending_runtime_memory.unwrap_or(0))
+                    + state.child_reserved_memory,
+            );
         }
         consumption.wall_time_micros =
             duration_micros(now.saturating_duration_since(self.inner.started_at));

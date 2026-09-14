@@ -173,7 +173,6 @@ fn retained_host_imports_reject_changed_or_unknown_functions_and_types() {
 #[test]
 fn unsupported_shapes_are_rejected_even_when_both_inputs_match() {
     for source in [
-        "package example:shape@1.0.0; interface api { run: async func() -> u32; } world service { export api; }",
         "package example:shape@1.0.0; interface api { run: func(value: future<u32>); } world service { export api; }",
         "package example:shape@1.0.0; interface api { run: func(value: stream<u8>); } world service { export api; }",
         "package example:shape@1.0.0; interface api { flags options { one, two } record item { access: options } run: func(value: item); } world service { export api; }",
@@ -182,6 +181,21 @@ fn unsupported_shapes_are_rejected_even_when_both_inputs_match() {
         "package example:shape@1.0.0; interface api { type count = u32; } world service { export api; }",
     ] {
         assert!(compares(source, source, SemanticLimits::default()).is_err());
+    }
+}
+
+#[test]
+fn selected_async_application_exports_keep_exact_function_kind_and_bounded_values() {
+    let asynchronous = "package example:shape@1.0.0; interface api { run: async func() -> u32; } world service { export api; }";
+    let synchronous = asynchronous.replace("async func", "func");
+    assert!(compares(asynchronous, asynchronous, SemanticLimits::default()).is_ok());
+    assert!(compares(asynchronous, &synchronous, SemanticLimits::default()).is_err());
+    assert!(compares(&synchronous, asynchronous, SemanticLimits::default()).is_err());
+    for source in [
+        asynchronous.replace("u32", "future<u32>"),
+        asynchronous.replace("u32", "stream<u8>"),
+    ] {
+        assert!(compares(&source, &source, SemanticLimits::default()).is_err());
     }
 }
 
