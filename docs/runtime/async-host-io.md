@@ -6,8 +6,8 @@ configured `IoRuntime` provides finite admission, byte accounting and streams on
 the caller's existing runtime. It creates no executor, thread, socket, worker,
 retry loop or service-specific resource. Dormant deployments own none of these
 leases. The [shared provider registry and pools](provider-pools.md) build on this
-ownership. [Buffered HTTP](outbound-http.md), [streaming HTTP](streaming-http.md)
-and [local blobs](local-blobs.md) install concrete adapters on this substrate; the other providers are tracked
+ownership. [Buffered HTTP](outbound-http.md), [streaming HTTP](streaming-http.md),
+[local blobs](local-blobs.md) and [local secrets](local-secrets.md) install concrete adapters on this substrate; the other providers are tracked
 separately. Declaring an import does not install a provider.
 
 ## Admission and the original activation owner

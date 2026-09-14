@@ -126,6 +126,15 @@ impl PreparationContext {
                 )
             })?;
         }
+        if let Some(invoker) = self.secrets() {
+            crate::host::secrets::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind secret import",
+                    false,
+                )
+            })?;
+        }
         if let Some(invoker) = self.blobs() {
             crate::host::blob::install(&mut linker, invoker).map_err(|_| {
                 platform_error(
@@ -146,6 +155,11 @@ impl PreparationContext {
             )
         })?;
         Ok(pre)
+    }
+    pub(super) fn secrets(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::secrets::SecretInvoker>> {
+        self.capabilities.as_ref()?.upgrade()?.secrets().ok()
     }
     pub(super) fn blobs(&self) -> Option<Arc<dyn latent_capabilities::broker::blob::BlobInvoker>> {
         self.capabilities.as_ref()?.upgrade()?.blobs().ok()

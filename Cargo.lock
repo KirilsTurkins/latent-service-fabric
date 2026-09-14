@@ -1680,6 +1680,7 @@ dependencies = [
  "latent-manifest",
  "latent-policy",
  "latent-routing",
+ "latent-secrets",
  "rcgen",
  "rustls",
  "serde",
@@ -1827,6 +1828,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-protected-files"
+version = "0.1.0-alpha.3"
+dependencies = [
+ "latent-core",
+ "rustix",
+ "tempfile",
+ "zeroize",
+]
+
+[[package]]
 name = "latent-rollout"
 version = "0.1.0-alpha.3"
 dependencies = [
@@ -1882,6 +1893,23 @@ name = "latent-sdk"
 version = "0.1.0-alpha.3"
 dependencies = [
  "latent-core",
+]
+
+[[package]]
+name = "latent-secrets"
+version = "0.1.0-alpha.3"
+dependencies = [
+ "latent-capabilities",
+ "latent-core",
+ "latent-policy",
+ "latent-protected-files",
+ "rustix",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "tokio",
+ "zeroize",
 ]
 
 [[package]]
@@ -1985,6 +2013,7 @@ dependencies = [
  "latent-policy",
  "latent-routing",
  "latent-scheduler",
+ "latent-secrets",
  "latent-telemetry",
  "libc",
  "memmap2",
@@ -2068,6 +2097,7 @@ dependencies = [
  "latent-node",
  "latent-optimization-workloads",
  "latent-policy",
+ "latent-protected-files",
  "latent-rollout",
  "latent-routing",
  "latent-scheduler",

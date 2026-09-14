@@ -157,3 +157,8 @@ producer/consumer windows, truncation, encoding rejection, deadline/cancellation
 and actual connection reuse. A 256-deployment dormant cohort leaves provider,
 I/O and broker ownership counters unchanged and creates no activation Store.
 No 100k execution or throughput claim is made.
+
+The streaming provider also supports `install_with_secret_references` for
+[opaque local credentials](local-secrets.md). It checks the exact tenant,
+provider and origin and resolves current material before writing request
+headers. The credential is unavailable through guest secret reads or overrides.

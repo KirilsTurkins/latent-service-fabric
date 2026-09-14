@@ -79,6 +79,16 @@ impl ProviderPools {
             return Err(denied());
         }
         call.io.checkpoint()?;
+        self.control_blocking(move || work(call))
+    }
+    /// Trusted operator work (for example, protected secret reloads) uses the
+    /// same finite node worker slots. This is not guest capability authority.
+    /// The closure must own prepaid buffers and its actual filesystem work;
+    /// abandoning the result waiter never refunds a running physical worker.
+    pub fn control_blocking<T: Send + 'static>(
+        &self,
+        work: impl FnOnce() -> T + Send + 'static,
+    ) -> Result<ProviderJob<T>, PlatformError> {
         let mut tasks = self.inner.control.tasks.try_lock().map_err(|_| busy())?;
         self.inner.check()?;
         let slot = tasks
@@ -93,7 +103,7 @@ impl ProviderPools {
         let (send, result) = oneshot::channel();
         tasks[slot] = Some(self.inner.control.handle.spawn_blocking(move || {
             let _charge = charge;
-            let value = work(call);
+            let value = work();
             // A dropped result waiter destroys actual returned owners here.
             let _ = send.send(value);
         }));

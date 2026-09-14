@@ -62,7 +62,8 @@ files or ancestors.
 Regression fixtures explicitly protect their credential paths. Tests cover named
 user ACLs on files and ancestors as well as modes, links, bounded reads and
 descriptor replacement. A separate opt-in test,
-`config::protected_file::tests::unexpected_file_and_directory_owners_are_rejected`,
+`tests::unexpected_file_and_directory_owners_are_rejected` in the
+`latent-protected-files` crate,
 requires root inside a disposable Linux environment and creates only temporary
 `/tmp` fixtures. It changes file and directory owners to a third UID and verifies
 rejection. Run that exact built libtest with `--exact --ignored --test-threads=1`;

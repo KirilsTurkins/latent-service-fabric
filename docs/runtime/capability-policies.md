@@ -92,14 +92,16 @@ stage. Omitted required fields always reject.
 
 Provider binding metadata pins a separately installed profile, configuration
 digest and positive epoch. The evaluator requires an exact current match; these
-fields do not install a destination or transfer credentials.
+fields do not install a destination or transfer credentials. The example names
+the implemented [local secret profile](local-secrets.md); its digest is illustrative
+and must be replaced with the installed provider's actual configuration digest.
 
 ```json
 {
   "formatVersion": 1,
   "tenant": "acme",
   "capability": "latent:secrets/reader@0.1.0",
-  "providerProfile": "local-secrets-v1",
+  "providerProfile": "protected-local-secrets-v1",
   "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
   "configurationEpoch": 1,
   "restriction": {"operations": []}

@@ -17,7 +17,7 @@ web and SDK work without claiming it has shipped.
 | `latent:random` | Declared; budgeted cryptographic randomness is Phase 3. |
 | `latent:blob` | Implemented configured Linux [immutable blobs](runtime/local-blobs.md) at 0.2.0; S3 remains Phase 3 work. |
 | `latent:http` | Implemented configured [buffered](runtime/outbound-http.md) and [streaming](runtime/streaming-http.md) providers. |
-| `latent:secrets` | Declared; protected local/Vault references and rotation are Phase 3. |
+| `latent:secrets` | Implemented configured [protected local references](runtime/local-secrets.md), rotation and opaque credentials; Vault remains Phase 3 work. |
 | `latent:telemetry` | Declared; guest custom metrics with cardinality policy are Phase 3. |
 | `latent:service` | Implemented configured [local invocation](runtime/local-service-invocation.md) with conserved descendant budgets. |
 | `latent:events` | Declared; real provider publication is Phase 3, while transactional durable event intents require Phase 4. |
@@ -32,7 +32,7 @@ guest derives its canonical ABI exports from the same authoritative WIT.
 The generic backend accepts components without imports and the four supported
 [activation interfaces](runtime/capabilities.md): context, log, monotonic clock
 and wall clock. Configured broker adapters add local service calls, outbound HTTP
-and local blobs through the [current host profile](runtime/host-abi-profile.md).
+and local blobs/secrets through the [current host profile](runtime/host-abi-profile.md).
 Uninstalled provider imports fail explicitly. Dynamic exports use the
 [canonical WIT value protocol](protocol/wit-values.md). Phase 3 must preserve
 exact versioned ABI identity and actual host-profile compatibility when adding
@@ -118,8 +118,10 @@ separate facts.
 | `latent-wasmtime` | Generic component factory/backend, bounded value/host policy, fresh stores, cleanup proof and prepared-cache ownership. Opt-in `IsolatedAotCompiler`, `TrustedAotOutput`, `NativeAotSettings`, `NativeImageLimits`, `with_catalog_and_aot` and aggregate native usage. |
 | `latent-node` | `LocalActivationManager`, immediate-ID handles, scoped cancel/status, bounded journal, transport cleanup interruption and inventory seams. |
 | `latent-wire` | Invocation/management adapters, trusted principal/trace boundaries, finite request conversion and response services. Audit, deployment and rollout response leases remain attached through body/frame ownership. |
-| `latent-capabilities` | Sealed activation plans/sessions, policy/audit dispatch, affine I/O and shared provider pools. Configured local-service and HTTP ports require exact current grants. |
+| `latent-capabilities` | Sealed activation plans/sessions, policy/audit dispatch, affine I/O and shared provider pools. Configured service, HTTP, blob and secret ports require exact current grants. |
 | `latent-http` | `HttpProvider`, bounded destination/DNS/TLS/header configuration and buffered async HTTP; [profile and composition](runtime/outbound-http.md). |
+| `latent-secrets` | `LocalSecretStore`, `LocalSecretProvider`, finite protected reloads, per-use raw read authorization and opaque provider credential bindings. |
+| `latent-protected-files` | Shared bootstrap file policy and strict descriptor-anchored secret roots. |
 | `latent-testkit` | Deterministic async/process/resource helpers and invariant/conformance probes. |
 
 Repository preparation returns the pinned runtime and its declared imports

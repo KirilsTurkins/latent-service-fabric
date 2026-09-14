@@ -14,6 +14,7 @@ pub struct ActivationCapabilityRuntime {
     streaming_http: OnceLock<Arc<dyn super::streaming_http::StreamingHttpInvoker>>,
     http: OnceLock<Arc<dyn super::http::OutboundHttpInvoker>>,
     blobs: OnceLock<Arc<dyn super::blob::BlobInvoker>>,
+    secrets: OnceLock<Arc<dyn super::secrets::SecretInvoker>>,
 }
 impl ActivationCapabilityRuntime {
     #[must_use]
@@ -28,6 +29,7 @@ impl ActivationCapabilityRuntime {
             http: OnceLock::new(),
             streaming_http: OnceLock::new(),
             blobs: OnceLock::new(),
+            secrets: OnceLock::new(),
         }
     }
     #[must_use]
@@ -70,6 +72,15 @@ impl ActivationCapabilityRuntime {
             return Err(denied());
         }
         Ok(())
+    }
+    pub fn install_secrets(
+        &self,
+        invoker: Arc<dyn super::secrets::SecretInvoker>,
+    ) -> Result<(), PlatformError> {
+        self.secrets.set(invoker).map_err(|_| denied())
+    }
+    pub fn secrets(&self) -> Result<Arc<dyn super::secrets::SecretInvoker>, PlatformError> {
+        self.secrets.get().cloned().ok_or_else(denied)
     }
     pub fn install_blobs(
         &self,

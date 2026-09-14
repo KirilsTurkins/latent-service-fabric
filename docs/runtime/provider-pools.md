@@ -11,8 +11,9 @@ with no service-specific runtime, thread, listener, retry loop or timer.
 This is the common provider infrastructure. The [exact binding compiler](capability-bindings.md)
 publishes configured plans with the deployment catalog. Concrete production
 configuration remains part of each provider adapter.
-The [buffered HTTP adapter](outbound-http.md) now uses these owners. Blob,
-secrets and event protocol adapters remain their separate Phase 3 tickets. Ordinary standalone startup still exposes its existing built-in imports;
+The [buffered HTTP](outbound-http.md), [streaming HTTP](streaming-http.md),
+[local blob](local-blobs.md) and [local secret](local-secrets.md) adapters use these
+owners. S3, Vault and event protocol adapters retain their separate Phase 3 tickets. Ordinary standalone startup still exposes its existing built-in imports;
 declaring a capability does not construct a client or enable an external provider.
 
 ## Installation and immutable epochs
@@ -146,3 +147,14 @@ panic, and a real blocking job whose dropped waiter cannot refund it. Tests also
 check that cleanup progresses when ordinary workers are saturated and shutdown
 waits for actual joins. These are bounded conformance tests, not a load campaign
 or a claim of hostile multitenant qualification.
+
+## Protected secret reloads
+
+`control_blocking` schedules explicit trusted operator work on the same finite
+worker slots and retains actual work charges when a waiter is abandoned. It does
+not construct guest authority. Local secret reloads prepay candidate material,
+source buffers and metadata before using this path. Raw guest reads reuse cached
+material through normal policy/audit admission and keep their canonical copy
+charged until Store destruction. HTTP opaque credential bindings resolve current
+material at request construction, independently of the reusable socket's origin
+authority. See [protected local secrets](local-secrets.md) for expiry and rotation.

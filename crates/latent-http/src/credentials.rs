@@ -8,6 +8,82 @@ pub struct HttpCredential<'a> {
     pub name: &'a str,
     pub value: &'a str,
 }
+/// An explicit operator binding. It cannot be named or read through guest HTTP
+/// arguments, and the transport verifies its tenant and exact destination.
+pub struct HttpCredentialReference {
+    pub destination: usize,
+    pub name: String,
+    pub binding: std::sync::Arc<dyn latent_capabilities::broker::secrets::ProviderCredential>,
+}
+pub(crate) enum CredentialInput<'a, 'b> {
+    Inline(&'a [HttpCredential<'b>]),
+    References(Vec<HttpCredentialReference>),
+}
+pub(crate) fn hash_references(
+    hash: &mut HashWriter,
+    references: &[HttpCredentialReference],
+) -> Result<(), HttpError> {
+    if !references.is_empty() {
+        hash.0.update(b"opaque-header-bindings-v1\0");
+        for entry in references {
+            serde_json::to_writer(
+                &mut *hash,
+                &(
+                    entry.destination,
+                    &entry.name,
+                    &entry.binding.scope().tenant.0,
+                    entry.binding.reference(),
+                ),
+            )
+            .map_err(|_| HttpError::InvalidRequest)?;
+        }
+    }
+    Ok(())
+}
+pub(crate) fn validate_references(
+    input: &[HttpCredentialReference],
+    logical_id: &str,
+    config: &crate::HttpProviderConfig,
+) -> Result<(), HttpError> {
+    if input.len() > 16 {
+        return Err(HttpError::InvalidRequest);
+    }
+    for (index, entry) in input.iter().enumerate() {
+        let destination = config
+            .destinations
+            .get(entry.destination)
+            .ok_or(HttpError::InvalidRequest)?;
+        let scope = entry.binding.scope();
+        if entry.name.capacity() > 64
+            || scope.provider_id != logical_id
+            || scope.origin != destination.origin
+            || scope.tenant.0.is_empty()
+            || scope.tenant.0.len() > 128
+            || entry.binding.reference().is_empty()
+            || entry.binding.reference().len() > 256
+            || input[..index]
+                .iter()
+                .any(|e| e.destination == entry.destination)
+            || destination
+                .allowed_request_headers
+                .iter()
+                .any(|h| h.eq_ignore_ascii_case(&entry.name))
+        {
+            return Err(HttpError::InvalidRequest);
+        }
+        // Reuse the static credential header grammar without resolving material
+        // or hashing a secret during provider installation.
+        encode(
+            &[HttpCredential {
+                destination: entry.destination,
+                name: &entry.name,
+                value: "validated-reference",
+            }],
+            config.destinations.len(),
+        )?;
+    }
+    Ok(())
+}
 pub(crate) fn encode(
     input: &[HttpCredential<'_>],
     destinations: usize,

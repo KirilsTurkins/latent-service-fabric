@@ -14,6 +14,7 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 mod audit;
 pub mod blob;
 pub mod diagnostics;
+pub mod secrets;
 pub use audit::{reconcile_capability_audit, CapabilityAuditDurability, CapabilityRequestDigest};
 pub mod http;
 mod invocation;
