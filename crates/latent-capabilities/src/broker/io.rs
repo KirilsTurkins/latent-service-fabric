@@ -440,6 +440,36 @@ impl Drop for IoReady {
 pub struct IoCall {
     operation: Arc<Operation>,
 }
+/// Cancellable response ownership for a separately charged physical worker.
+/// Dropping a pending waiter requests stop; it never aborts/refunds that worker.
+pub struct IoJobWaiter {
+    operation: Arc<Operation>,
+    completed: bool,
+}
+impl IoJobWaiter {
+    pub async fn wait<F: std::future::Future>(
+        mut self,
+        future: F,
+    ) -> Result<F::Output, PlatformError> {
+        self.operation.check()?;
+        self.operation.waiting.fetch_add(1, Ordering::AcqRel);
+        let _waiting = Waiting(&self.operation.waiting);
+        let result = tokio::select! {
+            biased;
+            failure = self.operation.stopped() => Err(failure),
+            result = future => { self.operation.check()?; Ok(result) },
+        };
+        self.completed = result.is_ok();
+        result
+    }
+}
+impl Drop for IoJobWaiter {
+    fn drop(&mut self) {
+        if !self.completed {
+            self.operation.request_stop();
+        }
+    }
+}
 /// Internal physical-work lease. No constructor can mint another activation.
 pub(super) struct IoLease(Arc<Operation>);
 impl IoLease {
@@ -448,6 +478,13 @@ impl IoLease {
     }
 }
 impl IoCall {
+    #[must_use]
+    pub fn job_waiter(&self) -> IoJobWaiter {
+        IoJobWaiter {
+            operation: Arc::clone(&self.operation),
+            completed: false,
+        }
+    }
     pub(super) fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {
         self.operation.with_session(inspect)
     }

@@ -41,7 +41,7 @@ impl GrantRestriction {
         Ok(value)
     }
     pub fn validate(&self, capability: &str) -> Result<(), PlatformError> {
-        if latent_core::PHASE3_HOST_ABI_V3
+        if latent_core::PHASE3_HOST_ABI_CURRENT
             .interface(capability)
             .is_none()
             || !unique(&self.operations, |value| operation(capability, value))

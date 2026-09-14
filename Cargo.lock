@@ -1553,7 +1553,14 @@ dependencies = [
 name = "latent-blobs"
 version = "0.1.0-alpha.3"
 dependencies = [
+ "latent-capabilities",
  "latent-core",
+ "latent-policy",
+ "rustix",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
 ]
 
 [[package]]
@@ -1965,6 +1972,7 @@ dependencies = [
  "latent-admission",
  "latent-artifacts",
  "latent-audit",
+ "latent-blobs",
  "latent-capabilities",
  "latent-component-bindings",
  "latent-control-store",

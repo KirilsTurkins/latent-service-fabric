@@ -1,11 +1,11 @@
 # Host ABI compatibility profiles
 
-`lsf-host-abi-phase3-v3` is the current generic recognition profile in
-`latent-core`. The [frozen matrix](../../wit/host-abi-phase3-v3.json) records its
+`lsf-host-abi-phase3-v4` is the current generic recognition profile in
+`latent-core`. The [frozen matrix](../../wit/host-abi-phase3-v4.json) records its
 exact interface identities, source hashes, function forms and installed bindings.
 [ADR-0031](../../adr/0031-version-host-abi-recognition-independently-of-provider-authority.md)
 and [RFC-0005](../../rfcs/0005-phase3-host-abi-profiles.md) define its ownership,
-error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-resources-for-streaming-http.md) adds the exact streaming resource extension.
+error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-resources-for-streaming-http.md) adds the exact streaming resource extension. [ADR-0033](../../adr/0033-use-scoped-durable-local-blobs-with-owned-chunks.md) adds immutable blobs with owned chunks.
 
 ## Recognition and availability
 
@@ -16,7 +16,8 @@ error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-re
 | `latent:clock/monotonic@0.1.0` | supported | built in |
 | `latent:clock/wall@0.1.0` | supported | built in |
 | `latent:random/random@0.1.0` | supported | unavailable, #219 |
-| `latent:blob/blob@0.1.0` | supported | unavailable, #213/#214 |
+| `latent:blob/blob@0.1.0` | supported, legacy | unavailable |
+| `latent:blob/blob@0.2.0` | supported, async owned chunks | configured Linux [local blob adapter](local-blobs.md); S3 remains #214 |
 | `latent:secrets/reader@0.1.0` | supported | unavailable, #215/#216 |
 | `latent:events/publisher@0.2.0` | supported | unavailable, #217 |
 | `latent:http/streaming@0.3.0` | supported, async owned resources | configured [streaming HTTP adapter](streaming-http.md) |
@@ -27,7 +28,7 @@ error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-re
 An inspected package has no provider authority. Wasmtime preparation rejects a
 required provider that has no installed owner. The generated Phase 3 host/guest
 bindings contain types and registration helpers; the production linker supplies
-context, log and clock, plus service invocation, buffered HTTP and streaming HTTP when their node-owned
+context, log and clock, plus service invocation, buffered/streaming HTTP and local blobs when their node-owned
 adapters are installed. Activations must supply their exact prepared
 imports and pass current eligibility/descriptor checks.
 
@@ -43,7 +44,8 @@ one finite work allowance across all required interfaces.
 The v1 four-interface profile remains defined. Existing context/log/clock bytes
 and versions are unchanged. The legacy aggregate world at 0.1.0 and its Rust
 bindings remain available; the aggregate at 0.2.0 selects v2. The separate
-0.3.0 aggregate selects V3 and includes both HTTP package versions. V1/V2
+0.3.0 aggregate selects V3 and includes both HTTP package versions. The 0.4.0
+aggregate selects V4 and additionally includes both blob versions. V1/V2/V3
 sources and identities remain unchanged. Binding staging
 loads only the referenced package versions to preserve generated module names.
 
@@ -53,18 +55,20 @@ uncertainty after possible dispatch. Events report broker stream/sequence and
 acknowledgement, including duplicate status, or an explicit uncertain outcome.
 Neither implies a transaction, consumer processing or automatic retry authority.
 
-Only freestanding HTTP/service async imports are selected. Synchronous guest
+HTTP/service/blob operations select freestanding async imports. Synchronous guest
 imports may eventually use a cooperative async host bridge. Neither form makes
 waiting activations free: stores, cells, handles, buffers and reservations stay
 owned until completion or affirmative cleanup.
 
-The local service, buffered HTTP and streaming HTTP profiles additionally select freestanding async application
+The local service, buffered/streaming HTTP and local blob profiles additionally
+select freestanding async application
 exports so callers can wait for the canonical async import. Exact source, binary
 and contract metadata must agree, and production preparation requires an installed async
 adapter. The frozen host WIT and digest remain unchanged. V3 additionally accepts exact upload/body/chunk own/borrow resources only in
-`latent:http/streaming@0.3.0`. Application exports still use the bounded value
+`latent:http/streaming@0.3.0`. V4 additionally accepts exact chunk own/borrow
+positions in `latent:blob/blob@0.2.0`. Application exports still use the bounded value
 codec. Other resource identities, implicit futures/streams, maps, fixed lists
-and error-context remain rejected. Blob tokens retain their separate lifecycle;
+and error-context remain rejected. [Blob tokens](local-blobs.md) retain their separate lifecycle;
 state and timer remain later-phase contracts. See the [streaming ownership and
 limits](streaming-http.md).
 
@@ -91,7 +95,7 @@ an advisory reachability review. ABI compatibility does not establish a stronger
 External-capsule deployment enforcement belongs to #280; fixed external guest
 execution hosts remain unavailable.
 
-Normal CI parses all three worlds, compiles native/Wasm generated bindings and tests
+Normal CI parses all four worlds, compiles native/Wasm generated bindings and tests
 real component/linker compatibility, wrong shapes/versions, missing providers,
 forged/stale descriptors, comparison limits and schema/source/generator parity.
 The fixtures allocate no dormant application resources and provide no provider

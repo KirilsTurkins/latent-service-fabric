@@ -161,15 +161,17 @@ class WitContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             for world, http, events, count in [("runtime", "http", "events", 12),
                                                ("runtime-phase3", "http-v2", "events-v2", 10),
-                                               ("runtime-phase3-streaming", "http-v2", "events-v2", 11)]:
+                                               ("runtime-phase3-streaming", "http-v2", "events-v2", 11),
+                                               ("runtime-phase3-blobs", "http-v2", "events-v2", 12)]:
                 destination = Path(temporary) / world
                 stager.stage(destination, ROOT / "wit/platform" / world)
                 deps = {path.name for path in (destination / "deps").iterdir()}
                 self.assertEqual(len(deps), count)
                 self.assertEqual(deps & {"http", "http-v2"}, {http})
                 self.assertEqual(deps & {"events", "events-v2"}, {events})
-                self.assertFalse(deps & {"runtime", "runtime-phase3", "runtime-phase3-streaming"})
-                self.assertEqual("http-v3" in deps, world == "runtime-phase3-streaming")
+                self.assertFalse(deps & {"runtime", "runtime-phase3", "runtime-phase3-streaming", "runtime-phase3-blobs"})
+                self.assertEqual("http-v3" in deps, world in {"runtime-phase3-streaming", "runtime-phase3-blobs"})
+                self.assertEqual("blob-v2" in deps, world == "runtime-phase3-blobs")
 
 
 if __name__ == "__main__":

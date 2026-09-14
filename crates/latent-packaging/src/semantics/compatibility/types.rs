@@ -17,9 +17,11 @@ pub(super) fn inspect_host_interface(
     id: InterfaceId,
     a: &mut Analysis,
 ) -> Result<(), PlatformError> {
-    let resources = resolve
-        .id_of(id)
-        .is_some_and(|name| name == "latent:http/streaming@0.3.0");
+    let resources = resolve.id_of(id).is_some_and(|name| {
+        latent_core::PHASE3_HOST_ABI_CURRENT
+            .interface(&name)
+            .is_some_and(|profile| !profile.resource_types().is_empty())
+    });
     inspect_interface_inner(resolve, id, a, resources)
 }
 fn inspect_interface_inner(
@@ -330,7 +332,9 @@ fn resource_allowed(
     };
     a.name(name)?;
     a.name(&interface)?;
-    Ok(interface == "latent:http/streaming@0.3.0" && ["upload", "body", "chunk"].contains(&name))
+    Ok(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(&interface)
+        .is_some_and(|profile| profile.resource_types().contains(&name)))
 }
 
 #[cfg(test)]

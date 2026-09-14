@@ -1,0 +1,127 @@
+{
+  "formatVersion": 1,
+  "id": "lsf-host-abi-phase3-v4",
+  "world": "latent:platform/capsule@0.4.0",
+  "digest": "sha256:f51a290e8cce2ca8af183d27322e1f144d70ba37666a6a855196e340259e667c",
+  "wasmtimeVersion": "47.0.4",
+  "guestGenerator": "wit-bindgen@0.60.0",
+  "interfaces": [
+    {
+      "interface": "latent:context/context@0.1.0",
+      "package": "latent:context",
+      "source": "wit/platform/context/package.wit",
+      "sourceSha256": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1",
+      "binding": "built-in",
+      "asynchronous": false,
+      "installed": true
+    },
+    {
+      "interface": "latent:log/log@0.1.0",
+      "package": "latent:log",
+      "source": "wit/platform/log/package.wit",
+      "sourceSha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e",
+      "binding": "built-in",
+      "asynchronous": false,
+      "installed": true
+    },
+    {
+      "interface": "latent:clock/monotonic@0.1.0",
+      "package": "latent:clock",
+      "source": "wit/platform/clock/package.wit",
+      "sourceSha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "binding": "built-in",
+      "asynchronous": false,
+      "installed": true
+    },
+    {
+      "interface": "latent:clock/wall@0.1.0",
+      "package": "latent:clock",
+      "source": "wit/platform/clock/package.wit",
+      "sourceSha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "binding": "built-in",
+      "asynchronous": false,
+      "installed": true
+    },
+    {
+      "interface": "latent:random/random@0.1.0",
+      "package": "latent:random",
+      "source": "wit/platform/random/package.wit",
+      "sourceSha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60",
+      "binding": "provider",
+      "asynchronous": false,
+      "installed": false
+    },
+    {
+      "interface": "latent:blob/blob@0.1.0",
+      "package": "latent:blob",
+      "source": "wit/platform/blob/package.wit",
+      "sourceSha256": "sha256:e73a86a069223567fd782ef0e20d83a8f25a1353d39b6d2c174c31bbfb936210",
+      "binding": "provider",
+      "asynchronous": false,
+      "installed": false
+    },
+    {
+      "interface": "latent:secrets/reader@0.1.0",
+      "package": "latent:secrets",
+      "source": "wit/platform/secrets/package.wit",
+      "sourceSha256": "sha256:4e0593c21ac5e3051500717fcf347cf7e23821816a9fc15945c68e93cee4ee54",
+      "binding": "provider",
+      "asynchronous": false,
+      "installed": false
+    },
+    {
+      "interface": "latent:events/publisher@0.2.0",
+      "package": "latent:events",
+      "source": "wit/platform/events-v2/package.wit",
+      "sourceSha256": "sha256:645d6373dd55afeaaa400bd27f35e55dbb9c99a9599013d8419e90b02fb911d3",
+      "binding": "provider",
+      "asynchronous": false,
+      "installed": false
+    },
+    {
+      "interface": "latent:http/client@0.2.0",
+      "package": "latent:http",
+      "source": "wit/platform/http-v2/package.wit",
+      "sourceSha256": "sha256:2728b8d0458a441a7dab01dde896f1cc87c453382a6f5ce35bd86718f5e6fa9d",
+      "binding": "provider",
+      "asynchronous": true,
+      "installed": false
+    },
+    {
+      "interface": "latent:telemetry/custom@0.1.0",
+      "package": "latent:telemetry",
+      "source": "wit/platform/telemetry/package.wit",
+      "sourceSha256": "sha256:c79721b703eca86c55ab04ddcb37cbc7965287db64880c0a0bb555b92baaadc6",
+      "binding": "provider",
+      "asynchronous": false,
+      "installed": false
+    },
+    {
+      "interface": "latent:service/invoke@0.1.0",
+      "package": "latent:service",
+      "source": "wit/platform/invocation/package.wit",
+      "sourceSha256": "sha256:2e9f13a01c9cf90834c53ff38f408e8e23f39cc29cbd7bc5b47d796159f61b67",
+      "binding": "provider",
+      "asynchronous": true,
+      "installed": false
+    },
+    {
+      "interface": "latent:http/streaming@0.3.0",
+      "package": "latent:http",
+      "source": "wit/platform/http-v3/package.wit",
+      "sourceSha256": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d",
+      "binding": "provider",
+      "asynchronous": true,
+      "installed": false
+    },
+    {
+      "interface": "latent:blob/blob@0.2.0",
+      "package": "latent:blob",
+      "source": "wit/platform/blob-v2/package.wit",
+      "sourceSha256": "sha256:d1744403a7882fbe8bf99808ac28c26d271eb1fb26fbac2519f1c7b2840d0dcb",
+      "binding": "provider",
+      "asynchronous": true,
+      "installed": false
+    }
+  ]
+}

@@ -7,6 +7,7 @@ use latent_core::{
 use wasmtime::{ResourceLimiter, StoreLimits, StoreLimitsBuilder};
 
 pub(crate) mod accounting;
+pub(crate) mod blob;
 pub(crate) mod capabilities;
 mod clock;
 mod context;

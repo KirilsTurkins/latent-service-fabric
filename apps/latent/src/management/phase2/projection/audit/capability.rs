@@ -71,7 +71,7 @@ impl Project for proto::AuditCapabilityContext {
             || self.provider_outcome.is_some_and(|value| {
                 value == 0 || proto::AuditProviderOutcome::try_from(value).is_err()
             })
-            || latent_core::PHASE3_HOST_ABI_V3
+            || latent_core::PHASE3_HOST_ABI_CURRENT
                 .interface(&self.capability)
                 .is_none()
         {

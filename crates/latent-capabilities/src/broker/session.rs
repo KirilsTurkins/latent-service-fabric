@@ -109,6 +109,14 @@ pub struct SessionResourceTableReservation {
     _metadata: Charge,
     _slot: Charge,
 }
+impl SessionResourceTableReservation {
+    /// Re-enter only the original sealed session. Every new provider operation
+    /// still requires current admission and a guarded policy/audit dispatch.
+    pub fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {
+        CapabilitySession::with_work_scope(Arc::clone(&self.core), inspect)
+    }
+}
+
 impl Drop for SessionResourceTableReservation {
     fn drop(&mut self) {
         self.core.stats.handles.fetch_sub(1, Ordering::AcqRel);

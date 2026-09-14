@@ -107,8 +107,8 @@ fn generated_async_provider_binding_accepts_only_its_exact_interface() {
 fn frozen_schema_matrix_matches_host_shapes_identity_and_generated_sdk_baseline() {
     use sha2::{Digest, Sha256};
     let matrix: serde_json::Value =
-        serde_json::from_str(include_str!("../../../../wit/host-abi-phase3-v3.json")).unwrap();
-    let profile = latent_core::PHASE3_HOST_ABI_V3;
+        serde_json::from_str(include_str!("../../../../wit/host-abi-phase3-v4.json")).unwrap();
+    let profile = latent_core::PHASE3_HOST_ABI_CURRENT;
     assert_eq!(matrix["id"], profile.id);
     assert_eq!(
         matrix["digest"],
@@ -224,6 +224,119 @@ fn streaming_preparation_accepts_only_exact_resource_types_ownership_and_async_s
         })
         .collect::<Vec<_>>();
     assert_eq!(resources.len(), 3);
+    let config = crate::WasmtimeConfig::default();
+    let types = [wasmtime::component::Type::Own(resources[0])];
+    assert!(crate::values::validate_signature(
+        &types,
+        config.value_codec_limits,
+        config.hostcall_fuel
+    )
+    .is_err());
+    crate::values::validate_host_signature(
+        &types,
+        config.value_codec_limits,
+        config.hostcall_fuel,
+        &resources,
+    )
+    .unwrap();
+    assert!(crate::values::validate_host_signature(
+        &types,
+        config.value_codec_limits,
+        config.hostcall_fuel,
+        &resources[1..]
+    )
+    .is_err());
+}
+
+struct TestBlob;
+impl latent_capabilities::broker::blob::BlobInvoker for TestBlob {
+    fn create(
+        &self,
+        _: &latent_capabilities::broker::CapabilitySession,
+        _: String,
+        _: Option<u64>,
+    ) -> Result<
+        latent_capabilities::broker::blob::BlobFuture<
+            'static,
+            Box<dyn latent_capabilities::broker::blob::BlobWriter>,
+        >,
+        latent_capabilities::broker::blob::BlobError,
+    > {
+        Err(latent_capabilities::broker::blob::BlobError::Unavailable)
+    }
+    fn open(
+        &self,
+        _: &latent_capabilities::broker::CapabilitySession,
+        _: latent_capabilities::broker::blob::BlobReference,
+    ) -> Result<
+        latent_capabilities::broker::blob::BlobFuture<
+            'static,
+            Box<dyn latent_capabilities::broker::blob::BlobReader>,
+        >,
+        latent_capabilities::broker::blob::BlobError,
+    > {
+        Err(latent_capabilities::broker::blob::BlobError::Unavailable)
+    }
+}
+#[test]
+fn blob_preparation_requires_exact_owned_chunk_and_async_shapes() {
+    let engine = engine();
+    let cap = latent_capabilities::broker::blob::BLOB_CAPABILITY;
+    let spec = latent_core::PHASE3_HOST_ABI_CURRENT.interface(cap).unwrap();
+    let mut linker = Linker::<HostState>::new(&engine);
+    crate::host::blob::install(&mut linker, std::sync::Arc::new(TestBlob)).unwrap();
+    let encode = |source: &str| {
+        fixture::with_host(
+            fixture::Options::default(),
+            cap,
+            &host_fixture::interface(source, cap, None),
+        )
+    };
+    let validate = |component: &Component| -> wasmtime::Result<()> {
+        let component_type = component.component_type();
+        let (_, item) = component_type.imports(&engine).next().unwrap();
+        let wasmtime::component::types::ComponentItem::ComponentInstance(interface) = item.ty
+        else {
+            panic!("host interface")
+        };
+        for (name, item) in interface.exports(&engine) {
+            if let wasmtime::component::types::ComponentItem::ComponentFunc(function) = item.ty {
+                crate::surface::blob::validate(name, &function, &interface, &engine)
+                    .map_err(|error| wasmtime::Error::msg(error.message))?;
+            }
+        }
+        linker.instantiate_pre(component).map(|_| ())
+    };
+    let valid = Component::new(&engine, encode(spec.wit)).unwrap();
+    validate(&valid).unwrap();
+    for (index, altered) in [
+        spec.wit.replace("value: borrow<chunk>", "value: chunk"),
+        spec.wit.replace("read: async func", "read: func"),
+        spec.wit.replace("length: u32", "length: u64"),
+        spec.wit
+            .replace("result<chunk, blob-error>", "result<u64, blob-error>"),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        assert_ne!(altered, spec.wit);
+        let component = Component::new(&engine, encode(&altered)).unwrap();
+        assert!(validate(&component).is_err(), "altered signature {index}");
+    }
+    // Owned host handles are never accepted by the general application value codec.
+    let component_type = valid.component_type();
+    let (_, item) = component_type.imports(&engine).next().unwrap();
+    let wasmtime::component::types::ComponentItem::ComponentInstance(interface) = item.ty else {
+        panic!("interface")
+    };
+    let resources = interface
+        .exports(&engine)
+        .filter_map(|(_, item)| match item.ty {
+            wasmtime::component::types::ComponentItem::Resource(r) => Some(r),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(resources.len(), 1);
     let config = crate::WasmtimeConfig::default();
     let types = [wasmtime::component::Type::Own(resources[0])];
     assert!(crate::values::validate_signature(

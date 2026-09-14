@@ -6,8 +6,8 @@ configured `IoRuntime` provides finite admission, byte accounting and streams on
 the caller's existing runtime. It creates no executor, thread, socket, worker,
 retry loop or service-specific resource. Dormant deployments own none of these
 leases. The [shared provider registry and pools](provider-pools.md) build on this
-ownership. [Buffered HTTP](outbound-http.md) and [streaming HTTP](streaming-http.md)
-install concrete adapters on this substrate; the other providers are tracked
+ownership. [Buffered HTTP](outbound-http.md), [streaming HTTP](streaming-http.md)
+and [local blobs](local-blobs.md) install concrete adapters on this substrate; the other providers are tracked
 separately. Declaring an import does not install a provider.
 
 ## Admission and the original activation owner
@@ -144,9 +144,11 @@ and verifies cancellation, shutdown and the production cleanup predicate.
 
 The original #205 substrate introduced an affine Rust stream API without
 installing guest-facing providers. The current runtime can additionally install
-bounded local-service, buffered HTTP and streaming HTTP adapters through trusted
-ports. Streaming HTTP adds explicit owned resources in the V3 profile; it does
-not install WASIp3 built-in streams or WASI filesystem imports.
+bounded local-service, buffered/streaming HTTP and local blob adapters through
+trusted ports. Streaming HTTP adds owned resources in V3; local blobs add owned
+chunks in V4. Neither installs WASIp3 streams or WASI filesystem imports.
+`IoJobWaiter` requests stop when its pending response is dropped; the actual
+blocking worker retains `IoCall` until real completion.
 
 The WASIp3 adapters implicated by
 [RUSTSEC-2026-0268](https://rustsec.org/advisories/RUSTSEC-2026-0268.html) and the

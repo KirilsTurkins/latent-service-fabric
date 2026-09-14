@@ -61,7 +61,7 @@ def command(client, node, config, name, success):
                 and report["protectedCredentialFile"] is True
                 and report["guestBoundary"] == "in-process-wasmtime"
                 and report["wasmtimeVersion"] == "47.0.4"
-                and report["hostAbiProfile"] == "lsf-host-abi-phase3-v3"
+                and report["hostAbiProfile"] == "lsf-host-abi-phase3-v4"
                 and report["compilerSandbox"] == "lsf-linux-x86_64-landlock3-seccomp-v1"
                 and report["authenticatedNativeLoading"] is True, "profile-check-controls")
         return report

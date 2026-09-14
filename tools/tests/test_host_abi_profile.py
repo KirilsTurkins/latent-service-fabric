@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class HostAbiProfileTests(unittest.TestCase):
     def test_frozen_matrix_matches_exact_sources_world_and_pinned_generators(self):
-        for version, world_directory in [(2, "runtime-phase3"), (3, "runtime-phase3-streaming")]:
+        for version, world_directory in [(2, "runtime-phase3"), (3, "runtime-phase3-streaming"), (4, "runtime-phase3-blobs")]:
             with self.subTest(version=version):
                 self.check_matrix(version, world_directory)
 

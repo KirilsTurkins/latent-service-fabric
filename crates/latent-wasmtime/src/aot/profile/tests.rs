@@ -39,7 +39,7 @@ fn host_abi_identity_is_bound_to_prepared_and_native_compatibility() {
     );
     assert_eq!(
         current.configuration["host-abi-profile"],
-        latent_core::PHASE3_HOST_ABI_V3.id
+        latent_core::PHASE3_HOST_ABI_CURRENT.id
     );
     let policy = declared_digest(&current, limits).unwrap();
     for field in ["host-abi-profile", "host-abi-digest"] {

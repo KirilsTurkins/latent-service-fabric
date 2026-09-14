@@ -31,6 +31,7 @@ impl HostInterfaceSpec {
     pub fn resource_types(&self) -> &'static [&'static str] {
         match self.interface {
             "latent:http/streaming@0.3.0" => &["upload", "body", "chunk"],
+            "latent:blob/blob@0.2.0" => &["chunk"],
             _ => &[],
         }
     }
@@ -215,10 +216,58 @@ pub const PHASE3_HOST_ABI_V3: HostAbiProfile = HostAbiProfile {
     interfaces: &PHASE3_V3_INTERFACES,
 };
 
+const PHASE3_V4_INTERFACES: [HostInterfaceSpec; 13] = [
+    PHASE3_V3_INTERFACES[0],
+    PHASE3_V3_INTERFACES[1],
+    PHASE3_V3_INTERFACES[2],
+    PHASE3_V3_INTERFACES[3],
+    PHASE3_V3_INTERFACES[4],
+    PHASE3_V3_INTERFACES[5],
+    PHASE3_V3_INTERFACES[6],
+    PHASE3_V3_INTERFACES[7],
+    PHASE3_V3_INTERFACES[8],
+    PHASE3_V3_INTERFACES[9],
+    PHASE3_V3_INTERFACES[10],
+    PHASE3_V3_INTERFACES[11],
+    HostInterfaceSpec {
+        interface: "latent:blob/blob@0.2.0",
+        package: "latent:blob",
+        binding: HostInterfaceBinding::Provider,
+        wit: include_str!("../../../wit/platform/blob-v2/package.wit"),
+        asynchronous: true,
+    },
+];
+/// Adds immutable blobs with explicit uncertainty and owned range chunks. Prior
+/// profile sources/identities are frozen; recognition grants no storage access.
+pub const PHASE3_HOST_ABI_V4: HostAbiProfile = HostAbiProfile {
+    id: "lsf-host-abi-phase3-v4",
+    interfaces: &PHASE3_V4_INTERFACES,
+};
+/// The single selected profile for current inspection, policy and execution.
+pub const PHASE3_HOST_ABI_CURRENT: HostAbiProfile = PHASE3_HOST_ABI_V4;
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::collections::BTreeSet;
+
+    #[test]
+    fn current_v4_preserves_every_frozen_v3_interface_and_adds_only_blob_v2() {
+        assert_eq!(PHASE3_HOST_ABI_CURRENT, PHASE3_HOST_ABI_V4);
+        for old in PHASE3_HOST_ABI_V3.interfaces() {
+            assert_eq!(PHASE3_HOST_ABI_V4.interface(old.interface), Some(old));
+        }
+        assert_eq!(
+            PHASE3_HOST_ABI_V4.interfaces().len(),
+            PHASE3_HOST_ABI_V3.interfaces().len() + 1
+        );
+        let blob = PHASE3_HOST_ABI_V4
+            .interface("latent:blob/blob@0.2.0")
+            .unwrap();
+        assert_eq!(blob.resource_types(), &["chunk"]);
+        assert!(blob.asynchronous);
+        assert!(PHASE3_HOST_ABI_V3.interface(blob.interface).is_none());
+    }
 
     #[test]
     fn phase3_v1_is_exact_versioned_and_unique() {

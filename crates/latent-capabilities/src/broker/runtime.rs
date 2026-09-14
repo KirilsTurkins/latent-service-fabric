@@ -13,6 +13,7 @@ pub struct ActivationCapabilityRuntime {
     local_services: OnceLock<Arc<dyn super::LocalServiceInvoker>>,
     streaming_http: OnceLock<Arc<dyn super::streaming_http::StreamingHttpInvoker>>,
     http: OnceLock<Arc<dyn super::http::OutboundHttpInvoker>>,
+    blobs: OnceLock<Arc<dyn super::blob::BlobInvoker>>,
 }
 impl ActivationCapabilityRuntime {
     #[must_use]
@@ -26,6 +27,7 @@ impl ActivationCapabilityRuntime {
             local_services: OnceLock::new(),
             http: OnceLock::new(),
             streaming_http: OnceLock::new(),
+            blobs: OnceLock::new(),
         }
     }
     #[must_use]
@@ -68,6 +70,15 @@ impl ActivationCapabilityRuntime {
             return Err(denied());
         }
         Ok(())
+    }
+    pub fn install_blobs(
+        &self,
+        invoker: Arc<dyn super::blob::BlobInvoker>,
+    ) -> Result<(), PlatformError> {
+        self.blobs.set(invoker).map_err(|_| denied())
+    }
+    pub fn blobs(&self) -> Result<Arc<dyn super::blob::BlobInvoker>, PlatformError> {
+        self.blobs.get().cloned().ok_or_else(denied)
     }
     pub fn check_policy_owner(
         &self,

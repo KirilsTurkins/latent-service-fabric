@@ -51,7 +51,7 @@ pub(crate) fn install_context_log_clock(linker: &mut Linker<HostState>) -> wasmt
 pub(crate) fn host_abi_digest() -> [u8; 32] {
     use sha2::{Digest, Sha256};
     let mut hash = Sha256::new();
-    latent_core::PHASE3_HOST_ABI_V3.visit_identity_bytes(|part| hash.update(part));
+    latent_core::PHASE3_HOST_ABI_CURRENT.visit_identity_bytes(|part| hash.update(part));
     hash.finalize().into()
 }
 
