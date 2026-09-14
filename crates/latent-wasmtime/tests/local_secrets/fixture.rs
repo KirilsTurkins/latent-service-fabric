@@ -96,7 +96,7 @@ impl ExecutionCancellation for Control {
         Some(self.probe.clone())
     }
 }
-pub struct Fixture {
+pub struct Fixture<P = LocalSecretProvider> {
     _factory: WasmtimeComponentEngineFactory,
     pub backend: WasmtimeBackend,
     pub prepared: PreparedComponent,
@@ -106,7 +106,7 @@ pub struct Fixture {
     _runtime: Arc<ActivationCapabilityRuntime>,
     _clock: Arc<Clock>,
     pub revision: ResolvedRevision,
-    pub provider: LocalSecretProvider,
+    pub provider: P,
     pub secrets: LocalSecretStore,
     pub secret_clock: Arc<TestSecretClock>,
     pub gate: Arc<ReadGate>,
@@ -120,13 +120,38 @@ impl Fixture {
     pub async fn new() -> Self {
         Self::configured(None, ProviderPoolLimits::default()).await
     }
+    pub async fn configured(
+        audit: Option<latent_audit::AuditHandle>,
+        pool_limits: ProviderPoolLimits,
+    ) -> Self {
+        Self::with_provider(
+            audit,
+            pool_limits,
+            latent_secrets::LOCAL_SECRETS_PROFILE,
+            |_, _, secrets, _| async move {
+                let provider = LocalSecretProvider::install("secrets", 1, 0, &secrets).unwrap();
+                let reference = provider.reference();
+                (provider, reference)
+            },
+        )
+        .await
+    }
+}
+impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> Fixture<P> {
     #[expect(
         clippy::too_many_lines,
         reason = "compose the real catalog, grants, provider and fresh Store with explicit owner lifetimes"
     )]
-    pub async fn configured(
+    pub async fn with_provider<F: std::future::Future<Output = (P, ProviderReference)>>(
         audit: Option<latent_audit::AuditHandle>,
         pool_limits: ProviderPoolLimits,
+        profile: &str,
+        make: impl FnOnce(
+            std::path::PathBuf,
+            Arc<ProviderPools>,
+            LocalSecretStore,
+            Arc<TestSecretClock>,
+        ) -> F,
     ) -> Self {
         let required = audit.is_some();
         let mut ceiling = support::budget();
@@ -226,12 +251,19 @@ impl Fixture {
         .await
         .unwrap();
         secrets.reload(0, specs("1")).unwrap().await.unwrap();
-        let provider = LocalSecretProvider::install("secrets", 1, 0, &secrets).unwrap();
+        let (provider, provider_reference) = make(
+            directory.path().to_owned(),
+            pools.clone(),
+            secrets.clone(),
+            secret_clock.clone(),
+        )
+        .await;
         install(
             &policies,
             &publication,
-            provider.reference().configuration_digest(),
+            provider_reference.configuration_digest(),
             required,
+            profile,
         );
         let revision = ResolvedRevision {
             target: latent_routing::InvocationTarget {
@@ -255,7 +287,7 @@ impl Fixture {
                     definition_digest: Some(&latent_artifacts::package::artifact_blob_digest(
                         b"secret-fixture-binding-v1",
                     )),
-                    provider: &provider.reference(),
+                    provider: &provider_reference,
                     imported_operations: &["read".into()],
                     policy_ids: &["p".into()],
                     provider_binding_id: "binding",
@@ -402,6 +434,7 @@ impl Fixture {
         )
         .await
         .unwrap();
+        let stores_before = self.backend.resource_snapshot().stores_created;
         let before = (
             self.io.snapshot(),
             self.pools.snapshot().unwrap(),
@@ -447,7 +480,10 @@ impl Fixture {
         assert_eq!(self.io.snapshot(), before.0);
         assert_eq!(self.pools.snapshot().unwrap(), before.1);
         assert_eq!(self.broker.snapshot(), before.2);
-        assert_eq!(self.backend.resource_snapshot().stores_created, 0);
+        assert_eq!(
+            self.backend.resource_snapshot().stores_created,
+            stores_before
+        );
         self.idle();
     }
     pub fn idle(&self) {
@@ -468,7 +504,13 @@ impl Fixture {
         );
     }
 }
-fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &str, required: bool) {
+fn install(
+    store: &PolicyStore,
+    publication: &ReleaseUseEligibility,
+    digest: &str,
+    required: bool,
+    profile: &str,
+) {
     for (id, kind, value) in [
         (
             "p",
@@ -484,7 +526,7 @@ fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &st
             "binding",
             RecordKind::ProviderBinding,
             json!({"formatVersion":1,"tenant":"tests","capability":component::CAP,
-            "providerProfile":"protected-local-secrets-v1","configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
+            "providerProfile":profile,"configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
         ),
     ] {
         store
@@ -568,11 +610,13 @@ pub struct ReadGate {
     pub entered: tokio::sync::Notify,
     pub released: tokio::sync::Notify,
 }
-struct GatedProvider {
-    provider: LocalSecretProvider,
+struct GatedProvider<P> {
+    provider: P,
     gate: Arc<ReadGate>,
 }
-impl latent_capabilities::broker::secrets::SecretInvoker for GatedProvider {
+impl<P: latent_capabilities::broker::secrets::SecretInvoker>
+    latent_capabilities::broker::secrets::SecretInvoker for GatedProvider<P>
+{
     fn read(
         &self,
         session: &CapabilitySession,

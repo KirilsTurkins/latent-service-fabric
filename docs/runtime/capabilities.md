@@ -13,7 +13,7 @@ implements canonical async `latent:service/invoke@0.1.0`. The configured
 capability packages remain contracts for subsequent implementation. The Linux
 [local blob provider](local-blobs.md) and [S3 provider](s3-blobs.md) implement `latent:blob/blob@0.2.0` with
 scoped durable references and owned read chunks. The configured
-[local secret provider](local-secrets.md) implements `latent:secrets/reader@0.1.0`
+[local](local-secrets.md) and [Vault KV-v2](vault-secrets.md) secret providers implement `latent:secrets/reader@0.1.0`
 with protected sources, atomic rotation and separate opaque provider credentials.
 Completion of [Phase 2](../phase-2-completion.md) adds package delivery,
 currentness, native caching and rollout control; it does not expand this guest
@@ -49,7 +49,7 @@ permission or exposing credential-bearing selectors.
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
 [standalone node](../reference/standalone-node.md). Phase 3 continues with production
-standalone provider configuration, Vault secrets and event providers, random
+standalone provider configuration, event providers, random
 and custom metrics, application ingress and web/SSR integration. Transactional
 state/effects, cluster transport and durable workflow suspension remain later
 phases; declared WIT alone makes none of them callable.
@@ -81,7 +81,7 @@ a Phase 4 transaction/outbox receipt.
 The shared async ownership work in #205 and concrete HTTP/blob/event providers in
 #211, #214 and #217 must preserve those distinctions in typed results and cleanup.
 #238 owns integrated adversarial uncertainty/resource-retirement evidence and
-#240 reviews that evidence at the Phase 3 gate. Buffered/streaming HTTP, local/S3 immutable blobs and local secrets are implemented; Vault and event
+#240 reviews that evidence at the Phase 3 gate. Buffered/streaming HTTP, local/S3 immutable blobs and local/Vault secrets are implemented; event
 adapters retain their separate delivery tickets.
 
 ## Context disclosure

@@ -12,8 +12,8 @@ This is the common provider infrastructure. The [exact binding compiler](capabil
 publishes configured plans with the deployment catalog. Concrete production
 configuration remains part of each provider adapter.
 The [buffered HTTP](outbound-http.md), [streaming HTTP](streaming-http.md),
-[local blob](local-blobs.md), [S3 blob](s3-blobs.md) and [local secret](local-secrets.md) adapters use these
-owners. Vault and event protocol adapters retain their separate Phase 3 tickets. Ordinary standalone startup still exposes its existing built-in imports;
+[local blob](local-blobs.md), [S3 blob](s3-blobs.md), [local secret](local-secrets.md) and [Vault KV-v2](vault-secrets.md) adapters use these
+owners. Event protocol adapters retain their separate Phase 3 tickets. Ordinary standalone startup still exposes its existing built-in imports;
 declaring a capability does not construct a client or enable an external provider.
 
 ## Installation and immutable epochs
