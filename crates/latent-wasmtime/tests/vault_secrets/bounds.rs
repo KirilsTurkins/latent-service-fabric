@@ -2,6 +2,49 @@ use super::*;
 use server::{Reply, Server};
 
 #[tokio::test]
+async fn aggregate_plaintext_exhaustion_rejects_before_opening_another_connection() {
+    let mut held_reply = Reply::value(1, "Alpha");
+    held_reply.gated = true;
+    let server = Server::new(vec![held_reply, Reply::value(1, "Alpha")]).await;
+    let mut config = server.config.clone();
+    config.limits.maximum_value_bytes = 8;
+    config.limits.maximum_response_bytes = 1024;
+    config.limits.maximum_plaintext_bytes = 3 * 1024 + 8 + 65536;
+    let maximum = config.limits.maximum_plaintext_bytes;
+    let f = setup::fixture(config, None).await;
+    let (session, _) = f.session("bounded-concurrent-plaintext");
+    let first = f.provider.read(&session, "allowed".into()).unwrap();
+    tokio::pin!(first);
+    tokio::select! {
+        _ = server.event.notified() => (),
+        _ = tokio::time::sleep(Duration::from_secs(1)) => panic!("server request deadline"),
+        _ = &mut first => panic!("held response completed"),
+    }
+    assert_eq!(
+        f.provider.snapshot().unwrap().retained_plaintext_bytes,
+        maximum
+    );
+    assert!(matches!(
+        f.provider.read(&session, "allowed".into()).unwrap().await,
+        Err(SecretError::Unavailable)
+    ));
+    assert_eq!(f.provider.snapshot().unwrap().remote_read_attempts, 1);
+    assert_eq!(
+        f.provider.snapshot().unwrap().retained_plaintext_bytes,
+        maximum
+    );
+    server.release.notify_one();
+    // The newer failed request still fences the older selected sequence.
+    assert!(matches!(first.await, Err(SecretError::Unavailable)));
+    drop(session);
+    setup::idle(&f).await;
+    assert_eq!(f.provider.snapshot().unwrap().retained_plaintext_bytes, 0);
+    assert_eq!(invoke(&f, 0).await, marker(b'A', b'1', 5));
+    shutdown(&f).await;
+    server.close().await;
+}
+
+#[tokio::test]
 async fn replacement_requires_a_fresh_plan_and_keeps_old_owners_until_drain() {
     use latent_capabilities::broker::secrets::CredentialScope;
     let server = Server::new(vec![Reply::value(1, "Alpha"), Reply::value(1, "Alpha")]).await;
