@@ -164,7 +164,11 @@ impl ProviderPools {
         })
     }
 }
-fn tenant(state: &mut State, owner: &Arc<Inner>, id: &str) -> Result<Arc<Tenant>, PlatformError> {
+pub(super) fn tenant(
+    state: &mut State,
+    owner: &Arc<Inner>,
+    id: &str,
+) -> Result<Arc<Tenant>, PlatformError> {
     if let Some(tenant) = state
         .tenants
         .iter()

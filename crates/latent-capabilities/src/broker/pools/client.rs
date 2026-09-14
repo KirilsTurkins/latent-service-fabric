@@ -1,7 +1,7 @@
 use super::{
     busy, capacity, denied, invalid, limits, Any, Arc, AtomicUsize, Charge, Epoch, ErasedClient,
-    Inner, InstalledProvider, Instant, Kind, MaintenanceRequest, Mutex, Ordering, PlatformError,
-    PoolCall, ProviderPools, Weak,
+    IngressRequest, Inner, InstalledProvider, Instant, Kind, MaintenanceRequest, Mutex, Ordering,
+    PlatformError, PoolCall, ProviderPools, Weak,
 };
 use crate::broker::io::IoLease;
 use std::{collections::VecDeque, time::Duration};
@@ -134,6 +134,20 @@ impl<T: Send + 'static> ProviderClient<T> {
         call: &PoolCall,
     ) -> Result<Option<PooledConnection<T>>, PlatformError> {
         call.check_client(&self.core)?;
+        self.checkout_owned(Some(call.io.lease()), None)
+    }
+    pub fn checkout_ingress(
+        self: &Arc<Self>,
+        request: &IngressRequest,
+    ) -> Result<Option<PooledConnection<T>>, PlatformError> {
+        request.check_client(&self.core)?;
+        self.checkout_owned(None, Some(request.clone()))
+    }
+    fn checkout_owned(
+        self: &Arc<Self>,
+        activation: Option<IoLease>,
+        ingress: Option<IngressRequest>,
+    ) -> Result<Option<PooledConnection<T>>, PlatformError> {
         let mut idle = self.idle.try_lock().map_err(|_| busy())?;
         let value = idle.pop_front();
         drop(idle);
@@ -153,8 +167,9 @@ impl<T: Send + 'static> ProviderClient<T> {
         Ok(Some(PooledConnection {
             physical: Some(physical),
             client: Arc::clone(self),
-            activation: Some(call.io.lease()),
+            activation,
             maintenance: None,
+            ingress,
         }))
     }
     /// Reserve before a socket/dial task is allocated. One dial per client and
@@ -164,7 +179,7 @@ impl<T: Send + 'static> ProviderClient<T> {
         call: &PoolCall,
     ) -> Result<ConnectionReservation<T>, PlatformError> {
         call.check_client(&self.core)?;
-        self.reserve_owned(Some(call.io.lease()), None)
+        self.reserve_owned(Some(call.io.lease()), None, None)
     }
     /// Recovery connections retain their finite operator request until the
     /// actual resource is destroyed. They cannot become an idle guest client.
@@ -173,12 +188,21 @@ impl<T: Send + 'static> ProviderClient<T> {
         request: &MaintenanceRequest,
     ) -> Result<ConnectionReservation<T>, PlatformError> {
         request.check_client(&self.core)?;
-        self.reserve_owned(None, Some(request.clone()))
+        self.reserve_owned(None, Some(request.clone()), None)
+    }
+    /// Inbound work cannot borrow another tenant/client's request capacity.
+    pub fn reserve_ingress_connection(
+        self: &Arc<Self>,
+        request: &IngressRequest,
+    ) -> Result<ConnectionReservation<T>, PlatformError> {
+        request.check_client(&self.core)?;
+        self.reserve_owned(None, None, Some(request.clone()))
     }
     fn reserve_owned(
         self: &Arc<Self>,
         activation: Option<IoLease>,
         maintenance: Option<MaintenanceRequest>,
+        ingress: Option<IngressRequest>,
     ) -> Result<ConnectionReservation<T>, PlatformError> {
         let owner = self.core.owner.upgrade().ok_or_else(denied)?;
         let _state = owner.state.try_lock().map_err(|_| busy())?;
@@ -206,6 +230,7 @@ impl<T: Send + 'static> ProviderClient<T> {
             client: Arc::clone(self),
             activation,
             maintenance,
+            ingress,
             lifetime: Some(ConnectionLifetime {
                 client: Arc::clone(&self.core),
                 failed: false,
@@ -258,12 +283,15 @@ pub struct ConnectionReservation<T: Send + 'static> {
     lifetime: Option<ConnectionLifetime>,
     activation: Option<IoLease>,
     maintenance: Option<MaintenanceRequest>,
+    ingress: Option<IngressRequest>,
     success: bool,
 }
 impl<T: Send + 'static> ConnectionReservation<T> {
     pub fn connected(mut self, value: T) -> Result<PooledConnection<T>, PlatformError> {
         if let Some(activation) = &self.activation {
             activation.checkpoint()?;
+        } else if let Some(ingress) = &self.ingress {
+            ingress.checkpoint()?;
         } else {
             self.maintenance
                 .as_ref()
@@ -279,6 +307,7 @@ impl<T: Send + 'static> ConnectionReservation<T> {
             client: Arc::clone(&self.client),
             activation: self.activation.take(),
             maintenance: self.maintenance.take(),
+            ingress: self.ingress.take(),
         })
     }
 }
@@ -318,6 +347,7 @@ pub struct PooledConnection<T: Send + 'static> {
     client: Arc<ProviderClient<T>>,
     activation: Option<IoLease>,
     maintenance: Option<MaintenanceRequest>,
+    ingress: Option<IngressRequest>,
 }
 impl<T: Send + 'static> PooledConnection<T> {
     pub(super) fn belongs_to(&self, owner: &Arc<Inner>) -> bool {
@@ -336,10 +366,14 @@ impl<T: Send + 'static> PooledConnection<T> {
         if self.maintenance.is_some() {
             return Err(denied());
         }
-        self.activation
-            .as_ref()
-            .expect("active connection")
-            .checkpoint()?;
+        if let Some(activation) = &self.activation {
+            activation.checkpoint()?;
+        } else {
+            self.ingress
+                .as_ref()
+                .expect("active ingress connection")
+                .checkpoint()?;
+        }
         let owner = self.client.core.owner.upgrade().ok_or_else(denied)?;
         let _state = owner.state.try_lock().map_err(|_| busy())?;
         owner.check()?;

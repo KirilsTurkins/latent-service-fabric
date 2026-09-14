@@ -17,6 +17,8 @@ use tokio::sync::Notify;
 use zeroize::Zeroizing;
 
 mod admission;
+mod ingress;
+pub use ingress::IngressRequest;
 mod protocol;
 pub use protocol::ProviderMetadata;
 mod client;

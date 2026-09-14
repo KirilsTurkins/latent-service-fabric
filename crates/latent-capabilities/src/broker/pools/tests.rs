@@ -10,6 +10,7 @@ use std::{
     time::Duration,
 };
 mod fixture;
+mod ingress;
 mod lifecycle;
 mod maintenance;
 mod protocol;
