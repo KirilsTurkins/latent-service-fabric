@@ -550,6 +550,11 @@
         },
         "ceiling": {
           "$ref": "#/$defs/ceiling"
+        },
+        "requireAudit": {
+          "type": "boolean",
+          "default": false,
+          "description": "Require durable bounded audit admission before provider dispatch; matching grants combine this requirement by logical OR."
         }
       },
       "allOf": [

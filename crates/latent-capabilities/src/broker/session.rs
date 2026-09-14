@@ -11,7 +11,7 @@ use latent_policy::capability::{
 };
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
-    Arc, Mutex,
+    Arc, Mutex, Weak,
 };
 
 /// Wire lookup data. Knowing or constructing this value grants no authority.
@@ -31,12 +31,31 @@ impl GuestCapabilityHandle {
     }
 }
 pub(super) struct Stats {
+    pub tenant: latent_core::TenantId,
     pub closed: AtomicBool,
     pub handles: AtomicUsize,
     pub calls: AtomicUsize,
     pub waiting: AtomicUsize,
     pub results: AtomicUsize,
+    pub buffer_bytes: AtomicUsize,
     _metadata: Charge,
+}
+#[derive(Default, Clone)]
+pub(super) struct RegistryEntry {
+    pub core: Weak<SessionCore>,
+    pub stats: Weak<Stats>,
+}
+impl RegistryEntry {
+    fn reusable(&self) -> bool {
+        self.core.strong_count() == 0
+            && self.stats.upgrade().is_none_or(|stats| {
+                stats.handles.load(Ordering::Acquire) == 0
+                    && stats.calls.load(Ordering::Acquire) == 0
+                    && stats.results.load(Ordering::Acquire) == 0
+                    && stats.waiting.load(Ordering::Acquire) == 0
+                    && stats.buffer_bytes.load(Ordering::Acquire) == 0
+            })
+    }
 }
 struct HandleLifetime {
     stats: Arc<Stats>,
@@ -66,6 +85,7 @@ pub(super) struct SessionCore {
     pub plan: Arc<CompiledCapabilityPlan>,
     pub activation_id: ActivationId,
     pub root_activation_id: ActivationId,
+    pub parent_activation_id: Option<ActivationId>,
     pub principal: InvocationPrincipal,
     pub budget: ActivationBudget,
     pub deadline: latent_core::EffectiveDeadline,
@@ -79,12 +99,16 @@ pub(super) struct SessionCore {
 pub struct CapabilitySession {
     pub(super) core: Arc<SessionCore>,
 }
-/// Compact counters only; this cannot retain a plan, identity, provider or Store.
+/// Compact tenant-scoped accounting only; no plan, provider or guest Store.
 #[derive(Clone)]
 pub struct CapabilitySessionObserver {
     stats: Arc<Stats>,
 }
 impl CapabilitySessionObserver {
+    #[must_use]
+    pub fn reserved_buffer_bytes(&self) -> usize {
+        self.stats.buffer_bytes.load(Ordering::Acquire)
+    }
     #[must_use]
     pub fn is_closed(&self) -> bool {
         self.stats.closed.load(Ordering::Acquire)
@@ -107,6 +131,7 @@ impl CapabilitySessionObserver {
             && self.live_calls() == 0
             && self.retained_results() == 0
             && self.retained_handles() == 0
+            && self.reserved_buffer_bytes() == 0
     }
     /// The embedder calls this after destroying the guest future and Store.
     /// Queue owners, blocking jobs, streams and lowering/consumer leases all
@@ -203,14 +228,14 @@ impl ActivationCapabilityBroker {
         let mut sessions = self.inner.sessions.try_lock().map_err(|_| busy())?;
         if sessions
             .iter()
-            .filter_map(std::sync::Weak::upgrade)
+            .filter_map(|entry| entry.core.upgrade())
             .any(|s| s.budget.is_same_instance(budget))
         {
             return Err(denied());
         }
         let index = sessions
             .iter()
-            .position(|s| s.strong_count() == 0)
+            .position(RegistryEntry::reusable)
             .ok_or_else(capacity)?;
         let slot = self.inner.counters.acquire(Kind::Session, 1)?;
         let metadata = self.inner.counters.acquire(
@@ -218,13 +243,15 @@ impl ActivationCapabilityBroker {
             4096 + self.inner.limits.maximum_handles_per_session
                 * std::mem::size_of::<Option<Arc<HandleEntry>>>(),
         )?;
-        let stats_metadata = self.inner.counters.acquire(Kind::Metadata, 256)?;
+        let stats_metadata = self.inner.counters.acquire(Kind::Metadata, 512)?;
         let stats = Arc::new(Stats {
+            tenant: plan.target.tenant.clone(),
             closed: AtomicBool::new(false),
             handles: AtomicUsize::new(0),
             calls: AtomicUsize::new(0),
             waiting: AtomicUsize::new(0),
             results: AtomicUsize::new(0),
+            buffer_bytes: AtomicUsize::new(0),
             _metadata: stats_metadata,
         });
         let core = Arc::new(SessionCore {
@@ -234,6 +261,12 @@ impl ActivationCapabilityBroker {
             root_activation_id: ActivationId(checked_text(
                 &request.activation.root_activation_id.0,
             )?),
+            parent_activation_id: request
+                .activation
+                .parent_activation_id
+                .as_ref()
+                .map(|id| checked_text(&id.0).map(ActivationId))
+                .transpose()?,
             principal: InvocationPrincipal {
                 subject: checked_text(&actor.subject)?,
                 kind: actor.kind,
@@ -254,7 +287,10 @@ impl ActivationCapabilityBroker {
             _slot: slot,
         });
         core.check()?;
-        sessions[index] = Arc::downgrade(&core);
+        sessions[index] = RegistryEntry {
+            core: Arc::downgrade(&core),
+            stats: Arc::downgrade(&core.stats),
+        };
         Ok(CapabilitySession { core })
     }
 }
@@ -326,12 +362,26 @@ impl SessionCore {
 }
 impl CapabilitySession {
     #[must_use]
+    pub fn captures_audit(&self) -> bool {
+        self.core.owner.audit.is_some()
+    }
+    #[must_use]
     pub fn observer(&self) -> CapabilitySessionObserver {
         CapabilitySessionObserver {
             stats: Arc::clone(&self.core.stats),
         }
     }
     pub fn bind(
+        &self,
+        capability: &str,
+        operation: &str,
+        resource: ResourceTarget<'_>,
+    ) -> Result<GuestCapabilityHandle, PlatformError> {
+        let result = self.bind_inner(capability, operation, resource);
+        super::audit::observe_grant(&self.core, capability, operation, resource, &result);
+        result
+    }
+    fn bind_inner(
         &self,
         capability: &str,
         operation: &str,

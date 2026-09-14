@@ -50,6 +50,14 @@ impl Catalogs {
         if let Some(capabilities) = &self.capabilities {
             capabilities.check_catalog(&self.artifacts.lifecycle_authority())?;
             capabilities.check_clock(clock)?;
+            if capabilities.broker().has_audit()
+                && self
+                    .audit
+                    .as_ref()
+                    .is_none_or(|audit| !capabilities.broker().audit_owner_matches(&audit.handle()))
+            {
+                return Err(mode_error());
+            }
             capabilities.check_policy_owner(
                 self.policies
                     .as_ref()
@@ -296,6 +304,11 @@ impl Catalogs {
                 .await?;
                 latent_artifacts::reconcile_release_audit(&audit.handle(), artifacts.as_ref())
                     .await?;
+                latent_capabilities::broker::reconcile_capability_audit(
+                    &audit.handle(),
+                    std::time::Instant::now() + std::time::Duration::from_secs(30),
+                )
+                .await?;
             }
             Ok::<_, PlatformError>((artifacts, deployments))
         }
@@ -412,6 +425,23 @@ impl StandaloneNode {
         Ok(node)
     }
 
+    fn policy_management(
+        &self,
+        mut management: ManagementServiceAdapter,
+        catalogs: &Catalogs,
+    ) -> Result<ManagementServiceAdapter, PlatformError> {
+        if let Some(policies) = &self.policies {
+            management = management.with_policy_control(policies.handle())?;
+        }
+        if let Some(capabilities) = &catalogs.capabilities {
+            management = management.with_capability_inspection(
+                catalogs.deployments.clone(),
+                capabilities.broker().clone(),
+            )?;
+        }
+        Ok(management)
+    }
+
     async fn start_services(
         &mut self,
         settings: &NodeSettings,
@@ -434,14 +464,14 @@ impl StandaloneNode {
                 ..InvocationServiceServices::default()
             },
         )?;
-        let mut management = ManagementServiceAdapter::new(
+        let management = ManagementServiceAdapter::new(
             ManagementServices {
                 audit: self.audit.as_ref().map(super::audit::AuditRuntime::handle),
                 rollouts: self
                     .rollouts
                     .as_ref()
                     .map(super::rollouts::RolloutRuntime::handle),
-                artifacts: catalogs.artifacts,
+                artifacts: catalogs.artifacts.clone(),
                 deployments: catalogs.deployments.clone(),
                 routes: catalogs.deployments.clone(),
                 inventory: self.inventory.clone(),
@@ -451,9 +481,7 @@ impl StandaloneNode {
             },
             settings.management.clone(),
         )?;
-        if let Some(policies) = &self.policies {
-            management = management.with_policy_control(policies.handle())?;
-        }
+        let management = self.policy_management(management, &catalogs)?;
         if self.sampler.is_none() {
             self.sampler = Some(load::LoadSampler::start(
                 Arc::clone(&self.load),

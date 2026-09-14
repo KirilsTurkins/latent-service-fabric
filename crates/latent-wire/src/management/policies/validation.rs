@@ -5,10 +5,10 @@ use prost::Message;
 use std::time::{Duration, Instant};
 use tonic::{Request, Status};
 
-pub(super) fn invalid() -> Status {
+pub(in crate::management) fn invalid() -> Status {
     Status::invalid_argument("capability-policy-invalid")
 }
-pub(super) fn platform(error: PlatformError) -> Status {
+pub(in crate::management) fn platform(error: PlatformError) -> Status {
     let code = error.code;
     drop(error);
     match code {
@@ -28,7 +28,7 @@ pub(super) fn platform(error: PlatformError) -> Status {
         _ => Status::unavailable("capability-policy-unavailable"),
     }
 }
-pub(super) fn too_large() -> PlatformError {
+pub(in crate::management) fn too_large() -> PlatformError {
     PlatformError {
         code: PlatformErrorCode::ResourceExhausted,
         message: "capability-policy-response-capacity".into(),
@@ -36,7 +36,7 @@ pub(super) fn too_large() -> PlatformError {
         details: Vec::new(),
     }
 }
-pub(super) fn deadline<T>(request: &Request<T>) -> Instant {
+pub(in crate::management) fn deadline<T>(request: &Request<T>) -> Instant {
     let maximum = Instant::now() + Duration::from_secs(30);
     request
         .extensions()
@@ -44,13 +44,13 @@ pub(super) fn deadline<T>(request: &Request<T>) -> Instant {
         .and_then(crate::invocation::AuthenticatedInvocationContext::transport_expires_at)
         .map_or(maximum, |value| value.min(maximum))
 }
-pub(super) fn completed(deadline: Instant) -> Result<(), Status> {
+pub(in crate::management) fn completed(deadline: Instant) -> Result<(), Status> {
     if Instant::now() >= deadline {
         return Err(Status::deadline_exceeded("capability-policy-deadline"));
     }
     Ok(())
 }
-pub(super) fn identity(principal: &InvocationPrincipal) -> Result<&str, Status> {
+pub(in crate::management) fn identity(principal: &InvocationPrincipal) -> Result<&str, Status> {
     if principal.kind != PrincipalKind::Administrator {
         return Err(Status::permission_denied("capability-policy-denied"));
     }
@@ -62,7 +62,7 @@ pub(super) fn identity(principal: &InvocationPrincipal) -> Result<&str, Status> 
     bounds::identifier(&principal.subject, 256)?;
     Ok(&tenant.0)
 }
-pub(super) fn kind(value: i32) -> Result<domain::RecordKind, Status> {
+pub(in crate::management) fn kind(value: i32) -> Result<domain::RecordKind, Status> {
     match proto::CapabilityPolicyRecordKind::try_from(value) {
         Ok(proto::CapabilityPolicyRecordKind::Policy) => Ok(domain::RecordKind::Policy),
         Ok(proto::CapabilityPolicyRecordKind::ProviderBinding) => {
@@ -71,23 +71,26 @@ pub(super) fn kind(value: i32) -> Result<domain::RecordKind, Status> {
         _ => Err(invalid()),
     }
 }
-pub(super) fn id(value: &String, budget: &mut RequestBudget) -> Result<(), Status> {
+pub(in crate::management) fn id(value: &String, budget: &mut RequestBudget) -> Result<(), Status> {
     budget.string(value, 256)?;
     bounds::identifier(value, 256)
 }
-pub(super) fn encoded(value: &impl Message, limits: &ManagementLimits) -> Result<(), Status> {
+pub(in crate::management) fn encoded(
+    value: &impl Message,
+    limits: &ManagementLimits,
+) -> Result<(), Status> {
     if value.encoded_len() > limits.max_request_bytes.min(super::MAX_REQUEST_BYTES) {
         return Err(bounds::exhausted());
     }
     Ok(())
 }
-pub(super) fn language(kind: domain::RecordKind) -> &'static str {
+pub(in crate::management) fn language(kind: domain::RecordKind) -> &'static str {
     match kind {
         domain::RecordKind::Policy => domain::LANGUAGE,
         domain::RecordKind::ProviderBinding => domain::PROVIDER_BINDING_LANGUAGE,
     }
 }
-pub(super) fn normalize(
+pub(in crate::management) fn normalize(
     value: &proto::Policy,
     tenant: &str,
     budget: &mut RequestBudget,

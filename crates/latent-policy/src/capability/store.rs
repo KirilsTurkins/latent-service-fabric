@@ -10,7 +10,8 @@ mod tests;
 
 use super::{invalid, unavailable, CapabilityPolicy, ProviderBinding};
 pub use authority::{
-    CallRestrictions, EvaluationInput, Explanation, PolicySnapshot, SealedPolicyDecision,
+    CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, PolicySnapshot,
+    PolicySnapshotState, SealedPolicyDecision,
 };
 use latent_artifacts::LifecycleAuthorityHandle;
 use latent_core::PlatformError;
@@ -78,6 +79,12 @@ pub struct PolicyStore {
     started: Instant,
 }
 impl PolicyStore {
+    /// Bounded ownership for a redacted management inspection response. The
+    /// caller must preflight its response before releasing the control job.
+    pub fn reserve_inspection(&self) -> Result<PolicyReadLease, PlatformError> {
+        self.owner.check()?;
+        self.owner.lease()
+    }
     pub fn open(
         path: &Path,
         limits: PolicyStoreLimits,

@@ -20,6 +20,7 @@ impl AuditHandle {
     ) -> Result<()> {
         codec::attempt(attempt)?;
         codec::conclusion(conclusion)?;
+        codec::capability_pair(attempt, conclusion)?;
         let conclusion = codec::normalize(conclusion, self.shared.limits.maximum_record_bytes)?;
         codec::envelope(
             &attempt.scope,
@@ -177,6 +178,7 @@ fn finish(p: Arc<Pending>, conclusion: AuditOperationConclusion) -> AuditAppendT
     let result = (|| {
         codec::conclusion(&conclusion)?;
         let shared = p.shared.upgrade().ok_or_else(closed)?;
+        codec::capability_pair(&p.attempt, &conclusion)?;
         let mut s = shared.state.lock().map_err(|_| unavailable())?;
         if s.summary.recovery_pending
             || s.finish.is_some()
@@ -217,6 +219,14 @@ fn finish(p: Arc<Pending>, conclusion: AuditOperationConclusion) -> AuditAppendT
 }
 pub(super) fn abandoned(p: &Pending) -> AuditOperationConclusion {
     let started = p.started.load(Ordering::Acquire);
+    let mut identities = p.attempt.identities.clone();
+    if let Some(context) = &mut identities.capability {
+        context.provider_outcome = Some(if started {
+            super::super::AuditProviderOutcome::Unknown
+        } else {
+            super::super::AuditProviderOutcome::NotStarted
+        });
+    }
     AuditOperationConclusion {
         canary_decision: None,
         result: if started {
@@ -230,7 +240,7 @@ pub(super) fn abandoned(p: &Pending) -> AuditOperationConclusion {
             AuditReason::NotStarted
         },
         receipt_digest: None,
-        identities: p.attempt.identities.clone(),
+        identities,
         replay: p.attempt.replay,
         occurred_at_unix_millis: store::now(),
     }

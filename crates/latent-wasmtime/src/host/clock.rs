@@ -10,7 +10,7 @@ use crate::bindings::latent::clock::{monotonic, wall};
 impl monotonic::Host for HostState {
     async fn now_nanos(&mut self) -> wasmtime::Result<u64> {
         let started = Instant::now();
-        let _call = self.capabilities.scalar(
+        let mut call = self.capabilities.scalar(
             "latent:clock/monotonic@0.1.0",
             "now-nanos",
             latent_policy::capability::ResourceTarget::Clock,
@@ -21,6 +21,11 @@ impl monotonic::Host for HostState {
             self.clock_origin,
             &mut self.last_monotonic_nanos,
         );
+        if let Some(call) = &mut call {
+            let _ = call.record_provider_outcome(
+                latent_capabilities::broker::AuditProviderOutcome::HostCompleted,
+            );
+        }
         self.record_host_call(started);
         Ok(value)
     }
@@ -29,7 +34,7 @@ impl monotonic::Host for HostState {
 impl wall::Host for HostState {
     async fn now_unix_millis(&mut self) -> wasmtime::Result<u64> {
         let started = Instant::now();
-        let _call = self.capabilities.scalar(
+        let mut call = self.capabilities.scalar(
             "latent:clock/wall@0.1.0",
             "now-unix-millis",
             latent_policy::capability::ResourceTarget::Clock,
@@ -38,6 +43,11 @@ impl wall::Host for HostState {
         // Wall-clock adjustments are observable; elapsed time and deadlines
         // remain based on the separate monotonic process clock.
         let value = self.clock.sample().unix_millis();
+        if let Some(call) = &mut call {
+            let _ = call.record_provider_outcome(
+                latent_capabilities::broker::AuditProviderOutcome::HostCompleted,
+            );
+        }
         self.record_host_call(started);
         Ok(value)
     }

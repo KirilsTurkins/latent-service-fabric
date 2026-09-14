@@ -93,9 +93,29 @@ async fn cancelled_queue_input_keeps_its_actual_tenant_and_byte_ownership() {
     drop(other);
     assert!(!observer.is_quiescent());
     assert_eq!(setup.pools.snapshot().unwrap().pending_requests, 1);
+    let usage = setup.fixture.broker.inspect_node_usage().unwrap();
+    assert_eq!(usage.pools.unwrap().pending_requests, 1);
+    assert!(usage.io.unwrap().staged_bytes >= 32);
+    let tenant = setup
+        .fixture
+        .broker
+        .inspect_tenant_usage(&latent_core::TenantId("a".into()))
+        .unwrap();
+    assert!(tenant.waiting > 0);
     drop(input);
     assert!(observer.is_quiescent());
     assert_eq!(setup.pools.snapshot().unwrap().pending_requests, 0);
+    assert_eq!(
+        setup
+            .fixture
+            .broker
+            .inspect_node_usage()
+            .unwrap()
+            .pools
+            .unwrap()
+            .pending_requests,
+        0
+    );
     drop(occupied);
     drop(session);
     clean(&setup.pools).await;

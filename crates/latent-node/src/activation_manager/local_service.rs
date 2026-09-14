@@ -61,7 +61,7 @@ impl LocalActivationManager {
 impl LocalServiceInvoker for Invoker {
     fn start(
         &self,
-        call: ProviderCall,
+        mut call: ProviderCall,
         request: LocalServiceRequest,
     ) -> Result<LocalServiceInvocation, PlatformError> {
         let executor = tokio::runtime::Handle::try_current().map_err(|_| {
@@ -77,6 +77,12 @@ impl LocalServiceInvoker for Invoker {
             )
         })?;
         let (activation, child) = manager.start_child(&call, request, &self.ceiling)?;
+        // This witnesses the node's accepted child lifecycle, not guest success
+        // or transactional effects. Failed evidence recording remains Unknown;
+        // the actual child and call still go through node-owned cleanup.
+        let _ = call.record_provider_outcome(
+            latent_capabilities::broker::AuditProviderOutcome::LocalDispatchAccepted,
+        );
         let (sender, receiver) = tokio::sync::oneshot::channel();
         // This task is bounded by the accepted call, descendant, quota and cell
         // owners. It drives cleanup after receiver loss; no extra worker pool.

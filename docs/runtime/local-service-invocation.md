@@ -107,6 +107,12 @@ silently unquarantines that parent cell.
 
 ## Validation
 
+Required [capability audit](capability-audit.md) is admitted before child creation.
+Its digest covers the real typed target, payload and options. A recorded
+`LocalDispatchAccepted` means the lifecycle was accepted even if the child guest
+later fails. A full required journal prevents admission; a failed terminal write
+never causes automatic child retry.
+
 `cargo test -p latent-wasmtime --test local_service --locked` uses real canonical
 async caller and callee components with the catalog, policies, compiled bindings,
 admission controller and scheduler. It covers success, concurrent calls, spent

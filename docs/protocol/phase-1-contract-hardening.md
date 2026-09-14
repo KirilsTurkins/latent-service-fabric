@@ -403,3 +403,29 @@ reinterpreted as publication identity. Full semantics and limits are in
 
 The normalized descriptor baseline deliberately records these additive changes.
 They do not change the guest WIT ABI or install a new provider.
+
+### Phase 3 capability audit and inspection (#210)
+
+The descriptor baseline records additive capability audit and inspection fields.
+`AuditIdentities` field 21 carries bounded, redacted capability provenance;
+`AuditControlAction` value 10 and `Phase2AuditEventKind` values 16 through 18
+identify capability calls, grant decisions and provider outcomes. New typed
+context, revision, digest and outcome messages distinguish observed provider
+acceptance from audit durability. Historical records omit the new context and
+retain their canonical bytes. Existing field numbers and types are unchanged.
+
+`CapabilityService` keeps its RPC signatures. List request fields 4/5 select a
+deployment and optional node usage; response fields 3 through 6 expose revision,
+tenant/node counters and sampled state. Descriptor field 6 adds binding
+inspection. Explain request fields 6/7 provide a bounded typed resource and
+optional hypothetical subject; response fields 5 through 8 expose revision,
+binding inspection, required-audit policy and ceilings.
+
+The formerly descriptive surface now has a closed executable profile: List
+requires a deployment, tenant scope comes from authentication, and shared node
+usage requires the trusted operator claim. Explain rejects the legacy principal
+and attribute overrides; hypothetical subjects inherit the authenticated tenant
+and cannot supply claims. Descriptions and sampled currentness are not grants.
+The [capability audit and inspection contract](../runtime/capability-audit.md)
+defines redaction, pagination, resource ownership and failure behavior. These
+additions do not change the guest WIT ABI.

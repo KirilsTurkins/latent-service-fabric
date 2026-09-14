@@ -35,6 +35,11 @@ apply/get/list/revoke/explain control. Sealed decisions recheck policy and
 publication authority at final admission. This control foundation does not itself
 install the remaining guest providers.
 
+[Capability audit and inspection](capability-audit.md) records required provider
+attempts and typed outcomes through the existing audit owner. Scoped management
+reads explain compiled grants and retained resources without granting execution
+permission or exposing credential-bearing selectors.
+
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
 [standalone node](../reference/standalone-node.md). Phase 3 continues with production

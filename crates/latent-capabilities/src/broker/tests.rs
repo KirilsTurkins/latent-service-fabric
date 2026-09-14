@@ -4,6 +4,8 @@ use latent_policy::capability::ResourceTarget;
 use std::{sync::atomic::Ordering, time::Duration};
 pub(super) mod fixture;
 use fixture::*;
+mod audit;
+mod diagnostics;
 mod route_fence;
 
 fn output() -> CapabilityCallCost {
@@ -514,6 +516,7 @@ fn binding_compile_rejects_substituted_provider_configuration_and_expired_work()
         })
         .unwrap();
     let imports = [CapabilityBindingSpec {
+        definition_digest: None,
         provider: &wrong.reference(),
         imported_operations: &["read".into()],
         policy_ids: &["p".into()],

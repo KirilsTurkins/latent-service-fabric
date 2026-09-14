@@ -26,6 +26,7 @@ fn local_route_cutover_denies_old_handles_before_provider_work_starts() {
         .compile_routed_plan(
             &f.revision,
             &[CapabilityBindingSpec {
+                definition_digest: None,
                 provider: &f.provider.reference(),
                 imported_operations: &["read".into()],
                 policy_ids: &["p".into()],

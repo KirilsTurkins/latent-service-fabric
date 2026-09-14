@@ -38,22 +38,23 @@ pub(crate) fn install(
                     let invocation = access.with(|mut access| {
                         let mut store = access.as_context_mut();
                         checkpoint(&mut store)?;
-                        let invocation = start(
-                            store.data(),
-                            invoker.as_ref(),
-                            target,
-                            payload,
-                            media_type,
-                            options,
-                        );
+                        let invocation = start(store.data(), target, payload, media_type, options);
                         // Failed setup also settles any provisional reservation.
                         synchronize(&mut store)?;
                         Ok::<_, wasmtime::Error>(invocation)
                     })?;
-                    let completion = match invocation {
-                        Ok(invocation) => invocation.await,
+                    let mut completion = match invocation {
+                        Ok((dispatch, request)) => {
+                            match dispatch.dispatch(|call| invoker.start(call, request)).await {
+                                Ok(Ok(invocation)) => invocation.await,
+                                Ok(Err(failure)) | Err(failure) => Err(failure),
+                            }
+                        }
                         Err(failure) => Err(failure),
                     };
+                    if let Ok(completion) = &mut completion {
+                        completion.call.finish_audit().await;
+                    }
                     access.with(|mut access| {
                         let mut store = access.as_context_mut();
                         checkpoint(&mut store)?;
@@ -84,12 +85,17 @@ pub(crate) fn install(
 
 fn start(
     state: &HostState,
-    invoker: &dyn LocalServiceInvoker,
     target: wit::Target,
     payload: Vec<u8>,
     media_type: String,
     options: wit::CallOptions,
-) -> Result<latent_capabilities::broker::LocalServiceInvocation, PlatformError> {
+) -> Result<
+    (
+        latent_capabilities::broker::CapabilityDispatch,
+        LocalServiceRequest,
+    ),
+    PlatformError,
+> {
     if payload.capacity() > MAX_INPUT_BYTES || options.metadata.len() > MAX_METADATA_PAIRS {
         return Err(exhausted());
     }
@@ -141,9 +147,14 @@ fn start(
         function: FunctionId(target.function),
         route: target.route,
     };
+    let digest = state
+        .capabilities
+        .captures_audit()
+        .then(|| request_digest(&target, &payload, &media_type, &options))
+        .transpose()?;
     let call = state
         .capabilities
-        .local_call(&target, &[], bytes, MAX_OUTPUT_BYTES)?;
+        .local_call(&target, &[], bytes, MAX_OUTPUT_BYTES, digest)?;
     let mut metadata = latent_core::Metadata::new();
     for (key, value) in options.metadata {
         if metadata.insert(key, value).is_some() {
@@ -153,7 +164,7 @@ fn start(
             ));
         }
     }
-    invoker.start(
+    Ok((
         call,
         LocalServiceRequest {
             target,
@@ -164,7 +175,44 @@ fn start(
             input: payload,
             input_media_type: media_type,
         },
-    )
+    ))
+}
+fn request_digest(
+    target: &InvocationTarget,
+    payload: &[u8],
+    media_type: &str,
+    options: &wit::CallOptions,
+) -> Result<latent_capabilities::broker::CapabilityRequestDigest, PlatformError> {
+    let priority = [options.priority];
+    let present = [
+        u8::from(options.deadline_unix_millis.is_some()),
+        u8::from(options.idempotency_key.is_some()),
+        u8::from(target.route.is_some()),
+    ];
+    let deadline = options.deadline_unix_millis.unwrap_or(0).to_le_bytes();
+    let mut parts: Vec<&[u8]> = vec![
+        b"local-service-v1",
+        target.tenant.0.as_bytes(),
+        target.service.0.as_bytes(),
+        target.contract.0.as_bytes(),
+        target.function.0.as_bytes(),
+        &present,
+        target.route.as_deref().unwrap_or_default().as_bytes(),
+        &deadline,
+        &priority,
+        options
+            .idempotency_key
+            .as_deref()
+            .unwrap_or_default()
+            .as_bytes(),
+        media_type.as_bytes(),
+        payload,
+    ];
+    for (key, value) in &options.metadata {
+        parts.push(key.as_bytes());
+        parts.push(value.as_bytes());
+    }
+    latent_capabilities::broker::CapabilityRequestDigest::from_parts(&parts)
 }
 fn checkpoint(store: &mut StoreContextMut<'_, HostState>) -> wasmtime::Result<()> {
     let fuel = store.get_fuel()?;

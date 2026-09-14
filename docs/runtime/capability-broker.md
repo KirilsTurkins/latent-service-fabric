@@ -6,6 +6,11 @@ the broker's private plan, session, handle row and accepted call owners authoriz
 provider work. This is the implementation of [#204](https://github.com/KirilsTurkins/latent-service-fabric/issues/204),
 building on [durable policies](capability-policies.md) and exact publication identity.
 
+[Capability audit and inspection](capability-audit.md) adds required durable
+dispatch admission, typed provider evidence and tenant-scoped descriptive reads.
+Ordinary calls avoid mandatory journaling; required calls use owned asynchronous
+dispatch and retain explicit uncertainty on interruption.
+
 ## Installation and session creation
 
 One configured `ActivationCapabilityBroker` owns bounded counters, an exact

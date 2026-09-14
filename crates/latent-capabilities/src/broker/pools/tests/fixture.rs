@@ -104,6 +104,7 @@ impl Setup {
             .compile_plan(
                 &revision,
                 &[CapabilityBindingSpec {
+                    definition_digest: None,
                     provider: &provider.reference(),
                     imported_operations: &["read".into()],
                     policy_ids: &["p".into()],

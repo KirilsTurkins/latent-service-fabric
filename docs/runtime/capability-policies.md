@@ -38,6 +38,10 @@ actual publication ID; a component digest cannot stand in for it.
 No matching allow means deny. A matching deny overrides every allow. Multiple
 matching allows intersect their ceilings. Each independently required policy
 must allow the operation; policies are never combined into a union of authority.
+An optional `requireAudit` boolean on an allow rule requires durable recording
+before dispatch. Requirements combine with logical OR; omission means false and
+preserves old canonical bytes. See [capability audit](capability-audit.md) for
+asynchronous admission, saturation and synchronous-import limitations.
 Values within one selector are alternatives; different selectors all have to
 match. Service and publication lists form a cross-product, so use separate rules
 when only particular service/publication pairs should be allowed.

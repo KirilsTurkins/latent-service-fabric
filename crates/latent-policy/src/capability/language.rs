@@ -54,6 +54,13 @@ struct Rule {
     operations: Vec<String>,
     resources: ResourceConstraint,
     ceiling: CapabilityCeiling,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    require_audit: bool,
+}
+
+pub(super) struct EvaluatedGrant {
+    pub ceiling: CapabilityCeiling,
+    pub require_audit: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -134,11 +141,12 @@ impl CapabilityPolicy {
         capability: &str,
         operation: &str,
         resource: &super::ResourceTarget<'_>,
-    ) -> Option<CapabilityCeiling> {
+    ) -> Option<EvaluatedGrant> {
         if principal.tenant.as_ref().map(|tenant| tenant.0.as_str()) != Some(self.tenant()) {
             return None;
         }
         let mut allowed: Option<CapabilityCeiling> = None;
+        let mut require_audit = false;
         for rule in &self.document.rules {
             if rule.capability != capability
                 || !rule.operations.iter().any(|value| value == operation)
@@ -157,7 +165,11 @@ impl CapabilityPolicy {
             // Matching grants narrow one another; disjoint matching rules must
             // never combine selected dimensions into a broader synthetic grant.
             allowed = Some(allowed.map_or(rule.ceiling, |value| value.intersect(rule.ceiling)));
+            require_audit |= rule.require_audit;
         }
-        allowed
+        allowed.map(|ceiling| EvaluatedGrant {
+            ceiling,
+            require_audit,
+        })
     }
 }

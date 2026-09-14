@@ -91,11 +91,19 @@ pub struct Fixture {
     _root: tempfile::TempDir,
 }
 impl Fixture {
+    pub async fn new(cells: u32, foreign: bool, permit_target: bool) -> Self {
+        Self::with_audit(cells, foreign, permit_target, None).await
+    }
     #[expect(
         clippy::too_many_lines,
         reason = "one explicit real catalog, broker and node ownership composition for integration tests"
     )]
-    pub async fn new(cells: u32, foreign: bool, permit_target: bool) -> Self {
+    pub async fn with_audit(
+        cells: u32,
+        foreign: bool,
+        permit_target: bool,
+        audit: Option<latent_audit::AuditHandle>,
+    ) -> Self {
         let root = tempfile::tempdir().unwrap();
         let target_tenant = if foreign { "tenant-b" } else { "tenant-a" };
         let caller = packages::caller(foreign.then_some(target_tenant));
@@ -194,7 +202,7 @@ impl Fixture {
                 "id":"call","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":["caller"],
                 "publications":[caller_publication.as_str()],"capability":SERVICE_INVOCATION_CAPABILITY,"operations":["call"],
                 "resources":{"kind":"service","services":["callee"],"publications":[allowed_target]},
-                "ceiling":{"operations":8,"inputBytes":65536,"outputBytes":65536,"wallTimeMillis":5000}}]}),
+                "ceiling":{"operations":8,"inputBytes":65536,"outputBytes":65536,"wallTimeMillis":5000},"requireAudit":audit.is_some()}]}),
             ),
             (
                 "installed",
@@ -221,15 +229,17 @@ impl Fixture {
                 .unwrap();
         }
         let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
-        let broker = Arc::new(
-            ActivationCapabilityBroker::new(
-                catalog.lifecycle_authority(),
-                policies.clone(),
-                clock.clone(),
-                CapabilityBrokerLimits::default(),
-            )
-            .unwrap(),
-        );
+        let broker = ActivationCapabilityBroker::new(
+            catalog.lifecycle_authority(),
+            policies.clone(),
+            clock.clone(),
+            CapabilityBrokerLimits::default(),
+        )
+        .unwrap();
+        let broker = Arc::new(match audit {
+            Some(audit) => broker.with_audit(audit, false).unwrap(),
+            None => broker,
+        });
         let provider = broker
             .register_provider(ProviderConfiguration {
                 capability: SERVICE_INVOCATION_CAPABILITY,

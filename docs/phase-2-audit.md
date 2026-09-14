@@ -1,5 +1,9 @@
 # Phase 2 audit
 
+Phase 3 [capability audit and inspection](runtime/capability-audit.md) extends this
+same owner with typed capability grant/call/provider evidence and optional
+policy-required admission. It preserves the query and resource contracts below.
+
 `latent-audit` provides a bounded durable journal for security and administrative
 history. An optional node configuration opens one filesystem owner and one
 worker, shared by management, admission verification and native-cache producers.

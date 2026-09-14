@@ -303,6 +303,7 @@ pub(super) fn revision(
     }
 }
 struct Import<'a> {
+    definition_digest: latent_core::ArtifactBlobDigest,
     definition: &'a BindingDefinition,
     provider: &'a ConfiguredBindingProvider,
     operations: Vec<String>,
@@ -377,6 +378,7 @@ async fn plan(
         };
         let (policies, restriction) = grant(record, d, interface)?;
         imports.push(Import {
+            definition_digest: definition_digest(d)?,
             definition: d,
             provider,
             operations: proof.operations().to_vec(),
@@ -387,6 +389,7 @@ async fn plan(
     let specs: Vec<_> = imports
         .iter()
         .map(|i| CapabilityBindingSpec {
+            definition_digest: Some(&i.definition_digest),
             provider: &i.provider.reference,
             imported_operations: &i.operations,
             policy_ids: &i.policies,
@@ -402,6 +405,7 @@ async fn plan(
     });
     owner.broker.compile_invocation_plan(
         &revision(record, catalog.generation),
+        Some(&record.deployment.id),
         &specs,
         &publication,
         &dependencies,
@@ -410,6 +414,24 @@ async fn plan(
         fence,
         deadline,
     )
+}
+
+fn definition_digest(
+    definition: &BindingDefinition,
+) -> Result<latent_core::ArtifactBlobDigest, PlatformError> {
+    use latent_manifest::{JsonManifestCodec, ManifestCodec};
+    let manifest = JsonManifestCodec::default()
+        .encode_binding(&definition.manifest)
+        .map_err(|_| invalid())?;
+    let bytes = latent_manifest::__serde_json::to_vec(&(
+        "lsf-capability-binding-definition-v1",
+        manifest,
+        &definition.provider_binding_id,
+        &definition.allowed_modes,
+        &definition.restriction_json,
+    ))
+    .map_err(|_| invalid())?;
+    Ok(latent_artifacts::package::artifact_blob_digest(&bytes))
 }
 
 fn grant(

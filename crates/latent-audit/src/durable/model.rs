@@ -7,6 +7,8 @@ use latent_core::{
 use serde::{Deserialize, Serialize};
 mod canary;
 pub use canary::{AuditCanaryDecision, AuditCanaryReason, AuditCanaryVerdict};
+mod capability;
+pub use capability::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AuditScope {
@@ -75,7 +77,8 @@ enumeration!(AuditControlAction {
     DeploymentDelete,
     Rollout,
     Promotion,
-    Rollback
+    Rollback,
+    CapabilityCall
 });
 enumeration!(AuditOperationResult {
     Committed,
@@ -141,6 +144,12 @@ pub struct AuditPolicyIdentity {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditIdentities {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub capability: Option<AuditCapabilityContext>,
     /// Captured source publication; record scope authorizes the operation and
     /// does not promote a local-unscoped compatibility source to tenant admission.
     #[serde(

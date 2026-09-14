@@ -1,8 +1,8 @@
 //! Tenant-scoped policy control, never a guest-facing permission mint.
-mod conversion;
+pub(super) mod conversion;
 mod lease;
 mod reads;
-mod validation;
+pub(super) mod validation;
 pub use lease::PolicyResponseService;
 
 use super::{proto, ManagementOperation, ManagementServiceAdapter, RequestBudget};
@@ -13,7 +13,7 @@ use tonic::{Request, Response, Status};
 pub(super) const MAX_REQUEST_BYTES: usize = 128 * 1024;
 pub(super) const MAX_RESPONSE_BYTES: usize = 1024 * 1024;
 impl ManagementServiceAdapter {
-    fn policy_control(&self) -> Result<&domain::PolicyControlHandle, Status> {
+    pub(super) fn policy_control(&self) -> Result<&domain::PolicyControlHandle, Status> {
         self.policies
             .as_ref()
             .ok_or_else(|| Status::unimplemented("capability-policy-unavailable"))

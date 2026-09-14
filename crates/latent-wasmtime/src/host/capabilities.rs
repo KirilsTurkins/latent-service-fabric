@@ -72,13 +72,19 @@ impl HostCapabilities {
             .map(|session| session.tenant().clone())
             .ok_or_else(super::service::denied)
     }
+    pub(super) fn captures_audit(&self) -> bool {
+        self.session
+            .as_ref()
+            .is_some_and(CapabilitySession::captures_audit)
+    }
     pub(super) fn local_call(
         &self,
         requested: &latent_routing::InvocationTarget,
         input: &[u8],
         typed_bytes: usize,
         output_bytes: usize,
-    ) -> Result<ProviderCall, PlatformError> {
+        digest: Option<latent_capabilities::broker::CapabilityRequestDigest>,
+    ) -> Result<latent_capabilities::broker::CapabilityDispatch, PlatformError> {
         let session = self.session.as_ref().ok_or_else(super::service::denied)?;
         let target = session.local_invocation_target(requested)?;
         let resource = ResourceTarget::Service {
@@ -89,17 +95,17 @@ impl HostCapabilities {
                 .expect("compiled scoped target")
                 .as_str(),
         };
-        let call = self
-            .dispatch_typed(
-                latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY,
-                "call",
-                resource,
-                input,
-                CapabilityCallCost::new(output_bytes).with_typed_input_bytes(typed_bytes),
-            )?
-            .ok_or_else(super::service::denied)?;
-        call.local_invocation_target(requested)?;
-        Ok(call)
+        let mut cost = CapabilityCallCost::new(output_bytes).with_typed_input_bytes(typed_bytes);
+        if let Some(digest) = digest {
+            cost = cost.with_typed_request_digest(digest);
+        }
+        session.prepare_owned_dispatch(
+            latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY,
+            "call",
+            resource,
+            input,
+            cost,
+        )
     }
     pub(super) fn retain_lowering(&mut self, call: ProviderCall) {
         self.lowering.push(call);
@@ -108,13 +114,18 @@ impl HostCapabilities {
         &self,
         level: &str,
         encoded_bytes: usize,
+        digest: Option<latent_capabilities::broker::CapabilityRequestDigest>,
     ) -> Result<Option<ProviderCall>, PlatformError> {
+        let mut cost = CapabilityCallCost::new(0).with_typed_input_bytes(encoded_bytes);
+        if let Some(digest) = digest {
+            cost = cost.with_typed_request_digest(digest);
+        }
         self.begin_typed(
             "latent:log/log@0.1.0",
             "write",
             ResourceTarget::Log { level },
             &[],
-            CapabilityCallCost::new(0).with_typed_input_bytes(encoded_bytes),
+            cost,
         )
     }
     pub(super) fn context(&mut self, operation: &str, output_bytes: usize) -> wasmtime::Result<()> {

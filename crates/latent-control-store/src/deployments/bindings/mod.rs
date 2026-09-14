@@ -1,5 +1,6 @@
 //! Exact data-only bindings published by the existing deployment transaction.
 mod compile;
+mod inspection;
 pub(in crate::deployments) mod model;
 mod source;
 pub(in crate::deployments) use source::Generations;
