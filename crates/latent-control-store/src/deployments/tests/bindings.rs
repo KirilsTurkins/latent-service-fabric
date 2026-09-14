@@ -1,5 +1,6 @@
 //! Checked packages and real catalog/policy ownership; no guest execution.
 mod fixture;
+mod inspection;
 mod local;
 #[path = "../../../../latent-packaging/tests/fixtures/mod.rs"]
 mod package_fixture;

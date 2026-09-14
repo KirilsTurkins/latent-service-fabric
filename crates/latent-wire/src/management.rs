@@ -3,6 +3,7 @@
 mod audit;
 mod authentication;
 mod bounds;
+mod capabilities;
 mod control_audit;
 mod deployment;
 mod errors;
@@ -59,6 +60,7 @@ pub struct ManagementServiceAdapter {
     services: ManagementServices,
     limits: ManagementLimits,
     policies: Option<latent_policy::capability::PolicyControlHandle>,
+    capabilities: Option<capabilities::Inspection>,
 }
 
 impl ManagementServiceAdapter {
@@ -84,6 +86,7 @@ impl ManagementServiceAdapter {
             services,
             limits,
             policies: None,
+            capabilities: None,
         })
     }
 

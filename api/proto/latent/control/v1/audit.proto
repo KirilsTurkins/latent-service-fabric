@@ -33,6 +33,9 @@ enum Phase2AuditEventKind {
   PHASE2_AUDIT_EVENT_KIND_PROMOTION_REJECTED = 13;
   PHASE2_AUDIT_EVENT_KIND_ROLLBACK_ACCEPTED = 14;
   PHASE2_AUDIT_EVENT_KIND_ROLLBACK_REJECTED = 15;
+  PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED = 16;
+  PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_DENIED = 17;
+  PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME = 18;
 }
 
 message Phase2AuditFilter {
@@ -104,6 +107,9 @@ message AuditPolicyIdentity {
 }
 
 message AuditIdentities {
+  // Trusted captured facts only. Resource selectors, credentials and payloads
+  // are never returned here; this message cannot authorize a provider call.
+  AuditCapabilityContext capability = 21;
   // Exact captured source publication. The record scopes the operation; a
   // local-unscoped compatibility source does not acquire tenant admission.
   // Absence on a historical record never requests fresh component resolution.
@@ -142,6 +148,65 @@ enum AuditControlAction {
   AUDIT_CONTROL_ACTION_PROMOTION = 7;
   AUDIT_CONTROL_ACTION_ROLLBACK = 8;
   AUDIT_CONTROL_ACTION_DEPLOYMENT_DELETE = 9;
+  AUDIT_CONTROL_ACTION_CAPABILITY_CALL = 10;
+}
+
+enum AuditCapabilityResourceClass {
+  AUDIT_CAPABILITY_RESOURCE_CLASS_UNSPECIFIED = 0;
+  AUDIT_CAPABILITY_RESOURCE_CLASS_CONTEXT = 1;
+  AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK = 2;
+  AUDIT_CAPABILITY_RESOURCE_CLASS_RANDOM = 3;
+  AUDIT_CAPABILITY_RESOURCE_CLASS_LOG = 4;
+  AUDIT_CAPABILITY_RESOURCE_CLASS_HTTP = 5;
+  AUDIT_CAPABILITY_RESOURCE_CLASS_BLOB = 6;
+  AUDIT_CAPABILITY_RESOURCE_CLASS_SECRETS = 7;
+  AUDIT_CAPABILITY_RESOURCE_CLASS_EVENTS = 8;
+  AUDIT_CAPABILITY_RESOURCE_CLASS_TELEMETRY = 9;
+  AUDIT_CAPABILITY_RESOURCE_CLASS_SERVICE = 10;
+}
+enum AuditProviderOutcome {
+  AUDIT_PROVIDER_OUTCOME_UNSPECIFIED = 0;
+  AUDIT_PROVIDER_OUTCOME_NOT_STARTED = 1;
+  AUDIT_PROVIDER_OUTCOME_LOCAL_DISPATCH_ACCEPTED = 2;
+  AUDIT_PROVIDER_OUTCOME_HTTP_RESPONSE_RECEIVED = 3;
+  AUDIT_PROVIDER_OUTCOME_BROKER_ACKNOWLEDGED = 4;
+  AUDIT_PROVIDER_OUTCOME_BLOB_SEALED = 5;
+  AUDIT_PROVIDER_OUTCOME_SECRET_RESOLVED = 6;
+  AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED = 7;
+  AUDIT_PROVIDER_OUTCOME_REJECTED = 8;
+  AUDIT_PROVIDER_OUTCOME_UNKNOWN = 9;
+}
+enum AuditCapabilityDigestScope {
+  AUDIT_CAPABILITY_DIGEST_SCOPE_UNSPECIFIED = 0;
+  AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION = 1;
+  AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST = 2;
+}
+message AuditCapabilityRequestDigest {
+  AuditCapabilityDigestScope scope = 1;
+  string digest = 2;
+}
+message AuditCapabilityRevision {
+  string id = 1;
+  uint64 revision = 2;
+  string digest = 3;
+}
+message AuditCapabilityContext {
+  string activation = 1;
+  optional string parent_activation = 2;
+  string root_activation = 3;
+  string service = 4;
+  string binding_definition_digest = 5;
+  AuditCapabilityRevision binding = 6;
+  repeated AuditCapabilityRevision policies = 7;
+  string provider_profile = 8;
+  string provider_configuration_digest = 9;
+  uint64 provider_configuration_epoch = 10;
+  string capability = 11;
+  string operation = 12;
+  AuditCapabilityResourceClass resource_class = 13;
+  AuditCapabilityRequestDigest request = 14;
+  bool required = 15;
+  optional AuditProviderOutcome provider_outcome = 16;
 }
 
 enum AuditOperationResult {

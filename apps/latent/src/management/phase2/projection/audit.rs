@@ -1,5 +1,6 @@
 //! Closed typed projection; all protobuf u64 fields remain decimal strings.
 use super::{invalid_response, json, proto, Failure, Project, Tree, Value};
+mod capability;
 
 impl Project for proto::AuditActorIdentity {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
@@ -50,6 +51,9 @@ impl Project for proto::AuditCanaryDecision {
 impl Project for proto::AuditIdentities {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
+        if let Some(value) = &self.capability {
+            value.validate(b)?;
+        }
         for value in [
             &self.publication_id,
             &self.base_publication_id,
@@ -96,6 +100,7 @@ impl Project for proto::AuditIdentities {
     fn project(self) -> Value {
         json!({
         "packageDigest": self.package_digest.map(|value| json!(value)),
+        "capability": self.capability.map(Project::project),
         "publicationId": self.publication_id.map(|value| json!(value)),
         "basePublicationId": self.base_publication_id,
         "candidatePublicationId": self.candidate_publication_id,

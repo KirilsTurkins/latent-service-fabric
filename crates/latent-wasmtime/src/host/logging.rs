@@ -260,8 +260,26 @@ impl InvocationLogBuffer {
             .map_err(|_| log::LogError::BudgetExhausted)?;
         // Exact encoded LogBytes are already reserved on the original ledger.
         // The broker additionally owns transient input memory before encoding.
-        let _call = capabilities
-            .log(level, encoded_bytes)
+        let digest = if capabilities.captures_audit() {
+            let mut parts: Vec<&[u8]> = vec![
+                b"lsf-log-frame-v1",
+                context.activation_id.0.as_bytes(),
+                level.as_bytes(),
+                message.as_bytes(),
+            ];
+            for (key, value) in &normalized {
+                parts.push(key.as_bytes());
+                parts.push(value.as_bytes());
+            }
+            Some(
+                latent_capabilities::broker::CapabilityRequestDigest::from_parts(&parts)
+                    .map_err(|_| log::LogError::Unavailable)?,
+            )
+        } else {
+            None
+        };
+        let mut call = capabilities
+            .log(level, encoded_bytes, digest)
             .map_err(|_| log::LogError::Unavailable)?;
         let mut encoded = BoundedEncoding {
             bytes: Vec::with_capacity(encoded_bytes),
@@ -280,6 +298,11 @@ impl InvocationLogBuffer {
                 .collect(),
         };
         self.sink.accept(entry, &encoded.bytes, reservation)?;
+        if let Some(call) = &mut call {
+            let _ = call.record_provider_outcome(
+                latent_capabilities::broker::AuditProviderOutcome::HostCompleted,
+            );
+        }
         self.bytes += encoded_bytes;
         self.accepted_entries += 1;
         Ok(true)

@@ -1,4 +1,6 @@
 use super::*;
+#[cfg(unix)]
+mod capability;
 use latent_core::{ArtifactBlobDigest, TenantId};
 use std::{
     path::PathBuf,
@@ -561,11 +563,7 @@ fn query_scope_scan_and_frozen_cursor_are_independent_of_future_appends() {
     }
     drop(store);
     let (handle, mut worker) = open(&path, limits).unwrap();
-    let page = handle
-        .query(
-            query(attempt().scope),
-            Instant::now() + Duration::from_secs(2),
-        )
+    let page = admitted_query(&handle, &query(attempt().scope))
         .unwrap()
         .blocking_wait()
         .unwrap();
@@ -576,15 +574,13 @@ fn query_scope_scan_and_frozen_cursor_are_independent_of_future_appends() {
     drop(page);
     let mut forged = query(AuditScope::Node);
     forged.cursor = Some(cursor.clone());
-    assert!(handle
-        .query(forged, Instant::now() + Duration::from_secs(2))
+    assert!(admitted_query(&handle, &forged)
         .unwrap()
         .blocking_wait()
         .is_err());
     let mut next = query(attempt().scope);
     next.cursor = Some(cursor);
-    let page = handle
-        .query(next, Instant::now() + Duration::from_secs(2))
+    let page = admitted_query(&handle, &next)
         .unwrap()
         .blocking_wait()
         .unwrap();
@@ -592,6 +588,25 @@ fn query_scope_scan_and_frozen_cursor_are_independent_of_future_appends() {
     assert_eq!(page.records()[0].sequence, 2);
     drop(page);
     stop(&handle, &mut worker);
+}
+#[cfg(unix)]
+fn admitted_query(handle: &AuditHandle, request: &AuditQueryRequest) -> Result<AuditQueryTicket> {
+    // Only retry refusal before query admission. One original deadline bounds
+    // retries; an accepted query ticket is consumed exactly once, including
+    // malformed/foreign cursor errors returned by the worker.
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        match handle.query(request.clone(), deadline) {
+            Err(error)
+                if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                    && error.message == "audit-busy"
+                    && Instant::now() < deadline =>
+            {
+                std::thread::yield_now();
+            }
+            result => return result,
+        }
+    }
 }
 #[cfg(unix)]
 fn observation(scope: AuditScope) -> AuditObservation {

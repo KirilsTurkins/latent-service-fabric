@@ -59,7 +59,7 @@ pub(super) fn applied(
         receipt: Some(operation(receipt)),
     }
 }
-pub(super) fn finish<T: Message>(
+pub(in crate::management) fn finish<T: Message>(
     value: T,
     lease: domain::PolicyReadLease,
     maximum: usize,

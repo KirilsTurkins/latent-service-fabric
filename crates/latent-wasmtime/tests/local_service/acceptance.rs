@@ -5,6 +5,99 @@ use latent_routing::RouteResolver;
 use std::time::Duration;
 
 const ANSWER: u32 = u32::from_le_bytes(*b"[42]");
+
+#[tokio::test]
+async fn required_audit_records_real_local_acceptance_and_denies_full_sink_before_child_admission()
+{
+    use latent_audit::*;
+    use std::time::Instant;
+    let directory = tempfile::tempdir().unwrap();
+    let (audit, mut worker) = DirectoryPhase2AuditJournal::open(
+        directory.path().join("audit"),
+        AuditLimits {
+            maximum_records: 4,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let f = Fixture::with_audit(2, false, true, Some(audit.clone())).await;
+    assert_eq!(
+        value(
+            f.manager
+                .start(f.request("audited-success", 0))
+                .unwrap()
+                .await
+        ),
+        ANSWER
+    );
+    f.idle().await;
+    // Different actual typed function/options must produce a different request
+    // digest, despite both adapter dispatches having an empty raw input slice.
+    assert_eq!(
+        value(
+            f.manager
+                .start(f.request("audited-declared-failure", 1))
+                .unwrap()
+                .await
+        ),
+        1000
+    );
+    f.idle().await;
+    let request = AuditQueryRequest {
+        scope: AuditScope::Tenant(TenantId("tenant-a".into())),
+        filter: AuditFilter::default(),
+        cursor: None,
+        limit: 8,
+        maximum_bytes: 32768,
+    };
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let page = loop {
+        match audit.query(request.clone(), deadline) {
+            Err(error) if error.message == "audit-busy" && Instant::now() < deadline => {
+                tokio::task::yield_now().await
+            }
+            result => break result.unwrap().wait().await.unwrap(),
+        }
+    };
+    assert_eq!(page.records().len(), 4);
+    let attempts: Vec<_> = page
+        .records()
+        .iter()
+        .filter_map(|record| match &record.data {
+            AuditRecordData::Attempt(value) => Some(value),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(attempts.len(), 2);
+    assert_ne!(attempts[0].request_digest, attempts[1].request_digest);
+    for record in page.records() {
+        if let AuditRecordData::Outcome { conclusion, .. } = &record.data {
+            assert_eq!(conclusion.result, AuditOperationResult::Committed);
+            assert_eq!(
+                conclusion
+                    .identities
+                    .capability
+                    .as_ref()
+                    .unwrap()
+                    .provider_outcome,
+                Some(AuditProviderOutcome::LocalDispatchAccepted)
+            );
+            assert!(conclusion.identities.deployment.is_some());
+        }
+    }
+    drop(page);
+    let starts = f.observations.starts.lock().unwrap().len();
+    assert_eq!(
+        value(f.manager.start(f.request("audit-full", 0)).unwrap().await),
+        2003
+    );
+    f.idle().await;
+    assert_eq!(f.observations.starts.lock().unwrap().len(), starts + 1); // parent only
+    audit.close();
+    assert!(worker
+        .join_until(Instant::now() + Duration::from_secs(2))
+        .unwrap());
+}
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn oversized_input_unknown_targets_and_expired_deadline_never_start_children() {
     let f = Fixture::new(2, false, true).await;

@@ -20,7 +20,8 @@ pub use narrowing::GrantRestriction;
 pub use resource_request::ResourceRequest;
 pub use resources::{CapabilityCeiling, HttpOrigin, ResourceConstraint, ResourceTarget};
 pub use store::{
-    CallRestrictions, EvaluationInput, Explanation, PolicySnapshot, SealedPolicyDecision,
+    CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, PolicySnapshot,
+    PolicySnapshotState, SealedPolicyDecision,
 };
 pub use store::{
     MutationRequest, OperationReceipt, PolicyPage, PolicyPageRequest, PolicyRead, PolicyReadLease,

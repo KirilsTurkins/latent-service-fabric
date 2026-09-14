@@ -29,16 +29,54 @@ pub(super) fn binding() -> Value {
 }
 fn allowed(value: &Value, principal: &InvocationPrincipal) -> Option<CapabilityCeiling> {
     let policy = CapabilityPolicy::parse(&serde_json::to_vec(value).unwrap()).unwrap();
-    policy.evaluate(
-        principal,
-        "echo",
-        &publication_id(),
-        "latent:secrets/reader@0.1.0",
-        "read",
-        &ResourceTarget::Secrets {
-            reference: "test-key",
-        },
-    )
+    policy
+        .evaluate(
+            principal,
+            "echo",
+            &publication_id(),
+            "latent:secrets/reader@0.1.0",
+            "read",
+            &ResourceTarget::Secrets {
+                reference: "test-key",
+            },
+        )
+        .map(|grant| grant.ceiling)
+}
+#[test]
+fn required_audit_is_monotonic_and_old_canonical_documents_are_unchanged() {
+    let original = policy();
+    let parsed = CapabilityPolicy::parse(&serde_json::to_vec(&original).unwrap()).unwrap();
+    assert!(!std::str::from_utf8(parsed.canonical())
+        .unwrap()
+        .contains("requireAudit"));
+    let mut value = original.clone();
+    let mut extra = value["rules"][0].clone();
+    extra["id"] = "audited".into();
+    extra["requireAudit"] = true.into();
+    extra["ceiling"]["inputBytes"] = 64.into();
+    value["rules"].as_array_mut().unwrap().push(extra);
+    let parsed = CapabilityPolicy::parse(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let grant = parsed
+        .evaluate(
+            &principal(),
+            "echo",
+            &publication_id(),
+            "latent:secrets/reader@0.1.0",
+            "read",
+            &ResourceTarget::Secrets {
+                reference: "test-key",
+            },
+        )
+        .unwrap();
+    assert!(grant.require_audit);
+    assert_eq!(grant.ceiling.input_bytes, 64);
+    value["rules"][0]["effect"] = "deny".into();
+    assert!(allowed(&value, &principal()).is_none());
+    for invalid in [Value::Null, json!("true"), json!(1)] {
+        let mut value = original.clone();
+        value["rules"][0]["requireAudit"] = invalid;
+        assert!(CapabilityPolicy::parse(&serde_json::to_vec(&value).unwrap()).is_err());
+    }
 }
 #[test]
 fn exact_identity_is_required_and_guest_claims_do_not_supply_it() {

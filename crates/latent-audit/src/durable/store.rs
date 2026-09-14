@@ -232,6 +232,7 @@ impl Store {
                 if conclusion.result == AuditOperationResult::Unknown {
                     self.unknown = self.unknown.saturating_add(1);
                 }
+                codec::capability_pair(&p.attempt, conclusion).map_err(|_| corrupt())?;
                 None
             }
             AuditRecordData::Observation(o) => Some(o.kind),

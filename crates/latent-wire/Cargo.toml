@@ -23,6 +23,7 @@ latent-telemetry = { path = "../latent-telemetry" }
 latent-control-store = { path = "../latent-control-store" }
 latent-manifest = { path = "../latent-manifest" }
 latent-policy = { path = "../latent-policy" }
+latent-capabilities = { path = "../latent-capabilities" }
 latent-admission = { path = "../latent-admission" }
 http-body.workspace = true
 prost.workspace = true

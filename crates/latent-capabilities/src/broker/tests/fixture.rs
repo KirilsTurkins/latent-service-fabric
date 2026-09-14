@@ -102,6 +102,23 @@ impl Fixture {
         limits: CapabilityBrokerLimits,
         minimum_call_charges: &[ProviderBudgetRequirement<'_>],
     ) -> Self {
+        Self::configured(limits, minimum_call_charges, None, false, false)
+    }
+    pub fn audited(
+        limits: CapabilityBrokerLimits,
+        audit: latent_audit::AuditHandle,
+        required: bool,
+        observations: bool,
+    ) -> Self {
+        Self::configured(limits, &[], Some(audit), required, observations)
+    }
+    fn configured(
+        limits: CapabilityBrokerLimits,
+        minimum_call_charges: &[ProviderBudgetRequirement<'_>],
+        audit: Option<latent_audit::AuditHandle>,
+        required: bool,
+        observations: bool,
+    ) -> Self {
         let dir = TempDir::new().unwrap();
         let catalog = DirectoryArtifactRepository::open(
             dir.path().join("artifacts"),
@@ -124,12 +141,15 @@ impl Fixture {
             )
             .unwrap(),
         );
-        let document = json!({"formatVersion":1,"tenant":"a","rules":[{
+        let mut document = json!({"formatVersion":1,"tenant":"a","rules":[{
             "id":"allow","effect":"allow","principals":[{"kind":"user","subject":"alice"}],
             "services":["echo"],"publications":[publication.publication().as_str()],"capability":CAP,
             "operations":["read"],"resources":{"kind":"secrets","references":["test-key"]},
             "ceiling":{"operations":4,"inputBytes":128,"outputBytes":256,"wallTimeMillis":5000}
         }]});
+        if required {
+            document["rules"][0]["requireAudit"] = true.into();
+        }
         let digest = format!("sha256:{}", "2".repeat(64));
         for (id, kind, value) in [
             ("p", RecordKind::Policy, document),
@@ -157,15 +177,17 @@ impl Fixture {
                 )
                 .unwrap();
         }
-        let broker = Arc::new(
-            ActivationCapabilityBroker::new(
-                catalog.lifecycle_authority(),
-                policies.clone(),
-                Arc::new(SystemActivationClock),
-                limits,
-            )
-            .unwrap(),
-        );
+        let broker = ActivationCapabilityBroker::new(
+            catalog.lifecycle_authority(),
+            policies.clone(),
+            Arc::new(SystemActivationClock),
+            limits,
+        )
+        .unwrap();
+        let broker = Arc::new(match audit {
+            Some(audit) => broker.with_audit(audit, observations).unwrap(),
+            None => broker,
+        });
         let provider = broker
             .register_provider(ProviderConfiguration {
                 capability: CAP,
@@ -178,9 +200,13 @@ impl Fixture {
             .unwrap();
         let revision = revision(&publication);
         let plan = broker
-            .compile_plan(
+            .compile_invocation_plan(
                 &revision,
+                Some(&latent_core::DeploymentId("echo-deployment".into())),
                 &[CapabilityBindingSpec {
+                    definition_digest: Some(&latent_artifacts::package::artifact_blob_digest(
+                        b"fixture local secrets binding v1",
+                    )),
                     provider: &provider.reference(),
                     imported_operations: &["read".into()],
                     policy_ids: &["p".into()],
@@ -188,6 +214,10 @@ impl Fixture {
                     deployment_restriction_json: br#"{"operations":[]}"#,
                 }],
                 &publication,
+                &[],
+                &[],
+                &[],
+                None,
                 Instant::now() + Duration::from_secs(10),
             )
             .unwrap();

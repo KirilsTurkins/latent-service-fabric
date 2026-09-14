@@ -15,9 +15,17 @@ use std::{
 };
 
 struct Pinned {
+    id: Box<str>,
     stamp: Arc<Stamp>,
     revision: u64,
     document: Arc<Compiled>,
+}
+/// Descriptive captured record identity; it cannot be replayed as a live grant.
+#[derive(Debug, Clone, Copy)]
+pub struct CapabilityPolicyRevision<'a> {
+    pub id: &'a str,
+    pub revision: u64,
+    pub digest: &'a str,
 }
 /// Immutable validated rows from one configured owner. Retaining this snapshot
 /// does not keep an old revision eligible after update/revocation or shutdown.
@@ -58,6 +66,12 @@ pub enum Explanation {
     Deny,
     Indeterminate,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PolicySnapshotState {
+    Current,
+    Changed,
+    Unavailable,
+}
 
 /// Borrowed sealed decision. A descriptive Allow or a copied generation cannot
 /// construct this type; its only final admission path rechecks both live owners.
@@ -66,6 +80,17 @@ pub struct SealedPolicyDecision<'a> {
     publication: &'a ReleaseUseEligibility,
     input: EvaluationInput<'a>,
     ceiling: CapabilityCeiling,
+    require_audit: bool,
+}
+impl SealedPolicyDecision<'_> {
+    #[must_use]
+    pub const fn requires_audit(&self) -> bool {
+        self.require_audit
+    }
+    #[must_use]
+    pub const fn ceiling(&self) -> CapabilityCeiling {
+        self.ceiling
+    }
 }
 impl PolicyStore {
     /// Control-plane publication fence, distinct from the no-I/O call-start
@@ -115,6 +140,7 @@ impl PolicyStore {
                 .ok_or_else(denied)?;
             let row = &state.loaded[index];
             Ok(Pinned {
+                id: id.into(),
                 stamp: Arc::clone(&row.stamp),
                 revision: state.image.records[index].revision,
                 document: Arc::clone(row.document.as_ref().ok_or_else(denied)?),
@@ -192,6 +218,41 @@ impl PolicyStore {
     }
 }
 impl PolicySnapshot {
+    /// A bounded observation, not a currentness token or execution permission.
+    #[must_use]
+    pub fn diagnostic_state(&self) -> PolicySnapshotState {
+        let Ok(_fence) = self.owner.fence.try_read() else {
+            return PolicySnapshotState::Unavailable;
+        };
+        if self.owner.check().is_err() {
+            return PolicySnapshotState::Unavailable;
+        }
+        if self
+            .policies
+            .iter()
+            .chain(std::iter::once(&self.binding))
+            .any(|row| row.stamp.revision.load(Ordering::Acquire) != row.revision)
+        {
+            PolicySnapshotState::Changed
+        } else {
+            PolicySnapshotState::Current
+        }
+    }
+    pub fn policy_revisions(&self) -> impl Iterator<Item = CapabilityPolicyRevision<'_>> {
+        self.policies.iter().map(|pinned| CapabilityPolicyRevision {
+            id: &pinned.id,
+            revision: pinned.revision,
+            digest: pinned.document.digest(),
+        })
+    }
+    #[must_use]
+    pub fn binding_revision(&self) -> CapabilityPolicyRevision<'_> {
+        CapabilityPolicyRevision {
+            id: &self.binding.id,
+            revision: self.binding.revision,
+            digest: self.binding.document.digest(),
+        }
+    }
     fn check(&self) -> Result<(), PlatformError> {
         self.owner.check()?;
         if self
@@ -226,7 +287,10 @@ impl PolicySnapshot {
         }
         Ok(())
     }
-    fn evaluate(&self, input: &EvaluationInput<'_>) -> Option<CapabilityCeiling> {
+    fn evaluate(
+        &self,
+        input: &EvaluationInput<'_>,
+    ) -> Option<super::super::language::EvaluatedGrant> {
         if input.principal.tenant.as_ref() != Some(&self.tenant)
             || !identifier(&input.principal.subject)
             || !identifier(input.service)
@@ -237,6 +301,7 @@ impl PolicySnapshot {
             return None;
         }
         let mut ceiling: Option<CapabilityCeiling> = None;
+        let mut require_audit = false;
         for pinned in &self.policies {
             let Compiled::Policy(policy) = pinned.document.as_ref() else {
                 return None;
@@ -249,7 +314,8 @@ impl PolicySnapshot {
                 input.operation,
                 &input.resource,
             )?;
-            ceiling = Some(ceiling.map_or(allowed, |old| old.intersect(allowed)));
+            ceiling = Some(ceiling.map_or(allowed.ceiling, |old| old.intersect(allowed.ceiling)));
+            require_audit |= allowed.require_audit;
         }
         let Compiled::Binding(binding) = self.binding.document.as_ref() else {
             return None;
@@ -257,9 +323,13 @@ impl PolicySnapshot {
         if binding.capability() != input.capability {
             return None;
         }
-        binding
+        let ceiling = binding
             .restriction()
-            .narrow(input.operation, &input.resource, ceiling?)
+            .narrow(input.operation, &input.resource, ceiling?)?;
+        Some(super::super::language::EvaluatedGrant {
+            ceiling,
+            require_audit,
+        })
     }
     /// A redacted read-only observation, explicitly not execution authority.
     #[must_use]
@@ -320,7 +390,8 @@ impl PolicySnapshot {
         {
             return Err(denied());
         }
-        let mut ceiling = self.evaluate(&input).ok_or_else(denied)?;
+        let evaluated = self.evaluate(&input).ok_or_else(denied)?;
+        let mut ceiling = evaluated.ceiling;
         for extra in [restrictions.deployment, restrictions.provider_configuration] {
             ceiling = extra
                 .narrow(input.operation, &input.resource, ceiling)
@@ -339,6 +410,7 @@ impl PolicySnapshot {
             publication,
             input,
             ceiling,
+            require_audit: evaluated.require_audit,
         })
     }
 }

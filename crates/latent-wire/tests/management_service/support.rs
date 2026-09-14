@@ -1,6 +1,8 @@
 #[path = "support/publication.rs"]
 mod publication;
 pub(super) use publication::publish_variant;
+#[path = "support/capabilities.rs"]
+mod capabilities;
 #[path = "support/inventory.rs"]
 mod inventory;
 #[path = "support/model.rs"]
@@ -32,6 +34,7 @@ pub(super) struct Harness {
     pub deployments: Arc<DirectoryDeploymentRepository>,
     pub inventory: Arc<Inventory>,
     pub channel: Channel,
+    pub policy_control: Option<latent_policy::capability::PolicyControlHandle>,
     server: transport::Server,
     rollout_worker: Option<latent_rollout::RolloutWorker>,
     _root: TempRoot,
@@ -54,11 +57,11 @@ impl Harness {
         source: Option<Arc<dyn ArtifactRepository>>,
         audit: Option<latent_audit::AuditHandle>,
     ) -> Self {
-        Self::open(limits, source, audit, false, None).await
+        Self::open(limits, source, audit, false, None, false).await
     }
 
     pub async fn with_rollouts(limits: ManagementLimits, audit: latent_audit::AuditHandle) -> Self {
-        Self::open(limits, None, Some(audit), true, None).await
+        Self::open(limits, None, Some(audit), true, None, false).await
     }
 
     pub async fn with_canary(
@@ -66,7 +69,10 @@ impl Harness {
         audit: latent_audit::AuditHandle,
         hub: latent_telemetry::BoundedPhase2CanaryOutcomeWindow,
     ) -> Self {
-        Self::open(limits, None, Some(audit), true, Some(hub)).await
+        Self::open(limits, None, Some(audit), true, Some(hub), false).await
+    }
+    pub async fn with_capabilities(limits: ManagementLimits) -> Self {
+        Self::open(limits, None, None, false, None, true).await
     }
 
     async fn open(
@@ -75,6 +81,7 @@ impl Harness {
         audit: Option<latent_audit::AuditHandle>,
         enabled: bool,
         canary: Option<latent_telemetry::BoundedPhase2CanaryOutcomeWindow>,
+        capabilities: bool,
     ) -> Self {
         let root = TempRoot::new();
         let artifacts = Arc::new(
@@ -124,12 +131,20 @@ impl Harness {
             clock: Arc::new(SystemActivationClock),
         };
         let adapter = ManagementServiceAdapter::new(services, limits).unwrap();
+        let (adapter, policy_control) = if capabilities {
+            let (adapter, policies) =
+                capabilities::configure(adapter, &root.0, &artifacts, &deployments);
+            (adapter, Some(policies))
+        } else {
+            (adapter, None)
+        };
         let (channel, server) = transport::Server::start(adapter).await;
         Self {
             artifacts,
             deployments,
             inventory,
             channel,
+            policy_control,
             server,
             rollout_worker,
             _root: root,
@@ -156,6 +171,13 @@ impl Harness {
 
     pub async fn shutdown(mut self) {
         self.server.shutdown().await;
+        if let Some(control) = self.policy_control.take() {
+            assert!(
+                control
+                    .shutdown(std::time::Instant::now() + std::time::Duration::from_secs(5))
+                    .await
+            );
+        }
         if let Some(worker) = &mut self.rollout_worker {
             assert!(worker
                 .join_until(std::time::Instant::now() + std::time::Duration::from_secs(5))

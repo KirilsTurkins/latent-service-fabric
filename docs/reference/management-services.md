@@ -26,6 +26,7 @@ generated package inputs through this RPC boundary.
 | Audit | `QueryAudit`, `QueryPhase2Audit` | Bounded durable history when the node's optional audit owner is configured. |
 | Rollout | `StartRollout`, `ChangeRollout`, `EvaluateRollout`, `GetRollout`, `ListRollouts`, `GetRolloutOperation` | Optional audited stages and declared canary promotion over one tenant/service cohort. |
 | Policy | `ApplyPolicy`, `GetPolicy`, `ListPolicies`, `DeletePolicy`, `GetPolicyOperation`, `EvaluatePolicy` | Optional durable tenant-scoped capability policies and provider-binding metadata, CAS/replay, bounded pages and descriptive explanation. |
+| Capability | `ListCapabilities`, `ExplainCapabilityGrant` | Optional configured broker inspection: exact deployment bindings, policy/provider currentness, tenant resource usage and operator-only shared counters. Descriptive responses grant no authority. |
 
 `WatchDeployment`, `WatchRouteSnapshots`, `RegisterNode`, `ReportInventory`, and
 `Heartbeat` return explicit gRPC `Unimplemented`. They do not open an idle stream
@@ -47,6 +48,11 @@ preflight, owner lifetime and recovery rules are specified in
 [durable capability policies](../runtime/capability-policies.md). Generic legacy
 policy DTOs and explanation results confer no execution authority. With no policy
 owner, authenticated policy calls return `Unimplemented`.
+
+[Capability inspection](../runtime/capability-audit.md#bounded-management-inspection)
+shares the policy control runtime and response leases. It requires an explicit
+deployment within the authenticated tenant; node usage additionally requires the
+trusted operator claim. Missing inspection configuration returns `Unimplemented`.
 
 The listener supplies an `AuthenticatedInvocationContext` request extension,
 using the same principal boundary as the [invocation service](../protocol/invocation-service.md).

@@ -6,6 +6,11 @@ Rust message types plus Tonic client and server surfaces are generated at build 
 
 WIT remains authoritative for typed component-to-component calls. The generic invocation API carries encoded payloads for tooling and gateways; generated RPC types do not implement service semantics.
 
+Phase 3 [capability audit and inspection](../../docs/runtime/capability-audit.md)
+adds typed broker evidence to `AuditService` and bounded `CapabilityService`
+list/explain methods. Inspection requires a configured broker/catalog source and
+policy owner; explanatory responses never grant execution permission.
+
 `latent-wire` now implements the bounded Phase 1 invocation and management
 adapters. See the [management service reference](../../docs/reference/management-services.md)
 for typed release uploads, tenant authorization, atomic deployment generations,

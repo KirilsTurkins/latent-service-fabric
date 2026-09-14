@@ -1,3 +1,5 @@
+#[path = "inspection/capabilities.rs"]
+mod capabilities;
 #[path = "inspection/nodes.rs"]
 mod nodes;
 #[path = "inspection/routes.rs"]

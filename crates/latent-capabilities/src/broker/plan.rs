@@ -11,6 +11,9 @@ use std::{sync::Arc, time::Instant};
 /// Privileged compiler input. This does not install a provider or grant access.
 /// The runtime independently compares these imports with the prepared component.
 pub struct CapabilityBindingSpec<'a> {
+    /// Exact normalized binding definition supplied by the trusted catalog compiler.
+    /// Required audit rejects missing provenance instead of inventing an identity.
+    pub definition_digest: Option<&'a latent_core::ArtifactBlobDigest>,
     pub provider: &'a ProviderReference,
     pub imported_operations: &'a [String],
     pub policy_ids: &'a [String],
@@ -18,6 +21,7 @@ pub struct CapabilityBindingSpec<'a> {
     pub deployment_restriction_json: &'a [u8],
 }
 pub(super) struct Binding {
+    pub definition_digest: Option<latent_core::ArtifactBlobDigest>,
     pub provider: Arc<super::provider::Provider>,
     pub operations: Vec<String>,
     pub policies: PolicySnapshot,
@@ -28,10 +32,11 @@ pub(super) struct Binding {
 pub(super) struct Target {
     pub tenant: TenantId,
     pub service: ServiceId,
-    revision: RevisionId,
-    release: ReleaseDigest,
+    pub revision: RevisionId,
+    pub release: ReleaseDigest,
+    pub deployment: Option<latent_core::DeploymentId>,
     pub publication: PublicationId,
-    generation: RouteGeneration,
+    pub generation: RouteGeneration,
 }
 impl Target {
     pub(super) fn matches(&self, revision: &ResolvedRevision) -> bool {
@@ -197,6 +202,7 @@ impl ActivationCapabilityBroker {
     ) -> Result<Arc<CompiledCapabilityPlan>, PlatformError> {
         self.compile_invocation_plan(
             revision,
+            None,
             imports,
             publication,
             dependencies,
@@ -217,6 +223,7 @@ impl ActivationCapabilityBroker {
     pub fn compile_invocation_plan(
         &self,
         revision: &ResolvedRevision,
+        deployment: Option<&latent_core::DeploymentId>,
         imports: &[CapabilityBindingSpec<'_>],
         publication: &ReleaseUseEligibility,
         dependencies: &[ReleaseUseEligibility],
@@ -300,6 +307,7 @@ impl ActivationCapabilityBroker {
             let (operations, policies, deployment) =
                 binding_authority(&self.inner, import, &revision.target.tenant, deadline)?;
             bindings.push(Binding {
+                definition_digest: import.definition_digest.cloned(),
                 provider: Arc::clone(provider),
                 operations,
                 policies,
@@ -324,6 +332,9 @@ impl ActivationCapabilityBroker {
         Ok(Arc::new(CompiledCapabilityPlan {
             owner: Arc::clone(&self.inner),
             target: Target {
+                deployment: deployment
+                    .map(|id| checked_text(&id.0).map(latent_core::DeploymentId))
+                    .transpose()?,
                 tenant: TenantId(checked_text(&revision.target.tenant.0)?),
                 service: ServiceId(checked_text(&revision.target.service.0)?),
                 revision: RevisionId(checked_text(&revision.revision.0)?),

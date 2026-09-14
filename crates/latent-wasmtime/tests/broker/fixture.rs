@@ -191,6 +191,7 @@ impl Fixture {
             .compile_plan(
                 &revision,
                 &[CapabilityBindingSpec {
+                    definition_digest: None,
                     provider: &provider.reference(),
                     imported_operations: &["now-unix-millis".into()],
                     policy_ids: &["p".into()],

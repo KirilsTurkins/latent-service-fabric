@@ -39,7 +39,7 @@ pub struct ProviderSetup<'a> {
 pub struct ProviderPools {
     inner: Arc<Inner>,
 }
-struct Inner {
+pub(super) struct Inner {
     broker: Arc<ActivationCapabilityBroker>,
     io: Arc<IoRuntime>,
     quotas: Arc<Quotas>,
@@ -151,6 +151,12 @@ impl ProviderPools {
             ),
             _metadata: metadata,
         });
+        inner
+            .broker
+            .inner
+            .pool_diagnostics
+            .set(Arc::downgrade(&inner))
+            .map_err(|_| denied())?;
         control::start(&inner);
         Ok(Self { inner })
     }
@@ -302,6 +308,14 @@ impl ProviderPools {
             }
         }
     }
+}
+pub(super) fn diagnostic_snapshot(
+    owner: &Weak<Inner>,
+) -> Result<Option<(ProviderPoolSnapshot, super::io::IoSnapshot)>, PlatformError> {
+    owner
+        .upgrade()
+        .map(|owner| Ok((owner.snapshot()?, owner.io.snapshot())))
+        .transpose()
 }
 
 #[cfg(all(test, target_os = "linux"))]

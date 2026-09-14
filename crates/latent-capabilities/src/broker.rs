@@ -11,6 +11,9 @@ use latent_core::{ActivationClock, PlatformError, PlatformErrorCode};
 use latent_policy::capability::PolicyStore;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
+mod audit;
+pub mod diagnostics;
+pub use audit::{reconcile_capability_audit, CapabilityAuditDurability, CapabilityRequestDigest};
 mod invocation;
 pub mod io;
 mod limits;
@@ -27,6 +30,7 @@ mod work;
 pub use invocation::{
     InvocationBindingTarget, LOCAL_SERVICE_INVOCATION_PROFILE, SERVICE_INVOCATION_CAPABILITY,
 };
+pub use latent_audit::AuditProviderOutcome;
 pub use limits::{CapabilityBrokerLimits, CapabilityBrokerSnapshot};
 pub use local_service::{
     LocalServiceCompletion, LocalServiceInvocation, LocalServiceInvoker, LocalServiceRequest,
@@ -39,7 +43,7 @@ pub use provider::{
 };
 pub use runtime::ActivationCapabilityRuntime;
 pub use session::{CapabilitySession, CapabilitySessionObserver, GuestCapabilityHandle};
-pub use work::{CapabilityCallCost, OwnedCapabilityResponse, ProviderCall};
+pub use work::{CapabilityCallCost, CapabilityDispatch, OwnedCapabilityResponse, ProviderCall};
 
 use ownership::{Charge, Counters, Kind};
 
@@ -48,13 +52,15 @@ pub struct ActivationCapabilityBroker {
     inner: Arc<Inner>,
 }
 struct Inner {
+    audit: Option<audit::Configuration>,
     catalog: LifecycleAuthorityHandle,
     policies: Arc<PolicyStore>,
     clock: Arc<dyn ActivationClock>,
     live: RwLock<bool>,
     limits: CapabilityBrokerLimits,
     counters: Arc<Counters>,
-    sessions: Mutex<Vec<Weak<session::SessionCore>>>,
+    sessions: Mutex<Vec<session::RegistryEntry>>,
+    pool_diagnostics: std::sync::OnceLock<Weak<pools::Inner>>,
     pool_registered: std::sync::atomic::AtomicBool,
 }
 impl ActivationCapabilityBroker {
@@ -70,6 +76,7 @@ impl ActivationCapabilityBroker {
         }
         Ok(Self {
             inner: Arc::new(Inner {
+                audit: None,
                 catalog,
                 policies,
                 clock,
@@ -78,10 +85,11 @@ impl ActivationCapabilityBroker {
                 counters: Arc::new(Counters::new(limits)),
                 pool_registered: std::sync::atomic::AtomicBool::new(false),
                 sessions: Mutex::new(
-                    std::iter::repeat_with(Weak::new)
+                    std::iter::repeat_with(session::RegistryEntry::default)
                         .take(limits.maximum_sessions)
                         .collect(),
                 ),
+                pool_diagnostics: std::sync::OnceLock::new(),
             }),
         })
     }
