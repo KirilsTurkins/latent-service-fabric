@@ -61,6 +61,9 @@ pub(crate) fn subject(value: &str) -> bool {
 }
 impl NatsConfig {
     pub fn validate(&self) -> Result<()> {
+        if self.endpoint.server_name.capacity() > 256 {
+            return Err(EventError::InvalidEvent);
+        }
         self.endpoint
             .credential_destination()
             .validate()
@@ -125,5 +128,39 @@ impl NatsConfig {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn retained_endpoint_capacity_cannot_bypass_the_configuration_bound() {
+        let mut config = NatsConfig {
+            format_version: 1,
+            endpoint: NatsEndpoint {
+                server_name: "broker.example".into(),
+                peer: "1.1.1.1:4222".parse().unwrap(),
+                allow_non_public_peer: false,
+            },
+            public_roots: true,
+            extra_roots: vec![],
+            topics: vec![TopicMapping {
+                tenant: "test".into(),
+                topic: "orders".into(),
+                subject: "orders".into(),
+                stream: "ORDERS".into(),
+                duplicate_window_millis: 1000,
+            }],
+            idempotency_namespace: "test".into(),
+            maximum_payload_bytes: 1024,
+            timeout_millis: 1000,
+        };
+        assert!(config.validate().is_ok());
+        let mut name = String::with_capacity(1024);
+        name.push_str("broker.example");
+        config.endpoint.server_name = name;
+        assert_eq!(config.validate(), Err(EventError::InvalidEvent));
     }
 }
