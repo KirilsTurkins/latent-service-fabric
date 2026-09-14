@@ -14,8 +14,8 @@ mod tests;
 mod wasm;
 
 pub use compatibility::{
-    compare_packages, BreakingChangeAllowance, ComparedPackageIdentity, PackageComparisonLimits,
-    PackageCompatibilityReport,
+    compare_packages, compile_host_binding, compile_local_binding, BreakingChangeAllowance,
+    CheckedBinding, ComparedPackageIdentity, PackageComparisonLimits, PackageCompatibilityReport,
 };
 use latent_artifacts::package::{artifact_blob_digest, WitLock};
 use latent_contracts::ContractDescriptor;

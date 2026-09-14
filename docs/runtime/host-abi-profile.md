@@ -72,8 +72,9 @@ identity; repository LF line endings are checked.
 
 Mutable grants and credential rotations do not authorize native code through a
 cache key. Eligibility, exact descriptors and required activation bindings remain
-checked at invocation. The sealed broker and provider epoch checks are separate
-work in #204/#207; this profile does not claim their implementation.
+checked at invocation. The [sealed broker](capability-broker.md) and
+[exact binding compiler](capability-bindings.md) implement live policy, provider
+epoch and publication checks independently of ABI recognition.
 
 The baseline is Wasmtime 47.0.4 with guest generator wit-bindgen 0.60.0. No WASI
 filesystem, HTTP or WASIp3 streams are installed. Expanding that surface requires

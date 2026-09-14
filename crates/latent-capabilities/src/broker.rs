@@ -23,7 +23,9 @@ mod waiting;
 mod work;
 
 pub use limits::{CapabilityBrokerLimits, CapabilityBrokerSnapshot};
-pub use plan::{CapabilityBindingSpec, CapabilityPlanSource, CompiledCapabilityPlan};
+pub use plan::{
+    CapabilityBindingSpec, CapabilityPlanSource, CapabilityRouteFence, CompiledCapabilityPlan,
+};
 pub use provider::{
     ProviderBudgetRequirement, ProviderConfiguration, ProviderReference, ProviderRegistration,
 };

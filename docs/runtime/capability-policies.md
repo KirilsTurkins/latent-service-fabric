@@ -4,7 +4,7 @@ Phase 3 delivers a Linux node-owned policy store and evaluator in `latent-policy
 authenticated `PolicyService` management APIs, and `latent policy` commands.
 The closed language is `lsf-capability-policy-v1`; provider selection metadata uses
 `lsf-provider-binding-v1`. These are authorization building blocks for the broker
-and binding compiler in #204 and #207. Creating a policy does not install a
+and [exact binding compiler](capability-bindings.md). Creating a policy does not install a
 provider, extend the current guest linker, or make a descriptive DTO executable.
 The [host ABI profile](host-abi-profile.md) remains the operation authority.
 
@@ -259,5 +259,6 @@ are validated by their implementation tickets and #238, not claimed by this test
 
 The [sealed capability broker](capability-broker.md) consumes these immutable
 policy rows for bind and guarded provider-call admission. Its executable broker
-and Wasmtime tests cover guest call currentness and ownership; coherent standalone
-plan construction remains #207.
+and Wasmtime tests cover guest call currentness and ownership. The
+[control compiler](capability-bindings.md) publishes exact plans with route CAS;
+standalone provider configuration remains part of the concrete adapter work.

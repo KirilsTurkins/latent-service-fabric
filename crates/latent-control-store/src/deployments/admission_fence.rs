@@ -87,6 +87,13 @@ impl CompiledCatalog {
         &self,
         action: &mut dyn FnMut(Option<&dyn ReleaseUseRecheck>) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
+        self.bindings
+            .with_current(&mut || self.with_current_releases(action))
+    }
+    fn with_current_releases(
+        &self,
+        action: &mut dyn FnMut(Option<&dyn ReleaseUseRecheck>) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
         if self.eligibility.is_empty() {
             // Empty and wholly inactive generations confer no release authority.
             action(None)

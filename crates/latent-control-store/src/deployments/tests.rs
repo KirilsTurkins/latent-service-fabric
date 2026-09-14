@@ -519,3 +519,5 @@ fn concurrent_snapshot_replacement_never_exposes_half_a_batch() {
     .unwrap()
     .is_some());
 }
+#[cfg(target_os = "linux")]
+mod bindings;

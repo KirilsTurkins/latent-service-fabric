@@ -1459,6 +1459,8 @@ name = "latent-contracts"
 version = "0.1.0-alpha.3"
 dependencies = [
  "latent-core",
+ "semver",
+ "sha2 0.10.9",
 ]
 
 [[package]]
@@ -1473,6 +1475,7 @@ dependencies = [
  "latent-admission",
  "latent-artifacts",
  "latent-audit",
+ "latent-capabilities",
  "latent-contracts",
  "latent-core",
  "latent-executor",
@@ -1626,8 +1629,8 @@ dependencies = [
 name = "latent-policy"
 version = "0.1.0-alpha.3"
 dependencies = [
- "blake3",
  "base64 0.22.1",
+ "blake3",
  "latent-artifacts",
  "latent-core",
  "latent-manifest",

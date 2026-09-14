@@ -17,8 +17,9 @@ publication eligibility. Its sealed decisions require a final currentness check;
 updates/revocations invalidate held authority. Required policies and additional
 restrictions intersect. The broker connects these rows to activation-owned handle
 tables, guarded call admission, the original budget ledger and retained work/
-result ownership. The standalone binding compiler and concrete external provider
-implementations are subsequent Phase 3 tickets.
+result ownership. The [binding compiler](../runtime/capability-bindings.md) now
+publishes exact host/local plans with deployment CAS. Standalone configuration
+and concrete external provider adapters remain subsequent Phase 3 work.
 
 ## Identity layers
 

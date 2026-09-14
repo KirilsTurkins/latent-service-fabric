@@ -24,7 +24,11 @@ pub(super) fn write_with_control(
     control: Option<&super::ControlPayloadRef<'_>>,
     work: &mut Work,
 ) -> io::Result<()> {
-    output.write_all(PREFIX)?;
+    if catalog.bindings.data.is_empty() {
+        output.write_all(PREFIX)?;
+    } else {
+        output.write_all(b"{\"format_version\":6,\"checksum\":\"sha256:")?;
+    }
     let checksum_start = output.bytes.len();
     output.write_all(&[b'0'; 64])?;
     output.write_all(b"\",\"payload\":")?;
@@ -104,7 +108,12 @@ fn write_payload(
             )?;
         }
     }
-    output.write_all(b"]}")
+    output.write_all(b"]")?;
+    if !catalog.bindings.data.is_empty() {
+        output.write_all(b",\"capability_bindings\":")?;
+        value(output, catalog.bindings.data.as_ref())?;
+    }
+    output.write_all(b"}")
 }
 
 #[derive(Serialize)]
