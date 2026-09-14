@@ -1,12 +1,9 @@
 //! Restricted bounded NATS framing and verified `JetStream` publish receipts.
 use crate::{
-    network::{self, Connection},
+    network::{self, Connection, Scope},
     request, EventError, Result, TopicMapping,
 };
-use latent_capabilities::broker::{
-    events::{Event, PublishReceipt},
-    pools::PoolCall,
-};
+use latent_capabilities::broker::events::{Event, PublishReceipt};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -64,11 +61,19 @@ fn guard(bytes: &[u8]) -> Result<()> {
     }
     Ok(())
 }
-pub(crate) async fn barrier(connection: &mut Connection, call: &PoolCall) -> Result<()> {
+pub(crate) async fn barrier<'a>(
+    connection: &mut Connection,
+    call: impl Into<Scope<'a>>,
+) -> Result<()> {
+    let call = call.into();
     network::write(connection, call, b"PING\r\n").await?;
     pong(connection, call).await
 }
-pub(crate) async fn pong(connection: &mut Connection, call: &PoolCall) -> Result<()> {
+pub(crate) async fn pong<'a>(
+    connection: &mut Connection,
+    call: impl Into<Scope<'a>>,
+) -> Result<()> {
+    let call = call.into();
     for _ in 0..8 {
         let line = network::line(connection, call).await?;
         match line.as_slice() {
@@ -152,25 +157,27 @@ fn frame(line: &[u8], inbox: &str) -> Result<(usize, usize)> {
     }
     Ok((headers, total))
 }
-pub(crate) async fn subscribe(
+pub(crate) async fn subscribe<'a>(
     connection: &mut Connection,
-    call: &PoolCall,
+    call: impl Into<Scope<'a>>,
     inbox: &str,
 ) -> Result<()> {
+    let call = call.into();
     let subscription = format!("SUB {inbox} 1\r\nUNSUB 1 1\r\nPING\r\n");
     network::write(connection, call, subscription.as_bytes()).await?;
     pong(connection, call).await?;
     Ok(())
 }
-pub(crate) async fn publish(
+pub(crate) async fn publish<'a>(
     connection: &mut Connection,
-    call: &PoolCall,
+    call: impl Into<Scope<'a>>,
     event: &Event,
     mapping: &TopicMapping,
     inbox: &str,
     id: &str,
     wrote: &mut bool,
 ) -> Result<PublishReceipt> {
+    let call = call.into();
     let headers = request::headers(event, &mapping.stream, id);
     if headers.len() + event.payload.len() > connection.max_payload {
         return Err(EventError::InvalidEvent);
@@ -181,7 +188,7 @@ pub(crate) async fn publish(
         headers.len(),
         headers.len() + event.payload.len()
     );
-    call.io().checkpoint()?;
+    call.checkpoint()?;
     // From this first possible publication write onward, cancellation/EOF and
     // malformed replies are uncertain. Nothing resends the mutation.
     *wrote = true;
