@@ -1,0 +1,46 @@
+[package]
+name = "latent-http"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Policy-scoped buffered HTTP with owned bounded DNS, TLS and connection pools."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+latent-capabilities = { path = "../latent-capabilities" }
+latent-policy = { path = "../latent-policy" }
+bytes = "=1.12.1"
+flate2 = { version = "=1.1.10", default-features = false, features = ["rust_backend"] }
+getrandom = "=0.4.3"
+hickory-proto = "=0.26.3"
+http = "=1.5.0"
+http-body.workspace = true
+http-body-util = "=0.1.5"
+hyper = { version = "=1.11.1", features = ["client", "http1"] }
+hyper-util.workspace = true
+ipnet = { version = "=2.12.2", features = ["serde"] }
+rustls = { version = "=0.23.44", default-features = false, features = ["ring", "std", "tls12"] }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tokio = { workspace = true, features = ["net", "io-util"] }
+tokio-rustls = { version = "=0.26.5", default-features = false, features = ["ring", "tls12"] }
+url = "=2.5.8"
+webpki-roots = "=1.0.9"
+zeroize = { version = "=1.9.0", features = ["alloc"] }
+
+[dev-dependencies]
+rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring"] }
+tempfile.workspace = true
+latent-artifacts = { path = "../latent-artifacts" }
+latent-manifest = { path = "../latent-manifest" }
+latent-executor = { path = "../latent-executor" }
+latent-activation = { path = "../latent-activation" }
+latent-routing = { path = "../latent-routing" }
+latent-audit = { path = "../latent-audit" }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

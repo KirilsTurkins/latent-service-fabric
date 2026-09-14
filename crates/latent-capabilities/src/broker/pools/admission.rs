@@ -87,6 +87,15 @@ impl ProviderPools {
         client: &Arc<ProviderClient<T>>,
         session: &CapabilitySession,
     ) -> Result<PoolAdmission, PlatformError> {
+        self.admit_until(client, session, session.deadline()?)
+    }
+    /// Narrow once on entry; queue, connection and all body work share this bound.
+    pub fn admit_until<T: Send + 'static>(
+        &self,
+        client: &Arc<ProviderClient<T>>,
+        session: &CapabilitySession,
+        deadline: Instant,
+    ) -> Result<PoolAdmission, PlatformError> {
         if !Arc::ptr_eq(&session.core.owner, &self.inner.broker.inner)
             || !session.core.plan.bindings.iter().any(|b| {
                 Arc::ptr_eq(
@@ -97,7 +106,7 @@ impl ProviderPools {
         {
             return Err(denied());
         }
-        let io = self.inner.io.admit(session)?;
+        let io = self.inner.io.admit_until(session, deadline)?;
         let mut state = self.inner.state.try_lock().map_err(|_| busy())?;
         self.inner.check()?;
         if client.core.epoch.retired.load(Ordering::Acquire)
@@ -181,6 +190,16 @@ fn tenant(state: &mut State, owner: &Arc<Inner>, id: &str) -> Result<Arc<Tenant>
     Ok(tenant)
 }
 impl PoolAdmission {
+    pub fn reserve_input(
+        &self,
+        bytes: usize,
+        metadata: usize,
+    ) -> Result<super::super::io::IoMemory, PlatformError> {
+        self.io
+            .as_ref()
+            .expect("affine admission")
+            .reserve_input(bytes, metadata)
+    }
     pub fn input(
         &self,
         capacity: usize,
@@ -236,6 +255,26 @@ impl Drop for PoolAdmission {
     }
 }
 impl PoolReady {
+    /// Re-enter the original activation scope after queue admission. This is a
+    /// fresh final grant check, not reuse of an Allow DTO captured before waiting.
+    pub async fn dispatch(
+        self,
+        capability: &str,
+        operation: &str,
+        resource: latent_policy::capability::ResourceTarget<'_>,
+        input: &[u8],
+        cost: super::super::CapabilityCallCost,
+    ) -> Result<PoolCall, PlatformError> {
+        let dispatch = self.io.with_session(|session| {
+            session.prepare_owned_dispatch(capability, operation, resource, input, cost)
+        })?;
+        dispatch
+            .dispatch(|call| {
+                call.require_host_mode()?;
+                self.start(call)
+            })
+            .await?
+    }
     pub fn start(self, call: ProviderCall) -> Result<PoolCall, PlatformError> {
         // The broker's guarded dispatch, after both waits, defines acceptance.
         // Rotation after that fence may let this exact accepted old epoch finish.
@@ -259,6 +298,9 @@ impl PoolReady {
     }
 }
 impl PoolCall {
+    pub fn io_mut(&mut self) -> &mut IoCall {
+        &mut self.io
+    }
     #[must_use]
     pub fn io(&self) -> &IoCall {
         &self.io

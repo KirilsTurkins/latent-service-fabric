@@ -10,6 +10,7 @@ pub(crate) mod accounting;
 pub(crate) mod capabilities;
 mod clock;
 mod context;
+pub(crate) mod http;
 mod logging;
 mod owned_context;
 pub(crate) mod policy;

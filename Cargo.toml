@@ -21,6 +21,7 @@ members = [
     "crates/latent-executor",
     "crates/latent-wasmtime",
     "crates/latent-capabilities",
+    "crates/latent-http",
     "crates/latent-blobs",
     "crates/latent-commit",
     "crates/latent-identity",

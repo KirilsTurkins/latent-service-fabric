@@ -17,6 +17,8 @@ use tokio::sync::Notify;
 use zeroize::Zeroizing;
 
 mod admission;
+mod protocol;
+pub use protocol::ProviderMetadata;
 mod client;
 mod control;
 mod limits;

@@ -11,8 +11,8 @@ with no service-specific runtime, thread, listener, retry loop or timer.
 This is the common provider infrastructure. The [exact binding compiler](capability-bindings.md)
 publishes configured plans with the deployment catalog. Concrete production
 configuration remains part of each provider adapter.
-HTTP, blob, secrets and event protocol adapters remain their separate Phase 3
-tickets. Ordinary standalone startup still exposes its existing built-in imports;
+The [buffered HTTP adapter](outbound-http.md) now uses these owners. Blob,
+secrets and event protocol adapters remain their separate Phase 3 tickets. Ordinary standalone startup still exposes its existing built-in imports;
 declaring a capability does not construct a client or enable an external provider.
 
 ## Installation and immutable epochs

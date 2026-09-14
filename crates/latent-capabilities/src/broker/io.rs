@@ -16,8 +16,11 @@ use std::{
 };
 use tokio::sync::{Notify, OwnedSemaphorePermit, Semaphore};
 
+mod audit;
 mod buffer;
 mod limits;
+mod memory;
+pub use memory::IoMemory;
 mod stream;
 pub use buffer::IoBuffer;
 use limits::{Charge, Counters, Kind};
@@ -156,6 +159,20 @@ struct Operation {
     _slot: Charge,
 }
 impl Operation {
+    fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {
+        let core = {
+            let state = self
+                .execution
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            match &state.authority {
+                Authority::Waiting(waiting) => Arc::clone(&waiting.core),
+                Authority::Running(call) => call.session_core(),
+            }
+        };
+        // No operation lock survives into a broker/policy/catalog admission.
+        CapabilitySession::with_work_scope(core, inspect)
+    }
     fn accept_output(&self, bytes: usize) -> Result<(), PlatformError> {
         if self.runtime.closed.load(Ordering::Acquire) {
             return Err(retired());
@@ -369,6 +386,12 @@ pub struct IoReady {
     operation: Option<Arc<Operation>>,
 }
 impl IoReady {
+    pub(super) fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {
+        self.operation
+            .as_ref()
+            .expect("affine ready slot")
+            .with_session(inspect)
+    }
     pub fn start(mut self, call: ProviderCall) -> Result<IoCall, PlatformError> {
         let op = self.operation.as_ref().expect("affine ready slot");
         op.check()?;
@@ -421,6 +444,9 @@ impl IoLease {
     }
 }
 impl IoCall {
+    pub(super) fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {
+        self.operation.with_session(inspect)
+    }
     pub(super) fn lease(&self) -> IoLease {
         IoLease(Arc::clone(&self.operation))
     }
