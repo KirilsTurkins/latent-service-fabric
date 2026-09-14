@@ -101,6 +101,7 @@ pub(crate) struct SharedRuntime {
     instances: Arc<ActiveInstanceGate>,
     uncached_prepared: Arc<Mutex<Option<(String, Arc<PreparedRuntime>)>>>,
     pub(crate) log_sink: BoundedLogSink,
+    pub(crate) capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
     clock: Arc<dyn ActivationClock>,
     clock_origin: Instant,
     context_policy: Arc<ContextExposurePolicy>,
@@ -184,6 +185,7 @@ impl SharedRuntime {
                 config.retained_log_maximum_bytes,
                 services.log_sink,
             ),
+            capabilities: services.capabilities,
             clock_origin: services.clock.monotonic_now(),
             clock: services.clock,
             context_policy: Arc::new(config.context_policy.clone()),
@@ -408,6 +410,7 @@ impl WasmtimeBackend {
         timing: &mut Phase0InvocationTiming,
         prepared: Option<WasmtimePreparedUse>,
         input_trace: Option<&InputTrace>,
+        capability_observer: &mut Option<latent_capabilities::broker::CapabilitySessionObserver>,
     ) -> Result<GuestOutcome, PlatformError> {
         let setup_started = Instant::now();
         let _active_invocation = self.shared.resources.active_invocation();
@@ -450,6 +453,15 @@ impl WasmtimeBackend {
         let cancellation_guard = cancellation_probe
             .as_ref()
             .map(|_| self.shared.resources.cancellation_probe());
+        if self.shared.capabilities.is_some()
+            && (cancellation.budget_accounting().is_none() || cancellation_probe.is_none())
+        {
+            return Err(platform_error(
+                PlatformErrorCode::PermissionDenied,
+                "capability execution owner required",
+                false,
+            ));
+        }
         let accounting =
             match InvocationAccounting::new(&request, cancellation, self.shared.clock.as_ref()) {
                 Ok(accounting) => accounting,
@@ -462,6 +474,24 @@ impl WasmtimeBackend {
                 }
                 Err(error) => return Err(error),
             };
+        let capabilities = self
+            .shared
+            .capabilities
+            .as_ref()
+            .map(|owner| {
+                let publication = runtime.eligibility.as_ref().ok_or_else(|| {
+                    platform_error(
+                        PlatformErrorCode::PermissionDenied,
+                        "capability publication owner required",
+                        false,
+                    )
+                })?;
+                owner.open_session(&request, cancellation, publication, accounting.deadline())
+            })
+            .transpose()?;
+        *capability_observer = capabilities
+            .as_ref()
+            .map(latent_capabilities::broker::CapabilitySession::observer);
         let stop = Arc::new(StopControl::with_clock(
             accounting.deadline().monotonic(),
             cancellation_probe,
@@ -478,7 +508,8 @@ impl WasmtimeBackend {
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
-        let mut store = AccountedStore::new(self.invocation_store(request, &stop, accounting)?);
+        let mut store =
+            AccountedStore::new(self.invocation_store(request, &stop, accounting, capabilities)?);
         // Decoding and every borrowed validation have completed. The Store now
         // owns only the moved context; destroy the actual raw input before call.
         raw_input.release(InvocationInputDropReason::BeforeGuestCall);
@@ -595,6 +626,7 @@ impl WasmtimeBackend {
         request: ExecutionRequest,
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
+        capabilities: Option<latent_capabilities::broker::CapabilitySession>,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -619,7 +651,7 @@ impl WasmtimeBackend {
         let host_context =
             ActivationHostContext::from_request(request, accounting.deadline().unix_millis());
         let initial_fuel = accounting.initial_fuel();
-        let host_state = HostState::with_config(
+        let mut host_state = HostState::with_config(
             host_context,
             maximum_memory_bytes,
             &self.config,
@@ -630,6 +662,7 @@ impl WasmtimeBackend {
             self.shared.log_sink.clone(),
         );
 
+        host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
         let mut store = Store::new(&self.engine, host_state);
         store.set_hostcall_fuel(self.config.hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
@@ -813,7 +846,7 @@ impl ExecutionBackend for WasmtimeBackend {
         request: ExecutionRequest,
         cancellation: &'a dyn ExecutionCancellation,
     ) -> BoxFuture<'a, Result<GuestOutcome, PlatformError>> {
-        Box::pin(async move { self.invoke_inner(request, cancellation, None).await })
+        Box::pin(async move { self.invoke_inner(request, cancellation, None).await.outcome })
     }
 
     fn invoke_contained<'a>(
@@ -828,9 +861,8 @@ impl ExecutionBackend for WasmtimeBackend {
                 return ExecutionReport::reusable(Err(error));
             }
             let activation_id = request.activation.activation_id.clone();
-            let outcome = self.invoke_inner(request, cancellation, None).await;
+            let report = self.invoke_inner(request, cancellation, None).await;
             let proof_started = Instant::now();
-            let report = ExecutionReport::reusable(outcome);
             self.lock_timings()
                 .update_reusable_proof(&activation_id.0, elapsed_micros(proof_started));
             report

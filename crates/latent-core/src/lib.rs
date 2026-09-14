@@ -16,8 +16,8 @@ pub mod publication;
 
 pub use budget::{
     ActivationBudget, BudgetConsumption, BudgetDimension, BudgetError, BudgetFinalization,
-    BudgetReservation, ClockSample, EffectiveActivationBudget, EffectiveDeadline, IncomingDeadline,
-    ResourceBudget,
+    BudgetReservation, BudgetReservationGroup, ClockSample, EffectiveActivationBudget,
+    EffectiveDeadline, IncomingDeadline, ResourceBudget,
 };
 pub use clock::{ActivationClock, SystemActivationClock};
 pub use deadline_diagnostic_observer::{

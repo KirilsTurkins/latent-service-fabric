@@ -151,6 +151,28 @@ impl PolicySnapshot {
         }
         Ok(())
     }
+    /// Checks a trusted installed provider against the pinned binding metadata.
+    /// This is a compilation check only; it does not authorize an operation.
+    pub fn check_provider_configuration(
+        &self,
+        capability: &str,
+        profile: &str,
+        digest: &str,
+        epoch: u64,
+    ) -> Result<(), PlatformError> {
+        self.check()?;
+        let Compiled::Binding(binding) = self.binding.document.as_ref() else {
+            return Err(denied());
+        };
+        if binding.capability() != capability
+            || binding.provider_profile() != profile
+            || binding.configuration_digest() != digest
+            || binding.configuration_epoch() != epoch
+        {
+            return Err(denied());
+        }
+        Ok(())
+    }
     fn evaluate(&self, input: &EvaluationInput<'_>) -> Option<CapabilityCeiling> {
         if input.principal.tenant.as_ref() != Some(&self.tenant)
             || !identifier(&input.principal.subject)

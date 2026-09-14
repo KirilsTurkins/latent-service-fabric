@@ -37,6 +37,7 @@ pub(super) struct Catalogs {
     audit: Option<super::audit::AuditRuntime>,
     rollouts: Option<super::rollouts::RolloutRuntime>,
     policies: Option<super::policies::PolicyRuntime>,
+    capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
     clock: Arc<dyn ActivationClock>,
 }
 
@@ -46,6 +47,17 @@ impl Catalogs {
         settings: &NodeSettings,
         clock: &Arc<dyn ActivationClock>,
     ) -> Result<(), PlatformError> {
+        if let Some(capabilities) = &self.capabilities {
+            capabilities.check_catalog(&self.artifacts.lifecycle_authority())?;
+            capabilities.check_clock(clock)?;
+            capabilities.check_policy_owner(
+                self.policies
+                    .as_ref()
+                    .ok_or_else(mode_error)?
+                    .handle()
+                    .store(),
+            )?;
+        }
         if !self.profile.matches(settings)
             || settings.supply_chain.is_enforced() != self.supply_chain.is_some()
             || settings.audit.is_some() != self.audit.is_some()
@@ -128,6 +140,7 @@ impl Catalogs {
             audit,
             rollouts: None,
             policies: None,
+            capabilities: None,
             clock: Arc::new(SystemActivationClock),
         })
     }
@@ -315,6 +328,7 @@ impl Catalogs {
             audit,
             rollouts,
             policies,
+            capabilities: None,
             clock,
         })
     }
@@ -521,6 +535,7 @@ impl StandaloneNode {
             settings.observer.clone(),
         )?);
         let host_services = WasmtimeHostServices {
+            capabilities: catalogs.capabilities.clone(),
             clock: Arc::clone(&clock),
             log_sink: Some(Arc::new(TelemetryLogSink::new(
                 observer.clone(),
@@ -571,6 +586,7 @@ impl StandaloneNode {
             rollouts: None,
             policies: None,
             supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),
+            capabilities: super::CapabilityLifetime(catalogs.capabilities.clone()),
             cleanup: Some(ActivationCleanupOwner::start_with_observer(
                 settings.manager.journal.maximum_active,
                 settings.manager.cleanup_grace,

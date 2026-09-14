@@ -1424,7 +1424,17 @@ dependencies = [
 name = "latent-capabilities"
 version = "0.1.0-alpha.3"
 dependencies = [
+ "latent-activation",
+ "latent-artifacts",
  "latent-core",
+ "latent-executor",
+ "latent-manifest",
+ "latent-policy",
+ "latent-routing",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "zeroize",
 ]
 
 [[package]]
@@ -1776,11 +1786,13 @@ dependencies = [
  "latent-activation",
  "latent-artifacts",
  "latent-audit",
+ "latent-capabilities",
  "latent-component-bindings",
  "latent-core",
  "latent-executor",
  "latent-manifest",
  "latent-node",
+ "latent-policy",
  "latent-routing",
  "latent-scheduler",
  "latent-telemetry",
@@ -1791,6 +1803,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "tempfile",
  "tokio",
  "wasm-encoder 0.252.0",
  "wasmtime",
@@ -1856,6 +1869,7 @@ dependencies = [
  "latent-admission",
  "latent-artifacts",
  "latent-audit",
+ "latent-capabilities",
  "latent-control-store",
  "latent-core",
  "latent-executor",

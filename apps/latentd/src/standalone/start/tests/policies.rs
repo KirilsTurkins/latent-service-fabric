@@ -287,3 +287,62 @@ async fn missing_or_foreign_policy_owner_is_rejected_before_service_composition(
     )
     .is_err());
 }
+
+#[tokio::test]
+async fn capability_composition_requires_the_exact_policy_owner_even_with_the_same_catalog() {
+    use latent_capabilities::broker::{
+        ActivationCapabilityBroker, ActivationCapabilityRuntime, CapabilityBrokerLimits,
+        CapabilityPlanSource, CompiledCapabilityPlan,
+    };
+    struct NoPlans;
+    impl CapabilityPlanSource for NoPlans {
+        fn plan(
+            &self,
+            _: &latent_routing::ResolvedRevision,
+        ) -> Result<Arc<CompiledCapabilityPlan>, latent_core::PlatformError> {
+            panic!("composition must not look up or execute an activation")
+        }
+    }
+    let directory = TempDir::new().unwrap();
+    let settings = configured(&directory);
+    let mut catalogs = Catalogs::open_with_control(&settings, &tokio::runtime::Handle::current())
+        .await
+        .unwrap();
+    let foreign = Arc::new(
+        latent_policy::capability::PolicyStore::open(
+            &directory.path().join("other-policies"),
+            PolicyStoreLimits::default(),
+            catalogs.artifacts.lifecycle_authority(),
+        )
+        .unwrap(),
+    );
+    let runtime = |policies| {
+        Arc::new(ActivationCapabilityRuntime::new(
+            Arc::new(
+                ActivationCapabilityBroker::new(
+                    catalogs.artifacts.lifecycle_authority(),
+                    policies,
+                    catalogs.clock.clone(),
+                    CapabilityBrokerLimits::default(),
+                )
+                .unwrap(),
+            ),
+            Arc::new(NoPlans),
+        ))
+    };
+    catalogs.capabilities = Some(runtime(foreign));
+    assert!(catalogs
+        .validate_composition(&settings, &catalogs.clock)
+        .is_err());
+    catalogs.capabilities = Some(runtime(
+        catalogs.policies.as_ref().unwrap().handle().store().clone(),
+    ));
+    assert!(catalogs
+        .validate_composition(&settings, &catalogs.clock)
+        .is_ok());
+    let handle = catalogs.policies.take();
+    assert!(catalogs
+        .validate_composition(&settings, &catalogs.clock)
+        .is_err());
+    drop(handle);
+}

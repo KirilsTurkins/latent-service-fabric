@@ -12,8 +12,10 @@ currentness, native caching and rollout control; it does not expand this guest
 import set. The [Phase 3 backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
 now includes the delivered [versioned host ABI profile](host-abi-profile.md).
 Package inspection recognizes its exact provider contracts and selected async
-imports, while preparation rejects providers without installed owners. General
-providers, the sealed broker and application hosting remain in progress.
+imports, while preparation rejects providers without installed owners. The [sealed activation broker](capability-broker.md) now implements session,
+handle and call ownership and can gate the four built-in imports in explicit
+managed embeddings. General providers, standalone plan compilation and
+application hosting remain in progress.
 
 The delivered [durable capability policy owner](capability-policies.md) provides
 bounded rules, scoped revisions, provider-binding metadata and authenticated
@@ -24,7 +26,7 @@ install the remaining guest providers.
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
 [standalone node](../reference/standalone-node.md). Phase 3 plans the shared
-capability broker, HTTP/blob/secrets/events providers, local child calls, random
+provider installation and plan compilation, HTTP/blob/secrets/events providers, local child calls, random
 and custom metrics, application ingress and web/SSR integration. Transactional
 state/effects, cluster transport and durable workflow suspension remain later
 phases; declared WIT alone makes none of them callable.

@@ -256,3 +256,8 @@ Linux node and CLI, historical replay, read-only denial, revocation and restart.
 It uses public test credentials, reaps both node processes and removes temporary
 storage. It makes zero guest Invokes; provider integration and adversarial calls
 are validated by their implementation tickets and #238, not claimed by this test.
+
+The [sealed capability broker](capability-broker.md) consumes these immutable
+policy rows for bind and guarded provider-call admission. Its executable broker
+and Wasmtime tests cover guest call currentness and ownership; coherent standalone
+plan construction remains #207.

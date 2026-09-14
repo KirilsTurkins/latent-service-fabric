@@ -8,26 +8,38 @@ use super::HostState;
 use crate::bindings::latent::clock::{monotonic, wall};
 
 impl monotonic::Host for HostState {
-    async fn now_nanos(&mut self) -> u64 {
+    async fn now_nanos(&mut self) -> wasmtime::Result<u64> {
         let started = Instant::now();
+        let _call = self.capabilities.scalar(
+            "latent:clock/monotonic@0.1.0",
+            "now-nanos",
+            latent_policy::capability::ResourceTarget::Clock,
+            8,
+        )?;
         let value = monotonic_nanos(
             self.clock.as_ref(),
             self.clock_origin,
             &mut self.last_monotonic_nanos,
         );
         self.record_host_call(started);
-        value
+        Ok(value)
     }
 }
 
 impl wall::Host for HostState {
-    async fn now_unix_millis(&mut self) -> u64 {
+    async fn now_unix_millis(&mut self) -> wasmtime::Result<u64> {
         let started = Instant::now();
+        let _call = self.capabilities.scalar(
+            "latent:clock/wall@0.1.0",
+            "now-unix-millis",
+            latent_policy::capability::ResourceTarget::Clock,
+            8,
+        )?;
         // Wall-clock adjustments are observable; elapsed time and deadlines
         // remain based on the separate monotonic process clock.
         let value = self.clock.sample().unix_millis();
         self.record_host_call(started);
-        value
+        Ok(value)
     }
 }
 

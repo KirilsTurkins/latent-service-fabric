@@ -2,6 +2,9 @@
 
 #![forbid(unsafe_code)]
 
+/// Concrete sealed authority; the legacy DTOs below remain descriptive only.
+pub mod broker;
+
 use latent_core::{
     ActivationId, BoxFuture, CapabilityHandleId, CapabilityId, ContractId, Metadata, Payload,
     PlatformError, PolicyId, ProviderId,
@@ -62,29 +65,29 @@ pub struct CapabilityResponse {
 pub trait CapabilityProvider: Send + Sync {
     fn descriptor(&self) -> &CapabilityDescriptor;
 
-    fn bind<'a>(
-        &'a self,
+    fn bind(
+        &self,
         request: CapabilityBindingRequest,
-    ) -> BoxFuture<'a, Result<CapabilityHandle, PlatformError>>;
+    ) -> BoxFuture<'_, Result<CapabilityHandle, PlatformError>>;
 
-    fn invoke<'a>(
-        &'a self,
+    fn invoke(
+        &self,
         call: CapabilityCall,
-    ) -> BoxFuture<'a, Result<CapabilityResponse, PlatformError>>;
+    ) -> BoxFuture<'_, Result<CapabilityResponse, PlatformError>>;
 
-    fn release<'a>(&'a self, handle: CapabilityHandle) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn release(&self, handle: CapabilityHandle) -> BoxFuture<'_, Result<(), PlatformError>>;
 }
 
 pub trait CapabilityBroker: Send + Sync {
-    fn bind<'a>(
-        &'a self,
+    fn bind(
+        &self,
         request: CapabilityBindingRequest,
-    ) -> BoxFuture<'a, Result<CapabilityHandle, PlatformError>>;
+    ) -> BoxFuture<'_, Result<CapabilityHandle, PlatformError>>;
 
-    fn invoke<'a>(
-        &'a self,
+    fn invoke(
+        &self,
         call: CapabilityCall,
-    ) -> BoxFuture<'a, Result<CapabilityResponse, PlatformError>>;
+    ) -> BoxFuture<'_, Result<CapabilityResponse, PlatformError>>;
 
     fn release_activation<'a>(
         &'a self,

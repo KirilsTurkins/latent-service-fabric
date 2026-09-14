@@ -44,6 +44,7 @@ pub struct RuntimeThreads {
 /// Retain this owner until explicit shutdown has joined its services and helpers.
 pub struct StandaloneNode {
     supply_chain: SupplyChainLifetime,
+    capabilities: CapabilityLifetime,
     transport: Option<transport::Transport>,
     audit: Option<audit::AuditRuntime>,
     rollouts: Option<rollouts::RolloutRuntime>,
@@ -65,6 +66,20 @@ pub struct StandaloneNode {
     classes: Vec<CellClass>,
     shutdown_grace: Duration,
     cleanup_grace: Duration,
+}
+
+struct CapabilityLifetime(Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>);
+impl CapabilityLifetime {
+    fn retire(&self) {
+        if let Some(owner) = &self.0 {
+            owner.retire();
+        }
+    }
+}
+impl Drop for CapabilityLifetime {
+    fn drop(&mut self) {
+        self.retire();
+    }
 }
 
 struct SupplyChainLifetime(Option<Arc<latent_policy::supply_chain::SupplyChainAuthority>>);

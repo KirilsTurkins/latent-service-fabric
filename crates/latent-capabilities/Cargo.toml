@@ -5,10 +5,22 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-capabilities."
+description = "Bounded activation-scoped capability authority and provider ownership."
 
 [lints]
 workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-activation = { path = "../latent-activation" }
+latent-artifacts = { path = "../latent-artifacts" }
+latent-executor = { path = "../latent-executor" }
+latent-policy = { path = "../latent-policy" }
+latent-routing = { path = "../latent-routing" }
+zeroize = { version = "=1.9.0", features = ["alloc"] }
+
+[dev-dependencies]
+tempfile.workspace = true
+serde_json.workspace = true
+latent-manifest = { path = "../latent-manifest" }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }

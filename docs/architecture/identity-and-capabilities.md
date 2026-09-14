@@ -6,16 +6,19 @@ and cancellation authorization. Its guest imports are limited to context, log
 and monotonic/wall clocks. See the [node credential model](../reference/standalone-node.md)
 and [capability implementation](../runtime/capabilities.md). Phase 2 also binds
 execution to current release lifecycle and, in enforced mode, verified signing
-authority. Phase 3 plans the general capability broker, bounded delegation and
-external providers below. Node workload mTLS remains part of the later cluster
+authority. Phase 3 adds the [sealed activation broker](../runtime/capability-broker.md)
+in explicit managed embeddings; coherent standalone provider installation,
+bounded delegation and external providers remain in progress. Node workload mTLS remains part of the later cluster
 architecture. See the [security boundary](security.md) and [roadmap](../roadmap.md).
 
 The delivered [capability policy owner](../runtime/capability-policies.md) binds
 tenant-scoped immutable policy revisions and provider selections to real
 publication eligibility. Its sealed decisions require a final currentness check;
 updates/revocations invalidate held authority. Required policies and additional
-restrictions intersect. The remaining broker work connects that foundation to
-actual installed providers and resource reservations.
+restrictions intersect. The broker connects these rows to activation-owned handle
+tables, guarded call admission, the original budget ledger and retained work/
+result ownership. The standalone binding compiler and concrete external provider
+implementations are subsequent Phase 3 tickets.
 
 ## Identity layers
 
@@ -30,17 +33,28 @@ LSF distinguishes:
 
 A future remote child call must carry a bounded delegation rather than the caller's unrestricted original credential. Phase 1 root/parent IDs are correlation metadata and do not grant delegated authority.
 
-## Planned broker authorization
+## Broker authorization
 
-Authorization decisions bind principal, action, resource, deployment generation, route generation, capability policy, and relevant request attributes. Decisions can attach obligations such as reduced budgets, redaction, audit requirements, or placement constraints.
+Sealed decisions bind the trusted principal, exact operation/resource, service
+revision, route generation, publication, current policies and installed provider
+configuration. Policy ceilings narrow actual operation budgets; they do not
+create a new ledger. Bind and call start both recheck currentness. No authority
+fence crosses provider I/O or an await. Detailed provider audit, delegation and
+placement behavior remain their respective Phase 3 implementation tickets.
 
-## Planned capability intersection
+## Capability intersection
 
 A guest import becomes usable only when requested by the immutable capsule, granted by deployment policy, and permitted for the current principal and operation.
 
-## Planned broker handle properties
+## Broker handle properties
 
-Capability handles must be opaque, activation-scoped, non-transferable unless explicitly delegated, operation-scoped, quota-bound, expiring, and revocable. The broker must prevent use after activation completion. Existing context, log and clock bindings already check their activation context; descriptive policy and handle DTOs alone do not grant provider authority.
+A handle is a slot/incarnation lookup inside one affine activation session. It
+cannot transfer authority to another session or publication. Bind fixes the
+operation and exact resource; every call rechecks current policy/provider
+revisions and the effective deadline. Session termination invalidates lookup
+slots, while actual provider work and result owners retain their charges until
+destruction. Cell reuse requires cleanup proof. Descriptive DTOs, claims and
+cached code are not grants. Explicit descendant delegation remains #208/#209.
 
 ## Node identity
 
