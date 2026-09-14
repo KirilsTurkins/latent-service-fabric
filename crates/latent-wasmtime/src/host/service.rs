@@ -214,7 +214,7 @@ fn request_digest(
     }
     latent_capabilities::broker::CapabilityRequestDigest::from_parts(&parts)
 }
-fn checkpoint(store: &mut StoreContextMut<'_, HostState>) -> wasmtime::Result<()> {
+pub(super) fn checkpoint(store: &mut StoreContextMut<'_, HostState>) -> wasmtime::Result<()> {
     let fuel = store.get_fuel()?;
     let state = store.data_mut();
     state.limiter.confirm_memory_growth();
@@ -223,7 +223,7 @@ fn checkpoint(store: &mut StoreContextMut<'_, HostState>) -> wasmtime::Result<()
         .observe_runtime(fuel, state.limiter.peak_memory_bytes())
         .map_err(host_error)
 }
-fn synchronize(store: &mut StoreContextMut<'_, HostState>) -> wasmtime::Result<()> {
+pub(super) fn synchronize(store: &mut StoreContextMut<'_, HostState>) -> wasmtime::Result<()> {
     let state = store.data();
     let remaining = state
         .accounting

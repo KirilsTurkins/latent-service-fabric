@@ -276,6 +276,17 @@ impl OwnedCapabilityResponse {
     }
 }
 impl ProviderCall {
+    pub(super) fn session_core(&self) -> Arc<SessionCore> {
+        Arc::clone(&self.work.as_ref().expect("affine call").session)
+    }
+    pub(super) fn take_audit(&mut self) -> Option<Box<super::audit::CallAudit>> {
+        self.work.as_mut().expect("affine call").audit.take()
+    }
+    pub(super) fn restore_audit(&mut self, audit: Box<super::audit::CallAudit>) {
+        let work = self.work.as_mut().expect("affine call");
+        debug_assert!(work.audit.is_none());
+        work.audit = Some(audit);
+    }
     /// A trusted adapter records the evidence it actually received, including
     /// after cancellation. This method neither grants nor refreshes permission.
     pub fn record_provider_outcome(

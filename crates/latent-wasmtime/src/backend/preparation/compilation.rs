@@ -168,12 +168,15 @@ impl super::super::PreparationContext {
             key.publication.as_ref(),
         )?;
         let linking = job.stage(PreparationStage::SurfaceLink);
-        let surface = surface::validate_with_local_services(
+        let surface = surface::validate_with_providers(
             component,
             &self.engine,
             artifact,
             &self.config,
-            self.local_services().is_some(),
+            surface::Providers {
+                local_services: self.local_services().is_some(),
+                http: self.http().is_some(),
+            },
         )?;
         let metadata_bytes = input
             .metadata_bytes

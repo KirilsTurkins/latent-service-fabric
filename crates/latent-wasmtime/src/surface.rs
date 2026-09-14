@@ -51,12 +51,23 @@ fn lookup_function<'a, T>(
     Some(&functions[index].1)
 }
 
-pub(crate) fn validate_with_local_services(
+#[derive(Clone, Copy, Default)]
+pub(crate) struct Providers {
+    pub local_services: bool,
+    pub http: bool,
+}
+impl Providers {
+    fn supports(self, name: &str) -> bool {
+        (self.local_services && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
+            || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
+    }
+}
+pub(crate) fn validate_with_providers(
     component: &Component,
     engine: &Engine,
     artifact: &CapsuleArtifact,
     config: &WasmtimeConfig,
-    local_service_available: bool,
+    providers: Providers,
 ) -> Result<Surface, PlatformError> {
     let component_type = component.component_type();
     let mut remaining = config.value_codec_limits.max_type_nodes;
@@ -69,7 +80,7 @@ pub(crate) fn validate_with_local_services(
         config,
         &mut remaining,
         &mut retained_bytes,
-        local_service_available,
+        providers,
     )?;
 
     let declared_exports = artifact
@@ -107,7 +118,7 @@ pub(crate) fn validate_with_local_services(
                     retain(entry_bytes, &mut retained_bytes, config)?;
                     let (params, results) = signature(
                         &function,
-                        local_service_available && function.async_(),
+                        (providers.local_services || providers.http) && function.async_(),
                         config,
                         &mut remaining,
                     )?;
@@ -171,7 +182,7 @@ fn validate_imports(
     config: &WasmtimeConfig,
     remaining: &mut usize,
     retained_bytes: &mut usize,
-    local_service_available: bool,
+    providers: Providers,
 ) -> Result<BTreeSet<String>, PlatformError> {
     let mut imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
@@ -180,11 +191,10 @@ fn validate_imports(
             .interface(name)
             .ok_or_else(|| incompatible("component imports an unsupported host capability"))?;
         if specification.binding == latent_core::HostInterfaceBinding::Provider
-            && !(local_service_available
-                && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
+            && !providers.supports(name)
         {
-            // Recognition is data-only. The current runtime installs only the
-            // built-ins below; a label or a package manifest cannot install I/O.
+            // Recognition is data-only. Providers require an installed trusted port;
+            // a label or a package manifest cannot install I/O.
             return Err(incompatible(
                 "required host capability provider is unavailable",
             ));

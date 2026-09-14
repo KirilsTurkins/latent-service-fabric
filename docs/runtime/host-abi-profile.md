@@ -19,15 +19,15 @@ error and compatibility contract.
 | `latent:blob/blob@0.1.0` | supported | unavailable, #213/#214 |
 | `latent:secrets/reader@0.1.0` | supported | unavailable, #215/#216 |
 | `latent:events/publisher@0.2.0` | supported | unavailable, #217 |
-| `latent:http/client@0.2.0` | supported, async import | unavailable, #211 |
+| `latent:http/client@0.2.0` | supported, async import | configured [bounded HTTP adapter](outbound-http.md) |
 | `latent:telemetry/custom@0.1.0` | supported | unavailable, #220 |
 | `latent:service/invoke@0.1.0` | supported, async import | configured [isolated local adapter](local-service-invocation.md) |
 
 An inspected package has no provider authority. Wasmtime preparation rejects a
 required provider that has no installed owner. The generated Phase 3 host/guest
 bindings contain types and registration helpers; the production linker supplies
-context, log and clock, plus service invocation when its node-owned adapter is
-installed. Activations must supply their exact prepared
+context, log and clock, plus service invocation and HTTP when their node-owned
+adapters are installed. Activations must supply their exact prepared
 imports and pass current eligibility/descriptor checks.
 
 The complete source interface must match authoritative WIT. A compiler may prune
@@ -55,9 +55,9 @@ imports may eventually use a cooperative async host bridge. Neither form makes
 waiting activations free: stores, cells, handles, buffers and reservations stay
 owned until completion or affirmative cleanup.
 
-The local service profile additionally selects freestanding async application
+The local service and buffered HTTP profiles additionally select freestanding async application
 exports so callers can wait for the canonical async import. Exact source, binary
-and contract metadata must agree, and production preparation requires the local
+and contract metadata must agree, and production preparation requires an installed async
 adapter. The frozen host WIT and digest remain unchanged. Component Model
 resources, futures, streams, flags, maps, fixed lists and error-context remain
 rejected. Blob handles are opaque numeric

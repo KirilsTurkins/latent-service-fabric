@@ -98,6 +98,9 @@ pub(super) struct SessionCore {
 /// Affine activation lifetime. It is never retained by a prepared component.
 pub struct CapabilitySession {
     pub(super) core: Arc<SessionCore>,
+    // Only the original Store owner closes the scope. A short internal view
+    // borrows an already-owned operation; it cannot reopen or prolong authority.
+    close_on_drop: bool,
 }
 /// Compact tenant-scoped accounting only; no plan, provider or guest Store.
 #[derive(Clone)]
@@ -291,7 +294,10 @@ impl ActivationCapabilityBroker {
             core: Arc::downgrade(&core),
             stats: Arc::downgrade(&core.stats),
         };
-        Ok(CapabilitySession { core })
+        Ok(CapabilitySession {
+            core,
+            close_on_drop: true,
+        })
     }
 }
 impl SessionCore {
@@ -361,6 +367,34 @@ impl SessionCore {
     }
 }
 impl CapabilitySession {
+    pub(super) fn with_work_scope<T>(
+        core: Arc<SessionCore>,
+        inspect: impl FnOnce(&Self) -> T,
+    ) -> T {
+        inspect(&Self {
+            core,
+            close_on_drop: false,
+        })
+    }
+    /// Trusted adapter selection only; the later broker dispatch still checks
+    /// every grant and currentness fence. No public descriptor grants authority.
+    pub fn uses_provider(
+        &self,
+        provider: &super::ProviderReference,
+    ) -> Result<bool, PlatformError> {
+        self.core.check()?;
+        Ok(self
+            .core
+            .plan
+            .bindings
+            .iter()
+            .any(|binding| Arc::ptr_eq(&binding.provider, &provider.entry)))
+    }
+    pub fn deadline(&self) -> Result<std::time::Instant, PlatformError> {
+        self.core.check()?;
+        self.core.deadline.monotonic().ok_or_else(denied)
+    }
+
     #[must_use]
     pub fn captures_audit(&self) -> bool {
         self.core.owner.audit.is_some()
@@ -490,7 +524,9 @@ impl CapabilitySession {
 }
 impl Drop for CapabilitySession {
     fn drop(&mut self) {
-        self.close();
+        if self.close_on_drop {
+            self.close();
+        }
     }
 }
 pub(super) fn next_incarnation() -> Result<u64, PlatformError> {

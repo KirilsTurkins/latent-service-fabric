@@ -116,6 +116,8 @@ separate facts.
 | `latent-wasmtime` | Generic component factory/backend, bounded value/host policy, fresh stores, cleanup proof and prepared-cache ownership. Opt-in `IsolatedAotCompiler`, `TrustedAotOutput`, `NativeAotSettings`, `NativeImageLimits`, `with_catalog_and_aot` and aggregate native usage. |
 | `latent-node` | `LocalActivationManager`, immediate-ID handles, scoped cancel/status, bounded journal, transport cleanup interruption and inventory seams. |
 | `latent-wire` | Invocation/management adapters, trusted principal/trace boundaries, finite request conversion and response services. Audit, deployment and rollout response leases remain attached through body/frame ownership. |
+| `latent-capabilities` | Sealed activation plans/sessions, policy/audit dispatch, affine I/O and shared provider pools. Configured local-service and HTTP ports require exact current grants. |
+| `latent-http` | `HttpProvider`, bounded destination/DNS/TLS/header configuration and buffered async HTTP; [profile and composition](runtime/outbound-http.md). |
 | `latent-testkit` | Deterministic async/process/resource helpers and invariant/conformance probes. |
 
 Repository preparation returns the pinned runtime and its declared imports
@@ -143,7 +145,7 @@ recovery while disabling rollout RPCs. An initialized durable audit owner cannot
 silently downgrade to volatile or absent audit on reopen.
 
 The following crates still contain primarily architectural interfaces for
-future integrations: `latent-capabilities`, `latent-blobs`, `latent-triggers`,
+future integrations: `latent-blobs`, `latent-triggers`,
 `latent-ingress`, `latent-state`, `latent-commit`, `latent-effects`,
 `latent-workflows` and `latent-wrpc`. Identity/delegation and generic
 `PolicyEngine`/`PolicyRepository` traits likewise do not imply distributed

@@ -64,7 +64,7 @@ It emits bindings into `OUT_DIR` and exposes:
 - `latent_component_bindings::host::echo`;
 - `latent_component_bindings::guest::runtime` on Wasm targets.
 
-`latent-wasmtime` consumes the shared aggregate-runtime host bindings for its allowed context, log, and clock imports, and the shared echo host bindings for the retained Phase 0 signature check. Generic guest calls use Wasmtime's validated dynamic export indices. `latent-toolchain-smoke` consumes the shared aggregate runtime bindings for compile probes; its executable fixtures generate canonical ABI exports in their final guest crates from maintained WIT.
+`latent-wasmtime` consumes the shared aggregate-runtime host bindings for its allowed context, log, and clock imports, plus the Phase 3 binding types for configured async local-service and HTTP adapters, and the shared echo host bindings for the retained Phase 0 signature check. Generic guest calls use Wasmtime's validated dynamic export indices. `latent-toolchain-smoke` consumes the shared aggregate runtime bindings for compile probes; its executable fixtures generate canonical ABI exports in their final guest crates from maintained WIT.
 
 ## Generated-output boundary
 

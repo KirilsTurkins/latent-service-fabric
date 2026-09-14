@@ -392,3 +392,49 @@ async fn typed_inputs_need_their_actual_digest_and_optional_capture_stays_lossy(
     assert_eq!(accepted(&session, handle).await.bytes(), b"secret-value");
     assert!(journal.handle.snapshot().dropped_observations > 0);
 }
+
+#[tokio::test]
+async fn terminal_io_audit_releases_no_retained_buffer_or_activation_ownership() {
+    use crate::broker::io::{IoLimits, IoRuntime};
+    let journal = Journal::new(8);
+    let f = Fixture::audited(
+        CapabilityBrokerLimits::default(),
+        journal.handle.clone(),
+        true,
+        false,
+    );
+    let (request, control) = f.request("io-audit");
+    let session = f.session(&request, &control);
+    let observer = session.observer();
+    let io = IoRuntime::new(IoLimits::default()).unwrap();
+    let ready = io.admit(&session).unwrap().wait().await.unwrap();
+    let handle = session.bind(CAP, "read", resource()).unwrap();
+    let mut call = session
+        .dispatch_audited(handle, "read", resource(), b"request", output(), |call| {
+            ready.start(call)
+        })
+        .await
+        .unwrap()
+        .unwrap();
+    session.close_handle(handle).unwrap();
+    let mut buffer = call.buffer(32, 0).unwrap();
+    buffer.spare_mut().unwrap()[0] = 42;
+    buffer.advance_written(1).unwrap();
+    let buffer = buffer.retain().unwrap();
+    call.record_provider_outcome(AuditProviderOutcome::SecretResolved)
+        .unwrap();
+    let durability = call.finish_audit().await;
+    assert!(matches!(
+        durability,
+        CapabilityAuditDurability::Durable { .. }
+    ));
+    assert_eq!(call.finish_audit().await, durability);
+    assert_eq!(journal.query("a").await.records().len(), 2);
+    drop(call);
+    drop(session);
+    assert_eq!(io.snapshot().result_bytes, 32);
+    assert!(!observer.is_quiescent());
+    drop(buffer);
+    assert_eq!(io.snapshot().result_bytes, 0);
+    assert!(observer.is_quiescent());
+}

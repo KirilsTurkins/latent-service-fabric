@@ -108,6 +108,15 @@ impl PreparationContext {
                 )
             })?;
         }
+        if let Some(invoker) = self.http() {
+            crate::host::http::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind HTTP import",
+                    false,
+                )
+            })?;
+        }
         let pre = linker.instantiate_pre(component).map_err(|error| {
             platform_error(
                 PlatformErrorCode::IncompatibleContract,
@@ -119,6 +128,11 @@ impl PreparationContext {
             )
         })?;
         Ok(pre)
+    }
+    pub(super) fn http(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::http::OutboundHttpInvoker>> {
+        self.capabilities.as_ref()?.upgrade()?.http().ok()
     }
     pub(super) fn local_services(
         &self,

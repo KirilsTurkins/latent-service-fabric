@@ -8,12 +8,14 @@ pub(crate) struct HostCapabilities {
     // Destroy typed-result reservations before closing/destroying the session.
     // They remain charged through canonical lowering and component post-return.
     lowering: Vec<ProviderCall>,
+    pooled_lowering: Vec<latent_capabilities::broker::pools::PoolCall>,
     session: Option<CapabilitySession>,
 }
 impl HostCapabilities {
     pub(crate) fn new(session: Option<CapabilitySession>) -> Self {
         Self {
             lowering: Vec::new(),
+            pooled_lowering: Vec::new(),
             session,
         }
     }
@@ -106,6 +108,26 @@ impl HostCapabilities {
             input,
             cost,
         )
+    }
+    pub(super) fn http_start(
+        &self,
+        invoker: &dyn latent_capabilities::broker::http::OutboundHttpInvoker,
+        request: latent_capabilities::broker::http::HttpRequest,
+    ) -> Result<
+        latent_capabilities::broker::http::HttpInvocation,
+        latent_capabilities::broker::http::HttpError,
+    > {
+        let session = self
+            .session
+            .as_ref()
+            .ok_or(latent_capabilities::broker::http::HttpError::PermissionDenied)?;
+        invoker.start(session, request)
+    }
+    pub(super) fn retain_pool_lowering(
+        &mut self,
+        call: latent_capabilities::broker::pools::PoolCall,
+    ) {
+        self.pooled_lowering.push(call);
     }
     pub(super) fn retain_lowering(&mut self, call: ProviderCall) {
         self.lowering.push(call);
