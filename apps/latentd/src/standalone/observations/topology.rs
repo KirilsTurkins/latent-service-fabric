@@ -19,6 +19,7 @@ pub(in crate::standalone) struct TopologySource {
     invocation_threads: Arc<AtomicUsize>,
     control_threads: Arc<AtomicUsize>,
     rollouts: Option<latent_rollout::RolloutHandle>,
+    policies: Option<latent_policy::capability::PolicyControlHandle>,
 }
 
 impl TopologySource {
@@ -55,6 +56,7 @@ impl TopologySource {
             invocation_threads: threads.invocation,
             control_threads: threads.control,
             rollouts: None,
+            policies: None,
         }
     }
 
@@ -64,6 +66,39 @@ impl TopologySource {
     ) -> Self {
         self.rollouts = rollouts;
         self
+    }
+    pub(in crate::standalone) fn with_policies(
+        mut self,
+        policies: Option<latent_policy::capability::PolicyControlHandle>,
+    ) -> Self {
+        self.policies = policies;
+        self
+    }
+    fn policy_rows(&self, writer: &mut NodeTopologyWriter<'_>) -> Result<bool, PlatformError> {
+        if let Some(handle) = &self.policies {
+            if !write_rows(
+                writer,
+                [
+                    row(
+                        "capability-policy-control-jobs",
+                        "command",
+                        ResourceOwnership::NodeFixed,
+                        count(handle.maximum_jobs()),
+                        Some(count(handle.active_jobs())),
+                    ),
+                    row(
+                        "capability-policy-read-owners",
+                        "response-or-snapshot",
+                        ResourceOwnership::NodeFixed,
+                        count(handle.store().limits().maximum_read_owners + 4),
+                        Some(count(handle.store().retained_read_owners())),
+                    ),
+                ],
+            )? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
     }
 }
 
@@ -95,6 +130,9 @@ impl NodeTopologySource for TopologySource {
             cleanup_slots: count(cleanup.reserved) + count(cleanup.queued) + count(cleanup.running),
         };
         if !write_rows(writer, rows(self.limits, observed))? {
+            return Ok(false);
+        }
+        if !self.policy_rows(writer)? {
             return Ok(false);
         }
         if let Some(handle) = &self.rollouts {

@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod capability;
 pub mod supply_chain;
 
 use latent_core::{BoxFuture, InvocationPrincipal, Metadata, PlatformError, PolicyId};

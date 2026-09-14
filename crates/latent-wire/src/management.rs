@@ -9,6 +9,7 @@ mod errors;
 mod inspection;
 mod inventory;
 mod limits;
+mod policies;
 mod release;
 mod rollouts;
 mod routes;
@@ -35,6 +36,7 @@ pub use deployment::{
 pub use inventory::{node_inventory_from_proto, node_inventory_to_proto};
 pub use latent_rpc::control::v1 as proto;
 pub use limits::ManagementLimits;
+pub use policies::PolicyResponseService;
 pub use release::{release_descriptor_from_proto, release_descriptor_to_proto};
 pub use rollouts::RolloutResponseService;
 
@@ -56,6 +58,7 @@ pub struct ManagementServices {
 pub struct ManagementServiceAdapter {
     services: ManagementServices,
     limits: ManagementLimits,
+    policies: Option<latent_policy::capability::PolicyControlHandle>,
 }
 
 impl ManagementServiceAdapter {
@@ -77,7 +80,47 @@ impl ManagementServiceAdapter {
                 details: Vec::new(),
             });
         }
-        Ok(Self { services, limits })
+        Ok(Self {
+            services,
+            limits,
+            policies: None,
+        })
+    }
+
+    /// Attach the single policy owner checked by node/catalog composition.
+    pub fn with_policy_control(
+        mut self,
+        policies: latent_policy::capability::PolicyControlHandle,
+    ) -> Result<Self, PlatformError> {
+        if self.policies.is_some() {
+            return Err(latent_core::PlatformError {
+                code: latent_core::PlatformErrorCode::InvalidArgument,
+                message: "capability-policy-owner-already-configured".into(),
+                retryable: false,
+                details: Vec::new(),
+            });
+        }
+        self.policies = Some(policies);
+        Ok(self)
+    }
+
+    #[must_use]
+    pub fn policy_server(
+        self,
+    ) -> PolicyResponseService<proto::policy_service_server::PolicyServiceServer<Self>> {
+        let input = self
+            .limits
+            .max_request_bytes
+            .min(policies::MAX_REQUEST_BYTES);
+        let output = self
+            .limits
+            .max_response_bytes
+            .min(policies::MAX_RESPONSE_BYTES);
+        PolicyResponseService::new(
+            proto::policy_service_server::PolicyServiceServer::new(self)
+                .max_decoding_message_size(input)
+                .max_encoding_message_size(output),
+        )
     }
 
     #[must_use]

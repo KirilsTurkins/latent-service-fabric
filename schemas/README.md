@@ -39,6 +39,10 @@ Optional standalone node members have their own closed schemas:
 | [node-audit.schema.json](node-audit.schema.json) | `audit`: optional durable audit resource limits. |
 | [node-rollouts.schema.json](node-rollouts.schema.json) | `rollouts`: shared coordinator and optional canary observation limits, requiring the same enabled audit owner. |
 | [rollout-canary-policy.schema.json](rollout-canary-policy.schema.json) | Explicit immutable observation duration, candidate sample minimum and outcome/latency thresholds; never evidence of health. |
+| [capability-policy.schema.json](capability-policy.schema.json) | Closed exact capability policy v1; required scopes default deny and matching allow ceilings intersect. |
+| [capability-provider-binding.schema.json](capability-provider-binding.schema.json) | Tenant-scoped provider profile/configuration identity and additional narrowing; no credentials or installation authority. |
+| [capability-policy-resource.schema.json](capability-policy-resource.schema.json) | Typed descriptive target for authenticated policy explanation, never proof of an actual provider destination. |
+| [capability-policy-config.schema.json](capability-policy-config.schema.json) | Optional Linux node policy-owner configuration and finite retention/control/read limits. |
 
 The node decoder additionally rejects duplicate members and explicit null
 enablement. Runtime derivation checks cross-field resource relationships and

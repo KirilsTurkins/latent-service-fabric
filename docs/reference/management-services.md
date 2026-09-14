@@ -3,7 +3,7 @@
 `latent-wire::management::ManagementServiceAdapter` implements the generated
 `latent.control.v1` services over the node's existing artifact repository,
 versioned deployment store, compiled routes, inventory reporter, and optional
-shared durable audit handle and rollout coordinator. It opens no
+shared durable audit handle, rollout coordinator and capability policy owner. It opens no
 listener and creates no execution backend, guest instance, cell pool, or service
 worker. The embedding application supplies these shared services and a trusted
 authentication boundary. The [standalone Linux node](standalone-node.md)
@@ -25,6 +25,7 @@ generated package inputs through this RPC boundary.
 | Node | `GetNode`, `ListNodes` | The one configured node's bounded inventory snapshot. |
 | Audit | `QueryAudit`, `QueryPhase2Audit` | Bounded durable history when the node's optional audit owner is configured. |
 | Rollout | `StartRollout`, `ChangeRollout`, `EvaluateRollout`, `GetRollout`, `ListRollouts`, `GetRolloutOperation` | Optional audited stages and declared canary promotion over one tenant/service cohort. |
+| Policy | `ApplyPolicy`, `GetPolicy`, `ListPolicies`, `DeletePolicy`, `GetPolicyOperation`, `EvaluatePolicy` | Optional durable tenant-scoped capability policies and provider-binding metadata, CAS/replay, bounded pages and descriptive explanation. |
 
 `WatchDeployment`, `WatchRouteSnapshots`, `RegisterNode`, `ReportInventory`, and
 `Heartbeat` return explicit gRPC `Unimplemented`. They do not open an idle stream
@@ -39,6 +40,13 @@ and foreign-tenant objects. `GetNode` returns an absent optional inventory for a
 unknown node ID. Deleting an absent or foreign deployment returns `NotFound`.
 
 ## Authentication and tenant scope
+
+Capability policies use the same trusted principal boundary and additionally
+require tenant administrator identity. Their exact language, limits, response
+preflight, owner lifetime and recovery rules are specified in
+[durable capability policies](../runtime/capability-policies.md). Generic legacy
+policy DTOs and explanation results confer no execution authority. With no policy
+owner, authenticated policy calls return `Unimplemented`.
 
 The listener supplies an `AuthenticatedInvocationContext` request extension,
 using the same principal boundary as the [invocation service](../protocol/invocation-service.md).

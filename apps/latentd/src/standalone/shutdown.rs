@@ -13,6 +13,8 @@ pub struct ShutdownReport {
     pub audit: Option<super::AuditShutdownReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rollouts: Option<super::RolloutShutdownReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub policies: Option<super::PolicyShutdownReport>,
     pub clean: bool,
     pub active_connections: usize,
     pub active_rpcs: usize,
@@ -49,6 +51,7 @@ pub struct ShutdownReport {
 impl ShutdownReport {
     fn reclaimed(&self) -> bool {
         self.audit.is_none_or(super::AuditShutdownReport::clean)
+            && self.policies.is_none_or(super::PolicyShutdownReport::clean)
             && self
                 .rollouts
                 .is_none_or(super::RolloutShutdownReport::clean)
@@ -88,6 +91,9 @@ impl StandaloneNode {
     )]
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
         self.supply_chain.retire();
+        if let Some(policies) = &self.policies {
+            policies.handle().retire();
+        }
         self.load.stop_accepting();
         if let Some(rollouts) = &self.rollouts {
             rollouts.handle().close();
@@ -156,6 +162,20 @@ impl StandaloneNode {
                 )
             });
         }
+        let policy_report = if let Some(policies) = &self.policies {
+            let report = policies.shutdown(drain_deadline.into_std()).await;
+            if !report.clean() {
+                failure.get_or_insert_with(|| {
+                    error(
+                        PlatformErrorCode::DeadlineExceeded,
+                        "capability policy work did not stop cleanly",
+                    )
+                });
+            }
+            Some(report)
+        } else {
+            None
+        };
         let rollout_report = if let Some(rollouts) = &self.rollouts {
             match rollouts.shutdown(self.shutdown_grace).await {
                 Ok(report) => {
@@ -212,6 +232,7 @@ impl StandaloneNode {
         if let Ok(report) = &mut report {
             report.audit = audit_report;
             report.rollouts = rollout_report;
+            report.policies = policy_report;
         }
         if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
             failure.get_or_insert_with(|| {
@@ -287,6 +308,7 @@ impl StandaloneNode {
         Ok(ShutdownReport {
             audit: None,
             rollouts: None,
+            policies: None,
             clean: false,
             active_connections: transport.active_connections,
             active_rpcs: transport.active_rpcs,

@@ -1,0 +1,859 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1alpha1/capability-policy.schema.json",
+  "title": "LSF capability policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "tenant",
+    "rules"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "tenant": {
+      "$ref": "#/$defs/identifier"
+    },
+    "rules": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
+    },
+    "publication": {
+      "type": "string",
+      "pattern": "^publication:sha256:[0-9a-f]{64}$(?![\\s\\S])",
+      "minLength": 83,
+      "maxLength": 83
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$(?![\\s\\S])",
+      "minLength": 71,
+      "maxLength": 71
+    },
+    "ceiling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operations",
+        "inputBytes",
+        "outputBytes",
+        "wallTimeMillis"
+      ],
+      "properties": {
+        "operations": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "inputBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 67108864
+        },
+        "outputBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 67108864
+        },
+        "wallTimeMillis": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 300000
+        }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scheme",
+        "host",
+        "port"
+      ],
+      "properties": {
+        "scheme": {
+          "enum": [
+            "http",
+            "https"
+          ]
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 253,
+          "pattern": "^[a-z0-9.:-]+$(?![\\s\\S])"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "context"
+        }
+      }
+    },
+    "clock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "clock"
+        }
+      }
+    },
+    "random": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "random"
+        }
+      }
+    },
+    "log": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "levels"
+      ],
+      "properties": {
+        "kind": {
+          "const": "log"
+        },
+        "levels": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "trace",
+              "debug",
+              "info",
+              "warn",
+              "error"
+            ]
+          }
+        }
+      }
+    },
+    "http": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "origins",
+        "methods",
+        "paths",
+        "pathPrefixes"
+      ],
+      "properties": {
+        "kind": {
+          "const": "http"
+        },
+        "origins": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "scheme",
+              "host",
+              "port"
+            ],
+            "properties": {
+              "scheme": {
+                "enum": [
+                  "http",
+                  "https"
+                ]
+              },
+              "host": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 253,
+                "pattern": "^[a-z0-9.:-]+$(?![\\s\\S])"
+              },
+              "port": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+              }
+            }
+          }
+        },
+        "methods": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "GET",
+              "HEAD",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "OPTIONS"
+            ]
+          }
+        },
+        "paths": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))/(?!.*[%\\\\?#])[\\x21-\\x7e]*$(?![\\s\\S])"
+          }
+        },
+        "pathPrefixes": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "allOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048,
+                "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))/(?!.*[%\\\\?#])[\\x21-\\x7e]*$(?![\\s\\S])"
+              },
+              {
+                "pattern": "/$(?![\\s\\S])"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "blob": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "namespaces"
+      ],
+      "properties": {
+        "kind": {
+          "const": "blob"
+        },
+        "namespaces": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "references"
+      ],
+      "properties": {
+        "kind": {
+          "const": "secrets"
+        },
+        "references": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "subjects"
+      ],
+      "properties": {
+        "kind": {
+          "const": "events"
+        },
+        "subjects": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_:/@-]+(?:\\.[A-Za-z0-9_:/@-]+)*$(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "names"
+      ],
+      "properties": {
+        "kind": {
+          "const": "telemetry"
+        },
+        "names": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "services",
+        "publications"
+      ],
+      "properties": {
+        "kind": {
+          "const": "service"
+        },
+        "services": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
+          }
+        },
+        "publications": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^publication:sha256:[0-9a-f]{64}$(?![\\s\\S])",
+            "minLength": 83,
+            "maxLength": 83
+          }
+        }
+      }
+    },
+    "resource": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/context"
+        },
+        {
+          "$ref": "#/$defs/clock"
+        },
+        {
+          "$ref": "#/$defs/random"
+        },
+        {
+          "$ref": "#/$defs/log"
+        },
+        {
+          "$ref": "#/$defs/http"
+        },
+        {
+          "$ref": "#/$defs/blob"
+        },
+        {
+          "$ref": "#/$defs/secrets"
+        },
+        {
+          "$ref": "#/$defs/events"
+        },
+        {
+          "$ref": "#/$defs/telemetry"
+        },
+        {
+          "$ref": "#/$defs/service"
+        }
+      ]
+    },
+    "restriction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operations"
+      ],
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/resource"
+        },
+        "ceiling": {
+          "$ref": "#/$defs/ceiling"
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "effect",
+        "principals",
+        "services",
+        "publications",
+        "capability",
+        "operations",
+        "resources",
+        "ceiling"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "effect": {
+          "enum": [
+            "allow",
+            "deny"
+          ]
+        },
+        "principals": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "subject"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "user",
+                  "service",
+                  "node",
+                  "trigger",
+                  "administrator"
+                ]
+              },
+              "subject": {
+                "$ref": "#/$defs/identifier"
+              }
+            }
+          }
+        },
+        "services": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "publications": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/publication"
+          }
+        },
+        "capability": {
+          "enum": [
+            "latent:context/context@0.1.0",
+            "latent:log/log@0.1.0",
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:random/random@0.1.0",
+            "latent:blob/blob@0.1.0",
+            "latent:secrets/reader@0.1.0",
+            "latent:events/publisher@0.2.0",
+            "latent:http/client@0.2.0",
+            "latent:telemetry/custom@0.1.0",
+            "latent:service/invoke@0.1.0"
+          ]
+        },
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_.:/@-]+$(?![\\s\\S])"
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/resource"
+        },
+        "ceiling": {
+          "$ref": "#/$defs/ceiling"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:context/context@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "activation-id",
+                    "root-activation-id",
+                    "parent-activation-id",
+                    "principal",
+                    "trace",
+                    "deadline-unix-millis",
+                    "remaining-budget",
+                    "metadata"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/context"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:log/log@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "write"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/log"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:clock/monotonic@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "now-nanos"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/clock"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:clock/wall@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "now-unix-millis"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/clock"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:random/random@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "bytes",
+                    "u64-value"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/random"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:blob/blob@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "create",
+                    "open",
+                    "write",
+                    "read",
+                    "seal",
+                    "close"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/blob"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:secrets/reader@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "read"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/secrets"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:events/publisher@0.2.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "publish"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/events"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:http/client@0.2.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "send"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/http"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:telemetry/custom@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "emit-metric"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/telemetry"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:service/invoke@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "call"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/service"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$comment": "Rust additionally enforces 64 KiB bytes, duplicate JSON keys and rule IDs, parser limits, and canonical IP/DNS/path forms. The schema is descriptive, never authorization."
+}

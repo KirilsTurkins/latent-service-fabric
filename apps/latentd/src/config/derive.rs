@@ -55,6 +55,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         isolated_aot,
         audit: super::audit::derive(config.audit.as_ref())?,
         rollouts: super::rollouts::derive(config.rollouts.as_ref(), config.audit.is_some())?,
+        capability_policies: super::capability_policies::derive(config.capability_policies)?,
         node,
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,

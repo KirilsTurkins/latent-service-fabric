@@ -52,6 +52,13 @@ Enforced admission alone still does not select compiler isolation. See
 [execution profiles and their finite evidence](docs/runtime/execution-security-profiles.md)
 and [protected configuration](docs/runtime/protected-configuration.md).
 
+The optional [capability policy owner](docs/runtime/capability-policies.md) is now
+part of the trusted computing base. It enforces closed rule parsing, tenant-scoped
+revision/CAS history, protected storage and final policy/publication currentness.
+Descriptive explanations and historical receipts grant no execution permission.
+Uncertain persistence retires the live owner until verified reopen. Provider
+installation and actual budget reservation remain separate broker boundaries.
+
 General external capability providers, transactional state/effects, and cluster
 mTLS remain later work. They add trust boundaries when implemented. See the
 [security architecture](docs/architecture/security.md) and

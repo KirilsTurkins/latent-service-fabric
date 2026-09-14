@@ -41,6 +41,8 @@ pub struct NodeConfig {
     pub audit: Option<super::AuditConfig>,
     #[serde(default, deserialize_with = "super::rollouts::present")]
     pub rollouts: Option<super::RolloutConfig>,
+    #[serde(default, deserialize_with = "super::capability_policies::present")]
+    pub capability_policies: Option<super::CapabilityPolicyConfig>,
     #[serde(default)]
     pub retention: RetentionConfig,
     #[serde(default)]

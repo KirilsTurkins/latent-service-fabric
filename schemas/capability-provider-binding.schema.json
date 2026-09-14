@@ -1,0 +1,398 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1alpha1/capability-provider-binding.schema.json",
+  "title": "LSF provider binding v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "tenant",
+    "capability",
+    "providerProfile",
+    "configurationDigest",
+    "configurationEpoch",
+    "restriction"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "tenant": {
+      "$ref": "capability-policy.schema.json#/$defs/identifier"
+    },
+    "capability": {
+      "enum": [
+        "latent:context/context@0.1.0",
+        "latent:log/log@0.1.0",
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:random/random@0.1.0",
+        "latent:blob/blob@0.1.0",
+        "latent:secrets/reader@0.1.0",
+        "latent:events/publisher@0.2.0",
+        "latent:http/client@0.2.0",
+        "latent:telemetry/custom@0.1.0",
+        "latent:service/invoke@0.1.0"
+      ]
+    },
+    "providerProfile": {
+      "$ref": "capability-policy.schema.json#/$defs/identifier"
+    },
+    "configurationDigest": {
+      "$ref": "capability-policy.schema.json#/$defs/digest"
+    },
+    "configurationEpoch": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 18446744073709551615
+    },
+    "restriction": {
+      "$ref": "capability-policy.schema.json#/$defs/restriction"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:context/context@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "activation-id",
+                    "root-activation-id",
+                    "parent-activation-id",
+                    "principal",
+                    "trace",
+                    "deadline-unix-millis",
+                    "remaining-budget",
+                    "metadata"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/context"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:log/log@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "write"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/log"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:clock/monotonic@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "now-nanos"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/clock"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:clock/wall@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "now-unix-millis"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/clock"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:random/random@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "bytes",
+                    "u64-value"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/random"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:blob/blob@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "create",
+                    "open",
+                    "write",
+                    "read",
+                    "seal",
+                    "close"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/blob"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:secrets/reader@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "read"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/secrets"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:events/publisher@0.2.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "publish"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/events"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:http/client@0.2.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "send"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/http"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:telemetry/custom@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "emit-metric"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/telemetry"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:service/invoke@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "call"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/service"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
