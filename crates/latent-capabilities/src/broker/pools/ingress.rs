@@ -54,7 +54,7 @@ impl ProviderPools {
     ) -> Result<IngressRequest, PlatformError> {
         let now = Instant::now();
         if deadline <= now
-            || deadline.duration_since(now) > Duration::from_secs(60)
+            || deadline.duration_since(now) > Duration::from_mins(1)
             || !(1..=16).contains(&maximum_operations)
             || !(4096..=1024 * 1024).contains(&memory_bytes)
             || client

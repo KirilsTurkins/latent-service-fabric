@@ -32,7 +32,10 @@ async fn ingress_socket_keeps_capacity_after_waiter_loss_and_idle_reuse_has_no_c
     let mut connection = setup.client.checkout_ingress(&next).unwrap().unwrap();
     assert_eq!(connection.resource().local_addr().unwrap(), local);
     assert_eq!(setup.pools.snapshot().unwrap().connections, 1);
-    drop((connection, next));
+    connection.park().unwrap();
+    drop(next);
+    setup.client.close_idle().unwrap();
+    assert_eq!(setup.pools.snapshot().unwrap().idle_connections, 0);
     assert_eq!(peer.read(&mut [0]).unwrap(), 0);
     clean(&setup.pools).await;
 }

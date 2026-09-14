@@ -129,6 +129,14 @@ impl ProviderPools {
     }
 }
 impl<T: Send + 'static> ProviderClient<T> {
+    /// Stop a configured poller without retiring unrelated node providers.
+    /// Actual idle resources are destroyed outside the ownership lock. Active
+    /// requests retain their separate owners until their caller drives cleanup.
+    pub fn close_idle(&self) -> Result<(), PlatformError> {
+        let idle = std::mem::take(&mut *self.idle.try_lock().map_err(|_| busy())?);
+        drop(idle);
+        Ok(())
+    }
     pub fn checkout(
         self: &Arc<Self>,
         call: &PoolCall,
