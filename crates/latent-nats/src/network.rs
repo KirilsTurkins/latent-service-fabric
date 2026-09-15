@@ -17,6 +17,8 @@ use tokio::{
 };
 use tokio_rustls::{client::TlsStream, TlsConnector};
 use zeroize::Zeroizing;
+mod scope;
+pub(crate) use scope::Scope;
 
 pub(crate) struct Connection {
     pub stream: BufReader<TlsStream<TcpStream>>,
@@ -101,11 +103,17 @@ pub(crate) fn check_current(credential: &NatsCredential, stamp: &[u8; 32]) -> Re
         .map_err(|_| EventError::PermissionDenied)
 }
 pub(crate) fn tls(config: &crate::NatsConfig) -> Result<Arc<rustls::ClientConfig>> {
+    tls_for(config.public_roots, &config.extra_roots)
+}
+pub(crate) fn tls_for(
+    public_roots: bool,
+    extra_roots: &[Vec<u8>],
+) -> Result<Arc<rustls::ClientConfig>> {
     let mut roots = rustls::RootCertStore::empty();
-    if config.public_roots {
+    if public_roots {
         roots.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
     }
-    for cert in &config.extra_roots {
+    for cert in extra_roots {
         roots
             .add(rustls::pki_types::CertificateDer::from(cert.clone()))
             .map_err(|_| EventError::InvalidEvent)?;
@@ -129,17 +137,44 @@ pub(crate) async fn connect(
     call: &PoolCall,
     auth: &Auth,
 ) -> Result<PooledConnection<Connection>> {
-    if let Some(mut connection) = client.checkout(call)? {
+    connect_to(
+        Dial {
+            pools: &inner.pools,
+            endpoint: &inner.config.endpoint,
+            tls: &inner.tls,
+            attempts: &inner.connection_attempts,
+            reuses: &inner.connection_reuses,
+        },
+        client,
+        call.into(),
+        auth,
+    )
+    .await
+}
+pub(crate) struct Dial<'a> {
+    pub pools: &'a latent_capabilities::broker::pools::ProviderPools,
+    pub endpoint: &'a crate::NatsEndpoint,
+    pub tls: &'a Arc<rustls::ClientConfig>,
+    pub attempts: &'a std::sync::atomic::AtomicU64,
+    pub reuses: &'a std::sync::atomic::AtomicU64,
+}
+pub(crate) async fn connect_to(
+    dial: Dial<'_>,
+    client: &Arc<ProviderClient<Connection>>,
+    call: Scope<'_>,
+    auth: &Auth,
+) -> Result<PooledConnection<Connection>> {
+    if let Some(mut connection) = call.checkout(client)? {
         if connection.resource().stamp.as_ref() == auth.stamp.as_ref() {
             protocol::barrier(connection.resource(), call).await?;
-            crate::provider::tick(&inner.connection_reuses);
+            crate::provider::tick(dial.reuses);
             return Ok(connection);
         }
         drop(connection);
     }
-    let reservation = client.reserve_connection(call)?;
-    let metadata = inner.pools.reserve_protocol_metadata(256 * 1024)?;
-    crate::provider::tick(&inner.connection_attempts);
+    let reservation = call.reserve(client)?;
+    let metadata = dial.pools.reserve_protocol_metadata(256 * 1024)?;
+    crate::provider::tick(dial.attempts);
     let socket = TcpSocket::new_v4().map_err(|_| EventError::Unavailable)?;
     socket
         .set_send_buffer_size(16384)
@@ -148,22 +183,20 @@ pub(crate) async fn connect(
         .set_recv_buffer_size(16384)
         .map_err(|_| EventError::Unavailable)?;
     let stream = call
-        .io()
-        .wait_for(socket.connect(inner.config.endpoint.peer))
+        .wait_for(socket.connect(dial.endpoint.peer))
         .await?
         .map_err(|_| EventError::Unavailable)?;
-    if stream.peer_addr().map_err(|_| EventError::Unavailable)? != inner.config.endpoint.peer {
+    if stream.peer_addr().map_err(|_| EventError::Unavailable)? != dial.endpoint.peer {
         return Err(EventError::PermissionDenied);
     }
     stream
         .set_nodelay(true)
         .map_err(|_| EventError::Unavailable)?;
-    let server = rustls::pki_types::ServerName::try_from(inner.config.endpoint.server_name.clone())
+    let server = rustls::pki_types::ServerName::try_from(dial.endpoint.server_name.clone())
         .map_err(|_| EventError::InvalidEvent)?;
     let stream = call
-        .io()
         .wait_for(
-            TlsConnector::from(inner.tls.clone())
+            TlsConnector::from(dial.tls.clone())
                 .connect_with(server, stream, |tls| tls.set_buffer_limit(Some(16384))),
         )
         .await?
@@ -181,11 +214,14 @@ pub(crate) async fn connect(
     protocol::pong(&mut connection, call).await?;
     reservation.connected(connection).map_err(Into::into)
 }
-pub(crate) async fn line(connection: &mut Connection, call: &PoolCall) -> Result<Vec<u8>> {
+pub(crate) async fn line<'a>(
+    connection: &mut Connection,
+    call: impl Into<Scope<'a>>,
+) -> Result<Vec<u8>> {
+    let call = call.into();
     let mut bytes = Vec::with_capacity(8192);
     for _ in 0..8192 {
         let byte = call
-            .io()
             .wait_for(connection.stream.read_u8())
             .await?
             .map_err(|_| EventError::Unavailable)?;
@@ -200,31 +236,37 @@ pub(crate) async fn line(connection: &mut Connection, call: &PoolCall) -> Result
     }
     Err(EventError::Unavailable)
 }
-pub(crate) async fn write(
+pub(crate) async fn write<'a>(
     connection: &mut Connection,
-    call: &PoolCall,
+    call: impl Into<Scope<'a>>,
     bytes: &[u8],
 ) -> Result<()> {
-    call.io()
-        .wait_for(connection.stream.get_mut().write_all(bytes))
+    let call = call.into();
+    call.wait_for(connection.stream.get_mut().write_all(bytes))
         .await?
         .map_err(|_| EventError::Unavailable)?;
-    call.io()
-        .wait_for(connection.stream.get_mut().flush())
+    call.wait_for(connection.stream.get_mut().flush())
         .await?
         .map_err(|_| EventError::Unavailable)
 }
-pub(crate) async fn body(
+pub(crate) async fn body<'a>(
     connection: &mut Connection,
-    call: &PoolCall,
+    call: impl Into<Scope<'a>>,
     length: usize,
 ) -> Result<Vec<u8>> {
-    if length > 4096 {
+    body_limit(connection, call.into(), length, 4096).await
+}
+pub(crate) async fn body_limit(
+    connection: &mut Connection,
+    call: Scope<'_>,
+    length: usize,
+    maximum: usize,
+) -> Result<Vec<u8>> {
+    if length > maximum || maximum > 65536 {
         return Err(EventError::Unavailable);
     }
     let mut bytes = vec![0; length + 2];
-    call.io()
-        .wait_for(connection.stream.read_exact(&mut bytes))
+    call.wait_for(connection.stream.read_exact(&mut bytes))
         .await?
         .map_err(|_| EventError::Unavailable)?;
     if &bytes[length..] != b"\r\n" {

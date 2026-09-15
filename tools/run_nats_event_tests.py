@@ -32,9 +32,11 @@ def close(name, token, identity):
     command(["docker", "rm", "--force", info["Id"]])
 
 
-def test_command(manifest):
+def test_command(manifest, suite="nats_events"):
+    if suite not in ("nats_events", "nats_triggers"):
+        raise RuntimeError("unknown NATS conformance suite")
     if manifest is None:
-        return ["cargo", "test", "--locked", "--all-features", "-p", "latent-wasmtime", "--test", "nats_events",
+        return ["cargo", "test", "--locked", "--all-features", "-p", "latent-wasmtime", "--test", suite,
                 "real_nats_", "--", "--ignored", "--nocapture", "--test-threads=1"]
     if manifest.stat().st_size > 32 * 1024 * 1024:
         raise RuntimeError("Cargo test manifest exceeds its finite limit")
@@ -44,7 +46,7 @@ def test_command(manifest):
             if len(line) > 131072:
                 raise RuntimeError("Cargo manifest line exceeds its finite limit")
             item = json.loads(line)
-            if item.get("reason") == "compiler-artifact" and item.get("target", {}).get("name") == "nats_events" and item.get("profile", {}).get("test") and item.get("executable"):
+            if item.get("reason") == "compiler-artifact" and item.get("target", {}).get("name") == suite and item.get("profile", {}).get("test") and item.get("executable"):
                 executables.add(item["executable"])
     if len(executables) != 1:
         raise RuntimeError("Cargo manifest must identify one NATS test harness")
@@ -73,7 +75,9 @@ def run(args, directory):
             "jetstream":{"store_dir":"/data","max_memory_store":16777216,"max_file_store":16777216},
             "tls":{"cert_file":"/fixtures/server.pem","key_file":"/fixtures/server.key","handshake_first":True},
             "authorization":{"users":[
-                {"user":"operator","password":PASSWORD,"permissions":{"publish":["$JS.API.>"],"subscribe":["_INBOX.ADMIN.>"]}},
+                {"user":"operator","password":PASSWORD,"permissions":{"publish":["$JS.API.>","lsf.trigger.a","lsf.trigger.b"],"subscribe":["_INBOX.ADMIN.>"]}},
+                {"user":"trigger-a","password":PASSWORD,"permissions":{"publish":["$JS.API.CONSUMER.INFO.TRIGGERA.*","$JS.API.CONSUMER.MSG.NEXT.TRIGGERA.*","$JS.ACK.TRIGGERA.>"],"subscribe":["_INBOX.LSF.>"]}},
+                {"user":"trigger-b","password":PASSWORD,"permissions":{"publish":["$JS.API.CONSUMER.INFO.TRIGGERB.*","$JS.API.CONSUMER.MSG.NEXT.TRIGGERB.*","$JS.ACK.TRIGGERB.>"],"subscribe":["_INBOX.LSF.>"]}},
                 {"user":"publisher","password":PASSWORD,"permissions":{"publish":["lsf.tests.allowed","lsf.tests.unrouted"],"subscribe":["_INBOX.LSF.>"]}},
                 {"user":"other","password":PASSWORD,"permissions":{"publish":["lsf.other.allowed"],"subscribe":["_INBOX.LSF.>"]}}]}}
         (directory/"nats.conf").write_text(json.dumps(config),encoding="ascii")
@@ -100,7 +104,7 @@ def run(args, directory):
             launch=[]
             env=dict(os.environ,LSF_NATS_TEST_PORT=str(port),LSF_NATS_TEST_CA=str(directory/"ca.der"),
                 LSF_NATS_TEST_PEM=str(directory/"ca.pem"),LSF_NATS_TEST_CONTROL=str(ROOT/"tools/nats_test_support.py"))
-        return subprocess.run([*launch,*test_command(args.test_manifest)],cwd=ROOT,env=env,timeout=300).returncode
+        return subprocess.run([*launch,*test_command(args.test_manifest, args.suite)],cwd=ROOT,env=env,timeout=300).returncode
     finally:
         close(name,token,identity)
         if remote_created:
@@ -114,6 +118,7 @@ def main():
     parser.add_argument("--cargo-container", help="existing bounded Linux test container")
     parser.add_argument("--workspace", default="/phase3-current")
     parser.add_argument("--test-manifest", type=Path, help="reuse the built workspace test harness in CI")
+    parser.add_argument("--suite", choices=("nats_events", "nats_triggers"), default="nats_events")
     args = parser.parse_args()
     if args.cargo_container and args.test_manifest:
         parser.error("a local Cargo manifest cannot address another container's filesystem")

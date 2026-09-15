@@ -16,6 +16,22 @@ with patch.object(sys, "path", [str(SCRIPT.parent), *sys.path]):
 
 
 class NatsRunnerTests(unittest.TestCase):
+    def test_trigger_profile_selects_only_the_trigger_harness(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            artifacts = []
+            for name in ("nats_events", "nats_triggers"):
+                executable = root / name
+                executable.touch()
+                artifacts.append({"reason": "compiler-artifact", "target": {"name": name},
+                                  "profile": {"test": True}, "executable": str(executable)})
+            manifest = root / "manifest.jsonl"
+            manifest.write_text("\n".join(map(json.dumps, artifacts)), encoding="utf-8")
+            with patch.dict(RUNNER.os.environ, {"CARGO_TARGET_DIR": str(root)}):
+                result = RUNNER.test_command(manifest, "nats_triggers")
+                self.assertEqual(result[0], str((root / "nats_triggers").resolve()))
+            with self.assertRaises(RuntimeError):
+                RUNNER.test_command(manifest, "arbitrary-program")
     def test_reuses_only_the_named_harness_inside_the_cargo_target(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

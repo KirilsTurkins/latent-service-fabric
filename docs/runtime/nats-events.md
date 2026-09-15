@@ -145,8 +145,8 @@ Trusted Rust composition installs `NatsPublisher::install(pools, logical_id,
 epoch, expected_epoch, config, credentials)`, compiles explicit provider bindings,
 and calls `ActivationCapabilityRuntime::install_events`. The WIT contract and
 current host ABI are unchanged. Ordinary standalone startup does not install this
-adapter implicitly: configuration/management remains #226, guest bindings #221
-and inbound durable consumer triggers #218.
+adapter implicitly: configuration/management remains #226
+and guest bindings #221. [Inbound durable consumer triggers](nats-triggers.md) use a separate node-owned poller.
 
 ```sh
 cargo test --locked -p latent-nats --lib

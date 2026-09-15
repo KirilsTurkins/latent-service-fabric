@@ -15,8 +15,8 @@ use latent_routing::RouteSnapshot;
 
 pub use activation_manager::{
     ActivationHandle, ActivationObservationSnapshot, ActivationReceipt,
-    ActivationTransportInterruption, LocalActivationDependencies, LocalActivationManager,
-    LocalActivationManagerConfig, LocalActivationServices,
+    ActivationTransportInterruption, InboundActivationReservation, LocalActivationDependencies,
+    LocalActivationManager, LocalActivationManagerConfig, LocalActivationServices,
 };
 pub use activation_runner::{
     ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,

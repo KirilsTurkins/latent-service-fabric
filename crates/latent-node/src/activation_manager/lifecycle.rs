@@ -28,6 +28,7 @@ pub(super) struct Lifecycle {
     pub(super) transport_stop: Arc<TransportStop>,
     pub(super) incoming_deadline: Option<IncomingDeadline>,
     pub(super) budget: Option<ActivationBudget>,
+    pub(super) inbound_permit: Option<latent_admission::AdmissionPermit>,
     pub(super) resolved: Option<ResolvedRevision>,
     pub(super) scheduled: Option<ScheduledActivation>,
     pub(super) child_control: Option<Arc<super::probes::ActivationControl>>,
@@ -52,6 +53,7 @@ impl Lifecycle {
             transport_stop,
             incoming_deadline,
             budget: None,
+            inbound_permit: None,
             resolved: None,
             scheduled: None,
             child_control: None,
@@ -131,6 +133,8 @@ impl Lifecycle {
     }
 
     fn reclaim(&mut self) {
+        // An unfilled inbound reservation has never received an execution cell.
+        drop(self.inbound_permit.take());
         self.observe_cancellation();
         let mut disposition = if self.assigned {
             ActivationCleanupDisposition::Abandoned

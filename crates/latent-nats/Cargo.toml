@@ -5,13 +5,16 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Bounded authenticated JetStream publication with explicit uncertain outcomes."
+description = "Bounded authenticated JetStream publication and shared inbound activation triggers."
 
 [lints]
 workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-activation = { path = "../latent-activation" }
+latent-node = { path = "../latent-node" }
+latent-routing = { path = "../latent-routing" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }
 getrandom = "=0.4.3"

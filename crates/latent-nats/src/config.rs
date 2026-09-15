@@ -13,6 +13,37 @@ pub struct NatsEndpoint {
     pub allow_non_public_peer: bool,
 }
 impl NatsEndpoint {
+    pub fn validate(&self) -> Result<()> {
+        if self.server_name.capacity() > 256 {
+            return Err(EventError::InvalidEvent);
+        }
+        self.credential_destination()
+            .validate()
+            .map_err(|_| EventError::InvalidEvent)?;
+        let public = match self.peer.ip() {
+            IpAddr::V4(ip) => {
+                let [a, b, _, _] = ip.octets();
+                if ip.is_unspecified() || ip.is_multicast() || ip.is_broadcast() {
+                    return Err(EventError::InvalidEvent);
+                }
+                !(ip.is_private()
+                    || ip.is_loopback()
+                    || ip.is_link_local()
+                    || ip.is_documentation()
+                    || a == 0
+                    || a >= 240
+                    || (a == 100 && (64..=127).contains(&b))
+                    || (a == 198 && (b == 18 || b == 19))
+                    || (a == 192 && b == 0))
+            }
+            // The initial transport profile has no IPv6/mapped-address ambiguity.
+            IpAddr::V6(_) => return Err(EventError::InvalidEvent),
+        };
+        if !public && !self.allow_non_public_peer {
+            return Err(EventError::PermissionDenied);
+        }
+        Ok(())
+    }
     #[must_use]
     pub fn credential_destination(&self) -> TlsCredentialDestination {
         TlsCredentialDestination {
@@ -61,13 +92,7 @@ pub(crate) fn subject(value: &str) -> bool {
 }
 impl NatsConfig {
     pub fn validate(&self) -> Result<()> {
-        if self.endpoint.server_name.capacity() > 256 {
-            return Err(EventError::InvalidEvent);
-        }
-        self.endpoint
-            .credential_destination()
-            .validate()
-            .map_err(|_| EventError::InvalidEvent)?;
+        self.endpoint.validate()?;
         if self.format_version != 1
             || self.topics.is_empty()
             || self.topics.capacity() > 16
@@ -84,28 +109,6 @@ impl NatsConfig {
             || !(10..=30000).contains(&self.timeout_millis)
         {
             return Err(EventError::InvalidEvent);
-        }
-        let public = match self.endpoint.peer.ip() {
-            IpAddr::V4(ip) => {
-                let [a, b, _, _] = ip.octets();
-                if ip.is_unspecified() || ip.is_multicast() || ip.is_broadcast() {
-                    return Err(EventError::InvalidEvent);
-                }
-                !(ip.is_private()
-                    || ip.is_loopback()
-                    || ip.is_link_local()
-                    || ip.is_documentation()
-                    || a == 0
-                    || a >= 240
-                    || (a == 100 && (64..=127).contains(&b))
-                    || (a == 198 && (b == 18 || b == 19))
-                    || (a == 192 && b == 0))
-            }
-            // The initial transport profile has no IPv6/mapped-address ambiguity.
-            IpAddr::V6(_) => return Err(EventError::InvalidEvent),
-        };
-        if !public && !self.endpoint.allow_non_public_peer {
-            return Err(EventError::PermissionDenied);
         }
         for (i, row) in self.topics.iter().enumerate() {
             if !text(&row.tenant, 128)

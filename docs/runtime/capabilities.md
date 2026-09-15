@@ -83,7 +83,7 @@ The shared async ownership work in #205 and concrete HTTP/blob/event providers i
 #211, #214 and #217 must preserve those distinctions in typed results and cleanup.
 #238 owns integrated adversarial uncertainty/resource-retirement evidence and
 #240 reviews that evidence at the Phase 3 gate. Buffered/streaming HTTP, local/S3 immutable blobs, local/Vault secrets and immediate NATS publication are implemented; inbound consumer
-triggers remain #218.
+triggers are implemented by the [shared JetStream poller](nats-triggers.md).
 
 ## Context disclosure
 
