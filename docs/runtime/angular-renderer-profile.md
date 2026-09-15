@@ -3,14 +3,15 @@
 [ADR-0037](../../adr/0037-qualify-a-closed-angular-component-renderer-profile.md)
 selects `angular-ssr-component-v1` for Phase 3's first renderer adapter.
 The [executable fixture](../../examples/renderer-profile/README.md) qualifies
-real Angular SSR and hydration. Production runtime integration and the observed
-Angular build adapter remain #233 and #234. Exact package admission
+real Angular SSR and hydration. The [installed generic-cell adapter](angular-renderer-runtime.md)
+implements #233; the observed Angular build adapter remains #234. Exact package admission
 and catalog lifecycle are implemented by the separate
 [web release admission profile](../reference/web-release-admission.md) (#225).
-That profile still rejects this private proof ABI until the public async adapter
-is installed.
-The name is a proposed renderer compatibility profile, not an accepted
-`node.json` security selector or a claim of arbitrary Angular/Node support.
+That profile rejects this private proof ABI. The composed production adapter
+exports the exact public async interface and has an explicit `rendererProfile`
+node selector, separate from security policy. T1 remains gated pending the
+observed Angular recipe and web deployment authority; arbitrary Angular/Node
+compatibility is not implied.
 
 ## Qualified inputs and identity
 
@@ -35,7 +36,7 @@ Identical recorded materials do not imply a predicted component digest. #234
 must resolve or disclose the nondeterminism and reject a reproducibility claim;
 every generated artifact remains independently content-addressed.
 
-#233 must bind component digest, package identity, renderer profile digest,
+The installed adapter binds component digest, package identity, renderer profile digest,
 adapter/host ABI, exact engine version and settings, target triple/CPU features,
 security selection and native-artifact compatibility to preparation. Different
 inputs cannot share an incompatible prepared entry. Shared code never carries
@@ -74,8 +75,8 @@ untrusted renderer inside the node.
 
 ComponentizeJS 0.22.0 rejects direct async WIT export generation. The private
 synchronous proof export drains JavaScript promises, and the selected production
-direction requires an async web adapter. #233 must prove that adapter/composition
-with actual Wasmtime calls, finite cell ownership, cancellation and no blocked
+direction uses the fixed async web adapter. Its required real-component gate
+checks Wasmtime calls, finite cell ownership, cancellation and progress on the
 shared Tokio executor. The private export must not leak into public SDKs. Any
 required provider import must be explicit, brokered, granted, charged and tested;
 the zero-I/O result does not prequalify provider-enabled Angular rendering.
@@ -107,8 +108,11 @@ count returns to zero after success and each failure. That counter is an
 ownership observation, not a measurement of the allocator returning pages to
 the OS. The limiter bounds linear memory/table growth, not whole-process RSS,
 compiled code, input parsing, Wasmtime bookkeeping or embedder allocations.
-#233 must account for those separately, along with retained input/output,
-prepared images, aggregate concurrent memory, queues and actual delivery owners.
+The installed adapter uses the generic backend and node owners to account for
+retained input/output, prepared images, aggregate concurrent memory, queues and
+actual delivery owners. The table above records the original one-memory
+qualification; the composed adapter has two memories sharing the same 256 MiB
+aggregate ceiling, as specified in ADR-0040.
 
 No dormant deployment owns a JavaScript engine instance, heap, process, thread,
 listener, connection, event loop or timer. Only bounded immutable code and
@@ -119,7 +123,7 @@ charges and quarantine the cell until it is safe to reuse.
 
 | Candidate | T0 | T1 | T2/T3 |
 | --- | --- | --- | --- |
-| Closed Angular component | Executed controlled SSR/hydration and finite Store failure probes. Selected for adapter work. | Compatible direction with the existing Wasm sandbox model, but node admission, isolated compilation and full adapter integration are still required by #233. The proof alone does not enable T1. | Unsupported; no external guest process/stronger OS boundary is established. |
+| Closed Angular component | Executed controlled SSR/hydration and finite Store failure probes. Selected for adapter work. | Not enabled. The adapter explicitly refuses external-capsule-v1 until #234/#226 integrate and test observed Angular evidence and selected web deployment authority; the qualification proof cannot enable T1. | Unsupported; no external guest process/stronger OS boundary is established. |
 | Fixed node-owned Node compatibility slot | Real SSR, child interruption/reap and fresh-process reset measured. Retained module state and non-total heap limit remain constraints. Rejected for this first profile. | No implemented hostile-code process/filesystem/network boundary; rejected. | Unsupported and rejected. |
 
 The Node experiment allows only one trusted child at a time. It executes two

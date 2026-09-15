@@ -43,6 +43,13 @@ pub fn config(root: &TempDir) -> Value {
 }
 impl Fixture {
     pub async fn start(root: TempDir, value: Value, component: Option<Vec<u8>>) -> Self {
+        Self::start_with_artifact(root, value, component.map(artifact)).await
+    }
+    pub async fn start_with_artifact(
+        root: TempDir,
+        value: Value,
+        component: Option<CapsuleArtifact>,
+    ) -> Self {
         let settings = serde_json::from_value::<NodeConfig>(value)
             .unwrap()
             .derive()
@@ -50,8 +57,8 @@ impl Fixture {
         let catalogs = Catalogs::open(&settings).await.unwrap();
         let artifacts = catalogs.artifacts.clone();
         let deployments = catalogs.deployments.clone();
-        if let Some(bytes) = component {
-            publish(&catalogs, bytes, settings.http.as_ref().unwrap().scheme).await;
+        if let Some(artifact) = component {
+            publish(&catalogs, artifact, settings.http.as_ref().unwrap().scheme).await;
         }
         let node = Box::pin(StandaloneNode::start_with_catalogs(
             settings,
@@ -176,9 +183,8 @@ pub fn actor() -> artifacts::ReleaseActor {
     }
 }
 
-async fn publish(catalogs: &Catalogs, bytes: Vec<u8>, scheme: http::Scheme) {
+async fn publish(catalogs: &Catalogs, artifact: CapsuleArtifact, scheme: http::Scheme) {
     let codec = JsonManifestCodec::default();
-    let artifact = artifact(bytes);
     let release = artifact.descriptor.release_digest.clone();
     let budget = artifact.manifest.execution.resource_budget_ceiling.clone();
     let publication = catalogs
@@ -263,7 +269,7 @@ async fn publish(catalogs: &Catalogs, bytes: Vec<u8>, scheme: http::Scheme) {
             .unwrap();
     }
 }
-fn artifact(bytes: Vec<u8>) -> CapsuleArtifact {
+pub fn artifact(bytes: Vec<u8>) -> CapsuleArtifact {
     let digest = artifacts::content_digest(&bytes);
     let mut value: Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),

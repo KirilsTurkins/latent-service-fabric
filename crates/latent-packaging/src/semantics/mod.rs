@@ -102,7 +102,14 @@ pub fn validate_capsule(
     Phase1ManifestValidator
         .validate_capsule(manifest)
         .map_err(|_| invalid("invalid-capsule-manifest"))?;
-    wasm::validate(component, limits)?;
+    if let Some(renderer) = &manifest.runtime_requirements.renderer {
+        if renderer != &latent_manifest::RendererRequirement::angular() {
+            return Err(incompatible("renderer-profile-incompatible"));
+        }
+        validate_web_renderer(component, renderer.profile, limits)?;
+    } else {
+        wasm::validate(component, limits)?;
+    }
     let digest = artifact_blob_digest(component);
     if manifest.component_digest.0 != digest.as_str() {
         return Err(incompatible("capsule-component-digest-mismatch"));

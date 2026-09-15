@@ -1525,6 +1525,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-angular-renderer-adapter"
+version = "0.1.0-alpha.3"
+dependencies = [
+ "base64 0.22.1",
+ "serde",
+ "serde_json",
+ "wit-bindgen",
+]
+
+[[package]]
 name = "latent-artifacts"
 version = "0.1.0-alpha.3"
 dependencies = [

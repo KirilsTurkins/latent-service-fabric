@@ -11,6 +11,7 @@ mod input;
 mod model;
 mod policy;
 mod protected_file;
+mod renderer;
 mod rollouts;
 mod runtime;
 mod security;

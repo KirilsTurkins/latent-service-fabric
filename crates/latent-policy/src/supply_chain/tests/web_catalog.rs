@@ -512,8 +512,11 @@ fn actual_web_component_catalog_keeps_renderer_and_assets_exact_through_revocati
             .bytes(),
         b"<h1>Example</h1>"
     );
-    let mut unsupported = support::web_input(Some(&component));
-    let metadata = unsupported
+    // The Angular execution profile is now supported. This small Wasm fixture
+    // checks its public ABI/catalog association, not Angular compilation or T1
+    // execution qualification (which have independent build/runtime gates).
+    let mut angular = support::web_input(Some(&component));
+    let metadata = angular
         .layers
         .iter_mut()
         .find(|layer| layer.path == WEB_MANIFEST_PATH)
@@ -523,10 +526,32 @@ fn actual_web_component_catalog_keeps_renderer_and_assets_exact_through_revocati
     web.renderer.as_mut().unwrap().profile_digest =
         renderer_profile_digest(WebRendererProfile::AngularSsrComponentV1).to_string();
     metadata.bytes = serde_json::to_vec(&web).unwrap();
+    let selected = reopened
+        .publish_web_package(
+            context("tests", "angular-profile", 0),
+            fixture.web_upload(angular.clone(), true, false),
+            &mut |_| Ok(()),
+        )
+        .unwrap()
+        .receipt
+        .publication;
+    assert_eq!(
+        reopened.read_web_renderer(&selected).unwrap().bytes(),
+        component
+    );
+
+    // A valid enum name never makes a stale/unknown compatibility digest valid.
+    web.renderer.as_mut().unwrap().profile_digest = format!("sha256:{}", "0".repeat(64));
+    angular
+        .layers
+        .iter_mut()
+        .find(|layer| layer.path == WEB_MANIFEST_PATH)
+        .unwrap()
+        .bytes = serde_json::to_vec(&web).unwrap();
     assert!(reopened
         .publish_web_package(
             context("tests", "unsupported-renderer", 0),
-            fixture.web_upload(unsupported, true, false),
+            fixture.web_upload(angular, true, false),
             &mut |_| Ok(())
         )
         .is_err());

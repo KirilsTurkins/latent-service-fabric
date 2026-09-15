@@ -29,6 +29,7 @@ path = "tests/aot_sandbox.rs"
 harness = false
 
 [dependencies]
+latent-packaging = { path = "../latent-packaging" }
 blake3.workspace = true
 latent-activation = { path = "../latent-activation" }
 latent-artifacts = { path = "../latent-artifacts" }
@@ -66,7 +67,6 @@ latent-blobs = { path = "../latent-blobs" }
 latent-http = { path = "../latent-http" }
 latent-admission = { path = "../latent-admission" }
 latent-control-store = { path = "../latent-control-store" }
-latent-packaging = { path = "../latent-packaging" }
 tempfile.workspace = true
 wasm-encoder.workspace = true
 wit-parser = { version = "=0.252.0", default-features = false, features = ["std"] }

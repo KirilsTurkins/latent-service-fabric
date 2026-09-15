@@ -24,6 +24,10 @@ pub struct SemanticLimits {
     pub max_functions: usize,
     pub max_parameters: usize,
     pub max_summary_bytes: usize,
+    /// Separate closed Angular binary profile. Ordinary capsule and public WIT
+    /// limits above remain unchanged; callers can independently lower these.
+    pub max_renderer_operators: usize,
+    pub max_renderer_type_nodes: usize,
 }
 
 impl Default for SemanticLimits {
@@ -49,6 +53,8 @@ impl Default for SemanticLimits {
             max_functions: 4096,
             max_parameters: 256,
             max_summary_bytes: 1024 * 1024,
+            max_renderer_operators: 8_000_000,
+            max_renderer_type_nodes: 262_144,
         }
     }
 }
@@ -83,7 +89,9 @@ impl SemanticLimits {
             max_exports,
             max_functions,
             max_parameters,
-            max_summary_bytes
+            max_summary_bytes,
+            max_renderer_operators,
+            max_renderer_type_nodes
         );
         Ok(())
     }

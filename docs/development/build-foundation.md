@@ -66,6 +66,12 @@ It emits bindings into `OUT_DIR` and exposes:
 
 `latent-wasmtime` consumes the shared aggregate-runtime host bindings for its allowed context, log, and clock imports, plus the Phase 3 binding types for configured async local-service and HTTP adapters, and the shared echo host bindings for the retained Phase 0 signature check. Generic guest calls use Wasmtime's validated dynamic export indices. `latent-toolchain-smoke` consumes the shared aggregate runtime bindings for compile probes; its executable fixtures generate canonical ABI exports in their final guest crates from maintained WIT.
 
+`latent-angular-renderer-adapter` is a fixed Wasm-only guest crate. It generates
+the public async web export and its private composition interface from maintained
+WIT. Handwritten code denies unsafe operations; a source tripwire permits only
+the exact generated ABI module to relax that lint. This guest exception does not
+add a native deserializer or weaken the audited Wasmtime loader boundary.
+
 ## Generated-output boundary
 
 No generated Rust is committed under `api/proto`, `wit`, or an example `wit` directory. The foundation validator requires the two generation owners above, rejects the superseded duplicate build scripts, and rejects unlisted Protobuf files or generated language sources inside contract-authority directories.

@@ -71,6 +71,18 @@ all = "warn"
         self.write("crates/other/Cargo.toml", '[lints.rust]\nunsafe_code = "allow"\n')
         self.assertTrue(boundary.validate(self.root))
 
+    def test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe(self) -> None:
+        self.write(f"{boundary.GUEST}/src/lib.rs", '#![cfg(target_arch = "wasm32")]\n' + boundary.GUEST_ALLOW)
+        self.write(f"{boundary.GUEST}/src/abi.rs", boundary.GUEST_ABI)
+        self.assertEqual(boundary.validate_guest(self.root), [])
+        for addition in ("unsafe { something() }", "#[allow(unsafe_code)] fn extra() {}"):
+            with self.subTest(addition=addition):
+                self.write(f"{boundary.GUEST}/src/extra.rs", addition)
+                self.assertTrue(boundary.validate_guest(self.root))
+        self.write(f"{boundary.GUEST}/src/extra.rs", "")
+        self.write(f"{boundary.GUEST}/src/abi.rs", boundary.GUEST_ABI + "\nfn handwritten() {}")
+        self.assertTrue(boundary.validate_guest(self.root))
+
 
 if __name__ == "__main__":
     unittest.main()

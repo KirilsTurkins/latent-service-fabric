@@ -418,6 +418,11 @@ fn validate_string(
     if let Some(pattern) = schema.get("pattern").and_then(Value::as_str) {
         let (matches, code, message) = match pattern {
             "^sha256:[a-fA-F0-9]{64}$" => (is_sha256_digest(value), "invalid-digest", "value must be a sha256: digest followed by exactly 64 hexadecimal characters"),
+            r"^sha256:[0-9a-f]{64}(?![\s\S])" => (
+                value.parse::<latent_core::ArtifactBlobDigest>().is_ok(),
+                "invalid-renderer-digest",
+                "renderer digest must be a canonical lowercase SHA-256 identity",
+            ),
             "^publication:sha256:[a-f0-9]{64}$" => (
                 value.parse::<latent_core::PublicationId>().is_ok(),
                 "invalid-publication",

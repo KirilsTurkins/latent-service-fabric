@@ -106,6 +106,7 @@ impl super::super::PreparationContext {
             &key.release,
             key.publication.as_ref(),
         )?;
+        self.validate_renderer_component(artifact)?;
         let compilation = job.stage(PreparationStage::ComponentNew);
         let component = Component::new(&self.engine, &artifact.component_bytes);
         if component.is_ok() {
@@ -136,6 +137,7 @@ impl super::super::PreparationContext {
             key.publication.as_ref(),
         )?;
         checked.check()?;
+        self.validate_renderer_component(checked.artifact())?;
         let service = self
             .native_aot
             .as_ref()

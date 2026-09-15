@@ -12,6 +12,16 @@ import tomllib
 from pathlib import Path
 
 CRATE = "crates/latent-wasmtime"
+GUEST = "tools/angular-renderer-adapter"
+GUEST_ALLOW = '#[allow(unsafe_code)] // Only wit-bindgen\'s generated canonical ABI and export.\nmod abi;'
+GUEST_ABI = '''#![allow(clippy::same_length_and_capacity, reason = "wit-bindgen consumes allocations transferred by the canonical ABI")]
+wit_bindgen::generate!({
+    path: ["../../wit/platform/context", "../../wit/platform/web", "wit"],
+    world: "latent:angular-renderer-internal/adapter@0.1.0",
+    generate_all,
+});
+use super::Adapter;
+export!(Adapter);'''
 LOADER = f"{CRATE}/src/aot/loader.rs"
 ALLOW = '''#[allow(
     unsafe_code,
@@ -52,6 +62,10 @@ def validate(root: Path) -> list[str]:
             # lints; this change must not introduce a second native exception.
             if lints:
                 errors.append("toolchain probe lint policy changed; review separately")
+        elif member == GUEST:
+            if lints != {"rust": {"unsafe_code": "deny"}, "clippy": workspace["lints"]["clippy"]}:
+                errors.append("Angular guest must retain deny and all workspace Clippy lints")
+            errors.extend(validate_guest(root))
         elif lints != {"workspace": True}:
             errors.append(f"{member} must inherit workspace unsafe-code prohibition")
     if "#![deny(unsafe_code)]" not in (root / CRATE / "src/lib.rs").read_text(encoding="utf-8"):
@@ -76,4 +90,25 @@ def validate(root: Path) -> list[str]:
                 source = source.replace(loader[start:end], "", 1)
         if unsafe.search(source) or lowered.search(source):
             errors.append(f"unreviewed unsafe code or allowance in {relative}")
+    return errors
+
+
+def validate_guest(root: Path) -> list[str]:
+    """One generated canonical export in a wasm-only guest, no native loader."""
+    errors = []
+    crate = root / GUEST
+    library = (crate / "src/lib.rs").read_text(encoding="utf-8")
+    abi = (crate / "src/abi.rs").read_text(encoding="utf-8")
+    if '#![cfg(target_arch = "wasm32")]' not in library or library.count(GUEST_ALLOW) != 1:
+        errors.append("Angular unsafe allowance must apply only to the generated wasm guest ABI")
+    if compact(abi) != compact(GUEST_ABI):
+        errors.append("Angular ABI module must contain only the reviewed generator and export")
+    unsafe = re.compile(r"\bunsafe\s*(?:\{|fn\b|impl\b|trait\b|extern\b)")
+    lowered = re.compile(r"#\s*!?\s*\[\s*(?:allow|expect)\s*\([^]]*\bunsafe_code\b", re.S)
+    for path in (crate / "src").rglob("*.rs"):
+        source = path.read_text(encoding="utf-8")
+        if path.name == "lib.rs":
+            source = source.replace(GUEST_ALLOW, "", 1)
+        if unsafe.search(source) or lowered.search(source):
+            errors.append(f"unreviewed handwritten unsafe code in {path.relative_to(root).as_posix()}")
     return errors
