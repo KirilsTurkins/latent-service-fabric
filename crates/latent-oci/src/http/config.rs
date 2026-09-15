@@ -5,8 +5,22 @@ use std::{fmt, net::SocketAddr, time::Duration};
 /// Explicit origin/repository-scoped credentials. Debug never renders their bytes.
 pub enum RegistryCredentials {
     Anonymous,
-    Basic { username: String, password: String },
+    Basic {
+        username: String,
+        password: String,
+    },
     Bearer(String),
+    /// Operator-approved Registry v2 challenge authority. The realm must be an
+    /// exact HTTPS URL without query/userinfo/fragment. Credentials are sent only
+    /// to that configured realm, never to a realm learned from a registry.
+    BearerChallenge {
+        realm: String,
+        service: String,
+        username: String,
+        password: String,
+        /// Required for hostname realms so token acquisition never uses ambient DNS.
+        addresses: Vec<SocketAddr>,
+    },
 }
 impl fmt::Debug for RegistryCredentials {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -14,6 +28,7 @@ impl fmt::Debug for RegistryCredentials {
             Self::Anonymous => "Anonymous",
             Self::Basic { .. } => "Basic([redacted])",
             Self::Bearer(_) => "Bearer([redacted])",
+            Self::BearerChallenge { .. } => "BearerChallenge([redacted])",
         })
     }
 }
