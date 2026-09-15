@@ -147,6 +147,11 @@ jobs:
       - name: Validate Vault secrets with the existing test harness
         timeout-minutes: 5
         run: python3 tools/run_vault_secret_tests.py --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
+      - name: Fetch the pinned NATS conformance server
+        run: docker pull nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc
+      - name: Validate NATS events with the existing test harness
+        timeout-minutes: 5
+        run: python3 tools/run_nats_event_tests.py --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
       - name: Validate capability policy CLI lifecycle
         timeout-minutes: 3
         run: python3 tools/run_capability_policy_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd"

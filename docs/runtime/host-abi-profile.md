@@ -19,7 +19,7 @@ error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-re
 | `latent:blob/blob@0.1.0` | supported, legacy | unavailable |
 | `latent:blob/blob@0.2.0` | supported, async owned chunks | configured Linux [local](local-blobs.md) or [S3](s3-blobs.md) blob adapter |
 | `latent:secrets/reader@0.1.0` | supported, synchronous WIT with cooperative host waits | configured [local](local-secrets.md) or [Vault KV-v2](vault-secrets.md) secret provider |
-| `latent:events/publisher@0.2.0` | supported | unavailable, #217 |
+| `latent:events/publisher@0.2.0` | supported, synchronous WIT with cooperative host waits | configured [NATS JetStream publisher](nats-events.md) |
 | `latent:http/streaming@0.3.0` | supported, async owned resources | configured [streaming HTTP adapter](streaming-http.md) |
 | `latent:http/client@0.2.0` | supported, async import | configured [bounded HTTP adapter](outbound-http.md) |
 | `latent:telemetry/custom@0.1.0` | supported | unavailable, #220 |
@@ -28,7 +28,7 @@ error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-re
 An inspected package has no provider authority. Wasmtime preparation rejects a
 required provider that has no installed owner. The generated Phase 3 host/guest
 bindings contain types and registration helpers; the production linker supplies
-context, log and clock, plus service invocation, buffered/streaming HTTP, local/S3 blobs and local secrets when their node-owned
+context, log and clock, plus service invocation, buffered/streaming HTTP, local/S3 blobs, local/Vault secrets and NATS publication when their node-owned
 adapters are installed. Activations must supply their exact prepared
 imports and pass current eligibility/descriptor checks.
 

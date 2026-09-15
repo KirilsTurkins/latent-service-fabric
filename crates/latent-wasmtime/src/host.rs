@@ -11,6 +11,7 @@ pub(crate) mod blob;
 pub(crate) mod capabilities;
 mod clock;
 mod context;
+pub(crate) mod events;
 pub(crate) mod http;
 mod logging;
 mod owned_context;

@@ -80,3 +80,53 @@ pub trait ProviderCredential: Send + Sync {
         use_value: &mut dyn FnMut(&[u8]) -> Result<(), SecretError>,
     ) -> Result<(), SecretError>;
 }
+
+/// A non-HTTP TLS protocol is a distinct credential destination. It cannot be
+/// substituted for an HTTP origin or used by a guest secret reader.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TlsCredentialProtocol {
+    Nats,
+}
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct TlsCredentialDestination {
+    pub protocol: TlsCredentialProtocol,
+    pub server_name: String,
+    pub port: u16,
+}
+impl TlsCredentialDestination {
+    pub fn validate(&self) -> Result<(), SecretError> {
+        let name = &self.server_name;
+        if self.port == 0
+            || name.is_empty()
+            || name.len() > 253
+            || name.capacity() > 256
+            || !name.split('.').all(|label| {
+                !label.is_empty()
+                    && label.len() <= 63
+                    && !label.starts_with('-')
+                    && !label.ends_with('-')
+                    && label
+                        .bytes()
+                        .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+            })
+        {
+            return Err(SecretError::PermissionDenied);
+        }
+        Ok(())
+    }
+}
+pub struct TlsCredentialScope {
+    pub tenant: latent_core::TenantId,
+    pub provider_id: String,
+    pub destination: TlsCredentialDestination,
+}
+pub trait TlsProviderCredential: Send + Sync {
+    fn scope(&self) -> &TlsCredentialScope;
+    fn reference(&self) -> &str;
+    fn with_current_value(
+        &self,
+        use_value: &mut dyn FnMut(&[u8]) -> Result<(), SecretError>,
+    ) -> Result<(), SecretError>;
+}

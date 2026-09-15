@@ -55,6 +55,7 @@ rustix = { version = "=1.1.4", features = ["process", "thread", "fs", "pipe", "m
 seccompiler = "=0.5.0"
 
 [dev-dependencies]
+latent-nats = { path = "../latent-nats" }
 latent-vault = { path = "../latent-vault" }
 latent-secrets = { path = "../latent-secrets" }
 latent-blobs = { path = "../latent-blobs" }

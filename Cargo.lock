@@ -1583,6 +1583,7 @@ dependencies = [
  "latent-manifest",
  "latent-policy",
  "latent-routing",
+ "serde",
  "serde_json",
  "sha2 0.10.9",
  "tempfile",
@@ -1727,6 +1728,24 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+]
+
+[[package]]
+name = "latent-nats"
+version = "0.1.0-alpha.3"
+dependencies = [
+ "getrandom 0.4.3",
+ "latent-capabilities",
+ "latent-core",
+ "latent-policy",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokio",
+ "tokio-rustls",
+ "webpki-roots",
+ "zeroize",
 ]
 
 [[package]]
@@ -2033,6 +2052,7 @@ dependencies = [
  "latent-executor",
  "latent-http",
  "latent-manifest",
+ "latent-nats",
  "latent-node",
  "latent-packaging",
  "latent-policy",

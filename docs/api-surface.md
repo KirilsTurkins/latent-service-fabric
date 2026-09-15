@@ -20,7 +20,7 @@ web and SDK work without claiming it has shipped.
 | `latent:secrets` | Implemented configured [protected local references](runtime/local-secrets.md), rotation and opaque credentials, plus the [Vault KV-v2 provider](runtime/vault-secrets.md). |
 | `latent:telemetry` | Declared; guest custom metrics with cardinality policy are Phase 3. |
 | `latent:service` | Implemented configured [local invocation](runtime/local-service-invocation.md) with conserved descendant budgets. |
-| `latent:events` | Declared; real provider publication is Phase 3, while transactional durable event intents require Phase 4. |
+| `latent:events` | Implemented configured [immediate NATS JetStream publication](runtime/nats-events.md); inbound triggers remain Phase 3 work and transactional durable event intents require Phase 4. |
 | `latent:state` | Declared; transactional keyed state is Phase 4. |
 | `latent:timer` | Declared; durable workflow timers are Phase 6. |
 | `latent:platform/capsule` | Aggregate platform world; its declarations do not imply all imports are executable. |
@@ -31,8 +31,8 @@ guest derives its canonical ABI exports from the same authoritative WIT.
 
 The generic backend accepts components without imports and the four supported
 [activation interfaces](runtime/capabilities.md): context, log, monotonic clock
-and wall clock. Configured broker adapters add local service calls, outbound HTTP
-and local blobs/secrets through the [current host profile](runtime/host-abi-profile.md).
+and wall clock. Configured broker adapters add local service calls, outbound HTTP,
+local/S3 blobs, local/Vault secrets and NATS publication through the [current host profile](runtime/host-abi-profile.md).
 Uninstalled provider imports fail explicitly. Dynamic exports use the
 [canonical WIT value protocol](protocol/wit-values.md). Phase 3 must preserve
 exact versioned ABI identity and actual host-profile compatibility when adding
@@ -118,9 +118,10 @@ separate facts.
 | `latent-wasmtime` | Generic component factory/backend, bounded value/host policy, fresh stores, cleanup proof and prepared-cache ownership. Opt-in `IsolatedAotCompiler`, `TrustedAotOutput`, `NativeAotSettings`, `NativeImageLimits`, `with_catalog_and_aot` and aggregate native usage. |
 | `latent-node` | `LocalActivationManager`, immediate-ID handles, scoped cancel/status, bounded journal, transport cleanup interruption and inventory seams. |
 | `latent-wire` | Invocation/management adapters, trusted principal/trace boundaries, finite request conversion and response services. Audit, deployment and rollout response leases remain attached through body/frame ownership. |
-| `latent-capabilities` | Sealed activation plans/sessions, policy/audit dispatch, affine I/O and shared provider pools. Configured service, HTTP, blob and secret ports require exact current grants. |
+| `latent-capabilities` | Sealed activation plans/sessions, policy/audit dispatch, affine I/O and shared provider pools. Configured service, HTTP, blob, secret and event ports require exact current grants. |
 | `latent-http` | `HttpProvider`, bounded destination/DNS/TLS/header configuration and buffered async HTTP; [profile and composition](runtime/outbound-http.md). |
 | `latent-secrets` | `LocalSecretStore`, `LocalSecretProvider`, finite protected reloads, per-use raw read authorization and opaque provider credential bindings. |
+| `latent-nats` | `NatsPublisher`, scoped TLS credentials, bounded JetStream publication, verified receipts and explicit uncertainty; [profile](runtime/nats-events.md). |
 | `latent-vault` | `VaultSecretProvider`, exact KV-v2 references, bounded shared plaintext/cache owners and checked disclosure; [profile and composition](runtime/vault-secrets.md). |
 | `latent-protected-files` | Shared bootstrap file policy and strict descriptor-anchored secret roots. |
 | `latent-testkit` | Deterministic async/process/resource helpers and invariant/conformance probes. |
