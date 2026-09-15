@@ -17,6 +17,7 @@ scoped durable references and owned read chunks. The configured
 with protected sources, atomic rotation and separate opaque provider credentials.
 [NATS JetStream publication](nats-events.md) implements immediate `latent:events/publisher@0.2.0` with broker receipts and explicit uncertainty.
 [Cryptographic randomness](random.md) implements both `latent:random/random@0.1.0` methods through the activation broker and original ledger.
+[Custom metrics](custom-metrics.md) implements all four `latent:telemetry/custom@0.1.0` kinds through a shared bounded registry and exporter.
 Completion of [Phase 2](../phase-2-completion.md) adds package delivery,
 currentness, native caching and rollout control; it does not expand this guest
 import set. The [Phase 3 backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
@@ -51,7 +52,7 @@ permission or exposing credential-bearing selectors.
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
 [standalone node](../reference/standalone-node.md). Phase 3 continues with production
-standalone provider configuration and custom metrics, application ingress and web/SSR integration. Transactional
+standalone provider configuration, application ingress and web/SSR integration. Transactional
 state/effects, cluster transport and durable workflow suspension remain later
 phases; declared WIT alone makes none of them callable.
 

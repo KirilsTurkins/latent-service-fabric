@@ -18,7 +18,7 @@ web and SDK work without claiming it has shipped.
 | `latent:blob` | Implemented configured Linux [local](runtime/local-blobs.md) and [S3](runtime/s3-blobs.md) immutable blobs at 0.2.0. |
 | `latent:http` | Implemented configured [buffered](runtime/outbound-http.md) and [streaming](runtime/streaming-http.md) providers. |
 | `latent:secrets` | Implemented configured [protected local references](runtime/local-secrets.md), rotation and opaque credentials, plus the [Vault KV-v2 provider](runtime/vault-secrets.md). |
-| `latent:telemetry` | Declared; guest custom metrics with cardinality policy are Phase 3. |
+| `latent:telemetry` | Implemented configured [custom metrics](runtime/custom-metrics.md) with exact labels, bounded aggregation and shared export. |
 | `latent:service` | Implemented configured [local invocation](runtime/local-service-invocation.md) with conserved descendant budgets. |
 | `latent:events` | Implemented configured [immediate NATS JetStream publication](runtime/nats-events.md); [bounded inbound triggers](runtime/nats-triggers.md) are implemented and transactional durable event intents require Phase 4. |
 | `latent:state` | Declared; transactional keyed state is Phase 4. |
@@ -88,7 +88,7 @@ audit need the trusted node-operator claim; it grants no cross-tenant access.
 | `latent-control-store` | `DirectoryDeploymentRepository`, `DeploymentStore`, immutable route pins, scoped pages and combined catalog persistence. `deployment_operations` exposes sealed prepare/synchronous commit, exact receipt lookup/snapshot and `DeploymentReadLease`. `rollouts` owns plans, policies, target provenance and atomic cohort publication. |
 | `latent-rollout` | `RolloutCoordinator`, `RolloutHandle`, one `RolloutWorker`, bounded tickets/control, response leases and explicit promote/rollback previews. `deployment_audit` shares exact receipt audit helpers without adding a deployment worker. |
 | `latent-audit` | `AuditWorker`, `AuditHandle`, typed records, critical reservations/attempts, bounded query pages and retained response ownership. `BoundedPhase2AuditJournal` remains an explicit volatile embedding API. |
-| `latent-telemetry` | Shared runtime/lifecycle observations plus `BoundedPhase2CanaryOutcomeWindow`, `CanaryCapture`, snapshots, thresholds and affine `SealedCanaryWindow`. Diagnostic evaluation does not authorize promotion. |
+| `latent-telemetry` | Shared runtime/lifecycle observations, configured `CustomMetricRegistry` and sealed custom records, plus `BoundedPhase2CanaryOutcomeWindow`, `CanaryCapture`, snapshots, thresholds and affine `SealedCanaryWindow`. Diagnostic evaluation does not authorize promotion. |
 
 [Lifecycle](reference/release-lifecycle.md) composes a sealed catalog capability
 with optional real signing proof. The node binds runtime and deployment owners
@@ -118,7 +118,7 @@ separate facts.
 | `latent-wasmtime` | Generic component factory/backend, bounded value/host policy, fresh stores, cleanup proof and prepared-cache ownership. Opt-in `IsolatedAotCompiler`, `TrustedAotOutput`, `NativeAotSettings`, `NativeImageLimits`, `with_catalog_and_aot` and aggregate native usage. |
 | `latent-node` | `LocalActivationManager`, immediate-ID handles, scoped cancel/status, bounded journal, transport cleanup interruption and inventory seams. |
 | `latent-wire` | Invocation/management adapters, trusted principal/trace boundaries, finite request conversion and response services. Audit, deployment and rollout response leases remain attached through body/frame ownership. |
-| `latent-capabilities` | Sealed activation plans/sessions, policy/audit dispatch, affine I/O and shared provider pools. Configured service, HTTP, blob, secret, event and OS randomness ports require exact current grants. |
+| `latent-capabilities` | Sealed activation plans/sessions, policy/audit dispatch, affine I/O and shared provider pools. Configured service, HTTP, blob, secret, event, OS randomness and custom metric ports require exact current grants. |
 | `latent-http` | `HttpProvider`, bounded destination/DNS/TLS/header configuration and buffered async HTTP; [profile and composition](runtime/outbound-http.md). |
 | `latent-secrets` | `LocalSecretStore`, `LocalSecretProvider`, finite protected reloads, per-use raw read authorization and opaque provider credential bindings. |
 | `latent-nats` | `NatsPublisher`, `NatsTriggers`, scoped TLS credentials, bounded publication and inbound scheduling, verified receipts and explicit uncertainty; [publisher](runtime/nats-events.md) and [trigger](runtime/nats-triggers.md) profiles. |

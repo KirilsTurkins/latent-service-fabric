@@ -39,24 +39,23 @@ impl Reservation {
             return Err(MetricError::BudgetExhausted);
         }
         let used = |slot: &SeriesUse| slot.accepted || slot.pending > 0;
-        let slot = match usage.series.iter().position(|s| used(s) && s.key == key) {
-            Some(slot) => slot,
-            None => {
-                if usage.series.iter().filter(|s| used(s)).count() >= limits.maximum_series {
-                    return Err(MetricError::BudgetExhausted);
-                }
-                let slot = usage
-                    .series
-                    .iter()
-                    .position(|s| !used(s))
-                    .ok_or(MetricError::BudgetExhausted)?;
-                usage.series[slot] = SeriesUse {
-                    key,
-                    pending: 0,
-                    accepted: false,
-                };
-                slot
+        let slot = if let Some(slot) = usage.series.iter().position(|s| used(s) && s.key == key) {
+            slot
+        } else {
+            if usage.series.iter().filter(|s| used(s)).count() >= limits.maximum_series {
+                return Err(MetricError::BudgetExhausted);
             }
+            let slot = usage
+                .series
+                .iter()
+                .position(|s| !used(s))
+                .ok_or(MetricError::BudgetExhausted)?;
+            usage.series[slot] = SeriesUse {
+                key,
+                pending: 0,
+                accepted: false,
+            };
+            slot
         };
         usage.series[slot].pending += 1;
         usage.observations += 1;

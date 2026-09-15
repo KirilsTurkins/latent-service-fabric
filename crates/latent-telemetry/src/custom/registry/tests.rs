@@ -3,7 +3,9 @@ use crate::{
     custom::*, LocalSinkConfig, StructuredLocalSink, TelemetryPipelineConfig, TelemetryRecord,
     TelemetryRuntime,
 };
+mod failure;
 mod retirement;
+mod validation;
 
 struct Clock {
     base: Instant,

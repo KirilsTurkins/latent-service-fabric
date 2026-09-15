@@ -187,7 +187,7 @@ impl CustomMetricRegistry {
             )
             .map_err(|_| E::InvalidName)?;
         }
-        let hash = selection_digest(&self.digest, source, input.name, &labels);
+        let hash = selection_digest(&self.digest, source, input.name, labels);
         Ok(MetricSelection {
             tenant,
             descriptor,
@@ -216,6 +216,7 @@ impl CustomMetricRegistry {
         selected: MetricSelection,
     ) -> Result<bool, E> {
         let result = self.emit_selected(source, &selected);
+        drop(selected);
         if let Err(error) = &result {
             self.record_failure(*error);
         }
@@ -234,7 +235,7 @@ impl CustomMetricRegistry {
         if ![source.tenant, source.service, source.revision]
             .iter()
             .all(|s| config::token(s, 128))
-            || selection_digest(&self.digest, source, &descriptor.name, &selected.labels)
+            || selection_digest(&self.digest, source, &descriptor.name, selected.labels)
                 != selected.digest
         {
             return Err(E::Unavailable);
@@ -384,7 +385,7 @@ fn selection_digest(
     config: &str,
     source: CustomMetricSource<'_>,
     name: &str,
-    labels: &[u8; 8],
+    labels: [u8; 8],
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
     for part in [
@@ -393,7 +394,7 @@ fn selection_digest(
         source.service.as_bytes(),
         source.revision.as_bytes(),
         name.as_bytes(),
-        labels,
+        &labels,
     ] {
         hash.update((part.len() as u64).to_le_bytes());
         hash.update(part);
