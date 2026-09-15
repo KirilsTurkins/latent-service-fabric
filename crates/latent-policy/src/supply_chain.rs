@@ -13,6 +13,7 @@ mod receipt;
 mod tests;
 mod verification;
 mod verify;
+mod web;
 pub use verification::{
     verify_package_once, PackageVerificationReport, PackageVerificationRequest,
 };
@@ -236,6 +237,36 @@ impl Drop for SupplyChainAuthority {
 }
 
 impl AdmissionAuthority for SupplyChainAuthority {
+    fn verify_web(
+        &self,
+        tenant: &TenantId,
+        upload: PackageAdmissionUpload,
+    ) -> Result<latent_artifacts::web::VerifiedWebAdmission, PlatformError> {
+        let mut state = self.inner.lock()?;
+        web::with_state(&self.inner, tenant, upload, None, &mut state)
+    }
+
+    fn recover_web(
+        &self,
+        binding: &latent_artifacts::web::WebAdmissionBinding,
+        upload: PackageAdmissionUpload,
+    ) -> Result<latent_artifacts::web::VerifiedWebAdmission, PlatformError> {
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .map_err(|_| unavailable("admission-authority-poisoned"))?;
+        let upload = web::validate_retained(binding, upload)?;
+        self.renew(&mut state)?;
+        web::with_state(
+            &self.inner,
+            &binding.tenant,
+            upload,
+            Some(binding),
+            &mut state,
+        )
+    }
+
     fn verify(
         &self,
         tenant: &TenantId,

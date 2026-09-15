@@ -96,7 +96,8 @@
             "enum": [
               "https://latent.dev/build/echo-capsule/v1",
               "https://latent.dev/build/rust-guest/v1",
-              "https://latent.dev/build/c-guest/v1"
+              "https://latent.dev/build/c-guest/v1",
+              "https://latent.dev/build/web-package-assembly/v1"
             ]
           },
           "sourceRepository": {

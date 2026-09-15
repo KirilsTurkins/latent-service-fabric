@@ -31,6 +31,28 @@ impl ProvenanceEvidence {
     ) -> SignatureResult<Self> {
         let inspected = inspect_provenance(envelope, limits)?;
         validate_expected(subject, &inspected)?;
+        Self::from_checked_envelope(subject, envelope)
+    }
+
+    /// Checks the distinct web-output profile and exact package association.
+    /// This container is not an authenticated builder proof.
+    pub fn from_web_envelope(
+        subject: &PackageSigningSubject,
+        envelope: &[u8],
+        limits: ProvenanceLimits,
+    ) -> SignatureResult<Self> {
+        let inspected = crate::web_provenance::inspect_web_provenance(envelope, limits)?;
+        if inspected.subject() != subject.subject() {
+            return Err(SignatureFailure::SubjectMismatch.into());
+        }
+        crate::web_provenance::validate_output(subject, inspected.observation())?;
+        Self::from_checked_envelope(subject, envelope)
+    }
+
+    fn from_checked_envelope(
+        subject: &PackageSigningSubject,
+        envelope: &[u8],
+    ) -> SignatureResult<Self> {
         let manifest = ReferrerManifest {
             schema_version: 2,
             media_type: OCI_MANIFEST_MEDIA_TYPE.to_owned(),
@@ -98,16 +120,49 @@ impl fmt::Debug for ProvenanceEvidence {
             .finish_non_exhaustive()
     }
 }
-pub(crate) struct InspectedProvenanceEvidence {
+pub(crate) struct InspectedProvenanceEvidence<T = super::BuildObservation> {
     pub(crate) referrer_digest: PackageDigest,
     pub(crate) payload_digest: ArtifactBlobDigest,
-    pub(crate) provenance: UnverifiedProvenance,
+    pub(crate) provenance: UnverifiedProvenance<T>,
 }
 pub(crate) fn inspect_evidence(
     expected: &PackageSigningSubject,
     evidence: ProvenanceEvidenceRef<'_>,
     limits: ProvenanceLimits,
 ) -> SignatureResult<InspectedProvenanceEvidence> {
+    let (referrer_digest, payload_digest) = inspect_association(expected, evidence, limits)?;
+    let provenance = inspect_provenance(evidence.payload, limits)?;
+    validate_expected(expected, &provenance)?;
+    Ok(InspectedProvenanceEvidence {
+        referrer_digest,
+        payload_digest,
+        provenance,
+    })
+}
+
+pub(crate) fn inspect_web_evidence(
+    expected: &PackageSigningSubject,
+    evidence: ProvenanceEvidenceRef<'_>,
+    limits: ProvenanceLimits,
+) -> SignatureResult<InspectedProvenanceEvidence<crate::WebBuildObservation>> {
+    let (referrer_digest, payload_digest) = inspect_association(expected, evidence, limits)?;
+    let provenance = crate::web_provenance::inspect_web_provenance(evidence.payload, limits)?;
+    if provenance.subject() != expected.subject() {
+        return Err(SignatureFailure::SubjectMismatch.into());
+    }
+    crate::web_provenance::validate_output(expected, provenance.observation())?;
+    Ok(InspectedProvenanceEvidence {
+        referrer_digest,
+        payload_digest,
+        provenance,
+    })
+}
+
+fn inspect_association(
+    expected: &PackageSigningSubject,
+    evidence: ProvenanceEvidenceRef<'_>,
+    limits: ProvenanceLimits,
+) -> SignatureResult<(PackageDigest, ArtifactBlobDigest)> {
     limits.validate()?;
     if evidence.manifest.len() > 4096
         || evidence.payload.len() > limits.max_envelope_bytes
@@ -132,13 +187,7 @@ pub(crate) fn inspect_evidence(
     if layer.digest != payload_digest || layer.size != evidence.payload.len() as u64 {
         return Err(SignatureFailure::IntegrityMismatch.into());
     }
-    let provenance = inspect_provenance(evidence.payload, limits)?;
-    validate_expected(expected, &provenance)?;
-    Ok(InspectedProvenanceEvidence {
-        referrer_digest: package_digest(evidence.manifest),
-        payload_digest,
-        provenance,
-    })
+    Ok((package_digest(evidence.manifest), payload_digest))
 }
 fn validate_expected(
     expected: &PackageSigningSubject,

@@ -33,6 +33,7 @@ pub(super) struct SharedContent {
     blob_bytes: u64,
     publication_bytes: u64,
     incomplete_bytes: u64,
+    external_bytes: u64,
     metadata_bytes: usize,
     healthy: bool,
 }
@@ -46,6 +47,8 @@ pub struct PublicationStorageSnapshot {
     pub retained_publications: usize,
     pub publication_file_bytes: u64,
     pub incomplete_file_bytes: u64,
+    /// Web lifecycle/evidence files, including bounded atomic-write exposure.
+    pub web_control_bytes: u64,
     pub accounted_metadata_bytes: usize,
 }
 
@@ -57,6 +60,15 @@ pub struct PublicationContentReclamation {
 }
 
 impl SharedContent {
+    pub(super) fn check_web_control(&self, bytes: u64) -> Result<(), PlatformError> {
+        self.check()?;
+        self.check_exposure(bytes.saturating_sub(self.external_bytes), 0, 0)
+    }
+    pub(super) fn replace_web_control(&mut self, bytes: u64) -> Result<(), PlatformError> {
+        self.check_web_control(bytes)?;
+        self.external_bytes = bytes;
+        Ok(())
+    }
     pub(super) fn new(root: &Path, config: DirectoryArtifactRepositoryConfig) -> Self {
         Self {
             root: root.join(BLOB_DIR),
@@ -67,6 +79,7 @@ impl SharedContent {
             blob_bytes: 0,
             publication_bytes: 0,
             incomplete_bytes: 0,
+            external_bytes: 0,
             metadata_bytes: 0,
             healthy: true,
         }
@@ -144,6 +157,7 @@ impl SharedContent {
             .blob_bytes
             .checked_add(self.publication_bytes)
             .and_then(|n| n.checked_add(self.incomplete_bytes))
+            .and_then(|n| n.checked_add(self.external_bytes))
             .and_then(|n| n.checked_add(blobs))
             .and_then(|n| n.checked_add(publications))
             .is_none_or(|n| n > self.config.max_storage_bytes)
@@ -604,6 +618,7 @@ impl SharedContent {
             retained_publications: self.publications.len(),
             publication_file_bytes: self.publication_bytes,
             incomplete_file_bytes: self.incomplete_bytes,
+            web_control_bytes: self.external_bytes,
             accounted_metadata_bytes: self.metadata_bytes,
         }
     }

@@ -1,10 +1,12 @@
 use super::{validate_builder_id, BuilderRequirement};
-use crate::{provenance, BuildObservation, SignatureFailure, SignatureResult};
+use crate::{provenance, SignatureFailure, SignatureResult};
 
 pub(super) fn validate(requirements: &mut [BuilderRequirement]) -> SignatureResult<()> {
     for item in requirements.iter() {
         validate_builder_id(&item.builder_id).map_err(|_| SignatureFailure::InvalidPolicy)?;
-        if !provenance::supported_build_type(&item.build_type) {
+        if !provenance::supported_build_type(&item.build_type)
+            && item.build_type != crate::WEB_ASSEMBLY_BUILD_TYPE
+        {
             return Err(SignatureFailure::InvalidPolicy.into());
         }
         provenance::validate_repository(&item.source_repository)
@@ -23,10 +25,12 @@ pub(super) fn validate(requirements: &mut [BuilderRequirement]) -> SignatureResu
     Ok(())
 }
 
-pub(crate) fn authorize(
+pub(crate) fn authorize_source(
     requirements: &[BuilderRequirement],
     builder: &str,
-    observation: &BuildObservation,
+    build_type: &str,
+    source: &crate::BuildSource,
+    reproducibility: &str,
 ) -> SignatureResult<()> {
     let mut known_builder = false;
     let mut known_predicate = false;
@@ -35,21 +39,20 @@ pub(crate) fn authorize(
             continue;
         }
         known_builder = true;
-        if item.build_type != observation.build_type {
+        if item.build_type != build_type {
             continue;
         }
         known_predicate = true;
-        if item.source_repository == observation.source.repository
+        if item.source_repository == source.repository
             && item
                 .source_revision
                 .as_ref()
-                .is_none_or(|revision| revision == &observation.source.revision)
+                .is_none_or(|revision| revision == &source.revision)
             && item
                 .source_snapshot_digest
                 .as_ref()
-                .is_none_or(|digest| digest == &observation.source.snapshot_digest)
-            && (!item.require_reproducible
-                || observation.reproducibility == "two-build-byte-equality")
+                .is_none_or(|digest| digest == &source.snapshot_digest)
+            && (!item.require_reproducible || reproducibility == "two-build-byte-equality")
         {
             return Ok(());
         }

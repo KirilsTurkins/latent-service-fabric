@@ -18,6 +18,10 @@ mod publications;
 mod runtime;
 mod support;
 mod verification;
+#[cfg(target_os = "linux")]
+mod web;
+#[cfg(target_os = "linux")]
+mod web_catalog;
 
 use super::*;
 use support::*;

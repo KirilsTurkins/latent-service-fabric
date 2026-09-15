@@ -69,12 +69,12 @@ pub struct CBuildParameters {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(crate) struct Statement {
+pub(crate) struct Statement<T = BuildObservation> {
     #[serde(rename = "_type")]
     pub(crate) kind: String,
     pub(crate) subject: [Subject; 1],
     pub(crate) predicate_type: String,
-    pub(crate) predicate: Predicate,
+    pub(crate) predicate: Predicate<T>,
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -89,11 +89,11 @@ pub(crate) struct Sha256 {
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(crate) struct Predicate {
+pub(crate) struct Predicate<T = BuildObservation> {
     pub(crate) format_version: u32,
     pub(crate) package_subject: PackageSubject,
     pub(crate) builder_id: String,
     pub(crate) issued_at: u64,
     pub(crate) expires_at: u64,
-    pub(crate) observation: BuildObservation,
+    pub(crate) observation: T,
 }

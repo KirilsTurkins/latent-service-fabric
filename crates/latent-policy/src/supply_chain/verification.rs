@@ -10,31 +10,33 @@ use latent_packaging::{
 use latent_signing::{
     BuilderVerifier, PackageSigningSubject, ProvenanceEvidenceRef, PublisherVerifier,
     SignatureEvidenceRef, VerifiedBuildProvenance, VerifiedPackageSignature,
+    VerifiedWebBuildProvenance,
 };
 use serde::Serialize;
 
+#[derive(Clone, Copy)]
 pub(super) struct EvidenceInput<'a> {
     pub signatures: &'a Vec<AdmissionEvidence>,
     pub provenance: &'a Vec<AdmissionEvidence>,
     pub sboms: &'a Vec<AdmissionEvidence>,
 }
 
-pub(super) struct CheckedEvidence {
+pub(super) struct CheckedEvidence<B = VerifiedBuildProvenance> {
     pub subject: PackageSigningSubject,
     pub publisher: VerifiedPackageSignature,
-    pub builder: VerifiedBuildProvenance,
+    pub builder: B,
     pub sbom: SbomPolicyEvaluation,
 }
 
 // The durable authority invokes this under its existing policy/currentness fence.
-pub(super) fn check_evidence(
+pub(super) fn check_evidence<B: BuilderEvidence>(
     policy: &SupplyChainPolicy,
     verifiers: &(PublisherVerifier, BuilderVerifier),
     tenant: &TenantId,
     bundle: &PackageBundle,
     input: EvidenceInput<'_>,
     now: u64,
-) -> Result<CheckedEvidence, PlatformError> {
+) -> Result<CheckedEvidence<B>, PlatformError> {
     if !super::config::identifier(&tenant.0) || !policy.tenants.contains_key(&tenant.0) {
         return Err(denied("admission-tenant-denied"));
     }
@@ -43,35 +45,9 @@ pub(super) fn check_evidence(
         provenance,
         sboms,
     } = input;
-    let maximum = latent_artifacts::AdmissionStorageLimits::default();
-    let mut bytes = 0usize;
-    for entries in [signatures, provenance, sboms] {
-        if entries.len() > maximum.max_evidence_per_kind
-            || entries.capacity() > maximum.max_evidence_per_kind
-        {
-            return Err(super::invalid("admission-evidence-limit"));
-        }
-        for entry in entries {
-            if entry.manifest.len() > maximum.max_document_bytes
-                || entry.configuration.len() > maximum.max_document_bytes
-            {
-                return Err(super::invalid("admission-evidence-limit"));
-            }
-            for value in [&entry.manifest, &entry.configuration, &entry.payload] {
-                bytes = bytes
-                    .checked_add(value.capacity())
-                    .ok_or_else(|| super::invalid("admission-evidence-limit"))?;
-            }
-        }
-    }
-    if bytes > maximum.max_auxiliary_bytes {
-        return Err(super::invalid("admission-evidence-limit"));
-    }
-    if signatures.len() != 1 || provenance.len() != 1 {
-        return Err(denied("admission-required-evidence-cardinality"));
-    }
+    input.check_bounds()?;
     let limits = PackagingLimits::default();
-    if bundle.layout().config().kind != PackageKind::Capsule {
+    if !B::supports(bundle.layout().config().kind) {
         return Err(denied("admission-executable-package-required"));
     }
     let subject = PackageSigningSubject::from_package(
@@ -97,7 +73,8 @@ pub(super) fn check_evidence(
         return Err(denied("admission-tenant-publisher-denied"));
     }
     let provenance_entry = &provenance[0];
-    let builder = verifiers.1.verify_package(
+    let builder = B::verify(
+        &verifiers.1,
         &subject,
         ProvenanceEvidenceRef {
             manifest: &provenance_entry.manifest,
@@ -140,6 +117,82 @@ pub(super) fn check_evidence(
         builder,
         sbom,
     })
+}
+
+impl EvidenceInput<'_> {
+    fn check_bounds(self) -> Result<(), PlatformError> {
+        let maximum = latent_artifacts::AdmissionStorageLimits::default();
+        let mut bytes = 0usize;
+        for entries in [self.signatures, self.provenance, self.sboms] {
+            if entries.capacity() > maximum.max_evidence_per_kind {
+                return Err(super::invalid("admission-evidence-limit"));
+            }
+            for entry in entries {
+                if entry.manifest.len() > maximum.max_document_bytes
+                    || entry.configuration.len() > maximum.max_document_bytes
+                {
+                    return Err(super::invalid("admission-evidence-limit"));
+                }
+                for value in [&entry.manifest, &entry.configuration, &entry.payload] {
+                    bytes = bytes
+                        .checked_add(value.capacity())
+                        .ok_or_else(|| super::invalid("admission-evidence-limit"))?;
+                }
+            }
+        }
+        if bytes > maximum.max_auxiliary_bytes {
+            return Err(super::invalid("admission-evidence-limit"));
+        }
+        if self.signatures.len() != 1 || self.provenance.len() != 1 {
+            return Err(denied("admission-required-evidence-cardinality"));
+        }
+        Ok(())
+    }
+}
+
+// Both output models use the same bounded publisher, tenant, SBOM and source
+// checks. The build verifiers retain distinct wire profiles and proof types.
+pub(super) trait BuilderEvidence: Sized {
+    fn supports(kind: PackageKind) -> bool;
+    fn verify(
+        owner: &BuilderVerifier,
+        subject: &PackageSigningSubject,
+        evidence: ProvenanceEvidenceRef<'_>,
+        now: u64,
+    ) -> latent_signing::SignatureResult<Self>;
+    fn source_snapshot_digest(&self) -> &latent_core::ArtifactBlobDigest;
+}
+impl BuilderEvidence for VerifiedBuildProvenance {
+    fn supports(kind: PackageKind) -> bool {
+        kind == PackageKind::Capsule
+    }
+    fn verify(
+        owner: &BuilderVerifier,
+        subject: &PackageSigningSubject,
+        evidence: ProvenanceEvidenceRef<'_>,
+        now: u64,
+    ) -> latent_signing::SignatureResult<Self> {
+        owner.verify_package(subject, evidence, now)
+    }
+    fn source_snapshot_digest(&self) -> &latent_core::ArtifactBlobDigest {
+        self.source_snapshot_digest()
+    }
+}
+impl BuilderEvidence for VerifiedWebBuildProvenance {
+    fn supports(kind: PackageKind) -> bool {
+        matches!(kind, PackageKind::BrowserAssets | PackageKind::SsrPackage)
+    }
+    fn verify(
+        owner: &BuilderVerifier,
+        subject: &PackageSigningSubject,
+        evidence: ProvenanceEvidenceRef<'_>,
+        now: u64,
+    ) -> latent_signing::SignatureResult<Self> {
+        owner.verify_web_package(subject, evidence, now)
+    }
+    fn source_snapshot_digest(&self) -> &latent_core::ArtifactBlobDigest {
+        self.source_snapshot_digest()
+    }
 }
 
 /// Borrowed package and evidence for one explicit local diagnostic check.
@@ -198,7 +251,7 @@ pub fn verify_package_once(
     request: PackageVerificationRequest<'_>,
 ) -> Result<PackageVerificationReport, PlatformError> {
     let verifiers = policy.verifiers(request.unix_seconds)?;
-    let checked = check_evidence(
+    let checked: CheckedEvidence = check_evidence(
         policy,
         &verifiers,
         request.tenant,

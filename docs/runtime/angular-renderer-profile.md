@@ -3,8 +3,12 @@
 [ADR-0037](../../adr/0037-qualify-a-closed-angular-component-renderer-profile.md)
 selects `angular-ssr-component-v1` for Phase 3's first renderer adapter.
 The [executable fixture](../../examples/renderer-profile/README.md) qualifies
-real Angular SSR and hydration. Production execution, deployment packaging and
-the observed Angular build adapter remain #233, #225 and #234 respectively.
+real Angular SSR and hydration. Production runtime integration and the observed
+Angular build adapter remain #233 and #234. Exact package admission
+and catalog lifecycle are implemented by the separate
+[web release admission profile](../reference/web-release-admission.md) (#225).
+That profile still rejects this private proof ABI until the public async adapter
+is installed.
 The name is a proposed renderer compatibility profile, not an accepted
 `node.json` security selector or a claim of arbitrary Angular/Node support.
 

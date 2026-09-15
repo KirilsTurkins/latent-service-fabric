@@ -1863,6 +1863,7 @@ dependencies = [
  "latent-artifacts",
  "latent-core",
  "latent-manifest",
+ "latent-oci",
  "latent-packaging",
  "latent-signing",
  "rustix",

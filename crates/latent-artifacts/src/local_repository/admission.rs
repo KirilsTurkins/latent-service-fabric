@@ -19,6 +19,8 @@ use crate::{
 
 const MODE_FILE: &str = "ADMISSION_MODE";
 const MODE: &[u8] = b"lsf-enforced-admission-v1\n";
+pub(super) const WEB_MODE: &[u8] = b"lsf-enforced-admission-web-v2\n";
+pub(super) const WEB_MODE_FILE: &str = MODE_FILE;
 
 pub(super) struct RepositoryAdmission {
     pub(super) authority: Arc<dyn AdmissionAuthority>,
@@ -50,9 +52,8 @@ pub(super) fn check_mode(root: &Path, enforced: bool) -> Result<(), PlatformErro
         Err(failure) => return Err(super::io_error(failure)),
     };
     if let Some(metadata) = metadata {
-        if !metadata.file_type().is_file()
-            || super::read_bounded_file(&path, 64, "admission mode")? != MODE
-        {
+        let bytes = super::read_bounded_file(&path, 64, "admission mode")?;
+        if !metadata.file_type().is_file() || (bytes != MODE && bytes != WEB_MODE) {
             return Err(corrupt("invalid-admission-mode-marker"));
         }
         #[cfg(windows)]
@@ -81,6 +82,7 @@ pub(super) fn persist_mode(root: &Path) -> Result<(), PlatformError> {
 
 impl Drop for DirectoryArtifactRepository {
     fn drop(&mut self) {
+        self.web.epoch.retire();
         if let Some(lifecycle) = self.lifecycle.get() {
             lifecycle.retire();
         }

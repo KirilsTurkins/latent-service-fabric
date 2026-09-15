@@ -19,6 +19,7 @@ mod shared_content;
 pub use migration::{CatalogMigrationLimits, CatalogMigrationReceipt};
 pub use shared_content::{PublicationContentReclamation, PublicationStorageSnapshot};
 mod sha256;
+mod web;
 
 #[cfg(test)]
 mod tests;
@@ -182,6 +183,7 @@ pub struct DirectoryArtifactRepository {
     content: Mutex<shared_content::SharedContent>,
     admission: Option<admission::RepositoryAdmission>,
     lifecycle: OnceLock<crate::lifecycle::LifecycleStore>,
+    web: web::WebCatalog,
     _owner_lock: OwnerLock,
     #[cfg(test)]
     fail_parent_sync_once: AtomicBool,
@@ -261,6 +263,7 @@ impl DirectoryArtifactRepository {
         sync_dir(&repository.root)?;
         let baseline = repository.rebuild_index()?;
         repository.initialize_lifecycle(&baseline)?;
+        repository.initialize_web()?;
         if repository.admission.is_some() {
             admission::persist_mode(&repository.root)?;
         }
@@ -275,6 +278,10 @@ impl DirectoryArtifactRepository {
     ) -> Result<Self, PlatformError> {
         validate_config(config)?;
         lifecycle_limits.validate()?;
+        let config = DirectoryArtifactRepositoryConfig {
+            max_index_entries: config.max_index_entries.min(lifecycle_limits.max_records),
+            ..config
+        };
         let root = root_durability::create_durable_root(&root)?;
 
         let owner_lock = OpenOptions::new()
@@ -307,6 +314,7 @@ impl DirectoryArtifactRepository {
             admission_work: Mutex::new(()),
             admission,
             lifecycle: OnceLock::new(),
+            web: web::WebCatalog::new()?,
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_parent_sync_once: AtomicBool::new(false),

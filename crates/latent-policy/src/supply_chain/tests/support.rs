@@ -5,6 +5,9 @@ mod operator_fixture;
 mod packaging;
 #[path = "../../../../latent-packaging/tests/sbom_association/support.rs"]
 mod sbom;
+#[path = "web_fixture.rs"]
+mod web_fixture;
+pub use web_fixture::web_input;
 
 use super::super::{SupplyChainClock, SupplyChainPolicy};
 use base64::{engine::general_purpose::STANDARD, Engine};

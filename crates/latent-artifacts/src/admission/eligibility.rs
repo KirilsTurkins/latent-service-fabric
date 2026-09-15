@@ -184,6 +184,13 @@ struct OwnerRecheck<'a> {
     checker: &'a dyn AdmissionRecheck,
 }
 impl AdmissionRecheck for OwnerRecheck<'_> {
+    fn check_web_grant(
+        &self,
+        grant: &dyn crate::web::WebAdmissionGrant,
+    ) -> Result<(), PlatformError> {
+        self.owner.check()?;
+        self.checker.check_web_grant(grant)
+    }
     fn check(&self) -> Result<(), PlatformError> {
         self.owner.check()?;
         self.checker.check()
@@ -199,6 +206,13 @@ struct BatchRecheck<'a> {
     checker: &'a dyn AdmissionRecheck,
 }
 impl AdmissionRecheck for BatchRecheck<'_> {
+    fn check_web_grant(
+        &self,
+        grant: &dyn crate::web::WebAdmissionGrant,
+    ) -> Result<(), PlatformError> {
+        self.check()?;
+        self.checker.check_web_grant(grant)
+    }
     fn check(&self) -> Result<(), PlatformError> {
         self.checker.check()?;
         for entry in self.entries {

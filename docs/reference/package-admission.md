@@ -8,14 +8,21 @@ for deployment or execution. `latent-policy::supply_chain::SupplyChainAuthority`
 is the shared node owner. It retains approved public trust configuration and
 durable policy/time floors; request data cannot construct that authority.
 
+Phase 3 [web release admission](web-release-admission.md) adds separately typed
+browser/SSR package admission through that same authority and concrete catalog.
+It uses exact scoped package references, without assigning a capsule component
+identity to browser assets. Its host API and receipt are distinct from the
+capsule `ReleaseService` methods described below.
+
 The accepted Phase 3 correction in
 [ADR-0027](../../adr/0027-separate-publication-authority-from-component-identity.md)
 and [RFC-0002](../../rfcs/0002-tenant-scoped-publication-identity.md) separates
 tenant-scoped publication from component identity. The catalog now implements
 independent publications, tenant-neutral package admission and package coexistence.
 [Catalog format 2 and offline migration](publication-catalog.md) describe the
-storage boundary. Runtime and deployment propagation (#266), and public RPC/CLI/SDK
-selectors (#267), are separate integration work. Existing component fields retain
+storage boundary. [Runtime and deployment propagation](publication-runtime.md)
+and [public RPC/CLI/SDK selectors](publication-api.md) carry those exact identities
+through execution and management. Existing component fields retain
 their byte identity; legacy selection fails explicitly when it becomes ambiguous.
 
 ## Select the node mode

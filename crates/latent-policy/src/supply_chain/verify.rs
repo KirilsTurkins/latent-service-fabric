@@ -61,7 +61,7 @@ pub(super) fn with_state(
         },
         limits,
     )?;
-    let checked = super::verification::check_evidence(
+    let checked: super::verification::CheckedEvidence = super::verification::check_evidence(
         &state.policy,
         state.verifiers()?,
         tenant,
