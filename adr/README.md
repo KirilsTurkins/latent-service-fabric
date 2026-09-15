@@ -118,3 +118,9 @@ and unsupported stronger isolation profiles explicit.
 [ADR-0038](0038-admit-web-packages-with-componentless-publication-authority.md)
 admits exact browser/SSR packages with componentless scoped publication authority,
 current-use leases and the existing catalog's shared resource bounds.
+
+[ADR-0039](0039-bound-the-shared-http-listener-and-preserve-selected-admission.md)
+defines the shared HTTP/TLS listener, explicit authentication and proxy profiles,
+finite connection residency, exact selected admission and retained cleanup/write
+ownership. Its narrow Connection-header rule supersedes that part of ADR-0035;
+the bounded application mapping remains unchanged.

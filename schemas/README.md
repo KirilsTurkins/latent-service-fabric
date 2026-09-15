@@ -35,6 +35,7 @@ Optional standalone node members have their own closed schemas:
 
 | Schema | Configuration member |
 | --- | --- |
+| [node-http-ingress.schema.json](node-http-ingress.schema.json) | Optional shared HTTP/TLS listener, explicit principal/proxy adapters and finite connection/exchange deadlines and reservations. |
 | [node-isolated-aot.schema.json](node-isolated-aot.schema.json) | `isolatedAot`: bounded native compiler/cache configuration and protected host-key path. |
 | [node-audit.schema.json](node-audit.schema.json) | `audit`: optional durable audit resource limits. |
 | [node-rollouts.schema.json](node-rollouts.schema.json) | `rollouts`: shared coordinator and optional canary observation limits, requiring the same enabled audit owner. |

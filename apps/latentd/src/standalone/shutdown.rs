@@ -15,6 +15,8 @@ pub struct ShutdownReport {
     pub rollouts: Option<super::RolloutShutdownReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policies: Option<super::PolicyShutdownReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub http: Option<super::http::HttpSnapshot>,
     pub clean: bool,
     pub active_connections: usize,
     pub active_rpcs: usize,
@@ -51,6 +53,7 @@ pub struct ShutdownReport {
 impl ShutdownReport {
     fn reclaimed(&self) -> bool {
         self.audit.is_none_or(super::AuditShutdownReport::clean)
+            && self.http.is_none_or(super::http::HttpSnapshot::clean)
             && self.policies.is_none_or(super::PolicyShutdownReport::clean)
             && self
                 .rollouts
@@ -109,6 +112,10 @@ impl StandaloneNode {
         if let Some(handle) = &handle {
             handle.stop_accepting();
         }
+        let http_handle = self.http.as_ref().map(super::http::HttpOwner::handle);
+        if let Some(handle) = &http_handle {
+            handle.stop_accepting();
+        }
         let cleanup = self.cleanup.take().expect("owned cleanup driver");
         let cleanup_handle = cleanup.handle();
         cleanup.stop_accepting();
@@ -130,7 +137,8 @@ impl StandaloneNode {
         let compiler_quiescence = factory.quiesce_compiler();
         self.scheduler.shutdown();
         let transport = self.transport.take();
-        let (transport_result, cleanup_result) = tokio::join!(
+        let http = self.http.take();
+        let (transport_result, cleanup_result, http_result) = tokio::join!(
             Box::pin(async {
                 if let Some(transport) = transport {
                     transport.shutdown().await.map(|_| ())
@@ -138,9 +146,19 @@ impl StandaloneNode {
                     Ok(())
                 }
             }),
-            Box::pin(cleanup.shutdown(forced_deadline))
+            Box::pin(cleanup.shutdown(forced_deadline)),
+            Box::pin(async {
+                if let Some(http) = http {
+                    http.shutdown(forced_deadline).await
+                } else {
+                    Ok(())
+                }
+            })
         );
         let mut failure = transport_result.err();
+        if let Err(error) = http_result {
+            failure.get_or_insert(error);
+        }
         if let Err(error) = cleanup_result {
             failure.get_or_insert(error);
         }
@@ -237,6 +255,7 @@ impl StandaloneNode {
             report.audit = audit_report;
             report.rollouts = rollout_report;
             report.policies = policy_report;
+            report.http = http_handle.as_ref().map(super::http::HttpHandle::snapshot);
         }
         if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
             failure.get_or_insert_with(|| {
@@ -313,6 +332,7 @@ impl StandaloneNode {
             audit: None,
             rollouts: None,
             policies: None,
+            http: None,
             clean: false,
             active_connections: transport.active_connections,
             active_rpcs: transport.active_rpcs,

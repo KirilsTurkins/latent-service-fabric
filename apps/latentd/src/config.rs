@@ -6,6 +6,7 @@ mod budgets;
 mod capability_policies;
 mod derive;
 mod engine;
+pub(crate) mod http;
 mod input;
 mod model;
 mod policy;
@@ -27,6 +28,9 @@ pub use aot::{AotCacheConfig, AotImageConfig, AotProcessConfig, IsolatedAotConfi
 pub use audit::AuditConfig;
 pub use budgets::BudgetConfig;
 pub use capability_policies::CapabilityPolicyConfig;
+pub use http::{
+    HttpAuthentication, HttpIngressConfig, HttpIngressLimits, HttpOrigin, HttpTransport,
+};
 pub use latent_wasmtime::ExecutionIsolationProfile;
 pub use model::{
     CacheConfig, CatalogConfig, CellConfig, CredentialConfig, CredentialRole, EngineAllocator,
@@ -69,6 +73,7 @@ pub struct NodeSettings {
     pub(crate) observer: latent_telemetry::SharedActivationObserverConfig,
     pub(crate) inventory: latent_node::StandaloneInventoryConfig,
     pub(crate) transport: crate::standalone::transport::TransportConfig,
+    pub(crate) http: Option<http::HttpSettings>,
     pub(crate) shutdown_grace: Duration,
     pub(crate) load_sample_interval: Duration,
 }

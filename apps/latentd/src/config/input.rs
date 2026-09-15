@@ -22,6 +22,14 @@ pub(super) fn load(path: &Path) -> Result<NodeConfig, PlatformError> {
         "configurationFileProtection",
     )?;
     let mut config = decode(&bytes)?;
+    if let Some(http) = &mut config.http_ingress {
+        super::http::anchor(
+            http,
+            absolute
+                .parent()
+                .ok_or_else(|| invalid("configurationPath"))?,
+        )?;
+    }
     config.credentials_from_protected_file = cfg!(all(target_os = "linux", target_arch = "x86_64"));
     if let Some(aot) = &mut config.isolated_aot {
         let parent = absolute

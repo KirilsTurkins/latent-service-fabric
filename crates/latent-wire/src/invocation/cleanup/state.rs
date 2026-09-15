@@ -263,6 +263,15 @@ impl CleanupSlot {
         handle: ActivationHandle,
         cause: ActivationTransportInterruption,
     ) {
+        self.continue_with_retention(handle, cause, ());
+    }
+
+    pub(super) fn continue_with_retention<R: Send + 'static>(
+        self,
+        handle: ActivationHandle,
+        cause: ActivationTransportInterruption,
+        retention: R,
+    ) {
         let handoff = Instant::now();
         let deadline = handoff
             .checked_add(self.shared.allowance)
@@ -286,10 +295,20 @@ impl CleanupSlot {
                 },
             );
         }
-        let handle = handle.interrupt_for_cleanup(cause);
+        // Explicit field order also applies when this future is aborted before
+        // its first poll: destroy the lifecycle before refunding adapter bytes.
+        struct Retained<R> {
+            handle: ActivationHandle,
+            _retention: R,
+        }
+        let mut retained = Retained {
+            handle: handle.interrupt_for_cleanup(cause),
+            _retention: retention,
+        };
         self.transfer(Work {
             future: Box::pin(async move {
-                drop(handle.await);
+                drop((&mut retained.handle).await);
+                drop(retained);
             }),
             deadline,
         });

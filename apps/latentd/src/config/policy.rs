@@ -38,6 +38,24 @@ pub(super) fn admission(
             policy.allowed_principal_kinds.push(kind);
         }
     }
+    if let Some(super::HttpIngressConfig {
+        authentication: super::HttpAuthentication::PublicOrigins { origins },
+        ..
+    }) = &config.http_ingress
+    {
+        for origin in origins {
+            let tenant = tenants
+                .get_mut(&TenantId(origin.tenant.clone()))
+                .ok_or_else(|| invalid("httpIngress.publicOriginTenant"))?;
+            tenant.allowed_subjects.insert(origin.subject.clone());
+            if !tenant
+                .allowed_principal_kinds
+                .contains(&PrincipalKind::Trigger)
+            {
+                tenant.allowed_principal_kinds.push(PrincipalKind::Trigger);
+            }
+        }
+    }
     let policy = NodeAdmissionPolicy {
         budget_ceiling: budget(config, capacity.maximum_memory),
         limits,

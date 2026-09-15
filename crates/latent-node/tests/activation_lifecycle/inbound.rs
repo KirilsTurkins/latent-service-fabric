@@ -9,6 +9,73 @@ use latent_core::{
 use latent_node::InboundActivationReservation;
 use std::{sync::atomic::Ordering, time::Duration};
 
+#[tokio::test]
+async fn selected_inbound_keeps_exact_weighted_choice_and_policy_across_cutover() {
+    use latent_routing::ActivationCatalogSource;
+    let h = Harness::standard();
+    let mut request = model::request("selected-after-cutover");
+    request.input = Vec::new();
+    let catalog = h.catalog.pin().unwrap();
+    let selected = catalog
+        .resolve(&request.target, Some("trigger-chosen-key"))
+        .unwrap();
+    h.catalog.generation.store(2, Ordering::Release);
+    let sample = h.clock.sample();
+    let pending = h
+        .manager
+        .reserve_selected_inbound(
+            request,
+            16,
+            IncomingDeadline::new(
+                sample.monotonic() + Duration::from_secs(2),
+                sample.unix_millis() + 2000,
+            ),
+            selected.clone(),
+            catalog,
+        )
+        .unwrap();
+    assert_eq!(pending.revision(), &selected);
+    assert_eq!(
+        h.catalog.keys.lock().unwrap().as_slice(),
+        &["trigger-chosen-key"]
+    );
+    let receipt = finish(pending.start(0).unwrap()).await;
+    assert!(matches!(receipt.outcome, ActivationOutcome::Succeeded(_)));
+    assert_eq!(receipt.resolved_revision, Some(selected));
+    h.assert_idle();
+}
+
+#[test]
+fn selected_inbound_rejects_mismatched_target_or_generation_before_execution() {
+    use latent_routing::ActivationCatalogSource;
+    for changed_target in [true, false] {
+        let h = Harness::standard();
+        let mut request = model::request("invalid-selected");
+        request.input = Vec::new();
+        let catalog = h.catalog.pin().unwrap();
+        let mut selected = catalog.resolve(&request.target, Some("selected")).unwrap();
+        if changed_target {
+            selected.target.tenant.0 = "tenant-b".into();
+        } else {
+            selected.route_generation = RouteGeneration(99);
+        }
+        let sample = h.clock.sample();
+        let result = h.manager.reserve_selected_inbound(
+            request,
+            16,
+            IncomingDeadline::new(
+                sample.monotonic() + Duration::from_secs(2),
+                sample.unix_millis() + 2000,
+            ),
+            selected,
+            catalog,
+        );
+        assert!(matches!(result, Err(e) if e.code == PlatformErrorCode::IncompatibleContract));
+        assert_eq!(h.backend.preparation_calls.load(Ordering::Acquire), 0);
+        h.assert_idle();
+    }
+}
+
 fn reserve(
     h: &Harness,
     id: &str,

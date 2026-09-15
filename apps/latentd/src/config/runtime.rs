@@ -52,6 +52,17 @@ pub(super) fn wasmtime(
     }
     runtime.value_codec_limits.max_input_bytes = config.limits.maximum_payload_bytes;
     runtime.value_codec_limits.max_output_bytes = config.limits.maximum_payload_bytes;
+    if config.http_ingress.is_some() {
+        if config.limits.maximum_payload_bytes < latent_ingress::http::MAX_WIRE_BYTES {
+            return Err(invalid("httpIngress.maximumPayloadBytes"));
+        }
+        // Explicit buffered HTTP profile; these settings participate in engine
+        // identity before catalog compatibility or authenticated AOT loading.
+        runtime.hostcall_fuel = 2 * MIB;
+        runtime.value_codec_limits.max_nodes = latent_ingress::http::MAX_JSON_NODES;
+        runtime.value_codec_limits.max_string_bytes = 512 * 1024;
+        runtime.value_codec_limits.max_lifted_bytes = 64 * MIB;
+    }
     runtime.validate().map_err(|_| invalid("wasmtime"))?;
     Ok(runtime)
 }

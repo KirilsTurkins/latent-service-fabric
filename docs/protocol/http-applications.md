@@ -7,11 +7,10 @@ async function. Its `buffered-v1` profile is defined by
 and the `latent-ingress::http` implementation. Generated host and guest bindings
 are available in `latent-component-bindings::{host::web, web_guest}`.
 
-This delivery provides the contract, bounded mapping and ownership primitives.
-The shared HTTP listener is tracked by
-[#229](https://github.com/KirilsTurkins/latent-service-fabric/issues/229), with
-durable routes in [#223](https://github.com/KirilsTurkins/latent-service-fabric/issues/223).
-It does not turn an application's WIT export into a listener.
+The standalone node's optional [shared HTTP/TLS listener](../reference/http-ingress.md)
+uses this mapping with [durable exact-target routes](../reference/http-triggers.md).
+The node owns transport, authentication and connection limits; an application's
+WIT export creates no listener. Angular renderer adaptation remains #233.
 
 ## Records and authority
 
@@ -106,8 +105,11 @@ body. Without Content-Length, this HTTP/1.1 profile accepts an empty request bod
 GET and HEAD request bodies are empty. An incomplete, excessive or failed
 collection cannot be retried as a valid request on the same owner.
 
-Connection, Keep-Alive, Proxy-Connection, TE, Transfer-Encoding, Trailer and Upgrade
-are rejected. The transport must reject folded headers, conflicting HTTP/2 pseudo
+The mapper rejects Connection, Keep-Alive, Proxy-Connection, TE, Transfer-Encoding,
+Trailer and Upgrade. [ADR-0039](../../adr/0039-bound-the-shared-http-listener-and-preserve-selected-admission.md)
+permits the trusted listener to consume exactly one Connection field containing
+only `close` or `keep-alive` before mapping; arbitrary nominations still fail.
+The transport must reject folded headers, conflicting HTTP/2 pseudo
 fields, ambiguous framing and connection reuse after a framing failure before
 creating `RawHead`. RPC timeouts alone are not an HTTP parser or connection policy.
 These restrictions apply the framing boundary described by

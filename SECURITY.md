@@ -7,7 +7,8 @@ Security-sensitive reports should not be opened as public issues. Until a privat
 The delivered Phase 1 trusted computing base includes the standalone node,
 Wasmtime and its local compiler, local artifact/catalog verification, scoped
 authentication and admission, activation capability hosts, and the host operating
-system. The listener is restricted to authenticated local loopback operation.
+system. The management/invocation RPC listener is restricted to authenticated
+local loopback operation.
 Integrity verification of local artifacts does not establish publisher identity.
 
 Phase 2 adds bounded OCI transport, package publisher signatures, independently
@@ -52,6 +53,16 @@ Enforced admission alone still does not select compiler isolation. See
 [execution profiles and their finite evidence](docs/runtime/execution-security-profiles.md)
 and [protected configuration](docs/runtime/protected-configuration.md).
 
+The optional [shared HTTP/TLS application ingress](docs/reference/http-ingress.md)
+adds the HTTP parser, TLS configuration, principal adapters and connection owner
+to the trusted computing base. Its direct TLS, local cleartext and approved
+reverse-proxy profiles are explicit. Forwarded fields never grant identity;
+public origins deliberately map unauthenticated callers to configured low-privilege
+principals. Finite handshake/header/body/idle/write/age limits reclaim connections,
+and every selected publication still passes current admission and guarded start.
+Request cancellation retains activation and delivery charges through actual
+cleanup. This transport does not broaden the supported guest isolation profile.
+
 The optional [capability policy owner](docs/runtime/capability-policies.md) is now
 part of the trusted computing base. It enforces closed rule parsing, tenant-scoped
 revision/CAS history, protected storage and final policy/publication currentness.
@@ -70,7 +81,7 @@ and cleanup pools on the configured node runtime. Retired epochs and unfinished
 physical resources retain their quotas; a timeout or dropped job waiter does not
 prove closure. Provider credentials are excluded from public pool observations.
 
-General external capability providers, transactional state/effects, and cluster
+Additional provider backends, transactional state/effects, and cluster
 mTLS remain later work. They add trust boundaries when implemented. See the
 [security architecture](docs/architecture/security.md) and
 [Phase 1 completion scope](docs/phase-1-completion.md). This remains an
