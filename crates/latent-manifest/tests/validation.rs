@@ -12,6 +12,34 @@ const ECHO_TRIGGER: &[u8] = include_bytes!("../../../examples/echo-contract/http
 const LOG_POLICY: &[u8] = include_bytes!("../../../examples/policies/default-log-policy.json");
 
 #[test]
+fn tenant_web_exports_use_only_the_exact_shared_application_contract() {
+    let codec = JsonManifestCodec::default();
+    let validator = Phase1ManifestValidator::new();
+    let mut capsule = codec.decode_capsule(ECHO_CAPSULE).unwrap();
+    capsule.exports[0].contract = ContractId("latent:web/application@0.1.0".into());
+    validator.validate_capsule(&capsule).unwrap();
+    for contract in [
+        "latent:web/application@0.2.0",
+        "latent:context/context@0.1.0",
+        "another:app/service@0.1.0",
+    ] {
+        capsule.exports[0].contract = ContractId(contract.into());
+        assert!(validator
+            .validate_capsule(&capsule)
+            .unwrap_err()
+            .iter()
+            .any(|v| v.code == "tenant-scope-mismatch"));
+    }
+    capsule.exports[0].contract = ContractId("latent:web/application@0.1.0".into());
+    capsule.world = ContractId("latent:web/application-service@0.1.0".into());
+    assert!(validator
+        .validate_capsule(&capsule)
+        .unwrap_err()
+        .iter()
+        .any(|v| v.path == "$.component.world" && v.code == "tenant-scope-mismatch"));
+}
+
+#[test]
 fn phase1_examples_validate_independently_and_as_a_release_pair() {
     let codec = JsonManifestCodec::default();
     let validator = Phase1ManifestValidator::new();

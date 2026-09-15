@@ -1160,6 +1160,30 @@ struct TriggerTargetWire {
     function: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     route: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "publication_option"
+    )]
+    publication: Option<latent_core::PublicationId>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "trigger_present"
+    )]
+    revision: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "trigger_present"
+    )]
+    deployment_generation: Option<u64>,
+}
+
+fn trigger_present<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
+    d: D,
+) -> Result<Option<T>, D::Error> {
+    T::deserialize(d).map(Some)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1213,6 +1237,9 @@ impl From<&TriggerManifest> for TriggerDocumentWire {
                     contract: value.target.contract.0.clone(),
                     function: value.target.function.clone(),
                     route: value.target.route.clone(),
+                    publication: value.target.publication.clone(),
+                    revision: value.target.revision.clone(),
+                    deployment_generation: value.target.deployment_generation,
                 },
                 configuration: value.configuration.clone(),
             },
@@ -1233,6 +1260,9 @@ impl From<TriggerDocumentWire> for TriggerManifest {
                 contract: ContractId(value.spec.target.contract),
                 function: value.spec.target.function,
                 route: value.spec.target.route,
+                publication: value.spec.target.publication,
+                revision: value.spec.target.revision,
+                deployment_generation: value.spec.target.deployment_generation,
             },
             configuration: value.spec.configuration,
         }

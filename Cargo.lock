@@ -1636,6 +1636,7 @@ dependencies = [
  "latent-contracts",
  "latent-core",
  "latent-executor",
+ "latent-ingress",
  "latent-manifest",
  "latent-node",
  "latent-packaging",

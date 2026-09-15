@@ -3,6 +3,7 @@
 mod admission_fence;
 pub mod bindings;
 mod compiler;
+pub(crate) mod http;
 mod mutations;
 mod observation;
 pub(crate) mod operations;
@@ -125,6 +126,7 @@ pub struct DirectoryDeploymentRepository {
     binding_generations: bindings::Generations,
     rollout_limits: crate::rollouts::RolloutLimits,
     operation_budget: Arc<crate::deployment_operations::budget::Budget>,
+    http_budget: Arc<crate::deployment_operations::budget::Budget>,
     rollout_budget: Arc<rollouts::table::MetadataBudget>,
     rollout_work: Arc<std::sync::atomic::AtomicBool>,
     rollout_cursor_epoch: u64,
@@ -421,6 +423,13 @@ impl DirectoryDeploymentRepository {
             let operation_budget =
                 crate::deployment_operations::budget::Budget::new(operation_limits);
             let rollout_cursor_epoch = next_rollout_cursor_epoch()?;
+            let http_budget = crate::deployment_operations::budget::Budget::new(
+                crate::deployment_operations::DeploymentOperationLimits {
+                    maximum_receipts: http::table::RECEIPTS,
+                    maximum_metadata_bytes: 8 * 1024 * 1024,
+                    maximum_read_owners: 64,
+                },
+            );
             let root = root.into();
             let (root, owner_lock) = persistence::own_root(&root)?;
             let rollout_budget =
@@ -527,6 +536,13 @@ impl DirectoryDeploymentRepository {
             let transaction = control
                 .as_ref()
                 .map_or(generation.0, |v| v.transaction_version);
+            let http = match control.as_mut().and_then(|c| c.http_routes.take()) {
+                Some(data) if data.sequence == 0 => return Err(crate::http_routes::corrupt()),
+                Some(data) => {
+                    http::table::HttpTable::new(data, &http_budget, transaction, generation.0)?
+                }
+                None => http::table::HttpTable::empty(&http_budget)?,
+            };
             let mut needs_operation_upgrade = false;
             let operations = if let Some(mut data) = control
                 .as_mut()
@@ -570,6 +586,7 @@ impl DirectoryDeploymentRepository {
                         transaction_version: transaction,
                         rollouts: &rollout_table.data,
                         deployment_operations: operations.enabled.then_some(&operations.data),
+                        http_routes: http.enabled.then_some(&http.data),
                     },
                     config.max_state_bytes,
                     &mut work,
@@ -588,11 +605,13 @@ impl DirectoryDeploymentRepository {
                     routes: Arc::new(catalog),
                     rollouts: rollout_table,
                     operations,
+                    http,
                     confirmed: false,
                 })),
                 binding_generations: bindings::Generations::default(),
                 rollout_limits,
                 operation_budget,
+                http_budget,
                 rollout_budget,
                 rollout_work: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 rollout_cursor_epoch,
@@ -745,6 +764,7 @@ impl DirectoryDeploymentRepository {
                     .operations
                     .enabled
                     .then_some(&publication.operations.data),
+                http_routes: publication.http.enabled.then_some(&publication.http.data),
             };
             drop(legacy_bytes);
             persistence::encode_combined(&next, &control, self.config.max_state_bytes, work)?
@@ -846,6 +866,7 @@ impl DirectoryDeploymentRepository {
                     routes: next,
                     rollouts: table,
                     operations,
+                    http: Arc::clone(&publication.http),
                     confirmed: durable.is_ok(),
                 },
             );

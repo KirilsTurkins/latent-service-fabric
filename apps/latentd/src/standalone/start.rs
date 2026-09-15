@@ -302,6 +302,12 @@ impl Catalogs {
                     std::time::Instant::now() + std::time::Duration::from_secs(30),
                 )
                 .await?;
+                latent_rollout::trigger_audit::reconcile_trigger_audit(
+                    &audit.handle(),
+                    deployments.as_ref(),
+                    std::time::Instant::now() + std::time::Duration::from_secs(30),
+                )
+                .await?;
                 latent_artifacts::reconcile_release_audit(&audit.handle(), artifacts.as_ref())
                     .await?;
                 latent_capabilities::broker::reconcile_capability_audit(
@@ -439,7 +445,7 @@ impl StandaloneNode {
                 capabilities.broker().clone(),
             )?;
         }
-        Ok(management)
+        management.with_http_control(catalogs.deployments.clone())
     }
 
     async fn start_services(

@@ -21,6 +21,7 @@ generated package inputs through this RPC boundary.
 | --- | --- | --- |
 | Release | `PublishRelease`, `GetRelease`, `ListReleases`, `GetReleaseLifecycle`, `GetReleaseOperation`, `ChangeReleaseLifecycle`, `RenewReleaseEvidence` | Immutable publication, tenant-scoped metadata, durable lifecycle and bounded evidence renewal. |
 | Deployment | `ApplyDeployment`, `GetDeployment`, `ListDeployments`, `DeleteDeployment`, `GetDeploymentOperation` | Atomic tenant-scoped versions, optional managed operation receipts and coherent state snapshots, and bounded pages. |
+| Trigger | `ApplyTrigger`, `GetTrigger`, `ListTriggers`, `DeleteTrigger`, `GetTriggerOperation` | [Closed HTTP routes](http-triggers.md), explicit tenant publication/deployment pins, atomic CAS and bounded historical receipts. Mutations require durable audit. |
 | Route | `GetRouteSnapshot` | Complete projection of the current catalog generation for one tenant. |
 | Node | `GetNode`, `ListNodes` | The one configured node's bounded inventory snapshot. |
 | Audit | `QueryAudit`, `QueryPhase2Audit` | Bounded durable history when the node's optional audit owner is configured. |
@@ -61,7 +62,7 @@ and `ManagementPolicy`. Request metadata, manifest annotations, and descriptor
 claims never create or override this trusted context.
 
 The default `LocalManagementPolicy` requires an `Administrator` principal for
-all supported management calls. Release, deployment, and route operations use
+all supported management calls. Release, deployment, trigger, and route operations use
 that principal's exact tenant. Administrator status does not grant access to a
 different tenant. RPC publication requires the capsule's tenant to be present
 and equal to the authenticated tenant; deployment application requires the same

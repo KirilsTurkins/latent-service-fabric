@@ -24,7 +24,9 @@ pub(super) fn write_with_control(
     control: Option<&super::ControlPayloadRef<'_>>,
     work: &mut Work,
 ) -> io::Result<()> {
-    if catalog.bindings.data.is_empty() {
+    if control.is_some_and(|v| v.http_routes.is_some()) {
+        output.write_all(b"{\"format_version\":7,\"checksum\":\"sha256:")?;
+    } else if catalog.bindings.data.is_empty() {
         output.write_all(PREFIX)?;
     } else {
         output.write_all(b"{\"format_version\":6,\"checksum\":\"sha256:")?;

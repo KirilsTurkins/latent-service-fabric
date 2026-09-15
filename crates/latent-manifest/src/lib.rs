@@ -267,6 +267,12 @@ pub struct TriggerTarget {
     pub contract: ContractId,
     pub function: String,
     pub route: Option<String>,
+    /// Explicit publication in metadata.tenant; never a component identity.
+    pub publication: Option<latent_core::PublicationId>,
+    /// Exact immutable deployment content revision, required by the HTTP profile.
+    pub revision: Option<String>,
+    /// The deployment object's mutation stamp also distinguishes delete/recreate.
+    pub deployment_generation: Option<u64>,
 }
 
 /// Declarative trigger resource. Runtime trigger behavior remains outside this

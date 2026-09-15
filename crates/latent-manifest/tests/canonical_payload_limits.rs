@@ -161,6 +161,9 @@ fn base_trigger() -> TriggerManifest {
             contract: ContractId("examples:echo/api@0.1.0".to_owned()),
             function: "echo".to_owned(),
             route: Some("production".to_owned()),
+            publication: None,
+            revision: None,
+            deployment_generation: None,
         },
         configuration: BTreeMap::new(),
     }

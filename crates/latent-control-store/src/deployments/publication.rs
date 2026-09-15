@@ -5,6 +5,7 @@ pub(super) struct PublishedCatalog {
     pub routes: Arc<CompiledCatalog>,
     pub rollouts: Arc<RolloutTable>,
     pub operations: Arc<OperationTable>,
+    pub http: Arc<super::http::table::HttpTable>,
     pub confirmed: bool,
 }
 impl std::ops::Deref for PublishedCatalog {
@@ -18,6 +19,7 @@ pub(super) struct PublicationView {
     pub routes: Arc<CompiledCatalog>,
     pub rollouts: Arc<RolloutTable>,
     pub operations: Arc<OperationTable>,
+    pub http: Arc<super::http::table::HttpTable>,
     pub confirmed: bool,
 }
 impl PublishedCatalog {
@@ -27,12 +29,13 @@ impl PublishedCatalog {
             routes: Arc::clone(&self.routes),
             rollouts: Arc::clone(&self.rollouts),
             operations: Arc::clone(&self.operations),
+            http: Arc::clone(&self.http),
             confirmed: self.confirmed,
         }
     }
 }
 impl PublicationView {
     pub fn has_control(&self) -> bool {
-        self.rollouts.enabled || self.operations.enabled
+        self.rollouts.enabled || self.operations.enabled || self.http.enabled
     }
 }

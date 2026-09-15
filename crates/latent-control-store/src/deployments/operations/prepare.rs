@@ -214,6 +214,7 @@ impl DirectoryDeploymentRepository {
             transaction_version: state_version,
             rollouts: &previous.rollouts.data,
             deployment_operations: Some(&next_operations.data),
+            http_routes: previous.http.enabled.then_some(&previous.http.data),
         };
         let bytes = persistence::encode_combined(
             &next_routes,

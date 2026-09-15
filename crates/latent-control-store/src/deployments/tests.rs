@@ -1,6 +1,7 @@
 mod admission;
 pub(super) mod fixtures;
 mod golden;
+mod http;
 mod lifecycle;
 #[cfg(unix)]
 mod lock_release;

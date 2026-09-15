@@ -31,7 +31,10 @@ to release, deployment and rollout RPCs, and captured source IDs to invocation
 receipts and audit, while retaining component fields and their numbers.
 The [standalone Linux node](../../docs/reference/standalone-node.md) serves this
 subset through a bounded loopback listener with configured credentials.
-Generated trigger, provider, clustered registration/watch and other later-phase
-services remain declarations until their implementations are delivered.
+Phase 3 [HTTP trigger management](../../docs/reference/http-triggers.md) now
+implements scoped Apply/Get/List/Delete and operation lookup on this listener.
+It requires exact publication, deployment revision and object-generation pins.
+Other trigger kinds, the public application listener and clustered
+registration/watch remain separate later deliveries.
 
 The Phase 1 pre-stabilization compatibility record and checked-in descriptor contract are in [`docs/protocol/phase-1-contract-hardening.md`](../../docs/protocol/phase-1-contract-hardening.md) and `phase1-descriptor-contract.json`, which is validated from a Buf-built `FileDescriptorSet` by `tools/validate_phase1_descriptor.py`.

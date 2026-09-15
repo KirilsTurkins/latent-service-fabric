@@ -130,7 +130,10 @@ impl Harness {
             authorization: Arc::new(LocalManagementPolicy),
             clock: Arc::new(SystemActivationClock),
         };
-        let adapter = ManagementServiceAdapter::new(services, limits).unwrap();
+        let adapter = ManagementServiceAdapter::new(services, limits)
+            .unwrap()
+            .with_http_control(deployments.clone())
+            .unwrap();
         let (adapter, policy_control) = if capabilities {
             let (adapter, policies) =
                 capabilities::configure(adapter, &root.0, &artifacts, &deployments);

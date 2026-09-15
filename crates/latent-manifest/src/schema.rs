@@ -83,7 +83,7 @@ fn assert_supported_schema(schema: &Value, path: &str) {
                     assert_supported_schema(child, &format!("{path}.{keyword}.{name}"));
                 }
             }
-            "items" => assert_supported_schema(value, &format!("{path}.items")),
+            "items" | "if" | "then" => assert_supported_schema(value, &format!("{path}.{keyword}")),
             "additionalProperties" if value.is_object() => {
                 assert_supported_schema(value, &format!("{path}.additionalProperties"));
             }
@@ -105,6 +105,19 @@ fn validate_node(
 ) {
     if violations.len() >= max_violations {
         return;
+    }
+
+    if let Some(condition) = schema.get("if") {
+        let mut probe = Vec::new();
+        validate_node(condition, instance, path, root, &mut probe, 1);
+        if probe.is_empty() {
+            if let Some(consequent) = schema.get("then") {
+                validate_node(consequent, instance, path, root, violations, max_violations);
+            }
+        }
+        if violations.len() >= max_violations {
+            return;
+        }
     }
 
     if let Some(reference) = schema.get("$ref").and_then(Value::as_str) {
@@ -409,6 +422,11 @@ fn validate_string(
                 value.parse::<latent_core::PublicationId>().is_ok(),
                 "invalid-publication",
                 "publication must be a canonical publication:sha256: identity with 64 lowercase hexadecimal characters",
+            ),
+            "^revision-v1:sha256:[a-f0-9]{64}$" => (
+                value.strip_prefix("revision-v1:").is_some_and(|digest| digest.parse::<latent_core::ArtifactBlobDigest>().is_ok()),
+                "invalid-revision",
+                "revision must be a canonical revision-v1:sha256: identity with 64 lowercase hexadecimal characters",
             ),
             r"^[A-Za-z0-9_.]+(?:-[A-Za-z0-9_.]+){2,}(?![\s\S])" => (
                 crate::runtime_compatibility::model::target(value),

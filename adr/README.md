@@ -105,3 +105,7 @@ ownership while keeping the original echo recipe unchanged.
 the buffered inbound application contract, canonical HTTP mapping, host-context
 authority and retained response-delivery ownership. It separates an async
 application export from provider availability and from the shared HTTP listener.
+
+[ADR-0036](0036-publish-http-triggers-with-exact-catalog-target-pins.md) binds
+HTTP route metadata and exact publication/deployment targets in one catalog
+transaction, with explicit CAS, bounded receipts and retained request ownership.

@@ -534,6 +534,12 @@ fn validate_capsule_scope(manifest: &CapsuleManifest, violations: &mut Vec<Manif
     if let Some(tenant) = tenant {
         validate_contract_namespace(&manifest.world.0, tenant, "$.component.world", violations);
         for (index, export) in manifest.exports.iter().enumerate() {
+            // This versioned application interface is shared by tenant web
+            // capsules. Exporting it conveys no host capability or tenant grant;
+            // the capsule world and publication retain their own tenant scope.
+            if export.contract.0 == "latent:web/application@0.1.0" {
+                continue;
+            }
             validate_contract_namespace(
                 &export.contract.0,
                 tenant,

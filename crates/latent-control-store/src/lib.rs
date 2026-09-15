@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod deployment_operations;
+pub mod http_routes;
 pub use deployments::bindings;
 mod deployments;
 pub mod rollouts;

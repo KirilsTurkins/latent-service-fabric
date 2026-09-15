@@ -14,6 +14,7 @@ mod policies;
 mod release;
 mod rollouts;
 mod routes;
+mod triggers;
 
 use std::fmt;
 use std::sync::Arc;
@@ -61,6 +62,7 @@ pub struct ManagementServiceAdapter {
     limits: ManagementLimits,
     policies: Option<latent_policy::capability::PolicyControlHandle>,
     capabilities: Option<capabilities::Inspection>,
+    http: Option<Arc<latent_control_store::DirectoryDeploymentRepository>>,
 }
 
 impl ManagementServiceAdapter {
@@ -87,6 +89,7 @@ impl ManagementServiceAdapter {
             limits,
             policies: None,
             capabilities: None,
+            http: None,
         })
     }
 
