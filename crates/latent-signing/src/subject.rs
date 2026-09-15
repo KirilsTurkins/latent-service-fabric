@@ -13,6 +13,7 @@ pub struct PackageSigningSubject {
     component_digest: Option<ArtifactBlobDigest>,
     component_size: Option<u64>,
     web_outputs: Option<latent_artifacts::web::WebBuildOutputs>,
+    renderer: Option<(ArtifactBlobDigest, u64)>,
 }
 
 impl PackageSigningSubject {
@@ -27,6 +28,12 @@ impl PackageSigningSubject {
         let package = inspect_package(manifest_bytes, config_bytes, limits)
             .map_err(|error| map_package_error(&error, SignatureFailure::InvalidSubject))?;
         Ok(Self {
+            renderer: package
+                .config()
+                .layers
+                .iter()
+                .find(|layer| layer.role == LayerRole::Renderer)
+                .map(|layer| (layer.digest.clone(), layer.size)),
             web_outputs: matches!(
                 package.config().kind,
                 PackageKind::BrowserAssets | PackageKind::SsrPackage
@@ -70,5 +77,9 @@ impl PackageSigningSubject {
     #[must_use]
     pub fn web_outputs(&self) -> Option<&latent_artifacts::web::WebBuildOutputs> {
         self.web_outputs.as_ref()
+    }
+
+    pub(crate) fn renderer(&self) -> Option<(&ArtifactBlobDigest, u64)> {
+        self.renderer.as_ref().map(|(digest, size)| (digest, *size))
     }
 }

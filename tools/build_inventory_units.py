@@ -58,7 +58,8 @@ def _pairs(items):
     return result
 
 
-def collect_units(output: str, build_root: Path, limits: InventoryLimits = InventoryLimits()) -> tuple[CargoUnit, ...]:
+def collect_units(output: str, build_root: Path, limits: InventoryLimits = InventoryLimits(), *,
+                  component_library: str | None = None) -> tuple[CargoUnit, ...]:
     """Private paths remain local join/ownership data and must never be exported."""
     limits.validate()
     if not isinstance(output, str) or len(output.encode("utf-8")) > 8 * 1024 * 1024:
@@ -134,7 +135,12 @@ def collect_units(output: str, build_root: Path, limits: InventoryLimits = Inven
                 raise SnapshotError("captured Cargo example is outside the maintained recipe")
             role = "component"
         elif set(kinds) <= {"lib", "rlib", "dylib", "cdylib", "staticlib"}:
-            role = "guest-dependency" if domain == "guest" else "build-dependency"
+            if component_library is not None and name == component_library:
+                if domain != "guest" or crate_types != ("cdylib",):
+                    raise SnapshotError("selected component library is not a guest cdylib")
+                role = "component"
+            else:
+                role = "guest-dependency" if domain == "guest" else "build-dependency"
         else:
             raise SnapshotError("captured Cargo unit kind is unsupported")
         units.add(CargoUnit(identity, manifest, role, name))

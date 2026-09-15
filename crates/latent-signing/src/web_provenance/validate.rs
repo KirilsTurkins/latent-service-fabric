@@ -1,4 +1,4 @@
-use super::{WebBuildObservation, WEB_ASSEMBLY_BUILD_TYPE};
+use super::{WebBuildObservation, WebBuildRecipe, ANGULAR_BUILD_TYPE, WEB_ASSEMBLY_BUILD_TYPE};
 use crate::{provenance, ProvenanceLimits, SignatureFailure, SignatureResult};
 use std::collections::BTreeSet;
 
@@ -22,14 +22,17 @@ pub(crate) fn validate_observation(
         (&value.outputs_digest, 71),
         (&value.reproducibility, 32),
         (&value.dependency_completeness, 32),
-        (&value.parameters.assembler, 64),
-        (&value.parameters.input_mode, 32),
     ] {
         if text.capacity() > maximum {
             return Err(SignatureFailure::ResourceLimit.into());
         }
     }
-    if value.format_version != 1 || value.build_type != WEB_ASSEMBLY_BUILD_TYPE {
+    if value.format_version != 1
+        || !matches!(
+            value.build_type.as_str(),
+            WEB_ASSEMBLY_BUILD_TYPE | ANGULAR_BUILD_TYPE
+        )
+    {
         return Err(SignatureFailure::UnsupportedProfile.into());
     }
     provenance::validate_repository(&value.source.repository)?;
@@ -56,11 +59,22 @@ pub(crate) fn validate_observation(
     {
         return Err(SignatureFailure::MalformedProvenance.into());
     }
-    if value.parameters.assembler != "lsf-web-package-assembly"
-        || value.parameters.recipe_version != 1
-        || value.parameters.input_mode != "explicit-supplied-files"
-    {
-        return Err(SignatureFailure::PredicateDisallowed.into());
+    match (&value.parameters, value.build_type.as_str()) {
+        (WebBuildRecipe::Assembly(recipe), WEB_ASSEMBLY_BUILD_TYPE) => {
+            if recipe.assembler.capacity() > 64 || recipe.input_mode.capacity() > 32 {
+                return Err(SignatureFailure::ResourceLimit.into());
+            }
+            if recipe.assembler != "lsf-web-package-assembly"
+                || recipe.recipe_version != 1
+                || recipe.input_mode != "explicit-supplied-files"
+            {
+                return Err(SignatureFailure::PredicateDisallowed.into());
+            }
+        }
+        (WebBuildRecipe::Angular(recipe), ANGULAR_BUILD_TYPE) => {
+            super::angular::validate(recipe, &value.materials)?;
+        }
+        _ => return Err(SignatureFailure::PredicateDisallowed.into()),
     }
     materials(value)?;
     Ok(())

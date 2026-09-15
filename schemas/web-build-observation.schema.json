@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://latent.dev/schemas/v1/web-build-observation.schema.json",
-  "title": "LSF supplied-file web package assembly observation",
-  "$comment": "Unsigned data; builder authentication is separate. Snapshot revision equals its digest hex. Exact ordered output descriptors exclude only package/sbom.cdx.json and package/build-inputs.json; full package identity authenticates both. Rust also checks byte/capacity bounds, distinct materials, source association and ordered timestamps within one hour. This profile asserts supplied-file assembly, not Angular compilation or hermetic builds.",
+  "title": "LSF web build observation",
+  "$comment": "Unsigned data. Legacy supplied-file assembly and actual Angular compilation require separately approved build types. Exact output descriptors exclude only package/sbom.cdx.json and package/build-inputs.json to avoid digest cycles; the full package authenticates both. Rust additionally checks profile and renderer identities, distinct materials, byte/capacity bounds and ordered timestamps within one hour. Neither profile asserts hermeticity or complete dependencies.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -25,7 +25,10 @@
       "const": 1
     },
     "buildType": {
-      "const": "https://latent.dev/build/web-package-assembly/v1"
+      "enum": [
+        "https://latent.dev/build/web-package-assembly/v1",
+        "https://latent.dev/build/angular-component/v1"
+      ]
     },
     "source": {
       "type": "object",
@@ -150,24 +153,70 @@
       ]
     },
     "parameters": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "assembler",
-        "recipeVersion",
-        "inputMode"
-      ],
-      "properties": {
-        "assembler": {
-          "const": "lsf-web-package-assembly"
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "assembler",
+            "recipeVersion",
+            "inputMode"
+          ],
+          "properties": {
+            "assembler": {
+              "const": "lsf-web-package-assembly"
+            },
+            "recipeVersion": {
+              "const": 1
+            },
+            "inputMode": {
+              "const": "explicit-supplied-files"
+            }
+          }
         },
-        "recipeVersion": {
-          "const": 1
-        },
-        "inputMode": {
-          "const": "explicit-supplied-files"
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "compiler",
+            "recipeVersion",
+            "rendererProfile",
+            "profileDigest",
+            "rendererDigest",
+            "rendererSize",
+            "maxHydrationBytes",
+            "lifecycleScripts"
+          ],
+          "properties": {
+            "compiler": {
+              "const": "lsf-angular-component"
+            },
+            "recipeVersion": {
+              "const": 1
+            },
+            "rendererProfile": {
+              "const": "angular-ssr-component-v1"
+            },
+            "profileDigest": {
+              "$ref": "#/$defs/digest"
+            },
+            "rendererDigest": {
+              "$ref": "#/$defs/digest"
+            },
+            "rendererSize": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 33554432
+            },
+            "maxHydrationBytes": {
+              "const": 32768
+            },
+            "lifecycleScripts": {
+              "const": false
+            }
+          }
         }
-      }
+      ]
     },
     "startedAt": {
       "$ref": "#/$defs/time"
@@ -231,5 +280,315 @@
       "maxLength": 512,
       "pattern": "^https://(?=[^/]{1,253}/)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+(?:/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+)*(?![\\s\\S])"
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "buildType": {
+            "const": "https://latent.dev/build/angular-component/v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "compiler",
+              "recipeVersion",
+              "rendererProfile",
+              "profileDigest",
+              "rendererDigest",
+              "rendererSize",
+              "maxHydrationBytes",
+              "lifecycleScripts"
+            ],
+            "properties": {
+              "compiler": {
+                "const": "lsf-angular-component"
+              },
+              "recipeVersion": {
+                "const": 1
+              },
+              "rendererProfile": {
+                "const": "angular-ssr-component-v1"
+              },
+              "profileDigest": {
+                "$ref": "#/$defs/digest"
+              },
+              "rendererDigest": {
+                "$ref": "#/$defs/digest"
+              },
+              "rendererSize": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 33554432
+              },
+              "maxHydrationBytes": {
+                "const": 32768
+              },
+              "lifecycleScripts": {
+                "const": false
+              }
+            }
+          },
+          "materials": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "node"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "cargo"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "rustc"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "wasm-tools"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "dependency-lock"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "npm-lock"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "npm-tree"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "javascript-embedding"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "async-adapter"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "adapter-source"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "public-wit"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "private-wit"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "renderer-component"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "angular-server-bundle"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "const": "angular-client-bundle"
+                    }
+                  }
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "assembler",
+              "recipeVersion",
+              "inputMode"
+            ],
+            "properties": {
+              "assembler": {
+                "const": "lsf-web-package-assembly"
+              },
+              "recipeVersion": {
+                "const": 1
+              },
+              "inputMode": {
+                "const": "explicit-supplied-files"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

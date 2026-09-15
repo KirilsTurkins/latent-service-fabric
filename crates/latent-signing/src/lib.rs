@@ -48,8 +48,9 @@ pub use signer::LocalSigner;
 pub use subject::PackageSigningSubject;
 pub use verify::{PublisherVerifier, VerifiedPackageSignature};
 pub use web_provenance::{
-    decode_web_build_observation, inspect_web_provenance, UnverifiedWebProvenance,
-    WebAssemblyRecipe, WebBuildObservation, WEB_ASSEMBLY_BUILD_TYPE, WEB_PROVENANCE_PREDICATE_TYPE,
+    decode_web_build_observation, inspect_web_provenance, AngularBuildRecipe,
+    UnverifiedWebProvenance, WebAssemblyRecipe, WebBuildObservation, WebBuildRecipe,
+    ANGULAR_BUILD_TYPE, WEB_ASSEMBLY_BUILD_TYPE, WEB_PROVENANCE_PREDICATE_TYPE,
 };
 
 /// The v1 signature profile's maximum lifetime, in seconds.
