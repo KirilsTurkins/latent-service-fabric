@@ -135,6 +135,15 @@ impl PreparationContext {
                 )
             })?;
         }
+        if let Some(provider) = self.random() {
+            crate::host::random::install(&mut linker, provider).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind random import",
+                    false,
+                )
+            })?;
+        }
         if let Some(invoker) = self.secrets() {
             crate::host::secrets::install(&mut linker, invoker).map_err(|_| {
                 platform_error(
@@ -169,6 +178,11 @@ impl PreparationContext {
         &self,
     ) -> Option<Arc<dyn latent_capabilities::broker::events::EventPublisher>> {
         self.capabilities.as_ref()?.upgrade()?.events().ok()
+    }
+    pub(super) fn random(
+        &self,
+    ) -> Option<Arc<latent_capabilities::broker::random::RandomProvider>> {
+        self.capabilities.as_ref()?.upgrade()?.random().ok()
     }
     pub(super) fn secrets(
         &self,

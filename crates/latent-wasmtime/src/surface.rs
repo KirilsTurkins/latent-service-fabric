@@ -62,10 +62,12 @@ pub(crate) struct Providers {
     pub blobs: bool,
     pub secrets: bool,
     pub events: bool,
+    pub random: bool,
 }
 impl Providers {
     fn supports(self, name: &str) -> bool {
         (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
+            || (self.random && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
             || (self.secrets && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
             || (self.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
             || (self.local_services

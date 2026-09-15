@@ -14,7 +14,7 @@ web and SDK work without claiming it has shipped.
 | `latent:context` | Implemented filtered activation identity, trace, deadline, metadata and remaining budget. |
 | `latent:log` | Implemented budgeted structured logging. |
 | `latent:clock` | Implemented monotonic and wall-clock interfaces. |
-| `latent:random` | Declared; budgeted cryptographic randomness is Phase 3. |
+| `latent:random` | Implemented configured [OS cryptographic randomness](runtime/random.md) with per-call and shared activation limits. |
 | `latent:blob` | Implemented configured Linux [immutable blobs](runtime/local-blobs.md) at 0.2.0; S3 remains Phase 3 work. |
 | `latent:http` | Implemented configured [buffered](runtime/outbound-http.md) and [streaming](runtime/streaming-http.md) providers. |
 | `latent:secrets` | Implemented configured [protected local references](runtime/local-secrets.md), rotation and opaque credentials, plus the [Vault KV-v2 provider](runtime/vault-secrets.md). |

@@ -1575,6 +1575,7 @@ dependencies = [
 name = "latent-capabilities"
 version = "0.1.0-alpha.3"
 dependencies = [
+ "getrandom 0.4.3",
  "latent-activation",
  "latent-artifacts",
  "latent-audit",
@@ -1583,6 +1584,7 @@ dependencies = [
  "latent-manifest",
  "latent-policy",
  "latent-routing",
+ "rustix",
  "serde",
  "serde_json",
  "sha2 0.10.9",

@@ -92,6 +92,7 @@ pub(super) struct SessionCore {
     pub probe: Arc<dyn ExecutionCancellationProbe>,
     pub stats: Arc<Stats>,
     pub state: Mutex<SessionState>,
+    pub random_bytes: AtomicUsize,
     _metadata: Charge,
     _slot: Charge,
 }
@@ -301,6 +302,7 @@ impl ActivationCapabilityBroker {
             deadline: deadline.clone(),
             probe,
             stats,
+            random_bytes: AtomicUsize::new(0),
             state: Mutex::new(SessionState {
                 slots: (0..self.inner.limits.maximum_handles_per_session)
                     .map(|_| None)
@@ -464,6 +466,11 @@ impl CapabilitySession {
     pub fn deadline(&self) -> Result<std::time::Instant, PlatformError> {
         self.core.check()?;
         self.core.deadline.monotonic().ok_or_else(denied)
+    }
+    /// Check cancellation, closure and an optional deadline. This does not
+    /// authorize a provider call or refresh its pinned grants.
+    pub fn check_liveness(&self) -> Result<(), PlatformError> {
+        self.core.check()
     }
 
     #[must_use]

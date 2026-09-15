@@ -180,6 +180,7 @@ impl super::super::PreparationContext {
                 blobs: self.blobs().is_some(),
                 secrets: self.secrets().is_some(),
                 events: self.events().is_some(),
+                random: self.random().is_some(),
             },
         )?;
         let metadata_bytes = input
