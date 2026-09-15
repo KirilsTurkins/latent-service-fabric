@@ -3,17 +3,23 @@
 Capsules never own listeners, queue-consumer loops, or timer threads. Shared ingress adapters and trigger sources translate external activity into activation envelopes.
 
 The completed Phase 2 node exposes direct invocation RPC on its authenticated
-loopback listener. Phase 3 plans HTTP ingress, event delivery and bounded local
-service calls. Durable workflow timers belong to Phase 6; blob-trigger adapters
-also remain future work. The trigger lifecycle below is an architectural
-contract, not a current background service. See the [roadmap](../roadmap.md).
+loopback listener. Phase 3 provides [bounded local service calls](../runtime/local-service-invocation.md),
+[shared NATS trigger delivery](../runtime/nats-triggers.md), and the
+[bounded HTTP application mapping](../protocol/http-applications.md). The shared
+HTTP listener and durable HTTP routes remain separate Phase 3 deliveries.
+Durable workflow timers belong to Phase 6; blob-trigger adapters also remain
+future work. See the [roadmap](../roadmap.md).
 See the [invocation service](../protocol/invocation-service.md) for available calls.
 
 ## Ingress adapters
 
 An adapter terminates one protocol, authenticates or extracts a principal, maps protocol metadata to an invocation target, applies payload limits, and converts the activation outcome back into a protocol response.
 
-Planned protocol classes are HTTP, direct RPC, events, queues, timers, blobs, and internal calls. Future implementations may support multiple concrete products behind one class.
+Protocol classes are HTTP, direct RPC, events, queues, timers, blobs, and internal
+calls. Declaring a class does not install its adapter. Current NATS triggers use
+shared durable consumer ownership; current HTTP application types use a bounded
+collector/invocation/delivery owner, preserve repeated headers and obtain identity
+from host context. Capsules own no protocol listener.
 
 ## Trigger lifecycle
 

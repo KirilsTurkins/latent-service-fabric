@@ -85,6 +85,14 @@ bench = false
 doc = false
 
 [[example]]
+name = "web-contract"
+path = "examples/web_contract/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
 name = "guest-streaming"
 path = "examples/guest_streaming/component.rs"
 crate-type = ["cdylib"]

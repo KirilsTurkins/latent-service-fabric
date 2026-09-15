@@ -8,10 +8,17 @@ declaration order on input, and results in declaration order on output. A functi
 with no parameters or results uses `[]`. Names identifying the contract and method
 belong to the invocation envelope, not this array.
 
-This version supports synchronous component functions exposed through component
-interfaces. It does not give clients WASI, resource handles, streams, futures, or
+This value representation supports synchronous and selected canonical-async
+application functions exposed through component interfaces. Function kind is
+checked exactly and does not require an unrelated provider. It does not give
+clients WASI, resource handles, streams, futures, or
 an alternate transport. HTTP and SDK byte payloads must use the same framing when
 targeting the generic backend.
+
+The [inbound HTTP application profile](http-applications.md) uses an explicit
+`body-base64: string` field for its raw body. That new WIT field follows the
+ordinary string mapping below; it does not change the representation of
+`list<u8>` or any existing invocation contract.
 
 ## Value mapping
 
