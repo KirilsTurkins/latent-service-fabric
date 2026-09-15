@@ -30,6 +30,27 @@ class SourceTraversalTests(unittest.TestCase):
         validator.ERRORS.clear()
         validator.WARNINGS.clear()
 
+    def test_tool_binary_and_library_sources_are_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "Cargo.toml").write_text(
+                '[workspace]\nmembers = ["tools/probe"]\n', encoding="utf-8")
+            member = root / "tools/probe"
+            (member / "src").mkdir(parents=True)
+            (member / "Cargo.toml").write_text(
+                '[package]\nname = "probe"\n', encoding="utf-8")
+            with patch.object(validator, "ROOT", root):
+                validator.validate_workspace()
+                self.assertEqual(len(validator.ERRORS), 1)
+                self.assertIn("workspace member source missing", validator.ERRORS[0])
+                validator.ERRORS.clear()
+                (member / "src/main.rs").write_text("fn main() {}", encoding="utf-8")
+                validator.validate_workspace()
+                self.assertEqual(validator.ERRORS, [])
+                (member / "src/main.rs").rename(member / "src/lib.rs")
+                validator.validate_workspace()
+                self.assertEqual(validator.ERRORS, [])
+
     def test_generated_directories_are_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -43,6 +64,9 @@ class SourceTraversalTests(unittest.TestCase):
                 root / "sdk/java-client/build",
                 root / "sdk/dotnet/Latent.Sdk/bin",
                 root / "sdk/dotnet/Latent.Sdk/obj",
+                root / "examples/renderer-profile/dist",
+                root / "examples/renderer-profile/compiled",
+                root / "examples/renderer-profile/transpiled",
             ]
             for generated in generated_paths:
                 generated.mkdir(parents=True)
@@ -65,6 +89,22 @@ class SourceTraversalTests(unittest.TestCase):
             validator.validate_json(root)
             self.assertEqual(len(validator.ERRORS), 1)
             self.assertIn("src/build/broken.json", validator.ERRORS[0])
+
+    def test_wit_ignores_installed_dependencies_but_checks_owned_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            owned = root / "examples/renderer-profile/renderer.wit"
+            generated = owned.parent / "node_modules/vendor/broken.wit"
+            generated.parent.mkdir(parents=True)
+            generated.write_text("invalid dependency WIT", encoding="utf-8")
+            owned.write_text("package lsf:proof;\nworld proof {}", encoding="utf-8")
+            with patch.object(validator, "ROOT", root):
+                validator.validate_wit()
+                self.assertEqual(validator.ERRORS, [])
+                owned.write_text("invalid owned WIT", encoding="utf-8")
+                validator.validate_wit()
+                self.assertEqual(len(validator.ERRORS), 1)
+                self.assertIn("missing WIT package declaration", validator.ERRORS[0])
 
     def test_json_rejects_duplicate_keys_in_each_bad_file(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

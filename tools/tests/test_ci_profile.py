@@ -14,6 +14,19 @@ from tools import ci_profile as profile
 
 
 class ClassificationTests(unittest.TestCase):
+    def test_renderer_proof_follows_its_inputs_and_defaults_to_running(self) -> None:
+        for path in ["Cargo.lock", "Cargo.toml", "tools/renderer-profile/src/main.rs",
+                     "examples/renderer-profile/package-lock.json",
+                     "crates/latent-wasmtime/src/backend.rs", ".github/workflows/ci.yml",
+                     "wit/platform/web/package.wit", "tools/ci_profile.py"]:
+            with self.subTest(path=path):
+                self.assertTrue(profile.classify_paths(["README.md", path]).renderer)
+        self.assertFalse(profile.classify_paths(["README.md"]).renderer)
+        self.assertFalse(profile.classify_paths(["sdk/go/client.go"]).renderer)
+        self.assertTrue(profile.classify_paths([]).renderer)
+        self.assertTrue(profile.classify_event("workflow_dispatch", {}, Path.cwd()).renderer)
+        self.assertTrue(profile.classify_event("push", {}, Path.cwd()).renderer)
+
     def test_only_known_documentation_is_allowlisted(self) -> None:
         allowed = [
             "README.md", "ARCHITECTURE.md", "CONTRIBUTING.md", "VALIDATION.md", "docs/roadmap.md",
@@ -113,7 +126,7 @@ class ClassificationTests(unittest.TestCase):
                     "--github-output", str(output), "--github-step-summary", str(summary)]
             with patch.dict(os.environ, {}, clear=True), contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(profile.main(args), 0)
-            self.assertEqual(output.read_text(), "profile=full\nreason=manual-dispatch\nchanged_files=0\n")
+            self.assertEqual(output.read_text(), "profile=full\nreason=manual-dispatch\nchanged_files=0\nrenderer=true\n")
             self.assertIn("manual-dispatch", summary.read_text())
 
 

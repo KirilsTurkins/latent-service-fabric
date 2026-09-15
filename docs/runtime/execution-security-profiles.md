@@ -111,3 +111,9 @@ allocations or node RSS. Native deserialization remains a synchronous trusted
 node operation. Provider/renderer containment, cross-capability isolation and
 Phase 3's integrated completion evidence remain assigned to their owning tickets.
 Dormant deployments acquire no process, thread, listener, compiler or guest state.
+
+The [Angular renderer qualification](angular-renderer-profile.md) evaluates a
+closed Component Model candidate and a Node compatibility host against these
+trust classes. Its T0 fixture does not add a node security selector or certify
+T1/T2 support; enforced admission, isolated compilation and the production
+renderer adapter remain separate gates.

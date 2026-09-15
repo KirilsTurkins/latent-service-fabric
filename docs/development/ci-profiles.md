@@ -41,3 +41,11 @@ replace tests. The run summary records the selected profile, reason and changed
 file count. Inspect those fields before attributing a shorter run to caching.
 To force a complete check without a code change, manually dispatch CI on the
 branch with the heavy catalog option left false.
+
+Within the full Rust job, the Angular qualification step reuses the already
+built Rust probe. It runs for renderer sources, the Wasmtime/bindings crates,
+the web WIT, Cargo/toolchain inputs and the CI selector/workflow. Empty or
+uncertain comparisons and manual dispatch select it too. Unrelated source
+changes do not rebuild Angular; documentation-only changes still skip Rust.
+The step uses a separate locked npm cache, disables dependency lifecycle scripts,
+and executes native Wasmtime failure probes plus actual browser hydration.

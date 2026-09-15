@@ -38,6 +38,7 @@ class Decision:
     profile: str
     reason: str
     changed_files: int
+    renderer: bool = True
 
 
 def documentation_path(name: str) -> bool:
@@ -67,8 +68,16 @@ def classify_paths(paths: list[str]) -> Decision:
     if len(paths) > MAX_PATHS:
         return Decision("full", "diff-limit", len(paths))
     if all(documentation_path(path) for path in paths):
-        return Decision("docs", "documentation-only", len(paths))
-    return Decision("full", "non-documentation-path", len(paths))
+        return Decision("docs", "documentation-only", len(paths), renderer=False)
+    renderer = any(
+        path in {"Cargo.toml", "Cargo.lock", ".cargo/config.toml", "rust-toolchain.toml",
+                 ".github/workflows/ci.yml", "tools/ci_profile.py", "tools/toolchain.toml"}
+        or path.startswith(("examples/renderer-profile/", "tools/renderer-profile/",
+                            "crates/latent-wasmtime/", "crates/latent-component-bindings/",
+                            "wit/platform/web/"))
+        for path in paths
+    )
+    return Decision("full", "non-documentation-path", len(paths), renderer=renderer)
 
 
 def git_command(repo: Path, *arguments: str, allow_failure: bool = False) -> bytes | None:
@@ -258,14 +267,15 @@ def main(argv: list[str] | None = None) -> int:
             raise ProfileError("missing-event-input")
         decision = classify_event(args.event_name, read_event(args.event_path), args.repo)
         summary = (f"CI profile: {decision.profile}; reason: {decision.reason}; "
-                   f"changed paths: {decision.changed_files}")
+                   f"changed paths: {decision.changed_files}; renderer: {decision.renderer}")
         if args.github_step_summary:
             with args.github_step_summary.open("a", encoding="utf-8") as target:
                 target.write(summary + "\n")
         if args.github_output:
             with args.github_output.open("a", encoding="utf-8") as target:
                 target.write(f"profile={decision.profile}\nreason={decision.reason}\n"
-                             f"changed_files={decision.changed_files}\n")
+                             f"changed_files={decision.changed_files}\n"
+                             f"renderer={str(decision.renderer).lower()}\n")
         print(summary)
         return 0
     except (ProfileError, OSError, ValueError, TypeError, RecursionError, subprocess.SubprocessError) as error:

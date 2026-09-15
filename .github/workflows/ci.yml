@@ -28,6 +28,7 @@ jobs:
       profile: ${{ steps.select.outputs.profile }}
       reason: ${{ steps.select.outputs.reason }}
       changed_files: ${{ steps.select.outputs.changed_files }}
+      renderer: ${{ steps.select.outputs.renderer }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Classify the complete change
@@ -131,6 +132,24 @@ jobs:
           cargo test --workspace --all-targets --all-features --locked
           cargo test -p latent-admission -p latent-scheduler --doc --locked
           cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests
+
+      - name: Set up the qualified Angular build runtime
+        if: needs.profile.outputs.renderer == 'true'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: examples/renderer-profile/package-lock.json
+      - name: Qualify bounded Angular SSR and browser hydration
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 10
+        working-directory: examples/renderer-profile
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build
+          node node-candidate.mjs
+          timeout 480 ../../target/debug/latent-renderer-profile dist/renderer.wasm dist/wasmtime-rendered.html
+          node hydrate.mjs "$(command -v google-chrome)"
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:

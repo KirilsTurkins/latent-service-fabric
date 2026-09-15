@@ -47,6 +47,7 @@ members = [
     "tools/toolchain-smoke",
     "tools/optimization-workloads",
     "tools/optimization-bench",
+    "tools/renderer-profile",
 ]
 
 [workspace.package]

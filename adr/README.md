@@ -109,3 +109,8 @@ application export from provider availability and from the shared HTTP listener.
 [ADR-0036](0036-publish-http-triggers-with-exact-catalog-target-pins.md) binds
 HTTP route metadata and exact publication/deployment targets in one catalog
 transaction, with explicit CAS, bounded receipts and retained request ownership.
+
+[ADR-0037](0037-qualify-a-closed-angular-component-renderer-profile.md) selects
+a closed Angular Component Model renderer candidate using executable SSR,
+hydration and resource-bound evidence. It keeps production adapter/build work
+and unsupported stronger isolation profiles explicit.
