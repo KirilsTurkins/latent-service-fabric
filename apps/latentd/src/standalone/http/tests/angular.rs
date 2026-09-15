@@ -10,7 +10,7 @@ use latent_executor::ExecutionBackend;
 use latent_ingress::http;
 use latent_manifest::RendererRequirement;
 use serde_json::json;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tempfile::TempDir;
 use tokio::io::AsyncWriteExt;
 
@@ -57,16 +57,24 @@ async fn actual_angular_http_queue_disconnect_recovery_and_revocation() {
     key.publication.clone_from(&revision.publication);
     // Preparation is a bounded shared control operation, outside the request's
     // five-second activation budget. It cannot retain an application instance.
+    // Debug compilation exceeded five minutes on a shared CI runner. Leave
+    // headroom for it within the harness's existing ten-minute process limit;
+    // the request and cleanup deadlines below are unchanged.
+    let preparation_started = Instant::now();
     let ready = tokio::time::timeout(
-        Duration::from_mins(5),
+        Duration::from_mins(8),
         fixture
             .node
             .backend
             .prepare_ready_from_repository(fixture.artifacts.clone(), key),
     )
     .await
-    .unwrap()
+    .expect("debug Angular preparation exceeded the eight-minute gate budget")
     .unwrap();
+    eprintln!(
+        "Angular HTTP: preparation finished in {:?}",
+        preparation_started.elapsed()
+    );
     drop(fixture.node.backend.materialize_ready(ready).unwrap());
     assert_eq!(fixture.node.backend.resource_snapshot().stores_created, 0);
     let response = call(&fixture, "/").await;
