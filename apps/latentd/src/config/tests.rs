@@ -7,6 +7,7 @@ use tempfile::TempDir;
 mod budgets;
 mod connection_limits;
 mod engine;
+mod renderer;
 mod security;
 
 use super::{input, CellConfig, CredentialRole, NodeConfig, NodeSettings, MIB};

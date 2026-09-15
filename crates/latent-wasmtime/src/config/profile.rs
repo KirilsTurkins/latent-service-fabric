@@ -85,6 +85,12 @@ impl WasmtimeConfig {
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
         if mode == DispatchMode::Generic {
+            if self.angular_renderer {
+                fields.insert(
+                    "renderer-profile-digest".into(),
+                    latent_manifest::RendererRequirement::angular().profile_digest,
+                );
+            }
             fields.insert(
                 "execution-isolation-profile".into(),
                 self.execution_isolation_profile.name().into(),

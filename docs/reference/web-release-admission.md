@@ -37,10 +37,12 @@ authenticated AOT identity remain separate preparation inputs.
 `wasm-web-buffered-v1` validates the exact public async
 `latent:web/application@0.1.0` export and the closed supported context imports.
 Validation uses bounded structural and WIT checks without compiling or executing
-untrusted Wasm. The identity of `angular-ssr-component-v1` is recognizable, but
-admission returns `web-renderer-profile-not-installed` until #233 installs its
-adapter. The [Angular qualification](../runtime/angular-renderer-profile.md)
-uses a private synchronous proof ABI and does not satisfy the public interface.
+untrusted Wasm. `angular-ssr-component-v1` now validates the composed public
+adapter with separate finite binary-work ceilings and the unchanged public WIT
+limits. The [installed renderer](../runtime/angular-renderer-runtime.md) requires
+an explicit node profile. The original private synchronous qualification ABI
+still fails the public interface check. Checked web publication is not yet a
+callable capsule or deployment grant; #226 supplies that authority integration.
 
 ## Publisher, builder and inventory policy
 

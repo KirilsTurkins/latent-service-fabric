@@ -124,3 +124,8 @@ defines the shared HTTP/TLS listener, explicit authentication and proxy profiles
 finite connection residency, exact selected admission and retained cleanup/write
 ownership. Its narrow Connection-header rule supersedes that part of ADR-0035;
 the bounded application mapping remains unchanged.
+
+[ADR-0040](0040-run-the-closed-angular-adapter-in-fresh-generic-stores.md)
+installs the closed Angular adapter in fresh generic Stores with explicit profile
+identity, finite callback/binary budgets and the existing HTTP cleanup ownership.
+T1 remains gated on observed Angular build and web deployment authority.

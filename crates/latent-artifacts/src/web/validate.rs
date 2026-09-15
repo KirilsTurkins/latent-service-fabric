@@ -1,8 +1,8 @@
 use super::{
     exhausted, incompatible, invalid, CheckedWebLayout, WebApplicationManifest, WebAsset,
-    WebRenderMode, WebRendererProfile, MAX_WEB_ASSETS, MAX_WEB_ASSET_BYTES,
-    MAX_WEB_ASSET_TREE_BYTES, MAX_WEB_MANIFEST_BYTES, MAX_WEB_RENDERER_BYTES, MAX_WEB_ROUTES,
-    WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
+    WebRenderMode, MAX_WEB_ASSETS, MAX_WEB_ASSET_BYTES, MAX_WEB_ASSET_TREE_BYTES,
+    MAX_WEB_MANIFEST_BYTES, MAX_WEB_RENDERER_BYTES, MAX_WEB_ROUTES, WEB_MANIFEST_PATH,
+    WEB_RELEASE_PROFILE,
 };
 use crate::package::{
     artifact_blob_digest, validate_package_json, validate_package_path, verify_layer_bytes,
@@ -57,30 +57,7 @@ pub fn asset_tree_digest(assets: &Vec<WebAsset>) -> Result<ArtifactBlobDigest, P
     Ok(finish(hash))
 }
 
-/// Portable contract/profile identity. Native engine target/CPU/settings keys
-/// remain separate preparation inputs; this does not authenticate native code.
-#[must_use]
-pub fn renderer_profile_digest(profile: WebRendererProfile) -> ArtifactBlobDigest {
-    let mut hash = Sha256::new();
-    part(&mut hash, b"lsf-web-renderer-compatibility-v1");
-    part(
-        &mut hash,
-        include_bytes!("../../../../wit/platform/web/package.wit"),
-    );
-    part(
-        &mut hash,
-        include_bytes!("../../../../wit/host-abi-phase3-v4.json"),
-    );
-    part(
-        &mut hash,
-        b"wasmtime-47.0.4;fresh-store;on-demand;cranelift-speed;buffered-v1",
-    );
-    part(&mut hash, match profile {
-        WebRendererProfile::WasmWebBufferedV1 => b"wasm-web-buffered-v1",
-        WebRendererProfile::AngularSsrComponentV1 => b"angular-ssr-component-v1;angular-22.1.6;componentize-js-0.22.0;zero-delay-256;microtasks-4096;no-ambient-io",
-    });
-    finish(hash)
-}
+pub use latent_manifest::renderer_profile_digest;
 
 /// Checks the exact manifest blob and every declared descriptor association.
 /// Callers must separately verify all layer bytes, renderer semantics and trust.

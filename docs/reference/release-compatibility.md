@@ -206,3 +206,9 @@ The Python checks validate the actual JSON example above and reject closed-field
 null, duplicate and collection-limit violations. Rust checks establish semantic
 version ordering, actual host support and the comparison result. These checks do
 not run a large load benchmark or start a guest for contract analysis.
+
+The optional `compatibility.renderer` object names `profile` and its canonical
+`profileDigest`. The installed [Angular profile](../runtime/angular-renderer-runtime.md)
+checks both fields against the actual host profile and binds them into immutable
+preparation metadata. Omission preserves existing capsules; `null`, unknown
+fields and noncanonical digests fail. It does not select a tenant or grant execution.

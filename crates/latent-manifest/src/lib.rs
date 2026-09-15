@@ -9,6 +9,7 @@
 
 mod bounded_codec;
 mod json_number;
+mod renderer;
 mod runtime_compatibility;
 mod schema;
 mod validation;
@@ -16,6 +17,7 @@ mod validation;
 mod wire_codec;
 
 pub use bounded_codec::{JsonManifestCodec, ManifestLimits};
+pub use renderer::{renderer_profile_digest, RendererProfile, RendererRequirement};
 pub use runtime_compatibility::{
     check_runtime_compatibility, RuntimeCompatibilityProfile, RuntimeRequirement,
     RuntimeRequirements, CPU_FEATURES,

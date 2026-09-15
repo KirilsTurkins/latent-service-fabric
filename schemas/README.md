@@ -12,7 +12,7 @@ JSON value can enter a typed manifest model. Any model/schema divergence must
 be resolved in favor of the schema or recorded as an API-versioned schema
 change.
 
-The capsule's closed optional runtime/target/CPU requirements are described in
+The capsule's closed optional runtime/target/CPU/renderer requirements are described in
 [release compatibility](../docs/reference/release-compatibility.md). Schema
 success checks their shape; actual host support and structural old/candidate
 comparison require the corresponding Rust checks.
@@ -35,6 +35,7 @@ Optional standalone node members have their own closed schemas:
 
 | Schema | Configuration member |
 | --- | --- |
+| [node-renderer-profile.schema.json](node-renderer-profile.schema.json) | `rendererProfile`: optional closed Angular engine shape; separate from security selection and resource grants. |
 | [node-http-ingress.schema.json](node-http-ingress.schema.json) | Optional shared HTTP/TLS listener, explicit principal/proxy adapters and finite connection/exchange deadlines and reservations. |
 | [node-isolated-aot.schema.json](node-isolated-aot.schema.json) | `isolatedAot`: bounded native compiler/cache configuration and protected host-key path. |
 | [node-audit.schema.json](node-audit.schema.json) | `audit`: optional durable audit resource limits. |

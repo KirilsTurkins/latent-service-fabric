@@ -52,9 +52,16 @@ pub(super) fn wasmtime(
     }
     runtime.value_codec_limits.max_input_bytes = config.limits.maximum_payload_bytes;
     runtime.value_codec_limits.max_output_bytes = config.limits.maximum_payload_bytes;
-    if config.http_ingress.is_some() {
+    if config.renderer_profile.is_some() {
+        if config.renderer_profile != Some(latent_manifest::RendererProfile::AngularSsrComponentV1)
+        {
+            return Err(invalid("rendererProfile"));
+        }
+        runtime.install_angular_renderer();
+    }
+    if config.http_ingress.is_some() || config.renderer_profile.is_some() {
         if config.limits.maximum_payload_bytes < latent_ingress::http::MAX_WIRE_BYTES {
-            return Err(invalid("httpIngress.maximumPayloadBytes"));
+            return Err(invalid("limits.maximumPayloadBytes"));
         }
         // Explicit buffered HTTP profile; these settings participate in engine
         // identity before catalog compatibility or authenticated AOT loading.

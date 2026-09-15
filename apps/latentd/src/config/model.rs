@@ -29,6 +29,8 @@ pub struct NodeConfig {
     pub execution: ExecutionConfig,
     #[serde(default)]
     pub engine: EngineConfig,
+    #[serde(default, deserialize_with = "super::renderer::present")]
+    pub renderer_profile: Option<latent_manifest::RendererProfile>,
     #[serde(default)]
     pub limits: LimitConfig,
     #[serde(default)]

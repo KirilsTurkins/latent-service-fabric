@@ -42,16 +42,13 @@ pub fn validate_web_renderer(
     mut limits: SemanticLimits,
 ) -> Result<CheckedSurface, PlatformError> {
     limits.validate()?;
-    // ADR-0037 qualified a private synchronous Angular probe. The production
-    // async adapter and its installation gate belong to #233; never relabel the
-    // probe as the public web ABI or infer its restrictions from a manifest.
-    if profile != WebRendererProfile::WasmWebBufferedV1 {
-        return Err(incompatible("web-renderer-profile-not-installed"));
-    }
     let renderer_maximum = usize::try_from(MAX_WEB_RENDERER_BYTES)
         .map_err(|_| super::exhausted("component-byte-limit"))?;
     limits.max_component_bytes = limits.max_component_bytes.min(renderer_maximum);
-    wasm::validate(component, limits)?;
+    match profile {
+        WebRendererProfile::WasmWebBufferedV1 => wasm::validate(component, limits)?,
+        WebRendererProfile::AngularSsrComponentV1 => wasm::validate_renderer(component, limits)?,
+    }
     let (source, world) = public_world()?;
     let declared = compare::surface(&source, world, limits)?;
     let decoded = wit_parser::decoding::decode(component)
@@ -129,7 +126,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn public_contract_is_async_and_private_renderer_profiles_do_not_install_themselves() {
+    fn public_contract_is_async_and_a_profile_name_never_substitutes_for_a_component() {
         let (source, world) = public_world().unwrap();
         let declared = compare::surface(&source, world, SemanticLimits::default()).unwrap();
         assert_eq!(declared.exports.len(), 1);
@@ -137,16 +134,12 @@ mod tests {
             source.interfaces[declared.exports[WEB_CONTRACT]].functions["handle"].kind,
             wit_parser::FunctionKind::AsyncFreestanding
         );
-        assert_eq!(
-            validate_web_renderer(
-                b"\0asm\x0d\0\x01\0",
-                WebRendererProfile::AngularSsrComponentV1,
-                SemanticLimits::default()
-            )
-            .unwrap_err()
-            .message,
-            "web-renderer-profile-not-installed"
-        );
+        assert!(validate_web_renderer(
+            b"\0asm\x0d\0\x01\0",
+            WebRendererProfile::AngularSsrComponentV1,
+            SemanticLimits::default()
+        )
+        .is_err());
         assert!(validate_web_renderer(
             b"\0asm\x0d\0\x01\0",
             WebRendererProfile::WasmWebBufferedV1,

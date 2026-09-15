@@ -48,6 +48,7 @@ members = [
     "tools/optimization-workloads",
     "tools/optimization-bench",
     "tools/renderer-profile",
+    "tools/angular-renderer-adapter",
 ]
 
 [workspace.package]

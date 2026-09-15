@@ -720,6 +720,12 @@ struct CapsuleCompatibilityWire {
         deserialize_with = "runtime_requirement"
     )]
     runtime: Option<crate::RuntimeRequirement>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "renderer_requirement"
+    )]
+    renderer: Option<crate::RendererRequirement>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     target_triples: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -730,6 +736,12 @@ fn runtime_requirement<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<Option<crate::RuntimeRequirement>, D::Error> {
     crate::RuntimeRequirement::deserialize(deserializer).map(Some)
+}
+
+fn renderer_requirement<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<crate::RendererRequirement>, D::Error> {
+    crate::RendererRequirement::deserialize(deserializer).map(Some)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -812,6 +824,7 @@ impl From<&CapsuleManifest> for CapsuleDocumentWire {
             compatibility: CapsuleCompatibilityWire {
                 minimum_fabric_version: value.minimum_fabric_version.clone(),
                 runtime: value.runtime_requirements.runtime.clone(),
+                renderer: value.runtime_requirements.renderer.clone(),
                 target_triples: value.runtime_requirements.target_triples.clone(),
                 cpu_features: value.runtime_requirements.cpu_features.clone(),
             },
@@ -855,6 +868,7 @@ impl From<CapsuleDocumentWire> for CapsuleManifest {
             minimum_fabric_version: value.compatibility.minimum_fabric_version,
             runtime_requirements: crate::RuntimeRequirements {
                 runtime: value.compatibility.runtime,
+                renderer: value.compatibility.renderer,
                 target_triples: value.compatibility.target_triples,
                 cpu_features: value.compatibility.cpu_features,
             },

@@ -2,6 +2,7 @@
 
 mod compilation;
 pub(super) mod counters;
+mod renderer;
 pub use counters::PreparationActivitySnapshot;
 pub(super) use counters::PreparationCounters;
 

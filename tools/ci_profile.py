@@ -71,10 +71,16 @@ def classify_paths(paths: list[str]) -> Decision:
         return Decision("docs", "documentation-only", len(paths), renderer=False)
     renderer = any(
         path in {"Cargo.toml", "Cargo.lock", ".cargo/config.toml", "rust-toolchain.toml",
-                 ".github/workflows/ci.yml", "tools/ci_profile.py", "tools/toolchain.toml"}
-        or path.startswith(("examples/renderer-profile/", "tools/renderer-profile/",
+                 ".github/workflows/ci.yml", "tools/ci_profile.py", "tools/toolchain.toml",
+                 "tools/native_loader_boundary.py", "schemas/capsule-manifest.schema.json",
+                 "schemas/node-renderer-profile.schema.json"}
+        or path.startswith(("examples/renderer-profile/", "tools/renderer-profile/", "tools/angular-renderer-adapter/",
+                            "tools/build_angular_renderer.py", "tools/run_angular_renderer_tests.py",
+                            "crates/latent-manifest/", "crates/latent-packaging/", "crates/latent-artifacts/",
+                            "apps/latentd/", "crates/latent-executor/", "crates/latent-node/", "crates/latent-ingress/",
                             "crates/latent-wasmtime/", "crates/latent-component-bindings/",
-                            "wit/platform/web/"))
+                            "crates/latent-core/", "crates/latent-admission/", "crates/latent-control-store/",
+                            "wit/platform/web/", "wit/platform/context/", "wit/host-abi-"))
         for path in paths
     )
     return Decision("full", "non-documentation-path", len(paths), renderer=renderer)

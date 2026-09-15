@@ -151,6 +151,20 @@ jobs:
           timeout 480 ../../target/debug/latent-renderer-profile dist/renderer.wasm dist/wasmtime-rendered.html
           node hydrate.mjs "$(command -v google-chrome)"
 
+      - name: Set up the pinned component composer
+        if: needs.profile.outputs.renderer == 'true'
+        uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Build the public Angular renderer fixture
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 10
+        run: python3 tools/build_angular_renderer.py
+      - name: Validate Angular in generic cells and the shared HTTP node
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 15
+        run: python3 tools/run_angular_renderer_tests.py --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --component examples/renderer-profile/dist/runtime/application.wasm
+
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5

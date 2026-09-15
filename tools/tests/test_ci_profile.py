@@ -21,6 +21,12 @@ class ClassificationTests(unittest.TestCase):
                      "wit/platform/web/package.wit", "tools/ci_profile.py"]:
             with self.subTest(path=path):
                 self.assertTrue(profile.classify_paths(["README.md", path]).renderer)
+        for path in ["tools/angular-renderer-adapter/src/lib.rs", "tools/build_angular_renderer.py",
+                     "tools/run_angular_renderer_tests.py", "apps/latentd/src/config/renderer.rs",
+                     "crates/latent-packaging/src/semantics/web.rs", "crates/latent-manifest/src/renderer.rs",
+                     "crates/latent-node/src/lib.rs", "crates/latent-ingress/src/http.rs"]:
+            with self.subTest(path=path):
+                self.assertTrue(profile.classify_paths([path]).renderer)
         self.assertFalse(profile.classify_paths(["README.md"]).renderer)
         self.assertFalse(profile.classify_paths(["sdk/go/client.go"]).renderer)
         self.assertTrue(profile.classify_paths([]).renderer)

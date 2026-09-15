@@ -8,6 +8,7 @@ pub use isolation::ExecutionIsolationProfile;
 mod layout;
 mod pooling;
 mod profile;
+mod renderer;
 mod runtime_compatibility;
 #[cfg(test)]
 mod tests;
@@ -87,6 +88,9 @@ impl CompilerOptimization {
 pub struct WasmtimeConfig {
     /// Required immutable owners and compatibility; never a grant by itself.
     pub execution_isolation_profile: ExecutionIsolationProfile,
+    /// Explicit installation of the closed Angular profile. Ordinary defaults
+    /// never imply support for a JavaScript runtime or an ambient host surface.
+    pub angular_renderer: bool,
     pub target_triple: String,
     pub cpu_feature_set: String,
     pub maximum_component_bytes: usize,
@@ -148,6 +152,7 @@ impl Default for WasmtimeConfig {
     fn default() -> Self {
         Self {
             execution_isolation_profile: ExecutionIsolationProfile::LocalExperimental,
+            angular_renderer: false,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),
             maximum_component_bytes: 16 * 1024 * 1024,
@@ -198,6 +203,7 @@ impl Default for WasmtimeConfig {
 impl WasmtimeConfig {
     pub fn validate(&self) -> Result<(), PlatformError> {
         self.execution_isolation_profile.validate_platform()?;
+        self.validate_renderer()?;
         let positive = [
             self.maximum_component_bytes,
             self.maximum_wasm_stack_bytes,

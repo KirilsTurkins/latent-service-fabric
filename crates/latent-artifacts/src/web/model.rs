@@ -28,12 +28,7 @@ pub struct WebAsset {
     pub media_type: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum WebRendererProfile {
-    WasmWebBufferedV1,
-    AngularSsrComponentV1,
-}
+pub use latent_manifest::RendererProfile as WebRendererProfile;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
