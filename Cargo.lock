@@ -1735,9 +1735,12 @@ name = "latent-nats"
 version = "0.1.0-alpha.3"
 dependencies = [
  "getrandom 0.4.3",
+ "latent-activation",
  "latent-capabilities",
  "latent-core",
+ "latent-node",
  "latent-policy",
+ "latent-routing",
  "rustls",
  "serde",
  "serde_json",

@@ -28,7 +28,7 @@ pub(crate) fn info(line: &[u8]) -> Result<usize> {
 }
 /// Reject deep containers before serde visits ignored extension fields. Borrowed
 /// strings and fixed structures keep server-selected allocations finite.
-fn guard(bytes: &[u8]) -> Result<()> {
+pub(crate) fn guard(bytes: &[u8]) -> Result<()> {
     if bytes.len() > 8192 {
         return Err(EventError::Unavailable);
     }

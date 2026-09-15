@@ -16,7 +16,7 @@ class Client:
         self.count = 0
     def request(self, subject, value):
         self.count += 1
-        if self.count > 32 or not subject.startswith("$JS.API.") or len(subject)>128:
+        if self.count > 512 or not (subject.startswith("$JS.API.") or subject in ("lsf.trigger.a","lsf.trigger.b")) or len(subject)>128:
             raise RuntimeError("fixture control limit exceeded")
         encoded=json.dumps(value,separators=(",",":")).encode()
         if len(encoded)>8192: raise RuntimeError("fixture request too large")
@@ -70,8 +70,31 @@ class Client:
     def run(self,operation):
         if operation=="setup": self.prepare(); return
         if operation=="reset-fixture": self.reset(); return
+        if operation in ("reset-triggers", "reset-many-triggers"):
+            self.reset_triggers(128 if operation=="reset-many-triggers" else 1); return
+        if operation in ("publish-triggers", "publish-poison"):
+            for name in ("a", "b"):
+                response=self.request("lsf.trigger."+name, [] if operation=="publish-triggers" else ["invalid-arity"])
+                if "error" in response: raise RuntimeError("trigger publication failed")
+            return
+        if operation=="trigger-info":
+            print(json.dumps([self.request("$JS.API.CONSUMER.INFO.TRIGGER"+name+".PROCESS",{}) for name in ("A","B")])); return
         if operation=="info":
             info=self.request("$JS.API.STREAM.INFO.ORDERS",{})
             print(json.dumps({"messages":info["state"]["messages"]})); return
         raise RuntimeError("unapproved fixture control operation")
+    def reset_triggers(self,count):
+        for name in ("a","b"):
+            stream="TRIGGER"+name.upper()
+            self.request("$JS.API.STREAM.DELETE."+stream,{})
+            response=self.request("$JS.API.STREAM.CREATE."+stream,{"name":stream,"subjects":["lsf.trigger."+name],
+                "storage":"memory","num_replicas":1,"retention":"limits","max_msgs":32,"max_bytes":1048576,"max_msg_size":1024})
+            if "error" in response: raise RuntimeError("trigger stream setup failed")
+            for index in range(count):
+                consumer="PROCESS" if index==0 else "PROCESS"+str(index)
+                response=self.request("$JS.API.CONSUMER.DURABLE.CREATE."+stream+"."+consumer,{
+                    "stream_name":stream,"config":{"name":consumer,"durable_name":consumer,"filter_subject":"lsf.trigger."+name,
+                    "ack_policy":"explicit","replay_policy":"instant","deliver_policy":"all","ack_wait":3500000000,
+                    "max_deliver":3,"max_waiting":1,"max_ack_pending":1,"max_batch":1,"max_bytes":10240,"max_expires":100000000}})
+                if "error" in response: raise RuntimeError("trigger consumer setup failed: "+str(response["error"]))
 if __name__=="__main__": Client(int(sys.argv[1]),Path(sys.argv[2])).run(sys.argv[3])

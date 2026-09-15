@@ -5,6 +5,7 @@ mod network;
 mod protocol;
 mod provider;
 mod request;
+pub mod triggers;
 pub use config::{NatsConfig, NatsEndpoint, TopicMapping};
 pub use latent_capabilities::broker::events::EventError;
 pub use provider::{NatsCredential, NatsPublisher, NatsSnapshot, NATS_PUBLISH_PROFILE};
