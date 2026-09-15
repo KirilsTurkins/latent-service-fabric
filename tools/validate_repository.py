@@ -91,6 +91,10 @@ def is_generated_directory(path: Path, root: Path) -> bool:
         return True
     if parts[:2] == ("sdk", "dotnet") and path.name in {"bin", "obj"}:
         return True
+    if parts[:2] == ("examples", "renderer-profile") and (
+        path.name in {"compiled", "dist"} or path.name.startswith("transpiled")
+    ):
+        return True
     return False
 
 
@@ -247,6 +251,10 @@ def validate_workspace() -> None:
         if not package.get("name"):
             fail(f"workspace member has no package name: {member}")
         source = directory / "src" / ("main.rs" if member.startswith("apps/") else "lib.rs")
+        # Tools can be reusable libraries or standalone qualification commands.
+        # Keep the existing library/application conventions for product crates.
+        if member.startswith("tools/") and not source.is_file():
+            source = directory / "src" / "main.rs"
         if not source.is_file():
             fail(f"workspace member source missing: {source.relative_to(ROOT)}")
 
@@ -383,7 +391,8 @@ def validate_proto() -> None:
 
 
 def validate_wit() -> None:
-    wit_files = list((ROOT / "wit").rglob("*.wit")) + list((ROOT / "examples").rglob("*.wit"))
+    wit_files = [path for path in files_with_suffix(".wit", ROOT)
+                 if path.relative_to(ROOT).parts[0] in {"wit", "examples"}]
     if not wit_files:
         fail("no WIT definitions found")
         return
