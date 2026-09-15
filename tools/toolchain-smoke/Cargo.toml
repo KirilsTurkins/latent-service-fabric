@@ -74,3 +74,76 @@ wasmtime.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wit-bindgen.workspace = true
+latent-guest = { path = "../../sdk/rust-guest" }
+
+[[example]]
+name = "guest-http"
+path = "examples/guest_http/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "guest-streaming"
+path = "examples/guest_streaming/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "guest-blob"
+path = "examples/guest_blob/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "guest-secrets"
+path = "examples/guest_secrets/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "guest-events"
+path = "examples/guest_events/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "guest-random"
+path = "examples/guest_random/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "guest-metrics"
+path = "examples/guest_metrics/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "guest-service"
+path = "examples/guest_service/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "guest-callee"
+path = "examples/guest_callee/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false

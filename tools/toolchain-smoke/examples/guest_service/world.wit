@@ -1,0 +1,10 @@
+package tests:caller@1.0.0;
+
+interface api {
+    run: async func(which: u32, text: string, handle: u64) -> u64;
+}
+
+world service {
+    import latent:service/invoke@0.1.0;
+    export api;
+}

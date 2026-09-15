@@ -1,0 +1,9 @@
+{
+  "name": "secrets",
+  "package": "tests:local-secrets@1.0.0",
+  "contract": "tests:local-secrets/api@1.0.0",
+  "capability": "latent:secrets/reader@0.1.0",
+  "world": "tests:local-secrets/service@1.0.0",
+  "witDirectory": "secrets",
+  "asynchronous": false
+}

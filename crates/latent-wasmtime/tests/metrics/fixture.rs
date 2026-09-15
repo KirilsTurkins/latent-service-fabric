@@ -101,6 +101,7 @@ impl ExecutionCancellation for Control {
     }
 }
 pub struct Fixture {
+    pub ceiling: latent_core::ResourceBudget,
     pub plan: Arc<CompiledCapabilityPlan>,
     plans: Arc<Plans>,
     pub provider: Arc<latent_capabilities::broker::metrics::MetricProvider>,
@@ -122,14 +123,26 @@ impl Fixture {
     pub async fn new(limits: latent_capabilities::broker::metrics::MetricActivationLimits) -> Self {
         Self::configured(limits, configuration::config(), None).await
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "real catalog, policy and runtime composition in dependency order"
-    )]
     pub async fn configured(
         limits: latent_capabilities::broker::metrics::MetricActivationLimits,
         config: latent_telemetry::custom::CustomMetricsConfig,
         audit: Option<latent_audit::AuditHandle>,
+    ) -> Self {
+        Self::with_publication(limits, config, audit, None).await
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "real catalog, policy and runtime composition in dependency order"
+    )]
+    pub async fn with_publication(
+        limits: latent_capabilities::broker::metrics::MetricActivationLimits,
+        config: latent_telemetry::custom::CustomMetricsConfig,
+        audit: Option<latent_audit::AuditHandle>,
+        publication: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_core::ReleaseDigest,
+            latent_artifacts::ManagedPublicationReceipt,
+        )>,
     ) -> Self {
         let required = audit.is_some();
         let ceiling = support::budget();
@@ -141,35 +154,47 @@ impl Fixture {
             contract: ContractId(component::CAP.into()),
             optional: false,
         });
-        let authority = authority::Authority::new(artifact.clone());
-        let catalog = Arc::new(
-            DirectoryArtifactRepository::open_enforced(
-                directory.path().join("catalog"),
-                DirectoryArtifactRepositoryConfig::default(),
-                latent_artifacts::AdmissionStorageLimits::default(),
-                authority.clone(),
-            )
-            .unwrap(),
-        );
-        let release = artifact.descriptor.release_digest.clone();
-        let receipt = catalog
-            .publish_managed(
-                ReleaseMutationContext {
-                    scope: LifecycleScope::Tenant(TenantId("tests".into())),
-                    actor: ReleaseActor {
-                        subject: "broker-test".into(),
-                        kind: ReleaseActorKind::Host,
+        let (catalog, release, receipt) = if let Some(publication) = publication {
+            publication
+        } else {
+            let authority = authority::Authority::new(artifact.clone());
+            let catalog = Arc::new(
+                DirectoryArtifactRepository::open_enforced(
+                    directory.path().join("catalog"),
+                    DirectoryArtifactRepositoryConfig::default(),
+                    latent_artifacts::AdmissionStorageLimits::default(),
+                    authority.clone(),
+                )
+                .unwrap(),
+            );
+            let release = artifact.descriptor.release_digest.clone();
+            let receipt = catalog
+                .publish_managed(
+                    ReleaseMutationContext {
+                        scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                        actor: ReleaseActor {
+                            subject: "broker-test".into(),
+                            kind: ReleaseActorKind::Host,
+                        },
+                        operation: Some(ReleaseOperationPrecondition {
+                            operation_id: "publish".into(),
+                            expected_generation: 0,
+                        }),
                     },
-                    operation: Some(ReleaseOperationPrecondition {
-                        operation_id: "publish".into(),
-                        expected_generation: 0,
-                    }),
-                },
-                ManagedPublicationUpload::Package(authority::upload(&artifact)),
-                &mut |_| Ok(()),
-            )
+                    ManagedPublicationUpload::Package(authority::upload(&artifact)),
+                    &mut |_| Ok(()),
+                )
+                .await
+                .unwrap();
+            (catalog, release, receipt)
+        };
+        let ceiling = catalog
+            .fetch(&release)
             .await
-            .unwrap();
+            .unwrap()
+            .manifest
+            .execution
+            .resource_budget_ceiling;
         let publication = catalog
             .execution_eligibility_selected(&release, Some(&receipt.publication.id))
             .unwrap()
@@ -265,6 +290,7 @@ impl Fixture {
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
+            ceiling,
             plan,
             plans,
             factory,
@@ -298,7 +324,7 @@ impl Fixture {
         mode: u32,
     ) -> (ExecutionRequest, Control) {
         let id = ActivationId(id.into());
-        let grant = support::budget();
+        let grant = self.ceiling.clone();
         let budget = ActivationBudget::new(
             EffectiveActivationBudget::admit_at(
                 &grant,

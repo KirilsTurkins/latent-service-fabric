@@ -53,7 +53,7 @@ crates/               Rust interfaces, Phase 1/2 subsystems, and isolated Phase 
 wit/                  WIT packages for platform capabilities
 api/proto/            Protobuf service definitions
 schemas/              JSON Schemas for declarative resources
-sdk/                  Cross-language interface-only SDK surfaces
+sdk/                  External client interfaces, Rust guest SDK and C guest conformance
 examples/             Contract and deployment examples
 adr/                   Accepted architecture decisions
 rfcs/                  Future design proposals
@@ -89,6 +89,7 @@ configured standalone node's supported RPC surface.
 | --- | --- |
 | Locked build and generated contracts | Protobuf/Tonic and Component Model bindings, SDK checks, deterministic test utilities; [build foundation](docs/development/build-foundation.md) |
 | SDK invocation contracts | Optional caller identity, cancellation/status by known ID, and executable fixtures across six languages; [SDK contract](sdk/README.md) |
+| Phase 3 guest SDK | Typed Rust capability helpers, generated C ownership fixtures and signed-package runtime conformance; [guest workflow](docs/component-development/guest-sdk.md) |
 | Manifest decoding and validation | Bounded schema-backed JSON codecs, canonicalization, and stateless Phase 1 semantic validation; [manifest codec](docs/protocol/manifest-codec.md) |
 | Resource accounting | Effective deadlines, concurrent budget consumption/reservations, terminal reconciliation, and cancellation primitives; [resource budgets](docs/runtime/resource-budgets.md) |
 | Local release storage | Exclusive directory ownership, immutable digest verification, bounded listing/indexes, durable publication and recovery; [release catalog](docs/development/local-release-catalog.md) |

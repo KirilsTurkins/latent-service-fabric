@@ -142,50 +142,68 @@ impl Fixture {
     }
 }
 impl<P: blob::BlobInvoker + Clone + 'static> Fixture<P> {
-    #[expect(
-        clippy::too_many_lines,
-        reason = "compose the real catalog, grants, provider and fresh Store with explicit owner lifetimes"
-    )]
     pub async fn with_provider<F: std::future::Future<Output = (P, ProviderReference)>>(
         ceiling: latent_core::ResourceBudget,
         pool_limits: ProviderPoolLimits,
         profile: &str,
         make: impl FnOnce(std::path::PathBuf, Arc<ProviderPools>) -> F,
     ) -> Self {
+        Self::with_publication(ceiling, pool_limits, profile, make, None).await
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "compose the real catalog, grants, provider and fresh Store with explicit owner lifetimes"
+    )]
+    pub async fn with_publication<F: std::future::Future<Output = (P, ProviderReference)>>(
+        ceiling: latent_core::ResourceBudget,
+        pool_limits: ProviderPoolLimits,
+        profile: &str,
+        make: impl FnOnce(std::path::PathBuf, Arc<ProviderPools>) -> F,
+        publication: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_core::ReleaseDigest,
+            latent_artifacts::ManagedPublicationReceipt,
+        )>,
+    ) -> Self {
         let directory = tempfile::TempDir::new().unwrap();
-        let catalog = Arc::new(
-            DirectoryArtifactRepository::open(
-                directory.path().join("catalog"),
-                DirectoryArtifactRepositoryConfig::default(),
-            )
-            .unwrap(),
-        );
-        let mut artifact = support::artifact_bytes(component::bytes(), &[component::CONTRACT]);
-        artifact.contracts = super::packages::artifact(&super::packages::capsule()).contracts;
-        artifact.manifest.execution.resource_budget_ceiling = ceiling.clone();
-        artifact.manifest.imports.push(ContractImport {
-            contract: ContractId(component::CAP.into()),
-            optional: false,
-        });
-        let release = artifact.descriptor.release_digest.clone();
-        let receipt = catalog
-            .publish_managed(
-                ReleaseMutationContext {
-                    scope: LifecycleScope::Tenant(TenantId("tests".into())),
-                    actor: ReleaseActor {
-                        subject: "broker-test".into(),
-                        kind: ReleaseActorKind::Host,
+        let (catalog, release, receipt) = if let Some(publication) = publication {
+            publication
+        } else {
+            let catalog = Arc::new(
+                DirectoryArtifactRepository::open(
+                    directory.path().join("catalog"),
+                    DirectoryArtifactRepositoryConfig::default(),
+                )
+                .unwrap(),
+            );
+            let mut artifact = support::artifact_bytes(component::bytes(), &[component::CONTRACT]);
+            artifact.contracts = super::packages::artifact(&super::packages::capsule()).contracts;
+            artifact.manifest.execution.resource_budget_ceiling = ceiling.clone();
+            artifact.manifest.imports.push(ContractImport {
+                contract: ContractId(component::CAP.into()),
+                optional: false,
+            });
+            let release = artifact.descriptor.release_digest.clone();
+            let receipt = catalog
+                .publish_managed(
+                    ReleaseMutationContext {
+                        scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                        actor: ReleaseActor {
+                            subject: "broker-test".into(),
+                            kind: ReleaseActorKind::Host,
+                        },
+                        operation: Some(ReleaseOperationPrecondition {
+                            operation_id: "publish".into(),
+                            expected_generation: 0,
+                        }),
                     },
-                    operation: Some(ReleaseOperationPrecondition {
-                        operation_id: "publish".into(),
-                        expected_generation: 0,
-                    }),
-                },
-                ManagedPublicationUpload::Local(artifact),
-                &mut |_| Ok(()),
-            )
-            .await
-            .unwrap();
+                    ManagedPublicationUpload::Local(artifact),
+                    &mut |_| Ok(()),
+                )
+                .await
+                .unwrap();
+            (catalog, release, receipt)
+        };
         let publication = catalog
             .execution_eligibility_selected(&release, Some(&receipt.publication.id))
             .unwrap()

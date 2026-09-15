@@ -46,14 +46,14 @@ pub fn observation() -> BuildObservation {
             size: 1,
         })
         .collect(),
-        parameters: BuildParameters {
+        parameters: BuildRecipe::Rust(BuildParameters {
             cargo_package: "latent-toolchain-smoke".into(),
             cargo_example: "echo-capsule".into(),
             target: "wasm32-unknown-unknown".into(),
             profile: "release".into(),
             locked: true,
             incremental: false,
-        },
+        }),
         started_at: 900,
         finished_at: 1000,
         reproducibility: "not-checked".into(),

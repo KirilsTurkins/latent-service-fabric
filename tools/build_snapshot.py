@@ -21,10 +21,10 @@ from tools.build_process_signals import owned_cancellation
 
 
 # Captures every current workspace member and build input, excluding historical
-# benchmark evidence (~484 MB), docs and generated/ignored target trees.
+# benchmark evidence, docs and generated/ignored target trees.
 SOURCE_ALLOWLIST = (
     ".cargo", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml",
-    "apps", "crates", "tools", "schemas", "wit", "api", "sdk/rust", "examples",
+    "apps", "crates", "tools", "schemas", "wit", "api", "sdk/rust", "sdk/rust-guest", "examples",
 )
 REVISION = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})\Z")
 SEGMENT = re.compile(r"[A-Za-z0-9._-]{1,128}\Z")
