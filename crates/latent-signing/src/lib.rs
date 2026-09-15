@@ -38,9 +38,10 @@ pub use policy::{
 };
 pub use provenance::{
     decode_build_observation, inspect_provenance, BuildMaterial, BuildObservation, BuildParameters,
-    BuildSource, LocalBuilderSigner, ProvenanceEvidence, ProvenanceEvidenceRef, ProvenanceLimits,
-    UnverifiedProvenance, PROVENANCE_BUILD_TYPE, PROVENANCE_PAYLOAD_TYPE,
-    PROVENANCE_PREDICATE_TYPE,
+    BuildRecipe, BuildSource, CBuildParameters, LocalBuilderSigner, ProvenanceEvidence,
+    ProvenanceEvidenceRef, ProvenanceLimits, UnverifiedProvenance, C_GUEST_BUILD_TYPE,
+    PROVENANCE_BUILD_TYPE, PROVENANCE_PAYLOAD_TYPE, PROVENANCE_PREDICATE_TYPE,
+    RUST_GUEST_BUILD_TYPE,
 };
 pub use signer::LocalSigner;
 pub use subject::PackageSigningSubject;

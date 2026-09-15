@@ -13,6 +13,24 @@ use latent_telemetry::{
 };
 use std::sync::atomic::{AtomicU64, Ordering};
 
+pub(super) async fn retired(handle: &RolloutHandle) {
+    // Receipt delivery precedes the worker's final RequestCharge drop. A new
+    // admission may correctly return Busy while that drop holds its stats lock.
+    // Keep response leases alive; only wait for the previous command's owner.
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            let snapshot = handle.snapshot();
+            if snapshot.active_commands == 0 && snapshot.queued_commands == 0 {
+                assert_eq!(snapshot.retained_request_bytes, 0);
+                return;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("rollout command worker retired");
+}
+
 pub(super) struct Clock {
     base: Instant,
     millis: AtomicU64,

@@ -95,3 +95,8 @@ profile to V4 with immutable local blobs, original tenant/session authority,
 owned chunks and a durable publication boundary. The [local storage
 contract](../docs/runtime/local-blobs.md) defines finite inventory, explicit
 retention, no-follow filesystem access and cancellation/recovery ownership.
+
+[ADR-0034](0034-version-maintained-guest-build-provenance-profiles.md) adds
+separately approved Rust and C guest build recipes for the maintained SDK
+examples. It preserves ADR-0023's independent builder trust and finite process
+ownership while keeping the original echo recipe unchanged.

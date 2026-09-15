@@ -1670,6 +1670,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-guest"
+version = "0.1.0-alpha.3"
+dependencies = [
+ "latent-component-bindings",
+ "zeroize",
+]
+
+[[package]]
 name = "latent-http"
 version = "0.1.0-alpha.3"
 dependencies = [
@@ -2004,6 +2012,7 @@ dependencies = [
  "blake3",
  "clap",
  "latent-component-bindings",
+ "latent-guest",
  "latent-optimization-workloads",
  "serde",
  "serde_json",
@@ -2046,6 +2055,7 @@ dependencies = [
 name = "latent-wasmtime"
 version = "0.1.0-alpha.3"
 dependencies = [
+ "base64 0.22.1",
  "blake3",
  "close_fds",
  "landlock",
@@ -2068,6 +2078,7 @@ dependencies = [
  "latent-routing",
  "latent-scheduler",
  "latent-secrets",
+ "latent-signing",
  "latent-telemetry",
  "latent-vault",
  "libc",

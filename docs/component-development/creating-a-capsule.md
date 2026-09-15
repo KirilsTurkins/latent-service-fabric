@@ -2,6 +2,11 @@
 
 A capsule project defines a versioned WIT world, implements its exported interfaces in a supported guest language, declares only the platform imports it requires, compiles to a Component Model binary, and packages immutable metadata.
 
+The [Phase 3 guest SDK workflow](guest-sdk.md) builds maintained Rust capability
+examples and a generated C ownership fixture, packages and signs their exact
+outputs, and executes them with enforced admission. It documents the supported
+host ABI, least-privilege deployment compositions and close/drop semantics.
+
 ## Phase 1 assets and workflow
 
 The completed Phase 1 workflow publishes locally trusted component bytes with a

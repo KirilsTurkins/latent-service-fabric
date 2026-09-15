@@ -12,7 +12,7 @@ pub struct BuildObservation {
     pub component_digest: String,
     pub component_size: u64,
     pub materials: Vec<BuildMaterial>,
-    pub parameters: BuildParameters,
+    pub parameters: BuildRecipe,
     pub started_at: u64,
     pub finished_at: u64,
     pub reproducibility: String,
@@ -47,6 +47,24 @@ pub struct BuildParameters {
     pub profile: String,
     pub locked: bool,
     pub incremental: bool,
+}
+
+/// Versioned build types select one exact recipe. The untagged representation
+/// preserves the existing echo profile's JSON without relabeling C as Cargo.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum BuildRecipe {
+    Rust(BuildParameters),
+    C(CBuildParameters),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CBuildParameters {
+    pub compiler: String,
+    pub fixture: String,
+    pub target: String,
+    pub optimization: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

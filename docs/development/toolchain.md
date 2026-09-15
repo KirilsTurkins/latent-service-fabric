@@ -117,3 +117,17 @@ Executable capsule binaries and generated transport source are not checked in. T
 ## Allocation boundary
 
 Build and validation code starts compiler/validator subprocesses only when a command explicitly runs. Linking generated bindings creates no engine, store, listener, socket, process, service thread, execution cell, or service-owned async runtime. `latent-testkit::block_on` polls on the calling thread; `AsyncTestRuntime` is explicitly constructed for tests and uses Tokio's current-thread scheduler without a worker pool.
+
+## Phase 3 guest contract tools
+
+The full contract gate also builds the Rust guest SDK examples and the C
+canonical ABI fixture. Install the pinned `wit-bindgen` 0.60.0 CLI and Zig
+0.16.0 alongside the existing Rust, Python and wasm-tools pins. On Linux x86_64,
+`python3 tools/install_guest_bindgen.py "$HOME/.local/lsf-guest-tools"` installs
+the SHA-verified upstream generator into a new directory; add that directory
+to `PATH`. CI uses this same verifier and the existing pinned Zig setup action.
+The installer refuses to overwrite an existing executable.
+
+Generated source, components and observations stay under the selected target
+root. See the [guest SDK workflow](../component-development/guest-sdk.md) for
+build, signed admission and actual Rust/C runtime checks.

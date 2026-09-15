@@ -97,6 +97,7 @@ impl ExecutionCancellation for Control {
     }
 }
 pub struct Fixture<P = LocalSecretProvider> {
+    pub ceiling: latent_core::ResourceBudget,
     _factory: WasmtimeComponentEngineFactory,
     pub backend: WasmtimeBackend,
     pub prepared: PreparedComponent,
@@ -138,10 +139,6 @@ impl Fixture {
     }
 }
 impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> Fixture<P> {
-    #[expect(
-        clippy::too_many_lines,
-        reason = "compose the real catalog, grants, provider and fresh Store with explicit owner lifetimes"
-    )]
     pub async fn with_provider<F: std::future::Future<Output = (P, ProviderReference)>>(
         audit: Option<latent_audit::AuditHandle>,
         pool_limits: ProviderPoolLimits,
@@ -153,6 +150,28 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
             Arc<TestSecretClock>,
         ) -> F,
     ) -> Self {
+        Self::with_publication(audit, pool_limits, profile, make, None).await
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "compose the real catalog, grants, provider and fresh Store with explicit owner lifetimes"
+    )]
+    pub async fn with_publication<F: std::future::Future<Output = (P, ProviderReference)>>(
+        audit: Option<latent_audit::AuditHandle>,
+        pool_limits: ProviderPoolLimits,
+        profile: &str,
+        make: impl FnOnce(
+            std::path::PathBuf,
+            Arc<ProviderPools>,
+            LocalSecretStore,
+            Arc<TestSecretClock>,
+        ) -> F,
+        publication: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_core::ReleaseDigest,
+            latent_artifacts::ManagedPublicationReceipt,
+        )>,
+    ) -> Self {
         let required = audit.is_some();
         let mut ceiling = support::budget();
         ceiling.outbound_requests = 8;
@@ -160,39 +179,51 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
         ceiling.blob_write_bytes = 65536;
         ceiling.wall_time_limit_millis = Some(5000);
         let directory = tempfile::TempDir::new().unwrap();
-        let catalog = Arc::new(
-            DirectoryArtifactRepository::open(
-                directory.path().join("catalog"),
-                DirectoryArtifactRepositoryConfig::default(),
-            )
-            .unwrap(),
-        );
-        let mut artifact = support::artifact_bytes(component::bytes(), &[component::CONTRACT]);
-        artifact.contracts = super::packages::artifact(&super::packages::capsule()).contracts;
-        artifact.manifest.execution.resource_budget_ceiling = ceiling;
-        artifact.manifest.imports.push(ContractImport {
-            contract: ContractId(component::CAP.into()),
-            optional: false,
-        });
-        let release = artifact.descriptor.release_digest.clone();
-        let receipt = catalog
-            .publish_managed(
-                ReleaseMutationContext {
-                    scope: LifecycleScope::Tenant(TenantId("tests".into())),
-                    actor: ReleaseActor {
-                        subject: "broker-test".into(),
-                        kind: ReleaseActorKind::Host,
+        let (catalog, release, receipt) = if let Some(publication) = publication {
+            publication
+        } else {
+            let catalog = Arc::new(
+                DirectoryArtifactRepository::open(
+                    directory.path().join("catalog"),
+                    DirectoryArtifactRepositoryConfig::default(),
+                )
+                .unwrap(),
+            );
+            let mut artifact = support::artifact_bytes(component::bytes(), &[component::CONTRACT]);
+            artifact.contracts = super::packages::artifact(&super::packages::capsule()).contracts;
+            artifact.manifest.execution.resource_budget_ceiling = ceiling;
+            artifact.manifest.imports.push(ContractImport {
+                contract: ContractId(component::CAP.into()),
+                optional: false,
+            });
+            let release = artifact.descriptor.release_digest.clone();
+            let receipt = catalog
+                .publish_managed(
+                    ReleaseMutationContext {
+                        scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                        actor: ReleaseActor {
+                            subject: "broker-test".into(),
+                            kind: ReleaseActorKind::Host,
+                        },
+                        operation: Some(ReleaseOperationPrecondition {
+                            operation_id: "publish".into(),
+                            expected_generation: 0,
+                        }),
                     },
-                    operation: Some(ReleaseOperationPrecondition {
-                        operation_id: "publish".into(),
-                        expected_generation: 0,
-                    }),
-                },
-                ManagedPublicationUpload::Local(artifact),
-                &mut |_| Ok(()),
-            )
+                    ManagedPublicationUpload::Local(artifact),
+                    &mut |_| Ok(()),
+                )
+                .await
+                .unwrap();
+            (catalog, release, receipt)
+        };
+        let ceiling = catalog
+            .fetch(&release)
             .await
-            .unwrap();
+            .unwrap()
+            .manifest
+            .execution
+            .resource_budget_ceiling;
         let publication = catalog
             .execution_eligibility_selected(&release, Some(&receipt.publication.id))
             .unwrap()
@@ -332,6 +363,7 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
+            ceiling,
             _factory: factory,
             backend,
             prepared,
@@ -354,11 +386,7 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
     }
     pub fn request(&self, id: &str, method: u32) -> (ExecutionRequest, Control) {
         let id = ActivationId(id.into());
-        let mut grant = support::budget();
-        grant.outbound_requests = 8;
-        grant.blob_read_bytes = 65536;
-        grant.blob_write_bytes = 65536;
-        grant.wall_time_limit_millis = Some(5000);
+        let grant = self.ceiling.clone();
         let budget = ActivationBudget::with_profile(
             EffectiveActivationBudget::admit_profile_at(
                 latent_core::BudgetProfile::Phase3,

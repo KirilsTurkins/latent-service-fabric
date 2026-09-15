@@ -1,12 +1,10 @@
 use super::{validate_builder_id, BuilderRequirement};
-use crate::{
-    provenance, BuildObservation, SignatureFailure, SignatureResult, PROVENANCE_BUILD_TYPE,
-};
+use crate::{provenance, BuildObservation, SignatureFailure, SignatureResult};
 
 pub(super) fn validate(requirements: &mut [BuilderRequirement]) -> SignatureResult<()> {
     for item in requirements.iter() {
         validate_builder_id(&item.builder_id).map_err(|_| SignatureFailure::InvalidPolicy)?;
-        if item.build_type != PROVENANCE_BUILD_TYPE {
+        if !provenance::supported_build_type(&item.build_type) {
             return Err(SignatureFailure::InvalidPolicy.into());
         }
         provenance::validate_repository(&item.source_repository)

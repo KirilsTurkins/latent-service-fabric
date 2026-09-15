@@ -43,6 +43,7 @@ members = [
     "crates/latent-audit",
     "crates/latent-testkit",
     "sdk/rust",
+    "sdk/rust-guest",
     "tools/toolchain-smoke",
     "tools/optimization-workloads",
     "tools/optimization-bench",

@@ -25,6 +25,7 @@ fn complete_window_promotes_once_and_replays_without_old_live_evidence() {
             RolloutObservationState::Collecting
         );
         drop(started);
+        support::retired(&fixture.handle).await;
         assert!(fixture
             .handle
             .submit(
@@ -48,6 +49,7 @@ fn complete_window_promotes_once_and_replays_without_old_live_evidence() {
         );
         assert_eq!(report.value().revisions.len(), 2);
         drop(report);
+        support::retired(&fixture.handle).await;
         let promoted = fixture
             .handle
             .promote(
@@ -75,6 +77,7 @@ fn complete_window_promotes_once_and_replays_without_old_live_evidence() {
                 .success,
             2
         );
+        support::retired(&fixture.handle).await;
         let replay = fixture
             .handle
             .promote(

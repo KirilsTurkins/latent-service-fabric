@@ -1,6 +1,11 @@
 # SDK surfaces
 
-The SDK directories contain interface-only client and guest programming models. They do not contain transports, serializers, retry logic, code generation, or runtime integration.
+The external client SDK directories contain interface-only programming models.
+The [Rust guest SDK](rust-guest/README.md) provides generated typed capability
+bindings and ownership helpers for actual Wasm components;
+[C guest fixtures](c-guest/README.md) validate generated ownership and ABI behavior.
+See the [guest workflow](../docs/component-development/guest-sdk.md) for exact
+profiles, signed admission and runtime validation.
 
 WIT remains authoritative for typed capsule contracts. Language SDKs are convenience surfaces and must preserve deadlines, cancellation, platform errors, domain errors, resource budgets, identity, and idempotency semantics.
 

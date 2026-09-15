@@ -94,54 +94,72 @@ impl Fixture {
     pub async fn new(cells: u32, foreign: bool, permit_target: bool) -> Self {
         Self::with_audit(cells, foreign, permit_target, None).await
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
-    )]
     pub async fn with_audit(
         cells: u32,
         foreign: bool,
         permit_target: bool,
         audit: Option<latent_audit::AuditHandle>,
     ) -> Self {
+        Self::with_packages(cells, foreign, permit_target, audit, None).await
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
+    )]
+    pub async fn with_packages(
+        cells: u32,
+        foreign: bool,
+        permit_target: bool,
+        audit: Option<latent_audit::AuditHandle>,
+        provided: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        )>,
+    ) -> Self {
         let root = tempfile::tempdir().unwrap();
         let target_tenant = if foreign { "tenant-b" } else { "tenant-a" };
-        let caller = packages::caller(foreign.then_some(target_tenant));
-        let callee = packages::callee(42);
-        let authority = authority::Authority::new_many(vec![
-            packages::artifact(&caller),
-            packages::artifact(&callee),
-        ]);
-        let catalog = Arc::new(
-            DirectoryArtifactRepository::open_enforced(
-                root.path().join("artifacts"),
-                latent_artifacts::DirectoryArtifactRepositoryConfig::default(),
-                latent_artifacts::AdmissionStorageLimits::default(),
-                authority,
-            )
-            .unwrap(),
-        );
-        for (tenant, bundle) in [("tenant-a", &caller), (target_tenant, &callee)] {
-            catalog
-                .admit_package(
-                    &TenantId(tenant.into()),
-                    PackageAdmissionUpload {
-                        manifest: bundle.manifest_bytes().to_vec(),
-                        configuration: bundle.config_bytes().to_vec(),
-                        layers: bundle
-                            .layers()
-                            .iter()
-                            .map(|blob| (blob.path().into(), blob.bytes().to_vec()))
-                            .collect(),
-                        signatures: vec![],
-                        provenance: vec![],
-                        sboms: vec![],
-                    },
-                    &mut |_| Ok(()),
+        let (catalog, caller, callee) = if let Some(provided) = provided {
+            provided
+        } else {
+            let caller = packages::caller(foreign.then_some(target_tenant));
+            let callee = packages::callee(42);
+            let authority = authority::Authority::new_many(vec![
+                packages::artifact(&caller),
+                packages::artifact(&callee),
+            ]);
+            let catalog = Arc::new(
+                DirectoryArtifactRepository::open_enforced(
+                    root.path().join("artifacts"),
+                    latent_artifacts::DirectoryArtifactRepositoryConfig::default(),
+                    latent_artifacts::AdmissionStorageLimits::default(),
+                    authority,
                 )
-                .await
-                .unwrap();
-        }
+                .unwrap(),
+            );
+            for (tenant, bundle) in [("tenant-a", &caller), (target_tenant, &callee)] {
+                catalog
+                    .admit_package(
+                        &TenantId(tenant.into()),
+                        PackageAdmissionUpload {
+                            manifest: bundle.manifest_bytes().to_vec(),
+                            configuration: bundle.config_bytes().to_vec(),
+                            layers: bundle
+                                .layers()
+                                .iter()
+                                .map(|blob| (blob.path().into(), blob.bytes().to_vec()))
+                                .collect(),
+                            signatures: vec![],
+                            provenance: vec![],
+                            sboms: vec![],
+                        },
+                        &mut |_| Ok(()),
+                    )
+                    .await
+                    .unwrap();
+            }
+            (catalog, caller, callee)
+        };
         let config = WasmtimeConfig {
             maximum_memory_bytes: packages::budget().memory_bytes,
             maximum_fuel: packages::budget().cpu_fuel,
@@ -173,11 +191,25 @@ impl Fixture {
             .publication()
             .clone();
         let mut consumer = deployment("caller", "tenant-a", &caller, &caller_publication);
+        consumer.resources = catalog
+            .fetch(&packages::release(&caller))
+            .await
+            .unwrap()
+            .manifest
+            .execution
+            .resource_budget_ceiling;
         consumer.grants = vec![CapabilityGrantSpec::new(
             latent_core::CapabilityId(SERVICE_INVOCATION_CAPABILITY.into()),
             PolicyId("local-calls".into()),
         )];
-        let target = deployment("callee", target_tenant, &callee, &callee_publication);
+        let mut target = deployment("callee", target_tenant, &callee, &callee_publication);
+        target.resources = catalog
+            .fetch(&packages::release(&callee))
+            .await
+            .unwrap()
+            .manifest
+            .execution
+            .resource_budget_ceiling;
         store.apply(target.clone()).await.unwrap();
         store.apply(consumer).await.unwrap();
         let policies = Arc::new(

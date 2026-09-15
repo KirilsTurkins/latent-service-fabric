@@ -119,7 +119,11 @@
               "const": 1
             },
             "buildType": {
-              "const": "https://latent.dev/build/echo-capsule/v1"
+              "enum": [
+                "https://latent.dev/build/echo-capsule/v1",
+                "https://latent.dev/build/rust-guest/v1",
+                "https://latent.dev/build/c-guest/v1"
+              ]
             },
             "source": {
               "type": "object",
@@ -145,7 +149,10 @@
                   "const": "operator-asserted"
                 },
                 "capture": {
-                  "const": "git-archive-allowlist"
+                  "enum": [
+                    "git-archive-allowlist",
+                    "explicit-input-files"
+                  ]
                 }
               }
             },
@@ -159,7 +166,7 @@
             },
             "materials": {
               "type": "array",
-              "minItems": 7,
+              "minItems": 6,
               "maxItems": 64,
               "uniqueItems": true,
               "items": {
@@ -190,6 +197,7 @@
               "allOf": [
                 {
                   "contains": {
+                    "type": "object",
                     "properties": {
                       "name": {
                         "const": "source-snapshot"
@@ -204,20 +212,7 @@
                 },
                 {
                   "contains": {
-                    "properties": {
-                      "name": {
-                        "const": "dependency-lock"
-                      }
-                    },
-                    "required": [
-                      "name"
-                    ]
-                  },
-                  "minContains": 1,
-                  "maxContains": 1
-                },
-                {
-                  "contains": {
+                    "type": "object",
                     "properties": {
                       "name": {
                         "const": "build-recipe"
@@ -232,6 +227,7 @@
                 },
                 {
                   "contains": {
+                    "type": "object",
                     "properties": {
                       "name": {
                         "const": "toolchain-config"
@@ -246,34 +242,7 @@
                 },
                 {
                   "contains": {
-                    "properties": {
-                      "name": {
-                        "const": "cargo"
-                      }
-                    },
-                    "required": [
-                      "name"
-                    ]
-                  },
-                  "minContains": 1,
-                  "maxContains": 1
-                },
-                {
-                  "contains": {
-                    "properties": {
-                      "name": {
-                        "const": "rustc"
-                      }
-                    },
-                    "required": [
-                      "name"
-                    ]
-                  },
-                  "minContains": 1,
-                  "maxContains": 1
-                },
-                {
-                  "contains": {
+                    "type": "object",
                     "properties": {
                       "name": {
                         "const": "wasm-tools"
@@ -289,36 +258,7 @@
               ]
             },
             "parameters": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "cargoPackage",
-                "cargoExample",
-                "target",
-                "profile",
-                "locked",
-                "incremental"
-              ],
-              "properties": {
-                "cargoPackage": {
-                  "const": "latent-toolchain-smoke"
-                },
-                "cargoExample": {
-                  "const": "echo-capsule"
-                },
-                "target": {
-                  "const": "wasm32-unknown-unknown"
-                },
-                "profile": {
-                  "const": "release"
-                },
-                "locked": {
-                  "const": true
-                },
-                "incremental": {
-                  "const": false
-                }
-              }
+              "type": "object"
             },
             "startedAt": {
               "$ref": "#/$defs/time"
@@ -336,9 +276,345 @@
               "const": false
             },
             "dependencyCompleteness": {
-              "const": "lockfile-only"
+              "enum": [
+                "lockfile-only",
+                "declared-inputs-incomplete"
+              ]
             }
-          }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "buildType": {
+                    "const": "https://latent.dev/build/echo-capsule/v1"
+                  }
+                },
+                "required": [
+                  "buildType"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "parameters": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "cargoPackage",
+                      "cargoExample",
+                      "target",
+                      "profile",
+                      "locked",
+                      "incremental"
+                    ],
+                    "properties": {
+                      "cargoPackage": {
+                        "const": "latent-toolchain-smoke"
+                      },
+                      "cargoExample": {
+                        "const": "echo-capsule"
+                      },
+                      "target": {
+                        "const": "wasm32-unknown-unknown"
+                      },
+                      "profile": {
+                        "const": "release"
+                      },
+                      "locked": {
+                        "const": true
+                      },
+                      "incremental": {
+                        "const": false
+                      }
+                    }
+                  },
+                  "source": {
+                    "properties": {
+                      "capture": {
+                        "const": "git-archive-allowlist"
+                      }
+                    }
+                  },
+                  "dependencyCompleteness": {
+                    "const": "lockfile-only"
+                  },
+                  "materials": {
+                    "allOf": [
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "dependency-lock"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "cargo"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "rustc"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "buildType": {
+                    "const": "https://latent.dev/build/rust-guest/v1"
+                  }
+                },
+                "required": [
+                  "buildType"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "parameters": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "cargoPackage",
+                      "cargoExample",
+                      "target",
+                      "profile",
+                      "locked",
+                      "incremental"
+                    ],
+                    "properties": {
+                      "cargoPackage": {
+                        "const": "latent-toolchain-smoke"
+                      },
+                      "cargoExample": {
+                        "enum": [
+                          "guest-http",
+                          "guest-streaming",
+                          "guest-blob",
+                          "guest-secrets",
+                          "guest-events",
+                          "guest-random",
+                          "guest-metrics",
+                          "guest-service",
+                          "guest-callee"
+                        ]
+                      },
+                      "target": {
+                        "const": "wasm32-unknown-unknown"
+                      },
+                      "profile": {
+                        "const": "release"
+                      },
+                      "locked": {
+                        "const": true
+                      },
+                      "incremental": {
+                        "const": false
+                      }
+                    }
+                  },
+                  "source": {
+                    "properties": {
+                      "capture": {
+                        "const": "explicit-input-files"
+                      },
+                      "revision": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+                      }
+                    }
+                  },
+                  "dependencyCompleteness": {
+                    "const": "declared-inputs-incomplete"
+                  },
+                  "materials": {
+                    "allOf": [
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "dependency-lock"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "cargo"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "rustc"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "wit-bindgen"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "buildType": {
+                    "const": "https://latent.dev/build/c-guest/v1"
+                  }
+                },
+                "required": [
+                  "buildType"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "parameters": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "compiler",
+                      "fixture",
+                      "target",
+                      "optimization"
+                    ],
+                    "properties": {
+                      "compiler": {
+                        "const": "zig-cc"
+                      },
+                      "fixture": {
+                        "const": "blob"
+                      },
+                      "target": {
+                        "const": "wasm32-wasi"
+                      },
+                      "optimization": {
+                        "const": "O2"
+                      }
+                    }
+                  },
+                  "source": {
+                    "properties": {
+                      "capture": {
+                        "const": "explicit-input-files"
+                      },
+                      "revision": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+                      }
+                    }
+                  },
+                  "dependencyCompleteness": {
+                    "const": "declared-inputs-incomplete"
+                  },
+                  "materials": {
+                    "allOf": [
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "zig"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "wit-bindgen"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
         }
       }
     }

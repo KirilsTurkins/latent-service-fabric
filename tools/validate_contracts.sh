@@ -149,6 +149,12 @@ LSF_CAPABILITIES_COMPONENT="${CAPABILITIES_COMPONENT}" \
     cargo test -p latent-wasmtime --test capabilities_backend --locked -- \
         --ignored --nocapture --test-threads=1
 
+# Generated Rust/C guests, real providers and enforced package admission.
+python3 tools/build_guest_capsules.py --output "${TARGET_ROOT}/guest-capsules"
+LSF_GUEST_CAPSULES="${TARGET_ROOT}/guest-capsules" \
+    cargo test -p latent-wasmtime --test guest_sdk --locked -- \
+        --ignored --nocapture --test-threads=1
+
 # Two real node invocations across a durable restart; no scale workload.
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
 LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \

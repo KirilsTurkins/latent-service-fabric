@@ -374,6 +374,11 @@ jobs:
         with:
           version: 1.72.0
           github_token: ${{ github.token }}
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: "0.16.0"
+      - name: Install verified guest binding generator
+        run: python3 tools/install_guest_bindgen.py "${RUNNER_TEMP}/lsf-guest-tools" >> "${GITHUB_PATH}"
       - name: Validate contracts, echo component, and generated bindings
         run: |
           unset CARGO_INCREMENTAL

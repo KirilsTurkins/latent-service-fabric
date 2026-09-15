@@ -1,4 +1,7 @@
-use super::{BuildObservation, ProvenanceLimits, PROVENANCE_BUILD_TYPE};
+use super::{
+    BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, PROVENANCE_BUILD_TYPE,
+    RUST_GUEST_BUILD_TYPE,
+};
 use crate::{SignatureFailure, SignatureResult};
 use std::collections::BTreeSet;
 
@@ -71,15 +74,25 @@ pub(crate) fn validate_observation(
     if value.materials.len() > limits.max_materials {
         return Err(SignatureFailure::ResourceLimit.into());
     }
-    if value.format_version != 1 || value.build_type != PROVENANCE_BUILD_TYPE {
+    if value.format_version != 1 || !super::supported_build_type(&value.build_type) {
         return Err(SignatureFailure::UnsupportedProfile.into());
     }
     validate_repository(&value.source.repository)?;
     validate_revision(&value.source.revision)?;
     validate_digest(&value.source.snapshot_digest)?;
     validate_digest(&value.component_digest)?;
+    if value.build_type != PROVENANCE_BUILD_TYPE
+        && value.source.revision != value.source.snapshot_digest[7..]
+    {
+        return Err(SignatureFailure::IntegrityMismatch.into());
+    }
     if value.source.repository_trust != "operator-asserted"
-        || value.source.capture != "git-archive-allowlist"
+        || value.source.capture
+            != if value.build_type == PROVENANCE_BUILD_TYPE {
+                "git-archive-allowlist"
+            } else {
+                "explicit-input-files"
+            }
         || value.component_size == 0
         || value.component_size > 64 * 1024 * 1024
         || value
@@ -91,20 +104,16 @@ pub(crate) fn validate_observation(
             "not-checked" | "two-build-byte-equality"
         )
         || value.hermetic
-        || value.dependency_completeness != "lockfile-only"
+        || value.dependency_completeness
+            != if value.build_type == PROVENANCE_BUILD_TYPE {
+                "lockfile-only"
+            } else {
+                "declared-inputs-incomplete"
+            }
     {
         return Err(SignatureFailure::MalformedProvenance.into());
     }
-    let p = &value.parameters;
-    if p.cargo_package != "latent-toolchain-smoke"
-        || p.cargo_example != "echo-capsule"
-        || p.target != "wasm32-unknown-unknown"
-        || p.profile != "release"
-        || !p.locked
-        || p.incremental
-    {
-        return Err(SignatureFailure::PredicateDisallowed.into());
-    }
+    validate_recipe(&value.build_type, &value.parameters)?;
     let mut names = BTreeSet::new();
     for material in &value.materials {
         if material.name.len() > 128 {
@@ -132,16 +141,64 @@ pub(crate) fn validate_observation(
     }
     for required in [
         "source-snapshot",
-        "dependency-lock",
         "build-recipe",
         "toolchain-config",
-        "cargo",
-        "rustc",
         "wasm-tools",
     ] {
         if !names.iter().any(|name| name.as_str() == required) {
             return Err(SignatureFailure::MalformedProvenance.into());
         }
+    }
+    let tool_materials: &[&str] = match value.build_type.as_str() {
+        PROVENANCE_BUILD_TYPE => &["dependency-lock", "cargo", "rustc"],
+        RUST_GUEST_BUILD_TYPE => &["dependency-lock", "cargo", "rustc", "wit-bindgen"],
+        C_GUEST_BUILD_TYPE => &["zig", "wit-bindgen"],
+        _ => unreachable!("profile checked above"),
+    };
+    for required in tool_materials {
+        if !names.iter().any(|name| name.as_str() == *required) {
+            return Err(SignatureFailure::MalformedProvenance.into());
+        }
+    }
+    Ok(())
+}
+
+fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResult<()> {
+    let valid_recipe = match (build_type, parameters) {
+        (PROVENANCE_BUILD_TYPE | RUST_GUEST_BUILD_TYPE, BuildRecipe::Rust(p)) => {
+            let example = if build_type == PROVENANCE_BUILD_TYPE {
+                p.cargo_example == "echo-capsule"
+            } else {
+                matches!(
+                    p.cargo_example.as_str(),
+                    "guest-http"
+                        | "guest-streaming"
+                        | "guest-blob"
+                        | "guest-secrets"
+                        | "guest-events"
+                        | "guest-random"
+                        | "guest-metrics"
+                        | "guest-service"
+                        | "guest-callee"
+                )
+            };
+            example
+                && p.cargo_package == "latent-toolchain-smoke"
+                && p.target == "wasm32-unknown-unknown"
+                && p.profile == "release"
+                && p.locked
+                && !p.incremental
+        }
+        (C_GUEST_BUILD_TYPE, BuildRecipe::C(p)) => {
+            p.compiler == "zig-cc"
+                && p.fixture == "blob"
+                && p.target == "wasm32-wasi"
+                && p.optimization == "O2"
+        }
+        _ => false,
+    };
+    if !valid_recipe {
+        return Err(SignatureFailure::PredicateDisallowed.into());
     }
     Ok(())
 }
