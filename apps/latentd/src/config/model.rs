@@ -45,6 +45,8 @@ pub struct NodeConfig {
     pub rollouts: Option<super::RolloutConfig>,
     #[serde(default, deserialize_with = "super::capability_policies::present")]
     pub capability_policies: Option<super::CapabilityPolicyConfig>,
+    #[serde(default, deserialize_with = "super::http::present")]
+    pub http_ingress: Option<super::HttpIngressConfig>,
     #[serde(default)]
     pub retention: RetentionConfig,
     #[serde(default)]

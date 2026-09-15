@@ -21,7 +21,8 @@ manual/canary/rollback control. The [Phase 2 completion review](../phase-2-compl
 records its accepted scope and evidence. Optional Phase 3 capability providers
 use their explicit policy and provider configurations. [HTTP trigger
 management](http-triggers.md) shares this node's catalog and management listener;
-a public application HTTP listener remains the separate #229 delivery.
+the optional [shared HTTP/TLS application listener](http-ingress.md) provides
+bounded browser ingress through those exact targets and normal admission.
 
 The [`latent` operator CLI](operator-cli.md) uses the generated clients to publish,
 deploy, invoke, cancel, reconcile operation receipts, control rollouts and query

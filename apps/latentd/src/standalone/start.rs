@@ -448,6 +448,10 @@ impl StandaloneNode {
         management.with_http_control(catalogs.deployments.clone())
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "ordered shared transports, inventory installation and admission cutover stay together"
+    )]
     async fn start_services(
         &mut self,
         settings: &NodeSettings,
@@ -455,14 +459,16 @@ impl StandaloneNode {
         control_runtime: tokio::runtime::Handle,
         threads: RuntimeThreads,
     ) -> Result<(), PlatformError> {
+        let cleanup = self
+            .cleanup
+            .as_ref()
+            .expect("owned cleanup driver")
+            .handle();
         let invocation = InvocationServiceAdapter::with_services(
             Arc::new(LocalInvocationRuntime::with_cleanup(
                 self.manager.clone(),
                 settings.invocation.clone(),
-                self.cleanup
-                    .as_ref()
-                    .expect("owned cleanup driver")
-                    .handle(),
+                cleanup.clone(),
             )?),
             settings.invocation.clone(),
             InvocationServiceServices {
@@ -506,6 +512,7 @@ impl StandaloneNode {
         )
         .await?;
         self.transport = Some(transport);
+        self.start_http(settings, &catalogs.deployments)?;
         let transport = self.transport.as_ref().expect("owned started transport");
         let topology = Arc::new(
             observations::TopologySource::new(
@@ -513,10 +520,7 @@ impl StandaloneNode {
                 self.backend.clone(),
                 self.scheduler.clone(),
                 transport.handle(),
-                self.cleanup
-                    .as_ref()
-                    .expect("owned cleanup driver")
-                    .handle(),
+                cleanup,
                 threads,
             )
             .with_policies(
@@ -524,6 +528,7 @@ impl StandaloneNode {
                     .as_ref()
                     .map(super::policies::PolicyRuntime::handle),
             )
+            .with_http(self.http.as_ref().map(super::http::HttpOwner::handle))
             .with_rollouts(
                 self.rollouts
                     .as_ref()
@@ -532,6 +537,7 @@ impl StandaloneNode {
         );
         let mut descriptor = settings.node.clone();
         descriptor.endpoint = format!("http://{}", transport.local_addr());
+        self.describe_http(settings, &mut descriptor);
         self.inventory
             .install(Arc::new(StandaloneInventoryReporter::new(
                 settings.inventory.clone(),
@@ -548,6 +554,50 @@ impl StandaloneNode {
             )?))?;
         self.load.start_accepting();
         transport.handle().start_accepting()?;
+        if let Some(http) = &self.http {
+            http.handle().start_accepting()?;
+        }
+        Ok(())
+    }
+
+    fn describe_http(&self, settings: &NodeSettings, descriptor: &mut latent_node::NodeDescriptor) {
+        if let Some(http) = &self.http {
+            let scheme = if settings.http.as_ref().expect("HTTP settings").tls.is_some() {
+                "https"
+            } else {
+                "http"
+            };
+            descriptor.attributes.insert(
+                "lsf.http.endpoint".into(),
+                format!("{scheme}://{}", http.local_addr()),
+            );
+            descriptor
+                .attributes
+                .insert("lsf.http.profile".into(), "buffered-http1-v1".into());
+        }
+    }
+
+    fn start_http(
+        &mut self,
+        settings: &NodeSettings,
+        deployments: &Arc<DirectoryDeploymentRepository>,
+    ) -> Result<(), PlatformError> {
+        if let Some(http) = &settings.http {
+            self.http = Some(super::http::HttpOwner::start(
+                http.clone(),
+                super::http::HttpServices {
+                    manager: self.manager.clone(),
+                    deployments: deployments.clone(),
+                    cleanup: self
+                        .cleanup
+                        .as_ref()
+                        .expect("owned cleanup driver")
+                        .handle(),
+                    clock: self.clock.clone(),
+                    budget: settings.admission.budget_ceiling.clone(),
+                },
+            )?);
+        }
         Ok(())
     }
 
@@ -627,6 +677,7 @@ impl StandaloneNode {
         }
         Ok(Self {
             transport: None,
+            http: None,
             audit: None,
             rollouts: None,
             policies: None,

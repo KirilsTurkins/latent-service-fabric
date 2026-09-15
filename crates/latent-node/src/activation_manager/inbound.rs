@@ -30,6 +30,36 @@ impl LocalActivationManager {
         maximum_input_bytes: usize,
         deadline: IncomingDeadline,
     ) -> Result<InboundActivationReservation, PlatformError> {
+        self.reserve_inbound_inner(request, maximum_input_bytes, deadline, None)
+    }
+
+    /// Trusted node adapter entry point for an already selected trigger. Preserve
+    /// the exact revision and immutable policy view across concurrent cutovers.
+    /// This is not a wire-supplied pin or an admission bypass: the catalog must
+    /// validate the complete tuple, including current publication authority.
+    pub fn reserve_selected_inbound(
+        &self,
+        request: ActivationRequest,
+        maximum_input_bytes: usize,
+        deadline: IncomingDeadline,
+        revision: ResolvedRevision,
+        catalog: Arc<dyn latent_routing::ActivationCatalog>,
+    ) -> Result<InboundActivationReservation, PlatformError> {
+        self.reserve_inbound_inner(
+            request,
+            maximum_input_bytes,
+            deadline,
+            Some((revision, catalog)),
+        )
+    }
+
+    fn reserve_inbound_inner(
+        &self,
+        request: ActivationRequest,
+        maximum_input_bytes: usize,
+        deadline: IncomingDeadline,
+        selected: Option<(ResolvedRevision, Arc<dyn latent_routing::ActivationCatalog>)>,
+    ) -> Result<InboundActivationReservation, PlatformError> {
         if request.input.capacity() != 0
             || maximum_input_bytes == 0
             || maximum_input_bytes > self.inner.config.requests.maximum_input_bytes
@@ -72,6 +102,7 @@ impl LocalActivationManager {
                 &token,
                 None,
                 Some(maximum_input_bytes),
+                selected,
             )?;
             lifecycle.inbound_permit = Some(permit);
             envelope

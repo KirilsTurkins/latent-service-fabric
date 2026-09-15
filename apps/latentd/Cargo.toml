@@ -24,6 +24,7 @@ latent-control-store = { path = "../../crates/latent-control-store" }
 latent-core = { path = "../../crates/latent-core" }
 latent-capabilities = { path = "../../crates/latent-capabilities" }
 latent-executor = { path = "../../crates/latent-executor" }
+latent-ingress = { path = "../../crates/latent-ingress" }
 latent-manifest = { path = "../../crates/latent-manifest" }
 latent-node = { path = "../../crates/latent-node" }
 latent-protected-files = { path = "../../crates/latent-protected-files" }
@@ -35,6 +36,10 @@ latent-telemetry = { path = "../../crates/latent-telemetry" }
 latent-wasmtime = { path = "../../crates/latent-wasmtime" }
 latent-wire = { path = "../../crates/latent-wire" }
 http-body.workspace = true
+httparse = "=1.10.1"
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std"] }
+tokio-rustls = { version = "=0.26.5", default-features = false, features = ["ring"] }
+socket2 = "=0.6.5"
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

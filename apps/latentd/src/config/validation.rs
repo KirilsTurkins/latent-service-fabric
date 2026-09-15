@@ -62,7 +62,11 @@ pub(super) fn validate(config: &NodeConfig) -> Result<Capacity, PlatformError> {
     range(
         config.limits.maximum_payload_bytes,
         1,
-        MIB,
+        if config.http_ingress.is_some() {
+            latent_ingress::http::MAX_WIRE_BYTES
+        } else {
+            MIB
+        },
         "limits.maximumPayloadBytes",
     )?;
     range64(

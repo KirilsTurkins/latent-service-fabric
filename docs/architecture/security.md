@@ -20,8 +20,12 @@ credentials and derives the principal's tenant and actor. A request body cannot
 choose another actor or tenant. Administrative release, deployment, rollout and
 audit operations remain tenant scoped; node audit additionally requires the
 trusted node-operator claim. That claim does not authorize arbitrary tenant
-queries. The delivered listener is bounded loopback RPC; workload mTLS and
-cross-node delegation belong to later work.
+queries. That listener remains bounded loopback RPC. The separate optional
+[HTTP/TLS application listener](../reference/http-ingress.md) uses invoke-role
+credentials or explicit public-origin principals and exact current tenant
+publication pins. Forwarded fields never grant authority, and finite connection
+residency applies before authentication. Workload mTLS and cross-node delegation
+belong to later work.
 
 ## Supply-chain admission
 

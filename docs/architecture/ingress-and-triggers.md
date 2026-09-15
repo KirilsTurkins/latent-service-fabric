@@ -5,8 +5,11 @@ Capsules never own listeners, queue-consumer loops, or timer threads. Shared ing
 The completed Phase 2 node exposes direct invocation RPC on its authenticated
 loopback listener. Phase 3 provides [bounded local service calls](../runtime/local-service-invocation.md),
 [shared NATS trigger delivery](../runtime/nats-triggers.md), and the
-[bounded HTTP application mapping](../protocol/http-applications.md). The shared
-HTTP listener and durable HTTP routes remain separate Phase 3 deliveries.
+[bounded HTTP application mapping](../protocol/http-applications.md),
+[durable HTTP routes](../reference/http-triggers.md) and an optional
+[shared HTTP/TLS listener](../reference/http-ingress.md). HTTP selection pins the
+publication, revision and policy snapshot before normal admission. Finite
+connection, exchange, input, output and cleanup ownership applies to all routes.
 Durable workflow timers belong to Phase 6; blob-trigger adapters also remain
 future work. See the [roadmap](../roadmap.md).
 See the [invocation service](../protocol/invocation-service.md) for available calls.

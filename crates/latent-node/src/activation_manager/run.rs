@@ -283,7 +283,7 @@ impl Inner {
         token: &CancellationToken,
         child: Option<super::local_service::ChildAdmission>,
     ) -> Result<(AdmissionPermit, Option<latent_core::ChildBudgetOwner>), PlatformError> {
-        self.resolve_and_admit_input(envelope, lifecycle, token, child, None)
+        self.resolve_and_admit_input(envelope, lifecycle, token, child, None, None)
     }
 
     pub(super) fn resolve_and_admit_input(
@@ -293,11 +293,20 @@ impl Inner {
         token: &CancellationToken,
         child: Option<super::local_service::ChildAdmission>,
         maximum_inbound_bytes: Option<usize>,
+        selected: Option<(
+            latent_routing::ResolvedRevision,
+            Arc<dyn latent_routing::ActivationCatalog>,
+        )>,
     ) -> Result<(AdmissionPermit, Option<latent_core::ChildBudgetOwner>), PlatformError> {
         // A single immutable catalog view supplies both revision selection and
         // policy, even if a deployment changes while this invocation is queued.
-        let catalog = self.dependencies.catalog.pin()?;
-        let resolved = catalog.resolve(&envelope.target, Some(&envelope.activation_id.0))?;
+        let (resolved, catalog) = if let Some(selected) = selected {
+            selected
+        } else {
+            let catalog = self.dependencies.catalog.pin()?;
+            let resolved = catalog.resolve(&envelope.target, Some(&envelope.activation_id.0))?;
+            (resolved, catalog)
+        };
         if resolved.target != envelope.target || resolved.route_generation != catalog.generation() {
             return Err(error(
                 PlatformErrorCode::IncompatibleContract,

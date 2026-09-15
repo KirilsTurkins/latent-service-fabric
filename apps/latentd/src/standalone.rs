@@ -1,6 +1,7 @@
 //! Fixed node-owned composition for the standalone stateless runtime.
 
 mod audit;
+pub mod http;
 mod load;
 #[cfg(all(test, target_os = "linux"))]
 mod measurements;
@@ -46,6 +47,7 @@ pub struct StandaloneNode {
     supply_chain: SupplyChainLifetime,
     capabilities: CapabilityLifetime,
     transport: Option<transport::Transport>,
+    http: Option<http::HttpOwner>,
     audit: Option<audit::AuditRuntime>,
     rollouts: Option<rollouts::RolloutRuntime>,
     policies: Option<policies::PolicyRuntime>,
@@ -97,6 +99,16 @@ impl Drop for SupplyChainLifetime {
 }
 
 impl StandaloneNode {
+    #[must_use]
+    pub fn http_endpoint(&self) -> Option<SocketAddr> {
+        self.http.as_ref().map(http::HttpOwner::local_addr)
+    }
+
+    #[must_use]
+    pub fn http_snapshot(&self) -> Option<http::HttpSnapshot> {
+        self.http.as_ref().map(|owner| owner.handle().snapshot())
+    }
+
     /// Actual bounded continuation ownership; absence is retained for older
     /// compositions used as comparison controls.
     #[must_use]
@@ -121,6 +133,7 @@ impl StandaloneNode {
         self.transport
             .as_ref()
             .is_some_and(|transport| !transport.is_finished())
+            && self.http.as_ref().is_none_or(|http| !http.is_finished())
     }
 }
 

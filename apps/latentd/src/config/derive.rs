@@ -36,6 +36,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     };
     telemetry.validate().map_err(|_| invalid("telemetry"))?;
     let wasmtime = runtime::wasmtime(config, &capacity)?;
+    let http = super::http::derive(config, capacity.reservations as usize)?;
     let runtime_profile = std::sync::Arc::new(wasmtime.detected_runtime_profile()?);
     let artifacts = artifact_limits(config, management.max_page_size);
     let isolated_aot = config
@@ -98,6 +99,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
             ..StandaloneInventoryConfig::default()
         },
         transport,
+        http,
         shutdown_grace: Duration::from_millis(config.shutdown_grace_millis),
         load_sample_interval: Duration::from_millis(250),
     })
