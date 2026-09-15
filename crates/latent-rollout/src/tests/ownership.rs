@@ -3,6 +3,8 @@ use latent_control_store::rollouts::{RolloutId, RolloutOperationLookup};
 use latent_core::{PlatformErrorCode, TenantId};
 use std::sync::mpsc;
 
+mod completion;
+
 #[test]
 fn mutation_preflight_precedes_audit_and_catalog_effects() {
     runtime().block_on(async {
