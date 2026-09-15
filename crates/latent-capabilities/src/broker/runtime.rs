@@ -17,6 +17,7 @@ pub struct ActivationCapabilityRuntime {
     events: OnceLock<Arc<dyn super::events::EventPublisher>>,
     secrets: OnceLock<Arc<dyn super::secrets::SecretInvoker>>,
     random: OnceLock<Arc<super::random::RandomProvider>>,
+    metrics: OnceLock<Arc<super::metrics::MetricProvider>>,
 }
 impl ActivationCapabilityRuntime {
     #[must_use]
@@ -34,6 +35,7 @@ impl ActivationCapabilityRuntime {
             events: OnceLock::new(),
             secrets: OnceLock::new(),
             random: OnceLock::new(),
+            metrics: OnceLock::new(),
         }
     }
     #[must_use]
@@ -48,6 +50,15 @@ impl ActivationCapabilityRuntime {
     }
     pub fn random(&self) -> Result<Arc<super::random::RandomProvider>, PlatformError> {
         self.random.get().cloned().ok_or_else(denied)
+    }
+    pub fn install_metrics(
+        &self,
+        provider: Arc<super::metrics::MetricProvider>,
+    ) -> Result<(), PlatformError> {
+        self.metrics.set(provider).map_err(|_| denied())
+    }
+    pub fn metrics(&self) -> Result<Arc<super::metrics::MetricProvider>, PlatformError> {
+        self.metrics.get().cloned().ok_or_else(denied)
     }
     /// Configure one node-owned adapter during composition. Implementations
     /// must hold only a weak manager reference to avoid backend/runtime cycles.

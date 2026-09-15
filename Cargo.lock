@@ -1584,6 +1584,7 @@ dependencies = [
  "latent-manifest",
  "latent-policy",
  "latent-routing",
+ "latent-telemetry",
  "rustix",
  "serde",
  "serde_json",
@@ -1973,6 +1974,9 @@ version = "0.1.0-alpha.3"
 dependencies = [
  "latent-activation",
  "latent-core",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
  "tokio",
 ]
 

@@ -22,13 +22,13 @@ error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-re
 | `latent:events/publisher@0.2.0` | supported, synchronous WIT with cooperative host waits | configured [NATS JetStream publisher](nats-events.md) |
 | `latent:http/streaming@0.3.0` | supported, async owned resources | configured [streaming HTTP adapter](streaming-http.md) |
 | `latent:http/client@0.2.0` | supported, async import | configured [bounded HTTP adapter](outbound-http.md) |
-| `latent:telemetry/custom@0.1.0` | supported | unavailable, #220 |
+| `latent:telemetry/custom@0.1.0` | supported, synchronous WIT with cooperative audit waits | configured [shared custom metrics](custom-metrics.md) |
 | `latent:service/invoke@0.1.0` | supported, async import | configured [isolated local adapter](local-service-invocation.md) |
 
 An inspected package has no provider authority. Wasmtime preparation rejects a
 required provider that has no installed owner. The generated Phase 3 host/guest
 bindings contain types and registration helpers; the production linker supplies
-context, log and clock, plus service invocation, buffered/streaming HTTP, local/S3 blobs, local/Vault secrets, NATS publication and cryptographic randomness when their node-owned
+context, log and clock, plus service invocation, buffered/streaming HTTP, local/S3 blobs, local/Vault secrets, NATS publication, cryptographic randomness and custom metrics when their node-owned
 adapters are installed. Activations must supply their exact prepared
 imports and pass current eligibility/descriptor checks.
 

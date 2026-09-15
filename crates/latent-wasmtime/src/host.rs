@@ -14,6 +14,7 @@ mod context;
 pub(crate) mod events;
 pub(crate) mod http;
 mod logging;
+pub(crate) mod metrics;
 mod owned_context;
 pub(crate) mod policy;
 pub(crate) mod random;

@@ -144,6 +144,15 @@ impl PreparationContext {
                 )
             })?;
         }
+        if let Some(provider) = self.metrics() {
+            crate::host::metrics::install(&mut linker, provider).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind metrics import",
+                    false,
+                )
+            })?;
+        }
         if let Some(invoker) = self.secrets() {
             crate::host::secrets::install(&mut linker, invoker).map_err(|_| {
                 platform_error(
@@ -183,6 +192,11 @@ impl PreparationContext {
         &self,
     ) -> Option<Arc<latent_capabilities::broker::random::RandomProvider>> {
         self.capabilities.as_ref()?.upgrade()?.random().ok()
+    }
+    pub(super) fn metrics(
+        &self,
+    ) -> Option<Arc<latent_capabilities::broker::metrics::MetricProvider>> {
+        self.capabilities.as_ref()?.upgrade()?.metrics().ok()
     }
     pub(super) fn secrets(
         &self,

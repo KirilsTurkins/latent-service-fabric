@@ -181,6 +181,7 @@ impl super::super::PreparationContext {
                 secrets: self.secrets().is_some(),
                 events: self.events().is_some(),
                 random: self.random().is_some(),
+                metrics: self.metrics().is_some(),
             },
         )?;
         let metadata_bytes = input
