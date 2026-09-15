@@ -93,6 +93,7 @@ pub(super) struct SessionCore {
     pub stats: Arc<Stats>,
     pub state: Mutex<SessionState>,
     pub random_bytes: AtomicUsize,
+    pub metrics: Mutex<super::metrics::SessionUsage>,
     _metadata: Charge,
     _slot: Charge,
 }
@@ -264,8 +265,9 @@ impl ActivationCapabilityBroker {
         let slot = self.inner.counters.acquire(Kind::Session, 1)?;
         let metadata = self.inner.counters.acquire(
             Kind::Metadata,
-            4096 + self.inner.limits.maximum_handles_per_session
-                * std::mem::size_of::<Option<Arc<HandleEntry>>>(),
+            4096 + size_of::<super::metrics::SessionUsage>()
+                + self.inner.limits.maximum_handles_per_session
+                    * std::mem::size_of::<Option<Arc<HandleEntry>>>(),
         )?;
         let stats_metadata = self.inner.counters.acquire(Kind::Metadata, 512)?;
         let stats = Arc::new(Stats {
@@ -303,6 +305,7 @@ impl ActivationCapabilityBroker {
             probe,
             stats,
             random_bytes: AtomicUsize::new(0),
+            metrics: Mutex::new(super::metrics::SessionUsage::default()),
             state: Mutex::new(SessionState {
                 slots: (0..self.inner.limits.maximum_handles_per_session)
                     .map(|_| None)
