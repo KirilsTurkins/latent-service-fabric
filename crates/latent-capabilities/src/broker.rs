@@ -178,5 +178,6 @@ fn checked_text(value: &str) -> Result<String, PlatformError> {
     Ok(value.to_owned())
 }
 
+pub mod random;
 #[cfg(all(test, target_os = "linux"))]
 mod tests;

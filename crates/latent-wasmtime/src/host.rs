@@ -16,6 +16,7 @@ pub(crate) mod http;
 mod logging;
 mod owned_context;
 pub(crate) mod policy;
+pub(crate) mod random;
 pub(crate) mod secrets;
 pub(crate) mod service;
 pub(crate) mod streaming_http;

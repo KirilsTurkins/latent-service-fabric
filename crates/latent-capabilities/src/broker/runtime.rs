@@ -16,6 +16,7 @@ pub struct ActivationCapabilityRuntime {
     blobs: OnceLock<Arc<dyn super::blob::BlobInvoker>>,
     events: OnceLock<Arc<dyn super::events::EventPublisher>>,
     secrets: OnceLock<Arc<dyn super::secrets::SecretInvoker>>,
+    random: OnceLock<Arc<super::random::RandomProvider>>,
 }
 impl ActivationCapabilityRuntime {
     #[must_use]
@@ -32,11 +33,21 @@ impl ActivationCapabilityRuntime {
             blobs: OnceLock::new(),
             events: OnceLock::new(),
             secrets: OnceLock::new(),
+            random: OnceLock::new(),
         }
     }
     #[must_use]
     pub fn broker(&self) -> &Arc<ActivationCapabilityBroker> {
         &self.broker
+    }
+    pub fn install_random(
+        &self,
+        provider: Arc<super::random::RandomProvider>,
+    ) -> Result<(), PlatformError> {
+        self.random.set(provider).map_err(|_| denied())
+    }
+    pub fn random(&self) -> Result<Arc<super::random::RandomProvider>, PlatformError> {
+        self.random.get().cloned().ok_or_else(denied)
     }
     /// Configure one node-owned adapter during composition. Implementations
     /// must hold only a weak manager reference to avoid backend/runtime cycles.

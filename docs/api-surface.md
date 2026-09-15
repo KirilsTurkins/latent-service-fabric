@@ -14,8 +14,8 @@ web and SDK work without claiming it has shipped.
 | `latent:context` | Implemented filtered activation identity, trace, deadline, metadata and remaining budget. |
 | `latent:log` | Implemented budgeted structured logging. |
 | `latent:clock` | Implemented monotonic and wall-clock interfaces. |
-| `latent:random` | Declared; budgeted cryptographic randomness is Phase 3. |
-| `latent:blob` | Implemented configured Linux [immutable blobs](runtime/local-blobs.md) at 0.2.0; S3 remains Phase 3 work. |
+| `latent:random` | Implemented configured [OS cryptographic randomness](runtime/random.md) with per-call and shared activation limits. |
+| `latent:blob` | Implemented configured Linux [local](runtime/local-blobs.md) and [S3](runtime/s3-blobs.md) immutable blobs at 0.2.0. |
 | `latent:http` | Implemented configured [buffered](runtime/outbound-http.md) and [streaming](runtime/streaming-http.md) providers. |
 | `latent:secrets` | Implemented configured [protected local references](runtime/local-secrets.md), rotation and opaque credentials, plus the [Vault KV-v2 provider](runtime/vault-secrets.md). |
 | `latent:telemetry` | Declared; guest custom metrics with cardinality policy are Phase 3. |
@@ -118,7 +118,7 @@ separate facts.
 | `latent-wasmtime` | Generic component factory/backend, bounded value/host policy, fresh stores, cleanup proof and prepared-cache ownership. Opt-in `IsolatedAotCompiler`, `TrustedAotOutput`, `NativeAotSettings`, `NativeImageLimits`, `with_catalog_and_aot` and aggregate native usage. |
 | `latent-node` | `LocalActivationManager`, immediate-ID handles, scoped cancel/status, bounded journal, transport cleanup interruption and inventory seams. |
 | `latent-wire` | Invocation/management adapters, trusted principal/trace boundaries, finite request conversion and response services. Audit, deployment and rollout response leases remain attached through body/frame ownership. |
-| `latent-capabilities` | Sealed activation plans/sessions, policy/audit dispatch, affine I/O and shared provider pools. Configured service, HTTP, blob, secret and event ports require exact current grants. |
+| `latent-capabilities` | Sealed activation plans/sessions, policy/audit dispatch, affine I/O and shared provider pools. Configured service, HTTP, blob, secret, event and OS randomness ports require exact current grants. |
 | `latent-http` | `HttpProvider`, bounded destination/DNS/TLS/header configuration and buffered async HTTP; [profile and composition](runtime/outbound-http.md). |
 | `latent-secrets` | `LocalSecretStore`, `LocalSecretProvider`, finite protected reloads, per-use raw read authorization and opaque provider credential bindings. |
 | `latent-nats` | `NatsPublisher`, `NatsTriggers`, scoped TLS credentials, bounded publication and inbound scheduling, verified receipts and explicit uncertainty; [publisher](runtime/nats-events.md) and [trigger](runtime/nats-triggers.md) profiles. |
