@@ -75,7 +75,8 @@ The package schemas describe a separate immutable artifact format:
 | [package-admission-upload.schema.json](package-admission-upload.schema.json) | Closed JSON projection of authenticated package publication and exact evidence bytes. |
 | [package-admission-receipt.schema.json](package-admission-receipt.schema.json) | Bounded historical admission identities and policy generations; never an executable grant. |
 | [web-application.schema.json](web-application.schema.json) | Closed public asset, route and exact renderer associations inside a browser/SSR package. |
-| [web-build-observation.schema.json](web-build-observation.schema.json) | Explicit supplied-file web assembly assertions without synthetic component identity. |
+| [angular-build.schema.json](angular-build.schema.json) | Closed source, public asset and route inputs for the maintained Angular compiler adapter. |
+| [web-build-observation.schema.json](web-build-observation.schema.json) | Distinct supplied-file assembly and actual Angular composition assertions without synthetic component identity. |
 | [web-provenance-statement.schema.json](web-provenance-statement.schema.json) | Separately versioned web provenance binding a complete package and ordered output descriptors. |
 | [web-admission-receipt.schema.json](web-admission-receipt.schema.json) | Historical componentless admission through the shared publisher/builder/SBOM authority. |
 | [supply-chain-policy.schema.json](supply-chain-policy.schema.json) | Complete approved publisher/builder/revocation/SBOM snapshots and tenant authorization. |

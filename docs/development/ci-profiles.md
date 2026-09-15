@@ -49,3 +49,11 @@ uncertain comparisons and manual dispatch select it too. Unrelated source
 changes do not rebuild Angular; documentation-only changes still skip Rust.
 The step uses a separate locked npm cache, disables dependency lifecycle scripts,
 and executes native Wasmtime failure probes plus actual browser hydration.
+
+The same selection also covers the maintained Angular build recipe, its signing
+and admission code, package CLI, source/evidence schemas and process/inventory
+helpers. It reuses the provisioned npm tree and existing Cargo test harnesses
+to build a real application, verify its publisher/builder/SBOM evidence, render
+fresh activation state and hydrate the exact generated browser bundle. Build and
+runtime probes have separate finite deadlines. SDK-only changes and
+documentation-only changes do not select these Angular build probes.

@@ -2,6 +2,8 @@ use super::*;
 use latent_artifacts::{web::WEB_MANIFEST_PATH, AdmissionAuthority, PackageAdmissionUpload};
 use latent_core::{PlatformErrorCode, TenantId};
 
+mod angular_build;
+
 fn fixture() -> Fixture {
     let mut fixture = Fixture::new();
     fixture.enable_web_builder();

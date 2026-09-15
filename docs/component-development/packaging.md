@@ -8,6 +8,11 @@ bytes without compiling a component or invoking a guest. The separate
 [publisher signing library](../reference/publisher-trust.md) signs and verifies
 exact package identities. The [build observer and builder verifier](../reference/build-provenance.md)
 authenticate maintained echo compilation claims through separate builder policy.
+The [observed Angular adapter](angular-build.md) compiles and composes real
+renderer/browser artifacts under its separately approved recipe. Use
+`latent package renderer-profile` to inspect the exact renderer compatibility
+identity and `latent package build --validate-web` to require full public renderer
+and web-metadata validation before writing a supplied web package.
 [Authenticated catalog admission](../reference/package-admission.md) composes
 these independent checks with SBOM and tenant policy under one live node authority.
 

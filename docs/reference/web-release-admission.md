@@ -69,8 +69,12 @@ both excluded layers. Required materials are `source-snapshot`, `build-recipe`,
 `toolchain-config` and `package-assembler`; names are unique and bounded.
 Hermetic execution is false and dependency completeness is explicitly limited.
 The verifier trusts an approved builder's assertions; the unsigned observation
-and the signer API do not themselves observe a compiler. #234 supplies the
-maintained observed Angular recipe. Reproducibility is a separately checked
+and the signer API do not themselves observe a compiler. The
+[maintained observed Angular recipe](../component-development/angular-build.md)
+uses the separately approved build type
+`https://latent.dev/build/angular-component/v1`, with closed composition
+parameters and exact renderer, toolchain, source and bundle materials.
+Reproducibility is a separately checked
 builder assertion, never inferred from a repeated input list.
 
 The [web admission receipt](../../schemas/web-admission-receipt.schema.json)

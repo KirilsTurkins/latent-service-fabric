@@ -159,16 +159,32 @@ impl Fixture {
                 assembler: "lsf-web-package-assembly".into(),
                 recipe_version: 1,
                 input_mode: "explicit-supplied-files".into(),
-            },
+            }
+            .into(),
             started_at: 900,
             finished_at: 1000,
             reproducibility: "not-checked".into(),
             hermetic: false,
             dependency_completeness: "declared-inputs-incomplete".into(),
         };
+        self.sign_observed_web(bundle, &observed, 1000)
+    }
+
+    pub fn sign_observed_web(
+        &self,
+        bundle: PackageBundle,
+        observed: &WebBuildObservation,
+        issued_at: u64,
+    ) -> PackageAdmissionUpload {
+        let subject = PackageSigningSubject::from_package(
+            bundle.manifest_bytes(),
+            bundle.config_bytes(),
+            PackageLimits::default(),
+        )
+        .unwrap();
         let validity = SignatureValidity {
-            issued_at: 1000,
-            expires_at: 2000,
+            issued_at,
+            expires_at: issued_at + 1000,
         };
         let signature = self
             .publisher_signer
@@ -176,7 +192,7 @@ impl Fixture {
             .unwrap();
         let provenance = self
             .builder_signer
-            .sign_web_build(&subject, &observed, validity, ProvenanceLimits::default())
+            .sign_web_build(&subject, observed, validity, ProvenanceLimits::default())
             .unwrap();
         let input = bundle.into_input();
         PackageAdmissionUpload {
@@ -195,5 +211,48 @@ impl Fixture {
             }],
             sboms: vec![],
         }
+    }
+
+    /// Approve the maintained test builder at the actual observation time.
+    /// Observed bytes and timestamps are never rewritten to fit fixture clocks.
+    pub fn enable_observed_angular_builder(&mut self, now: u64) {
+        fn shift(value: &mut Value, delta: u64) {
+            match value {
+                Value::Object(object) => {
+                    for (key, value) in object {
+                        if matches!(key.as_str(), "validFrom" | "validUntil") {
+                            *value = (value.as_u64().unwrap() + delta).into();
+                        } else {
+                            shift(value, delta);
+                        }
+                    }
+                }
+                Value::Array(array) => {
+                    for value in array {
+                        shift(value, delta);
+                    }
+                }
+                _ => (),
+            }
+        }
+        shift(&mut self.policy, now - NOW);
+        self.clock.set(now);
+        self.policy["builder"]["requirements"][0]["buildType"] = ANGULAR_BUILD_TYPE.into();
+        self.policy["publisherRevocations"]["policyDigest"] = PublisherPolicy::from_json(
+            &serde_json::to_vec(&self.policy["publisher"]).unwrap(),
+            SignatureLimits::default(),
+        )
+        .unwrap()
+        .digest()
+        .to_string()
+        .into();
+        self.policy["builderRevocations"]["policyDigest"] = BuilderPolicy::from_json(
+            &serde_json::to_vec(&self.policy["builder"]).unwrap(),
+            ProvenanceLimits::default(),
+        )
+        .unwrap()
+        .digest()
+        .to_string()
+        .into();
     }
 }

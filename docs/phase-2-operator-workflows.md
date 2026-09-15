@@ -39,7 +39,8 @@ paths, duplicate referrer identities and nonportable paths. Descendants are
 opened from one approved capability root without following symlinks; regular
 file size and consistency are checked before and after reading.
 
-The CLI limits a package to 32 MiB of layer bytes and each layer to 16 MiB.
+The CLI limits a package to 64 MiB of layer bytes and each layer to 32 MiB,
+including the [qualified Angular renderer](component-development/angular-build.md).
 Detached evidence has a separate 16 MiB aggregate ceiling, at most eight entries
 per kind, a 16 KiB index, 4 KiB referrer manifests and exact `{}` configuration.
 Signature payloads are at most 4 KiB, provenance payloads 48 KiB, and SBOM

@@ -22,6 +22,13 @@ class ClassificationTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertTrue(profile.classify_paths(["README.md", path]).renderer)
         for path in ["tools/angular-renderer-adapter/src/lib.rs", "tools/build_angular_renderer.py",
+                     "tools/angular_build/guard.mjs", "tools/build_angular_package.py",
+                     "tools/run_angular_build_tests.py", "tools/check_angular_hydration.mjs",
+                     "examples/angular-application/server/main.ts", "tools/build_inventory_units.py",
+                     "crates/latent-signing/src/web_provenance/angular.rs", "crates/latent-policy/src/supply_chain.rs",
+                     "apps/latent/src/package.rs", "schemas/angular-build.schema.json",
+                     "schemas/web-build-observation.schema.json", "schemas/builder-policy.schema.json",
+                     "tools/tests/test_build_angular_package.py", "tools/tests/test_angular_build_runner.py",
                      "tools/run_angular_renderer_tests.py", "apps/latentd/src/config/renderer.rs",
                      "crates/latent-packaging/src/semantics/web.rs", "crates/latent-manifest/src/renderer.rs",
                      "crates/latent-node/src/lib.rs", "crates/latent-ingress/src/http.rs"]:
