@@ -12,6 +12,9 @@ mod sources;
 #[cfg(test)]
 mod tests;
 mod wasm;
+mod web;
+
+pub use web::{inspect_web_bundle, validate_web_renderer};
 
 pub use compatibility::{
     check_invocation_target, compare_packages, compile_host_binding, compile_local_binding,

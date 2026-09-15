@@ -2,8 +2,10 @@ mod check;
 mod proof;
 #[cfg(test)]
 mod tests;
+mod web_proof;
 
 pub use proof::VerifiedBuildProvenance;
+pub use web_proof::VerifiedWebBuildProvenance;
 
 use crate::{
     provenance::evidence::inspect_evidence, BuilderTrust, BuilderTrustStateId,
@@ -77,6 +79,43 @@ impl BuilderVerifier {
         self.check_captured(proof, now)
     }
 
+    /// Verifies the explicitly approved componentless web-output profile against
+    /// the same bounded trust owner and high-water clock as capsule provenance.
+    pub fn verify_web_package(
+        &self,
+        expected: &PackageSigningSubject,
+        evidence: ProvenanceEvidenceRef<'_>,
+        now: u64,
+    ) -> SignatureResult<VerifiedWebBuildProvenance> {
+        self.observe(now)?;
+        let trust = Arc::clone(&*self.lock()?);
+        trust.fresh(now)?;
+        let inspected =
+            crate::provenance::evidence::inspect_web_evidence(expected, evidence, self.limits)?;
+        let proof = check::authenticate_web(&trust, inspected, self.limits, now)?;
+        self.check_state(
+            proof.state_id(),
+            proof.verified_at(),
+            proof.valid_until(),
+            now,
+        )?;
+        Ok(proof)
+    }
+
+    pub fn check_web_current(
+        &self,
+        proof: &VerifiedWebBuildProvenance,
+        now: u64,
+    ) -> SignatureResult<()> {
+        self.observe(now)?;
+        self.check_state(
+            proof.state_id(),
+            proof.verified_at(),
+            proof.valid_until(),
+            now,
+        )
+    }
+
     /// Atomically installs explicit fresh operator-approved snapshots. Failed
     /// refreshes never extend prior validity; identical updates do not renew TTLs.
     pub fn replace_trust(
@@ -111,12 +150,27 @@ impl BuilderVerifier {
     }
 
     fn check_captured(&self, proof: &VerifiedBuildProvenance, now: u64) -> SignatureResult<()> {
+        self.check_state(
+            proof.state_id(),
+            proof.verified_at(),
+            proof.valid_until(),
+            now,
+        )
+    }
+
+    fn check_state(
+        &self,
+        state: &BuilderTrustStateId,
+        verified_at: u64,
+        valid_until: u64,
+        now: u64,
+    ) -> SignatureResult<()> {
         let current = self.lock()?;
-        if current.state_id() != proof.state_id() {
+        if current.state_id() != state {
             return Err(SignatureFailure::StaleProof.into());
         }
         current.fresh(now)?;
-        if now < proof.verified_at() || now >= proof.valid_until() {
+        if now < verified_at || now >= valid_until {
             return Err(SignatureFailure::StaleProof.into());
         }
         if self.clock_floor() > now {

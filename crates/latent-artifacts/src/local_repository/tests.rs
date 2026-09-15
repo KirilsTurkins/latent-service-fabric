@@ -29,6 +29,9 @@ mod root_durability;
 mod verified_metadata;
 #[path = "visibility_tests.rs"]
 mod visibility;
+#[cfg(target_os = "linux")]
+#[path = "web_tests.rs"]
+mod web;
 
 use std::fs;
 use std::future::Future;

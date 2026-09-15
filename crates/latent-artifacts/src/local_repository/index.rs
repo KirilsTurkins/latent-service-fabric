@@ -17,7 +17,9 @@ pub(super) use sizing::descriptor_bytes;
 use std::collections::{BTreeMap, BTreeSet};
 
 pub(super) const REPOSITORY_ACCOUNTED_BYTES: usize = crate::preparation::EPOCH_RETAINED_BYTES
-    + std::mem::size_of::<crate::verification_statistics::VerificationStatistics>();
+    + std::mem::size_of::<crate::verification_statistics::VerificationStatistics>()
+    + std::mem::size_of::<super::web::WebCatalog>()
+    + 1024;
 pub(super) type Rows = BTreeSet<PublicationId>;
 
 #[derive(Debug)]
@@ -44,6 +46,8 @@ pub(super) struct CatalogIndex {
     by_tenant: BTreeMap<TenantId, Rows>,
     by_service: BTreeMap<TenantId, BTreeMap<ServiceId, Rows>>,
     pub(super) accounted_bytes: usize,
+    web_entries: usize,
+    web_bytes: usize,
     pub(super) generation: u64,
 }
 
@@ -59,6 +63,8 @@ impl Default for CatalogIndex {
             by_tenant: BTreeMap::new(),
             by_service: BTreeMap::new(),
             accounted_bytes: REPOSITORY_ACCOUNTED_BYTES,
+            web_entries: 0,
+            web_bytes: 0,
             generation: 0,
         }
     }
@@ -82,6 +88,42 @@ fn unique(rows: Option<&Rows>) -> Result<Option<&PublicationId>, PlatformError> 
 }
 
 impl CatalogIndex {
+    /// One aggregate metadata budget for capsule and componentless web rows.
+    /// Caller holds the shared publication writer while preflighting/cutting over.
+    pub(super) fn check_web(
+        &self,
+        entries: usize,
+        bytes: usize,
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<(), PlatformError> {
+        if self
+            .by_publication
+            .len()
+            .checked_add(self.pending_reservations.len())
+            .and_then(|n| n.checked_add(entries))
+            .is_none_or(|n| n > config.max_index_entries)
+            || self
+                .accounted_bytes
+                .checked_sub(self.web_bytes)
+                .and_then(|n| n.checked_add(bytes))
+                .is_none_or(|n| n > config.max_index_bytes)
+        {
+            return Err(resource_exhausted("catalog-web-index-limit"));
+        }
+        Ok(())
+    }
+    pub(super) fn replace_web(
+        &mut self,
+        entries: usize,
+        bytes: usize,
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<(), PlatformError> {
+        self.check_web(entries, bytes, config)?;
+        self.accounted_bytes = self.accounted_bytes - self.web_bytes + bytes;
+        self.web_entries = entries;
+        self.web_bytes = bytes;
+        Ok(())
+    }
     pub(super) fn pending_ids(&self, maximum: usize) -> Vec<PublicationId> {
         self.pending_reservations
             .keys()
@@ -231,7 +273,7 @@ impl CatalogIndex {
         config: DirectoryArtifactRepositoryConfig,
     ) -> Result<(), PlatformError> {
         if !self.pending_reservations.contains_key(id)
-            && self.by_publication.len() + self.pending_reservations.len()
+            && self.by_publication.len() + self.pending_reservations.len() + self.web_entries
                 >= config.max_index_entries
         {
             return Err(resource_exhausted("catalog index entry limit reached"));

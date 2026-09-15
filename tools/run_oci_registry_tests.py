@@ -27,6 +27,19 @@ LABEL = "io.latent.oci-test-run"
 USERNAME = "lsf-test-only"
 PASSWORD = "lsf-test-only-password"
 FIXTURE = ROOT / "crates/latent-oci/tests/fixtures/registry/htpasswd"
+WEB_TEST = "supply_chain::tests::web_catalog::registry::authenticated_web_registry_admission_roundtrip"
+
+
+def test_target(web: bool) -> list[str]:
+    """Build and run the same target; web mode selects exactly one required test."""
+    return (["-p", "latent-policy", "--lib"] if web else
+            ["-p", "latent-oci", "--test", "registry"])
+
+
+def test_filters(web: bool, observed: bool) -> list[str]:
+    if web:
+        return ["--exact", WEB_TEST]
+    return [] if observed else ["--skip", "real_observed_build_provenance_roundtrip"]
 
 
 def command(arguments: list[str], *, timeout: float = 30) -> str:
@@ -187,14 +200,20 @@ def main() -> int:
     parser.add_argument("--test-binary", type=Path, help="run an already-built registry test binary")
     parser.add_argument("--provenance-input", type=Path,
                         help="include actual observed-build round trip using package-ready build_provenance output")
+    parser.add_argument("--web-admission-component", type=Path,
+                        help="run signed browser/SSR catalog round trips with the bounded public web-contract component")
     parser.add_argument("--state-file", type=Path, help="exclusive CI recovery state, removed after cleanup")
     parser.add_argument("--cleanup-state", type=Path, help="recover only the labelled container in this state file")
     arguments = parser.parse_args()
+    if arguments.web_admission_component and arguments.provenance_input:
+        parser.error("web admission and observed capsule provenance use separate test targets")
     if arguments.cleanup_state:
         cleanup_state(arguments.cleanup_state)
         return 0
+    web = arguments.web_admission_component is not None
+    component = arguments.web_admission_component.resolve(strict=True) if web else None
     if not arguments.check_fixture and arguments.test_binary is None:
-        subprocess.run(["cargo", "test", "-p", "latent-oci", "--test", "registry", "--locked", "--no-run"],
+        subprocess.run(["cargo", "test", *test_target(web), "--locked", "--no-run"],
                        cwd=ROOT, check=True, timeout=900)
     with tempfile.TemporaryDirectory(prefix="lsf-oci-test-") as temporary:
         directory = Path(temporary)
@@ -209,13 +228,14 @@ def main() -> int:
             environment = os.environ.copy()
             environment.update(LSF_OCI_TEST_ORIGIN=origin, LSF_OCI_TEST_CA_DER=str(directory / "ca.der"))
             environment.pop("LSF_OCI_PROVENANCE_INPUT", None)
-            extra = []
+            environment.pop("LSF_WEB_COMPONENT", None)
+            if component:
+                environment["LSF_WEB_COMPONENT"] = str(component)
             if arguments.provenance_input:
                 environment["LSF_OCI_PROVENANCE_INPUT"] = str(arguments.provenance_input.resolve(strict=True))
-            else:
-                extra = ["--skip", "real_observed_build_provenance_roundtrip"]
+            extra = test_filters(web, arguments.provenance_input is not None)
             test = ([str(arguments.test_binary.resolve())] if arguments.test_binary else
-                    ["cargo", "test", "-p", "latent-oci", "--test", "registry", "--locked", "--"])
+                    ["cargo", "test", *test_target(web), "--locked", "--"])
             subprocess.run([*test, "--ignored", "--test-threads=1", "--nocapture", *extra], cwd=ROOT,
                            env=environment, check=True, timeout=180)
             print("Disposable registry integration passed; no artifacts retained.")

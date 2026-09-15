@@ -72,6 +72,10 @@ The package schemas describe a separate immutable artifact format:
 | [package-sbom-policy.schema.json](package-sbom-policy.schema.json) | Explicit embedded/detached presence and per-role attribution requirements. |
 | [package-admission-upload.schema.json](package-admission-upload.schema.json) | Closed JSON projection of authenticated package publication and exact evidence bytes. |
 | [package-admission-receipt.schema.json](package-admission-receipt.schema.json) | Bounded historical admission identities and policy generations; never an executable grant. |
+| [web-application.schema.json](web-application.schema.json) | Closed public asset, route and exact renderer associations inside a browser/SSR package. |
+| [web-build-observation.schema.json](web-build-observation.schema.json) | Explicit supplied-file web assembly assertions without synthetic component identity. |
+| [web-provenance-statement.schema.json](web-provenance-statement.schema.json) | Separately versioned web provenance binding a complete package and ordered output descriptors. |
+| [web-admission-receipt.schema.json](web-admission-receipt.schema.json) | Historical componentless admission through the shared publisher/builder/SBOM authority. |
 | [supply-chain-policy.schema.json](supply-chain-policy.schema.json) | Complete approved publisher/builder/revocation/SBOM snapshots and tenant authorization. |
 | [node-supply-chain.schema.json](node-supply-chain.schema.json) | Standalone `supplyChain` member selecting local compatibility or enforced admission. |
 | [node-isolated-aot.schema.json](node-isolated-aot.schema.json) | Opt-in standalone `isolatedAot` member selecting an approved isolated compiler, protected local key and bounded native caches. |

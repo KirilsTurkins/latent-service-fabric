@@ -4,7 +4,7 @@ pub(crate) mod codec;
 pub(crate) mod evidence;
 pub(crate) mod json;
 mod limits;
-mod model;
+pub(crate) mod model;
 mod signer;
 mod validate;
 

@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/web-build-observation.schema.json",
+  "title": "LSF supplied-file web package assembly observation",
+  "$comment": "Unsigned data; builder authentication is separate. Snapshot revision equals its digest hex. Exact ordered output descriptors exclude only package/sbom.cdx.json and package/build-inputs.json; full package identity authenticates both. Rust also checks byte/capacity bounds, distinct materials, source association and ordered timestamps within one hour. This profile asserts supplied-file assembly, not Angular compilation or hermetic builds.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "buildType",
+    "source",
+    "materials",
+    "parameters",
+    "startedAt",
+    "finishedAt",
+    "reproducibility",
+    "hermetic",
+    "dependencyCompleteness",
+    "outputsDigest",
+    "outputsCount",
+    "outputsBytes"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "buildType": {
+      "const": "https://latent.dev/build/web-package-assembly/v1"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "revision",
+        "snapshotDigest",
+        "repositoryTrust",
+        "capture"
+      ],
+      "properties": {
+        "repository": {
+          "$ref": "#/$defs/repository"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "snapshotDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "repositoryTrust": {
+          "const": "operator-asserted"
+        },
+        "capture": {
+          "const": "explicit-input-files"
+        }
+      }
+    },
+    "materials": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "digest",
+          "size"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*(?![\\s\\S])"
+          },
+          "digest": {
+            "$ref": "#/$defs/digest"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 268435456
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "const": "source-snapshot"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "const": "build-recipe"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "const": "toolchain-config"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "const": "package-assembler"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assembler",
+        "recipeVersion",
+        "inputMode"
+      ],
+      "properties": {
+        "assembler": {
+          "const": "lsf-web-package-assembly"
+        },
+        "recipeVersion": {
+          "const": 1
+        },
+        "inputMode": {
+          "const": "explicit-supplied-files"
+        }
+      }
+    },
+    "startedAt": {
+      "$ref": "#/$defs/time"
+    },
+    "finishedAt": {
+      "$ref": "#/$defs/time"
+    },
+    "reproducibility": {
+      "enum": [
+        "not-checked",
+        "two-build-byte-equality"
+      ]
+    },
+    "hermetic": {
+      "const": false
+    },
+    "dependencyCompleteness": {
+      "const": "declared-inputs-incomplete"
+    },
+    "outputsDigest": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "outputsCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 256
+    },
+    "outputsBytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 268435456
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "time": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:/@-]+(?![\\s\\S])"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})(?![\\s\\S])"
+    },
+    "repository": {
+      "type": "string",
+      "maxLength": 512,
+      "pattern": "^https://(?=[^/]{1,253}/)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+(?:/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+)*(?![\\s\\S])"
+    }
+  }
+}

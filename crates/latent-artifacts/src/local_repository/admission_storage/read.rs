@@ -313,7 +313,10 @@ fn regular(path: &Path) -> Result<(), PlatformError> {
     }
     Ok(())
 }
-fn verify(directory: &Path, blob: &Blob) -> Result<(), PlatformError> {
+pub(in crate::local_repository) fn verify(
+    directory: &Path,
+    blob: &Blob,
+) -> Result<(), PlatformError> {
     let path = directory.join(&blob.file);
     regular(&path)?;
     let mut file = File::open(path).map_err(|_| corrupt("missing-admission-file"))?;
@@ -346,7 +349,11 @@ fn verify(directory: &Path, blob: &Blob) -> Result<(), PlatformError> {
     }
     Ok(())
 }
-fn read_blob(directory: &Path, blob: &Blob, limit: usize) -> Result<Vec<u8>, PlatformError> {
+pub(in crate::local_repository) fn read_blob(
+    directory: &Path,
+    blob: &Blob,
+    limit: usize,
+) -> Result<Vec<u8>, PlatformError> {
     regular(&directory.join(&blob.file))?;
     let bytes = read_bounded_file(&directory.join(&blob.file), limit, "admission material")?;
     if bytes.len() as u64 != blob.size || content_digest(&bytes).0 != blob.digest {
@@ -354,7 +361,7 @@ fn read_blob(directory: &Path, blob: &Blob, limit: usize) -> Result<Vec<u8>, Pla
     }
     Ok(bytes)
 }
-fn read_evidence(
+pub(in crate::local_repository) fn read_evidence(
     directory: &Path,
     entries: &[Evidence],
     limits: AdmissionStorageLimits,

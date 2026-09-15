@@ -17,6 +17,7 @@ mod raw_cache;
 mod retained_package;
 mod verification_statistics;
 mod verified_metadata;
+pub mod web;
 pub use publication::{PublicationRef, PublicationSelector};
 pub use publication_management::PublicationOperationReceipt;
 pub use retained_package::{RetainedPackageParts, RetainedPackageSource};

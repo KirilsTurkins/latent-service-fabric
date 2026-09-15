@@ -169,6 +169,9 @@ wasm-tools validate "${WEB_COMPONENT}"
 LSF_WEB_COMPONENT="${WEB_COMPONENT}" \
     cargo test -p latent-wasmtime --test async_application --locked -- \
         --ignored --nocapture --test-threads=1
+LSF_WEB_COMPONENT="${WEB_COMPONENT}" \
+    cargo test -p latent-policy --lib --locked -- \
+        actual_web_component --ignored --nocapture --test-threads=1
 
 # Two real node invocations across a durable restart; no scale workload.
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \

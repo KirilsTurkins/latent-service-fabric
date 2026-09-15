@@ -114,3 +114,7 @@ transaction, with explicit CAS, bounded receipts and retained request ownership.
 a closed Angular Component Model renderer candidate using executable SSR,
 hydration and resource-bound evidence. It keeps production adapter/build work
 and unsupported stronger isolation profiles explicit.
+
+[ADR-0038](0038-admit-web-packages-with-componentless-publication-authority.md)
+admits exact browser/SSR packages with componentless scoped publication authority,
+current-use leases and the existing catalog's shared resource bounds.

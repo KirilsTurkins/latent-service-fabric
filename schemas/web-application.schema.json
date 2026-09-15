@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/web-application.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "profile",
+    "assetsDigest",
+    "assets",
+    "routes"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "profile": {
+      "const": "lsf.web-release.v1"
+    },
+    "assetsDigest": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "layer",
+          "digest",
+          "size",
+          "mediaType"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240,
+            "pattern": "^/(?:[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*)?(?![\\s\\S])",
+            "not": {
+              "pattern": "^/_lsf/assets/"
+            }
+          },
+          "layer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240,
+            "pattern": "^public/[A-Za-z0-9._/-]+(?![\\s\\S])"
+          },
+          "digest": {
+            "type": "string",
+            "minLength": 71,
+            "maxLength": 71,
+            "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8388608
+          },
+          "mediaType": {
+            "enum": [
+              "text/html",
+              "text/javascript",
+              "text/css",
+              "application/json",
+              "text/plain",
+              "image/svg+xml",
+              "image/png",
+              "image/jpeg",
+              "image/webp",
+              "image/x-icon",
+              "font/woff2"
+            ]
+          }
+        }
+      }
+    },
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "mode"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240,
+            "pattern": "^/(?:[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*)?(?![\\s\\S])",
+            "not": {
+              "pattern": "^/_lsf/assets/"
+            }
+          },
+          "mode": {
+            "enum": [
+              "client",
+              "prerender",
+              "server"
+            ]
+          },
+          "asset": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240,
+            "pattern": "^/(?:[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*)?(?![\\s\\S])",
+            "not": {
+              "pattern": "^/_lsf/assets/"
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "mode": {
+                  "const": "server"
+                }
+              },
+              "required": [
+                "mode"
+              ]
+            },
+            "then": {
+              "not": {
+                "required": [
+                  "asset"
+                ]
+              }
+            },
+            "else": {
+              "required": [
+                "asset"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "renderer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "layer",
+        "digest",
+        "size",
+        "profile",
+        "profileDigest",
+        "assetsDigest"
+      ],
+      "properties": {
+        "layer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240,
+          "pattern": "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*(?![\\s\\S])"
+        },
+        "digest": {
+          "type": "string",
+          "minLength": 71,
+          "maxLength": 71,
+          "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 33554432
+        },
+        "profile": {
+          "enum": [
+            "wasm-web-buffered-v1",
+            "angular-ssr-component-v1"
+          ]
+        },
+        "profileDigest": {
+          "type": "string",
+          "minLength": 71,
+          "maxLength": 71,
+          "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "assetsDigest": {
+          "type": "string",
+          "minLength": 71,
+          "maxLength": 71,
+          "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+        }
+      }
+    }
+  },
+  "title": "LSF exact web application package metadata",
+  "$comment": "At metadata/web-application.json; <=64 KiB. Rust additionally checks portable noncolliding paths, order, aggregate asset bytes, MIME suffixes, exact package/layer/profile hashes and actual async renderer WIT. Schema/layout alone confers no admission. Angular profile is recognizable but is not installed by declaring it.",
+  "allOf": [
+    {
+      "if": {
+        "not": {
+          "required": [
+            "renderer"
+          ]
+        }
+      },
+      "then": {
+        "properties": {
+          "routes": {
+            "items": {
+              "properties": {
+                "mode": {
+                  "enum": [
+                    "client",
+                    "prerender"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

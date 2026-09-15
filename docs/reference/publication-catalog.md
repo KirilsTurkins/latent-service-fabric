@@ -6,8 +6,13 @@ Catalog format 2 implements the storage contract in
 It separates component bytes, complete immutable packages and permission to use
 a package in a particular tenant. The catalog library and offline migration are
 implemented. [Deployment and runtime propagation](publication-runtime.md) carries
-exact selections through guest start. Public selectors in the RPC, CLI and six
-SDKs (#267) remain their own integration step.
+exact selections through guest start. [Public selectors](publication-api.md) in
+the RPC, CLI and six SDKs preserve the same publication identity.
+
+[Web publication admission](web-release-admission.md) uses the same exact scoped
+reference construction, root owner and combined storage/index quotas. Its
+componentless lifecycle has an explicit admission-mode upgrade that older
+readers reject before shared-blob recovery or collection.
 
 `ReleaseDigest` remains the SHA-256 of executable bytes. `PackageDigest` remains
 the complete immutable package identity. A `PublicationRef` contains an explicit

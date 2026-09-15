@@ -1,5 +1,5 @@
 //! Closed exact-byte side material, bound by the version-2 completion record.
-mod read;
+pub(super) mod read;
 
 use latent_core::PlatformError;
 use serde::{Deserialize, Serialize};
@@ -15,23 +15,23 @@ pub(super) const RECORD_FILE: &str = "admission.json";
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Blob {
-    file: String,
-    digest: String,
-    size: u64,
+pub(super) struct Blob {
+    pub(super) file: String,
+    pub(super) digest: String,
+    pub(super) size: u64,
 }
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Layer {
-    path: String,
-    blob: Blob,
+pub(super) struct Layer {
+    pub(super) path: String,
+    pub(super) blob: Blob,
 }
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Evidence {
-    manifest: Blob,
-    configuration: Blob,
-    payload: Blob,
+pub(super) struct Evidence {
+    pub(super) manifest: Blob,
+    pub(super) configuration: Blob,
+    pub(super) payload: Blob,
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -179,7 +179,7 @@ impl PreparedAdmissionFiles {
     }
 }
 
-fn add(files: &mut Vec<(String, Vec<u8>)>, bytes: Vec<u8>) -> Blob {
+pub(super) fn add(files: &mut Vec<(String, Vec<u8>)>, bytes: Vec<u8>) -> Blob {
     let file = format!("admission-{:04}.bin", files.len());
     let blob = Blob {
         file: file.clone(),
@@ -189,7 +189,10 @@ fn add(files: &mut Vec<(String, Vec<u8>)>, bytes: Vec<u8>) -> Blob {
     files.push((file, bytes));
     blob
 }
-fn evidence(files: &mut Vec<(String, Vec<u8>)>, entries: Vec<AdmissionEvidence>) -> Vec<Evidence> {
+pub(super) fn evidence(
+    files: &mut Vec<(String, Vec<u8>)>,
+    entries: Vec<AdmissionEvidence>,
+) -> Vec<Evidence> {
     entries
         .into_iter()
         .map(|value| Evidence {
