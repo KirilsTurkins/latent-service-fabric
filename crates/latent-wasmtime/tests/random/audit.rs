@@ -29,7 +29,7 @@ async fn required_audit_records_operations_and_outcomes_without_generated_bytes_
     let page = loop {
         match audit.query(request.clone(), deadline) {
             Err(error) if error.message == "audit-busy" && Instant::now() < deadline => {
-                tokio::task::yield_now().await
+                tokio::task::yield_now().await;
             }
             result => break result.unwrap().wait().await.unwrap(),
         }

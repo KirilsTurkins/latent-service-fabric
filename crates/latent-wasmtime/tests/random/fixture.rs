@@ -106,6 +106,10 @@ impl Fixture {
     ) -> Self {
         Self::configured(source, limits, None).await
     }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one real catalog, policy and runtime composition fixture in dependency order"
+    )]
     pub async fn configured(
         source: Option<Arc<dyn latent_capabilities::broker::random::TestEntropy>>,
         limits: latent_capabilities::broker::random::RandomLimits,

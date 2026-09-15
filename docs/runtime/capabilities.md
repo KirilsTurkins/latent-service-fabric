@@ -51,8 +51,7 @@ permission or exposing credential-bearing selectors.
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
 [standalone node](../reference/standalone-node.md). Phase 3 continues with production
-standalone provider configuration, event triggers
-and custom metrics, application ingress and web/SSR integration. Transactional
+standalone provider configuration and custom metrics, application ingress and web/SSR integration. Transactional
 state/effects, cluster transport and durable workflow suspension remain later
 phases; declared WIT alone makes none of them callable.
 

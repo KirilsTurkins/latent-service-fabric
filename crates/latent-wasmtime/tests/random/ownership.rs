@@ -134,3 +134,23 @@ async fn fuel_and_buffer_capacity_are_reserved_before_entropy_or_result_allocati
     drop(s);
     f.idle();
 }
+
+#[tokio::test]
+async fn a_second_provider_with_identical_metadata_cannot_borrow_the_installed_grant() {
+    use latent_capabilities::broker::random::RandomProvider;
+    let source = Arc::new(Source::default());
+    let f = Fixture::new(Some(source.clone()), RandomLimits::default()).await;
+    let second =
+        RandomProvider::for_test(&f.broker, 1, RandomLimits::default(), source.clone()).unwrap();
+    assert_eq!(
+        second.reference().configuration_digest(),
+        f.provider.reference().configuration_digest()
+    );
+    let (request, control) = f.request("foreign-owner", 0, 8, 1);
+    let s = session(&f, &request, &control);
+    assert!(matches!(second.bytes(&s, 8), Err(RandomError::Unavailable)));
+    assert_eq!(source.calls.load(Ordering::Acquire), 0);
+    assert_eq!(control.budget.snapshot_at(Instant::now()).cpu_fuel, 0);
+    drop(s);
+    f.idle();
+}

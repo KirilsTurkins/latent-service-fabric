@@ -149,14 +149,17 @@ async fn cancellation_before_and_after_entropy_prevents_delivery_and_reclaims_th
     assert!(!matches!(report.outcome, Ok(GuestOutcome::Returned { .. })));
     assert_eq!(source.calls.load(Ordering::Acquire), 0);
     f.idle();
-    let (request, control) = f.request("cancel-source", 0, 8, 2);
-    let probe = control.probe.clone();
-    *source.hook.lock().unwrap() = Some(Box::new(move || probe.0.store(true, Ordering::Release)));
-    let report = f.backend.invoke_contained(request, &control).await;
-    assert!(!matches!(report.outcome, Ok(GuestOutcome::Returned { .. })));
-    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
-    assert_eq!(source.calls.load(Ordering::Acquire), 1);
-    f.idle();
+    for mode in 0..=1 {
+        let (request, control) = f.request("cancel-source", mode, 8, 2);
+        let probe = control.probe.clone();
+        *source.hook.lock().unwrap() =
+            Some(Box::new(move || probe.0.store(true, Ordering::Release)));
+        let report = f.backend.invoke_contained(request, &control).await;
+        assert!(!matches!(report.outcome, Ok(GuestOutcome::Returned { .. })));
+        assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+        assert_eq!(source.calls.load(Ordering::Acquire), mode as usize + 1);
+        f.idle();
+    }
     assert_eq!(invoke(&f, 0, 8, 1).await, marker(8));
 }
 #[tokio::test]

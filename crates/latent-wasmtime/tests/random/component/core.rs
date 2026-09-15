@@ -62,10 +62,6 @@ fn load(offset: u64) -> MemArg {
     }
 }
 
-#[expect(
-    clippy::too_many_lines,
-    reason = "canonical ABI instruction order is the fixture"
-)]
 pub(super) fn caller() -> Module {
     let mut module = Module::new();
     let mut types = TypeSection::new();

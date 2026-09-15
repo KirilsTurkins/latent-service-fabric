@@ -1,8 +1,5 @@
 //! Exact random WIT imports; all entropy comes from the installed broker owner.
-use super::{
-    service::{checkpoint, synchronize},
-    HostState,
-};
+use super::{service::synchronize, HostState};
 use latent_capabilities::broker::random::{RandomError, RandomProvider, RANDOM_CAPABILITY};
 use latent_component_bindings::host::phase3::latent::random::random as wit;
 use std::{sync::Arc, time::Instant};
@@ -31,11 +28,6 @@ pub(crate) fn install(
                 Ok(pending) => pending.await,
                 Err(error) => Err(error),
             };
-            if let Some(session) = &store.data().capabilities.session {
-                session
-                    .check_liveness()
-                    .map_err(super::capabilities::host_error)?;
-            }
             checkpoint(&mut store)?;
             let result = result
                 .map(|mut completion| {
@@ -100,4 +92,14 @@ fn convert(error: RandomError) -> wit::RandomError {
         RandomError::BudgetExhausted => wit::RandomError::BudgetExhausted,
         RandomError::Unavailable => wit::RandomError::Unavailable,
     }
+}
+
+fn checkpoint(store: &mut wasmtime::StoreContextMut<'_, HostState>) -> wasmtime::Result<()> {
+    super::service::checkpoint(store)?;
+    if let Some(session) = &store.data().capabilities.session {
+        session
+            .check_liveness()
+            .map_err(super::capabilities::host_error)?;
+    }
+    Ok(())
 }

@@ -26,6 +26,7 @@ pub struct RandomLimits {
     pub maximum_bytes_per_call: usize,
     pub maximum_bytes_per_activation: usize,
 }
+
 impl Default for RandomLimits {
     fn default() -> Self {
         Self {
@@ -228,5 +229,35 @@ impl RandomProvider {
         result?;
         call.check()?;
         Ok(RandomCompletion { bytes, owner: call })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RandomLimits;
+    #[test]
+    fn configured_limits_cannot_widen_hard_bounds_or_exclude_the_scalar_operation() {
+        assert!(RandomLimits::default().validate().is_ok());
+        for (call, activation) in [
+            (0, 8),
+            (7, 8),
+            (4097, 8192),
+            (8, 7),
+            (8, 65_537),
+            (usize::MAX, usize::MAX),
+        ] {
+            assert!(RandomLimits {
+                maximum_bytes_per_call: call,
+                maximum_bytes_per_activation: activation
+            }
+            .validate()
+            .is_err());
+        }
+        assert!(RandomLimits {
+            maximum_bytes_per_call: 8,
+            maximum_bytes_per_activation: 8
+        }
+        .validate()
+        .is_ok());
     }
 }
