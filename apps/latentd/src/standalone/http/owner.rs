@@ -27,6 +27,15 @@ impl HttpOwner {
             tokio::net::TcpSocket::new_v6()
         }
         .map_err(|_| super::failure())?;
+        // Set inherited buffers before listen/TCP window negotiation. Shrinking
+        // an accepted socket can stall a body already sent against its previous
+        // advertised receive window. Kernel rounding is a separate OS charge.
+        socket
+            .set_recv_buffer_size(64 * 1024)
+            .map_err(|_| super::failure())?;
+        socket
+            .set_send_buffer_size(16 * 1024)
+            .map_err(|_| super::failure())?;
         socket.bind(settings.bind).map_err(|_| super::failure())?;
         let listener = socket
             .listen(

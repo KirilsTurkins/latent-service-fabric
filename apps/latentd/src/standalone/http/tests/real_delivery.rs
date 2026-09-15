@@ -38,6 +38,7 @@ async fn actual_http_component_tls_body_and_slow_output_keep_owners_until_retire
             .unwrap()
     };
     let mut valid = connect().await;
+    eprintln!("TLS conformance: maximum request and echoed response");
     valid
         .write_all(request("POST", "/", TOKEN, http::MAX_REQUEST_BODY, false).as_bytes())
         .await
@@ -54,21 +55,20 @@ async fn actual_http_component_tls_body_and_slow_output_keep_owners_until_retire
     fixture.idle().await;
     assert!(valid.read_u8().await.is_err());
     let mut slow_body = connect().await;
+    eprintln!("TLS conformance: trickling body expires without activation");
     slow_body
-        .write_all(request("POST", "/", TOKEN, 5, false).as_bytes())
+        .write_all(request("POST", "/", TOKEN, http::MAX_REQUEST_BODY, false).as_bytes())
         .await
         .unwrap();
     wait(|| fixture.node.http_snapshot().unwrap().exchanges == 1).await;
     assert_eq!(fixture.node.manager.journal().snapshot().active, 0);
-    for _ in 0..3 {
-        tokio::time::sleep(Duration::from_millis(45)).await;
-        slow_body.write_all(b"z").await.unwrap();
-    }
+    trickle_until_closed(slow_body, Duration::from_millis(2500)).await;
     fixture.idle().await;
-    assert!(slow_body.read_u8().await.is_err());
+    assert_eq!(fixture.node.manager.journal().snapshot().active, 0);
     // Tiny receiver window forces actual TLS/socket backpressure. Reading no
     // response must retain an exchange after the guest itself has completed.
     let tcp = TcpSocket::new_v4().unwrap();
+    eprintln!("TLS conformance: stalled receiver retains delivery until expiry");
     tcp.set_recv_buffer_size(1024).unwrap();
     let tcp = tcp
         .connect(fixture.node.http_endpoint().unwrap())
@@ -88,12 +88,13 @@ async fn actual_http_component_tls_body_and_slow_output_keep_owners_until_retire
     fixture.idle().await;
     drop(slow);
     let mut recovered = connect().await;
+    eprintln!("TLS conformance: recovery after stalled input and output");
     recovered
         .write_all(request("GET", "/", TOKEN, 0, true).as_bytes())
         .await
         .unwrap();
     assert_eq!(response(&mut recovered).await.0, 200);
-    drop((valid, slow_body, recovered));
+    drop((valid, recovered));
     fixture.shutdown().await;
 }
 

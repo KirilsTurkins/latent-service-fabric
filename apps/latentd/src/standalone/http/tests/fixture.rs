@@ -17,7 +17,7 @@ use serde_json::{json, Value};
 use std::{sync::Arc, time::Duration};
 use tempfile::TempDir;
 use tokio::{
-    io::{AsyncRead, AsyncReadExt, AsyncWriteExt},
+    io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
     net::TcpStream,
 };
 
@@ -101,6 +101,29 @@ pub async fn wait(mut condition: impl FnMut() -> bool) {
     })
     .await
     .expect("bounded observable transition");
+}
+pub async fn trickle_until_closed<S: AsyncRead + AsyncWrite + Unpin>(
+    socket: S,
+    watchdog: Duration,
+) {
+    let (mut reader, mut writer) = tokio::io::split(socket);
+    tokio::time::timeout(watchdog, async {
+        let mut pulse = tokio::time::interval(Duration::from_millis(25));
+        let mut byte = [0];
+        loop {
+            tokio::select! {
+                closed = reader.read(&mut byte) => {
+                    assert!(matches!(closed, Ok(0) | Err(_)), "expiry must close without a response");
+                    break;
+                }
+                _ = pulse.tick() => {
+                    if writer.write_all(b"z").await.is_err() || writer.flush().await.is_err() {
+                        break;
+                    }
+                }
+            }
+        }
+    }).await.expect("continuous input must not renew the absolute phase deadline");
 }
 pub fn request(method: &str, path: &str, token: &str, length: usize, close: bool) -> String {
     format!("{method} {path} HTTP/1.1\r\nHost: {AUTHORITY}\r\nAuthorization: Bearer {token}\r\nContent-Length: {length}\r\nConnection: {}\r\n\r\n", if close { "close" } else { "keep-alive" })

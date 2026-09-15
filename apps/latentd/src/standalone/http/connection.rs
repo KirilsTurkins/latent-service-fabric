@@ -63,13 +63,8 @@ async fn connection(mut socket: Socket, peer: SocketAddr, shared: Arc<Shared>, a
     {
         return;
     }
-    // Setting these disables OS autotuning for this socket. Kernel overhead and
-    // platform rounding are separate from the conservative user-space charge.
-    let socket_ref = socket2::SockRef::from(&socket.socket);
-    if socket.socket.set_nodelay(true).is_err()
-        || socket_ref.set_recv_buffer_size(16 * 1024).is_err()
-        || socket_ref.set_send_buffer_size(16 * 1024).is_err()
-    {
+    // Finite send/receive buffers are inherited from the listening socket.
+    if socket.socket.set_nodelay(true).is_err() {
         return;
     }
     if let Some(configuration) = &shared.settings.tls {

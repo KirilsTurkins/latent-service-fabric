@@ -54,13 +54,11 @@ async fn silent_and_trickling_connections_are_reclaimed_under_global_saturation(
         tokio::time::timeout(Duration::from_secs(2), excess.read_u8()).await,
         Ok(Err(_))
     ));
-    for _ in 0..3 {
-        tokio::time::sleep(Duration::from_millis(45)).await;
-        slow.write_all(b"E").await.unwrap();
-    }
+    // Keep transmitting beyond the original head deadline. An idle-only timer
+    // that resets on each byte would fail this bounded reclamation check.
+    trickle_until_closed(slow, Duration::from_secs(1)).await;
     fixture.idle().await;
     assert!(silent.read_u8().await.is_err());
-    assert!(slow.read_u8().await.is_err());
     assert_eq!(call(&fixture, "/").await.0, 404);
     fixture.shutdown().await;
 }

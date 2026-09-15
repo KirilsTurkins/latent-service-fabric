@@ -123,8 +123,10 @@ application sessions are needed.
 | Admitted scheduling | Existing node/tenant/cell-class queue, quota and cleanup-slot limits; no second ingress work queue. |
 | Native guest/value allocations | Existing activation/runtime owners; HTTP explicitly selects the 2 MiB value frame, 32,768 nodes, 512 KiB strings, 64 MiB lifted-value ceiling and 2 MiB hostcall-fuel profile. The engine identity includes these settings. |
 
-Kernel socket buffers are requested at 16 KiB send/receive per socket; platform
-rounding and kernel overhead remain outside the user-space reservation. Shared
+Kernel socket buffers are requested at 16 KiB send and 64 KiB receive before
+listening, so accepted sockets inherit them before TCP window negotiation.
+See [Linux TCP buffer configuration](https://man7.org/linux/man-pages/man7/tcp.7.html).
+Platform rounding and kernel overhead remain outside the user-space reservation. Shared
 TLS configuration and cryptographic/runtime implementation allocations are not
 a claim of a hard whole-process memory ceiling. Keep the
 [execution security profile](../runtime/execution-security-profiles.md) appropriate
