@@ -181,7 +181,11 @@ jobs:
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 15
         run: |
-          python3 tools/build_angular_package.py --input-root examples/angular-application --toolchain-root examples/renderer-profile --cli "$PWD/target/debug/latent" --target-root "$RUNNER_TEMP/angular-build" --output "$RUNNER_TEMP/angular-build/actual" --cargo-target-dir "$PWD/target" --repository https://example.com/source
+          # Full debug sections can exceed the observed tool's finite byte cap.
+          # Observe and execute this exact stripped copy, as for the AOT fixture.
+          objcopy --strip-debug "$PWD/target/debug/latent" "$RUNNER_TEMP/lsf-angular-package-assembler"
+          stat --format='Angular package assembler: %s bytes' "$RUNNER_TEMP/lsf-angular-package-assembler"
+          python3 tools/build_angular_package.py --input-root examples/angular-application --toolchain-root examples/renderer-profile --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --target-root "$RUNNER_TEMP/angular-build" --output "$RUNNER_TEMP/angular-build/actual" --cargo-target-dir "$PWD/target" --repository https://example.com/source
       - name: Verify actual Angular package admission, fresh rendering and browser hydration
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 15
