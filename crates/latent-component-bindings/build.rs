@@ -35,6 +35,7 @@ fn main() -> io::Result<()> {
     write_streaming_bindings(&output, &streaming_wit)?;
     stage_runtime_world(&platform_wit, &blob_wit, "runtime-phase3-blobs")?;
     write_blob_bindings(&output, &blob_wit)?;
+    write_web_bindings(&output, &platform_wit)?;
 
     println!(
         "cargo:rerun-if-changed={}",
@@ -46,6 +47,32 @@ fn main() -> io::Result<()> {
     );
     println!("cargo:rerun-if-changed={}", platform_wit.display());
     Ok(())
+}
+
+fn write_web_bindings(output: &Path, platform: &Path) -> io::Result<()> {
+    let wit = output.join("web-wit");
+    recreate(&wit)?;
+    copy_wit_tree(&platform.join("web"), &wit)?;
+    copy_wit_tree(&platform.join("context"), &wit.join("deps/context"))?;
+    let path = format!("{:?}", wit.to_string_lossy());
+    fs::write(
+        output.join("web_host.rs"),
+        format!(
+            r#"wasmtime::component::bindgen!({{
+        path: {path}, world: "latent:web/application-service@0.1.0",
+        imports: {{ default: async }}, exports: {{ default: async }},
+        with: {{ "latent:context/context@0.1.0": crate::host::runtime::latent::context::context }},
+    }});"#
+        ),
+    )?;
+    fs::write(
+        output.join("web_guest.rs"),
+        format!(
+            r#"wit_bindgen::generate!({{
+        path: {path}, world: "latent:web/application-service@0.1.0", generate_all, pub_export_macro: true,
+    }});"#
+        ),
+    )
 }
 
 fn stage_runtime_world(platform_wit: &Path, destination: &Path, world: &str) -> io::Result<()> {

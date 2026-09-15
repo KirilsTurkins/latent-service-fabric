@@ -18,8 +18,9 @@ validation gates. These commands describe validation coverage; the
 [extension report](docs/phase-1-extension-completion.md) record the completed
 decisions. The [September 7 audit](docs/development/feature-audit-2026-09-07.md)
 is an earlier snapshot. The [Phase 2 completion review](docs/phase-2-completion.md)
-records the collective gate decision and its retained evidence. Phase 3 providers
-remain planned. Historical Phase 0/1 receipts below retain their recorded source
+records the collective gate decision and its retained evidence. Phase 3 provider,
+guest SDK and HTTP contract tests extend the current development checks;
+the collective Phase 3 gate remains open. Historical Phase 0/1 receipts below retain their recorded source
 identities and do not validate newly added Phase 2 paths.
 
 ## Entry point
@@ -102,6 +103,7 @@ Run it from an isolated clone or worktree when local build output is present.
 - The committed root `Cargo.lock` contains the selected direct dependency versions and is consumed unchanged by every Cargo command with `--locked`; CI does not generate or substitute a dependency graph.
 - The pinned Rust toolchain, MSRV, target, direct dependency versions, Python requirements, and CI tool versions remain synchronized.
 - Every Rust workspace target compiles, passes Clippy, and runs its tests using the committed lockfile.
+- The [HTTP application contract](docs/protocol/http-applications.md) tests preserve repeated fields and raw bodies, reject ambiguous framing/targets and forged metadata, and retain bounded ownership through cancellation and partial delivery. WIT-derived codec checks and a compiled Rust guest cover exact shapes, maximum bodies and authenticated host context on reused cells.
 - The fixed execution-cell pool tests cover startup-fixed capacity, concurrent acquisition limits, bounded FIFO rejection, duplicate activations and returns, modified and foreign lease identities, explicit cancellation, deterministic deadline expiry with an injected wall clock, queued-future drop before release, explicit and drop-triggered quarantine, unaccepted handoff reclamation, token-sequence exhaustion, and barrier-controlled multi-threaded release/cancellation and release/task-abort races.
 - Manifest tests cover schema-backed decoding, document/depth/collection bounds, duplicate-key rejection, exact JSON numbers, canonicalization, Rust round trips, and unsupported Phase 1 semantic combinations.
 - Budget and cancellation tests cover effective deadlines, concurrent consumption/reservations, final accounting, unsupported dimensions, cancellation-versus-terminal races, and registry cleanup.

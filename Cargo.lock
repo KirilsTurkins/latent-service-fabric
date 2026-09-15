@@ -1725,10 +1725,14 @@ dependencies = [
 name = "latent-ingress"
 version = "0.1.0-alpha.3"
 dependencies = [
+ "base64 0.22.1",
  "latent-activation",
  "latent-core",
  "latent-identity",
  "latent-triggers",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -2070,6 +2074,7 @@ dependencies = [
  "latent-core",
  "latent-executor",
  "latent-http",
+ "latent-ingress",
  "latent-manifest",
  "latent-nats",
  "latent-node",

@@ -26,7 +26,9 @@ while IFS= read -r package; do
     if [[ "${name}" == "runtime" || "${name}" == "runtime-phase3" || "${name}" == "runtime-phase3-streaming" || "${name}" == "runtime-phase3-blobs" ]]; then
         continue
     fi
-    wasm-tools component wit "${package}" --json > "${OUTPUT}/wit/platform-${name}.json"
+    staged="${OUTPUT}/platform-${name}"
+    python3 tools/stage_runtime_wit.py "${staged}" --source "${package}"
+    wasm-tools component wit "${staged}" --json > "${OUTPUT}/wit/platform-${name}.json"
 done < <(find "${ROOT}/wit/platform" -mindepth 1 -maxdepth 1 -type d | sort)
 
 python3 tools/stage_runtime_wit.py "${OUTPUT}/runtime-wit"
@@ -153,6 +155,19 @@ LSF_CAPABILITIES_COMPONENT="${CAPABILITIES_COMPONENT}" \
 python3 tools/build_guest_capsules.py --output "${TARGET_ROOT}/guest-capsules"
 LSF_GUEST_CAPSULES="${TARGET_ROOT}/guest-capsules" \
     cargo test -p latent-wasmtime --test guest_sdk --locked -- \
+        --ignored --nocapture --test-threads=1
+
+# Actual inbound HTTP WIT lowering/lifting, context authority and maximum body.
+# This tiny contract fixture does not add a builder-provenance recipe.
+cargo build -p latent-toolchain-smoke --example web-contract \
+    --target wasm32-unknown-unknown --release --locked
+WEB_COMPONENT="${TARGET_ROOT}/capsules/web-contract/component.wasm"
+mkdir -p "$(dirname "${WEB_COMPONENT}")"
+wasm-tools component new "${TARGET_ROOT}/wasm32-unknown-unknown/release/examples/web_contract.wasm" \
+    -o "${WEB_COMPONENT}"
+wasm-tools validate "${WEB_COMPONENT}"
+LSF_WEB_COMPONENT="${WEB_COMPONENT}" \
+    cargo test -p latent-wasmtime --test async_application --locked -- \
         --ignored --nocapture --test-threads=1
 
 # Two real node invocations across a durable restart; no scale workload.

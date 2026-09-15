@@ -135,11 +135,9 @@ pub(crate) fn validate_with_providers(
                     retain(entry_bytes, &mut retained_bytes, config)?;
                     let (params, results) = signature(
                         &function,
-                        (providers.local_services
-                            || providers.http
-                            || providers.streaming_http
-                            || providers.blobs)
-                            && function.async_(),
+                        // Application function kind is independent of provider
+                        // availability. Exact host imports remain checked above.
+                        function.async_(),
                         config,
                         &mut remaining,
                     )?;

@@ -100,3 +100,8 @@ retention, no-follow filesystem access and cancellation/recovery ownership.
 separately approved Rust and C guest build recipes for the maintained SDK
 examples. It preserves ADR-0023's independent builder trust and finite process
 ownership while keeping the original echo recipe unchanged.
+
+[ADR-0035](0035-bound-http-application-values-and-delivery-ownership.md) defines
+the buffered inbound application contract, canonical HTTP mapping, host-context
+authority and retained response-delivery ownership. It separates an async
+application export from provider availability and from the shared HTTP listener.

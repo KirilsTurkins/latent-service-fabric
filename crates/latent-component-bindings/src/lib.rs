@@ -8,6 +8,10 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod host {
+    /// Buffered application export; trusted identity remains the context import.
+    pub mod web {
+        include!(concat!(env!("OUT_DIR"), "/web_host.rs"));
+    }
     /// Host bindings for the aggregate `latent:platform/capsule` runtime world.
     pub mod runtime {
         include!(concat!(env!("OUT_DIR"), "/runtime_host.rs"));
@@ -58,4 +62,10 @@ pub mod streaming_guest {
 pub mod blob_guest {
     //! Immutable blob handles and owned bounded range results.
     include!(concat!(env!("OUT_DIR"), "/blob_guest.rs"));
+}
+
+#[cfg(target_arch = "wasm32")]
+pub mod web_guest {
+    //! Exact inbound application records and the existing trusted context API.
+    include!(concat!(env!("OUT_DIR"), "/web_guest.rs"));
 }
