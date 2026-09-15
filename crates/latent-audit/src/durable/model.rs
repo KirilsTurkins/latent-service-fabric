@@ -75,6 +75,8 @@ enumeration!(AuditControlAction {
     RenewEvidence,
     DeploymentApply,
     DeploymentDelete,
+    TriggerApply,
+    TriggerDelete,
     Rollout,
     Promotion,
     Rollback,
@@ -144,6 +146,18 @@ pub struct AuditPolicyIdentity {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditIdentities {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub trigger: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub trigger_generation: Option<u64>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",

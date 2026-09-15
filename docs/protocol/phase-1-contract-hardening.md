@@ -429,3 +429,24 @@ and cannot supply claims. Descriptions and sampled currentness are not grants.
 The [capability audit and inspection contract](../runtime/capability-audit.md)
 defines redaction, pagination, resource ownership and failure behavior. These
 additions do not change the guest WIT ABI.
+
+### Phase 3 HTTP trigger control (#223)
+
+`TriggerService` now implements a closed HTTP profile. Existing RPC signatures
+and field numbers are unchanged; `DeleteTrigger` still returns Empty with bounded
+receipt/audit metadata. `TriggerTarget` fields 5?7 add explicit publication,
+content revision and deployment object generation. Apply/Delete add an operation
+ID and present global-state CAS. Responses add receipts, state/route generations,
+catalog durability and audit acknowledgement; `GetTriggerOperation` adds bounded
+historical reconciliation. A trigger's output generation is not a mutation CAS.
+
+`AuditIdentities` fields 22/23 and action values 11/12 identify trigger operations
+and object versions. Historical audit records omit these additions and retain
+their canonical bytes. The descriptor baseline deliberately records the additive
+changes. This delivery changes no guest WIT definitions.
+
+Profile-less Phase 1 trigger declarations remain structurally decodable but are
+not executable. The concrete HTTP profile requires all target pins, six closed
+configuration fields and explicit CAS; it never reinterprets a component digest
+as a publication selector. See the [HTTP trigger contract](../reference/http-triggers.md)
+for authorization, finite ownership, replay, recovery and listener boundaries.

@@ -143,6 +143,12 @@ pub(super) fn actor(v: &AuditActorIdentity) -> Result<()> {
     token(&v.subject, 512)
 }
 pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
+    if let Some(trigger) = &v.trigger {
+        token(trigger, 128)?;
+    }
+    if v.trigger.is_some() != v.trigger_generation.is_some() || v.trigger_generation == Some(0) {
+        return Err(invalid());
+    }
     if let Some(capability) = &v.capability {
         capability.validate()?;
         if v.publication.is_none()
@@ -201,6 +207,33 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     scope(&v.scope)?;
     actor(&v.actor)?;
     token(&v.operation_id, 128)?;
+    let trigger = matches!(
+        v.action,
+        AuditControlAction::TriggerApply | AuditControlAction::TriggerDelete
+    );
+    if trigger {
+        if !matches!(v.scope, AuditScope::Tenant(_))
+            || v.identities.trigger.is_none()
+            || v.identities.publication.is_none()
+            || v.identities.component.is_none()
+            || v.identities.revision.is_none()
+            || v.identities.deployment.is_none()
+            || v.identities.deployment_generation.is_none_or(|g| g == 0)
+            || v.identities.route_generation.is_none_or(|g| g.0 == 0)
+            || v.identities.state_version.is_none()
+            || v.expected_state_version.is_none()
+            || v.expected_generation.is_none()
+            || v.expected_deployment_generation != v.identities.deployment_generation
+            || v.expected_rollout_revision.is_some()
+            || v.expected_rollback_target_generation.is_some()
+            || v.preview_receipt_digest.is_none()
+            || (v.action == AuditControlAction::TriggerDelete && v.expected_generation == Some(0))
+        {
+            return Err(invalid());
+        }
+    } else if v.identities.trigger.is_some() {
+        return Err(invalid());
+    }
     if v.action == AuditControlAction::CapabilityCall {
         let context = v.identities.capability.as_ref().ok_or_else(invalid)?;
         if !context.required
@@ -224,7 +257,8 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     } else if v.identities.capability.is_some() {
         return Err(invalid());
     }
-    if v.expected_state_version.is_some()
+    if !trigger
+        && v.expected_state_version.is_some()
         && (!matches!(
             v.action,
             AuditControlAction::DeploymentApply | AuditControlAction::DeploymentDelete

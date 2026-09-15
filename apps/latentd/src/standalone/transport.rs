@@ -41,6 +41,7 @@ impl Transport {
         let routes = tonic::service::Routes::new(invocation.into_server())
             .add_service(management.clone().release_server())
             .add_service(management.clone().deployment_server())
+            .add_service(management.clone().trigger_server())
             .add_service(management.clone().route_server())
             .add_service(management.clone().audit_server())
             .add_service(management.clone().rollout_server())

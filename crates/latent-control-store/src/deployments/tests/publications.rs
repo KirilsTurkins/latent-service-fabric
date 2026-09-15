@@ -36,7 +36,7 @@ fn context(tenant: &str, operation: &str, generation: u64) -> ReleaseMutationCon
 fn publish(repo: &DirectoryArtifactRepository, tenant: &str, variant: &str) -> PublicationRef {
     publish_artifact(repo, tenant, variant, artifact("shared-executable"))
 }
-fn publish_artifact(
+pub(super) fn publish_artifact(
     repo: &DirectoryArtifactRepository,
     tenant: &str,
     variant: &str,

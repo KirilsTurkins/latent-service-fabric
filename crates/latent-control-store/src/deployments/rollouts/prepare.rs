@@ -444,6 +444,7 @@ impl DirectoryDeploymentRepository {
                 .operations
                 .enabled
                 .then_some(&previous.operations.data),
+            http_routes: previous.http.enabled.then_some(&previous.http.data),
         };
         let bytes = persistence::encode_combined(
             &next_routes,

@@ -107,6 +107,8 @@ message AuditPolicyIdentity {
 }
 
 message AuditIdentities {
+  optional string trigger = 22;
+  optional uint64 trigger_generation = 23;
   // Trusted captured facts only. Resource selectors, credentials and payloads
   // are never returned here; this message cannot authorize a provider call.
   AuditCapabilityContext capability = 21;
@@ -149,6 +151,8 @@ enum AuditControlAction {
   AUDIT_CONTROL_ACTION_ROLLBACK = 8;
   AUDIT_CONTROL_ACTION_DEPLOYMENT_DELETE = 9;
   AUDIT_CONTROL_ACTION_CAPABILITY_CALL = 10;
+  AUDIT_CONTROL_ACTION_TRIGGER_APPLY = 11;
+  AUDIT_CONTROL_ACTION_TRIGGER_DELETE = 12;
 }
 
 enum AuditCapabilityResourceClass {

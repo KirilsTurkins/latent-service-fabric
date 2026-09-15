@@ -122,6 +122,7 @@ impl DirectoryDeploymentRepository {
             routes: Arc::clone(&prepared.next_routes),
             rollouts: Arc::clone(&prepared.previous.rollouts),
             operations: Arc::clone(&prepared.next_operations),
+            http: Arc::clone(&prepared.previous.http),
             confirmed: durable.is_ok(),
         };
         let old = {

@@ -29,6 +29,8 @@ fn scope_to_proto(value: domain::AuditScope) -> proto::AuditQueryScope {
 }
 pub(super) fn identities(value: domain::AuditIdentities) -> proto::AuditIdentities {
     proto::AuditIdentities {
+        trigger: value.trigger,
+        trigger_generation: value.trigger_generation,
         capability: value.capability.map(capability::context),
         base_publication_id: value
             .base_publication

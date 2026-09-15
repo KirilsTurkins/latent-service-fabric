@@ -18,7 +18,7 @@ mapping!(actor, AuditActorKind, AuditActorKind; User, Service, Node, Trigger, Ad
 mapping!(policy, AuditPolicyRole, AuditPolicyRole; Publisher, PublisherRevocation, Builder,
     BuilderRevocation, Sbom, Admission, Delivery);
 mapping!(action, AuditControlAction, AuditControlAction; Publish, Revoke, Retire,
-    RenewEvidence, DeploymentApply, DeploymentDelete, Rollout, Promotion, Rollback, CapabilityCall);
+    RenewEvidence, DeploymentApply, DeploymentDelete, TriggerApply, TriggerDelete, Rollout, Promotion, Rollback, CapabilityCall);
 mapping!(capability_resource, AuditCapabilityResourceClass, AuditCapabilityResourceClass;
     Context, Clock, Random, Log, Http, Blob, Secrets, Events, Telemetry, Service);
 mapping!(provider_outcome, AuditProviderOutcome, AuditProviderOutcome;
@@ -111,6 +111,8 @@ pub(super) fn action_name(value: domain::AuditControlAction) -> &'static str {
         AuditControlAction::RenewEvidence => "renew-evidence",
         AuditControlAction::DeploymentApply => "deployment-apply",
         AuditControlAction::DeploymentDelete => "deployment-delete",
+        AuditControlAction::TriggerApply => "trigger-apply",
+        AuditControlAction::TriggerDelete => "trigger-delete",
         AuditControlAction::Rollout => "rollout",
         AuditControlAction::Promotion => "promotion",
         AuditControlAction::Rollback => "rollback",
