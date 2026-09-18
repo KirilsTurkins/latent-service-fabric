@@ -48,7 +48,7 @@ pub(super) struct Retention {
 }
 pub(super) enum Begun {
     Cached(Delivery),
-    Activation(RetainedActivation<Retention>),
+    Activation(Box<RetainedActivation<Retention>>),
 }
 pub(super) fn begin(
     head: Head,
@@ -119,14 +119,16 @@ pub(super) fn begin(
     let length = invocation.input().len();
     reserved.input_buffer().copy_from_slice(invocation.input());
     let handle = reserved.start(length).map_err(status)?;
-    Ok(Begun::Activation(cleanup.own(
+    let activation = cleanup.own(
         handle,
         Retention {
             invocation,
             _route: lease,
             cache,
         },
-    )))
+    );
+    // This fixed-size owner allocation is covered by the exchange reservation.
+    Ok(Begun::Activation(Box::new(activation)))
 }
 fn cache_request(
     mapped: &http::Request,
