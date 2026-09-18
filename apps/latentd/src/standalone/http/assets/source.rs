@@ -15,11 +15,13 @@ mod platform {
         pub(super) fn new(repository: &DirectoryArtifactRepository) -> Result<Self, u16> {
             // The catalog supplies its canonical absolute root. Walk it without
             // following links, then retain the actual directory, not its pathname.
-            let flags = OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW
-                | OFlags::CLOEXEC | OFlags::NONBLOCK;
-            let mut directory = File::from(
-                rustix::fs::open("/", flags, Mode::empty()).map_err(|_| 503u16)?,
-            );
+            let flags = OFlags::RDONLY
+                | OFlags::DIRECTORY
+                | OFlags::NOFOLLOW
+                | OFlags::CLOEXEC
+                | OFlags::NONBLOCK;
+            let mut directory =
+                File::from(rustix::fs::open("/", flags, Mode::empty()).map_err(|_| 503u16)?);
             if !repository.root().is_absolute() {
                 return Err(503);
             }
@@ -44,15 +46,14 @@ mod platform {
             output: &mut [u8],
         ) -> Result<(), u16> {
             let flags = OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK;
-            let directory = rustix::fs::openat(
-                &self.0, "blobs", flags | OFlags::DIRECTORY, Mode::empty(),
-            ).map_err(|_| 502u16)?;
+            let directory =
+                rustix::fs::openat(&self.0, "blobs", flags | OFlags::DIRECTORY, Mode::empty())
+                    .map_err(|_| 502u16)?;
             // Catalog content is hard-linked into committed publications. Links
             // to regular files are expected; symbolic links and special files are not.
             let name = digest.as_str().strip_prefix("sha256:").ok_or(502u16)?;
             let mut file = File::from(
-                rustix::fs::openat(&directory, name, flags, Mode::empty())
-                    .map_err(|_| 502u16)?,
+                rustix::fs::openat(&directory, name, flags, Mode::empty()).map_err(|_| 502u16)?,
             );
             let before = file.metadata().map_err(|_| 502u16)?;
             if !before.is_file() || before.len() != output.len() as u64 {
