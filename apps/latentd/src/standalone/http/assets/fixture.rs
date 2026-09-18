@@ -191,9 +191,9 @@ fn encode_upload(layers: Vec<(String, Vec<u8>)>) -> PackageAdmissionUpload {
             .map(|(path, bytes)| PackageLayer {
                 path: path.clone(),
                 role: LayerRole::Asset,
-                media_type: if path.ends_with(".html") {
+                media_type: if path == "public/index.html" {
                     "text/html"
-                } else if path.ends_with(".js") {
+                } else if path == "public/app.js" {
                     "text/javascript"
                 } else {
                     "application/json"
