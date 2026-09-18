@@ -1,0 +1,68 @@
+name: Temporary asset development validation
+on:
+  push:
+    branches: [feat/231-immutable-browser-assets]
+    paths: [.github/workflows/asset-development.yml]
+permissions:
+  contents: write
+concurrency:
+  group: temporary-asset-development
+  cancel-in-progress: true
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/feat/231-immutable-browser-assets'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: feat/231-immutable-browser-assets
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Install exact catalog owner before HTTP admission and format
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('apps/latentd/src/standalone/start.rs')
+          text = p.read_text()
+          needle = '        self.start_http(settings, &catalogs.deployments)?;\n'
+          addition = '''        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+                  if let Some(http) = &self.http {
+                      http.install_assets(catalogs.artifacts.clone())?;
+                  }
+          '''
+          if 'http.install_assets(catalogs.artifacts.clone())?' not in text:
+              assert text.count(needle) == 1
+              p.write_text(text.replace(needle, needle + addition))
+          p = Path('apps/latentd/src/standalone/http/assets/wire.rs')
+          p.write_text(p.read_text().replace('pub(super) async fn exchange', 'pub(in crate::standalone::http) async fn exchange'))
+          PY
+          cargo fmt --all
+          git add apps/latentd/src/standalone
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'feat(assets): wire the catalog owner at startup and format implementation'
+            git push origin HEAD:feat/231-immutable-browser-assets
+          fi
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: false
+      - name: Compile asset integration
+        run: cargo check -p latentd --lib --all-features --locked
+      - name: Check asset and HTTP tests
+        run: cargo test -p latentd --lib --all-features --locked standalone::http::assets
+      - name: Check strict package lint
+        run: cargo clippy -p latentd --lib --all-features --locked --no-deps -- -D warnings
