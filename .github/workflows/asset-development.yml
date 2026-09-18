@@ -59,13 +59,13 @@ jobs:
           s = s.replace('    let prepared = store.begin(request).unwrap().await.unwrap().unwrap();', '    let reference = request.reference.clone();\n    let prepared = store.begin(request).unwrap().await.unwrap().unwrap();')
           s = s.replace('    let reference = fixture::publish(&h.repository, "same-package", b"hello");\n', '')
           p.write_text(s)
-          p = Path('docs/package-format.md')
+          p = Path('docs/protocol/package-format.md')
           s = p.read_text()
           if 'immutable-browser-assets.md' not in s:
-              p.write_text(s.rstrip() + '\n\n## Immutable browser asset delivery\n\nThe [immutable browser asset HTTP profile](immutable-browser-assets.md) defines exact publication URLs, current admission checks, GET/HEAD and conditional behavior, shared storage/cache ownership, and the explicitly unsupported range and compression features.\n')
+              p.write_text(s.rstrip() + '\n\n## Immutable browser asset delivery\n\nThe [immutable browser asset HTTP profile](../immutable-browser-assets.md) defines exact publication URLs, current admission checks, GET/HEAD and conditional behavior, shared storage/cache ownership, and the explicitly unsupported range and compression features.\n')
           PY
           cargo fmt --all
-          git add apps/latentd/src/standalone docs/package-format.md
+          git add apps/latentd/src/standalone docs/protocol/package-format.md
           if ! git diff --cached --quiet; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
