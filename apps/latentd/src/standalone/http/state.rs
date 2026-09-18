@@ -4,7 +4,7 @@ use latent_ingress::http::{HttpPool, EXCHANGE_RESERVATION_BYTES};
 use serde::Serialize;
 use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
-    Arc,
+    Arc, OnceLock,
 };
 use tokio::sync::watch;
 
@@ -18,6 +18,7 @@ pub(super) enum Signal {
 pub(super) struct State {
     pub signal: watch::Sender<Signal>,
     pub pool: HttpPool,
+    pub assets: OnceLock<Arc<super::assets::Store>>,
     pub connections: AtomicUsize,
     pub maximum_connections: usize,
     pub maximum_bytes: usize,
@@ -48,6 +49,8 @@ pub struct HttpSnapshot {
     pub exchanges: usize,
     pub maximum_buffer_bytes: usize,
     pub reserved_buffer_bytes: usize,
+    /// Independent asset byte/work ceiling, in addition to transport buffers.
+    pub assets: Option<super::AssetSnapshot>,
 }
 impl HttpSnapshot {
     #[must_use]
@@ -60,6 +63,7 @@ impl HttpSnapshot {
             && self.connections == 0
             && self.exchanges == 0
             && self.reserved_buffer_bytes == 0
+            && self.assets.is_none_or(super::AssetSnapshot::clean)
     }
 }
 impl HttpHandle {
@@ -72,6 +76,7 @@ impl HttpHandle {
                 limits.maximum_exchanges * EXCHANGE_RESERVATION_BYTES,
             )
             .map_err(|_| super::failure())?,
+            assets: OnceLock::new(),
             connections: AtomicUsize::new(0),
             maximum_connections: limits.maximum_connections,
             maximum_bytes: limits.maximum_buffer_bytes,
@@ -96,6 +101,7 @@ impl HttpHandle {
             exchanges: pool.active_exchanges,
             maximum_buffer_bytes: self.0.maximum_bytes,
             reserved_buffer_bytes: connections * CONNECTION_BYTES + pool.reserved_bytes,
+            assets: self.0.assets.get().map(|store| store.snapshot()),
         }
     }
     pub(super) fn accepting(&self) -> bool {
@@ -114,6 +120,11 @@ impl HttpHandle {
         self.signal(Signal::Draining);
     }
     pub(super) fn signal(&self, signal: Signal) {
+        if signal >= Signal::Draining {
+            if let Some(assets) = self.0.assets.get() {
+                assets.stop();
+            }
+        }
         self.0.signal.send_if_modified(|old| {
             if *old < signal {
                 *old = signal;
