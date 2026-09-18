@@ -213,10 +213,15 @@ jobs:
           LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/publication-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite publication-fixture
           python3 tools/run_publication_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/publication-inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/publication-receipt.json"
           LSF_PHASE2_RESOURCE_FIXTURE_ROOT="${fixture_root}/resource-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite resource-fixture
-          python3 -m unittest tools.tests.test_phase2_gate_resource tools.tests.test_phase2_resource_clock
-          LSF_GATE_FIXTURE_ROOT="${fixture_root}" python3 - <<'PY'
+          python3 -m unittest tools.tests.test_phase2_gate_resource tools.tests.test_phase2_resource_clock tools.tests.test_phase2_resource_binaries
+          # Debug information is not runtime resource evidence. Keep Cargo outputs
+          # unchanged; hash and execute the same bounded, debug-stripped copies.
+          resource_bins="${fixture_root}/resource-binaries"
+          python3 tools/phase2_resource_binaries.py --build-directory "${PWD}/target/debug" --output-directory "${resource_bins}"
+          LSF_GATE_FIXTURE_ROOT="${fixture_root}" LSF_GATE_BINARIES="${resource_bins}" python3 - <<'PY'
           import hashlib, json, os, pathlib, subprocess
           root = pathlib.Path.cwd()
+          binaries = pathlib.Path(os.environ["LSF_GATE_BINARIES"])
           def digest(path):
               with path.open("rb") as source:
                   return "sha256:" + hashlib.file_digest(source, "sha256").hexdigest()
@@ -224,14 +229,14 @@ jobs:
               "schemaVersion": "latent.phase2.resource-build.v1",
               "sourceRevision": os.environ["GITHUB_SHA"],
               "cargoLockSha256": digest(root / "Cargo.lock"),
-              "cliSha256": digest(root / "target/debug/latent"),
-              "nodeSha256": digest(root / "target/debug/latentd"),
+              "cliSha256": digest(binaries / "latent"),
+              "nodeSha256": digest(binaries / "latentd"),
               "rustcVersion": subprocess.check_output(["rustc", "--version"], text=True).strip(),
               "buildProfile": "debug",
           }
           (pathlib.Path(os.environ["LSF_GATE_FIXTURE_ROOT"]) / "build.json").write_text(json.dumps(identity))
           PY
-          python3 tools/phase2_gate_resource.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+          python3 tools/phase2_gate_resource.py --cli "${resource_bins}/latent" --node "${resource_bins}/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
           python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
       - name: Retain compact Phase 2 gate receipts
         if: always()
