@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 from html.parser import HTMLParser
 from pathlib import Path
+import re
 
 from tools.angular_build.inputs import MEDIA, MAX_ASSET_TREE_BYTES, decode, read
 from tools.build_observation import file_identity
@@ -14,11 +15,26 @@ class Hydration(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=False)
         self.active, self.data, self.total = False, [], 0
+        self.in_script, self.scripts = False, 0
 
     def handle_starttag(self, tag, attrs):
         if tag == 'script':
-            self.active = any(name == 'type' and value and value.lower() == 'application/json' for name, value in attrs)
-            self.data = []
+            self.scripts += 1
+            if self.scripts > 64:
+                raise SnapshotError('Angular supplied script count exceeded')
+            # Match application.js's closed grammar before HTMLParser's decoded
+            # attributes can hide references, malformed syntax or duplicate keys.
+            raw = self.get_starttag_text()[7:-1]
+            if '&' in raw or not re.fullmatch(
+                    r"(?:[ \t\n\f\r]+[a-zA-Z0-9_-]+(?:[ \t\n\f\r]*=[ \t\n\f\r]*(?:\"[^\"]*\"|'[^']*'|[^ \t\n\f\r\"'`=<>]+))?)*[ \t\n\f\r]*", raw):
+                raise SnapshotError('Angular supplied script attributes are unsupported')
+            values = dict(attrs)
+            if len(values) != len(attrs):
+                raise SnapshotError('Angular supplied script attributes are duplicated')
+            mime = (values.get('type') or '').strip(' \t\n\f\r').lower()
+            state_id = (values.get('id') or '').endswith('-state')
+            self.active = mime == 'application/json' or state_id
+            self.in_script, self.data = True, []
 
     def handle_data(self, data):
         if self.active:
@@ -28,9 +44,10 @@ class Hydration(HTMLParser):
             self.data.append(data)
 
     def handle_endtag(self, tag):
-        if tag == 'script' and self.active:
-            decode(''.join(self.data).encode())
-            self.active = False
+        if tag == 'script':
+            if self.active:
+                decode(''.join(self.data).encode('utf-8'))
+            self.active = self.in_script = False
 
 
 def check_html(data: bytes) -> None:
@@ -42,7 +59,7 @@ def check_html(data: bytes) -> None:
         parser.close()
     except UnicodeError as error:
         raise SnapshotError('Angular HTML must be UTF-8') from error
-    if parser.active:
+    if parser.in_script:
         raise SnapshotError('Angular supplied hydration script is incomplete')
 
 

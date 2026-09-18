@@ -64,6 +64,15 @@ These checks define a conservative authoring profile, not a JavaScript security
 sandbox. Final component validation and the runtime resource boundary remain
 mandatory.
 
+External resource metadata requires explicit string-literal `templateUrl` and
+`styleUrl` properties, or a literal `styleUrls` array of string literals. Shorthand
+resource properties, accessors and methods are rejected before compilation, even
+when their identifiers refer to captured files. Computed property names are
+unsupported by this conservative scanner. Resource paths must be relative and
+resolve to declared files in the permitted source area; absolute paths, Windows
+path spellings and URLs are not accepted. Escaped property names do not bypass
+these checks.
+
 The generated browser entry has the content-addressed path
 `/client/<full SHA-256>/main.js`. The supplied server's
 `__LSF_CLIENT_ASSET__` marker is replaced with this path before the HTML leaves
@@ -91,9 +100,19 @@ state under the [generic-cell runtime](../runtime/angular-renderer-runtime.md).
 | Routes / web manifest | 128 / 64 KiB |
 | Renderer component | 32 MiB |
 | Returned or supplied HTML | 128 KiB |
-| Returned JSON hydration data | 32 KiB aggregate; at most 64 script tags |
+| Returned or supplied JSON / transfer-state data | 32 KiB aggregate; at most 64 script tags |
 | Installed npm tree observation | 40,000 entries / 1 GiB file bytes / 8 MiB inventory |
 | SBOM inventory | 1,024 entries / 1 MiB |
+
+Hydration accounting includes every script whose `type`, after trimming ASCII
+whitespace and ignoring case, is `application/json`, and every script whose
+case-sensitive `id` ends with `-state`. State-ID scripts are counted regardless
+of a missing or different MIME type, matching Angular's ID-based state lookup.
+The aggregate ceiling counts UTF-8 payload bytes, including JSON whitespace;
+each recognized payload must also parse as JSON. Runtime output and supplied
+HTML reject ambiguous duplicate attributes, character references in script
+attributes, malformed attributes, incomplete scripts and excess script counts.
+A rejected render does not retain its counters for the next invocation.
 
 The installed tool tree, executable identities, recipe and lock identities are
 observed before work and checked again after work. Node children receive a
@@ -152,6 +171,13 @@ hydration data and proves recovery. Headless Chrome loads that exact client and
 the actual generic-cell HTML, proves the original DOM is reused, checks escaped
 text and clicks the signal-backed counter. Test harnesses are selected from the
 current Cargo build inventory; these gates do not rebuild the Rust workspace.
+
+The source-separation gate also runs the production adapter's configure path on
+marker-bearing server HTML/CSS referenced through shorthand metadata from both
+shared and client code, and on existing resources outside the capture. It requires
+rejection before Angular compilation or package output. A shared acceptance
+corpus checks runtime and supplied hydration data, including padded MIME types,
+state IDs with other or missing types, aggregate/UTF-8 limits and recovery.
 
 These are finite conformance fixtures, not throughput or memory benchmarks.
 Generated packages and HTML remain temporary CI/local output. No large binary

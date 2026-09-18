@@ -30,6 +30,12 @@ export function checkSource(ts, name, text, names) {
   }
   function resource(value) {
     if (!ts.isStringLiteral(value)) throw new Error('angular-nonliteral-resource');
+    // Do not normalize an absolute/URL spelling into an apparently local name:
+    // Angular, not this scanner, will eventually resolve the resource.
+    if (path.posix.isAbsolute(value.text) || path.win32.isAbsolute(value.text) ||
+        value.text.includes('\\') || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(value.text)) {
+      throw new Error('angular-resource-outside-capture');
+    }
     const target = path.posix.normalize(path.posix.join(path.posix.dirname(name), value.text));
     if (!names.has(target) || !/\.(html|css)$/.test(target)) throw new Error('angular-resource-outside-capture');
     // ngc inlines templates and styles before the bundler sees its graph.
@@ -47,12 +53,23 @@ export function checkSource(ts, name, text, names) {
     if (ts.isImportEqualsDeclaration(node) || (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword)) {
       throw new Error('angular-dynamic-module');
     }
-    if (ts.isPropertyAssignment(node)) {
-      const key = node.name.getText(source).replaceAll('"', '').replaceAll("'", '');
-      if (key === 'templateUrl' || key === 'styleUrl') resource(node.initializer);
-      if (key === 'styleUrls') {
-        if (!ts.isArrayLiteralExpression(node.initializer)) throw new Error('angular-nonliteral-resource');
-        for (const entry of node.initializer.elements) resource(entry);
+    // External resources use only ordinary, explicitly initialized properties.
+    // Angular resolves shorthand identifiers too, but this closed profile does
+    // not: reject them rather than let ngc inline unchecked file contents.
+    // Reject computed keys conservatively, including unknown keys that might
+    // evaluate to a resource name. Read decoded property names, not source text.
+    if (ts.isComputedPropertyName(node)) throw new Error('angular-computed-property');
+    if (node.name && ts.isObjectLiteralExpression(node.parent) &&
+        (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))) {
+      const key = node.name.text;
+      if (['templateUrl', 'styleUrl', 'styleUrls'].includes(key)) {
+        if (!ts.isPropertyAssignment(node)) throw new Error('angular-nonliteral-resource');
+        if (key === 'styleUrls') {
+          if (!ts.isArrayLiteralExpression(node.initializer)) throw new Error('angular-nonliteral-resource');
+          for (const entry of node.initializer.elements) resource(entry);
+        } else {
+          resource(node.initializer);
+        }
       }
     }
     ts.forEachChild(node, visit);
