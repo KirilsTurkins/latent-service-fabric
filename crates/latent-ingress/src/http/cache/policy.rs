@@ -51,8 +51,8 @@ impl PublicCachePolicy {
                 &self.renderer_profile,
                 &self.authority,
             ]
-                .iter()
-                .any(|v| v.is_empty() || v.len() > 256 || !v.bytes().all(|b| b.is_ascii_graphic()))
+            .iter()
+            .any(|v| v.is_empty() || v.len() > 256 || !v.bytes().all(|b| b.is_ascii_graphic()))
             || self.path.len() > 1024
         {
             return false;

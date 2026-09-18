@@ -10,7 +10,10 @@ fn partial_delivery_disconnect_and_drop_never_publish() {
         let mut delivery = fill(request, key, b"complete body", &public());
         assert_eq!(cache.snapshot().entries, 1); // charged but not visible
         let probe = make_request(&pool, "tenant-a", "public", &[]);
-        assert!(matches!(ticket(&cache, &probe, 1).lookup(), CacheLookup::Miss(_)));
+        assert!(matches!(
+            ticket(&cache, &probe, 1).lookup(),
+            CacheLookup::Miss(_)
+        ));
         drop(probe);
         if mode == 0 {
             drop(delivery);
@@ -36,12 +39,18 @@ fn rollout_and_eligibility_generations_invalidate_future_use_not_read_ownership(
     finish(fill(request, key, b"old", &public()));
     let request = make_request(&pool, "tenant-a", "public", &[]);
     let old_read = hit(ticket(&cache, &request, 1));
-    let different = cache.request(&request, &scope("tenant-a", 1)).unwrap().bind_eligibility([2; 32]);
+    let different = cache
+        .request(&request, &scope("tenant-a", 1))
+        .unwrap()
+        .bind_eligibility([2; 32]);
     assert!(matches!(different.lookup(), CacheLookup::Miss(_)));
     assert!(cache.observe_generation(2));
     assert!(!cache.observe_generation(1));
     assert!(cache.request(&request, &scope("tenant-a", 1)).is_none());
-    assert!(matches!(ticket(&cache, &request, 2).lookup(), CacheLookup::Miss(_)));
+    assert!(matches!(
+        ticket(&cache, &request, 2).lookup(),
+        CacheLookup::Miss(_)
+    ));
     assert_eq!(cache.snapshot().entries, 1); // retired read still charged
     assert!(old_read.wire().windows(4).any(|bytes| bytes == b"b2xk"));
     cache.close();
@@ -79,7 +88,10 @@ fn monotonic_expiry_includes_render_delivery_delay_and_never_renews_on_hit() {
         Arc::get_mut(&mut state.entries[0]).unwrap().expires = Instant::now();
     }
     let request = make_request(&pool, "tenant-a", "public", &[]);
-    assert!(matches!(ticket(&cache, &request, 1).lookup(), CacheLookup::Miss(_)));
+    assert!(matches!(
+        ticket(&cache, &request, 1).lookup(),
+        CacheLookup::Miss(_)
+    ));
     assert_eq!(cache.snapshot().entries, 0);
 }
 
@@ -88,7 +100,9 @@ fn owner_key_body_and_churn_bounds_return_to_zero() {
     let cache = cache();
     let pool = pool();
     let request = make_request(&pool, "tenant-a", "public", &[]);
-    let owners: Vec<_> = (0..MAX_OWNERS).map(|_| ticket(&cache, &request, 1)).collect();
+    let owners: Vec<_> = (0..MAX_OWNERS)
+        .map(|_| ticket(&cache, &request, 1))
+        .collect();
     assert!(cache.request(&request, &scope("tenant-a", 1)).is_none());
     assert_eq!(cache.snapshot().owners, MAX_OWNERS);
     drop(owners);
@@ -107,7 +121,12 @@ fn owner_key_body_and_churn_bounds_return_to_zero() {
     }
     let request = make_request(&pool, "tenant-a", "public", &[]);
     let key = ticket(&cache, &request, 130);
-    finish(fill(request, key, &vec![b'x'; crate::http::MAX_RESPONSE_BODY + 1], &public()));
+    finish(fill(
+        request,
+        key,
+        &vec![b'x'; crate::http::MAX_RESPONSE_BODY + 1],
+        &public(),
+    ));
     assert_eq!(cache.snapshot().entries, 0);
     cache.close();
     assert_eq!(cache.snapshot().reserved_bytes, 0);

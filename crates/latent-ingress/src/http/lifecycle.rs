@@ -74,7 +74,10 @@ impl Collector {
         }
         if (matches!(self.method, Method::Get | Method::Head) && length != 0)
             || (self.version == HttpVersion::Http11 && self.headers.length.is_none() && length != 0)
-            || self.headers.length.is_some_and(|declared| length > declared)
+            || self
+                .headers
+                .length
+                .is_some_and(|declared| length > declared)
         {
             return Err(HttpError::InvalidFraming);
         }
@@ -97,7 +100,11 @@ impl Collector {
         if self.failed {
             return Err(HttpError::InvalidFraming);
         }
-        if self.headers.length.is_some_and(|length| length != self.body.len()) {
+        if self
+            .headers
+            .length
+            .is_some_and(|length| length != self.body.len())
+        {
             return Err(HttpError::InvalidFraming);
         }
         Ok(Request {

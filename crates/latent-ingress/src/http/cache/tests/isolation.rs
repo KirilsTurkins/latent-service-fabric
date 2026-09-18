@@ -6,24 +6,42 @@ fn alternate_tenants_public_principals_and_languages_never_cross_bytes() {
     let pool = pool();
     // Six entries fit the byte reservation; look up each after interleaving fills.
     let cases = [
-        ("tenant-a", "public-a", "en"), ("tenant-b", "public-a", "en"),
-        ("tenant-a", "public-b", "en"), ("tenant-a", "public-a", "de"),
-        ("tenant-b", "public-b", "de"), ("tenant-b", "public-a", "de"),
+        ("tenant-a", "public-a", "en"),
+        ("tenant-b", "public-a", "en"),
+        ("tenant-a", "public-b", "en"),
+        ("tenant-a", "public-a", "de"),
+        ("tenant-b", "public-b", "de"),
+        ("tenant-b", "public-a", "de"),
     ];
     for (tenant, subject, language) in cases {
-        let headers = [HeaderView { name: "accept-language", value: language.as_bytes() }];
+        let headers = [HeaderView {
+            name: "accept-language",
+            value: language.as_bytes(),
+        }];
         let request = make_request(&pool, tenant, subject, &headers);
         let key = ticket(&cache, &request, 1);
         let body = format!("{tenant}/{subject}/{language}");
         finish(fill(request, key, body.as_bytes(), &public()));
     }
     for (tenant, subject, language) in cases.into_iter().rev() {
-        let headers = [HeaderView { name: "accept-language", value: language.as_bytes() }];
+        let headers = [HeaderView {
+            name: "accept-language",
+            value: language.as_bytes(),
+        }];
         let request = make_request(&pool, tenant, subject, &headers);
         let read = hit(ticket(&cache, &request, 1));
-        let delivery = request.into_invocation().unwrap().complete_cache_hit(read).unwrap();
-        assert_eq!(delivery.remaining_body().unwrap(), format!("{tenant}/{subject}/{language}").as_bytes());
-        assert!(delivery.headers().any(|h| h.name == "cache-control" && h.value == b"no-store"));
+        let delivery = request
+            .into_invocation()
+            .unwrap()
+            .complete_cache_hit(read)
+            .unwrap();
+        assert_eq!(
+            delivery.remaining_body().unwrap(),
+            format!("{tenant}/{subject}/{language}").as_bytes()
+        );
+        assert!(delivery
+            .headers()
+            .any(|h| h.name == "cache-control" && h.value == b"no-store"));
         assert!(delivery.headers().any(|h| h.name == "age"));
         finish(delivery);
     }
@@ -36,10 +54,23 @@ fn alternate_tenants_public_principals_and_languages_never_cross_bytes() {
 fn credentials_cookies_unknown_headers_queries_and_user_principals_bypass() {
     let cache = cache();
     let pool = pool();
-    for name in ["authorization", "proxy-authorization", "cookie", "cache-control", "range", "x-user"] {
-        let headers = [HeaderView { name, value: b"private" }];
+    for name in [
+        "authorization",
+        "proxy-authorization",
+        "cookie",
+        "cache-control",
+        "range",
+        "x-user",
+    ] {
+        let headers = [HeaderView {
+            name,
+            value: b"private",
+        }];
         let request = make_request(&pool, "tenant-a", "public", &headers);
-        assert!(cache.request(&request, &scope("tenant-a", 1)).is_none(), "{name}");
+        assert!(
+            cache.request(&request, &scope("tenant-a", 1)).is_none(),
+            "{name}"
+        );
     }
     let request = request_as(&pool, "tenant-a", "public", &[], PrincipalKind::User);
     assert!(cache.request(&request, &scope("tenant-a", 1)).is_none());
@@ -73,13 +104,20 @@ fn absent_empty_duplicate_and_unapproved_vary_values_are_distinct() {
     let key = ticket(&cache, &absent, 1);
     finish(fill(absent, key, b"absent", &public()));
     for values in [vec![""], vec!["fr"], vec!["en", "en"]] {
-        let headers: Vec<_> = values.iter().map(|value| HeaderView {
-            name: "accept-language", value: value.as_bytes(),
-        }).collect();
+        let headers: Vec<_> = values
+            .iter()
+            .map(|value| HeaderView {
+                name: "accept-language",
+                value: value.as_bytes(),
+            })
+            .collect();
         let request = make_request(&pool, "tenant-a", "public", &headers);
         let candidate = cache.request(&request, &scope("tenant-a", 1));
         if values == [""] {
-            assert!(matches!(candidate.unwrap().bind_eligibility([1; 32]).lookup(), CacheLookup::Miss(_)));
+            assert!(matches!(
+                candidate.unwrap().bind_eligibility([1; 32]).lookup(),
+                CacheLookup::Miss(_)
+            ));
         } else {
             assert!(candidate.is_none());
         }

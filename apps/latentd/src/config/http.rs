@@ -233,14 +233,21 @@ fn validate_cache(http: &HttpIngressConfig) -> Result<(), PlatformError> {
         return Err(invalid("httpIngress.responseCache"));
     };
     let mut unique = BTreeSet::new();
-    if http.response_cache.len() > 32 || http.response_cache.iter().any(|policy| {
-        !policy.validate()
-            || !unique.insert((&policy.tenant, &policy.publication, &policy.authority, &policy.path))
-            || policy.renderer_profile != latent_ingress::http::PROFILE
-            || !origins.iter().any(|origin| {
-                origin.authority == policy.authority && origin.tenant == policy.tenant
-            })
-    }) {
+    if http.response_cache.len() > 32
+        || http.response_cache.iter().any(|policy| {
+            !policy.validate()
+                || !unique.insert((
+                    &policy.tenant,
+                    &policy.publication,
+                    &policy.authority,
+                    &policy.path,
+                ))
+                || policy.renderer_profile != latent_ingress::http::PROFILE
+                || !origins.iter().any(|origin| {
+                    origin.authority == policy.authority && origin.tenant == policy.tenant
+                })
+        })
+    {
         return Err(invalid("httpIngress.responseCache"));
     }
     Ok(())

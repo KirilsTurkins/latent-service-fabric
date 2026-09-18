@@ -6,8 +6,7 @@ use crate::http::{
 use base64::Engine;
 use latent_activation::TraceContext;
 use latent_core::{
-    IncomingDeadline, InvocationPrincipal, Metadata, PlatformErrorCode, SpanId, TenantId,
-    TraceId,
+    IncomingDeadline, InvocationPrincipal, Metadata, PlatformErrorCode, SpanId, TenantId, TraceId,
 };
 use serde_json::json;
 
@@ -46,10 +45,21 @@ fn scope(tenant: &str, generation: u64) -> CacheScope<'_> {
         state_version: generation,
     }
 }
-fn make_request(pool: &HttpPool, tenant: &str, subject: &str, headers: &[HeaderView<'_>]) -> Request {
+fn make_request(
+    pool: &HttpPool,
+    tenant: &str,
+    subject: &str,
+    headers: &[HeaderView<'_>],
+) -> Request {
     request_as(pool, tenant, subject, headers, PrincipalKind::Trigger)
 }
-fn request_as(pool: &HttpPool, tenant: &str, subject: &str, headers: &[HeaderView<'_>], kind: PrincipalKind) -> Request {
+fn request_as(
+    pool: &HttpPool,
+    tenant: &str,
+    subject: &str,
+    headers: &[HeaderView<'_>],
+    kind: PrincipalKind,
+) -> Request {
     let context = TrustedContext::new(
         InvocationPrincipal {
             subject: subject.into(),
@@ -66,7 +76,10 @@ fn request_as(pool: &HttpPool, tenant: &str, subject: &str, headers: &[HeaderVie
         },
     )
     .unwrap();
-    let mut fields = vec![HeaderView { name: "host", value: b"example.test" }];
+    let mut fields = vec![HeaderView {
+        name: "host",
+        value: b"example.test",
+    }];
     fields.extend_from_slice(headers);
     pool.begin(
         RawHead {
@@ -85,23 +98,36 @@ fn request_as(pool: &HttpPool, tenant: &str, subject: &str, headers: &[HeaderVie
 }
 fn ticket(cache: &ResponseCache, request: &Request, generation: u64) -> CacheRequest {
     let tenant = &request.context().principal().tenant.as_ref().unwrap().0;
-    cache.request(request, &scope(tenant, generation)).unwrap().bind_eligibility([1; 32])
+    cache
+        .request(request, &scope(tenant, generation))
+        .unwrap()
+        .bind_eligibility([1; 32])
 }
 fn wire(status: u16, body: &[u8], headers: &[(&str, &str)]) -> Vec<u8> {
-    let headers: Vec<_> = headers.iter().map(|(name, value)| {
-        json!({"name": name, "value": value.as_bytes()})
-    }).collect();
+    let headers: Vec<_> = headers
+        .iter()
+        .map(|(name, value)| json!({"name": name, "value": value.as_bytes()}))
+        .collect();
     serde_json::to_vec(&json!([{
         "profile": "buffered-v1", "status": status, "headers": headers,
         "media-type": {"some": "text/html"}, "representation-length": {"none": null},
         "body-base64": base64::engine::general_purpose::STANDARD.encode(body)
-    }])).unwrap()
+    }]))
+    .unwrap()
 }
 fn fill(request: Request, ticket: CacheRequest, body: &[u8], headers: &[(&str, &str)]) -> Delivery {
     let bytes = wire(200, body, headers);
-    request.into_invocation().unwrap().complete_cached(
-        Outcome::Returned { bytes: &bytes, media_type: VALUE_MEDIA_TYPE }, Some(ticket)
-    ).unwrap()
+    request
+        .into_invocation()
+        .unwrap()
+        .complete_cached(
+            Outcome::Returned {
+                bytes: &bytes,
+                media_type: VALUE_MEDIA_TYPE,
+            },
+            Some(ticket),
+        )
+        .unwrap()
 }
 fn finish(mut delivery: Delivery) {
     delivery.mark_headers_written().unwrap();

@@ -12,19 +12,29 @@ pub(super) fn ttl(delivery: &Delivery, policy: &PublicCachePolicy) -> Option<u64
     for header in &delivery.response.headers.0 {
         let name = header.name.0.as_str();
         let value = std::str::from_utf8(&header.value.0).ok()?;
+        if !value.is_ascii() {
+            return None;
+        }
         match name {
             "cache-control" if control.is_none() => control = Some(value),
             "vary" => {
                 for name in value.split(',').map(str::trim) {
-                    let index = policy.vary.iter().position(|v| v.name.eq_ignore_ascii_case(name))?;
+                    let index = policy
+                        .vary
+                        .iter()
+                        .position(|v| v.name.eq_ignore_ascii_case(name))?;
                     if vary[index] {
                         return None;
                     }
                     vary[index] = true;
                 }
             }
-            "content-language" | "etag" | "last-modified" | "content-security-policy"
-            | "x-content-type-options" | "referrer-policy" => {}
+            "content-language"
+            | "etag"
+            | "last-modified"
+            | "content-security-policy"
+            | "x-content-type-options"
+            | "referrer-policy" => {}
             // Includes Set-Cookie, credentials, Age, Expires, cache extensions,
             // duplicate Cache-Control and unknown/unbounded Vary fields.
             _ => return None,
@@ -52,6 +62,8 @@ pub(super) fn ttl(delivery: &Delivery, policy: &PublicCachePolicy) -> Option<u64
             return None;
         }
     }
-    let ttl = maximum_age?.min(shared_age.unwrap_or(u64::MAX)).min(policy.maximum_age_seconds);
+    let ttl = maximum_age?
+        .min(shared_age.unwrap_or(u64::MAX))
+        .min(policy.maximum_age_seconds);
     (public && ttl > 0).then_some(ttl)
 }

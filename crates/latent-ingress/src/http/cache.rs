@@ -7,9 +7,9 @@ mod response;
 #[cfg(test)]
 mod tests;
 
-pub use policy::{DependencyProfile, PublicCachePolicy, VaryField, MAX_AGE_SECONDS, MAX_KEY_BYTES};
 use super::{Delivery, HttpError, Method, Request, Scheme, MAX_WIRE_BYTES};
 use latent_core::PrincipalKind;
+pub use policy::{DependencyProfile, PublicCachePolicy, VaryField, MAX_AGE_SECONDS, MAX_KEY_BYTES};
 use std::{
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -224,7 +224,10 @@ impl ResponseCache {
         // Cookies, conditions, Range and request cache directives thus bypass.
         for header in &request.data.headers {
             let field = policy.vary.iter().find(|v| v.name == header.name.0)?;
-            if !field.values.iter().any(|v| v.as_bytes() == header.value.0.as_slice())
+            if !field
+                .values
+                .iter()
+                .any(|v| v.as_bytes() == header.value.0.as_slice())
                 || request
                     .data
                     .headers
@@ -308,13 +311,14 @@ impl CacheRequest {
             state
                 .entries
                 .iter()
-                .find(|entry| {
-                    entry.key == self.key && Some(entry.eligibility) == self.eligibility
-                })
+                .find(|entry| entry.key == self.key && Some(entry.eligibility) == self.eligibility)
                 .cloned()
         });
         match found {
-            Some(entry) => CacheLookup::Hit(CacheHit { entry, _request: self }),
+            Some(entry) => CacheLookup::Hit(CacheHit {
+                entry,
+                _request: self,
+            }),
             None => CacheLookup::Miss(self),
         }
     }
@@ -343,7 +347,9 @@ impl CacheRequest {
             state.entries.remove(0);
         }
         accounting.entries.fetch_add(1, Ordering::AcqRel);
-        accounting.bytes.fetch_add(MAX_ENTRY_BYTES, Ordering::AcqRel);
+        accounting
+            .bytes
+            .fetch_add(MAX_ENTRY_BYTES, Ordering::AcqRel);
         let charge = Charge(accounting);
         drop(state);
         let mut bytes = Vec::new();
@@ -367,7 +373,12 @@ impl CacheRequest {
 fn append(key: &mut String, value: &str) -> Option<()> {
     use std::fmt::Write;
     let length = value.len().to_string();
-    if key.len().checked_add(length.len() + 1)?.checked_add(value.len())? > MAX_KEY_BYTES {
+    if key
+        .len()
+        .checked_add(length.len() + 1)?
+        .checked_add(value.len())?
+        > MAX_KEY_BYTES
+    {
         return None;
     }
     write!(key, "{length}:{value}").ok()

@@ -75,7 +75,10 @@ impl HttpHandle {
         let response_cache = if settings.response_cache.is_empty() {
             None
         } else {
-            Some(ResponseCache::new(settings.response_cache.clone()).map_err(|_| super::failure())?)
+            Some(
+                ResponseCache::new(settings.response_cache.clone())
+                    .map_err(|_| super::failure())?,
+            )
         };
         Ok(Self(Arc::new(State {
             signal: watch::channel(Signal::Starting).0,
@@ -96,7 +99,12 @@ impl HttpHandle {
     }
     pub(crate) fn snapshot(&self) -> HttpSnapshot {
         let pool = self.0.pool.snapshot();
-        let cache = self.0.response_cache.as_ref().map(ResponseCache::snapshot).unwrap_or_default();
+        let cache = self
+            .0
+            .response_cache
+            .as_ref()
+            .map(ResponseCache::snapshot)
+            .unwrap_or_default();
         let connections = self.0.connections.load(Ordering::Acquire);
         HttpSnapshot {
             listener_alive: self.0.listener_alive.load(Ordering::Acquire),
