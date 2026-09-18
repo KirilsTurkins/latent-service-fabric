@@ -1,5 +1,5 @@
 //! Read only a typed content digest below the catalog's shared blob directory.
-//! The caller supplies a fresh WebSelection; a digest or this handle is not authority.
+//! The caller supplies a fresh `WebSelection`; a digest or this handle is not authority.
 use latent_artifacts::DirectoryArtifactRepository;
 use latent_core::ArtifactBlobDigest;
 

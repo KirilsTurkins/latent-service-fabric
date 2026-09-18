@@ -42,11 +42,11 @@ pub(in crate::standalone::http) async fn exchange<S: AsyncRead + AsyncWrite + Un
 fn prepare_request(head: &Head, raw: &[u8]) -> Result<Request, u16> {
     LocalPrincipalPolicy
         .authenticate(&head.principal)
-        .map_err(super::status)?;
+        .map_err(|error| super::status(&error))?;
     let tenant = head.principal.tenant.as_ref().ok_or(403u16)?;
     LocalPrincipalPolicy
         .authorize_target(&head.principal, &tenant.0)
-        .map_err(super::status)?;
+        .map_err(|error| super::status(&error))?;
     if head.content_length != 0 {
         return Err(400);
     }

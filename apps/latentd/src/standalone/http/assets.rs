@@ -1,6 +1,10 @@
 //! Immutable browser assets are a sibling of activation dispatch, not a renderer.
 //! One node-owned cache and nonblocking work gate serve all admitted publications.
 mod cache;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod fixture;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod integration;
 mod request;
 mod source;
 mod wire;
@@ -15,6 +19,9 @@ use std::sync::{
     Arc,
 };
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+
+#[cfg(test)]
+type TestPause = (std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>);
 
 const MAX_READS: usize = 4;
 pub(super) use wire::exchange;
@@ -47,6 +54,8 @@ pub(super) struct Store {
     work: Arc<Semaphore>,
     stopped: AtomicBool,
     rejected: AtomicU64,
+    #[cfg(test)]
+    pause: std::sync::Mutex<Option<TestPause>>,
 }
 impl Store {
     pub(super) fn new(repository: Arc<DirectoryArtifactRepository>) -> Result<Arc<Self>, u16> {
@@ -57,6 +66,8 @@ impl Store {
             work: Arc::new(Semaphore::new(MAX_READS)),
             stopped: AtomicBool::new(false),
             rejected: AtomicU64::new(0),
+            #[cfg(test)]
+            pause: std::sync::Mutex::new(None),
         }))
     }
     pub(super) fn snapshot(&self) -> AssetSnapshot {
@@ -81,7 +92,8 @@ impl Store {
         // AND response owners before clearing cache, never release their slots early.
         let Ok(Ok(_all)) = tokio::time::timeout_at(
             deadline,
-            Arc::clone(&self.work).acquire_many_owned(MAX_READS as u32),
+            Arc::clone(&self.work)
+                .acquire_many_owned(u32::try_from(MAX_READS).expect("fixed asset read limit")),
         )
         .await
         else {
@@ -113,13 +125,21 @@ impl Store {
         }))
     }
     fn prepare(&self, request: Request, permit: OwnedSemaphorePermit) -> Result<Prepared, u16> {
+        #[cfg(test)]
+        {
+            let pause = self.pause.lock().unwrap().take();
+            if let Some((entered, resume)) = pause {
+                let _ = entered.send(());
+                let _ = resume.recv();
+            }
+        }
         if self.stopped.load(Ordering::Acquire) {
             return Err(503);
         }
         let selection = self
             .repository
             .select_web_publication(&request.reference)
-            .map_err(status)?;
+            .map_err(|error| status(&error))?;
         // Never use a supplied digest as a grant or look up an arbitrary layer.
         let asset = selection.layout().asset(&request.path).ok_or(404u16)?;
         let buffer = self
@@ -156,7 +176,7 @@ impl Prepared {
         // invalidate this acceptance instead of silently switching publications.
         self.selection
             .with_current(tenant, &mut |current| current.check())
-            .map_err(status)
+            .map_err(|error| status(&error))
     }
 }
 fn identity(digest: &str, size: u64, media: &str) -> String {
@@ -168,7 +188,7 @@ fn identity(digest: &str, size: u64, media: &str) -> String {
     hash.update(media.as_bytes());
     format!("\"identity-sha256-{:x}\"", hash.finalize())
 }
-fn status(error: PlatformError) -> u16 {
+fn status(error: &PlatformError) -> u16 {
     match error.code {
         PlatformErrorCode::Unauthenticated => 401,
         PlatformErrorCode::PermissionDenied => 403,
