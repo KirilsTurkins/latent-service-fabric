@@ -1,0 +1,113 @@
+name: Temporary resource fixture verification
+on:
+  push:
+    branches: [feat/231-immutable-browser-assets]
+    paths: [.github/workflows/resource-fix-validation.yml]
+permissions:
+  contents: write
+concurrency:
+  group: temporary-resource-fixture-verification
+  cancel-in-progress: true
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/feat/231-immutable-browser-assets'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: feat/231-immutable-browser-assets
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Wire exact staged identities into the ordinary CI resource step
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('.github/workflows/ci.yml')
+          s = p.read_text()
+          old = 'python3 -m unittest tools.tests.test_phase2_gate_resource tools.tests.test_phase2_resource_clock\n'
+          if 'tools.tests.test_phase2_resource_binaries' not in s:
+              assert s.count(old) == 1
+              s = s.replace(old, old.rstrip() + ' tools.tests.test_phase2_resource_binaries\n')
+          if 'resource_bins="${fixture_root}/resource-binaries"' not in s:
+              first = s.index('          LSF_GATE_FIXTURE_ROOT="${fixture_root}" python3 -')
+              last = s.index('      - name: Retain compact Phase 2 gate receipts', first)
+              part = s[first:last]
+              replacements = {
+                  'LSF_GATE_FIXTURE_ROOT="${fixture_root}" python3 -': 'LSF_GATE_FIXTURE_ROOT="${fixture_root}" LSF_GATE_BINARIES="${resource_bins}" python3 -',
+                  '          root = pathlib.Path.cwd()\n': '          root = pathlib.Path.cwd()\n          binaries = pathlib.Path(os.environ["LSF_GATE_BINARIES"])\n',
+                  'digest(root / "target/debug/latent")': 'digest(binaries / "latent")',
+                  'digest(root / "target/debug/latentd")': 'digest(binaries / "latentd")',
+                  'tools/phase2_gate_resource.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd"': 'tools/phase2_gate_resource.py --cli "${resource_bins}/latent" --node "${resource_bins}/latentd"',
+              }
+              for before, after in replacements.items():
+                  assert part.count(before) == 1, before
+                  part = part.replace(before, after)
+              prefix = ('          # Debug information is not runtime resource evidence. Keep Cargo outputs\n'
+                        '          # unchanged; hash and execute the same bounded, debug-stripped copies.\n'
+                        '          resource_bins="${fixture_root}/resource-binaries"\n'
+                        '          python3 tools/phase2_resource_binaries.py --build-directory "${PWD}/target/debug" --output-directory "${resource_bins}"\n')
+              s = s[:first] + prefix + part + s[last:]
+          p.write_text(s)
+          p = Path('docs/testing/phase-2-resource-profile.md')
+          s = p.read_text()
+          if '## CI executable preparation' not in s:
+              s = s.rstrip() + '''\n\n## CI executable preparation\n\nCI stages `latent` and `latentd` in a fresh temporary directory using\n`tools/phase2_resource_binaries.py`. `objcopy --strip-debug` removes only debug\nsections from these copies; Cargo outputs and caches are not modified, and no\nsecond Rust build is performed. The copies must still fit the frozen\n`maximumBinaryBytes` limit (512 MiB). Preparation fails on an oversized output,\nan existing destination, a nonregular/nonexecutable input or output, a tool\nfailure, or a timeout; it never raises the collector limit.\n\nThe build identity hashes these exact copies, and the collector launches the\nsame paths. Its own bounded hash checks and `/proc/<pid>/exe` identity/inode\nchecks remain unchanged. `buildProfile` remains `debug`: stripping DWARF does\nnot turn the unoptimized build into a release build. Runtime ownership, RSS,\nfixture, deadline and receipt checks retain the `phase2-dormant-32-r3` profile.\nThe existing fixture cleanup trap owns the staged files.\n'''
+              p.write_text(s)
+          PY
+          python3 -m unittest tools.tests.test_phase2_resource_binaries tools.tests.test_phase2_gate_resource tools.tests.test_phase2_resource_clock
+          git diff --check
+          git add .github/workflows/ci.yml docs/testing/phase-2-resource-profile.md
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'fix(ci): hash and execute the same bounded resource fixture binaries'
+            git push origin HEAD:feat/231-immutable-browser-assets
+          fi
+          git rev-parse HEAD
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          prefix-key: lsf-asset-development-v1
+          key: ubuntu-24.04
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: false
+      - name: Build the actual node CLI and bounded resource fixture exporter
+        run: |
+          cargo build -p latent -p latentd --bin latent --bin latentd --all-features --locked > /tmp/resource-build.log 2>&1 || { tail -n 100 /tmp/resource-build.log; exit 1; }
+          cargo test -p latent-policy --lib --all-features --locked --no-run --message-format=json,json-render-diagnostics > "$RUNNER_TEMP/lsf-workspace-tests.jsonl" 2>/tmp/resource-fixture-build.log || { tail -n 100 /tmp/resource-fixture-build.log; exit 1; }
+          stat --format='%n: %s bytes' target/debug/latent target/debug/latentd
+      - name: Run the exact repaired resource fragment from ordinary CI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+          text = Path('.github/workflows/ci.yml').read_text()
+          first = text.index('          LSF_PHASE2_RESOURCE_FIXTURE_ROOT=')
+          last = text.index('      - name: Retain compact Phase 2 gate receipts', first)
+          Path('/tmp/resource-tail.sh').write_text(dedent(text[first:last]))
+          PY
+          export fixture_root="$(mktemp -d "${RUNNER_TEMP}/resource-fix.XXXXXXXX")"
+          trap 'rm -rf -- "$fixture_root"' EXIT
+          mkdir -p "${RUNNER_TEMP}/phase2-gate"
+          export GITHUB_SHA="$(git rev-parse HEAD)"
+          bash -e /tmp/resource-tail.sh
+      - name: Retain focused resource evidence and exact workflow
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: resource-fix-verification
+          path: |
+            ${{ runner.temp }}/phase2-gate/*.json
+            .github/workflows/ci.yml
+          retention-days: 7
