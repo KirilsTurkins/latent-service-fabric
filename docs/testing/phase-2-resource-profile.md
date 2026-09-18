@@ -194,3 +194,20 @@ Their logical counters must not be inferred from this portable profile's RSS.
 The profile retains authoritative release/audit history after route removal:
 reclaimed execution objects and intentionally retained control data are distinct.
 Phase 3 provider and web capabilities are outside this gate experiment.
+
+## CI executable preparation
+
+CI stages `latent` and `latentd` in a fresh temporary directory using
+`tools/phase2_resource_binaries.py`. `objcopy --strip-debug` removes only debug
+sections from these copies; Cargo outputs and caches are not modified, and no
+second Rust build is performed. The copies must still fit the frozen
+`maximumBinaryBytes` limit (512 MiB). Preparation fails on an oversized output,
+an existing destination, a nonregular/nonexecutable input or output, a tool
+failure, or a timeout; it never raises the collector limit.
+
+The build identity hashes these exact copies, and the collector launches the
+same paths. Its own bounded hash checks and `/proc/<pid>/exe` identity/inode
+checks remain unchanged. `buildProfile` remains `debug`: stripping DWARF does
+not turn the unoptimized build into a release build. Runtime ownership, RSS,
+fixture, deadline and receipt checks retain the `phase2-dormant-32-r3` profile.
+The existing fixture cleanup trap owns the staged files.
