@@ -11,9 +11,8 @@ use tokio::io::AsyncWriteExt;
 
 async fn public_call(fixture: &Fixture, path: &str, extra: &str) -> (u16, String, Vec<u8>) {
     let mut socket = fixture.connect().await;
-    let request = format!(
-        "GET {path} HTTP/1.1\r\nHost: {AUTHORITY}\r\nConnection: close\r\n{extra}\r\n"
-    );
+    let request =
+        format!("GET {path} HTTP/1.1\r\nHost: {AUTHORITY}\r\nConnection: close\r\n{extra}\r\n");
     socket.write_all(request.as_bytes()).await.unwrap();
     response(&mut socket).await
 }
@@ -29,7 +28,10 @@ async fn enabled_fixture() -> Fixture {
     let reply = public_call(&fixture, "/cache", "").await;
     assert_eq!(reply.0, 200);
     assert!(reply.1.contains("cache-control: no-store\r\n"));
-    assert_eq!(fixture.node.http_snapshot().unwrap().response_cache_entries, 0);
+    assert_eq!(
+        fixture.node.http_snapshot().unwrap().response_cache_entries,
+        0
+    );
     let selected = fixture
         .deployments
         .select_http(
@@ -66,15 +68,24 @@ async fn actual_http_component_cache_preserves_admission_revocation_and_owner_re
     assert!(second.1.contains("cache-control: no-store\r\n"));
     assert!(second.1.contains("\r\nage: "));
     fixture.idle().await;
-    assert_eq!(fixture.node.backend.resource_snapshot().stores_created, stores);
-    assert_eq!(fixture.node.http_snapshot().unwrap().response_cache_entries, 1);
+    assert_eq!(
+        fixture.node.backend.resource_snapshot().stores_created,
+        stores
+    );
+    assert_eq!(
+        fixture.node.http_snapshot().unwrap().response_cache_entries,
+        1
+    );
     for cookie in ["Cookie: session=alice\r\n", "Cookie: session=bob\r\n"] {
         let reply = public_call(&fixture, "/cache", cookie).await;
         assert_eq!(reply.0, 200);
         assert!(!reply.1.contains("\r\nage: "));
     }
     fixture.idle().await;
-    assert_eq!(fixture.node.backend.resource_snapshot().stores_created, stores + 2);
+    assert_eq!(
+        fixture.node.backend.resource_snapshot().stores_created,
+        stores + 2
+    );
     assert_eq!(call(&fixture, "/cache").await.0, 401);
     let selected = fixture
         .deployments
@@ -103,6 +114,9 @@ async fn actual_http_component_cache_preserves_admission_revocation_and_owner_re
     assert_ne!(rejected.2, b"public");
     assert!(!rejected.1.contains("\r\nage: "));
     fixture.idle().await;
-    assert_eq!(fixture.node.backend.resource_snapshot().stores_created, stores + 2);
+    assert_eq!(
+        fixture.node.backend.resource_snapshot().stores_created,
+        stores + 2
+    );
     fixture.shutdown().await;
 }
