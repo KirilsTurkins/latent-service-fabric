@@ -13,6 +13,8 @@ jobs:
     if: github.ref == 'refs/heads/feat/231-immutable-browser-assets'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    env:
+      CARGO_TERM_COLOR: never
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -21,48 +23,96 @@ jobs:
         with:
           components: rustfmt, clippy
           targets: wasm32-wasip2,wasm32-unknown-unknown
-      - name: Install exact catalog owner before HTTP admission and format
+      - name: Register deterministic ownership tests and apply compiler feedback
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('apps/latentd/src/standalone/start.rs')
-          text = p.read_text()
-          needle = '        self.start_http(settings, &catalogs.deployments)?;\n'
-          addition = '''        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-                  if let Some(http) = &self.http {
-                      http.install_assets(catalogs.artifacts.clone())?;
+          p = Path('apps/latentd/src/standalone/http/assets.rs')
+          s = p.read_text()
+          if 'mod integration;' not in s:
+              s = s.replace('mod wire;\n', 'mod wire;\n#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]\nmod fixture;\n#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]\nmod integration;\n')
+          if 'type TestPause' not in s:
+              s = s.replace('const MAX_READS: usize = 4;', '#[cfg(test)]\ntype TestPause = (std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>);\n\nconst MAX_READS: usize = 4;')
+              s = s.replace('    rejected: AtomicU64,', '    rejected: AtomicU64,\n    #[cfg(test)]\n    pause: std::sync::Mutex<Option<TestPause>>,')
+              s = s.replace('            rejected: AtomicU64::new(0),', '            rejected: AtomicU64::new(0),\n            #[cfg(test)]\n            pause: std::sync::Mutex::new(None),')
+              needle = '    fn prepare(&self, request: Request, permit: OwnedSemaphorePermit) -> Result<Prepared, u16> {\n'
+              hook = '''        #[cfg(test)]
+                  {
+                      let pause = self.pause.lock().unwrap().take();
+                      if let Some((entered, resume)) = pause {
+                          let _ = entered.send(());
+                          let _ = resume.recv();
+                      }
                   }
           '''
-          if 'http.install_assets(catalogs.artifacts.clone())?' not in text:
-              assert text.count(needle) == 1
-              p.write_text(text.replace(needle, needle + addition))
+              assert s.count(needle) == 1
+              s = s.replace(needle, needle + hook)
+          s = s.replace('MAX_READS as u32', 'u32::try_from(MAX_READS).expect("fixed asset read limit")')
+          s = s.replace('fn status(error: PlatformError)', 'fn status(error: &PlatformError)').replace('.map_err(status)', '.map_err(|error| status(&error))')
+          p.write_text(s)
           p = Path('apps/latentd/src/standalone/http/assets/wire.rs')
-          p.write_text(p.read_text().replace('pub(super) async fn exchange', 'pub(in crate::standalone::http) async fn exchange'))
+          p.write_text(p.read_text().replace('.map_err(super::status)', '.map_err(|error| super::status(&error))'))
+          p = Path('apps/latentd/src/standalone/http/assets/source.rs')
+          p.write_text(p.read_text().replace('a fresh WebSelection;', 'a fresh `WebSelection`;'))
+          p = Path('apps/latentd/src/standalone/http/assets/integration.rs')
+          s = p.read_text().replace('_storage', 'storage')
+          s = s.replace('    let prepared = store.begin(request).unwrap().await.unwrap().unwrap();', '    let reference = request.reference.clone();\n    let prepared = store.begin(request).unwrap().await.unwrap().unwrap();')
+          s = s.replace('    let reference = fixture::publish(&h.repository, "same-package", b"hello");\n', '')
+          p.write_text(s)
+          p = Path('docs/package-format.md')
+          s = p.read_text()
+          if 'immutable-browser-assets.md' not in s:
+              p.write_text(s.rstrip() + '\n\n## Immutable browser asset delivery\n\nThe [immutable browser asset HTTP profile](immutable-browser-assets.md) defines exact publication URLs, current admission checks, GET/HEAD and conditional behavior, shared storage/cache ownership, and the explicitly unsupported range and compression features.\n')
           PY
           cargo fmt --all
-          git add apps/latentd/src/standalone
+          git add apps/latentd/src/standalone docs/package-format.md
           if ! git diff --cached --quiet; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'feat(assets): wire the catalog owner at startup and format implementation'
+            git commit -m 'test(assets): register deterministic socket ownership coverage and resolve lint feedback'
             git push origin HEAD:feat/231-immutable-browser-assets
           fi
+          git rev-parse HEAD
+          cargo fmt --all --check
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
-          prefix-key: lsf-ci-dependencies-v1
-          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          prefix-key: lsf-asset-development-v1
+          key: ubuntu-24.04
           cache-targets: false
           cache-bin: false
           cache-workspace-crates: false
           cache-all-crates: false
+          cache-on-failure: true
           cache-directories: |
             target/debug/.fingerprint
             target/debug/build
             target/debug/deps
-          save-if: false
-      - name: Compile asset integration
-        run: cargo check -p latentd --lib --all-features --locked
-      - name: Check asset and HTTP tests
-        run: cargo test -p latentd --lib --all-features --locked standalone::http::assets
-      - name: Check strict package lint
-        run: cargo clippy -p latentd --lib --all-features --locked --no-deps -- -D warnings
+          save-if: true
+      - name: Compile all latentd targets
+        id: compile
+        run: |
+          status=0
+          cargo check -p latentd --all-targets --all-features --locked > /tmp/asset-check.log 2>&1 || status=$?
+          tail -n 100 /tmp/asset-check.log
+          exit "$status"
+      - name: Run asset socket and ownership regressions
+        if: success()
+        run: |
+          status=0
+          cargo test -p latentd --lib --all-features --locked standalone::http::assets > /tmp/asset-tests.log 2>&1 || status=$?
+          tail -n 180 /tmp/asset-tests.log
+          exit "$status"
+      - name: Check strict all-target lint
+        if: always() && steps.compile.outcome == 'success'
+        run: |
+          status=0
+          cargo clippy -p latentd --all-targets --all-features --locked --no-deps -- -D warnings > /tmp/asset-clippy.log 2>&1 || status=$?
+          tail -n 180 /tmp/asset-clippy.log
+          exit "$status"
+      - name: Run existing HTTP regression suite
+        if: success()
+        run: |
+          status=0
+          cargo test -p latentd --lib --all-features --locked standalone::http > /tmp/http-tests.log 2>&1 || status=$?
+          tail -n 160 /tmp/http-tests.log
+          exit "$status"
