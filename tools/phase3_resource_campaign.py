@@ -36,7 +36,8 @@ SOURCE_FILES = (
     "phase3_resource_node.py", "phase3_resource_os.py", "phase3_resource_peer.py", "phase3_resource_fixture.py",
     "phase3_resource_profile.py", "phase3_resource_schedule.py", "phase3_resource_workload.py",
     "phase2_operator_process.py", "phase2_operator_scenario.py", "phase3_management_scenario.py",
-    "sdk_provider_scenario.py", "sdk_provider_http_fixture.py", "build_process_linux.py", "build_process_signals.py",
+    "sdk_provider_scenario.py", "sdk_provider_http_fixture.py", "build_process.py",
+    "build_process_linux.py", "build_process_signals.py", "ci_rust_artifacts.py",
 )
 
 
@@ -80,12 +81,15 @@ def build(args):
 
 def identify(args, result):
     receipt = read_json(args.build_identity)
+    result["build"] = receipt
+    result["observedBinaries"] = {name: file_identity(path) for name, path in
+                                  (("node", args.node), ("cli", args.cli))}
+    require(file_identity(args.build_identity)["sha256"] == args.build_identity.with_suffix(
+        args.build_identity.suffix + ".sha256").read_text(encoding="ascii").strip(), "resource-build-checksum")
     require(receipt["schemaVersion"] == "latent.phase3.resource-build.v1", "resource-build-schema")
     require(receipt["sourceInputs"] == source_identity(ROOT), "resource-build-source-mismatch")
     require(receipt["cargoLock"] == file_identity(ROOT / "Cargo.lock"), "resource-build-lock-mismatch")
-    for name, path in (("node", args.node), ("cli", args.cli)):
-        require(receipt["binaries"][name] == file_identity(path), "resource-build-binary-mismatch")
-    result["build"] = receipt
+    require(receipt["binaries"] == result["observedBinaries"], "resource-build-binary-mismatch")
     result["collectorSources"] = [{"path": "tools/" + name, **file_identity(ROOT / "tools" / name)}
                                   for name in SOURCE_FILES]
     result["host"] = {"system": platform.system(), "machine": platform.machine(),

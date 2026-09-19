@@ -71,6 +71,10 @@ def run(directory, maximum, seconds):
                         write_json(directory / f"closed-{marker}.json", {"request": counts["requests"]})
                 elif mode["kind"] == "disconnect":
                     counts["disconnected"] += 1
+                    require(type(mode["ordinal"]) is int and 0 <= mode["ordinal"] <= 256, "resource-peer-marker")
+                    marker = directory / f"disconnected-{mode['ordinal']}.json"
+                    if not marker.exists():
+                        write_json(marker, {"request": counts["requests"]})
                 else:
                     connection.sendall(b"HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\n"
                                        b"Content-Length: 2\r\nConnection: close\r\n\r\n"

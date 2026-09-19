@@ -22,6 +22,7 @@ from tools.phase3_resource_os import Probe, network_counts, proc_stat
 from tools.phase3_resource_profile import ACTIVE_COUNTERS, PROFILES, digest, integer, quiescent, summary, validate_schedule
 from tools.phase3_resource_schedule import run_open_loop
 from tools.phase3_resource_rust import SUITE, artifact_from_cargo, validate_observations
+from tools.phase3_resource_workload import measured_work
 
 
 class Clock:
@@ -140,6 +141,18 @@ class ScheduleTests(unittest.TestCase):
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_failed_call_is_retained_before_its_expected_outcome_is_checked(self):
+        receipt = {"calls": [], "catalog": {"dormantPopulations": [{"dormantAdded": 4}]}}
+        failure = {"activation": "synthetic-failed-call", "elapsedNanos": "1",
+                   "result": {"category": "platform-failure", "value": None}}
+        with patch("tools.phase3_resource_workload.one", return_value=failure):
+            with self.assertRaises(WorkflowError):
+                measured_work(None, {"http": {}}, 12345, None, None, PROFILES["smoke"], receipt)
+        self.assertEqual(len(receipt["calls"]), 1)
+        self.assertEqual(receipt["calls"][0]["result"], failure["result"])
+        self.assertEqual(receipt["calls"][0]["outcome"], "unclassified")
+        self.assertEqual(receipt["calls"][0]["expectedOutcome"], "success")
+
     def test_expired_or_too_short_signatures_cannot_qualify_an_entire_campaign(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

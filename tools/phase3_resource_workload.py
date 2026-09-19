@@ -36,6 +36,12 @@ def success(result, expected):
             and result["result"]["outcomeKnown"] is True, "resource-real-provider-output")
 
 
+def retain(timings, kind, heat, expected, observed):
+    row = {"kind": kind, "heat": heat, "expectedOutcome": expected, "outcome": "unclassified", **observed}
+    timings.append(row)
+    return row
+
+
 def measured_work(client, targets, port, control, probe, profile, result):
     url = f"http://localhost:{port}/allowed"
     dormant = result["catalog"]["dormantPopulations"][-1]["dormantAdded"]
@@ -43,20 +49,26 @@ def measured_work(client, targets, port, control, probe, profile, result):
     for heat in ("cold", "warm"):
         for kind, expected in (("http", 2201), ("blob", 4)):
             observed = one(client, targets[kind], f"resource-{heat}-{kind}", [0, url if kind == "http" else "", "0"])
+            row = retain(timings, kind, heat, "success", observed)
             success(observed, expected)
-            timings.append({"kind": kind, "heat": heat, "outcome": "success", **observed})
+            row["outcome"] = "success"
     result["samples"] += settled_samples(client, probe, "warm", dormant,
                                          profile["samplesPerPhase"])
     mode(control, "disconnect")
     failure = one(client, targets["http"], "resource-http-failed", [0, url, "0"])
-    require(failure["result"]["category"] != "success", "resource-http-failure-not-observed")
-    timings.append({"kind": "http", "heat": "warm", "outcome": "failure", **failure})
+    row = retain(timings, "http", "warm", "failure", failure)
+    row["peerDisconnected"] = wait_marker(client, control, "disconnected-0.json")
+    require(failure["result"]["category"] != "success" or failure["result"]["value"] == ["11"],
+            "resource-http-failure-not-observed")
+    row["outcome"] = "failure"
+    row["guestTypedUncertain"] = failure["result"]["category"] == "success"
     mode(control, "reply")
     for operation, expected in (("invalid-handle", 11), ("abandon", 1)):
         observed = one(client, targets["blob"], "resource-blob-" + operation,
                        [4 if operation == "invalid-handle" else 1, "", "18446744073709551615"])
+        row = retain(timings, "blob", "warm", operation, observed)
         success(observed, expected)
-        timings.append({"kind": "blob", "heat": "warm", "outcome": operation, **observed})
+        row["outcome"] = operation
     cancel_http(client, targets["http"], url, control, probe, profile, result)
     overload(client, targets["http"], url, control, probe, profile, result)
     mode(control, "reply")
@@ -81,8 +93,9 @@ def measured_work(client, targets, port, control, probe, profile, result):
                                              profile["samplesPerPhase"])
     for kind, expected in (("http", 2201), ("blob", 4)):
         observed = one(client, targets[kind], "resource-recovered-" + kind, [0, url if kind == "http" else "", "0"])
+        row = retain(timings, kind, "warm", "recovery", observed)
         success(observed, expected)
-        timings.append({"kind": kind, "heat": "warm", "outcome": "recovery", **observed})
+        row["outcome"] = "recovery"
 
 
 def cancel_http(client, target, url, control, probe, profile, result):
@@ -98,12 +111,13 @@ def cancel_http(client, target, url, control, probe, profile, result):
         cancellation = client.call("activation", "cancel", "resource-cancel-http", "--reason", "resource-campaign")
         require(cancellation["outcomeKnown"], "resource-cancel-uncertain")
         terminal = finish(client, process)
-        require(terminal["category"] != "success", "resource-cancel-not-observed")
+        row = retain(result["calls"], "http", "warm", "cancellation",
+                     {"activation": "resource-cancel-http", "elapsedNanos": str(time.monotonic_ns() - began),
+                      "result": terminal, "peerRequest": started["request"], "cancellationControl": cancellation})
+        require(terminal["code"] == "cancelled", "resource-cancel-not-observed")
         closed = wait_marker(client, control, "closed-0.json")
         require(started == closed, "resource-cancel-peer-association")
-        result["calls"].append({"kind": "http", "heat": "warm", "outcome": "cancellation",
-                                "activation": "resource-cancel-http", "elapsedNanos": str(time.monotonic_ns() - began),
-                                "result": terminal, "peerRequest": started["request"], "peerClosed": True})
+        row.update(outcome="cancellation", peerClosed=True)
     finally:
         process.close()
     mode(control, "reply")
@@ -119,7 +133,7 @@ def overload(client, target, url, control, probe, profile, result):
         observed = sample(client, probe, "active", result["catalog"]["dormantPopulations"][-1]["dormantAdded"])
         result["samples"].append(observed)
         result["overload"] = [finish(client, process) for process in processes]
-        require(any(entry["category"] != "success" for entry in result["overload"]),
+        require(any(entry["code"] == "resource-exhausted" for entry in result["overload"]),
                 "resource-overload-empty")
     finally:
         for process in processes:
