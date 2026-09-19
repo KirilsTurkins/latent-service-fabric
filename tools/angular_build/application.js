@@ -34,7 +34,12 @@ export async function prepare(request, context) {
 export async function render(request, context, backend = null) {
   const result = await application.render(request, context, backend);
   if (!result || typeof result.html !== 'string' || result.html.length > 131072) throw new Error('angular-render-result');
-  const html = result.html.replaceAll('__LSF_CLIENT_ASSET__', clientAsset);
+  const publication = context.publication;
+  if (publication != null && (typeof publication !== 'string' || !/^publication:sha256:[0-9a-f]{64}$/.test(publication))) {
+    throw new Error('angular-publication-identity');
+  }
+  const asset = publication == null ? clientAsset : '/_lsf/assets/' + publication + clientAsset;
+  const html = result.html.replaceAll('__LSF_CLIENT_ASSET__', asset);
   if (bytes(html) > 131072) throw new Error('angular-html-limit');
   let transferred = 0, scripts = 0;
   const tags = /<script\b((?:"[^"]*"|'[^']*'|[^'">])*)>/gi;
