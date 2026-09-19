@@ -136,6 +136,32 @@ class WebAdmissionSchemaTests(unittest.TestCase):
         value["epoch"] = 0
         self.assertFalse(self.validators["web-admission-receipt"].is_valid(value))
 
+    def test_angular_observation_is_a_separate_closed_recipe_with_actual_output_materials(self):
+        validator = self.validators['web-build-observation']
+        value = observation()
+        value['buildType'] = 'https://latent.dev/build/angular-component/v1'
+        self.assertFalse(validator.is_valid(value))
+        value['parameters'] = {'compiler': 'lsf-angular-component', 'recipeVersion': 1,
+            'rendererProfile': 'angular-ssr-component-v1', 'profileDigest': DIGEST,
+            'rendererDigest': DIGEST, 'rendererSize': 100, 'maxHydrationBytes': 32768,
+            'lifecycleScripts': False}
+        for name in ('node', 'cargo', 'rustc', 'wasm-tools', 'dependency-lock', 'npm-lock', 'npm-tree',
+                     'javascript-embedding', 'async-adapter', 'adapter-source', 'public-wit', 'private-wit',
+                     'renderer-component', 'angular-server-bundle', 'angular-client-bundle'):
+            value['materials'].append({'name': name, 'digest': DIGEST, 'size': 1})
+        validator.validate(value)
+        for field in (*value['parameters'], 'extra'):
+            changed = copy.deepcopy(value)
+            if field == 'extra': changed['parameters'][field] = True
+            else: del changed['parameters'][field]
+            self.assertFalse(validator.is_valid(changed), field)
+        for material in value['materials']:
+            changed = copy.deepcopy(value)
+            changed['materials'] = [item for item in changed['materials'] if item['name'] != material['name']]
+            self.assertFalse(validator.is_valid(changed), material['name'])
+        value['buildType'] = BUILD_TYPE
+        self.assertFalse(validator.is_valid(value))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 
 #[derive(Subcommand)]
 pub enum PackageCommand {
+    /// Print the exact installed Angular renderer compatibility identity for builders.
+    RendererProfile,
     /// Package explicitly supplied bytes; does not compile source or create provenance.
     Build(PackageBuildArgs),
     /// Inspect exact package identities and semantics without granting trust.
@@ -25,6 +27,9 @@ pub struct PackageBuildArgs {
     pub output_dir: PathBuf,
     #[arg(long)]
     pub sbom_inputs: Option<PathBuf>,
+    /// Require the closed web manifest, exact assets and supported renderer ABI.
+    #[arg(long)]
+    pub validate_web: bool,
 }
 
 #[derive(Args)]
@@ -73,6 +78,7 @@ pub struct PackagePullArgs {
 impl PackageCommand {
     pub fn name(&self) -> &'static str {
         match self {
+            Self::RendererProfile => "package renderer-profile",
             Self::Build(_) => "package build",
             Self::Inspect(_) => "package inspect",
             Self::Verify(_) => "package verify",
@@ -84,6 +90,7 @@ impl PackageCommand {
         use super::validation::{identifier, path_argument};
         let path = |p: &Path| path_argument(p);
         match self {
+            Self::RendererProfile => (),
             Self::Build(a) => {
                 for p in [&a.source, &a.input_root, &a.output_dir] {
                     path(p)?;

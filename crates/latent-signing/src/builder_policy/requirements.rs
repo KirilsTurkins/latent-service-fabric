@@ -5,7 +5,10 @@ pub(super) fn validate(requirements: &mut [BuilderRequirement]) -> SignatureResu
     for item in requirements.iter() {
         validate_builder_id(&item.builder_id).map_err(|_| SignatureFailure::InvalidPolicy)?;
         if !provenance::supported_build_type(&item.build_type)
-            && item.build_type != crate::WEB_ASSEMBLY_BUILD_TYPE
+            && !matches!(
+                item.build_type.as_str(),
+                crate::WEB_ASSEMBLY_BUILD_TYPE | crate::ANGULAR_BUILD_TYPE
+            )
         {
             return Err(SignatureFailure::InvalidPolicy.into());
         }

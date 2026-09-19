@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/angular-build.schema.json",
+  "title": "LSF closed Angular build inputs",
+  "$comment": "The builder also rejects Windows device names, links, case collisions, missing source/asset associations and aggregate byte limits. Only explicitly captured files are compiled; caller npm scripts, compiler configs and additional dependency graphs are not loaded.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "profile",
+    "name",
+    "version",
+    "serverEntry",
+    "clientEntry",
+    "sources",
+    "assets",
+    "routes"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "profile": {
+      "const": "angular-ssr-component-v1"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?(?![\\s\\S])"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 128,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?![\\s\\S])"
+    },
+    "serverEntry": {
+      "allOf": [
+        {
+          "allOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240,
+              "pattern": "^(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64}(?:/(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64})*(?![\\s\\S])"
+            },
+            {
+              "type": "string",
+              "maxLength": 220,
+              "pattern": "^(?!\\.)(?!.*\\/\\.)"
+            }
+          ]
+        },
+        {
+          "pattern": "^server/.*\\.ts$"
+        }
+      ]
+    },
+    "clientEntry": {
+      "allOf": [
+        {
+          "allOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240,
+              "pattern": "^(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64}(?:/(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64})*(?![\\s\\S])"
+            },
+            {
+              "type": "string",
+              "maxLength": 220,
+              "pattern": "^(?!\\.)(?!.*\\/\\.)"
+            }
+          ]
+        },
+        {
+          "pattern": "^client/.*\\.ts$"
+        }
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "allOf": [
+          {
+            "allOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240,
+                "pattern": "^(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64}(?:/(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64})*(?![\\s\\S])"
+              },
+              {
+                "type": "string",
+                "maxLength": 220,
+                "pattern": "^(?!\\.)(?!.*\\/\\.)"
+              }
+            ]
+          },
+          {
+            "pattern": "^(server|client|shared)/.*\\.(ts|html|css)$"
+          }
+        ]
+      }
+    },
+    "assets": {
+      "type": "array",
+      "maxItems": 126,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "source"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 221,
+            "pattern": "^/(?!_lsf/assets/)(?:[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*)?(?![\\s\\S])"
+          },
+          "source": {
+            "allOf": [
+              {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240,
+                    "pattern": "^(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64}(?:/(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64})*(?![\\s\\S])"
+                  },
+                  {
+                    "type": "string",
+                    "maxLength": 220,
+                    "pattern": "^(?!\\.)(?!.*\\/\\.)"
+                  }
+                ]
+              },
+              {
+                "pattern": "^public/"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "mode"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 221,
+                "pattern": "^/(?!_lsf/assets/)(?:[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*)?(?![\\s\\S])"
+              },
+              "mode": {
+                "const": "server"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "mode",
+              "asset"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 221,
+                "pattern": "^/(?!_lsf/assets/)(?:[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*)?(?![\\s\\S])"
+              },
+              "mode": {
+                "enum": [
+                  "client",
+                  "prerender"
+                ]
+              },
+              "asset": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 221,
+                    "pattern": "^/(?!_lsf/assets/)(?:[A-Za-z0-9_-][A-Za-z0-9._-]*(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*)*)?(?![\\s\\S])"
+                  },
+                  {
+                    "pattern": "\\.html$"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
