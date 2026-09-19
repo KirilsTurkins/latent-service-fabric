@@ -22,6 +22,14 @@ change is introduced here. [#370's site foundation](https://github.com/KirilsTur
 owns the single-source build/coverage implementation; other guides consume their
 actual subsystem owners, not a new parallel protocol or browser test suite.
 
+The bounded handoff also integrates the parent-reviewed foundation squash
+`6ab7192903574afb5b018d1450b0d84c305b3713` in guide merge `8a819509`, including
+the already-merged Rust and Node clients. This makes the current guide pages
+available to the actual site builder. It does not relabel historical CLI/provider
+receipts as execution of the newer runtime or complete six-client qualification.
+No startup/runtime fix, new guide scenario, native version pair or publication
+is part of this handoff.
+
 ## Current guide checkpoint
 
 | Guide | Complete source and intended outcome | Evidence available here | Still required |
@@ -44,7 +52,7 @@ and claims no new VM run. Full trust inputs remain separately provisioned.
 
 ## Map the existing finite coverage rows, without declaring them complete
 
-The foundation's [coverage contract](https://github.com/KirilsTurkins/latent-service-fabric/blob/9e8cbc418c23ef0c96c99e6f078a1eb49e9f8e80/website/content/coverage-contract.json)
+The foundation's [coverage contract](../../website/content/coverage-contract.json)
 has 27 required outcomes. Do not add synthetic completed rows or use a future
 phase/release tag as a prerequisite for honest development documentation.
 The table maps the actual issue acceptance, not a substitute checklist.
@@ -84,8 +92,10 @@ workflow. Planned distributed state/cluster/freshness semantics remain planned.
 
 ## Integrate the pages and evidence into the site
 
-After the parent merges the required source/foundation, the coverage owner adds
-these runbooks and matching JSON evidence to the applicable existing rows,
+The foundation is merged; its builder consumes these current pages directly.
+The existing `learn/` and `how-to/` pages belong in their matching task sidebars,
+not the architecture section. The coverage owner still needs to add these
+runbooks and matching JSON evidence to the applicable existing rows,
 especially `install-auth-readiness`, `operator-security-recovery` and
 `trust-resource-architecture`. Retain reference-only sources as references;
 do not mark an entire row accepted from this partial release/activation slice.
@@ -100,9 +110,10 @@ snippet, assets and version. Do not put copied runnable programs or a second
 edited `website/docs` tree beside the authoritative `docs/` sources.
 
 Use the foundation's pinned website toolchain and
-[its complete validation instructions](https://github.com/KirilsTurkins/latent-service-fabric/blob/9e8cbc418c23ef0c96c99e6f078a1eb49e9f8e80/docs/development/website.md).
-These are the expected checks once that source is integrated; they are not
-reported here as already executed against these new pages:
+[its complete validation instructions](website.md).
+The bounded [PR #375 handoff](https://github.com/KirilsTurkins/latent-service-fabric/pull/375)
+records which of these checks actually executed, with their source and dirty flag.
+The command list alone is not execution or human acceptance:
 
 ```text
 python3 tools/validate_docs.py
