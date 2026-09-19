@@ -63,7 +63,7 @@ def measured_work(client, targets, port, control, probe, profile, result):
     row["outcome"] = "failure"
     row["guestTypedUncertain"] = failure["result"]["category"] == "success"
     mode(control, "reply")
-    for operation, expected in (("invalid-handle", 11), ("abandon", 1)):
+    for operation, expected in (("invalid-handle", 10), ("abandon", 1)):
         observed = one(client, targets["blob"], "resource-blob-" + operation,
                        [4 if operation == "invalid-handle" else 1, "", "18446744073709551615"])
         row = retain(timings, "blob", "warm", operation, observed)
