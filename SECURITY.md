@@ -63,6 +63,12 @@ and every selected publication still passes current admission and guarded start.
 Request cancellation retains activation and delivery charges through actual
 cleanup. This transport does not broaden the supported guest isolation profile.
 
+The [browser/hydration boundary](docs/security/browser-boundary.md) fixes a
+same-origin CSP/CSRF/header policy and bounds public DTO transfer. It does not
+sanitize arbitrary HTML, make malicious same-origin scripts safe, or provide
+browser end-user authentication. Tenant origins and application disclosure
+decisions remain explicit operator/application responsibilities.
+
 The optional [capability policy owner](docs/runtime/capability-policies.md) is now
 part of the trusted computing base. It enforces closed rule parsing, tenant-scoped
 revision/CAS history, protected storage and final policy/publication currentness.
