@@ -6,6 +6,9 @@ HTTP/blob guests and the maintained signed provider fixture. A successful build,
 a synthetic unit test, or an unexecuted recipe is not resource evidence. Actual
 SSR/backend/browser qualification is coordinated with #236/#226; no renderer
 heap, event, secret, child-call or OCI-network result is inferred from HTTP/blob.
+Separate small Rust HTTP/blob/secret/child measurements are documented in the
+[checkpoint](phase3-resource-checkpoint.md); they are not a standalone node or
+SSR campaign.
 
 ## Ownership and populations
 
@@ -54,12 +57,22 @@ success. Retain offered, attempted, shed and completed populations separately,
 including launch lateness and scheduled-to-completion delay. The explicit
 overload episode is separate from successful-call latency distributions.
 
-A larger requested dormant population can hit admission capacity before the
+Provider failure is not the same as RPC failure. The maintained HTTP guest
+returns `11` for typed uncertain delivery after the controlled peer actually
+disconnects. The blob guest returns `10` for an invalid-state handle, not `11`
+(permission denied). The collector retains unclassified call results before
+checking expectations, records the peer observation, and does not count these
+guest-returned error values as successful provider work.
+
+A requested dormant population can receive `resource-exhausted` before the
 catalog's configured entry ceiling. The collector stops that population at the
-first definite `resource-exhausted`, pages the actual committed population and
-retains requested versus admitted counts and the refusal. It neither retries
-that mutation nor invents which internal owner exhausted when the CLI does not
-expose it. Subsequent samples are labelled with the **actual** admitted count.
+first definite refusal, pages the actual committed population and retains
+requested versus admitted counts. It neither retries that mutation nor infers
+a proven capacity ceiling or which owner refused when the CLI does not expose
+it. Subsequent diagnostic samples use the **actual** admitted count, but a
+refused or incomplete requested population makes the overall campaign fail.
+The parent is investigating #344 audit-busy enqueue/reconciliation handling;
+an old failure is not reclassified as successful density evidence.
 
 CLI latency includes process creation, connection setup, RPC, possible queueing
 and preparation, provider work, and actual process reap. It is **not** isolated
@@ -96,6 +109,14 @@ Generated guest build observations, package/evidence files and collector source
 hashes are retained independently. A later build or source change requires a
 new identity, never relabeling an old binary.
 
+The maintained guest fixture's signature/provenance lifetime is 1,200 seconds.
+Export fresh signed evidence to a new directory for each campaign; do not alter
+timestamps, clocks or trust policy to reuse expired evidence. Record the native
+build **after** fixture export because Cargo integration-test compilation can
+replace a native executable. The preflight retains declared validity windows
+and requires enough remaining time for the entire bounded profile plus cleanup;
+this is not signature verification, which remains the real node's responsibility.
+
 ```sh
 python3 tools/install_guest_bindgen.py /workspace/target/phase3-resource-bin
 PATH=/workspace/target/phase3-resource-bin:$PATH python3 tools/build_guest_capsules.py --output /workspace/target/phase3-resource-guests
@@ -124,3 +145,15 @@ inventory and immutable output refusal. Linux also measures and reaps a real
 owned process. These synthetic regression fixtures are not benchmark evidence.
 No shared SDK runner, Angular T1 implementation, merge or issue closure belongs
 to this resource worker.
+
+`tools/phase3_resource_rust.py` builds the dedicated `phase3_resource` integration
+test, selects only the executable named by successful Cargo JSON metadata,
+checks its exact nonempty libtest listing, and runs it through the maintained
+owned-process harness. The receipt records commands, compiler/profile/input
+identity, bounded output, process reap and the separately hashed observation
+file. Failed execution or incomplete active/recovered populations cannot pass.
+
+```sh
+python3 tools/phase3_resource_rust.py --revision FULL_TESTED_COMMIT --output /workspace/target/resource-rust-run.json --report /workspace/target/resource-rust-observations.json --host-condition shared-docker-desktop-host
+cargo test --locked -p latent-wasmtime --test phase3_resource -- --test-threads=1
+```
