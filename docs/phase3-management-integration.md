@@ -59,6 +59,16 @@ command; an absent operation is not evidence of rollback. All diagnostic 64-bit
 counters and generations are JSON decimal strings. Capability output always
 reports `executionPermission: false`; a sampled allow is not an executable grant.
 
+Trigger object generations are catalog-assigned versions, not per-object
+counters. Apply returns the newly committed state version as the object's
+generation; Delete retains the removed object's positive generation while
+advancing only the catalog state. CLI receipt and deletion-metadata validation
+preserves those existing server semantics, including retained replay. The actual
+T1 workflow exposed the previous counter assumption after several deployment
+changes; focused red/green tests cover creation, replacement and deletion across
+unrelated catalog writes. Invalid responses still leave the mutation outcome
+unknown and never cause an automatic retry.
+
 Invocation keeps the Phase 1 budget grammar by default. Use
 `invoke --budget-profile phase3 --budget budget.json` for the delivered child-call,
 outbound-request and blob byte dimensions. State/effect dimensions remain
