@@ -124,6 +124,11 @@ pub fn inspect_web_layout(
             }
         }
         (Some(renderer), PackageKind::SsrPackage) => {
+            if !renderer.backend_profile.is_none()
+                && renderer.profile != super::WebRendererProfile::AngularSsrComponentV1
+            {
+                return Err(incompatible());
+            }
             let layer = config
                 .layers
                 .iter()

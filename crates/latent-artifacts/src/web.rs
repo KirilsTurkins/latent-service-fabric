@@ -24,8 +24,8 @@ pub use lifecycle::{
     WebLifecycleRecord, WebMutationResult, WebOperationReceipt, WebPublicationStatus,
 };
 pub use model::{
-    CheckedWebLayout, WebApplicationManifest, WebAsset, WebRenderMode, WebRenderer,
-    WebRendererProfile, WebRoute,
+    CheckedWebLayout, WebApplicationManifest, WebAsset, WebBackendProfile, WebRenderMode,
+    WebRenderer, WebRendererProfile, WebRoute,
 };
 pub use read::{WebBlobRead, WebReadLimits, WebReadSnapshot, WebSelection};
 pub(crate) use read::{WebReadBudget, WebReadPermit};
@@ -37,6 +37,8 @@ pub const WEB_MANIFEST_PATH: &str = "metadata/web-application.json";
 pub const WEB_RELEASE_PROFILE: &str = "lsf.web-release.v1";
 pub const WEB_CONTRACT: &str = "latent:web/application@0.1.0";
 pub const WEB_WORLD: &str = "latent:web/application-service@0.1.0";
+pub const WEB_HTTP_WORLD: &str = "latent:web-http/application-service@0.1.0";
+pub const WEB_HTTP_CONTRACT: &str = "latent:http/client@0.2.0";
 pub const IMMUTABLE_ASSET_PREFIX: &str = "/_lsf/assets/";
 pub const MAX_WEB_MANIFEST_BYTES: usize = 64 * 1024;
 pub const MAX_WEB_ASSETS: usize = 128;

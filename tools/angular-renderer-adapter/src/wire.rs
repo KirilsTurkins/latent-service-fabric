@@ -11,6 +11,8 @@ struct Input<'a> {
     format_version: u32,
     request: HttpRequest<'a>,
     context: Context,
+    #[cfg(feature = "backend-http")]
+    backend: Option<super::backend::Data>,
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,10 +60,23 @@ struct InvocationTrace {
 }
 
 pub fn request(value: &Request) -> String {
+    encode(&frame(value))
+}
+
+#[cfg(feature = "backend-http")]
+pub fn render_request(value: &Request, backend: Option<super::backend::Data>) -> String {
+    let mut input = frame(value);
+    input.backend = backend;
+    encode(&input)
+}
+
+fn frame(value: &Request) -> Input<'_> {
     let principal = context::principal();
     let trace = context::trace();
-    let input = Input {
+    Input {
         format_version: 1,
+        #[cfg(feature = "backend-http")]
+        backend: None,
         request: HttpRequest {
             method: method(value.method),
             scheme: match value.scheme {
@@ -101,9 +116,12 @@ pub fn request(value: &Request) -> String {
             },
             deadline_unix_millis: context::deadline_unix_millis().map(|v| v.to_string()),
         },
-    };
+    }
+}
+
+fn encode(input: &Input<'_>) -> String {
     let mut output = Capped(Vec::new());
-    serde_json::to_writer(&mut output, &input).expect("renderer-request-frame-limit");
+    serde_json::to_writer(&mut output, input).expect("renderer-request-frame-limit");
     String::from_utf8(output.0).expect("JSON is UTF-8")
 }
 fn method(value: Method) -> &'static str {

@@ -30,6 +30,44 @@ pub struct WebAsset {
 
 pub use latent_manifest::RendererProfile as WebRendererProfile;
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum WebBackendProfile {
+    #[default]
+    None,
+    ScopedHttpGetV1,
+}
+
+impl WebBackendProfile {
+    #[must_use]
+    pub const fn is_none(&self) -> bool {
+        matches!(self, Self::None)
+    }
+
+    #[must_use]
+    pub const fn world(self) -> &'static str {
+        match self {
+            Self::None => super::WEB_WORLD,
+            Self::ScopedHttpGetV1 => super::WEB_HTTP_WORLD,
+        }
+    }
+
+    pub fn from_imports(
+        imports: &[latent_manifest::ContractImport],
+    ) -> Result<Self, PlatformError> {
+        let mut matching = imports
+            .iter()
+            .filter(|item| item.contract.0 == super::WEB_HTTP_CONTRACT);
+        match matching.next() {
+            None => Ok(Self::None),
+            Some(imported) if !imported.optional && matching.next().is_none() => {
+                Ok(Self::ScopedHttpGetV1)
+            }
+            Some(_) => Err(invalid("web-backend-import-contract")),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WebRenderer {
@@ -39,6 +77,8 @@ pub struct WebRenderer {
     pub profile: WebRendererProfile,
     pub profile_digest: String,
     pub assets_digest: String,
+    #[serde(default, skip_serializing_if = "WebBackendProfile::is_none")]
+    pub backend_profile: WebBackendProfile,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
