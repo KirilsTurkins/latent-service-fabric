@@ -47,6 +47,7 @@ case "${1:-}" in
         NODE="$(realpath -e "$3")"
         FIXTURE="$(realpath -e "$4")"
         mkdir -p "${OUTPUT}"
+        rm -f -- "${OUTPUT}/matrix.json"
         for language in rust typescript go c java dotnet; do
             case "${language}" in
                 rust) participant=("${TARGET_ROOT}/debug/examples/provider_workflow") ;;
