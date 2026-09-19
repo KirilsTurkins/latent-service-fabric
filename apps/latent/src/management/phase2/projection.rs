@@ -1,9 +1,11 @@
 //! Fixed-schema traversal before allocation of the lossless JSON result.
 mod audit;
+mod capability;
 mod common;
 mod deployment;
 mod release;
 mod rollout;
+mod trigger;
 use super::{invalid_response, proto};
 use crate::error::Failure;
 use prost::Message;
@@ -47,7 +49,7 @@ impl Tree {
         self.charge(1, value.capacity())
     }
     fn sequence<T>(&mut self, value: &Vec<T>, maximum: usize) -> Result<(), Failure> {
-        if value.len() > maximum || value.capacity() > maximum.saturating_mul(2) {
+        if value.len() > maximum || value.capacity() > maximum.saturating_mul(2).max(4) {
             return Err(invalid_response());
         }
         self.charge(

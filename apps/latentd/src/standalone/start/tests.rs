@@ -11,11 +11,15 @@ mod aot;
 #[cfg(target_os = "linux")]
 mod audit;
 #[cfg(target_os = "linux")]
+mod capability_recovery;
+#[cfg(target_os = "linux")]
 mod control;
 #[cfg(target_os = "linux")]
 mod deployment_operations;
 #[cfg(target_os = "linux")]
 mod policies;
+#[cfg(target_os = "linux")]
+mod provider_startup;
 #[cfg(target_os = "linux")]
 mod rollouts;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]

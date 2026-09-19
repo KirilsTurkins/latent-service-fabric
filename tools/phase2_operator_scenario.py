@@ -49,6 +49,7 @@ def connect(client, binary, directory, config, tenant, ordinal):
                    environment, client.cancellation, maximum=262144)
     try:
         started = node.line(min(client.deadline, time.monotonic() + 30))
+        node.startup_record = started
         endpoint = started.get("endpoint", "")
         require(re.fullmatch(r"127\.0\.0\.1:[0-9]{1,5}", endpoint), "node-endpoint")
         profile = client.directory / f"client-{ordinal}.json"

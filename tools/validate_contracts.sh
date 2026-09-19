@@ -193,6 +193,19 @@ LSF_SHUTDOWN_COMPONENT="${SHUTDOWN_COMPONENT}" \
 
 # Small real CLI/node workflows, including explicit cancellation; no scale workload.
 cargo build -p latent -p latentd --locked
+(
+    PHASE3_FIXTURE="$(mktemp -d "${TARGET_ROOT}/phase3-provider-fixture.XXXXXX")"
+    trap 'rm -rf -- "${PHASE3_FIXTURE}"' EXIT
+    LSF_GUEST_CAPSULES="${TARGET_ROOT}/guest-capsules" \
+    LSF_PHASE3_WORKFLOW_FIXTURE_ROOT="${PHASE3_FIXTURE}/inputs" \
+        timeout 180 cargo test -p latentd --test phase3_workflow_fixture --locked -- \
+            export_signed_provider_workflow_fixtures --exact --ignored --nocapture --test-threads=1
+    mkdir -p "${TARGET_ROOT}/phase3-management"
+    timeout 360 python3 tools/run_phase3_management_workflow.py \
+        --cli "${TARGET_ROOT}/debug/latent" --node "${TARGET_ROOT}/debug/latentd" \
+        --fixture-root "${PHASE3_FIXTURE}/inputs" \
+        > "${TARGET_ROOT}/phase3-management/provider-receipt.json"
+)
 LSF_LATENTD_BIN="${TARGET_ROOT}/debug/latentd" \
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
 LSF_GENERIC_COMPONENT="${GENERIC_COMPONENT}" \
