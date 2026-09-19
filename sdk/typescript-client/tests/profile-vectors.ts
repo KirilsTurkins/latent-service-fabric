@@ -712,9 +712,10 @@ function rejects(action: () => unknown): void {
     check(!(value.auditAck !== undefined), "local-cancel-before-dispatch.audit_ack.presence");
     check(!(value.auditStatus !== undefined), "local-cancel-before-dispatch.audit_status.presence");
     check(!(value.unsupportedWireValue !== undefined), "local-cancel-before-dispatch.unsupported_wire_value.presence");
+    check(!(value.auditAttemptSequence !== undefined), "local-cancel-before-dispatch.audit_attempt_sequence.presence");
 }
 {
-    const value: Profile.ClientFailure = {category: 2, message: "deadline", grpcStatus: 4, dispatched: true, outcome: 2, identity: {operationId: "operation-a"}, auditAck: {status: 2, attemptSequence: 18446744073709551615n}, auditStatus: "outcome-unknown"};
+    const value: Profile.ClientFailure = {category: 2, message: "deadline", grpcStatus: 4, dispatched: true, outcome: 2, identity: {operationId: "operation-a"}, auditAck: {status: 2, attemptSequence: 18446744073709551615n}, auditStatus: "outcome-unknown", auditAttemptSequence: 18446744073709551615n};
     check(value.category == 2, "deadline-after-dispatch-is-uncertain.category");
     check(value.message == "deadline", "deadline-after-dispatch-is-uncertain.message");
     check(value.grpcStatus !== undefined, "deadline-after-dispatch-is-uncertain.grpc_status.presence");
@@ -732,6 +733,8 @@ function rejects(action: () => unknown): void {
     check(value.auditStatus !== undefined, "deadline-after-dispatch-is-uncertain.audit_status.presence");
     check(value.auditStatus! == "outcome-unknown", "deadline-after-dispatch-is-uncertain.audit_status");
     check(!(value.unsupportedWireValue !== undefined), "deadline-after-dispatch-is-uncertain.unsupported_wire_value.presence");
+    check(value.auditAttemptSequence !== undefined, "deadline-after-dispatch-is-uncertain.audit_attempt_sequence.presence");
+    check(value.auditAttemptSequence! == 18446744073709551615n, "deadline-after-dispatch-is-uncertain.audit_attempt_sequence");
 }
 {
     const value: Profile.ClientFailure = {category: 4, message: "capability-policy-conflict", grpcStatus: 9, platformError: {code: "state-conflict", message: "capability-policy-conflict", retryable: false, detailItems: [{kind: "future-detail", fields: {"value": "retained"}}]}, dispatched: true, outcome: 3, identity: {operationId: "operation-a"}};
@@ -755,6 +758,7 @@ function rejects(action: () => unknown): void {
     check(!(value.auditAck !== undefined), "rpc-conflict-retains-request-identity.audit_ack.presence");
     check(!(value.auditStatus !== undefined), "rpc-conflict-retains-request-identity.audit_status.presence");
     check(!(value.unsupportedWireValue !== undefined), "rpc-conflict-retains-request-identity.unsupported_wire_value.presence");
+    check(!(value.auditAttemptSequence !== undefined), "rpc-conflict-retains-request-identity.audit_attempt_sequence.presence");
 }
 {
     const value: Profile.ClientFailure = {category: 5, message: "invalid-response", dispatched: true, outcome: 2, identity: {activationId: "activation-a", operationId: "operation-a"}, unsupportedWireValue: {field: "phase", value: "future-phase-not-authority"}};
@@ -773,9 +777,10 @@ function rejects(action: () => unknown): void {
     check(value.unsupportedWireValue !== undefined, "decode-failure-retains-known-identity.unsupported_wire_value.presence");
     check(value.unsupportedWireValue!.field == "phase", "decode-failure-retains-known-identity.unsupported_wire_value.field");
     check(value.unsupportedWireValue!.value == "future-phase-not-authority", "decode-failure-retains-known-identity.unsupported_wire_value.value");
+    check(!(value.auditAttemptSequence !== undefined), "decode-failure-retains-known-identity.audit_attempt_sequence.presence");
 }
 {
-    const value: Profile.ResponseMetadata = {identity: {operationId: "operation-a"}, outcome: 3, auditAck: {status: 2, attemptSequence: 18446744073709551615n}, auditStatus: "outcome-unknown"};
+    const value: Profile.ResponseMetadata = {identity: {operationId: "operation-a"}, outcome: 3, auditAck: {status: 2, attemptSequence: 18446744073709551615n}, auditStatus: "outcome-unknown", auditAttemptSequence: 18446744073709551615n};
     check(!(value.identity.activationId !== undefined), "observed-receipt-audit-outcome-independent.identity.activation_id.presence");
     check(value.identity.operationId !== undefined, "observed-receipt-audit-outcome-independent.identity.operation_id.presence");
     check(value.identity.operationId! == "operation-a", "observed-receipt-audit-outcome-independent.identity.operation_id");
@@ -786,6 +791,8 @@ function rejects(action: () => unknown): void {
     check(value.auditAck!.attemptSequence! == 18446744073709551615n, "observed-receipt-audit-outcome-independent.audit_ack.attempt_sequence");
     check(value.auditStatus !== undefined, "observed-receipt-audit-outcome-independent.audit_status.presence");
     check(value.auditStatus! == "outcome-unknown", "observed-receipt-audit-outcome-independent.audit_status");
+    check(value.auditAttemptSequence !== undefined, "observed-receipt-audit-outcome-independent.audit_attempt_sequence.presence");
+    check(value.auditAttemptSequence! == 18446744073709551615n, "observed-receipt-audit-outcome-independent.audit_attempt_sequence");
 }
 {
     const value: Profile.ResponseMetadata = {identity: {operationId: "operation-a"}, outcome: 3};
@@ -795,6 +802,7 @@ function rejects(action: () => unknown): void {
     check(value.outcome == 3, "policy-response-has-no-fabricated-audit.outcome");
     check(!(value.auditAck !== undefined), "policy-response-has-no-fabricated-audit.audit_ack.presence");
     check(!(value.auditStatus !== undefined), "policy-response-has-no-fabricated-audit.audit_status.presence");
+    check(!(value.auditAttemptSequence !== undefined), "policy-response-has-no-fabricated-audit.audit_attempt_sequence.presence");
 }
 {
     const value: Profile.ResponseMetadata = {identity: {operationId: "operation-a"}, outcome: 2};
@@ -804,9 +812,10 @@ function rejects(action: () => unknown): void {
     check(value.outcome == 2, "missing-recovery-keeps-outcome-unknown.outcome");
     check(!(value.auditAck !== undefined), "missing-recovery-keeps-outcome-unknown.audit_ack.presence");
     check(!(value.auditStatus !== undefined), "missing-recovery-keeps-outcome-unknown.audit_status.presence");
+    check(!(value.auditAttemptSequence !== undefined), "missing-recovery-keeps-outcome-unknown.audit_attempt_sequence.presence");
 }
 {
-    const value: Profile.ResponseMetadata = {identity: {operationId: "operation-a"}, outcome: 91, auditAck: {status: 91, attemptSequence: 0n}, auditStatus: "future-audit-status"};
+    const value: Profile.ResponseMetadata = {identity: {operationId: "operation-a"}, outcome: 91, auditAck: {status: 91, attemptSequence: 0n}, auditStatus: "future-audit-status", auditAttemptSequence: 0n};
     check(!(value.identity.activationId !== undefined), "unknown-audit-enum-and-status.identity.activation_id.presence");
     check(value.identity.operationId !== undefined, "unknown-audit-enum-and-status.identity.operation_id.presence");
     check(value.identity.operationId! == "operation-a", "unknown-audit-enum-and-status.identity.operation_id");
@@ -817,6 +826,39 @@ function rejects(action: () => unknown): void {
     check(value.auditAck!.attemptSequence! == 0n, "unknown-audit-enum-and-status.audit_ack.attempt_sequence");
     check(value.auditStatus !== undefined, "unknown-audit-enum-and-status.audit_status.presence");
     check(value.auditStatus! == "future-audit-status", "unknown-audit-enum-and-status.audit_status");
+    check(value.auditAttemptSequence !== undefined, "unknown-audit-enum-and-status.audit_attempt_sequence.presence");
+    check(value.auditAttemptSequence! == 0n, "unknown-audit-enum-and-status.audit_attempt_sequence");
+}
+{
+    const value: Profile.ResponseMetadata = {identity: {operationId: "operation-a"}, outcome: 3, auditStatus: "future-state", auditAttemptSequence: 18446744073709551615n};
+    check(!(value.identity.activationId !== undefined), "unknown-audit-header-and-max-attempt.identity.activation_id.presence");
+    check(value.identity.operationId !== undefined, "unknown-audit-header-and-max-attempt.identity.operation_id.presence");
+    check(value.identity.operationId! == "operation-a", "unknown-audit-header-and-max-attempt.identity.operation_id");
+    check(value.outcome == 3, "unknown-audit-header-and-max-attempt.outcome");
+    check(!(value.auditAck !== undefined), "unknown-audit-header-and-max-attempt.audit_ack.presence");
+    check(value.auditStatus !== undefined, "unknown-audit-header-and-max-attempt.audit_status.presence");
+    check(value.auditStatus! == "future-state", "unknown-audit-header-and-max-attempt.audit_status");
+    check(value.auditAttemptSequence !== undefined, "unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence");
+    check(value.auditAttemptSequence! == 18446744073709551615n, "unknown-audit-header-and-max-attempt.audit_attempt_sequence");
+}
+{
+    const value: Profile.ClientFailure = {category: 4, message: "rpc-failure", grpcStatus: 13, dispatched: true, outcome: 2, identity: {operationId: "operation-a"}, auditStatus: "future-state", auditAttemptSequence: 18446744073709551615n};
+    check(value.category == 4, "failed-rpc-unknown-audit-header-and-max-attempt.category");
+    check(value.message == "rpc-failure", "failed-rpc-unknown-audit-header-and-max-attempt.message");
+    check(value.grpcStatus !== undefined, "failed-rpc-unknown-audit-header-and-max-attempt.grpc_status.presence");
+    check(value.grpcStatus! == 13, "failed-rpc-unknown-audit-header-and-max-attempt.grpc_status");
+    check(!(value.platformError !== undefined), "failed-rpc-unknown-audit-header-and-max-attempt.platform_error.presence");
+    check(value.dispatched == true, "failed-rpc-unknown-audit-header-and-max-attempt.dispatched");
+    check(value.outcome == 2, "failed-rpc-unknown-audit-header-and-max-attempt.outcome");
+    check(!(value.identity.activationId !== undefined), "failed-rpc-unknown-audit-header-and-max-attempt.identity.activation_id.presence");
+    check(value.identity.operationId !== undefined, "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id.presence");
+    check(value.identity.operationId! == "operation-a", "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id");
+    check(!(value.auditAck !== undefined), "failed-rpc-unknown-audit-header-and-max-attempt.audit_ack.presence");
+    check(value.auditStatus !== undefined, "failed-rpc-unknown-audit-header-and-max-attempt.audit_status.presence");
+    check(value.auditStatus! == "future-state", "failed-rpc-unknown-audit-header-and-max-attempt.audit_status");
+    check(!(value.unsupportedWireValue !== undefined), "failed-rpc-unknown-audit-header-and-max-attempt.unsupported_wire_value.presence");
+    check(value.auditAttemptSequence !== undefined, "failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence");
+    check(value.auditAttemptSequence! == 18446744073709551615n, "failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence");
 }
 {
     const value: Profile.AuditAck = {status: 1};
@@ -895,4 +937,4 @@ rejects(() => Profile.formatU64Decimal(9007199254740992 as unknown as bigint));
 rejects(() => Profile.parseU64Decimal(1 as unknown as string));
 rejects(() => Profile.formatU64Decimal(-1n));
 rejects(() => Profile.formatU64Decimal(18446744073709551616n));
-console.log("shared profile vectors: 66");
+console.log("shared profile vectors: 68");
