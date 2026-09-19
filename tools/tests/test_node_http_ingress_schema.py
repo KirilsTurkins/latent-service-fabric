@@ -54,6 +54,19 @@ class NodeHttpIngressSchema(unittest.TestCase):
             for value in (field["minimum"] - 1, field["maximum"] + 1, None, True, 1.5):
                 self.assertFalse(VALIDATOR.is_valid(dict(LOCAL, limits={name: value})), (name, value))
 
+    def test_browser_bindings_are_bounded_closed_and_not_credentials(self):
+        binding = {"authority": "web.example.test", "tenant": "example"}
+        VALIDATOR.validate(dict(LOCAL, browserOrigins=[]))
+        VALIDATOR.validate(dict(LOCAL, browserOrigins=[binding]))
+        for value in (None, {}, [None], [{}], [dict(binding, credential="never-a-binding")],
+                      [dict(binding, tenant="")], [binding, binding],
+                      [dict(binding, authority=f"web{index}.example.test") for index in range(33)]):
+            self.assertFalse(VALIDATOR.is_valid(dict(LOCAL, browserOrigins=value)), value)
+        guide = (ROOT / "docs/security/browser-boundary.md").read_text(encoding="utf-8")
+        examples = [json.loads(text) for text in re.findall(r"```json\n(.*?)\n```", guide, re.S)]
+        self.assertEqual(len(examples), 1)
+        VALIDATOR.validate(dict(LOCAL, **examples[0]))
+
 
 if __name__ == "__main__":
     unittest.main()

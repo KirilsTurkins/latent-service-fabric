@@ -1,0 +1,10 @@
+title = "LSF reviewed secret baseline"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "lsf-synthetic-secret"
+description = "Noncredential scanner self-test marker"
+regex = '''LSF_SYNTHETIC_TEST_ONLY_[A-F0-9]{32}'''
+keywords = ["LSF_SYNTHETIC_TEST_ONLY_"]

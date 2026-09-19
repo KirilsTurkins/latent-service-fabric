@@ -1,6 +1,7 @@
 use super::{Prepared, Request};
 use crate::standalone::http::{head::Head, millis, Shared};
 use latent_core::IncomingDeadline;
+use latent_ingress::http::{browser, Scheme};
 use latent_wire::invocation::{LocalPrincipalPolicy, PrincipalPolicy};
 use std::io;
 use tokio::{
@@ -31,7 +32,7 @@ pub(in crate::standalone::http) async fn exchange<S: AsyncRead + AsyncWrite + Un
         Err(code) => {
             let until = Instant::from_std(deadline.monotonic())
                 .min(Instant::now() + millis(shared.settings.limits.write_timeout_millis));
-            let _ = timeout_at(until, rejection(socket, code)).await;
+            let _ = timeout_at(until, rejection(socket, code, shared.settings.scheme)).await;
             let _ = timeout_at(until, socket.shutdown()).await;
             Ok(true)
         }
@@ -78,7 +79,11 @@ async fn serve<S: AsyncRead + AsyncWrite + Unpin>(
     let close = close || !shared.handle.accepting();
     let until = Instant::from_std(deadline.monotonic())
         .min(Instant::now() + millis(shared.settings.limits.write_timeout_millis));
-    let result = timeout_at(until, delivery(socket, &prepared, close)).await;
+    let result = timeout_at(
+        until,
+        delivery(socket, &prepared, close, shared.settings.scheme),
+    )
+    .await;
     if close || !matches!(&result, Ok(Ok(()))) {
         // In particular a TLS flush timeout does not drop the asset buffer's
         // output reservation before the bounded shutdown attempt completes.
@@ -92,9 +97,10 @@ async fn delivery<W: AsyncWrite + Unpin>(
     socket: &mut W,
     response: &Prepared,
     close: bool,
+    scheme: Scheme,
 ) -> io::Result<()> {
     let mut head = format!(
-        "HTTP/1.1 {} Response\r\nETag: {}\r\nCache-Control: private, max-age=31536000, immutable\r\nVary: Authorization, Accept-Encoding\r\nX-Content-Type-Options: nosniff\r\nAccept-Ranges: none\r\n",
+        "HTTP/1.1 {} Response\r\nETag: {}\r\nCache-Control: private, max-age=31536000, immutable\r\nVary: Authorization, Accept-Encoding\r\nAccept-Ranges: none\r\n",
         response.code, response.etag,
     );
     if close {
@@ -110,8 +116,9 @@ async fn delivery<W: AsyncWrite + Unpin>(
         )
         .map_err(|_| io::ErrorKind::InvalidData)?;
     }
+    security(&mut head, scheme);
     head.push_str("\r\n");
-    if head.len() > 1024 {
+    if head.len() > 2048 {
         return Err(io::ErrorKind::InvalidData.into());
     }
     socket.write_all(head.as_bytes()).await?;
@@ -124,13 +131,27 @@ async fn delivery<W: AsyncWrite + Unpin>(
     }
     Ok(())
 }
-async fn rejection<W: AsyncWrite + Unpin>(socket: &mut W, code: u16) -> io::Result<()> {
+async fn rejection<W: AsyncWrite + Unpin>(
+    socket: &mut W,
+    code: u16,
+    scheme: Scheme,
+) -> io::Result<()> {
     let allow = if code == 405 {
         "Allow: GET, HEAD\r\n"
     } else {
         ""
     };
-    let head = format!("HTTP/1.1 {code} Rejected\r\nConnection: close\r\nContent-Length: 0\r\nCache-Control: no-store\r\n{allow}\r\n");
+    let mut head = format!("HTTP/1.1 {code} Rejected\r\nConnection: close\r\nContent-Length: 0\r\nCache-Control: no-store\r\n{allow}");
+    security(&mut head, scheme);
+    head.push_str("\r\n");
     socket.write_all(head.as_bytes()).await?;
     socket.flush().await
+}
+fn security(head: &mut String, scheme: Scheme) {
+    for header in browser::security_headers(scheme) {
+        head.push_str(header.name);
+        head.push_str(": ");
+        head.push_str(std::str::from_utf8(header.value).expect("static security header"));
+        head.push_str("\r\n");
+    }
 }

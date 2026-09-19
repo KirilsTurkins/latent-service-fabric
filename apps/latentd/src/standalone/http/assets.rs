@@ -1,5 +1,7 @@
 //! Immutable browser assets are a sibling of activation dispatch, not a renderer.
 //! One node-owned cache and nonblocking work gate serve all admitted publications.
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod browser;
 mod cache;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod fixture;
