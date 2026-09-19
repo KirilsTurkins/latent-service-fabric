@@ -106,10 +106,29 @@ def validate_result(value, language):
                     for item in value["activationIds"]), "sdk-activation-identities")
     require(value["operationId"] == language + "-policy-create", "sdk-operation-identity")
     attempt = value["auditAttempt"]
-    require(isinstance(attempt, str) and re.fullmatch(r"[1-9][0-9]{0,19}", attempt)
-            and int(attempt) <= 18446744073709551615, "sdk-observed-audit-attempt")
+    require(attempt is None or (isinstance(attempt, str) and re.fullmatch(r"[1-9][0-9]{0,19}", attempt)
+            and int(attempt) <= 18446744073709551615), "sdk-observed-audit-attempt")
     require(value["transport"] == "numeric-loopback-http2-protobuf-v1", "sdk-transport-profile")
     return value
+
+
+def participant_diagnostic(stderr):
+    if not 0 < len(stderr) <= 512:
+        return "unavailable"
+    try:
+        value = json.loads(stderr)
+    except (ValueError, UnicodeError):
+        return "unavailable"
+    if not isinstance(value, dict) or not {"stage", "reason"} <= value.keys() <= {
+            "stage", "reason", "category", "grpcStatus"}:
+        return "unavailable"
+    for key in ("stage", "reason"):
+        if not isinstance(value[key], str) or not re.fullmatch(r"[a-z][a-z0-9-]{0,79}", value[key]):
+            return "unavailable"
+    category, status = value.get("category"), value.get("grpcStatus")
+    category = category if type(category) is int and 0 <= category <= 16 else "unavailable"
+    status = status if type(status) is int and 0 <= status <= 16 else "unavailable"
+    return f"{value['stage']}-{value['reason']}-category-{category}-grpc-{status}"
 
 
 def run_participant(client, directory, command, input_path, language):
@@ -119,7 +138,8 @@ def run_participant(client, directory, command, input_path, language):
                           client.cancellation, maximum=65536)
     try:
         result = participant.complete(min(client.deadline, time.monotonic() + 90))
-        require(result.returncode == 0 and not result.stderr, "sdk-participant-failed")
+        require(result.returncode == 0 and not result.stderr,
+                "sdk-participant-failed-" + participant_diagnostic(result.stderr))
         lines = result.stdout.splitlines()
         require(len(lines) == 1 and len(lines[0]) <= 32768, "sdk-participant-output-bound")
         value = validate_result(json.loads(lines[0]), language)

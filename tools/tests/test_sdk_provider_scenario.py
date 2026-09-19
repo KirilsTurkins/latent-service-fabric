@@ -5,7 +5,7 @@ from pathlib import Path
 
 from tools.phase2_operator_process import WorkflowError
 from tools.sdk_provider_http_fixture import mode
-from tools.sdk_provider_scenario import ASSERTIONS, validate_result
+from tools.sdk_provider_scenario import ASSERTIONS, participant_diagnostic, validate_result
 
 
 class ParticipantContractTests(unittest.TestCase):
@@ -18,6 +18,8 @@ class ParticipantContractTests(unittest.TestCase):
 
     def test_complete_finite_result(self):
         result = self.result()
+        self.assertEqual(validate_result(result, "rust"), result)
+        result["auditAttempt"] = None
         self.assertEqual(validate_result(result, "rust"), result)
 
     def test_missing_false_or_invented_evidence_is_rejected(self):
@@ -54,6 +56,15 @@ class ParticipantContractTests(unittest.TestCase):
                     mode(directory)
             path.write_bytes(b"hold-rust-cancel")
             self.assertEqual(mode(directory), "hold-rust-cancel")
+
+    def test_only_bounded_stage_diagnostics_are_exposed(self):
+        self.assertEqual(participant_diagnostic(
+            b'{"stage":"provider-invocation","reason":"rpc-or-runtime","category":3,"grpcStatus":7}'),
+            "provider-invocation-rpc-or-runtime-category-3-grpc-7")
+        for value in (b"", b"x" * 513, b"not-json", b"[]", b"\xff",
+                      b'{"stage":"provider","reason":"Authorization: Bearer token"}',
+                      b'{"stage":"provider","reason":"failed","message":"secret"}'):
+            self.assertEqual(participant_diagnostic(value), "unavailable")
 
 
 if __name__ == "__main__":
