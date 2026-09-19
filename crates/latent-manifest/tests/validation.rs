@@ -40,6 +40,56 @@ fn tenant_web_exports_use_only_the_exact_shared_application_contract() {
 }
 
 #[test]
+fn web_projection_validation_preserves_tenant_budget_and_exact_contract_checks() {
+    let codec = JsonManifestCodec::default();
+    let validator = Phase1ManifestValidator;
+    let mut capsule = codec.decode_capsule(ECHO_CAPSULE).unwrap();
+    let mut deployment = codec.decode_deployment(ECHO_DEPLOYMENT).unwrap();
+    capsule.exports[0].contract = ContractId("latent:web/application@0.1.0".into());
+    capsule.world = ContractId("latent:web/application-service@0.1.0".into());
+    capsule.runtime_requirements.renderer = Some(latent_manifest::RendererRequirement::angular());
+    validator
+        .validate_web_execution_projection(&deployment, &capsule)
+        .unwrap();
+    assert_violation(
+        validator.validate_deployment_against_capsule(&deployment, &capsule),
+        "$.component.world",
+        "tenant-scope-mismatch",
+    );
+    deployment.resources.memory_bytes = capsule.execution.resource_budget_ceiling.memory_bytes + 1;
+    assert_violation(
+        validator.validate_web_execution_projection(&deployment, &capsule),
+        "$.spec.resources.memoryBytes",
+        "budget-exceeds-capsule",
+    );
+    deployment.resources.memory_bytes = capsule.execution.resource_budget_ceiling.memory_bytes;
+    deployment.metadata.tenant = Some(TenantId("foreign".into()));
+    assert_violation(
+        validator.validate_web_execution_projection(&deployment, &capsule),
+        "$.metadata.tenant",
+        "tenant-scope-mismatch",
+    );
+    deployment
+        .metadata
+        .tenant
+        .clone_from(&capsule.metadata.tenant);
+    for field in 0..4 {
+        let mut invalid = capsule.clone();
+        match field {
+            0 => invalid.world = ContractId("latent:web/application-service@0.2.0".into()),
+            1 => invalid.runtime_requirements.renderer = None,
+            2 => invalid.exports[0].contract = ContractId("latent:context/context@0.1.0".into()),
+            _ => invalid.exports.push(invalid.exports[0].clone()),
+        }
+        assert_violation(
+            validator.validate_web_execution_projection(&deployment, &invalid),
+            "$.component.world",
+            "invalid-web-execution-projection",
+        );
+    }
+}
+
+#[test]
 fn phase1_examples_validate_independently_and_as_a_release_pair() {
     let codec = JsonManifestCodec::default();
     let validator = Phase1ManifestValidator::new();

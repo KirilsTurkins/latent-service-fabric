@@ -183,7 +183,8 @@ impl DirectoryArtifactRepository {
             projection.manifest.clone(),
             projection.contracts.clone(),
             projection.descriptor.release_digest.clone(),
-        );
+        )
+        .with_web_execution_projection();
         HistoricalExecutionSnapshot::directory(
             metadata,
             reference.clone(),
