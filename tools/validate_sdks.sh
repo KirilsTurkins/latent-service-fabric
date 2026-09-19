@@ -81,3 +81,6 @@ ZIG_LOCAL_CACHE_DIR="${ZIG_LOCAL_CACHE}" \
     zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
     -I sdk/c/include sdk/c/tests/invocation_identity.c -o "${OUTPUT}/c/invocation-identity"
 "${OUTPUT}/c/invocation-identity"
+
+python3 sdk/c/tools/validate.py --build-dir "${TARGET_ROOT}/c-sdk"
+python3 sdk/c/tools/validate.py --build-dir "${TARGET_ROOT}/c-sdk-asan" --sanitize
