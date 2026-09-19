@@ -75,6 +75,14 @@ def selected(root: Path, version: str = "0.1.0-test.1", previous: dict | None = 
 
 
 class ManifestTests(unittest.TestCase):
+    def test_elf_loader_is_the_same_glibc_prerequisite_not_an_unbounded_library_allowlist(self):
+        metadata, _payload = fixture()
+        metadata["engine"]["dynamicDependencies"].append("ld-linux-x86-64.so.2")
+        verify.manifest(metadata, metadata["version"])
+        metadata["engine"]["dynamicDependencies"].append("lib-unapproved-native-vm-test.so")
+        with self.assertRaisesRegex(InstallError, "unsupported-dynamic-dependency"):
+            verify.manifest(metadata, metadata["version"])
+
     def test_shared_license_requires_reviewed_exact_monorepo_source_and_digest(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

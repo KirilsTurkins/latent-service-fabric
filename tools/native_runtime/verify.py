@@ -63,8 +63,8 @@ def manifest(value: dict, selected: str) -> dict:
             and isinstance(engine["wasmtimeVersion"], str) and isinstance(engine["hostAbiProfile"], str)
             and SHA256.fullmatch(engine["compilerSha256"]), "release-engine-identity")
     require(isinstance(engine["dynamicDependencies"], list)
-            and set(engine["dynamicDependencies"]) <= {"libc.so.6", "libgcc_s.so.1", "libm.so.6",
-                                                       "libpthread.so.0", "libdl.so.2", "librt.so.1"},
+        and set(engine["dynamicDependencies"]) <= {"libc.so.6", "libgcc_s.so.1", "libm.so.6",
+                                                       "libpthread.so.0", "libdl.so.2", "librt.so.1", "ld-linux-x86-64.so.2"},
             "unsupported-dynamic-dependency")
     compatibility = value["compatibility"]
     require(set(compatibility) == {"installerFormat", "nodeConfigFormat", "migration", "upgradeFrom"}
