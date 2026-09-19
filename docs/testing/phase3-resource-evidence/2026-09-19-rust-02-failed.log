@@ -1,0 +1,19 @@
+   Compiling latent-wasmtime v0.1.0-alpha.3 (/workspace/crates/latent-wasmtime)
+    Finished `test` profile [unoptimized] target(s) in 13.11s
+     Running tests/phase3_resource.rs (target/debug/deps/phase3_resource-63ecc53d36ab6793)
+
+running 1 test
+test phase3_resource_small_provider_ownership_checkpoint ... 
+thread 'phase3_resource_small_provider_ownership_checkpoint' (6694) panicked at crates/latent-wasmtime/tests/phase3_resource/observation.rs:27:40:
+called `Result::unwrap()` on an `Err` value: PlatformError { code: ResourceExhausted, message: "capability-busy", retryable: false, details: [] }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    phase3_resource_small_provider_ownership_checkpoint
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s
+
+error: test failed, to rerun pass `-p latent-wasmtime --test phase3_resource`
