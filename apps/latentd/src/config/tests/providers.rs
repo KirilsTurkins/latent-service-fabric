@@ -1,0 +1,81 @@
+use serde_json::{json, Value};
+
+fn document() -> Value {
+    let mut value: Value = serde_json::from_str(&super::document()).unwrap();
+    value["budgetProfile"] = json!({"mode":"phase3","maximumOutboundRequests":8,"maximumBlobReadBytes":65536,"maximumBlobWriteBytes":65536});
+    value["capabilityPolicies"] = json!({"formatVersion":1});
+    value["audit"] = json!({"mode":"durable"});
+    value["providers"] = json!({"formatVersion":1,
+        "blob":{"identity":{"id":"blobs","tenant":"examples","service":"blob-host","epoch":1},"namespace":"workflow"},
+        "bindings":[{"name":"blob-binding","tenant":"examples","consumerService":"guest-blob",
+            "providerService":"blob-host","contract":"latent:blob/blob@0.2.0","providerBinding":"blob-installed"}]});
+    value
+}
+
+#[test]
+fn provider_input_rejects_null_unknown_and_raw_secret_fields() {
+    for (pointer, invalid) in [
+        ("/providers", Value::Null),
+        ("/providers/blob", Value::Null),
+        ("/providers/http", Value::Null),
+        ("/providers/blob/profile", json!("future-profile")),
+        ("/providers/blob/identity/credential", json!("DO-NOT-ECHO")),
+    ] {
+        let mut value = document();
+        let (parent, field) = pointer.rsplit_once('/').unwrap();
+        value
+            .pointer_mut(parent)
+            .unwrap()
+            .as_object_mut()
+            .unwrap()
+            .insert(field.into(), invalid);
+        let error = super::input::decode(&serde_json::to_vec(&value).unwrap())
+            .err()
+            .unwrap();
+        assert!(!error.message.contains("DO-NOT-ECHO"));
+    }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn protected_provider_configuration_is_opt_in_closed_and_side_effect_free() {
+    use std::os::unix::fs::PermissionsExt;
+    let directory = tempfile::tempdir().unwrap();
+    std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    let path = directory.path().join("node.json");
+    let original = document();
+    std::fs::write(&path, serde_json::to_vec(&original).unwrap()).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let config = super::NodeConfig::load(&path).unwrap();
+    let settings = config.derive().unwrap();
+    assert_eq!(settings.providers.unwrap().definitions().unwrap().len(), 1);
+    assert!(!directory.path().join("data").exists());
+    let unprotected = super::input::decode(&serde_json::to_vec(&original).unwrap()).unwrap();
+    assert!(unprotected.derive().is_err());
+    for (pointer, replacement) in [
+        ("/providers/blob/identity/id", json!("../escape")),
+        ("/providers/blob/identity/epoch", json!(0)),
+        ("/providers/blob/identity/tenant", json!("foreign")),
+        (
+            "/providers/bindings/0/contract",
+            json!("latent:http/streaming-client@0.1.0"),
+        ),
+        (
+            "/providers/bindings",
+            json!(vec![original["providers"]["bindings"][0].clone(); 17]),
+        ),
+        ("/budgetProfile", json!({"mode":"phase1"})),
+    ] {
+        let mut value = original.clone();
+        *value.pointer_mut(pointer).unwrap() = replacement;
+        std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
+        assert!(super::NodeConfig::load(&path).unwrap().derive().is_err());
+        assert!(!directory.path().join("data").exists());
+    }
+    for field in ["audit", "capabilityPolicies"] {
+        let mut value = original.clone();
+        value.as_object_mut().unwrap().remove(field);
+        std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
+        assert!(super::NodeConfig::load(&path).unwrap().derive().is_err());
+    }
+}

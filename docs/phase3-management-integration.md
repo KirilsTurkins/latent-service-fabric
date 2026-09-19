@@ -45,12 +45,15 @@ scope/receipt associations, unknown-resource rejection, finite pagination,
 lossless 64-bit values and uncertainty. They do not substitute for a real
 separate client/node workflow.
 
-The planned real-node runner is `tools/run_phase3_management_workflow.py`, using
+The provider real-node runner is `tools/run_phase3_management_workflow.py`, using
 the existing `phase2_operator_process` and `phase2_operator_scenario` ownership
 helpers. Guest inputs remain the real HTTP/blob examples under
 `tools/toolchain-smoke/examples/guest_http` and `guest_blob`, produced by
 `tools/build_guest_capsules.py`; the existing `web_contract` example supplies
-the public HTTP-trigger contract.
+the public HTTP-trigger contract. The [provider bootstrap and shared fixture
+contract](reference/standalone-providers.md) documents SDK reuse without copying
+node setup or provider implementations. This initial runner deliberately reports
+HTTP/blob scope, not completed web/trigger or Angular acceptance.
 
 Angular remains gated to the delivered T0 runtime until the actual #234 build
 has passed protected T1 configuration, enforced publisher/builder/SBOM admission,

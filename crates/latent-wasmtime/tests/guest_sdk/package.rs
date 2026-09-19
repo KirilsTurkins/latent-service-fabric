@@ -83,6 +83,7 @@ pub struct Signers {
     publisher: LocalSigner,
     builder: LocalBuilderSigner,
     pub policy: SupplyChainPolicy,
+    pub policy_document: Vec<u8>,
     now: u64,
 }
 impl Signers {
@@ -107,10 +108,12 @@ impl Signers {
             builder_public,
         )
         .unwrap();
+        let policy_document = policy_document(now, &publisher_public, &builder_public, build_type);
         Self {
             publisher,
             builder,
-            policy: policy(now, &publisher_public, &builder_public, build_type),
+            policy: SupplyChainPolicy::from_json(&policy_document).unwrap(),
+            policy_document,
             now,
         }
     }
@@ -207,12 +210,12 @@ pub async fn publish(root: &Path, name: &str) -> Publication {
     (catalog, release, receipt)
 }
 
-fn policy(
+fn policy_document(
     now: u64,
     publisher: &[u8; 32],
     builder: &[u8; 32],
     build_type: &str,
-) -> SupplyChainPolicy {
+) -> Vec<u8> {
     let publisher = json!({"formatVersion":1,"scope":"tests","generation":1,"validFrom":now - 60,"validUntil":now + 3600,
             "maxSignatureLifetimeSeconds":2000,"maxProofAgeSeconds":60,
             "keys":[{"publisherId":"guest-publisher","publicKey":STANDARD.encode(publisher),"validFrom":now - 60,"validUntil":now + 3600}]});
@@ -239,7 +242,7 @@ fn policy(
             "publisherRevocations":{"formatVersion":1,"scope":"tests","policyDigest":publisher_digest,"generation":1,"validFrom":now - 60,"validUntil":now + 3600,"revokedKeys":[],"revokedPublishers":[]},
             "builderRevocations":{"formatVersion":1,"scope":"tests","policyDigest":builder_digest,"generation":1,"validFrom":now - 60,"validUntil":now + 3600,"revokedKeys":[],"revokedBuilders":[]},
             "sbom":{"formatVersion":1,"embedded":"required","detached":"optional","requireSource":[],"requireLicense":[]}});
-    SupplyChainPolicy::from_json(&serde_json::to_vec(&policy).unwrap()).unwrap()
+    serde_json::to_vec(&policy).unwrap()
 }
 
 pub fn catalog(root: &Path, policy: SupplyChainPolicy) -> Arc<DirectoryArtifactRepository> {

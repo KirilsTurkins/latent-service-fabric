@@ -97,7 +97,7 @@ async fn serve(
     let ready = node
         .inventory()
         .is_ok_and(|inventory| inventory.health.ready);
-    let monitoring = match status::started(&node_id, node.endpoint(), ready) {
+    let monitoring = match status::started(&node_id, &node, ready) {
         Ok(()) => signals.wait(&node).await,
         Err(error) => Err(error),
     };

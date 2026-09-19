@@ -11,6 +11,7 @@ mod input;
 mod model;
 mod policy;
 mod protected_file;
+pub(crate) mod providers;
 mod renderer;
 mod rollouts;
 mod runtime;
@@ -38,6 +39,10 @@ pub use model::{
     EngineConfig, EngineOptimization, ExecutionConfig, LimitConfig, NodeConfig, RetentionConfig,
     SupplyChainConfig, TelemetryConfig, WorkerConfig,
 };
+pub use providers::{
+    BlobInstallation, ConfiguredProviders, HostBinding, HttpInstallation, ProviderIdentity,
+    ProviderSecretFile,
+};
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
 pub use security::ExecutionProfileReport;
@@ -60,6 +65,7 @@ pub struct NodeSettings {
     pub(crate) audit: Option<latent_audit::AuditLimits>,
     pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
+    pub(crate) providers: Option<ConfiguredProviders>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) budget_profile: latent_core::BudgetProfile,
     pub(crate) delegation_limits: latent_core::DelegationLimits,
