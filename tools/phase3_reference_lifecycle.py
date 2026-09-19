@@ -10,7 +10,7 @@ import sys
 import time
 
 from tools.phase2_operator_process import Process, WorkflowError, require, write_json
-from tools.phase2_operator_scenario import change, receipt
+from tools.phase2_operator_scenario import NODE_ID, change, receipt
 from tools.phase2_operator_canary import rollback_target, validate_window
 from tools.phase3_reference_scenario import decode_render, http, invocation_arguments, invoke, manifest
 from tools.phase3_web_scenario import idle_inventory
@@ -116,8 +116,16 @@ def canary(client, node, peer, records, publications):
     held = start_render(client, "reference-pinned-before-canary")
     try:
         pending = peer_event(client, peer, "held")
+        occupied = client.call("node", "get", NODE_ID)["data"]["inventory"]["cellCapacity"]
+        require(sum(cell["active"] for cell in occupied) == 1, "reference-held-render-capacity")
+        static, static_headers = http(client, node, "/offline")
+        require(b"Static delivery" in static and static_headers["cache-control"] == "private, no-cache",
+                "reference-prerender-mutable-alias")
+        unchanged = client.call("node", "get", NODE_ID)["data"]["inventory"]["cellCapacity"]
+        require(occupied == unchanged and all(cell["queueDepth"] == 0 for cell in unchanged),
+                "reference-prerender-entered-render-cells")
         started_at = time.monotonic()
-        started = receipt(client.call("rollout", "start", "reference-canary", "--base", "green",
+        started = receipt(client.call("rollout", "start", "healthy", "--base", "green",
             "--expected-base-generation", base["generation"], "--candidate", candidate, "--weights", "5000,10000",
             "--operation-id", "reference-canary-start", "--expected-revision", "0", "--canary-policy", policy), "reference-canary-start")
         for name in ("green", "blue"):
@@ -133,22 +141,23 @@ def canary(client, node, peer, records, publications):
                 and int(pinned["pin"]["routeGeneration"]) < int(started["routeGeneration"]), "reference-inflight-revision-replaced")
     finally:
         held.close()
-    historical = rollback_target(client, "reference-canary", started)
-    initial = client.call("rollout", "evaluate", "reference-canary", "--expected-revision", started["revision"])["data"]["report"]
+    historical = rollback_target(client, "healthy", started)
+    initial = client.call("rollout", "evaluate", "healthy", "--expected-revision", started["revision"])["data"]["report"]
     require(initial["assessment"]["verdict"].endswith("NO_DATA"), "reference-empty-canary-not-no-data")
-    rejected = change(client, "promote", "reference-canary", started["revision"], "reference-no-data-promote", "--next-step", "1", codes=(4,))
+    rejected = change(client, "promote", "healthy", started["revision"], "reference-no-data-promote", "--next-step", "1", codes=(4,))
     require(rejected["outcomeKnown"], "reference-no-data-promotion-uncertain")
-    samples = [invoke(client, records, publications, f"reference-canary-{ordinal:02d}", route=None) for ordinal in range(12)]
+    samples = [invoke(client, records, publications, f"reference-canary-{ordinal:02d}", route=None) for ordinal in range(16)]
     while time.monotonic() < started_at + 10:
         client.cancellation.check()
         require(time.monotonic() < client.deadline, "reference-canary-deadline")
         node.drain()
         time.sleep(0.025)
-    report = client.call("rollout", "evaluate", "reference-canary", "--expected-revision", started["revision"])["data"]["report"]
+    report = client.call("rollout", "evaluate", "healthy", "--expected-revision", started["revision"])["data"]["report"]
     candidate_counts, baseline_counts = validate_window(report, [sample["pin"] for sample in samples], started,
                                                        {"green": records["blue"], "blue": records["green"]})
-    promoted = receipt(change(client, "promote", "reference-canary", started["revision"], "reference-promote", "--next-step", "1"), "reference-promote")
+    promoted = receipt(change(client, "promote", "healthy", started["revision"], "reference-promote", "--next-step", "1"), "reference-promote")
     require(promoted["state"].endswith("COMPLETED") and promoted["canaryDecision"]["candidate"] == candidate_counts
             and promoted["canaryDecision"]["baseline"] == baseline_counts, "reference-canary-durable-decision")
     return {"started": started, "pinnedRender": pinned, "emptyEvaluation": initial, "samples": samples,
+            "prerenderDuringOccupiedCell": {"before": occupied, "after": unchanged, "cacheControl": static_headers["cache-control"]},
             "evaluation": report, "promoted": promoted, "historicalGeneration": historical}

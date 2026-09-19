@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 import tempfile
 import time
+import traceback
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -41,7 +42,11 @@ def browser(client, args, records, publications, mode):
 
 
 def browser_wait(client, process, phase):
-    event = process.line(min(client.deadline, time.monotonic() + 75))
+    try:
+        event = process.line(min(client.deadline, time.monotonic() + 75))
+    except WorkflowError:
+        print(bytes(process.buffers[1]).decode("utf-8", errors="replace")[:8192], file=sys.stderr)
+        raise
     require(event == {"event": "waiting", "phase": phase}, "reference-browser-phase")
 
 
@@ -156,10 +161,10 @@ def run(args, report):
                                                  if int(hit["sequence"]) > high_watermark]
             require(report["authenticatedCacheHits"], "reference-native-restart-cache-not-authenticated")
             promoted = report["canary"]["promoted"]
-            rolled = receipt(change(client, "rollback", "reference-canary", promoted["revision"], "reference-rollback",
+            rolled = receipt(change(client, "rollback", "healthy", promoted["revision"], "reference-rollback",
                 "--target-generation", report["canary"]["historicalGeneration"]), "reference-rollback")
             require(rolled["state"].endswith("ROLLED_BACK"), "reference-rollback-state")
-            replay = change(client, "rollback", "reference-canary", promoted["revision"], "reference-rollback",
+            replay = change(client, "rollback", "healthy", promoted["revision"], "reference-rollback",
                             "--target-generation", report["canary"]["historicalGeneration"])
             require(replay["data"]["replayed"] and replay["data"]["receipt"] == rolled, "reference-rollback-replay")
             report["rollback"] = rolled
@@ -227,8 +232,12 @@ def main():
     try:
         run(args, report)
     except (Exception, KeyboardInterrupt) as failure:
+        report["passed"] = False
         report["failure"] = str(failure) if isinstance(failure, WorkflowError) else "reference-invalid-input-or-process"
         print("Angular reference failed: " + report["failure"], file=sys.stderr)
+        if not isinstance(failure, WorkflowError):
+            print(type(failure).__name__, file=sys.stderr)
+            traceback.print_tb(failure.__traceback__, limit=6, file=sys.stderr)
     write_json(args.output, report)
     print(bounded_receipt(report))
     return 0 if report["passed"] else 1

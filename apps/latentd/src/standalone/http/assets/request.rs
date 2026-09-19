@@ -256,6 +256,31 @@ fn qvalue(value: &str) -> Result<u16, u16> {
 mod tests {
     use super::*;
     #[test]
+    fn selected_prerender_keeps_conditional_headers_and_rejects_foreign_scope() {
+        let tenant = TenantId("tests".into());
+        let reference = PublicationRef {
+            id: format!("publication:sha256:{}", "ab".repeat(32))
+                .parse()
+                .unwrap(),
+            scope: LifecycleScope::Tenant(tenant.clone()),
+        };
+        let raw = b"GET /offline HTTP/1.1\r\nHost: web.example.test\r\nIf-None-Match: \"current\"\r\n\r\n";
+        let request =
+            Request::parse_routed(raw, &tenant, reference.clone(), "/offline.html".into()).unwrap();
+        assert_eq!(request.reference, reference);
+        assert_eq!(request.path, "/offline.html");
+        assert_eq!(request.status("\"current\"").unwrap(), 304);
+        assert_eq!(request.status("\"changed\"").unwrap(), 200);
+        assert!(Request::parse_routed(
+            raw,
+            &TenantId("foreign".into()),
+            reference,
+            "/offline.html".into()
+        )
+        .is_err());
+        assert!(Request::parse(raw, &tenant).is_err());
+    }
+    #[test]
     fn immutable_locator_rejects_aliases_and_private_or_noncanonical_paths() {
         let tenant = TenantId("tests".into());
         let prefix = format!(

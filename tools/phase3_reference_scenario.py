@@ -41,7 +41,7 @@ def invocation_arguments(client, activation, path="/", route="green"):
     limits = budget()
     limits["outboundRequests"] = 1
     write_json(resources, limits)
-    arguments = ["--rpc-timeout-ms", "5000", "invoke", "--service", "angular-reference", "--contract", CONTRACT,
+    arguments = ["--rpc-timeout-ms", "5000", "invoke", "--budget-profile", "phase3", "--service", "angular-reference", "--contract", CONTRACT,
                  "--function", "handle", "--activation-id", activation, "--input", source, "--budget", resources]
     if route is not None:
         arguments += ["--route", route]

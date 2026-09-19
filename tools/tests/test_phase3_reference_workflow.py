@@ -77,6 +77,7 @@ class ReferenceBuildTests(unittest.TestCase):
             client = SimpleNamespace(directory=root, host="reference.test:12345")
             arguments = invocation_arguments(client, "held", "/slow", route=None)
             self.assertNotIn("--route", arguments)
+            self.assertEqual(arguments[arguments.index("--budget-profile") + 1], "phase3")
             data = (root / "held-input.json").read_text()
             self.assertNotIn("principal", data)
             self.assertNotIn("tenant", data)
