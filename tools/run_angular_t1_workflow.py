@@ -22,6 +22,7 @@ from tools.phase2_operator_process import (
     Client, WorkflowError, bounded_receipt, file_digest, require, stopped_record,
 )
 from tools.phase2_operator_scenario import audit_pages, connect, stop
+from tools.phase3_web_assets import immutable_assets, revoked_assets
 from tools.phase3_web_qualification import (
     admission, failure_recovery, http_rendering, independent_publications,
     native_cache_audit, renewal, tenant_denial,
@@ -84,6 +85,9 @@ def run(args):
             publications = admission(client, args.fixture_root)
             tenant_denial(client, foreign, publications["angular"])
             report_stage("signed-admission-and-tenant-checks-complete")
+            assets = {name: immutable_assets(client, node, records[name], publications[name])
+                      for name in ("angular", "alternate")}
+            report_stage("immutable-assets-before-renderer-preparation-checked")
             dormant = idle_inventory(client)
             require(dormant["cache"]["entries"] == "0", "publication-eagerly-prepared-renderer")
             started = time.monotonic()
@@ -102,6 +106,7 @@ def run(args):
             report_stage("render-failure-and-cancellation-recovery-complete")
             deployment, renewed = renewal(client, args.fixture_root, records["angular"], publications["angular"], deployment)
             deployment, revision, revoked = independent_publications(client, records, publications, deployment)
+            assets["revoked"] = revoked_assets(client, node, records["alternate"], publications["alternate"])
             http = http_rendering(client, node, records["angular"], publications["angular"], deployment, revision)
             report_stage("selected-lifecycle-and-http-checks-complete")
             audit_pages(client, {"publish-angular", "publish-alternate", "renew-angular", "revoke-alternate"})
@@ -116,6 +121,8 @@ def run(args):
             invoke(client, records["angular"], publications["angular"], "angular-restarted")
             warm_native = native_cache_audit(client, records["angular"], "cache-hit")
             prepare(client, publications["alternate"], 2, wait=5000, codes=(4,))
+            assets["restarted"] = immutable_assets(client, node, records["angular"], publications["angular"])
+            assets["revokedAfterRestart"] = revoked_assets(client, node, records["alternate"], publications["alternate"])
             body, _ = http_response(client, node, "alice.angular.test")
             require(b"ngh=" in body and b"Alice&lt;unsafe&gt;" in body, "angular-http-restart")
             after_restart = idle_inventory(client)
@@ -137,6 +144,7 @@ def run(args):
                       "unsupportedStagedRolloutRejected": True, "selectedDeploymentCasRollback": True,
                       "dormant": dormant, "prepared": prepared, "beforeRestart": before_restart,
                       "afterRestart": after_restart, "cancellations": cancellations, "http": http,
+                      "immutableAssets": assets,
                       "nativeCacheFilesUnchangedOnRestart": True, "cliProcesses": client.calls,
                       "nativeCacheMisses": cold_native, "authenticatedNativeCacheHits": warm_native,
                       "shutdown": shutdown, "temporaryOutputsRemoved": True}

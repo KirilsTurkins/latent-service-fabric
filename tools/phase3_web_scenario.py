@@ -238,7 +238,9 @@ def http_response(client, node, host, path="/", method="GET", headers=None, expe
         connection.request(method, path, headers={"Host": host, "Connection": "close", **(headers or {})})
         response = connection.getresponse()
         body = response.read(MIB + 1)
-        require(response.status == expected and len(body) <= MIB, "angular-http-status-or-size")
+        accepted = expected if isinstance(expected, tuple) else (expected,)
+        require(response.status in accepted, f"angular-http-status-{response.status}")
+        require(len(body) <= MIB, "angular-http-body-size")
         fields = response.getheaders()
         require(len(fields) <= 64 and sum(len(name) + len(value) for name, value in fields) <= 16384,
                 "angular-http-header-bound")

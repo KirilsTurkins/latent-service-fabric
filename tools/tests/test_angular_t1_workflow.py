@@ -1,15 +1,17 @@
 """Bounds and fixture identities, not a substitute for real T1 qualification."""
 import base64
 import copy
+import hashlib
 import json
 from pathlib import Path
 import tempfile
 import time
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from tools.phase2_operator_process import WorkflowError, read_json, write_json
+from tools.phase3_web_assets import immutable_assets, revoked_assets
 from tools.phase3_web_scenario import (
     MEDIA, MIB, PREPARATION_MILLIS, budget, configure_angular_node, deployment_manifest,
     fixture_metadata, invocation_arguments, invoke, prepare, tree_inventory,
@@ -22,6 +24,32 @@ def client(root):
 
 
 class AngularT1WorkflowTests(unittest.TestCase):
+    def test_asset_checks_pin_publication_bytes_and_never_use_rendered_html(self):
+        publication = "publication:sha256:" + "a" * 64
+        content = b"actual immutable browser bytes"
+        asset = {"path": "/client/main.js", "size": len(content), "mediaType": "text/javascript",
+                 "digest": "sha256:" + hashlib.sha256(content).hexdigest()}
+        headers = {"content-type": asset["mediaType"], "content-length": str(asset["size"]),
+                   "cache-control": "private, max-age=31536000, immutable",
+                   "x-content-type-options": "nosniff", "etag": '"identity-sha256-' + "b" * 64 + '"'}
+
+        def response(_client, _node, host, path, method="GET", expected=200, **_options):
+            self.assertTrue(path.startswith("/_lsf/assets/" + publication + "/"))
+            if expected in (403, 404, (403, 404)):
+                return b"", {}
+            return (content if method == "GET" and expected == 200 else b""), headers
+
+        with patch("tools.phase3_web_assets.http_response", side_effect=response) as requests:
+            result = immutable_assets(None, None, {"assets": [asset]}, publication)
+            self.assertEqual(result["verifiedAssets"], 1)
+            self.assertEqual(requests.call_count, 7)
+            revoked = revoked_assets(None, None, {"assets": [asset]}, publication)
+            self.assertTrue(revoked["revokedGetAndHeadDenied"])
+            self.assertEqual(requests.call_count, 9)
+        with patch("tools.phase3_web_assets.http_response", return_value=(b"corrupt", headers)):
+            with self.assertRaisesRegex(WorkflowError, "angular-asset-content-identity"):
+                immutable_assets(None, None, {"assets": [asset]}, publication)
+
     def test_configuration_keeps_external_profile_protected_key_and_independent_compile_budget(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

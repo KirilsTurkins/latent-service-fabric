@@ -86,6 +86,13 @@ cross-principal/tenant isolation, evidence-generation invalidation, independent
 publication revocation and exact deployment-CAS rollback. T2/T3 remain rejected.
 Native HTTP rendering is not a real-browser hydration claim.
 
+The asset checks request each exact publication's declared browser bytes before
+renderer preparation, verify content digests and bounded GET/HEAD/conditional
+responses, and deny foreign tenants and private renderer/source/SBOM paths.
+Revoked publications stay denied for GET and conditional HEAD after restart.
+These checks do not derive a self-publication locator from rendered HTML and do
+not substitute for #236's real-browser application qualification.
+
 ## Current evidence boundary
 
 The actual maintained build and real-clock signed exporter pass locally. CLI,
@@ -94,5 +101,13 @@ Protected configuration, enforced evidence admission, isolated native preparatio
 and exact selected deployment have also passed in the separate-process runner.
 The end-to-end T1 compiler/cache/render runner is still under qualification;
 the published runtime remains T0-only. No interrupted Docker run is counted as
-a pass. Immutable asset delivery depends on #336 integration and the browser
-scenario work remains separate. Full #226 completion is not claimed here.
+a pass. The #336 asset implementation is integrated; its new actual workflow
+checks are pending the complete T1 run. The browser scenario work remains
+separate. Full #226 completion is not claimed here.
+
+After integrating the provider startup fixes and optional backend profile,
+11 manifest and 115 wire tests pass, as does strict app-scope Linux Clippy.
+The initial fresh build rejects the stale installed npm tree against the merged
+lockfile; it does not publish a package. Qualification must provision that exact
+lock and build new bytes. An exporter launched before the output existed also
+failed and supplies no admission evidence.
