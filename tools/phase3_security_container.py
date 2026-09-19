@@ -19,7 +19,7 @@ if __package__ in (None, ""):
 
 from tools.build_process import BuildProcessError, run_bounded
 from tools.build_process_signals import owned_cancellation
-from tools.phase3_security_artifacts import SecurityError, require
+from tools.phase3_security_artifacts import SecurityError, require, unique_object
 
 ROOT = Path(__file__).resolve().parents[1]
 LABEL = "latent.phase3-security.owner"
@@ -72,13 +72,23 @@ def run(args) -> dict:
     identifier = owned_container(before, args.owner)
     try:
         result = command(["exec", "--workdir", "/workspace", identifier, "python3",
-                          "tools/phase3_security.py", "--profile", "manual", "--container-owner", args.owner,
+                          "-c", "from tools.phase3_security import container_entry; container_entry()",
+                          "--profile", "manual", "--container-owner", args.owner,
                           *args.arguments], timeout=2460, maximum=256 * 1024)
-        report = json.loads(result.stdout)
-        require(isinstance(report, dict) and report.get("schemaVersion") == "latent.phase3.security.v1"
-                and report.get("passed") is True and report.get("profile") == "manual"
+        report = json.loads(result.stdout, object_pairs_hook=unique_object)
+        require(isinstance(report, dict) and report.get("profile") == "manual"
                 and report.get("enclosingContainerStopRequired") is True
                 and report.get("enclosingContainerOwner") == args.owner, "container-run-receipt")
+        if report.get("schemaVersion") == "latent.phase3.security.failure.v1":
+            require(report.get("passed") is False
+                    and isinstance(report.get("failedStage"), str)
+                    and re.fullmatch(r"[A-Za-z_0-9:-]{1,512}", report["failedStage"]) is not None
+                    and isinstance(report.get("classification"), str)
+                    and re.fullmatch(r"[a-z0-9-]{1,80}", report["classification"]) is not None,
+                    "container-failure-receipt")
+        else:
+            require(report.get("schemaVersion") == "latent.phase3.security.v1"
+                    and report.get("passed") is True, "container-run-receipt")
     finally:
         with owned_cancellation() as cancellation, cancellation.defer():
             command(["stop", "--timeout", "5", identifier])
@@ -115,6 +125,10 @@ def main(argv=None) -> int:
                 with destination.open("xb") as output:
                     output.write(encoded + b"\n")
             print(encoded.decode())
+            if report.get("passed") is False:
+                print("Phase 3 security failed: " + report["failedStage"] + ": "
+                      + report["classification"], file=sys.stderr)
+                return 1
         return 0
     except (Exception, KeyboardInterrupt) as error:
         reason = str(error) if isinstance(error, (SecurityError, BuildProcessError)) else "container-or-fixture-error"

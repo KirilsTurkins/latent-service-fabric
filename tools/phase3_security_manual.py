@@ -138,6 +138,7 @@ def workflows(args, runner, directory: Path) -> list[dict]:
         summary = validate_workflow(report, name, schema)
         require(tree_identity(arguments.fixture_root, runner.deadline) == before, "workflow-fixture-mutated")
         results.append({**summary, "fixture": before})
+        runner.validated_workflows.append(name)
     return results
 
 

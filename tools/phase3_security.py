@@ -39,6 +39,10 @@ class Runner:
         self.environment.update({"GIT_OPTIONAL_LOCKS": "0", "RUST_BACKTRACE": "0"})
         self.current = "preflight"
         self.commands = 0
+        self.validated_cases = []
+        self.active_case = None
+        self.active_case_completed = False
+        self.validated_workflows = []
 
     def command(self, command: list[str], *, cwd: Path | None = None,
                 environment: dict | None = None, timeout: int = 90, maximum: int = 1024 * 1024):
@@ -132,15 +136,22 @@ def run_cases(runner: Runner, groups: tuple, artifacts: dict, runtime: Path,
         explicit_ignored = []
         if group.marker is not None:
             runner.current = group.key
+            runner.active_case = group.key + ":" + group.target
+            runner.active_case_completed = False
             result = runner.command([str(artifact.executable)], cwd=artifact.package,
                                     environment=environment, timeout=group.timeout)
+            runner.active_case_completed = True
             validate_custom(result.stdout + result.stderr, group.marker)
             completed.append(group.target)
+            runner.validated_cases.append(runner.active_case)
+            runner.active_case = None
         else:
             for case in group.cases:
                 if profile == "pr" and not case.pr:
                     continue
                 runner.current = group.key + ":" + case.name
+                runner.active_case = runner.current
+                runner.active_case_completed = False
                 command = [str(artifact.executable), case.name, "--exact", "--test-threads=1",
                            "--format=pretty", "--color=never"]
                 if case.ignored:
@@ -148,12 +159,15 @@ def run_cases(runner: Runner, groups: tuple, artifacts: dict, runtime: Path,
                     explicit_ignored.append(case.name)
                 result = runner.command(command, cwd=artifact.package, environment=environment,
                                         timeout=group.timeout)
+                runner.active_case_completed = True
                 emitted_record = None
                 if group.key == "actual-browser":
                     from tools.phase3_security_manual import browser_output
                     emitted_record = browser_output(directory, runner.deadline)
                 validate_result(result.stdout, case.name, emitted_record=emitted_record)
                 completed.append(case.name)
+                runner.validated_cases.append(runner.active_case)
+                runner.active_case = None
         require(completed, "empty-security-group")
         results.append({"id": group.key, "layer": group.layer, "issues": list(group.issues),
                         "passed": completed, "explicitIgnored": explicit_ignored,
@@ -195,7 +209,9 @@ def run(args, runner: Runner) -> dict:
         if args.profile == "manual":
             runner.current = "maintained-node-workflows"
             workflow_results = manual.workflows(args, runner, directory)
+            runner.current = "fixture-identities"
             fixture_outputs = manual.fixture_identities(directory, runner.deadline)
+            runner.current = "manual-input-identities"
             manual.verify_inputs(args, runner, fixture_inputs)
     require(not directory.exists(), "owned-fixtures-retained")
     runner.current = "final-identities"
@@ -243,6 +259,45 @@ def arguments(argv=None):
     return parser.parse_args(argv)
 
 
+def failure_reason(error: BaseException) -> str:
+    return str(error) if isinstance(error, (SecurityError, BuildProcessError)) else "fixture-or-process-error"
+
+
+def failure_report(args, runner: Runner, error: BaseException) -> dict:
+    entries = [group.key + ":" + name for group in selected(args.profile)
+               for name in ([group.target] if group.marker else
+                            [case.name for case in group.cases if args.profile == "manual" or case.pr])]
+    completed = set(runner.validated_cases)
+    active_workflow = runner.current.removeprefix("workflow:") if runner.current.startswith("workflow:") else None
+    return {"schemaVersion": "latent.phase3.security.failure.v1", "profile": args.profile, "passed": False,
+            "requestedSourceCommit": args.source_commit if re.fullmatch(r"[0-9a-f]{40}", args.source_commit) else None,
+            "failedStage": runner.current, "classification": failure_reason(error),
+            "validatedCases": runner.validated_cases, "activeCase": runner.active_case,
+            "activeCaseCommandAccepted": runner.active_case_completed if runner.active_case else None,
+            "notExecutedCases": [name for name in entries if name not in completed and name != runner.active_case],
+            "validatedWorkflows": runner.validated_workflows, "activeWorkflow": active_workflow,
+            "notExecutedWorkflows": [name for name in ("publication", "security-profile", "provider-management")
+                                     if args.profile == "manual" and name not in runner.validated_workflows
+                                     and name != active_workflow],
+            "commands": runner.commands, "elapsedMillis": int((time.monotonic() - runner.started) * 1000),
+            "enclosingContainerStopRequired": args.profile == "manual",
+            "enclosingContainerOwner": args.container_owner}
+
+
+def container_entry(argv=None) -> None:
+    """Private owner protocol; the host CLI must reject a negative receipt."""
+    args = arguments(argv)
+    runner = Runner(ROOT, args.profile)
+    try:
+        with owned_cancellation():
+            report = run(args, runner)
+    except (Exception, KeyboardInterrupt) as error:
+        report = failure_report(args, runner, error)
+    encoded = json.dumps(report, sort_keys=True, separators=(",", ":")).encode()
+    require(len(encoded) <= MAX_RECEIPT_BYTES, "security-receipt-limit")
+    print(encoded.decode())
+
+
 def main(argv=None) -> int:
     args = arguments(argv)
     runner = Runner(ROOT, args.profile)
@@ -260,7 +315,7 @@ def main(argv=None) -> int:
             print(encoded.decode())
         return 0
     except (Exception, KeyboardInterrupt) as error:
-        reason = str(error) if isinstance(error, (SecurityError, BuildProcessError)) else "fixture-or-process-error"
+        reason = failure_reason(error)
         print(f"Phase 3 security failed: {runner.current}: {reason}", file=sys.stderr)
         return 1
 

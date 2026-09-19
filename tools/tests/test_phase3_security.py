@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 import copy
 from dataclasses import replace
 import io
@@ -213,6 +213,37 @@ class SelectionTests(unittest.TestCase):
             with self.assertRaises(artifacts.SecurityError):
                 security.verify_source(runner, "a" * 40)
 
+    def test_negative_receipt_separates_validated_active_and_unexecuted_cases(self):
+        runner = security.Runner(Path.cwd(), "manual")
+        first, second = cases.GROUPS[:2]
+        runner.validated_cases.append(first.key + ":" + first.cases[0].name)
+        runner.active_case = second.key + ":" + second.cases[0].name
+        runner.active_case_completed = True
+        runner.current = runner.active_case
+        arguments = argparse.Namespace(profile="manual", source_commit="a" * 40, container_owner="owned-fixture")
+        report = security.failure_report(arguments, runner, artifacts.SecurityError("test-result-count"))
+        self.assertIs(report["passed"], False)
+        self.assertIs(report["activeCaseCommandAccepted"], True)
+        self.assertEqual(report["validatedCases"], runner.validated_cases)
+        self.assertEqual(report["activeCase"], runner.active_case)
+        self.assertEqual(len(report["notExecutedCases"]), 184)
+        self.assertNotIn(runner.active_case, report["notExecutedCases"])
+        self.assertNotIn(runner.validated_cases[0], report["notExecutedCases"])
+        self.assertEqual(report["notExecutedWorkflows"], ["publication", "security-profile", "provider-management"])
+
+    def test_private_envelope_keeps_failures_explicit_and_diagnostics_redacted(self):
+        output = io.StringIO()
+        with patch.object(security, "run", side_effect=ValueError("credential-fixture")), redirect_stdout(output):
+            security.container_entry(["--profile", "manual", "--inventory", "unused",
+                                      "--source-commit", "a" * 40, "--container-owner", "owned-fixture"])
+        report = json.loads(output.getvalue())
+        self.assertEqual(report["schemaVersion"], "latent.phase3.security.failure.v1")
+        self.assertIs(report["passed"], False)
+        self.assertEqual(report["validatedCases"], [])
+        self.assertEqual(len(report["notExecutedCases"]), 186)
+        self.assertEqual(report["classification"], "fixture-or-process-error")
+        self.assertNotIn("credential-fixture", output.getvalue())
+
 
 class WorkflowTests(unittest.TestCase):
     def report(self):
@@ -318,6 +349,39 @@ class ContainerTests(unittest.TestCase):
             with self.assertRaisesRegex(BuildProcessError, "command-deadline"):
                 container.run(args)
         self.assertEqual(call.call_args_list[-1].args[0], ["stop", "--timeout", "5", before["Id"]])
+
+    def test_negative_inner_receipt_stops_the_container_and_exits_nonzero(self):
+        before = self.fixture()
+        after = copy.deepcopy(before)
+        after["State"]["Running"] = False
+        report = {"schemaVersion": "latent.phase3.security.failure.v1", "profile": "manual", "passed": False,
+                  "enclosingContainerStopRequired": True, "enclosingContainerOwner": "owned-fixture",
+                  "failedStage": "selected:case", "classification": "test-result-count"}
+        args = argparse.Namespace(container="named-fixture", owner="owned-fixture", arguments=["--inventory", "unused"])
+        with patch.object(container, "inspect", side_effect=[before, after]), \
+                patch.object(container, "command", side_effect=[completed(json.dumps(report).encode()), completed()]):
+            result = container.run(args)
+        self.assertIs(result["passed"], False)
+        self.assertIs(result["enclosingContainer"]["stopped"], True)
+        self.assertIs(result["enclosingContainerStopRequired"], False)
+        with patch.object(container, "run", return_value=result), redirect_stdout(io.StringIO()), \
+                redirect_stderr(io.StringIO()) as diagnostic:
+            status = container.main(["--container", "named-fixture", "--owner", "owned-fixture", "--", "unused"])
+        self.assertEqual(status, 1)
+        self.assertIn("selected:case: test-result-count", diagnostic.getvalue())
+
+    def test_false_failure_schema_cannot_be_coerced_into_a_success(self):
+        before = self.fixture()
+        after = copy.deepcopy(before)
+        after["State"]["Running"] = False
+        report = {"schemaVersion": "latent.phase3.security.failure.v1", "profile": "manual", "passed": True,
+                  "enclosingContainerStopRequired": True, "enclosingContainerOwner": "owned-fixture",
+                  "failedStage": "selected:case", "classification": "test-result-count"}
+        args = argparse.Namespace(container="named-fixture", owner="owned-fixture", arguments=["--inventory", "unused"])
+        with patch.object(container, "inspect", side_effect=[before, after]), \
+                patch.object(container, "command", side_effect=[completed(json.dumps(report).encode()), completed()]):
+            with self.assertRaisesRegex(artifacts.SecurityError, "container-failure-receipt"):
+                container.run(args)
 
     def test_unowned_container_is_not_started_stopped_or_removed(self):
         args = argparse.Namespace(container="parent", owner="wrong-owner", arguments=["--inventory", "x"])
