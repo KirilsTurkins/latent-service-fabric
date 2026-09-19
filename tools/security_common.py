@@ -55,6 +55,9 @@ def relative_path(value: str) -> str:
 
 def read_file(root: Path, relative: str, limit: int = MAX_FILE_BYTES) -> bytes:
     current = root.resolve(strict=True)
+    if os.name == "nt" and not str(current).startswith("\\\\?\\"):
+        absolute = str(current)
+        current = Path("\\\\?\\UNC\\" + absolute[2:] if absolute.startswith("\\\\") else "\\\\?\\" + absolute)
     for part in relative_path(relative).split("/"):
         current = current / part
         metadata = current.lstat()

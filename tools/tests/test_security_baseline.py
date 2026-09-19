@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta, timezone
 from email.utils import format_datetime
 import io
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -148,6 +149,27 @@ class SecurityFixtureTests(unittest.TestCase):
                 with self.assertRaisesRegex(SecurityError, "unreviewed-or-missing-dependency-manifest"):
                     inventory(ROOT)
 
+    def test_node_sdk_inventory_includes_pinned_runtime_and_development_dependencies(self) -> None:
+        manifest = {"dependencies": {"@bufbuild/protobuf": "2.15.0"},
+                    "devDependencies": {"@types/node": "24.13.6"}, "engines": {"node": "24.19.x"}}
+        resolved = {"": manifest}
+        for name, version in {**manifest["dependencies"], **manifest["devDependencies"]}.items():
+            resolved[f"node_modules/{name}"] = {"version": version,
+                "resolved": f"https://registry.npmjs.org/{name}/-/{name.rsplit('/', 1)[-1]}-{version}.tgz"}
+        self.write("package.json", json.dumps(manifest))
+        self.write("package-lock.json", json.dumps({"lockfileVersion": 3, "packages": resolved}))
+        packages = npm_packages(self.root, {"path": "package.json", "lock": "package-lock.json"})
+        self.assertEqual({(package.name, package.version) for package in packages},
+                         {("@bufbuild/protobuf", "2.15.0"), ("@types/node", "24.13.6")})
+
+    def test_renderer_toolchain_removes_the_unpatched_archive_extractor(self) -> None:
+        path = "examples/renderer-profile/package.json"
+        manifest = decode_json(read_file(ROOT, path))
+        self.assertEqual(manifest["overrides"]["@bytecodealliance/weval"], "0.5.0")
+        packages = npm_packages(ROOT, {"path": path, "lock": "examples/renderer-profile/package-lock.json"})
+        self.assertEqual({package.version for package in packages if package.name == "@bytecodealliance/weval"}, {"0.5.0"})
+        self.assertFalse(any(package.name == "decompress" or package.name.startswith("decompress-") for package in packages))
+
     def test_synthetic_source_rule_has_pass_and_fail_without_execution(self) -> None:
         path = "tools/fixture.py"
         self.write(path, "value = 1\n")
@@ -194,6 +216,21 @@ class SecurityFixtureTests(unittest.TestCase):
             self.skipTest("host does not allow creating symlinks")
         with self.assertRaises(SecurityError):
             read_file(self.root, "linked.txt")
+
+    def test_deep_tracked_inputs_are_read_without_relaxing_path_validation(self) -> None:
+        relative = "/".join(["nested-" + "fixture" * 7] * 5 + ["fixture.txt"])
+        filesystem_root = Path("\\\\?\\" + str(self.root)) if os.name == "nt" else self.root
+        target = filesystem_root / relative
+        try:
+            target.parent.mkdir(parents=True)
+            target.write_bytes(b"harmless")
+            self.assertEqual(read_file(self.root, relative), b"harmless")
+        finally:
+            target.unlink(missing_ok=True)
+            parent = target.parent
+            while parent != filesystem_root:
+                parent.rmdir()
+                parent = parent.parent
 
     def test_tools_require_both_reviewed_archive_and_binary_digests(self) -> None:
         lock = security_install.tool_lock()

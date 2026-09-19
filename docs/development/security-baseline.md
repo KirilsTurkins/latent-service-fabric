@@ -17,7 +17,7 @@ complete. See the [dated evidence and gaps](security-baseline-evidence.md).
 | Cargo manifests/lock, toolchain, Cargo config, platform WIT, Wasmtime host/surface or component bindings | RustSec |
 | Any supported or newly discovered dependency manifest/lock | SDK inventory and OSV; Cargo changes also select RustSec |
 | Source files, workflows, local actions or Dependabot config | Applicable source/workflow static rules; workflow changes also select canaries |
-| Scanner controls, policies, fixtures or tests | All checks |
+| Scanner controls, policies, fixtures/tests or central `tools/toolchain.toml` | All checks |
 | Weekly Monday 04:23 UTC, or manual dispatch | All checks against **both `development` and `release`**, regardless of lockfile changes |
 
 [Scope selection](../../tools/security_scope.py) uses Git object identities and the
@@ -293,8 +293,10 @@ retain both-ref manual and scheduled results without changing locks, and require
 The 2026-09-19 snapshot still has only `CI result` required; this implementation
 does not prematurely change protection on other in-flight Phase 3 PRs.
 
-Real advisory matches in the current renderer lock and older `release` lock,
-full-snapshot secret triage and deployment/evidence gaps are listed in the
+The renderer's initial advisory matches are removed by a reviewed, exact
+`@bytecodealliance/weval` 0.5.0 override, without changing the renderer's AOT-disabled
+profile or ComponentizeJS version. Older `release` lock findings, full-snapshot
+secret triage and deployment/evidence gaps are listed in the
 [evidence ledger](security-baseline-evidence.md), not silently excepted. A real
 fork execution and synthetic server push rejection were not performed by this
 delivery; static fork-permission fixtures and enabled-service API state should

@@ -79,11 +79,11 @@ absent from default `release`.
   directories while still querying caller scanner dependencies. This is not
   evidence that the release's Rust graph or workflows pass.
 
-## Unsuppressed findings and acceptance gaps
+## Findings, remediation and acceptance gaps
 
 ### Development renderer dependency
 
-Both local and hosted OSV scans match `npm:decompress@4.2.1` in
+The initial local and hosted OSV scans match `npm:decompress@4.2.1` in
 `examples/renderer-profile/package-lock.json`, transitively introduced by
 `@bytecodealliance/weval@0.4.1`:
 
@@ -93,9 +93,41 @@ Both local and hosted OSV scans match `npm:decompress@4.2.1` in
 
 Official advisory lookup on 2026-09-19 gives no patched version of the unscoped
 `decompress` package. A differently scoped package is not an automatic safe
-substitution. The renderer/build owner must assess reachable archive handling
-and review remediation; this scanner-only ticket does not alter that package
-graph or assert an LSF exploit. No advisory exception was introduced.
+substitution. On the parent's explicit request to resolve the failing SDK job,
+this delivery adds the narrow upstream remediation below rather than a finding
+exception. The initial match is not a claim of an LSF exploit.
+
+The official [weval 0.5.0 release](https://github.com/bytecodealliance/weval/releases/tag/v0.5.0),
+published 2026-09-10, resolves to full upstream commit
+`04191f69e9cdf624a272be01887dfbe5cf306bfa`. Its reviewed npm wrapper replaces the
+old `decompress` family with `tar` and `fflate`, keeping the default `getWeval`
+export. The renderer manifest now pins that exact transitive override; the
+lockfile resolves `tar` 7.5.22 and `fflate` 0.8.3. The npm archive integrity is
+retained in the lock. ComponentizeJS remains 0.22.0 and the existing renderer
+profile still disables AOT, so the native weval compiler is not selected.
+
+Only weval changes version among retained package entries. Seven entries are
+added and 77 unused extractor-related entries removed, reducing the resolved
+renderer graph from 344 to 274 entries. The resulting lock SHA-256 is
+`86e664dcd26735c9e7ca655442c1f3c957eab2a0a10da005e63432ef5105cd0a`.
+It was regenerated from the existing lock in an isolated ignored directory with
+package scripts disabled, then applied as a focused patch. A clean
+`npm ci --ignore-scripts` succeeds, a fresh full `npm audit` reports zero
+vulnerabilities, and the fresh repository OSV scan reports zero matches.
+No unrelated retained package versions, runtime/SDK/provider code or parent Node
+worktree were changed. Final exact-head hosted checks still require review.
+The added import smoke checks the real pinned weval/ComponentizeJS modules; it
+does not claim a full Windows build. An attempted Windows componentization probe
+failed in existing Wizer default-cache configuration. Full compatibility must
+pass the existing Linux renderer CI, with the profile and engine unchanged.
+
+Additional security tests prevent reintroduction of the unpatched extractor and
+verify inventory of the parent's pinned Node runtime `@bufbuild/protobuf` 2.15.0
+and development `@types/node` 24.13.6 with `24.19.x` engines. Both dependency kinds
+are queried; the inventory does not drop development packages or run Node code.
+Central toolchain changes select all lightweight security analyses. The parent
+#365 toolchain/setup-node changes are preserved through normal integration, not
+duplicated in this worktree.
 
 ### Older maintained release
 
@@ -126,6 +158,13 @@ occurrences across three paths**. A changed-file PR pass does not clear them.
 Only redacted positions/fingerprints and counts were retained locally; no raw
 matches, credential tests, blanket path/rule ignores or secret exceptions were
 published. These matches do not establish that a credential was found or leaked.
+
+After fixing Windows extended-length input handling without relaxing link/path
+validation, the unchanged legacy-release snapshot also completes: 3,259 text
+files, 222 counted binaries/archives and 15 unsuppressed generic-rule occurrences.
+Its missing newer local-secret test explains the lower count; neither snapshot
+is described as secret-clean. The control-worktree observations and final hosted
+revision must be distinguished when reviewing these local receipts.
 
 ### Central acceptance work
 

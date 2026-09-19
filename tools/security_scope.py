@@ -28,7 +28,9 @@ def classify(paths: list[str]) -> dict[str, bool]:
     if all(PurePosixPath(path).suffix in {".md", ".svg"} for path in paths):
         return dict.fromkeys(("rustsec", "dependencies", "static", "selftest"), False)
     controls = any(path.startswith((".github/security/", "tools/security", "tools/tests/test_security",
-                                    ".github/workflows/security-")) for path in paths)
+                                    ".github/workflows/security-"))
+                   or path in {"tools/toolchain.toml", "tools/validate_workflow_actions.py", "tools/workflow_action_yaml.py"}
+                   for path in paths)
     workflows = any(path.startswith(".github/workflows/") or PurePosixPath(path).name in {"action.yml", "action.yaml"}
                     or path == ".github/dependabot.yml" for path in paths)
     rustsec = controls or any(PurePosixPath(path).name in {"Cargo.lock", "Cargo.toml", "rust-toolchain.toml"}

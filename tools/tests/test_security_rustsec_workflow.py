@@ -52,6 +52,8 @@ class SecurityWorkflowTests(unittest.TestCase):
         self.assertTrue(classify(["apps/latentd/src/main.rs"])["static"])
         self.assertTrue(classify([".github/workflows/ci.yml"])["selftest"])
         self.assertTrue(all(classify([".github/security/exceptions.json"]).values()))
+        self.assertTrue(all(classify(["tools/toolchain.toml"]).values()))
+        self.assertTrue(all(classify(["tools/validate_workflow_actions.py"]).values()))
 
     def test_fork_pull_requests_have_no_privileged_token_cache_or_input_execution(self) -> None:
         for workflow in (self.baseline, self.rustsec):
