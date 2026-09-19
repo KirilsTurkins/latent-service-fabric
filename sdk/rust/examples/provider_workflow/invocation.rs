@@ -34,7 +34,13 @@ pub async fn run(
         let response = client
             .invoke(config.request(provider, provider, None)?, options())
             .await
-            .map_err(|_| "provider-invocation-rpc")?;
+            .map_err(|_| {
+                if provider == "http" {
+                    "http-invocation-rpc"
+                } else {
+                    "blob-invocation-rpc"
+                }
+            })?;
         require(guest(&response.value)? == expected, "provider-result")?;
         activations.push(format!("rust-{provider}"));
         assertions.insert(assertion, true);
