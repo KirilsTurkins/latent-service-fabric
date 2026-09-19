@@ -161,9 +161,10 @@ def run_cases(runner: Runner, groups: tuple, artifacts: dict, runtime: Path,
                                         timeout=group.timeout)
                 runner.active_case_completed = True
                 emitted_record = None
-                if group.key == "actual-browser":
+                if group.key in ("actual-browser", "actual-browser-application"):
                     from tools.phase3_security_manual import browser_output
-                    emitted_record = browser_output(directory, runner.deadline)
+                    emitted_record = browser_output(directory, runner.deadline,
+                                                    application=group.key == "actual-browser-application")
                 validate_result(result.stdout, case.name, emitted_record=emitted_record)
                 completed.append(case.name)
                 runner.validated_cases.append(runner.active_case)
@@ -240,7 +241,7 @@ def run(args, runner: Runner) -> dict:
         "processBoundary": "bounded-process-groups-and-maintained-workflow-owners",
         "enclosingContainerStopRequired": args.profile == "manual",
         "enclosingContainerOwner": args.container_owner,
-        "qualificationExclusions": ["T2-guest-process-containment", "Angular-Wasm-T1-followup-368",
+        "qualificationExclusions": ["T2-guest-process-containment", "reference-browser-backend-canary-236",
                                     "hosted-provider-vendor-campaigns", "SDK-real-node-runner",
                                     "load", "non-Linux-x86_64"],
     }
@@ -254,7 +255,7 @@ def arguments(argv=None):
     parser.add_argument("--output", type=Path)
     parser.add_argument("--container-owner")
     for name in ("cli", "node", "compiler", "guest-capsules", "web-component",
-                 "browser-node", "browser-chrome", "browser-toolchain"):
+                 "browser-node", "browser-chrome", "browser-toolchain", "angular-build", "angular-compiler"):
         parser.add_argument("--" + name, type=Path)
     return parser.parse_args(argv)
 
@@ -276,7 +277,7 @@ def failure_report(args, runner: Runner, error: BaseException) -> dict:
             "activeCaseCommandAccepted": runner.active_case_completed if runner.active_case else None,
             "notExecutedCases": [name for name in entries if name not in completed and name != runner.active_case],
             "validatedWorkflows": runner.validated_workflows, "activeWorkflow": active_workflow,
-            "notExecutedWorkflows": [name for name in ("publication", "security-profile", "provider-management")
+            "notExecutedWorkflows": [name for name in ("publication", "security-profile", "provider-management", "angular-t1")
                                      if args.profile == "manual" and name not in runner.validated_workflows
                                      and name != active_workflow],
             "commands": runner.commands, "elapsedMillis": int((time.monotonic() - runner.started) * 1000),

@@ -68,6 +68,10 @@ ignored export_publication_workflow_fixture
           "tests/phase3_workflow_fixture.rs", "fixture-export", (226,), selection("""
 ignored export_signed_provider_workflow_fixtures
 """)),
+    Group("fixture-angular", "apps/latentd/Cargo.toml", "phase3_angular_fixture", "test",
+          "tests/phase3_angular_fixture.rs", "actual-build-fixture-export", (226, 238), selection("""
+ignored export_actual_angular_t1_fixtures
+""")),
     guest("broker", (204, 205, 238, 272), """
 pr real_guest_calls_use_fresh_sessions_on_the_same_warm_cell
 manual real_guest_runs_with_the_original_phase3_ledger_and_unused_counters_stay_zero
@@ -311,6 +315,10 @@ ignored real_delivery::actual_http_component_pinned_cutover_and_revocation_use_c
     library("actual-browser", "apps/latentd", "latentd", "node-ssr-and-real-browser-not-t1-wasm",
             (235, 238), "standalone::http::assets::browser::", """
 ignored actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress
+"""),
+    library("actual-browser-application", "apps/latentd", "latentd", "real-browser-and-public-component",
+            (235, 238), "standalone::http::assets::browser::", """
+ignored actual_browser_application_uses_only_the_public_shared_http_contract
 """),
     guest("guest_sdk", (217, 238, 271), """
 ignored events::typed_event_receipt_denial_and_uncertainty_do_not_retry

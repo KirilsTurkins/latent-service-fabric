@@ -200,7 +200,7 @@ class SelectionTests(unittest.TestCase):
     def test_matrix_has_fixed_pr_inventory_and_manual_superset(self):
         security.check_matrix()
         self.assertEqual(sum(case.pr for group in cases.GROUPS for case in group.cases), 27)
-        self.assertEqual(sum(len(group.cases) for group in cases.selected("manual")), 184)
+        self.assertEqual(sum(len(group.cases) for group in cases.selected("manual")), 186)
         self.assertTrue(set(cases.selected("pr")).issubset(cases.selected("manual")))
         self.assertEqual(sum(group.marker is not None for group in cases.GROUPS), 2)
 
@@ -241,10 +241,11 @@ class SelectionTests(unittest.TestCase):
         self.assertIs(report["activeCaseCommandAccepted"], True)
         self.assertEqual(report["validatedCases"], runner.validated_cases)
         self.assertEqual(report["activeCase"], runner.active_case)
-        self.assertEqual(len(report["notExecutedCases"]), 184)
+        self.assertEqual(len(report["notExecutedCases"]), 186)
         self.assertNotIn(runner.active_case, report["notExecutedCases"])
         self.assertNotIn(runner.validated_cases[0], report["notExecutedCases"])
-        self.assertEqual(report["notExecutedWorkflows"], ["publication", "security-profile", "provider-management"])
+        self.assertEqual(report["notExecutedWorkflows"],
+                         ["publication", "security-profile", "provider-management", "angular-t1"])
 
     def test_private_envelope_keeps_failures_explicit_and_diagnostics_redacted(self):
         output = io.StringIO()
@@ -255,7 +256,7 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(report["schemaVersion"], "latent.phase3.security.failure.v1")
         self.assertIs(report["passed"], False)
         self.assertEqual(report["validatedCases"], [])
-        self.assertEqual(len(report["notExecutedCases"]), 186)
+        self.assertEqual(len(report["notExecutedCases"]), 188)
         self.assertEqual(report["classification"], "fixture-or-process-error")
         self.assertNotIn("credential-fixture", output.getvalue())
 
@@ -283,6 +284,62 @@ class WorkflowTests(unittest.TestCase):
     def test_unknown_workflow_cannot_claim_a_shutdown_profile(self):
         with self.assertRaisesRegex(artifacts.SecurityError, "workflow-name"):
             manual.validate_workflow(self.report(), "unexpected", "fixture")
+
+    def angular_report(self):
+        value = self.report()
+        value.update({"actualAngularBuild": True, "reproducibility": "not-checked",
+                      "buildObservationDigest": "sha256:" + "a" * 64,
+                      "nativeCacheFilesUnchangedOnRestart": True,
+                      "preRestartNativeCacheHitHighWatermark": "19",
+                      "authenticatedNativeCacheHits": [{"sequence": "35"}],
+                      "cancellations": [{"disconnect": False, "terminal": "cancelled"},
+                                        {"disconnect": True, "terminal": "cancelled"}],
+                      "profile": {"profile": "external-capsule-v1", "threatClass": "T1",
+                                  "admission": "enforced", "protectedCredentialFile": True,
+                                  "compiler": "isolated-aot-compiler-v1", "authenticatedNativeLoading": True}})
+        return value
+
+    def test_actual_angular_requires_protected_t1_not_a_t0_or_partial_receipt(self):
+        value = self.angular_report()
+        summary = manual.validate_workflow(value, "angular-t1", "fixture")
+        self.assertEqual(summary["nodeShutdowns"], 2)
+        self.assertEqual(summary["qualification"]["buildObservationDigest"], value["buildObservationDigest"])
+        for field, replacement in (("profile", "local-experimental-v1"), ("threatClass", "T0"),
+                                   ("admission", "trusted-local"), ("protectedCredentialFile", False),
+                                   ("compiler", "in-process"), ("authenticatedNativeLoading", False)):
+            wrong = copy.deepcopy(value)
+            wrong["profile"][field] = replacement
+            with self.subTest(field=field), self.assertRaisesRegex(artifacts.SecurityError, "angular-t1-profile"):
+                manual.validate_workflow(wrong, "angular-t1", "fixture")
+        for field, replacement in (("actualAngularBuild", False), ("buildObservationDigest", "not-observed"),
+                                   ("nativeCacheFilesUnchangedOnRestart", False), ("passed", False),
+                                   ("temporaryOutputsRemoved", False), ("shutdown", [])):
+            with self.subTest(field=field), self.assertRaises(artifacts.SecurityError):
+                manual.validate_workflow({**value, field: replacement}, "angular-t1", "fixture")
+
+    def test_angular_restart_requires_new_hits_and_both_cancelled_owners(self):
+        value = self.angular_report()
+        for sequence in ("18", "19", "-1", "1" * 21, True):
+            wrong = {**value, "authenticatedNativeCacheHits": [{"sequence": sequence}]}
+            with self.subTest(sequence=sequence), self.assertRaisesRegex(artifacts.SecurityError, "restart-cache"):
+                manual.validate_workflow(wrong, "angular-t1", "fixture")
+        for field, replacement in (("authenticatedNativeCacheHits", []),
+                                   ("preRestartNativeCacheHitHighWatermark", None)):
+            with self.subTest(field=field), self.assertRaisesRegex(artifacts.SecurityError, "restart-cache"):
+                manual.validate_workflow({**value, field: replacement}, "angular-t1", "fixture")
+        for cancellations in ([], value["cancellations"][:1], value["cancellations"][::-1],
+                              [{"disconnect": False, "terminal": "running"}, value["cancellations"][1]]):
+            with self.subTest(cancellations=cancellations), self.assertRaisesRegex(artifacts.SecurityError, "cancellation"):
+                manual.validate_workflow({**value, "cancellations": cancellations}, "angular-t1", "fixture")
+
+    def test_ci_runs_the_exact_current_inventory_and_retains_its_receipt(self):
+        workflow = (security.ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        command = ('python3 tools/phase3_security.py --profile pr --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" '
+                   '--source-commit "$GITHUB_SHA" --output target/phase3-security/pr-receipt.json')
+        self.assertEqual(workflow.count(command), 1)
+        self.assertLess(workflow.index("Build workspace binaries and test harnesses"), workflow.index(command))
+        self.assertIn("name: phase3-security-pr-${{ github.sha }}", workflow)
+        self.assertIn("path: target/phase3-security/pr-receipt.json", workflow)
 
     def test_provider_workflow_is_validated_without_inventing_its_absent_pass_flag(self):
         value = self.report()
@@ -321,7 +378,10 @@ class WorkflowTests(unittest.TestCase):
                   "componentRenderClaimed": False, "originalDomReused": True, "navigationHydrated": True,
                   "escapedDataRoundTrip": True, "inlineAndRemoteScriptsBlocked": True,
                   "baseOverrideBlocked": True, "wrongScriptMimeBlocked": True,
-                  "sameOriginPostReachedMethodPolicy": True, "errors": 0}
+                  "sameOriginPostReachedMethodPolicy": True, "errors": 0,
+                  "publicApplicationQualified": False, "applicationComponentInvoked": False,
+                  "managementRpcAbsent": False, "browserFetchCredentialsOmitted": False,
+                  "cookiesDoNotAuthenticate": False}
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             path = directory / "browser/browser-receipt.json"
@@ -330,7 +390,9 @@ class WorkflowTests(unittest.TestCase):
             path.write_bytes(raw)
             self.assertEqual(manual.browser_output(directory, time.monotonic() + 5), raw)
             for changed in ({"componentRenderClaimed": True}, {"errors": False}, {"originalDomReused": 1},
-                            {"navigationHydrated": False}, {"browser": "opaque-text"}, {"extra": True}):
+                            {"navigationHydrated": False}, {"browser": "opaque-text"}, {"extra": True},
+                            {"publicApplicationQualified": True}, {"applicationComponentInvoked": True},
+                            {"browserFetchCredentialsOmitted": 0}):
                 path.write_text(json.dumps({**report, **changed}))
                 with self.subTest(changed=changed), self.assertRaises(artifacts.SecurityError):
                     manual.browser_output(directory, time.monotonic() + 5)
@@ -340,6 +402,28 @@ class WorkflowTests(unittest.TestCase):
             path.write_bytes(b"x" * 4097)
             with self.assertRaisesRegex(artifacts.SecurityError, "file-limit"):
                 manual.browser_output(directory, time.monotonic() + 5)
+
+    def test_public_browser_application_cannot_reuse_assets_only_observations(self):
+        report = {"browser": "153.0.8010.47", "liveSharedIngress": True, "controlledNodeSsr": True,
+                  "componentRenderClaimed": False, "originalDomReused": True, "navigationHydrated": True,
+                  "escapedDataRoundTrip": True, "inlineAndRemoteScriptsBlocked": True,
+                  "baseOverrideBlocked": True, "wrongScriptMimeBlocked": True,
+                  "sameOriginPostReachedMethodPolicy": True, "errors": 0,
+                  "publicApplicationQualified": True, "applicationComponentInvoked": True,
+                  "managementRpcAbsent": True, "browserFetchCredentialsOmitted": True,
+                  "cookiesDoNotAuthenticate": True}
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            path = directory / "browser/browser-application-receipt.json"
+            path.parent.mkdir()
+            raw = json.dumps(report, separators=(",", ":")).encode()
+            path.write_bytes(raw)
+            self.assertEqual(manual.browser_output(directory, time.monotonic() + 5, application=True), raw)
+            for field in ("publicApplicationQualified", "applicationComponentInvoked", "managementRpcAbsent",
+                          "browserFetchCredentialsOmitted", "cookiesDoNotAuthenticate"):
+                path.write_text(json.dumps({**report, field: False}))
+                with self.subTest(field=field), self.assertRaises(artifacts.SecurityError):
+                    manual.browser_output(directory, time.monotonic() + 5, application=True)
 
 
 class ContainerTests(unittest.TestCase):
