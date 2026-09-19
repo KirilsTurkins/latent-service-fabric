@@ -72,7 +72,27 @@ public advisory decisions and the fresh nine-query OSV observation. The generate
 CycloneDX graph and audit are under `target/c-sdk/`; they are generated evidence,
 not ignored unknown dependencies or fabricated coverage guarantees.
 
-## Real-node handoff: not claimed executed here
+## Actual separate-node qualification
+
+Parent qualification on 2026-09-19 at integration source
+`3584f589` ran this exact native participant through all 18 assertions against
+a separately owned authenticated node and freshly signed maintained Rust
+HTTP/blob/callee guests. Nine activation IDs were retained, six upstream
+requests were authorized with zero unexpected requests, and all four held
+upstream sockets physically closed. The runner independently verified terminal
+status, the operation receipt and clean node/provider shutdown before reaping.
+The raw receipt SHA-256 is
+`6e04200fc97e6db34043070d1aae5d776ae8d8e7002d4ec2b1082a1b61e04867`;
+the curated checkpoint is retained in shared qualification PR #366.
+
+This replaces the prior unexecuted handoff status, not the controlled-peer
+record. `tools/validate_sdks.sh` now requires ordinary and ASan/UBSan native
+transport checks. The full six-language real-node CI matrix is still delivered
+by PR #366; its exact-head gate and acceptance review remain prerequisites for
+#261 closure. No installed-node, browser or whole-process isolation claim is
+made by this local result.
+
+### Executable and fixture contract
 
 The compiled **native** participant is `target/c-sdk/provider-workflow`, invoked
 as `provider-workflow --config /absolute/private/input.json`. Its non-sanitized
@@ -89,13 +109,12 @@ retained terminal status. Its failure output uses only fixed stage/reason tokens
 and bounded category/gRPC numbers. The smaller `provider-client` example invokes
 authorized HTTP/blob guests but deliberately does not claim the 18-check result.
 
-The parent owns execution against the separate real node with freshly signed
-Rust HTTP/blob/callee guests and integration into the shared validation runner.
-**No C real-node 18-assertion pass, provider cleanup, installed-node qualification
-or CI proof is claimed by this evidence.** The clean-checkout commands are in the
+The parent owns integration into the shared validation runner. The measured
+real-node pass above is not an installed-node qualification or CI result.
+The clean-checkout commands are in the
 [C README](README.md#clean-checkout-authorized-httpblob-example). A successful
-shared runner receipt must be attached before treating the real-node ticket
-criterion as met. Do not infer it from Rust/Node results or the controlled peer.
+shared runner receipt is attached in PR #366 rather than inferred from Rust/Node
+results or the controlled peer.
 
 Parent integration entry point: `python3 sdk/c/tools/validate.py --build-dir PATH`,
 plus `--sanitize` with a separate build directory. The shared real-node runner
