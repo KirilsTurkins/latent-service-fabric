@@ -20,7 +20,7 @@ from unittest.mock import patch
 from tools.native_runtime import archive, configuration, files, lifecycle, verify
 from tools.native_runtime.common import InstallError, document, encode, execute
 from tools.native_runtime.layout import Layout
-from tools.native_runtime_build import bootstrap, shared_license
+from tools.native_runtime_build import assemble, bootstrap, shared_license
 
 ROOT = Path(__file__).resolve().parents[2]
 LINUX = sys.platform == "linux"
@@ -279,6 +279,63 @@ class FileTests(unittest.TestCase):
             (destination / "untracked").write_bytes(b"extra")
             with self.assertRaisesRegex(InstallError, "untracked"):
                 archive.check_tree(destination, release.metadata["files"])
+
+    def test_purge_accepts_only_complete_in_root_hardlink_sets(self):
+        owned = self.root / "owned"
+        owned.mkdir(mode=0o700)
+        (owned / "blob").write_bytes(b"shared-catalog-content")
+        os.link(owned / "blob", owned / "reference")
+        files.remove_tree(owned)
+        self.assertFalse(owned.exists())
+        owned.mkdir(mode=0o700)
+        (owned / "first").write_bytes(b"must-survive-failed-prewalk")
+        outside = self.root / "foreign"
+        outside.write_bytes(b"not-selected-for-purge")
+        os.link(outside, owned / "outside-link")
+        with self.assertRaisesRegex(InstallError, "purge-hardlink-outside-owned-root"):
+            files.remove_tree(owned)
+        self.assertEqual(outside.read_bytes(), b"not-selected-for-purge")
+        self.assertTrue((owned / "first").exists())
+
+    def test_stopped_backup_preserves_only_backward_owned_storage_hardlinks(self):
+        from tools.native_vm_guest import Failure, validate_backup
+        for label, kind, target, name, accepted in (
+            ("contained", tarfile.LNKTYPE, "var/lib/lsf/blob", "var/lib/lsf/reference", True),
+            ("foreign", tarfile.LNKTYPE, "/etc/shadow", "var/lib/lsf/reference", False),
+            ("forward", tarfile.LNKTYPE, "var/lib/lsf/missing", "var/lib/lsf/reference", False),
+            ("credential", tarfile.LNKTYPE, "var/lib/lsf/blob", "etc/lsf/node.json", False),
+            ("symlink", tarfile.SYMTYPE, "var/lib/lsf/blob", "var/lib/lsf/reference", False),
+        ):
+            saved = self.root / (label + ".tar")
+            with tarfile.open(saved, "w", format=tarfile.USTAR_FORMAT) as output:
+                header = tarfile.TarInfo("var/lib/lsf/blob")
+                header.mode = 0o600
+                header.size = 4
+                output.addfile(header, io.BytesIO(b"test"))
+                header = tarfile.TarInfo(name)
+                header.type, header.linkname, header.mode = kind, target, 0o600
+                output.addfile(header)
+            saved.chmod(0o600)
+            if accepted:
+                validate_backup(saved)
+            else:
+                with self.assertRaises(Failure):
+                    validate_backup(saved)
+
+    def test_builder_output_round_trips_through_the_strict_installer_reader(self):
+        metadata, _payload = fixture()
+        identity = {key: metadata[key] for key in ("version", "sourceCommit", "target", "toolchain", "engine")}
+        payloads = {name: b"synthetic-not-an-executable\n" for name in verify.REQUIRED}
+        output = self.root / "synthetic-build"
+        manifest = assemble(output, ROOT, identity, payloads, metadata["compatibility"],
+                            {"syntheticTestOnly": True}, {"syntheticTestOnly": True}, 1700000000)
+        destination = self.root / "synthetic-stage"
+        destination.mkdir(mode=0o700)
+        with files.regular(output / manifest["archive"]["name"]) as descriptor:
+            archive.extract(descriptor, destination, manifest["files"])
+        archive.check_tree(destination, manifest["files"])
+        self.assertEqual((output / "lsf-install.pyz").read_bytes(), (destination / "lsf-install.pyz").read_bytes())
+        self.assertEqual(len((output / "SHA256SUMS").read_text().splitlines()), 3)
 
     def test_archive_links_devices_traversal_duplicates_and_truncation(self):
         metadata, payload = fixture()

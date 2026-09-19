@@ -301,6 +301,10 @@ Before a supported upgrade, stop the service, verify `MainPID=0` and an empty
 owned compiler cgroup, and make a private, consistent backup of `/etc/lsf`,
 `/var/lib/lsf`, the installed manifest and exact verified release. Include the
 profile marker, admission generations, clock floors and operation ledgers.
+Preserve the catalog's internal content-addressed hard links in the backup;
+flattening them into unrelated copies changes its shared-content representation.
+Validate backup hard links as backward references to regular files inside the
+selected data/cache roots, never credentials, symlinks or outside paths.
 Do not copy live catalogs and call that a consistent backup. Keep backups
 outside caches and protect them like credentials. Restoring requires a stopped
 node and its compatible original release/config/key/state set. Switching to an
@@ -329,7 +333,7 @@ is resumable by repeating removal.
 
 Purge is a separate command, requires the non-secret installation ID returned by
 install/status and a completed removal, validates the original root inode/device
-identities, refuses links, mounts, unexpected types and excessive walks, and
+identities, refuses symlinks, mounts, unexpected types and excessive walks, and
 deletes only that installation's owned roots. Interrupted purge is resumable with
 the same ID. The dedicated account and installer lock directory are retained to
 avoid UID reuse and lock-inode races. Purge is irreversible without a backup.
@@ -337,3 +341,8 @@ The non-secret `installed.json` becomes a `purged` tombstone before the purge
 journal is removed. This makes interruption during finalization safely resumable;
 it contains no retained credentials or catalog contents. A fresh installation
 after completed purge gets a new installation ID and fresh credentials.
+For catalog hard links, purge first counts the complete inode reference set inside
+each selected root and compares it with the actual link count. Any outside
+reference refuses the entire root before deletion. Only fully contained sets are
+unlinked; protected configuration, trust and executable reads still require
+single-link files.

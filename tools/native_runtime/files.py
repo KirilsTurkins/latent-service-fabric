@@ -199,6 +199,7 @@ def lock(path: Path, timeout: float = 10):
 
 def remove_tree(path: Path, *, maximum: int = 100_000) -> None:
     count = 0
+    links = {}
     with directory(path.parent, {0, os.geteuid()}) as parent:
         root = os.open(path.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
                        dir_fd=parent)
@@ -226,16 +227,28 @@ def remove_tree(path: Path, *, maximum: int = 100_000) -> None:
                         if deleting:
                             os.rmdir(name, dir_fd=descriptor)
                     else:
-                        require(stat.S_ISREG(metadata.st_mode) and metadata.st_nlink == 1,
-                                "purge-unexpected-file-type")
+                        require(stat.S_ISREG(metadata.st_mode) and metadata.st_nlink >= 1, "purge-unexpected-file-type")
+                        key = metadata.st_dev, metadata.st_ino
+                        identity = (metadata.st_uid, metadata.st_gid, metadata.st_mode, metadata.st_size, metadata.st_mtime_ns)
                         if deleting:
+                            require(key in links and links[key]["remaining"] == metadata.st_nlink
+                                    and links[key]["identity"] == identity, "purge-hardlink-set-changed")
                             os.unlink(name, dir_fd=descriptor)
+                            links[key]["remaining"] -= 1
+                        else:
+                            record = links.setdefault(key, {"count": 0, "remaining": metadata.st_nlink, "identity": identity})
+                            require(record["remaining"] == metadata.st_nlink and record["identity"] == identity,
+                                    "purge-hardlink-set-changed")
+                            record["count"] += 1
                 if deleting:
                     os.fsync(descriptor)
 
             visit(root, 0, False)
+            require(all(record["count"] == record["remaining"] for record in links.values()),
+                    "purge-hardlink-outside-owned-root")
             count = 0
             visit(root, 0, True)
+            require(all(record["remaining"] == 0 for record in links.values()), "purge-hardlink-set-changed")
         finally:
             os.close(root)
         os.rmdir(path.name, dir_fd=parent)

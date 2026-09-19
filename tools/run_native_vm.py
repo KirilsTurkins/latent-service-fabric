@@ -113,7 +113,13 @@ class Guest:
         deadline = time.monotonic() + self.profile["bootTimeoutSeconds"]
         while time.monotonic() < deadline:
             require(self.process.poll() is None, "owned-qemu-exited-before-guest-ready")
-            output = self.ssh(["cat", "/proc/sys/kernel/random/boot_id"], codes=(0, 255), timeout=10).decode().strip()
+            try:
+                output = self.ssh(["cat", "/proc/sys/kernel/random/boot_id"], codes=(0, 255),
+                                  timeout=min(10, max(0.01, deadline - time.monotonic()))).decode().strip()
+            except InstallError as error:
+                if str(error) != "command-timeout":
+                    raise
+                output = ""
             if re.fullmatch(r"[0-9a-f-]{36}", output) and (old_boot is None or output != old_boot):
                 self.ssh(["sudo", "cloud-init", "status", "--wait"], timeout=90)
                 return output
@@ -282,7 +288,13 @@ def run(args):
                     require(result.get("passed") is True, "packaged-native-guest-phase-failed-" + name)
 
                 phase("initial")
-                guest.ssh(["sudo", "systemctl", "reboot", "--no-block"], codes=(0, 255), timeout=15)
+                report["rebootRequest"] = "submitted-once"
+                try:
+                    guest.ssh(["sudo", "systemctl", "reboot", "--no-block"], codes=(0, 255), timeout=15)
+                except InstallError as error:
+                    if str(error) != "command-timeout":
+                        raise
+                    report["rebootRequest"] = "response-uncertain-no-mutation-replay"
                 report["rebootedBootId"] = guest.ready(old_boot=boot)
                 phase("retained")
                 if args.predecessor_directory is not None:

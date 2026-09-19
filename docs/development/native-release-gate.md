@@ -155,6 +155,25 @@ remain separate from this workflow.
 
 ## Current recorded boundary
 
+- [Run 35449471092](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35449471092),
+  source `dd08449fb2dfb3174bb5468cfd6e13253fe48a17`: the native build and real
+  GitHub attestation succeeded. The 444-file archive is 26,469,496 bytes with
+  SHA-256 `11000d2dabaa4091e66cee9fc51e02a5754bf8a7a58fecf32e1cc5d4cf88e429`.
+  Observed ELF dependencies are `ld-linux-x86-64.so.2`, `libc.so.6`,
+  `libgcc_s.so.1` and `libm.so.6`. Independent Windows GitHub CLI verification
+  accepted the exact identity, rejected a wrong source commit and checked all
+  three signed asset digests; it is not offline Linux proof.
+- Both real KVM guests in that run booted Ubuntu kernel `6.8.0-139-generic`,
+  Python `3.12.3`, with separately provisioned `gh 2.100.0`. Both passed actual
+  offline signature negatives, non-root systemd activation, ordinary/enforced
+  bundled echo invocation and same-version protected-identity preservation.
+  The local-profile guest additionally changed boot ID from
+  `00de0f32-ce27-4ca9-83bf-070b7c9eceb9` to
+  `98e6c3ad-6c74-4c9f-9f0e-72e0cabef221` and invoked its retained publication.
+  Its recovery test then rejected legitimate catalog hard links. The enforced
+  guest hit an SSH timeout at reboot. Both overall receipts are **failures**,
+  not complete acceptance; hard-link-safe recovery/purge and bounded read-only
+  reboot observation are being corrected.
 - [Run 35448259636](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35448259636),
   source `72c37aa737e13f8b94b22340308d63dc84170d2c`: all 27 focused Linux tests
   passed. Native executables and echo built; archive production failed because

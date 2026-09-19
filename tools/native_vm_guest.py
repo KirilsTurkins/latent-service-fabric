@@ -219,21 +219,40 @@ def clean_stop(invocation=None):
     passed("systemd-invocation-scoped-clean-shutdown-and-process-reap")
 
 
-def backup_and_restore(plan, name):
-    require(systemctl("show", "lsf.service", "--property=MainPID", "--value") == "0", "backup-requires-stopped-node")
-    original = protected_hashes()
-    backup = ROOT / (name + ".tar")
-    run(["/usr/bin/tar", "--create", "--file", backup, "--numeric-owner", "--one-file-system", "--directory", "/",
-         "etc/lsf", "var/lib/lsf", "var/cache/lsf", "opt/lsf/installed.json"], timeout=60)
+def validate_backup(backup):
     require(backup.stat().st_size <= 134_217_728 and backup.stat().st_mode & 0o077 == 0, "private-bounded-consistent-backup-required")
+    regular = {}
+    seen = set()
     with tarfile.open(backup) as saved:
         count = 0
         total = 0
         for entry in saved:
             count += 1
             total += entry.size
-            require(count <= 8192 and total <= 134_217_728 and not entry.name.startswith("/")
-                    and ".." not in entry.name.split("/") and (entry.isdir() or entry.isfile()), "unsafe-test-backup")
+            name = entry.name.rstrip("/")
+            require(count <= 8192 and total <= 134_217_728 and name not in seen
+                    and all(part not in {"", ".", ".."} for part in name.split("/"))
+                    and (name == "opt/lsf/installed.json" or any(name == root or name.startswith(root + "/")
+                         for root in ("etc/lsf", "var/lib/lsf", "var/cache/lsf"))), "unsafe-test-backup")
+            seen.add(name)
+            identity = entry.uid, entry.gid, entry.mode
+            if entry.isfile():
+                regular[name] = identity
+            elif entry.islnk():
+                require(entry.size == 0 and entry.linkname in regular and regular[entry.linkname] == identity
+                        and all(any(path.startswith(root + "/") for root in ("var/lib/lsf", "var/cache/lsf"))
+                                for path in (name, entry.linkname)), "backup-hardlink-must-reference-previous-owned-storage-file")
+            else:
+                require(entry.isdir(), "unsafe-test-backup")
+
+
+def backup_and_restore(plan, name):
+    require(systemctl("show", "lsf.service", "--property=MainPID", "--value") == "0", "backup-requires-stopped-node")
+    original = protected_hashes()
+    backup = ROOT / (name + ".tar")
+    run(["/usr/bin/tar", "--create", "--file", backup, "--numeric-owner", "--one-file-system", "--directory", "/",
+         "etc/lsf", "var/lib/lsf", "var/cache/lsf", "opt/lsf/installed.json"], timeout=60)
+    validate_backup(backup)
     node = CONFIG / "node.json"
     node.write_bytes(b'{"deliberatelyInterruptedOperatorEdit":true}\n')
     require(bootstrap(plan, "preflight", codes=None, identity=service_identity())[0] != 0, "invalid-recovery-config-accepted")
