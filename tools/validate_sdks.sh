@@ -41,19 +41,8 @@ javac --release 21 -d "${OUTPUT}/java" "${java_sources[@]}"
 java -cp "${OUTPUT}/java" dev.latent.sdk.InvocationIdentityTest
 python3 sdk/java-client/tools/build.py test
 
-dotnet build sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj \
-    --configuration Release \
-    --nologo \
-    --output "${OUTPUT}/dotnet/bin" \
-    -p:BaseIntermediateOutputPath="${OUTPUT}/dotnet/obj/" \
-    -p:ContinuousIntegrationBuild=true
-
-dotnet build sdk/dotnet/Latent.Sdk.SemanticTests/Latent.Sdk.SemanticTests.csproj \
-    --configuration Release \
-    --nologo \
-    --artifacts-path "${OUTPUT}/dotnet-semantic" \
-    -p:ContinuousIntegrationBuild=true
-dotnet "${OUTPUT}/dotnet-semantic/bin/Latent.Sdk.SemanticTests/release/Latent.Sdk.SemanticTests.dll"
+python3 -m unittest discover -s sdk/dotnet -p 'test_validate.py'
+python3 sdk/dotnet/validate.py --check
 
 cat > "${OUTPUT}/c/header-smoke.c" <<'EOF_C'
 #include <latent/latent.h>
