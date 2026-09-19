@@ -63,6 +63,11 @@ variables, strict rendering and SVG text (`htmlLabels: false`); its initial
 flowchart is tested in both site modes. Do not infer blanket qualification of
 every future Mermaid diagram type.
 
+Use Mermaid's root-level `htmlLabels` option, not the deprecated flowchart-only
+setting: the [upstream configuration schema](https://mermaid.js.org/config/schema-docs/config.html)
+gives the root option precedence. The browser check rejects `foreignObject`
+labels and measures the actual SVG text, rather than trusting configuration alone.
+
 The [SVG convention and inventory](../svg-style.md) bind all five immutable
 originals, two maintained presentation copies and the read-only legacy Wiki
 source assessment. Changing a token reveals new generated CSS identity and a

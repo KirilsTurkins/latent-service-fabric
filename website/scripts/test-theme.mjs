@@ -14,6 +14,7 @@ const inventory = JSON.parse(readSource(repositoryRoot, 'docs/assets/illustratio
 const directory = generatedDirectory('.generated/theme-review');
 const results = [];
 const zoomReflow = [];
+const illustrations = [];
 const browser = await chromium.launch({headless: true, timeout: 15000});
 
 async function visit(page, url) {
@@ -22,6 +23,10 @@ async function visit(page, url) {
 
 async function screenshot(page, name) {
   await page.screenshot({path: path.join(directory, `${name}.png`), fullPage: true, animations: 'disabled'});
+}
+
+async function waitForImage(page) {
+  await page.waitForFunction(() => document.querySelector('img').complete && document.querySelector('img').naturalWidth > 0);
 }
 
 try {
@@ -95,6 +100,7 @@ try {
           await page.keyboard.press('Enter');
           await assertFocus(page);
           assert.match(await page.getByRole('status').innerText(), /exercised 1 times/);
+          await page.screenshot({path: path.join(directory, `${variant}-${mode}-keyboard-focus.png`), animations: 'disabled'});
           assert.equal(await page.getByRole('button', {name: 'Unavailable (disabled)', exact: true}).isDisabled(), true);
           await visit(page, `${prefix}/components/`);
           let keyboardStops = 0;
@@ -137,7 +143,7 @@ try {
             assertColorPair(color, palette.modes.dark.surface);
             assertColorPair(color, palette.modes.dark.raised);
           }
-          await screenshot(page, `${variant}-${mode}-mermaid`);
+          await page.locator('.docusaurus-mermaid-container').screenshot({path: path.join(directory, `${variant}-${mode}-mermaid.png`), animations: 'disabled'});
           await visit(page, `${prefix}/components/`);
           await page.setViewportSize({width: 390, height: 844});
           await assertReflow(page);
@@ -162,12 +168,19 @@ try {
       }
       for (const entry of inventory.outputs) {
         const context = await browser.newContext({viewport: {width: 1440, height: 760}});
+        const errors = [];
+        await context.route('**/*', route => {
+          if (new URL(route.request().url()).origin !== server.origin) { errors.push('External illustration dependency'); return route.abort(); }
+          return route.continue();
+        });
         const page = await context.newPage();
         page.setDefaultTimeout(10000);
+        page.on('pageerror', error => errors.push(error.message));
         try {
           const asset = built.manifest.assets.find(asset => asset.path === entry.path);
           const original = built.manifest.assets.find(asset => asset.path === entry.source);
           assert.ok(asset && original);
+          const beforeAfter = [];
           for (const [label, selected] of [['before', original], ['after', asset]]) {
             await visit(page, `${prefix}${assetRoute(selected)}`);
             const geometry = await page.evaluate(() => {
@@ -192,12 +205,16 @@ try {
                 }
               }
             }
+            await visit(page, `${prefix}/components/`);
+            await page.setContent(`<html><body style="margin:0"><img alt="${label} palette review" src="${prefix}${assetRoute(selected)}" style="display:block;width:100%;height:auto"></body></html>`);
+            await waitForImage(page);
             await screenshot(page, `${variant}-${path.basename(entry.path, '.svg')}-${label}`);
+            beforeAfter.push({label, textLabels: geometry.texts.length, missingMarkers: geometry.missingMarkers, withinViewBox: true});
           }
           for (const mode of ['light', 'dark']) {
             await page.setViewportSize({width: 390, height: 844});
             await page.setContent(`<html><body style="margin:16px;background:${palette.modes[mode].canvas};color:${palette.modes[mode].text};font:16px system-ui"><h1 style="font-size:22px">Presentation copy</h1><p>${entry.caption}</p><a href="${prefix}${assetRoute(asset)}" style="color:${palette.modes[mode].link}"><img alt="Historical relationship in the maintained palette" src="${prefix}${assetRoute(asset)}" style="max-width:100%;height:auto">Open full-size diagram</a><p>The linked original remains unchanged.</p></body></html>`);
-            await page.waitForFunction(() => document.querySelector('img').complete && document.querySelector('img').naturalWidth > 0);
+            await waitForImage(page);
             await assertReflow(page);
             assertTextContrast(await textSamples(page));
             await screenshot(page, `${variant}-${path.basename(entry.path, '.svg')}-${mode}-embedded`);
@@ -205,7 +222,14 @@ try {
             await page.waitForURL(`${prefix}${assetRoute(asset)}`);
             await page.locator('svg').evaluate(element => { element.style.width = '2880px'; element.style.maxWidth = 'none'; });
             assert.ok((await page.locator('svg').boundingBox()).width >= 2880);
+            await visit(page, `${prefix}/components/`);
+            await page.setContent(`<html><body style="margin:0;background:${palette.modes[mode].canvas}"><img alt="Presentation at twice its design width" src="${prefix}${assetRoute(asset)}" style="display:block;width:2880px;max-width:none;height:auto"></body></html>`);
+            await waitForImage(page);
+            assert.equal((await page.locator('img').boundingBox()).width, 2880);
+            await screenshot(page, `${variant}-${path.basename(entry.path, '.svg')}-${mode}-zoom-200`);
           }
+          assert.deepEqual(errors, []);
+          illustrations.push({variant, path: entry.path, source: entry.source, beforeAfter, embeddedModes: ['light', 'dark'], narrowWidth: 390, fullSizeWidth: 2880});
         } finally { await context.close(); }
       }
       zoomReflow.push(...await reviewZoomReflow(browser, prefix, variant, directory));
@@ -213,6 +237,6 @@ try {
   }
 } finally { await browser.close(); }
 
-const evidence = {schema: 1, measuredAt: new Date().toISOString(), browser: browser.version(), paletteSha256: sha256(readSource(repositoryRoot, palettePath)), pairings: validatePalette(palette), results, zoomReflow, limitations: ['Chromium headless shell on Windows only; no complete accessibility certification or screen-reader campaign.', '200% rendering is exercised by halving the CSS viewport and doubling DPR, not by native browser zoom controls. Native browser zoom remains a manual acceptance check.', 'SVG text remains a two-dimensional diagram: full-size link and zoom are required for narrow displays.', 'Wiki source snapshot is inventoried, not migrated or republished.']};
+const evidence = {schema: 1, measuredAt: new Date().toISOString(), browser: browser.version(), paletteSha256: sha256(readSource(repositoryRoot, palettePath)), pairings: validatePalette(palette), results, zoomReflow, illustrations, limitations: ['Chromium headless shell on Windows only; no complete accessibility certification or screen-reader campaign.', '200% rendering is exercised by halving the CSS viewport and doubling DPR, not by native browser zoom controls. Native browser zoom remains a manual acceptance check.', 'SVG text remains a two-dimensional diagram: full-size link and zoom are required for narrow displays.', 'Wiki source snapshot is inventoried, not migrated or republished.']};
 fs.writeFileSync(path.join(directory, 'evidence.json'), `${JSON.stringify(evidence, null, 2)}\n`);
 console.log(JSON.stringify({results, zoomReflow, screenshots: path.relative(websiteRoot, directory)}));

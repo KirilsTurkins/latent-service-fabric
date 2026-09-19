@@ -32,6 +32,9 @@ export async function textSamples(page, scope = 'body') {
       if (!node.textContent.trim()) continue;
       const element = node.parentElement;
       if (!element || element.closest('svg, script, style, [aria-hidden="true"]') || !element.getClientRects().length) continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      if (![...range.getClientRects()].some(rectangle => rectangle.width > 0 && rectangle.height > 0)) continue;
       const style = getComputedStyle(element);
       if (style.visibility !== 'visible') continue;
       const ancestors = [];

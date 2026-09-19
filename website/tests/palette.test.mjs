@@ -48,5 +48,5 @@ test('generated CSS and Prism derive from the same tokens without independent co
   changed.modes.dark.accent = '#F2CA68';
   assert.notEqual(paletteCss(changed), paletteCss(palette));
   assert.equal(mermaidOptions(palette.modes.dark).themeVariables.primaryTextColor, palette.modes.dark.text);
-  assert.equal(mermaidOptions(palette.modes.dark).flowchart.htmlLabels, false);
+  assert.equal(mermaidOptions(palette.modes.dark).htmlLabels, false);
 });

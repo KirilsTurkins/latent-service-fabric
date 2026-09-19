@@ -85,7 +85,7 @@ export function mermaidOptions(tokens) {
   return {
     securityLevel: 'strict',
     fontFamily: 'system-ui, sans-serif',
-    flowchart: {htmlLabels: false},
+    htmlLabels: false,
     themeVariables: {
       darkMode: true, background: tokens.canvas,
       primaryColor: tokens.surface, primaryTextColor: tokens.text, primaryBorderColor: tokens.border,
