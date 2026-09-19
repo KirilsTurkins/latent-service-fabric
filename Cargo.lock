@@ -1804,13 +1804,17 @@ dependencies = [
  "latent-core",
  "latent-packaging",
  "latent-signing",
+ "rcgen",
  "reqwest",
  "rustls",
  "serde",
  "serde_json",
  "tempfile",
+ "time",
  "tokio",
+ "tokio-rustls",
  "webpki-roots",
+ "zeroize",
 ]
 
 [[package]]

@@ -39,7 +39,8 @@ def test_target(web: bool) -> list[str]:
 def test_filters(web: bool, observed: bool) -> list[str]:
     if web:
         return ["--exact", WEB_TEST]
-    return [] if observed else ["--skip", "real_observed_build_provenance_roundtrip"]
+    filters = ["--skip", "bearer::real_harbor_bearer_roundtrip"]
+    return filters if observed else [*filters, "--skip", "real_observed_build_provenance_roundtrip"]
 
 
 def command(arguments: list[str], *, timeout: float = 30) -> str:

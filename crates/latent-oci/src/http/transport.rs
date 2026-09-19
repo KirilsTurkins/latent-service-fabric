@@ -1,7 +1,9 @@
 pub(super) mod client;
 use super::auth::{self, ConfiguredBearer};
 use super::reference::Endpoint;
-use super::{exhausted, invalid, RegistryConfig, RegistryLimits, Result};
+use super::{
+    exhausted, invalid, BearerIdentity, BearerUsage, RegistryConfig, RegistryLimits, Result,
+};
 use bytes::Bytes;
 use latent_core::{PlatformError, PlatformErrorCode};
 use reqwest::{
@@ -39,23 +41,27 @@ pub struct RegistryUsage {
     pub retained_packages: usize,
     pub retained_bytes: usize,
     pub closed: bool,
+    pub bearer: Option<BearerUsage>,
 }
 impl Transport {
-    pub(crate) fn new(config: RegistryConfig) -> Result<Self> {
+    pub(crate) fn new(mut config: RegistryConfig) -> Result<Self> {
         config.limits.validate()?;
         let endpoint = Endpoint::new(&config)?;
         let challenge = ConfiguredBearer::new(&config)?;
         let client = client::build(&config, &endpoint)?;
         let auth = client::authorization(&config.credentials)?;
+        let limits = config.limits;
+        config.credentials.clear_secrets();
+        drop(config);
         Ok(Self {
             client,
             auth,
             challenge,
             endpoint,
-            limits: config.limits,
-            operations: Arc::new(Semaphore::new(config.limits.max_in_flight)),
-            packages: Arc::new(Semaphore::new(config.limits.max_retained_packages)),
-            bytes: Arc::new(Semaphore::new(config.limits.max_retained_bytes as usize)),
+            limits,
+            operations: Arc::new(Semaphore::new(limits.max_in_flight)),
+            packages: Arc::new(Semaphore::new(limits.max_retained_packages)),
+            bytes: Arc::new(Semaphore::new(limits.max_retained_bytes as usize)),
             closed: AtomicBool::new(false),
         })
     }
@@ -98,7 +104,26 @@ impl Transport {
             retained_bytes: self.limits.max_retained_bytes as usize
                 - self.bytes.available_permits(),
             closed: self.closed.load(Ordering::Acquire),
+            bearer: self.challenge.as_ref().map(ConfiguredBearer::usage),
         }
+    }
+
+    pub(crate) fn rotate_bearer_credentials(
+        &self,
+        identity: BearerIdentity,
+        username: &str,
+        password: &str,
+    ) -> Result<()> {
+        if self.closed.load(Ordering::Acquire) {
+            return Err(crate::error(
+                PlatformErrorCode::Unavailable,
+                "oci-client-closed",
+            ));
+        }
+        self.challenge
+            .as_ref()
+            .ok_or_else(|| invalid("oci-bearer-not-configured"))?
+            .rotate(identity, username, password)
     }
     pub(crate) async fn close_and_wait(&self, deadline: Instant) -> Result<()> {
         self.closed.store(true, Ordering::Release);
@@ -111,6 +136,9 @@ impl Transport {
             })?
             .map_err(|_| crate::error(PlatformErrorCode::Unavailable, "oci-client-closed"))?;
         drop(permit);
+        if let Some(challenge) = &self.challenge {
+            challenge.close()?;
+        }
         Ok(())
     }
     pub(crate) async fn send(
@@ -121,42 +149,75 @@ impl Transport {
         content_type: Option<&str>,
         deadline: Instant,
     ) -> Result<Response> {
-        let response = self
+        let Some(challenge) = self.challenge.as_ref() else {
+            return self
+                .send_once(
+                    method,
+                    url,
+                    body,
+                    content_type,
+                    deadline,
+                    self.auth.as_ref(),
+                )
+                .await;
+        };
+        challenge.require_method(&method)?;
+        let epoch = challenge.epoch()?;
+        let mut token = challenge.cached(epoch)?;
+        let may_continue = auth::read_continuation_allowed(&method, body.is_some());
+        if token.is_none() && !may_continue {
+            token = Some(challenge.acquire(self, epoch, deadline).await?);
+        }
+        if let Some(token) = &token {
+            challenge.current(token)?;
+        }
+        let mut response = self
             .send_once(
                 method.clone(),
                 url.clone(),
                 body.clone(),
                 content_type,
                 deadline,
-                self.auth.as_ref(),
+                token.as_ref().map(|token| &token.authorization),
             )
             .await?;
-        let Some(challenge) = self.challenge.as_ref() else {
+        if let Some(token) = &token {
+            response.extensions_mut().insert(Arc::clone(token));
+        }
+        if response.status() != StatusCode::UNAUTHORIZED {
             return Ok(response);
-        };
-        if response.status() != StatusCode::UNAUTHORIZED
-            || !auth::read_continuation_allowed(&method, body.is_some())
-        {
-            // A write or body-bearing request is never repeated after an
-            // authentication response because its remote state may be uncertain.
+        }
+        if !may_continue {
+            if let Some(token) = &token {
+                challenge.invalidate(token)?;
+            }
             return Ok(response);
         }
         challenge.validate_challenge(response.headers())?;
         drop(response);
-
-        let token_response = challenge
-            .exchange(deadline, self.limits.request_timeout)
-            .await?;
-        let token_body = self
-            .read_body(token_response, auth::MAX_TOKEN_RESPONSE_BYTES, None)
-            .await?;
-        let bearer = challenge.token_header(&token_body)?;
-        drop(token_body);
+        if let Some(token) = token {
+            challenge.invalidate(&token)?;
+        }
+        let bearer = challenge.acquire(self, epoch, deadline).await?;
+        challenge.current(&bearer)?;
 
         // There is exactly one authentication continuation. A second 401 is
         // returned to the caller and is never converted into a challenge loop.
-        self.send_once(method, url, body, content_type, deadline, Some(&bearer))
-            .await
+        let mut response = self
+            .send_once(
+                method,
+                url,
+                body,
+                content_type,
+                deadline,
+                Some(&bearer.authorization),
+            )
+            .await?;
+        if response.status() == StatusCode::UNAUTHORIZED {
+            challenge.invalidate(&bearer)?;
+        }
+        response.extensions_mut().insert(bearer);
+        Ok(response)
     }
 
     async fn send_once(
