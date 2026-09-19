@@ -113,6 +113,15 @@ within the fixture's 5,000 ms cap, with a 500 ms held original deadline.
 
 ## Remaining acceptance gates
 
+The first exact-head SDK CI job at `bdc286d1` failed before Go tests because
+that job did not install Buf. The fix adds the same commit-pinned Buf setup
+action/version already used by the contract job to the SDK job. Generation
+requirements and checks are not weakened; a new exact-head run is required.
+The complete `tools/validate_sdks.sh` then passed in the isolated Go worktree,
+including generation/checking, Go tests/race checks, TypeScript, Java, .NET and
+C validation. Workflow validation passed for 74 pinned/local references;
+its focused unit suite ran 13 tests with one environment-dependent skip.
+
 - Execute and review the corrected shared separate-node workflow, including
   real provider cleanup evidence; fix any participant/transport integration
   failures rather than replacing them with a fake pass.
