@@ -58,7 +58,8 @@ def verify_source(runner: Runner, source: str) -> None:
     status = runner.command([*prefix, "status", "--porcelain", "--untracked-files=no"], maximum=65536)
     require(not status.stdout, "tracked-source-dirty")
     runner.command([*prefix, "ls-files", "--error-unmatch", "tools/phase3_security.py",
-                    "tools/phase3_security_cases.py", "tools/phase3_security_artifacts.py"], maximum=4096)
+                    "tools/phase3_security_cases.py", "tools/phase3_security_artifacts.py",
+                    "tools/phase3_security_manual.py", "tools/phase3_security_container.py"], maximum=4096)
 
 
 def check_matrix() -> None:
@@ -151,7 +152,8 @@ def run_cases(runner: Runner, groups: tuple, artifacts: dict, runtime: Path,
                 completed.append(case.name)
         require(completed, "empty-security-group")
         results.append({"id": group.key, "layer": group.layer, "issues": list(group.issues),
-                        "passed": completed, "explicitIgnored": explicit_ignored})
+                        "passed": completed, "explicitIgnored": explicit_ignored,
+                        "customHarnessMarker": group.marker})
         print(json.dumps({"group": group.key, "passed": len(completed)}, separators=(",", ":")),
               file=sys.stderr, flush=True)
     return results
@@ -183,13 +185,16 @@ def run(args, runner: Runner) -> dict:
         fixtures = {}
         if args.profile == "manual":
             from tools import phase3_security_manual as manual
+            runner.current = "manual-inputs"
             fixtures, fixture_inputs = manual.inputs(args, runner, directory)
         results = run_cases(runner, groups, artifacts, runtime, args.profile, fixtures, directory)
         if args.profile == "manual":
             runner.current = "maintained-node-workflows"
             workflow_results = manual.workflows(args, runner, directory)
             fixture_outputs = manual.fixture_identities(directory, runner.deadline)
+            manual.verify_inputs(args, runner, fixture_inputs)
     require(not directory.exists(), "owned-fixtures-retained")
+    runner.current = "final-identities"
     for executable, identity in identities.items():
         require(file_identity(executable, runner.deadline) == identity, "test-binary-changed")
     require(file_identity(args.inventory, runner.deadline, 32 * 1024 * 1024) == inventory_before,

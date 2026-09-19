@@ -62,6 +62,7 @@ def inputs(args, runner, directory: Path) -> tuple[dict[str, str], dict]:
             "browser-version")
     identities["browserVersion"] = version
     identities["browserOsSandboxDisabled"] = True
+    identities["cargoCompiler"] = file_identity(runner.repo / "target/debug/latent-aot-compiler", runner.deadline)
     environment = {
         "LSF_OPERATOR_FIXTURE_ROOT": str(directory / "operator"),
         "LSF_PHASE3_WORKFLOW_FIXTURE_ROOT": str(directory / "provider"),
@@ -81,6 +82,17 @@ def inputs(args, runner, directory: Path) -> tuple[dict[str, str], dict]:
     return environment, identities
 
 
+def verify_inputs(args, runner, identities: dict) -> None:
+    for name in ("cli", "node", "compiler", "web_component", "browser_node", "browser_chrome"):
+        require(file_identity(getattr(args, name), runner.deadline) == identities[name], "manual-input-changed")
+    require(tree_identity(args.guest_capsules, runner.deadline) == identities["guest_capsules"],
+            "guest-fixture-changed")
+    require(file_identity(args.browser_toolchain / "package-lock.json", runner.deadline)
+            == identities["browser_toolchain"], "browser-lock-changed")
+    require(file_identity(runner.repo / "target/debug/latent-aot-compiler", runner.deadline)
+            == identities["cargoCompiler"], "cargo-compiler-changed")
+
+
 def workflows(args, runner, directory: Path) -> list[dict]:
     from tools import run_publication_workflow, run_security_profile_workflow
     from tools import run_phase3_management_workflow
@@ -93,6 +105,7 @@ def workflows(args, runner, directory: Path) -> list[dict]:
     )
     results = []
     for name, execute, schema, fixture, maximum in operations:
+        runner.current = "workflow:" + name
         require(runner.deadline - time.monotonic() >= maximum + 10, "workflow-budget-unavailable")
         arguments = argparse.Namespace(cli=args.cli, node=args.node, compiler=args.compiler,
                                        fixture_root=directory / fixture, source_commit=args.source_commit)

@@ -235,6 +235,13 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn("credential-fixture", diagnostic.getvalue())
         self.assertIn("fixture-or-process-error", diagnostic.getvalue())
 
+    def test_mutated_manual_binary_prevents_a_final_fixture_identity_claim(self):
+        arguments = argparse.Namespace(cli=Path("approved-cli"))
+        runner = Mock(deadline=time.monotonic() + 5)
+        with patch.object(manual, "file_identity", return_value={"sha256": "new"}):
+            with self.assertRaisesRegex(artifacts.SecurityError, "manual-input-changed"):
+                manual.verify_inputs(arguments, runner, {"cli": {"sha256": "old"}})
+
 
 class ContainerTests(unittest.TestCase):
     def fixture(self):
