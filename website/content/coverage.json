@@ -1,0 +1,1267 @@
+{
+  "schema": 1,
+  "gate": 345,
+  "rows": [
+    {
+      "id": "evaluate-boundary",
+      "area": "evaluate-install-contribute",
+      "guideIssue": 357,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "evaluator"
+      ],
+      "outcomes": [
+        "Distinguish released alpha, development support and unavailable later phases."
+      ],
+      "pages": [
+        {
+          "path": "docs/roadmap.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/reference/standalone-node.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "README.md",
+        "SECURITY.md"
+      ],
+      "implementationPrerequisites": [
+        308,
+        273
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_repository.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "install-auth-readiness",
+      "area": "evaluate-install-contribute",
+      "guideIssue": 357,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "operator"
+      ],
+      "outcomes": [
+        "Use supported rootless evaluation or verified native installation, authenticated readiness and cleanup; never invent an npm installer."
+      ],
+      "pages": [
+        {
+          "path": "docs/development/standalone-quickstart.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/protected-configuration.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "apps/latentd/src",
+        "apps/latent/src"
+      ],
+      "implementationPrerequisites": [
+        308,
+        278
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_phase2_operator_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "contributor-checks",
+      "area": "evaluate-install-contribute",
+      "guideIssue": 357,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "contributor"
+      ],
+      "outcomes": [
+        "Choose focused contributor validation and preserve full checks for product or frozen-evidence changes."
+      ],
+      "pages": [
+        {
+          "path": "docs/development/ci-profiles.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/development/toolchain.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "CONTRIBUTING.md",
+        "tools/ci_profile.py"
+      ],
+      "implementationPrerequisites": [
+        237
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_docs.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "author-capsule",
+      "area": "capsule-delivery-recovery",
+      "guideIssue": 357,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "capsule-author"
+      ],
+      "outcomes": [
+        "Author a supported capsule, understand WIT and budgets, and distinguish guest bindings from network clients."
+      ],
+      "pages": [
+        {
+          "path": "docs/component-development/creating-a-capsule.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/component-development/guest-sdk.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "sdk/rust-guest/src",
+        "sdk/c-guest",
+        "wit"
+      ],
+      "implementationPrerequisites": [
+        221,
+        222
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_repository.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "package-sign-publish",
+      "area": "capsule-delivery-recovery",
+      "guideIssue": 357,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "capsule-author",
+        "operator"
+      ],
+      "outcomes": [
+        "Package, sign, verify, publish, deploy and invoke; distinguish component, package and publication identity."
+      ],
+      "pages": [
+        {
+          "path": "docs/component-development/packaging.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/phase-2-delivery.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "schemas",
+        "apps/latent/src"
+      ],
+      "implementationPrerequisites": [
+        267,
+        270
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_phase2_operator_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "rollout-uncertain-recovery",
+      "area": "capsule-delivery-recovery",
+      "guideIssue": 357,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "operator"
+      ],
+      "outcomes": [
+        "Use rollout, canary and rollback receipts; recover an uncertain operation without blind retries."
+      ],
+      "pages": [
+        {
+          "path": "docs/phase-2-rollouts.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/phase-2-canary-promotion.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/phase-2-rollback.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "api",
+        "apps/latent/src"
+      ],
+      "implementationPrerequisites": [
+        267,
+        272
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_phase2_operator_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "client-rust",
+      "area": "executable-clients",
+      "guideIssue": 358,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "client-developer"
+      ],
+      "outcomes": [
+        "Language-native setup/link/auth; success and declared/platform/transport failures; retained activation ID and status.",
+        "Explicit server cancellation, deadlines, finite shutdown, bounded management and receipt recovery using the actual transport."
+      ],
+      "pages": [
+        {
+          "path": "docs/protocol/invocation-service.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/reference/management-services.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "sdk/rust/src",
+        "sdk/profile/README.md"
+      ],
+      "implementationPrerequisites": [
+        227,
+        228
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_sdks.sh",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "client-typescript",
+      "area": "executable-clients",
+      "guideIssue": 358,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "client-developer"
+      ],
+      "outcomes": [
+        "Language-native setup/link/auth; success and declared/platform/transport failures; retained activation ID and status.",
+        "Explicit server cancellation, deadlines, finite shutdown, bounded management and receipt recovery using the actual transport."
+      ],
+      "pages": [
+        {
+          "path": "docs/protocol/invocation-service.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/reference/management-services.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "sdk/typescript-client/src",
+        "sdk/profile/README.md"
+      ],
+      "implementationPrerequisites": [
+        227,
+        230
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_sdks.sh",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "client-go",
+      "area": "executable-clients",
+      "guideIssue": 358,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "client-developer"
+      ],
+      "outcomes": [
+        "Language-native setup/link/auth; success and declared/platform/transport failures; retained activation ID and status.",
+        "Explicit server cancellation, deadlines, finite shutdown, bounded management and receipt recovery using the actual transport."
+      ],
+      "pages": [
+        {
+          "path": "docs/protocol/invocation-service.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/reference/management-services.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "sdk/go",
+        "sdk/profile/README.md"
+      ],
+      "implementationPrerequisites": [
+        227,
+        260
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_sdks.sh",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "client-c",
+      "area": "executable-clients",
+      "guideIssue": 358,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "client-developer"
+      ],
+      "outcomes": [
+        "Language-native setup/link/auth; success and declared/platform/transport failures; retained activation ID and status.",
+        "Explicit server cancellation, deadlines, finite shutdown, bounded management and receipt recovery using the actual transport."
+      ],
+      "pages": [
+        {
+          "path": "docs/protocol/invocation-service.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/reference/management-services.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "sdk/c",
+        "sdk/profile/README.md"
+      ],
+      "implementationPrerequisites": [
+        227,
+        261
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_sdks.sh",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "client-java",
+      "area": "executable-clients",
+      "guideIssue": 358,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "client-developer"
+      ],
+      "outcomes": [
+        "Language-native setup/link/auth; success and declared/platform/transport failures; retained activation ID and status.",
+        "Explicit server cancellation, deadlines, finite shutdown, bounded management and receipt recovery using the actual transport."
+      ],
+      "pages": [
+        {
+          "path": "docs/protocol/invocation-service.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/reference/management-services.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "sdk/java-client/src",
+        "sdk/profile/README.md"
+      ],
+      "implementationPrerequisites": [
+        227,
+        262
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_sdks.sh",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "client-dotnet",
+      "area": "executable-clients",
+      "guideIssue": 358,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "client-developer"
+      ],
+      "outcomes": [
+        "Language-native setup/link/auth; success and declared/platform/transport failures; retained activation ID and status.",
+        "Explicit server cancellation, deadlines, finite shutdown, bounded management and receipt recovery using the actual transport."
+      ],
+      "pages": [
+        {
+          "path": "docs/protocol/invocation-service.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/reference/management-services.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "sdk/dotnet/Latent.Sdk",
+        "sdk/profile/README.md"
+      ],
+      "implementationPrerequisites": [
+        227,
+        263
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_sdks.sh",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "grants-bindings",
+      "area": "capabilities-operators",
+      "guideIssue": 359,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "capsule-author",
+        "operator"
+      ],
+      "outcomes": [
+        "Configure broker intersection, immutable policy/grants/bindings and handle lifetime; demonstrate denial and revocation."
+      ],
+      "pages": [
+        {
+          "path": "docs/runtime/capability-broker.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/capability-policies.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/capability-bindings.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "wit",
+        "examples/policies"
+      ],
+      "implementationPrerequisites": [
+        226,
+        207,
+        210
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_capability_policy_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "http-streaming",
+      "area": "capabilities-operators",
+      "guideIssue": 359,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "capsule-author",
+        "operator"
+      ],
+      "outcomes": [
+        "Exercise buffered/streaming HTTP, authority/SSRF denial, deadlines, cancellation, finite buffers and partial-result uncertainty."
+      ],
+      "pages": [
+        {
+          "path": "docs/runtime/outbound-http.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/streaming-http.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "wit",
+        "crates/latent-wasmtime/src"
+      ],
+      "implementationPrerequisites": [
+        211,
+        212,
+        270
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_repository.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "local-s3-blobs",
+      "area": "capabilities-operators",
+      "guideIssue": 359,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "capsule-author",
+        "operator"
+      ],
+      "outcomes": [
+        "Configure local/S3 storage, grants and bounded chunks, denial/overload, uncertain publication and cleanup."
+      ],
+      "pages": [
+        {
+          "path": "docs/runtime/local-blobs.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/s3-blobs.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "wit",
+        "examples"
+      ],
+      "implementationPrerequisites": [
+        213,
+        214
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_s3_blob_tests.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "local-vault-secrets",
+      "area": "capabilities-operators",
+      "guideIssue": 359,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "capsule-author",
+        "operator"
+      ],
+      "outcomes": [
+        "Handle local/Vault secrets without disclosure; show rotation/revocation, limits, denied access and cleanup."
+      ],
+      "pages": [
+        {
+          "path": "docs/runtime/local-secrets.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/vault-secrets.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "wit",
+        "crates/latent-wasmtime/src"
+      ],
+      "implementationPrerequisites": [
+        215,
+        216,
+        278
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_vault_secret_tests.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "nats-events-triggers",
+      "area": "capabilities-operators",
+      "guideIssue": 359,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "capsule-author",
+        "operator"
+      ],
+      "outcomes": [
+        "Publish and consume NATS triggers with bounded state, explicit uncertainty, acknowledgement, overload and recovery."
+      ],
+      "pages": [
+        {
+          "path": "docs/runtime/nats-events.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/nats-triggers.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "wit",
+        "crates/latent-wasmtime/src"
+      ],
+      "implementationPrerequisites": [
+        217,
+        218
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_nats_event_tests.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "local-calls-descendants",
+      "area": "capabilities-operators",
+      "guideIssue": 359,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "capsule-author"
+      ],
+      "outcomes": [
+        "Preserve descendant conservation and authorization; demonstrate denial/cancellation without refunding live ownership."
+      ],
+      "pages": [
+        {
+          "path": "docs/runtime/local-service-invocation.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/descendant-budgets.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "wit",
+        "crates/latent-wasmtime/src"
+      ],
+      "implementationPrerequisites": [
+        208,
+        209,
+        272
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_repository.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "randomness-metrics",
+      "area": "capabilities-operators",
+      "guideIssue": 359,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "capsule-author",
+        "operator"
+      ],
+      "outcomes": [
+        "Use bounded cryptographic randomness and approved metrics without implying security from telemetry."
+      ],
+      "pages": [
+        {
+          "path": "docs/runtime/random.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/custom-metrics.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "wit",
+        "crates/latent-wasmtime/src"
+      ],
+      "implementationPrerequisites": [
+        219,
+        220
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_repository.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "operator-security-recovery",
+      "area": "capabilities-operators",
+      "guideIssue": 359,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "operator"
+      ],
+      "outcomes": [
+        "Explain pooling/resource limits, audit versus external action, overload, support boundary and bounded troubleshooting/recovery."
+      ],
+      "pages": [
+        {
+          "path": "docs/runtime/provider-pools.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/capability-audit.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/execution-security-profiles.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/development/security-baseline.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "SECURITY.md",
+        "apps/latentd/src"
+      ],
+      "implementationPrerequisites": [
+        226,
+        237,
+        206,
+        273,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_capability_policy_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "angular-build-profile",
+      "area": "angular-browser",
+      "guideIssue": 361,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "web-developer"
+      ],
+      "outcomes": [
+        "Build the supported profile from full source with public/private separation and qualified compiler/runtime identities."
+      ],
+      "pages": [
+        {
+          "path": "docs/component-development/angular-build.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/angular-renderer-profile.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "examples/renderer-profile",
+        "tools/run_angular_build_tests.py"
+      ],
+      "implementationPrerequisites": [
+        44,
+        232,
+        234
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_angular_build_tests.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/361",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "angular-publication-routing",
+      "area": "angular-browser",
+      "guideIssue": 361,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "web-developer",
+        "operator"
+      ],
+      "outcomes": [
+        "Associate publication, routes and immutable assets; exercise rollout and failures without crossing tenant authority."
+      ],
+      "pages": [
+        {
+          "path": "docs/reference/web-release-admission.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/reference/http-triggers.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/immutable-browser-assets.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "schemas",
+        "apps/latentd/src"
+      ],
+      "implementationPrerequisites": [
+        231,
+        234,
+        236
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_angular_renderer_tests.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/361",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "angular-browser-workflow",
+      "area": "angular-browser",
+      "guideIssue": 361,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "web-developer"
+      ],
+      "outcomes": [
+        "Observe actual SSR/hydration/navigation, capability calls, denied/personalized paths and cancellation, not a browser-only mock."
+      ],
+      "pages": [
+        {
+          "path": "docs/runtime/angular-renderer-runtime.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/testing/angular-renderer-qualification.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "examples/renderer-profile",
+        "tools/run_angular_renderer_tests.py"
+      ],
+      "implementationPrerequisites": [
+        232,
+        235,
+        236
+      ],
+      "evidence": [
+        {
+          "path": "tools/run_angular_renderer_tests.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/361",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "reference-contracts",
+      "area": "reference-evidence",
+      "guideIssue": 237,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "client-developer",
+        "operator"
+      ],
+      "outcomes": [
+        "Find authoritative CLI/API/config/SDK/WIT/schema contracts and their actual compatibility limits."
+      ],
+      "pages": [
+        {
+          "path": "docs/reference/operator-cli.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/api-surface.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/protocol/platform-errors.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "api",
+        "wit",
+        "schemas",
+        "sdk/README.md"
+      ],
+      "implementationPrerequisites": [
+        227,
+        237
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_repository.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/237",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "trust-resource-architecture",
+      "area": "reference-evidence",
+      "guideIssue": 237,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "contributor",
+        "operator"
+      ],
+      "outcomes": [
+        "Distinguish architecture decisions, trust/resource ownership and actually delivered behavior."
+      ],
+      "pages": [
+        {
+          "path": "docs/architecture/overview.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/architecture/identity-and-capabilities.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/runtime/resource-budgets.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "adr",
+        "crates/latent-core/src"
+      ],
+      "implementationPrerequisites": [
+        267,
+        270,
+        271,
+        272,
+        273,
+        274
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_repository.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/237",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "retained-performance-evidence",
+      "area": "reference-evidence",
+      "guideIssue": 237,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "evaluator",
+        "contributor"
+      ],
+      "outcomes": [
+        "Read retained evidence with exact identities; distinguish measurements from product limits and preserve historical bytes."
+      ],
+      "pages": [
+        {
+          "path": "docs/testing/benchmark-retention.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/phase-1-extension-completion.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/testing/phase-2-resource-profile.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "benchmarks/README.md"
+      ],
+      "implementationPrerequisites": [
+        237
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_repository.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/237",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    },
+    {
+      "id": "later-phase-boundary",
+      "area": "reference-evidence",
+      "guideIssue": 237,
+      "owner": "@KirilsTurkins",
+      "audience": [
+        "evaluator",
+        "contributor"
+      ],
+      "outcomes": [
+        "Keep transactional state/effects, clustering and durable workflows explicitly separate from current local support."
+      ],
+      "pages": [
+        {
+          "path": "docs/roadmap.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/architecture/state-and-effects.md",
+          "role": "reference-only"
+        },
+        {
+          "path": "docs/architecture/cluster-freshness-handoff.md",
+          "role": "reference-only"
+        }
+      ],
+      "sourceRefs": [
+        "adr/0030-bound-disconnected-authorization-validity.md"
+      ],
+      "implementationPrerequisites": [
+        271,
+        274,
+        237
+      ],
+      "evidence": [
+        {
+          "path": "tools/validate_docs.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning validation source is linked, not executed or certified by the website."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/237",
+        "reviewedCommit": null,
+        "criteria": []
+      }
+    }
+  ]
+}
