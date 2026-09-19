@@ -208,13 +208,17 @@ attribute earlier unclassified manual failures to startup recovery.
   rendering and altered result counts are not normalized into a pass.
 - The two `harness = false` compiler mains are never invoked with `--list`.
   Their exact source/artifact identity and distinct successful completion
-  markers are checked. Each is one custom entry, not a fabricated number of
-  libtest successes. The source mains assert their own real child schedules.
+  records are checked. The supervisor must emit both its readiness and final
+  ownership records once, in order; arbitrary diagnostics are not stripped.
+  Each main is one custom entry, not a fabricated number of libtest successes.
+  The source mains assert their own real child schedules.
 - PR/manual budgets are 600/2400 seconds, with serial execution, 30-second
   listing bounds, 90-second ordinary cases and a 180-second supervisor bound.
   Maintained node workflows keep their existing 180/300-second budgets and run
   **in process** under their existing process owners, not in a killable outer
-  interpreter that could abandon separately grouped nodes.
+  interpreter that could abandon separately grouped nodes. Publication requires
+  three reaped, clean node lifetimes; security-profile and provider-management
+  each require two. An absent or extra shutdown record fails the exact profile.
 - Capture is bounded per command, Cargo input to 32 MiB, ordinary files to
   1 GiB, fixture trees to 4096 entries/128 MiB and final receipts to 128 KiB.
   Helpers retain the leader until group cleanup/reaping. Deliberate OS/session
