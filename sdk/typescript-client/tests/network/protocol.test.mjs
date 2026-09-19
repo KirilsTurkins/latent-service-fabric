@@ -94,6 +94,8 @@ test("audit absence, uncertainty and future values remain distinct without fabri
   const known = audit(new Map([["latent-audit-status", "durable"], ["latent-audit-attempt", "18446744073709551615"]]));
   assert.equal(known.auditAck.attemptSequence, 18446744073709551615n);
   assert.deepEqual(audit(new Map([["latent-audit-status", "future-state"]])), { auditStatus: "future-state" });
+  assert.deepEqual(audit(new Map([["latent-audit-status", "future-durable-v2"], ["latent-audit-attempt", "18446744073709551615"]])),
+    { auditStatus: "future-durable-v2", auditAttemptSequence: 18446744073709551615n });
   for (const attempt of ["0", "01", "18446744073709551616"]) assert.throws(() => audit(new Map([["latent-audit-status", "durable"], ["latent-audit-attempt", attempt]])));
   assert.throws(() => audit(new Map([["latent-audit-attempt", "1"]])));
 });
