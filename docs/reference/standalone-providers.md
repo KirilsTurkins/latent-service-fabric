@@ -139,3 +139,29 @@ The existing contract gate builds the guests once and runs this workflow with
 fresh short-lived evidence. CI retains `phase3-management/provider-receipt.json`
 alongside the existing bounded conformance diagnostics, keeping the existing
 `phase-1-bounded-conformance-<commit>` artifact name for compatibility.
+
+### Startup audit recovery checkpoint
+
+The 2026-09-19 contract run retained a
+`node-startup-exit-startup-resource-exhausted` diagnostic. Inspection found that
+the capability and generic release recovery paths used nonblocking audit reads
+without waiting for pre-admission journal contention. Startup now bounds those
+waits by one original 30-second deadline and retries only the exact
+`ResourceExhausted` / `audit-busy` pre-admission result. Real capacity failures,
+uncertain writes and admitted append acknowledgements are never replayed.
+
+Capability attempts reconcile before the generic release fallback, preserving
+the captured capability identity and an explicit `Unknown` provider outcome.
+Recovery neither calls the provider nor recreates an authorization grant.
+A real durable-journal crash-cut regression reopens the catalogs and checks
+that exact identity; three focused tests cover pre-admission contention,
+nonretryable capacity/write failures and the original deadline.
+
+On Linux with Rust 1.97.1, `cargo test --locked -p latentd --lib
+standalone::start -- --nocapture` passed 28 tests; four separate trust-currentness
+tests remained explicitly ignored because their signed fixtures were not
+provided. `cargo clippy --locked -p latentd --lib --tests --all-features
+--no-deps -- -D warnings` passed. These are bounded startup regression results,
+not full provider-workflow or Angular qualification. Exact-head CI must still
+complete before merge; earlier unclassified exits are not retroactively
+attributed to this finding.
