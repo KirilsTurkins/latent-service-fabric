@@ -9,6 +9,13 @@ credentials. This implements the foundation selected in
 It is not the complete [migration gate #345](https://github.com/KirilsTurkins/latent-service-fabric/issues/345),
 a released documentation snapshot, a Node hosting product, or runtime qualification.
 
+```mermaid
+flowchart LR
+  Source["docs/ and adr/"] --> Validation["Bounded source and link checks"]
+  Validation --> Output["Static website output"]
+  Output --> Reader["Reader browser"]
+```
+
 The main docs plugin reads `../docs` directly from `website/`; decisions use a
 separate `../adr` plugin. There is no edited `website/docs` copy. Existing current
 documents remain in place. `docs/wiki` is excluded and separately counted;
@@ -82,10 +89,13 @@ Browser files stay in `website/.generated/browsers`; they are not fetched by a
 normal site build. The test starts temporary loopback-only static servers,
 checks all source-backed pages' local links and rendered anchors, verifies
 commit-pinned edit links and copied asset hashes, then exercises actual Chromium
-navigation, nested-page reloads, SVG loading and a narrow viewport at both base
+navigation, nested-page reloads, SVG/Mermaid loading and a narrow viewport at both base
 paths. Unexpected external browser requests and JavaScript errors fail. Unknown
 pages return 404 rather than silently falling back to the homepage. This is
 foundation browser evidence, not #354's complete accessibility/search campaign.
+Stale source identities/document bytes and private build paths in public JavaScript
+also fail. Docusaurus serializes its configuration: the private input index is
+held in server-only closures, not serializable plugin options.
 
 `website/.generated/build-evidence.json` retains compact counts, source SHA,
 dirty flag and base paths. Each output has `site-manifest.json` with page and
@@ -93,6 +103,8 @@ approved-asset hashes. Hashes describe checked-out bytes, not rewritten or
 normalized historical content. A dirty local build is labelled and is not exact
 commit publication evidence; final publishing must require a clean bound source
 and #353's snapshot identities.
+Small `project-home.png`, `project-mobile.png`, `root-home.png` and
+`root-mobile.png` screenshots remain under `.generated/` for visual inspection.
 
 Generated dependencies/output remain under ignored `website/node_modules`,
 `.docusaurus`, `.generated` and `build`. Stop the preview before cleaning only
@@ -151,6 +163,8 @@ required outcome rows across #345's six areas. Its
 published pages, source/evidence paths, implementation prerequisites and delegated
 guide owners. All initial practical-guide reviews remain explicitly pending.
 Linked test sources are labelled available-not-run, not executed receipts.
+Guide/runbook owners and phase gates cannot be implementation prerequisites:
+#237 consumes the guides, not the other way around.
 
 ```text
 npm run coverage:acceptance

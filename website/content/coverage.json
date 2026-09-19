@@ -116,7 +116,8 @@
         "tools/ci_profile.py"
       ],
       "implementationPrerequisites": [
-        237
+        338,
+        339
       ],
       "evidence": [
         {
@@ -165,7 +166,7 @@
       ],
       "evidence": [
         {
-          "path": "tools/validate_repository.py",
+          "path": "crates/latent-wasmtime/tests/guest_sdk.rs",
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
@@ -624,7 +625,7 @@
       ],
       "evidence": [
         {
-          "path": "tools/validate_repository.py",
+          "path": "crates/latent-wasmtime/tests/streaming_http.rs",
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
@@ -805,7 +806,7 @@
       ],
       "evidence": [
         {
-          "path": "tools/validate_repository.py",
+          "path": "crates/latent-wasmtime/tests/local_service/acceptance.rs",
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
@@ -850,7 +851,13 @@
       ],
       "evidence": [
         {
-          "path": "tools/validate_repository.py",
+          "path": "crates/latent-wasmtime/tests/random.rs",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Owning randomness integration source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "crates/latent-wasmtime/tests/metrics.rs",
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
@@ -898,8 +905,8 @@
       ],
       "implementationPrerequisites": [
         226,
-        237,
         206,
+        210,
         273,
         277,
         278,
@@ -1097,7 +1104,9 @@
       ],
       "implementationPrerequisites": [
         227,
-        237
+        226,
+        222,
+        223
       ],
       "evidence": [
         {
@@ -1197,7 +1206,7 @@
         "benchmarks/README.md"
       ],
       "implementationPrerequisites": [
-        237
+        239
       ],
       "evidence": [
         {
@@ -1245,8 +1254,7 @@
       ],
       "implementationPrerequisites": [
         271,
-        274,
-        237
+        274
       ],
       "evidence": [
         {

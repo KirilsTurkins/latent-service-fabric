@@ -15,6 +15,7 @@ export function validateCoverage(document, index, {acceptance = false} = {}) {
   let pending = 0;
   for (const row of document.rows) {
     requireValue(contract.areas.includes(row.area) && contract.guideIssues.includes(row.guideIssue), `Unknown area/guide owner: ${row.id}`);
+    requireValue(row.implementationPrerequisites.every(ticket => ![201, 240, 345, ...contract.guideIssues].includes(ticket)), `Guide/gate issues are not implementation prerequisites: ${row.id}`);
     for (const reference of [...row.sourceRefs, ...row.evidence.map(entry => entry.path)]) {
       canonicalPath(reference);
       requireValue(index.paths.includes(reference) || index.directories.includes(reference), `Missing coverage source/evidence: ${reference}`);

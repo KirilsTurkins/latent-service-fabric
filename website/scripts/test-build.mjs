@@ -29,6 +29,7 @@ try {
       const response = await page.goto(`${prefix}/`, {waitUntil: 'networkidle', timeout: 15000});
       assert.equal(response.status(), 200);
       assert.match(await page.locator('main').innerText(), /development/);
+      await page.screenshot({path: path.join(websiteRoot, `.generated/${variant}-home.png`)});
       await page.getByRole('link', {name: 'Understand', exact: true}).last().click();
       await page.waitForURL(`${prefix}/docs/architecture/overview/`);
       assert.equal((await page.reload({waitUntil: 'networkidle', timeout: 15000})).status(), 200);
@@ -39,12 +40,17 @@ try {
         assert.equal((await page.goto(`${prefix}${route}`, {waitUntil: 'networkidle', timeout: 15000})).status(), 200);
         assert.equal((await page.reload({waitUntil: 'networkidle', timeout: 15000})).status(), 200);
       }
+      assert.equal((await page.goto(`${prefix}/docs/development/website/`, {waitUntil: 'networkidle', timeout: 15000})).status(), 200);
+      assert.equal((await page.reload({waitUntil: 'networkidle', timeout: 15000})).status(), 200);
+      await page.locator('article .docusaurus-mermaid-container svg').waitFor({state: 'visible'});
+      assert.match(await page.locator('article .docusaurus-mermaid-container').innerText(), /Static website output/);
       await page.setViewportSize({width: 390, height: 844});
       assert.ok(await page.locator('main').isVisible());
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);
+      await page.screenshot({path: path.join(websiteRoot, `.generated/${variant}-mobile.png`)});
       assert.equal((await page.request.get(`${prefix}/not-a-real-page/`)).status(), 404);
       assert.deepEqual(errors, []);
-      results.push({variant, source: result.manifest.revision, dirty: result.manifest.dirty, baseUrl: result.manifest.baseUrl, pages: result.pages, checkedLinks: result.checkedLinks, nestedReloads: 4, approvedAssetBytes: 'unchanged', browserErrors: 0});
+      results.push({variant, source: result.manifest.revision, dirty: result.manifest.dirty, baseUrl: result.manifest.baseUrl, pages: result.pages, checkedLinks: result.checkedLinks, publicJavaScript: result.publicJavaScript, nestedReloads: 5, approvedAssetBytes: 'unchanged', mermaid: 'rendered', browserErrors: 0, screenshots: [`${variant}-home.png`, `${variant}-mobile.png`]});
     } finally {
       await context.close();
       await server.close();

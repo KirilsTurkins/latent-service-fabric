@@ -1,15 +1,18 @@
 import type {Config} from '@docusaurus/types';
 import type {Options, ThemeConfig} from '@docusaurus/preset-classic';
+import path from 'node:path';
 import {prepare} from './lib/prepare.mjs';
-import {repositoryUrl} from './lib/repository.mjs';
+import {repositoryUrl, websiteRoot} from './lib/repository.mjs';
 import {remarkRepositoryLinks, rehypeRepositoryLinks} from './plugins/repository-links.mjs';
 
 const prepared = prepare();
 const pluginOptions = {index: prepared.index, assets: prepared.assets, baseUrl: prepared.baseUrl};
+const repositoryRemark = () => remarkRepositoryLinks(pluginOptions);
+const repositoryRehype = () => rehypeRepositoryLinks(pluginOptions);
 const commonDocs = {
   numberPrefixParser: false as const,
-  beforeDefaultRemarkPlugins: [[remarkRepositoryLinks, pluginOptions]],
-  beforeDefaultRehypePlugins: [[rehypeRepositoryLinks, pluginOptions]],
+  beforeDefaultRemarkPlugins: [repositoryRemark],
+  beforeDefaultRehypePlugins: [repositoryRehype],
   showLastUpdateAuthor: false,
   showLastUpdateTime: false,
 };
@@ -24,7 +27,7 @@ const config: Config = {
   projectName: 'latent-service-fabric',
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
-  staticDirectories: [prepared.staticDirectory],
+  staticDirectories: [path.relative(websiteRoot, prepared.staticDirectory).split(path.sep).join('/')],
   markdown: {format: 'detect', mermaid: true, hooks: {onBrokenMarkdownLinks: 'throw', onBrokenMarkdownImages: 'throw'}},
   customFields: {contentIdentity: {channel: 'development', revision: prepared.index.revision, dirty: prepared.manifest.dirty}},
   presets: [['classic', {
@@ -47,7 +50,7 @@ const config: Config = {
       routeBasePath: 'decisions',
       editUrl: ({docPath}: {docPath: string}) => `${repositoryUrl}/edit/${prepared.index.revision}/adr/${docPath}`,
     }],
-    ['./plugins/repository-content.mjs', {manifest: prepared.manifest}],
+    './plugins/repository-content.mjs',
   ],
   themes: ['@docusaurus/theme-mermaid'],
   themeConfig: {

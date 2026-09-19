@@ -2,7 +2,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import {parse} from 'parse5';
-import {assetRoute, htmlElements, repositoryUrl, requireValue, sha256} from './repository.mjs';
+import {assetRoute, createRepositoryIndex, git, htmlElements, readSource, repositoryRoot, repositoryUrl, requireValue, sha256} from './repository.mjs';
+
+export function validatePublicJavaScript(output) {
+  const directory = path.join(output, 'assets/js');
+  let bytes = 0;
+  const files = fs.readdirSync(directory).filter(filename => filename.endsWith('.js'));
+  requireValue(files.length > 0 && files.length <= 2000, 'Invalid public JavaScript inventory');
+  for (const filename of files) {
+    const target = path.join(directory, filename);
+    requireValue(fs.statSync(target).size <= 8 * 1024 * 1024, 'Public JavaScript file size limit');
+    const content = fs.readFileSync(target, 'utf8');
+    bytes += Buffer.byteLength(content);
+    requireValue(bytes <= 64 * 1024 * 1024, 'Public JavaScript corpus size limit');
+    const privateRoots = [repositoryRoot, repositoryRoot.split(path.sep).join('/')];
+    requireValue(!privateRoots.some(root => content.includes(JSON.stringify(root).slice(1, -1))), `Private build path leaked into public JavaScript: ${filename}`);
+  }
+  return {files: files.length, bytes};
+}
 
 function outputPath(output, pathname, baseUrl) {
   requireValue(pathname.startsWith(baseUrl), `Built URL escaped its base path: ${pathname}`);
@@ -16,6 +33,11 @@ function outputPath(output, pathname, baseUrl) {
 
 export function validateBuiltSite(output) {
   const manifest = JSON.parse(fs.readFileSync(path.join(output, 'site-manifest.json'), 'utf8'));
+  const current = createRepositoryIndex();
+  const dirty = git(repositoryRoot, 'status', '--porcelain=v1', '--untracked-files=all').trim().length > 0;
+  requireValue(manifest.revision === current.revision && manifest.dirty === dirty, 'Built source identity is stale; rebuild this checkout');
+  requireValue(JSON.stringify(manifest.pages) === JSON.stringify(current.pages), 'Built document bytes/routes are stale; rebuild this checkout');
+  const publicJavaScript = validatePublicJavaScript(output);
   const documents = new Map();
   const requiredRoutes = ['/', ...manifest.pages.map(page => page.route)];
   for (const route of requiredRoutes) {
@@ -53,8 +75,9 @@ export function validateBuiltSite(output) {
   for (const asset of manifest.assets) {
     const target = path.join(output, ...assetRoute(asset, manifest.channel).split('/').filter(Boolean));
     requireValue(sha256(fs.readFileSync(target)) === asset.sha256, `Copied asset changed bytes: ${asset.path}`);
+    requireValue(sha256(readSource(repositoryRoot, asset.path, asset.maxBytes)) === asset.sha256, `Built asset input is stale: ${asset.path}`);
   }
-  return {manifest, pages: documents.size, checkedLinks};
+  return {manifest, pages: documents.size, checkedLinks, publicJavaScript};
 }
 
 export async function serveBuiltSite(output, baseUrl) {

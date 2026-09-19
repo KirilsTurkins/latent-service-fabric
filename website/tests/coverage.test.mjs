@@ -30,6 +30,9 @@ test('nonexistent or nonpublished pages, wrong-case sources and incomplete requi
     document => { document.rows[0].implementationPrerequisites = []; },
     document => { document.rows[0].evidence[0].path = '../secret'; },
     document => { document.rows[0].guideIssue = 345; },
+    document => { document.rows[0].implementationPrerequisites = [237]; },
+    document => { document.rows[0].implementationPrerequisites = [240]; },
+    document => { document.rows[0].implementationPrerequisites = [357]; },
   ]) {
     const document = structuredClone(original);
     change(document);

@@ -1,8 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {requireValue, websiteRoot} from '../lib/repository.mjs';
+import {prepare} from '../lib/prepare.mjs';
 
-export default function repositoryContent(_context, {manifest}) {
+export default function repositoryContent(context) {
+  const {manifest} = prepare({baseUrl: context.siteConfig.baseUrl});
   return {
     name: 'lsf-repository-content',
     async postBuild({outDir}) {

@@ -66,6 +66,8 @@ The only future Pages writer is a protected, reviewed workflow on
 `development`, owned by #355. It builds one site containing an actual released
 alpha snapshot plus clearly labelled development material. `release` and tag
 workflows may propose snapshot updates but never race as independent writers.
+The current bootstrap candidate is the existing `0.1.0-alpha.3` prerelease;
+#353 must verify its exact release/source identities before snapshot creation.
 Deployment requires protected environment approval, exact reviewed source/run
 identity and only the publisher job's necessary Pages/OIDC permissions. PR
 builds have no publishing credentials, no privileged PR execution and no writes
@@ -98,6 +100,8 @@ evidence/review state. Its local schema and tests reject absent/duplicate IDs,
 unknown sources/pages, invalid paths and inconsistent completion assertions.
 New initial required rows require explicit gate review. Existing references
 are mapped even when practical teaching work remains pending.
+Implementation prerequisites never point back to the guide/runbook owners or
+the consuming phase gates; those are review relationships, not dependency cycles.
 
 Each practical guide must contain: reader outcome, supported version/profile,
 prerequisite tools and authority, complete example source, copyable commands,
@@ -120,6 +124,9 @@ Website install/check/test/build commands neither invoke Cargo nor execute SDKs,
 start nodes/registries, fetch includes or use deployment credentials. They read
 existing content as data. Site configuration, local plugins, dependencies and
 MDX are reviewed executable build inputs, not a sandbox for hostile authors.
+The repository input index stays in server-only plugin closures: Docusaurus
+serializes site configuration into browser code, so private paths and complete
+source inventories must never be plugin-option data in that configuration.
 Any future snippet extractor (#351) receives an exact version/source manifest,
 allowlisted source path and bounded named region, with size/line limits; it
 returns display text plus hashes/verification metadata, never execution output

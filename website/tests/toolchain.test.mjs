@@ -5,7 +5,7 @@ import {createRequire} from 'node:module';
 import {test} from 'node:test';
 import serialize from 'serialize-javascript';
 import {template} from 'lodash-es';
-import {websiteRoot} from '../lib/repository.mjs';
+import {repositoryRoot, websiteRoot} from '../lib/repository.mjs';
 
 test('website pins and lock agree without a root workspace or dependency lifecycle scripts', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(websiteRoot, 'package.json'), 'utf8'));
@@ -37,4 +37,13 @@ test('reviewed security overrides retain the APIs used by the actual build depen
   const serialized = serialize({message: '</script>', observed: new Date(0)});
   assert.equal(serialized.includes('</script>'), false);
   assert.match(serialized, /new Date/);
+});
+
+test('Docusaurus client configuration never serializes the private source index or absolute build paths', async () => {
+  const {default: configuration} = await import('../docusaurus.config.ts');
+  const serialized = JSON.stringify(configuration);
+  assert.equal(serialized.includes(JSON.stringify(repositoryRoot).slice(1, -1)), false);
+  assert.equal(serialized.includes('"paths":'), false);
+  assert.equal(serialized.includes('"directories":'), false);
+  assert.ok(configuration.staticDirectories.every(directory => !path.isAbsolute(directory)));
 });
