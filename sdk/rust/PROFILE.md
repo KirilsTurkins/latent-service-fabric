@@ -106,11 +106,24 @@ errors; and independent known/unknown audit facts. Peer teardown and owner check
 are finite. They are not tiny-node, provider or authorization acceptance tests;
 those remain with the parent Rust transport delivery and its real-node suite.
 
-Initial adapter milestone `53134a51` on parent transport `5892bb4d` passed 49
-protobuf cases, nine TCP tests, targeted formatting and strict SDK-only Clippy
-on Windows/Rust 1.97.1. The future-status response and failure TCP tests require the parent's
-announced bounded raw-audit acceptance change; it fails against that older base
-instead of hiding the integration gap. No workflow, package manifest, shared
-SDK runner or other transport implementation file is changed beyond the
-additive `mod profile;`. Parent integrates adapter code/docs into #228; no
-separate adapter PR or issue closure is requested.
+The audit-sequence correction is shared model commit `e4096670` and adapter
+commit `d8b0636a`. Validation on Windows/Rust 1.97.1 with parent transport
+`2cae79d5` passes 49 protobuf cases, the raw-audit conversion unit test, all ten
+parent TCP tests, ten of eleven profile TCP tests, targeted formatting,
+regeneration and strict SDK-only Clippy. Unknown `future-state` plus a maximum
+attempt survives an RPC failure without fabricating an acknowledgement.
+
+The remaining profile TCP test deliberately fails: the parent audit parser
+rejects `future-durable-v2` because it permits only lowercase ASCII and dashes,
+then loses the independently valid attempt sequence. The adapter retains the
+raw status, observed receipt outcome and recovery identity, but cannot recover
+an attempt omitted by the parent. Accepting bounded opaque status tokens,
+including digits, remains a parent-owned `network/error.rs` integration
+dependency. The regression is neither ignored nor weakened; the full adapter
+suite is not yet green on that parent head.
+
+No workflow, package manifest, shared SDK runner or other transport
+implementation file is changed beyond the additive `mod profile;`. Parent
+integrates adapter code/docs into #228; no separate adapter PR or issue closure
+is requested. Provider-backed real-node qualification remains with the shared
+runner and parent participants, not these controlled TCP tests.
