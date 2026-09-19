@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "exceptions": [
+    {
+      "scanner": "zizmor",
+      "finding": "self-repository",
+      "path": ".github/workflows/security-baseline.yml",
+      "package": "",
+      "fingerprint": "b568b669a92b6c8dfcfcd1876188674e9e489cf1a9b3799be624642d395c12bf",
+      "owner": "@KirilsTurkins",
+      "created": "2026-09-19",
+      "expires": "2026-10-03",
+      "review": "https://github.com/KirilsTurkins/latent-service-fabric/issues/282",
+      "rationale": "Compatibility transition for this exact job-level reusable RustSec workflow call. GitHub resolves this local workflow at the caller commit before jobs run; it is not a workspace-relative action step that earlier untrusted steps can replace. The callee has only contents:read, no inherited secrets and no cache writes. Keep #281's currently supported local-reference syntax until its policy explicitly validates the new self-repository syntax. Parent review is required; update the pin policy or re-review this exact call before expiry."
+    }
+  ]
+}

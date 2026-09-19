@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "rules": [
+    {"id": "rust-tls-verification-disabled", "extensions": [".rs"], "pattern": "\\bdanger_accept_invalid_(?:certs|hostnames)\\s*\\(\\s*true\\s*\\)", "reason": "Disabling certificate or hostname verification invalidates authenticated TLS."},
+    {"id": "python-unverified-tls-context", "extensions": [".py"], "pattern": "\\bssl\\._create_unverified_context\\s*\\(", "reason": "An unverified SSL context bypasses peer authentication."},
+    {"id": "python-eval-exec", "extensions": [".py"], "pattern": "(?<![A-Za-z0-9_.])(?:eval|exec)\\s*\\(", "reason": "Dynamic Python execution requires explicit input and authority review."},
+    {"id": "javascript-tls-verification-disabled", "extensions": [".js", ".mjs", ".cjs", ".ts", ".tsx"], "pattern": "\\brejectUnauthorized\\s*:\\s*false\\b", "reason": "This option disables TLS server authentication."},
+    {"id": "go-tls-verification-disabled", "extensions": [".go"], "pattern": "\\bInsecureSkipVerify\\s*:\\s*true\\b", "reason": "Peer and hostname authentication need explicit review when skipped."},
+    {"id": "dotnet-tls-verification-disabled", "extensions": [".cs"], "pattern": "\\bDangerousAcceptAnyServerCertificateValidator\\b", "reason": "The built-in accept-all verifier must not enter a shipped SDK."},
+    {"id": "java-hostname-verification-disabled", "extensions": [".java"], "pattern": "\\bNoopHostnameVerifier\\b", "reason": "The accept-all hostname verifier defeats TLS endpoint identity."},
+    {"id": "c-unbounded-input", "extensions": [".c", ".h", ".cc", ".cpp", ".hpp"], "pattern": "(?<![A-Za-z0-9_])gets\\s*\\(", "reason": "Unbounded input cannot preserve destination-buffer limits."},
+    {"id": "shell-remote-code-pipe", "extensions": [".sh"], "pattern": "\\b(?:curl|wget)\\b[^\\n|]*\\|\\s*(?:sudo\\s+)?(?:ba)?sh\\b", "reason": "Downloaded code must be identified and reviewed before execution."}
+  ]
+}
