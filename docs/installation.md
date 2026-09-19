@@ -61,6 +61,10 @@ python3 -m unittest tools.tests.test_native_runtime
 
 Version must match the committed workspace version. A new binary release needs a
 new parent-reviewed release identity; do not reuse the historical alpha.3 tag.
+The [maintainer release gate](development/native-release-gate.md) describes the
+exact workflow, required review environment, two-profile real-VM matrix and
+compatible-version selection. It distinguishes scoped candidates from complete
+release acceptance and records observed failures without claiming a reboot test.
 The builder emits an **unsigned candidate**. The release gate uses GitHub artifact
 attestations with the exact repository, `native-runtime-release.yml` workflow,
 release tag, source/signing commit and GitHub-hosted runner certificate identity.
