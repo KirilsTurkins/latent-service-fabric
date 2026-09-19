@@ -17,6 +17,24 @@ use latent_rollout::trigger_audit::ManagedTriggerAudit;
 use std::{sync::Arc, time::Instant};
 use tonic::{Request, Response, Status};
 
+pub fn http_trigger_from_proto(
+    value: proto::Trigger,
+) -> Result<latent_manifest::TriggerManifest, Status> {
+    let limits = super::ManagementLimits::default();
+    let mut budget = super::RequestBudget::new::<proto::Trigger>(&limits)?;
+    validation::wire(&value, &mut budget, &limits)?;
+    latent_control_store::http_routes::normalize_http_trigger(conversion::manifest(value)?)
+        .map_err(|_| Status::invalid_argument("invalid-http-trigger"))
+}
+
+pub fn http_trigger_to_proto(
+    manifest: latent_manifest::TriggerManifest,
+    generation: u64,
+) -> Result<proto::Trigger, PlatformError> {
+    let manifest = latent_control_store::http_routes::normalize_http_trigger(manifest)?;
+    Ok(conversion::manifest_to_proto(manifest, generation))
+}
+
 impl ManagementServiceAdapter {
     pub fn with_http_control(
         mut self,

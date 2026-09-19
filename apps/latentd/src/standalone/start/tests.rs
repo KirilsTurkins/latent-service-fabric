@@ -11,6 +11,8 @@ mod aot;
 #[cfg(target_os = "linux")]
 mod audit;
 #[cfg(target_os = "linux")]
+mod capability_recovery;
+#[cfg(target_os = "linux")]
 mod control;
 #[cfg(target_os = "linux")]
 mod deployment_operations;

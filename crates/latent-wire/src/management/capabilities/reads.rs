@@ -3,7 +3,6 @@ use super::{conversion, finish, page, validation, MAX_REQUEST_BYTES, MAX_RESPONS
 use latent_core::{
     DeploymentId, InvocationPrincipal, Metadata, PrincipalKind, ServiceId, TenantId,
 };
-use latent_policy::capability as domain;
 use prost::Message;
 use tonic::{Request, Response, Status};
 
@@ -158,7 +157,8 @@ pub(super) async fn explain(
     let maximum = adapter.limits.max_response_bytes.min(MAX_RESPONSE_BYTES);
     let read = permit.run(move |store| {
         let lease = store.reserve_inspection()?;
-        let resource = domain::ResourceRequest::parse(request.resource_document.as_bytes())?;
+        let resource =
+            super::super::parse_inspection_resource(request.resource_document.as_bytes())?;
         let selected = inspection
             .source
             .inspect(&tenant, &DeploymentId(request.deployment_id))?;
