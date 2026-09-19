@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "securityProfile": "external-capsule-v1",
+  "dataDirectory": "/var/lib/lsf",
+  "bind": "127.0.0.1:50051",
+  "nodeId": "REPLACE_WITH_UNIQUE_NODE_ID",
+  "shutdownGraceMillis": 5000,
+  "execution": {"maximumWallTimeMillis": 5000},
+  "supplyChain": {"mode": "enforced", "policyFile": "/etc/lsf/admission-policy.json"},
+  "isolatedAot": {
+    "compilerExecutable": "/opt/lsf/current/bin/latent-aot-compiler",
+    "compilerDigest": "sha256:REPLACE_WITH_AUTHENTICATED_RELEASE_COMPILER_DIGEST",
+    "keyFile": "/etc/lsf/private/native-aot.key",
+    "blobRoot": "/var/cache/lsf/native-blobs",
+    "receiptRoot": "/var/cache/lsf/native-receipts"
+  },
+  "credentials": [{"token": "REPLACE_WITH_UNIQUE_PRIVATE_RANDOM_TOKEN", "subject": "installation-operator", "tenant": "examples", "role": "operator"}]
+}

@@ -1,0 +1,11 @@
+{
+  "formatVersion": 1,
+  "securityProfile": "local-experimental-v1",
+  "dataDirectory": "/var/lib/lsf",
+  "bind": "127.0.0.1:50051",
+  "nodeId": "REPLACE_WITH_UNIQUE_NODE_ID",
+  "shutdownGraceMillis": 5000,
+  "execution": {"maximumWallTimeMillis": 5000},
+  "supplyChain": {"mode": "trusted-local"},
+  "credentials": [{"token": "REPLACE_WITH_UNIQUE_PRIVATE_RANDOM_TOKEN", "subject": "installation-operator", "tenant": "examples", "role": "operator"}]
+}

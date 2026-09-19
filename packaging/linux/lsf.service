@@ -1,0 +1,42 @@
+[Unit]
+Description=Latent Service Fabric standalone node
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=lsf
+Group=lsf
+WorkingDirectory=/var/lib/lsf
+UMask=0077
+ExecStartPre=/usr/bin/python3 -I /opt/lsf/current/lsf-install.pyz preflight --system
+ExecStart=/opt/lsf/current/bin/latentd serve --config /etc/lsf/node.json
+ExecStartPost=/usr/bin/python3 -I /opt/lsf/current/lsf-install.pyz readiness --system
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=90s
+TimeoutStopSec=90s
+KillMode=mixed
+KillSignal=SIGTERM
+SendSIGKILL=yes
+FinalKillSignal=SIGKILL
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/lsf /var/cache/lsf
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RemoveIPC=yes
+LimitCORE=0
+
+[Install]
+WantedBy=multi-user.target
