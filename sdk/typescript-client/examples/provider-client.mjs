@@ -9,7 +9,7 @@ async function main() {
     || args.length !== ({ http: 8, blob: 7, status: 5, cancel: 5 })[mode]) throw new Error("invalid-example-arguments");
   const credential = protectedFile(credentialFile, 256);
   let client;
-  try { client = new RpcClient({ endpoint, tenant, credential }); } finally { credential.fill(0); }
+  try { client = new RpcClient({ endpoint, tenant, credential, limits: { rpcTimeoutMillis: 5000 } }); } finally { credential.fill(0); }
   let result;
   try {
     if (mode === "status") {
