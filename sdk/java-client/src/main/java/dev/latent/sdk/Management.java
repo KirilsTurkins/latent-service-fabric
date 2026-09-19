@@ -301,6 +301,10 @@ public final class Management {
             Optional<String> activationId,
             Optional<String> operationId) { }
 
+    public record UnsupportedWireValue(
+            String field,
+            String value) { }
+
     public record ResponseMetadata(
             RequestIdentity identity,
             OutcomeKnowledge outcome,
@@ -316,7 +320,8 @@ public final class Management {
             OutcomeKnowledge outcome,
             RequestIdentity identity,
             Optional<AuditAck> auditAck,
-            Optional<String> auditStatus) { }
+            Optional<String> auditStatus,
+            Optional<UnsupportedWireValue> unsupportedWireValue) { }
 
     public record ClientResponse<Response>(Response value, ResponseMetadata metadata) { }
 
@@ -357,6 +362,27 @@ public final class Management {
         }
 
         public ClientFailure failure() { return failure; }
+    }
+
+    public static final class ClientCancellationException extends java.util.concurrent.CancellationException {
+        private static final long serialVersionUID = 1L;
+        private final ClientFailure failure;
+
+        public ClientCancellationException(ClientFailure failure) {
+            super(failure.message());
+            this.failure = failure;
+        }
+
+        public ClientFailure failure() { return failure; }
+    }
+
+    public static Optional<ClientFailure> clientFailure(Throwable failure) {
+        for (int depth = 0; failure != null && depth < 8; depth++) {
+            if (failure instanceof ClientException typed) return Optional.of(typed.failure());
+            if (failure instanceof ClientCancellationException typed) return Optional.of(typed.failure());
+            failure = failure.getCause();
+        }
+        return Optional.empty();
     }
 
     public static long parseU64Decimal(String value) {

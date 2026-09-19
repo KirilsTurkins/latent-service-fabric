@@ -545,6 +545,13 @@ public sealed record RequestIdentity(
     string? ActivationId,
     string? OperationId);
 
+/// <summary>Transport-neutral UnsupportedWireValue; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Field">The exact field value with preserved presence.</param>
+/// <param name="Value">The exact value value with preserved presence.</param>
+public sealed record UnsupportedWireValue(
+    string Field,
+    string Value);
+
 /// <summary>Transport-neutral ResponseMetadata; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Identity">The exact identity value with preserved presence.</param>
 /// <param name="Outcome">The exact outcome value with preserved presence.</param>
@@ -566,6 +573,7 @@ public sealed record ResponseMetadata(
 /// <param name="Identity">The exact identity value with preserved presence.</param>
 /// <param name="AuditAck">The exact audit_ack value with preserved presence.</param>
 /// <param name="AuditStatus">The exact audit_status value with preserved presence.</param>
+/// <param name="UnsupportedWireValue">The exact unsupported_wire_value value with preserved presence.</param>
 public sealed record ClientFailure(
     FailureCategory Category,
     string Message,
@@ -575,7 +583,8 @@ public sealed record ClientFailure(
     OutcomeKnowledge Outcome,
     RequestIdentity Identity,
     AuditAck? AuditAck,
-    string? AuditStatus);
+    string? AuditStatus,
+    UnsupportedWireValue? UnsupportedWireValue);
 
 /// <summary>A fully owned unary response and independent recovery metadata.</summary>
 /// <typeparam name="Response">The response model.</typeparam>
@@ -646,6 +655,17 @@ public sealed class ClientException : Exception
     public ClientException(ClientFailure failure) : base(failure.Message) { Failure = failure; }
 }
 
+/// <summary>Local cancellation with retained dispatch and recovery facts.</summary>
+public sealed class ClientCancellationException : OperationCanceledException
+{
+    /// <summary>The independent failure and recovery facts.</summary>
+    public ClientFailure Failure { get; }
+
+    /// <summary>Retains local cancellation without implying server cleanup.</summary>
+    public ClientCancellationException(ClientFailure failure, CancellationToken cancellationToken)
+        : base(failure.Message, cancellationToken) { Failure = failure; }
+}
+
 /// <summary>Lossless canonical unsigned decimal conversion for shared fixtures.</summary>
 public static class UnsignedDecimal
 {
@@ -654,6 +674,8 @@ public static class UnsignedDecimal
     {
         if (value.Length == 0 || value.Length > 20 || (value.Length > 1 && value[0] == '0'))
             throw new FormatException("invalid uint64 decimal");
+        foreach (char digit in value)
+            if (digit < '0' || digit > '9') throw new FormatException("invalid uint64 digit");
         return ulong.Parse(value, NumberStyles.None, CultureInfo.InvariantCulture);
     }
 

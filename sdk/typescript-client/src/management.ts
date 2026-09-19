@@ -337,6 +337,11 @@ export interface RequestIdentity {
   readonly operationId?: string;
 }
 
+export interface UnsupportedWireValue {
+  readonly field: string;
+  readonly value: string;
+}
+
 export interface ResponseMetadata {
   readonly identity: RequestIdentity;
   readonly outcome: OutcomeKnowledge;
@@ -354,6 +359,7 @@ export interface ClientFailure {
   readonly identity: RequestIdentity;
   readonly auditAck?: AuditAck;
   readonly auditStatus?: string;
+  readonly unsupportedWireValue?: UnsupportedWireValue;
 }
 
 export interface ClientResponse<Response> {
@@ -384,7 +390,7 @@ export function parseU64Decimal(value: string): bigint {
     throw new RangeError("invalid uint64 decimal");
   }
   const parsed = BigInt(value);
-  if (parsed > 18446744073709551615n) throw new RangeError("uint64 overflow");
+  if (parsed > 18446744073709551615n || parsed.toString(10) !== value) throw new RangeError("invalid uint64 decimal");
   return parsed;
 }
 
