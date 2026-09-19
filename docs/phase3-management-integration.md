@@ -16,6 +16,7 @@ actor from the authenticated transport principal.
 | `trigger apply/get/list/delete/operation` | Closed buffered HTTP trigger profile; exact publication, deployment revision and generation |
 | `capability list --deployment ID` | One bounded page of sampled bindings and tenant usage |
 | `capability explain --deployment ID --capability CONTRACT --operation OP --resource FILE` | Descriptive current-principal inspection, not admission |
+| `web publish/get/operation/revoke/retire/renew-evidence/prepare` | Exact componentless web publication and lifecycle; optional finite shared preparation, never execution permission |
 
 Trigger mutation requires all three explicit comparison fields:
 
@@ -98,3 +99,10 @@ Focused storage tests cover independent revocation, renewal, restart, foreign
 catalogs sharing an authority, tenant denial, pre-reserved reads and tampering.
 These tests use an explicitly injected storage-test authority, not fabricated
 Angular build evidence; protected T1 execution still requires the full gate above.
+
+The additional [actual Angular workflow](testing/angular-t1-workflow.md) consumes
+the maintained #234 builder's bytes and observation. Its exporter now passes
+publisher/builder/SBOM verification with the real system clock; it does not
+relabel the Angular recipe or claim reproducibility. This is admission evidence,
+not yet a completed isolated-compiler/render qualification. The committed
+runtime gate remains T0-only until the complete T1 path passes.
