@@ -46,6 +46,8 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
         return super::phase2::execute(operation, session).await;
     }
     match operation {
+        Operation::Trigger(operation) => super::triggers::execute(*operation, session).await,
+        Operation::Capability(operation) => super::capabilities::execute(*operation, session).await,
         Operation::Policy(operation) => super::policies::execute(*operation, session).await,
         Operation::PublishRelease(request) => {
             let digest = publication_digest(&request)?;

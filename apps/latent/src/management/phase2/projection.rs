@@ -1,9 +1,11 @@
 //! Fixed-schema traversal before allocation of the lossless JSON result.
 mod audit;
+mod capability;
 mod common;
 mod deployment;
 mod release;
 mod rollout;
+mod trigger;
 use super::{invalid_response, proto};
 use crate::error::Failure;
 use prost::Message;
