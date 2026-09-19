@@ -7,6 +7,7 @@ use tempfile::TempDir;
 mod budgets;
 mod connection_limits;
 mod engine;
+mod providers;
 mod renderer;
 mod security;
 

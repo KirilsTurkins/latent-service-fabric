@@ -1,6 +1,13 @@
 use std::path::PathBuf;
 
-use clap::Args;
+use clap::{Args, ValueEnum};
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
+pub enum InvokeBudgetProfile {
+    #[default]
+    Phase1,
+    Phase3,
+}
 
 #[derive(Args)]
 pub struct InvokeArgs {
@@ -33,6 +40,8 @@ pub struct InvokeArgs {
     pub metadata: Vec<String>,
     #[arg(long, value_name = "FILE")]
     pub budget: Option<PathBuf>,
+    #[arg(long, value_enum, default_value = "phase1")]
+    pub budget_profile: InvokeBudgetProfile,
     #[arg(long)]
     pub cpu_fuel: Option<u64>,
     #[arg(long)]

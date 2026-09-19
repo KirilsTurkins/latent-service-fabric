@@ -173,7 +173,7 @@ pub(super) async fn explain(
         .policy_control()?
         .reserve()
         .map_err(validation::platform)?;
-    let resource = domain::ResourceRequest::parse(request.resource_document.as_bytes())
+    let resource = super::super::parse_inspection_resource(request.resource_document.as_bytes())
         .map_err(validation::platform)?;
     let read = run(
         permit.run(move |store| {

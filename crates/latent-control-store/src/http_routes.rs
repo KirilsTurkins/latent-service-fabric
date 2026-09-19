@@ -15,6 +15,12 @@ pub const MAX_RECORDS: usize = 256;
 pub const MAX_TABLE_BYTES: usize = 2 * 1024 * 1024;
 pub const MAX_PAGE_SIZE: u32 = 32;
 pub const MAX_PAGE_BYTES: usize = 128 * 1024;
+
+pub fn normalize_http_trigger(
+    value: latent_manifest::TriggerManifest,
+) -> Result<latent_manifest::TriggerManifest, PlatformError> {
+    definition::normalize(value).map(|(manifest, _matcher)| manifest)
+}
 fn error(code: PlatformErrorCode, message: &'static str) -> PlatformError {
     PlatformError {
         code,

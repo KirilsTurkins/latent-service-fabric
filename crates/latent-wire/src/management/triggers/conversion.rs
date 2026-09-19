@@ -51,43 +51,48 @@ pub(super) fn manifest(value: proto::Trigger) -> Result<TriggerManifest, Status>
     })
 }
 pub(super) fn trigger(value: VersionedTrigger) -> proto::Trigger {
-    let m = value.manifest;
+    manifest_to_proto(value.manifest, value.generation)
+}
+pub(super) fn manifest_to_proto(manifest: TriggerManifest, generation: u64) -> proto::Trigger {
     proto::Trigger {
-        id: m.id.0,
+        id: manifest.id.0,
         kind: "HttpTrigger".into(),
-        generation: value.generation,
+        generation,
         target: Some(proto::TriggerTarget {
-            service: m.target.service.0,
-            contract: m.target.contract.0,
-            function: m.target.function,
-            route: m.target.route,
-            publication: m.target.publication.map(|id| proto::PublicationRef {
-                id: id.into_string(),
-                tenant: m
-                    .metadata
-                    .tenant
-                    .as_ref()
-                    .expect("scoped HTTP trigger")
-                    .0
-                    .clone(),
-            }),
-            revision: m.target.revision,
-            deployment_generation: m.target.deployment_generation,
+            service: manifest.target.service.0,
+            contract: manifest.target.contract.0,
+            function: manifest.target.function,
+            route: manifest.target.route,
+            publication: manifest
+                .target
+                .publication
+                .map(|publication| proto::PublicationRef {
+                    id: publication.into_string(),
+                    tenant: manifest
+                        .metadata
+                        .tenant
+                        .as_ref()
+                        .expect("scoped HTTP trigger")
+                        .0
+                        .clone(),
+                }),
+            revision: manifest.target.revision,
+            deployment_generation: manifest.target.deployment_generation,
         }),
-        configuration: m
+        configuration: manifest
             .configuration
             .into_iter()
-            .map(|(k, v)| match v {
-                json::Value::String(v) => (k, v),
+            .map(|(key, value)| match value {
+                json::Value::String(value) => (key, value),
                 _ => unreachable!("closed stored trigger profile"),
             })
             .collect(),
         metadata: Some(proto::ObjectMetadata {
-            name: m.metadata.name,
-            tenant: m.metadata.tenant.map(|t| t.0),
-            namespace: m.metadata.namespace,
-            labels: m.metadata.labels.into_iter().collect(),
-            annotations: m.metadata.annotations.into_iter().collect(),
+            name: manifest.metadata.name,
+            tenant: manifest.metadata.tenant.map(|tenant| tenant.0),
+            namespace: manifest.metadata.namespace,
+            labels: manifest.metadata.labels.into_iter().collect(),
+            annotations: manifest.metadata.annotations.into_iter().collect(),
         }),
     }
 }

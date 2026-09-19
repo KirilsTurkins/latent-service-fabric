@@ -16,6 +16,8 @@ pub struct ShutdownReport {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policies: Option<super::PolicyShutdownReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub providers: Option<super::ProviderShutdownReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub http: Option<super::http::HttpSnapshot>,
     pub clean: bool,
     pub active_connections: usize,
@@ -55,6 +57,7 @@ impl ShutdownReport {
         self.audit.is_none_or(super::AuditShutdownReport::clean)
             && self.http.is_none_or(super::http::HttpSnapshot::clean)
             && self.policies.is_none_or(super::PolicyShutdownReport::clean)
+            && self.providers.is_none_or(|report| report.clean)
             && self
                 .rollouts
                 .is_none_or(super::RolloutShutdownReport::clean)
@@ -95,6 +98,9 @@ impl StandaloneNode {
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
         self.supply_chain.retire();
         self.capabilities.retire();
+        if let Some(providers) = &self.providers {
+            providers.retire();
+        }
         if let Some(factory) = &self.factory {
             factory.retire_capabilities();
         }
@@ -184,9 +190,21 @@ impl StandaloneNode {
                 )
             });
         }
-        let policy_report = if let Some(policies) = &self.policies {
+        let provider_report = if let Some(providers) = &self.providers {
+            match providers.shutdown(drain_deadline.into_std()).await {
+                Ok(report) => Some(report),
+                Err(error) => {
+                    failure.get_or_insert(error);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        let policies = self.policies.take();
+        let policy_report = if let Some(policies) = &policies {
             let report = policies.shutdown(drain_deadline.into_std()).await;
-            if !report.clean() {
+            if !report.work_completed || report.active_jobs != 0 {
                 failure.get_or_insert_with(|| {
                     error(
                         PlatformErrorCode::DeadlineExceeded,
@@ -255,15 +273,8 @@ impl StandaloneNode {
             report.audit = audit_report;
             report.rollouts = rollout_report;
             report.policies = policy_report;
+            report.providers = provider_report;
             report.http = http_handle.as_ref().map(super::http::HttpHandle::snapshot);
-        }
-        if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
-            failure.get_or_insert_with(|| {
-                error(
-                    PlatformErrorCode::Internal,
-                    "node resources were not reclaimed",
-                )
-            });
         }
         // This diagnostic contains no caller identifiers, payload, or private error.
         let _ = self.telemetry.try_emit_log(LogRecord {
@@ -299,6 +310,17 @@ impl StandaloneNode {
         }
         if let Ok(report) = &mut report {
             report.compiler = compiler_observer.snapshot();
+            if let (Some(policies), Some(previous)) = (&policies, policy_report) {
+                report.policies = Some(policies.snapshot(previous.work_completed));
+            }
+        }
+        if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
+            failure.get_or_insert_with(|| {
+                error(
+                    PlatformErrorCode::Internal,
+                    "node resources were not reclaimed",
+                )
+            });
         }
         if let Some(error) = failure {
             return Err(error);
@@ -332,6 +354,7 @@ impl StandaloneNode {
             audit: None,
             rollouts: None,
             policies: None,
+            providers: None,
             http: None,
             clean: false,
             active_connections: transport.active_connections,
