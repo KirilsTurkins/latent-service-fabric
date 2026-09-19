@@ -11,7 +11,10 @@ mod transport;
 mod upload_worker;
 
 use crate::{OciDescriptor, OciManifestBytes, OciPushRequest, OciReference, OciRegistry};
-pub use config::{RegistryConfig, RegistryCredentials, RegistryLimits};
+pub use auth::BearerUsage;
+pub use config::{
+    BearerIdentity, RegistryActions, RegistryConfig, RegistryCredentials, RegistryLimits,
+};
 use latent_core::{BoxFuture, PackageDigest, PlatformError, PlatformErrorCode};
 pub use pull::OciPulledPackage;
 use std::sync::Arc;
@@ -71,6 +74,16 @@ impl HttpOciRegistry {
     #[must_use]
     pub fn usage(&self) -> RegistryUsage {
         self.transport.usage()
+    }
+
+    pub fn rotate_bearer_credentials(
+        &self,
+        identity: BearerIdentity,
+        username: &str,
+        password: &str,
+    ) -> Result<()> {
+        self.transport
+            .rotate_bearer_credentials(identity, username, password)
     }
 
     /// Aggregate storage/read ownership across every client sharing this cache.

@@ -24,9 +24,9 @@ class RegistryRunnerTests(unittest.TestCase):
         self.assertIn("web_catalog::registry::", RUNNER.WEB_TEST)
         self.assertNotIn("--skip", RUNNER.test_filters(True, False))
         self.assertEqual(RUNNER.test_target(False), ["-p", "latent-oci", "--test", "registry"])
-        self.assertEqual(RUNNER.test_filters(False, True), [])
+        self.assertEqual(RUNNER.test_filters(False, True), ["--skip", "bearer::real_harbor_bearer_roundtrip"])
         self.assertEqual(RUNNER.test_filters(False, False),
-                         ["--skip", "real_observed_build_provenance_roundtrip"])
+                         ["--skip", "bearer::real_harbor_bearer_roundtrip", "--skip", "real_observed_build_provenance_roundtrip"])
 
     def test_launch_pins_image_loopback_and_container_resources(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

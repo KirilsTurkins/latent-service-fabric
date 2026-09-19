@@ -1,11 +1,24 @@
-use super::{exhausted, invalid, RegistryConfig, RegistryCredentials, Result};
+mod cache;
+mod lifecycle;
+#[cfg(test)]
+mod security_tests;
+mod token;
+
+use super::{
+    exhausted, invalid, BearerIdentity, RegistryActions, RegistryConfig, RegistryCredentials,
+    Result,
+};
+pub use cache::BearerUsage;
+pub(super) use cache::Token;
 use latent_core::PlatformErrorCode;
 use reqwest::{
     header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, WWW_AUTHENTICATE},
     Method, Response, StatusCode, Url,
 };
-use serde::Deserialize;
-use std::net::IpAddr;
+use std::{
+    net::IpAddr,
+    sync::{Arc, Mutex},
+};
 use tokio::time::Instant;
 
 const MAX_CHALLENGE_BYTES: usize = 4096;
@@ -20,7 +33,12 @@ pub(super) struct ConfiguredBearer {
     realm: Url,
     service: Box<str>,
     scope: Box<str>,
-    authorization: HeaderValue,
+    repository: Box<str>,
+    actions: RegistryActions,
+    cache: cache::Cache,
+    accounting: Arc<cache::Accounting>,
+    acquisition: tokio::sync::Mutex<()>,
+    waiters: tokio::sync::Semaphore,
     client: reqwest::Client,
 }
 
@@ -29,6 +47,8 @@ impl ConfiguredBearer {
         let RegistryCredentials::BearerChallenge {
             realm: configured_realm,
             service,
+            identity,
+            actions,
             username,
             password,
             addresses,
@@ -68,7 +88,8 @@ impl ConfiguredBearer {
         {
             return Err(invalid("invalid-oci-bearer-address"));
         }
-        let scope = format!("repository:{}:pull", config.repository);
+        identity.validate()?;
+        let scope = format!("repository:{}:{}", config.repository, actions.scope());
         if scope.len() > MAX_SCOPE_BYTES {
             return Err(invalid("invalid-oci-bearer-scope"));
         }
@@ -82,7 +103,23 @@ impl ConfiguredBearer {
             realm,
             service: service.clone().into_boxed_str(),
             scope: scope.into_boxed_str(),
-            authorization,
+            repository: config.repository.clone().into_boxed_str(),
+            actions: *actions,
+            cache: cache::Cache(Mutex::new(cache::State {
+                identity: identity.clone(),
+                authorization: Some(authorization),
+                cached: None,
+                failed: None,
+                closed: false,
+            })),
+            accounting: Arc::new(cache::Accounting {
+                active: 0.into(),
+                waiting: 0.into(),
+                bytes: 0.into(),
+                maximum: (MAX_TOKEN_BYTES + 7) * (config.limits.max_in_flight + 2),
+            }),
+            acquisition: tokio::sync::Mutex::new(()),
+            waiters: tokio::sync::Semaphore::new(config.limits.max_in_flight),
             client,
         }))
     }
@@ -101,17 +138,33 @@ impl ConfiguredBearer {
         let parameters = parse_challenge(value)?;
         if parameters.realm != self.realm.as_str()
             || parameters.service != self.service.as_ref()
-            || parameters.scope != self.scope.as_ref()
+            || parameters
+                .scope
+                .is_some_and(|scope| !self.permits_scope(scope))
         {
             return Err(unauthenticated("oci-bearer-challenge-outside-profile"));
         }
         Ok(())
     }
 
+    fn permits_scope(&self, scope: &str) -> bool {
+        let Some((repository, actions)) = scope
+            .strip_prefix("repository:")
+            .and_then(|scope| scope.rsplit_once(':'))
+        else {
+            return false;
+        };
+        repository == self.repository.as_ref()
+            && (actions == "pull"
+                || (self.actions == RegistryActions::PullPush
+                    && matches!(actions, "push" | "pull,push")))
+    }
+
     pub(super) async fn exchange(
         &self,
         deadline: Instant,
         request_timeout: std::time::Duration,
+        authorization: HeaderValue,
     ) -> Result<Response> {
         let remaining = deadline
             .checked_duration_since(Instant::now())
@@ -132,7 +185,7 @@ impl ConfiguredBearer {
             .client
             .get(request_url)
             .header(ACCEPT, HeaderValue::from_static("application/json"))
-            .header(AUTHORIZATION, self.authorization.clone())
+            .header(AUTHORIZATION, authorization)
             .timeout(remaining.min(request_timeout))
             .send()
             .await
@@ -142,29 +195,15 @@ impl ConfiguredBearer {
         Ok(response)
     }
 
-    pub(super) fn token_header(&self, body: &[u8]) -> Result<HeaderValue> {
-        if body.len() > MAX_TOKEN_RESPONSE_BYTES {
-            return Err(exhausted("oci-token-response-byte-limit"));
-        }
-        let document: TokenDocument = serde_json::from_slice(body)
-            .map_err(|_| unauthenticated("oci-token-response-invalid"))?;
-        let token = match (document.token, document.access_token) {
-            (Some(token), None) | (None, Some(token)) => token,
-            (Some(token), Some(alias)) if token == alias => token,
-            _ => return Err(unauthenticated("oci-token-response-ambiguous")),
-        };
-        if token.is_empty()
-            || token.len() > MAX_TOKEN_BYTES
-            || !token.bytes().all(|byte| byte.is_ascii_graphic())
-            || document.expires_in == Some(0)
-            || document
-                .scope
-                .as_deref()
-                .is_some_and(|scope| scope != self.scope.as_ref())
-        {
-            return Err(unauthenticated("oci-token-response-outside-profile"));
-        }
-        super::transport::client::bearer_authorization(&token)
+    #[cfg(test)]
+    fn token_header(&self, body: &[u8]) -> Result<HeaderValue> {
+        token::parse(
+            body,
+            &self.scope,
+            Instant::now(),
+            std::time::SystemTime::now(),
+        )
+        .map(|(header, _)| header)
     }
 }
 
@@ -175,7 +214,7 @@ pub(super) fn read_continuation_allowed(method: &Method, body_present: bool) -> 
 struct Challenge<'a> {
     realm: &'a str,
     service: &'a str,
-    scope: &'a str,
+    scope: Option<&'a str>,
 }
 
 fn parse_challenge(value: &str) -> Result<Challenge<'_>> {
@@ -190,49 +229,53 @@ fn parse_challenge(value: &str) -> Result<Challenge<'_>> {
     let mut realm = None;
     let mut service = None;
     let mut scope = None;
-    let parameters = parameters.trim_start();
+    let mut parameters = parameters.trim_start();
     if parameters.is_empty() {
         return Err(unauthenticated("oci-bearer-challenge-invalid"));
     }
-    for field in parameters.split(',') {
-        let (name, value) = field
-            .trim()
+    while !parameters.is_empty() {
+        let (name, value) = parameters
             .split_once('=')
             .ok_or_else(|| unauthenticated("oci-bearer-challenge-invalid"))?;
         let name = name.trim();
-        let value = value.trim();
-        if value.len() < 2
-            || !value.starts_with('"')
-            || !value.ends_with('"')
-            || value[1..value.len() - 1]
-                .bytes()
-                .any(|byte| byte == b'"' || byte == b'\\' || byte.is_ascii_control())
+        let quoted = value
+            .trim_start()
+            .strip_prefix('"')
+            .ok_or_else(|| unauthenticated("oci-bearer-challenge-invalid"))?;
+        let end = quoted
+            .find('"')
+            .ok_or_else(|| unauthenticated("oci-bearer-challenge-invalid"))?;
+        let value = &quoted[..end];
+        if value
+            .bytes()
+            .any(|byte| byte == b'\\' || byte.is_ascii_control())
         {
             return Err(unauthenticated("oci-bearer-challenge-invalid"));
         }
-        let value = &value[1..value.len() - 1];
         match name {
             name if name.eq_ignore_ascii_case("realm") && realm.is_none() => realm = Some(value),
             name if name.eq_ignore_ascii_case("service") && service.is_none() => {
-                service = Some(value)
+                service = Some(value);
             }
             name if name.eq_ignore_ascii_case("scope") && scope.is_none() => scope = Some(value),
             _ => return Err(unauthenticated("oci-bearer-challenge-invalid")),
         }
+        let remaining = quoted[end + 1..].trim();
+        parameters = if remaining.is_empty() {
+            ""
+        } else {
+            remaining
+                .strip_prefix(',')
+                .map(str::trim_start)
+                .filter(|rest| !rest.is_empty())
+                .ok_or_else(|| unauthenticated("oci-bearer-challenge-invalid"))?
+        };
     }
     Ok(Challenge {
         realm: realm.ok_or_else(|| unauthenticated("oci-bearer-challenge-invalid"))?,
         service: service.ok_or_else(|| unauthenticated("oci-bearer-challenge-invalid"))?,
-        scope: scope.ok_or_else(|| unauthenticated("oci-bearer-challenge-invalid"))?,
+        scope,
     })
-}
-
-#[derive(Deserialize)]
-struct TokenDocument {
-    token: Option<String>,
-    access_token: Option<String>,
-    expires_in: Option<u64>,
-    scope: Option<String>,
 }
 
 fn unauthenticated(reason: &'static str) -> latent_core::PlatformError {
@@ -251,6 +294,12 @@ mod tests {
             credentials: RegistryCredentials::BearerChallenge {
                 realm: "https://127.0.0.1/token".to_owned(),
                 service: "registry.example".to_owned(),
+                identity: BearerIdentity {
+                    tenant: latent_core::TenantId("tenant".into()),
+                    principal: "operator".into(),
+                    credential_epoch: 1,
+                },
+                actions: RegistryActions::Pull,
                 username: "robot".to_owned(),
                 password: "secret".to_owned(),
                 addresses: Vec::new(),
@@ -303,7 +352,7 @@ mod tests {
         assert!(header.is_sensitive());
         assert_eq!(header.as_bytes(), b"Bearer abc.def");
         for body in [
-            br#"{}"#.as_slice(),
+            b"{}".as_slice(),
             br#"{"token":"one","access_token":"two"}"#.as_slice(),
             br#"{"token":"one","expires_in":0}"#.as_slice(),
             br#"{"token":"one","scope":"repository:tenant/site:pull,push"}"#.as_slice(),
