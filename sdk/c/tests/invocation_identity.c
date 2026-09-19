@@ -9,6 +9,8 @@
 #define CAPACITY 128u
 
 #include "publication_identity.h"
+#include "profile_vectors.h"
+#include "profile_lifetime.h"
 
 typedef struct copied_string {
     char bytes[CAPACITY];
@@ -419,6 +421,8 @@ static void absent_identity_is_server_assigned_and_present_empty_is_preserved(vo
 
 int main(void) {
     publication_models();
+    profile_vectors();
+    profile_lifetime();
     pending_identity_supports_status_and_all_cancel_results();
     lost_response_can_be_recovered_by_id_without_reinvoking();
     absent_identity_is_server_assigned_and_present_empty_is_preserved();
