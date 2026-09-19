@@ -1981,7 +1981,19 @@ dependencies = [
 name = "latent-sdk"
 version = "0.1.0-alpha.3"
 dependencies = [
+ "http",
+ "http-body",
+ "hyper",
+ "hyper-util",
  "latent-core",
+ "latent-protected-files",
+ "latent-rpc",
+ "prost",
+ "serde_json",
+ "tokio",
+ "tonic",
+ "tower",
+ "zeroize",
 ]
 
 [[package]]
@@ -2201,6 +2213,7 @@ dependencies = [
 name = "latentd"
 version = "0.1.0-alpha.3"
 dependencies = [
+ "base64 0.22.1",
  "clap",
  "http-body",
  "httparse",
@@ -2208,19 +2221,24 @@ dependencies = [
  "latent-admission",
  "latent-artifacts",
  "latent-audit",
+ "latent-blobs",
  "latent-capabilities",
  "latent-control-store",
  "latent-core",
  "latent-executor",
+ "latent-http",
  "latent-ingress",
  "latent-manifest",
  "latent-node",
  "latent-optimization-workloads",
+ "latent-packaging",
  "latent-policy",
  "latent-protected-files",
  "latent-rollout",
  "latent-routing",
  "latent-scheduler",
+ "latent-secrets",
+ "latent-signing",
  "latent-telemetry",
  "latent-testkit",
  "latent-wasmtime",
