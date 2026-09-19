@@ -24,5 +24,16 @@
   "baseOverrideBlocked": true,
   "wrongScriptMimeBlocked": true,
   "sameOriginPostReachedMethodPolicy": true,
-  "errors": 0
+  "errors": 0,
+  "revalidation": {
+    "observedAt": "2026-09-19T15:53:53Z",
+    "source": "f75482ebd1a4c9da0faf648641cba68bce104837",
+    "fixtureCode": "8535403a589527a14cf193131a88d039b45e20a0",
+    "browserTestsPassed": 2,
+    "browserTestsFailed": 0,
+    "browserTestsIgnored": 0,
+    "browserSeconds": 7.61,
+    "strictNodeClippyNoDeps": "passed",
+    "unchangedClientAndApplicationComponent": true
+  }
 }
