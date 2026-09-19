@@ -7,11 +7,13 @@ import {generatedDirectory} from '../lib/prepare.mjs';
 import {assetRoute, readSource, repositoryRoot, sha256, websiteRoot} from '../lib/repository.mjs';
 import {loadPalette, palettePath, validatePalette} from '../lib/palette.mjs';
 import {assertColorPair, assertFocus, assertReflow, assertTextContrast, cssHex, textSamples} from '../lib/theme-review.mjs';
+import {reviewNativeZoom} from '../lib/native-zoom-review.mjs';
 
 const palette = loadPalette();
 const inventory = JSON.parse(readSource(repositoryRoot, 'docs/assets/illustrations.json'));
 const directory = generatedDirectory('.generated/theme-review');
 const results = [];
+const nativeZoom = [];
 const browser = await chromium.launch({headless: true, timeout: 15000});
 
 async function visit(page, url) {
@@ -31,28 +33,38 @@ try {
       for (const mode of ['light', 'dark']) {
         const context = await browser.newContext({viewport: {width: 1280, height: 900}, colorScheme: mode, reducedMotion: 'reduce'});
         const errors = [];
+        const hydrationRequests = [];
+        let allowHydration = false;
         await context.route('**/*', route => {
           if (new URL(route.request().url()).origin !== server.origin) { errors.push('External theme dependency'); return route.abort(); }
+          if (!allowHydration && new URL(route.request().url()).pathname.endsWith('.js')) return new Promise(resolve => hydrationRequests.push(() => resolve(route.continue())));
           return route.continue();
         });
         await context.addInitScript(() => {
-          function firstFrame() {
-            if (!document.body) { requestAnimationFrame(firstFrame); return; }
-            const style = getComputedStyle(document.body);
-            window.__lsfFirstFrame = {theme: document.documentElement.dataset.theme, color: style.color, background: style.backgroundColor};
-          }
-          requestAnimationFrame(firstFrame);
+          const observer = new PerformanceObserver(list => {
+            if (list.getEntries().some(entry => entry.name === 'first-contentful-paint')) {
+              const style = getComputedStyle(document.body);
+              const background = style.backgroundColor === 'rgba(0, 0, 0, 0)' ? getComputedStyle(document.documentElement).backgroundColor : style.backgroundColor;
+              window.__lsfFirstPaint = {theme: document.documentElement.dataset.theme, color: style.color, background};
+              observer.disconnect();
+            }
+          });
+          observer.observe({type: 'paint', buffered: true});
         });
         const page = await context.newPage();
         page.setDefaultTimeout(10000);
         page.on('pageerror', error => errors.push(error.message));
         try {
-          await visit(page, `${prefix}/components/`);
+          assert.equal((await page.goto(`${prefix}/components/`, {waitUntil: 'commit', timeout: 15000})).status(), 200);
+          await page.waitForFunction(() => window.__lsfFirstPaint !== undefined);
           assert.equal(await page.locator('html').getAttribute('data-theme'), mode);
-          const firstFrame = await page.evaluate(() => window.__lsfFirstFrame);
-          assert.equal(firstFrame.theme, mode, 'System theme must initialize before the first rendered body frame');
+          const firstFrame = await page.evaluate(() => window.__lsfFirstPaint);
+          assert.equal(firstFrame.theme, mode, 'System theme must initialize before first contentful paint, with hydration held');
           assertColorPair(firstFrame.color, firstFrame.background);
           assert.equal(cssHex(firstFrame.background), palette.modes[mode].canvas);
+          allowHydration = true;
+          for (const resume of hydrationRequests.splice(0)) resume();
+          await page.waitForLoadState('networkidle', {timeout: 15000});
           const actual = await page.evaluate(() => Object.fromEntries(Array.from(getComputedStyle(document.documentElement)).filter(name => name.startsWith('--lsf-')).map(name => [name, getComputedStyle(document.documentElement).getPropertyValue(name).trim()])));
           for (const [token, value] of Object.entries(palette.modes[mode])) assert.equal(actual[`--lsf-${token.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)}`].toUpperCase(), value, token);
           const reading = assertTextContrast(await textSamples(page));
@@ -101,7 +113,8 @@ try {
           assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
           await page.reload({waitUntil: 'networkidle'});
           assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
-          assert.equal((await page.evaluate(() => window.__lsfFirstFrame)).theme, 'dark', 'Persisted theme initializes before the first body frame');
+          await page.waitForFunction(() => window.__lsfFirstPaint !== undefined);
+          assert.equal((await page.evaluate(() => window.__lsfFirstPaint)).theme, 'dark', 'Persisted theme initializes before first contentful paint');
           await toggle.focus();
           await page.keyboard.press('Enter');
           await page.emulateMedia({colorScheme: mode});
@@ -140,8 +153,12 @@ try {
           await screenshot(page, `${variant}-${mode}-reflow-200`);
           assert.equal(await page.evaluate(() => [...document.querySelectorAll('*')].filter(element => getComputedStyle(element).animationName !== 'none').length), 0);
           assert.deepEqual(errors, []);
-          results.push({variant, mode, source: built.manifest.revision, dirty: built.manifest.dirty, reading, keyboardStops, firstFrame: 'system and persisted theme', reflow: '390px mobile and 640 CSS px equivalent to 1280px at 200%', requests: 'same-origin only', errors: 0});
-        } finally { await context.close(); }
+          results.push({variant, mode, source: built.manifest.revision, dirty: built.manifest.dirty, reading, keyboardStops, firstPaint: 'system theme with hydration held; persisted theme on reload', reflow: '390px mobile and 640 CSS px equivalent to 1280px at 200%', requests: 'same-origin only', errors: 0});
+        } finally {
+          allowHydration = true;
+          for (const resume of hydrationRequests.splice(0)) resume();
+          await context.close();
+        }
       }
       for (const entry of inventory.outputs) {
         const context = await browser.newContext({viewport: {width: 1440, height: 760}});
@@ -191,10 +208,11 @@ try {
           }
         } finally { await context.close(); }
       }
+      nativeZoom.push(...await reviewNativeZoom(prefix, variant, directory));
     } finally { await server.close(); }
   }
 } finally { await browser.close(); }
 
-const evidence = {schema: 1, measuredAt: new Date().toISOString(), paletteSha256: sha256(readSource(repositoryRoot, palettePath)), pairings: validatePalette(palette), results, limitations: ['Chromium on Windows only; no complete accessibility certification.', '200% responsive equivalent is 640 CSS px, not a claim of a native browser zoom shortcut campaign.', 'SVG text remains a two-dimensional diagram: full-size link and zoom are required for narrow displays.', 'Wiki source snapshot is inventoried, not migrated or republished.']};
+const evidence = {schema: 1, measuredAt: new Date().toISOString(), paletteSha256: sha256(readSource(repositoryRoot, palettePath)), pairings: validatePalette(palette), results, nativeZoom, limitations: ['Chromium on Windows only; no complete accessibility certification or screen-reader campaign.', 'Native browser zoom is exercised through the public tabs.setZoom API in an isolated test extension, not an operating-system keyboard shortcut.', 'SVG text remains a two-dimensional diagram: full-size link and zoom are required for narrow displays.', 'Wiki source snapshot is inventoried, not migrated or republished.']};
 fs.writeFileSync(path.join(directory, 'evidence.json'), `${JSON.stringify(evidence, null, 2)}\n`);
-console.log(JSON.stringify({results, screenshots: path.relative(websiteRoot, directory)}));
+console.log(JSON.stringify({results, nativeZoom, screenshots: path.relative(websiteRoot, directory)}));

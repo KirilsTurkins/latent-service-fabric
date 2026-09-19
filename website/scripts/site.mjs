@@ -13,7 +13,7 @@ let args = command === 'start'
 let program = path.join(websiteRoot, 'node_modules/@docusaurus/core/bin/docusaurus.mjs');
 if (command === 'test-build') { program = path.join(websiteRoot, 'scripts/test-build.mjs'); args = []; }
 if (command === 'test-theme') { program = path.join(websiteRoot, 'scripts/test-theme.mjs'); args = []; }
-if (command === 'browser-install') { program = path.join(websiteRoot, 'node_modules/playwright/cli.js'); args = ['install', 'chromium', '--only-shell']; }
+if (command === 'browser-install') { program = path.join(websiteRoot, 'node_modules/playwright/cli.js'); args = ['install', 'chromium']; }
 const child = spawn(process.execPath, [program, ...args], {
   cwd: websiteRoot,
   stdio: 'inherit',
@@ -26,7 +26,7 @@ function stop() {
   if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], {timeout: 15000, stdio: 'ignore'});
   else process.kill(-child.pid, 'SIGKILL');
 }
-const timer = command === 'start' ? undefined : setTimeout(() => { expired = true; stop(); }, ['test-build', 'test-theme', 'browser-install'].includes(command) ? 180000 : 600000);
+const timer = command === 'start' ? undefined : setTimeout(() => { expired = true; stop(); }, command === 'test-theme' ? 300000 : ['test-build', 'browser-install'].includes(command) ? 180000 : 600000);
 process.on('SIGINT', stop);
 process.on('SIGTERM', stop);
 child.on('error', error => { clearTimeout(timer); console.error(error.message); process.exitCode = 1; });

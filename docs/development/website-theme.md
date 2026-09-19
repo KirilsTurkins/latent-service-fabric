@@ -43,8 +43,10 @@ normal-text contrast instead of the upstream 0.4 opacity; its computed opacity
 and pairing are browser-tested. Re-review that selector on a Docusaurus upgrade.
 
 System preference and explicit light/dark choice use Docusaurus's maintained
-color-mode initialization and keyboard control. The first body frame and reload
-are checked, not just the hydrated final state. Supported standard tabs move
+color-mode initialization and keyboard control. First contentful paint with
+React hydration held, and persisted-theme reload, are checked rather than only
+the hydrated final state. The painted canvas includes the HTML background when
+the body is transparent. Supported standard tabs move
 focus with arrow keys and select with Enter. This is not the future language
 preference component. Focus has a 3-pixel offset outline, scroll spacing and a
 forced-colors fallback. Navigation, tab, disclosure and form specimens use
@@ -100,7 +102,7 @@ as a UI fixture. It is not a page-existence proxy for teaching quality.
 `test:theme` serves the actual production outputs on bounded loopback servers,
 with same-origin requests only. It checks computed text colors, code line
 numbers, hover/selection, a deliberately invisible-text negative canary, system
-and stored themes, keyboard focus/navigation, mobile layout, reduced motion,
+and stored themes, keyboard focus/navigation, mobile layout, native 200% zoom, reduced motion,
 Mermaid and before/after SVG rendering. Both project and root base paths are
 required. SVG labels, viewBox boundaries and markers are checked; originals and
 copies are inspected as external images, including narrow embedding and full-size
@@ -109,10 +111,21 @@ zoom. It writes compact evidence and screenshots under
 built-site check. A timeout/interrupted test is neither a pass nor proof of failure
 in the product.
 
-The reflow fixture uses a 640 CSS-pixel viewport, equivalent in available reading
-width to a 1280-pixel viewport at 200%. It is recorded as **responsive equivalence**,
-not an assertion that a native browser zoom shortcut was exercised. SVG inspection
-also doubles the full-size image width. Retain dated screenshots and manual
+The responsive fixture additionally uses a 640 CSS-pixel viewport. A separate
+**native 200% browser zoom** check uses Chromium's public `tabs.setZoom` API in
+an isolated, local test-only extension and temporary profile. It verifies the
+reported zoom factor, the halved CSS viewport, doubled device-pixel ratio,
+reflow, reading and mobile navigation at that actual zoom. It never accesses
+the user's browser profile. The extension is not shipped in the website or
+loaded into an existing browser. Its only permission is `tabs`; it accepts only
+one exact owned loopback page. Chromium and the headless shell come from the
+same pinned Playwright browser revision, installed by `browser:install`.
+The test has a five-minute total deadline and closes its own browsers and
+verified in-worktree temporary profile; it changes no OS/user zoom setting.
+[Playwright's extension support](https://playwright.dev/docs/chrome-extensions)
+and [Chromium's public tabs API](https://developer.chrome.com/docs/extensions/reference/api/tabs)
+are the maintained interfaces. SVG inspection also doubles the full-size image
+width. Retain dated screenshots and manual
 observations with the exact reviewed checkpoint; automated checks do not certify
 all accessibility, browsers, assistive technologies or future content. See
 [WCAG reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html) for the
