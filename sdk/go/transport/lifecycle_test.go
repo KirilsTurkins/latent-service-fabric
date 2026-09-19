@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/http2"
 	"latent.dev/sdk/go/internal/rpc/controlv1"
 	"latent.dev/sdk/go/internal/rpc/invocationv1"
 	"latent.dev/sdk/go/profile"
@@ -123,7 +122,7 @@ func TestRecoveryCapacityTracksPeerStreamLimit(test *testing.T) {
 			return
 		}
 		peerReply(writer, &invocationv1.ActivationStatus{ActivationId: "held-a", Phase: "running"})
-	}, func(server *http2.Server) { server.MaxConcurrentStreams = 2 })
+	}, func(server *http.HTTP2Config) { server.MaxConcurrentStreams = 2 })
 	client := testClient(test, peer, func(config *Config) { config.MaxInFlight = 4; config.ReservedRecovery = 1 })
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -194,7 +193,7 @@ func TestConcurrentCloseReapsPendingAndQueuedCalls(test *testing.T) {
 		test.Error("close refunded unfinished call owners")
 	}
 	client.mutex.Unlock()
-	if !client.channel.State().Closed {
+	if client.channel.Err() == nil {
 		test.Fatal("Close left a usable connection")
 	}
 	_, failure := client.Cancel(context.Background(), profile.CancelRequest{ActivationId: "close-a"}, profile.CallOptions{})

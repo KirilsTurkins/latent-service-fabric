@@ -5,7 +5,39 @@ controlled-wire/lifecycle evidence distinct from separate real-node provider
 qualification. It is not production, browser, installed-bundle, remote-node or
 Go guest-runtime certification.
 
-## Stack and reproducible setup
+## Current security-remediated transport
+
+The initial measurements below describe the earlier grpc-go/x/net transport,
+not the current dependency graph. Commit `88ec3078` replaces it with the owned
+Go 1.27.1 standard-library `http.ClientConn`; integration source
+`c0ada12f879e18613a4070779a1638427581324a` includes current development. It uses
+Protobuf 1.36.12 and the repository's small descriptor-driven unary interface
+generator. No grpc-go, x/net or x/crypto module remains in the selected graph.
+The earlier vulnerable graph is not exempted or claimed safe.
+
+Parent validation on 2026-09-19 at 16:47 UTC uses the explicit Go 1.27.1 binary
+in the isolated Linux/amd64 container. Regeneration checking, complete graph
+reproduction, all-package tests, all-package race tests, `go vet` and participant
+build pass. The complete suite has 37 top-level and 104 subcase passes; the
+transport subset has 21 top-level and 90 subcase passes, including all 49 shared
+wire vectors. Both real raw-TCP `REFUSED_STREAM` and unprocessed-GOAWAY peers
+observe exactly one mutation header block. The ten graph-checker unit tests
+also pass. The current participant SHA-256 is
+`e2c4e27dcbf2b6e0c83804067d5aba696c861f1a1a02e1c6403bce7bac013bb7`.
+
+Fresh dependency scanning at 16:48:42 UTC with controls
+`de51d033469ba6c76b85b72a37f6fb8ea91c5476` and clean source `c0ada12f` reports
+zero findings and zero exceptions across 285 unique coordinates in three OSV
+queries. The Go subset is the three selected modules plus stdlib 1.27.1;
+generator, test-only and transitive modules are not dropped. These scans are
+time-bound observations, not a permanent vulnerability-free guarantee.
+
+The current implementation still needs the separate real-node provider runner
+and exact-head CI before ticket closure. The earlier participant binary and
+controlled-peer results below are retained as history, not substituted for
+current native qualification.
+
+## Initial stack and reproducible setup
 
 - Worktree: `target/phase3-260`; branch: `feat/260-bounded-go-client`.
 - Implementation milestone: `482b057be70c10114a3e986b95a75702cc227d59`.

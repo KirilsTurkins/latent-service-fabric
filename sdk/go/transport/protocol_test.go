@@ -11,7 +11,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"latent.dev/sdk/go/internal/rpc/controlv1"
 	"latent.dev/sdk/go/internal/rpc/invocationv1"
@@ -101,6 +100,9 @@ func TestNilEmptyIdentityFullWidthDeadlineAndNoAmbientAuthority(test *testing.T)
 	peer := newPeer(test, func(writer http.ResponseWriter, request *http.Request) {
 		wire := &invocationv1.InvokeRequest{}
 		decodePeerRequest(test, request, wire)
+		if request.Header.Get("x-principal") != "" || wire.Metadata["authorization"] != "Bearer untrusted" {
+			test.Error("payload metadata became transport authority")
+		}
 		seen <- wire.ActivationId
 		if wire.DeadlineUnixMillis == nil || *wire.DeadlineUnixMillis != math.MaxUint64 || wire.RootActivationId == nil || *wire.RootActivationId != "" {
 			test.Error("absolute deadline or lineage was normalized")
@@ -116,7 +118,8 @@ func TestNilEmptyIdentityFullWidthDeadlineAndNoAmbientAuthority(test *testing.T)
 	request.ActivationId = nil
 	request.RootActivationId = pointer("")
 	request.DeadlineUnixMillis = pointer(uint64(math.MaxUint64))
-	ctx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs("authorization", "Bearer untrusted", "x-principal", "operator"))
+	request.Metadata = map[string]string{"authorization": "Bearer untrusted", "x-principal": "operator"}
+	ctx := context.Background()
 	response, failure := client.Invoke(ctx, request, profile.CallOptions{})
 	if failure != nil || response.Metadata.Identity.ActivationId == nil || *response.Metadata.Identity.ActivationId != "server-assigned" {
 		test.Fatalf("absent identity or explicit credential changed: %v", failure)

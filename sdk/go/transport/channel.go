@@ -13,7 +13,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"latent.dev/sdk/go/internal/rpc/controlv1"
 	"latent.dev/sdk/go/profile"
@@ -48,14 +47,8 @@ type rpcChannel struct {
 	client *Client
 }
 
-func (*rpcChannel) NewStream(context.Context, *grpc.StreamDesc, string, ...grpc.CallOption) (grpc.ClientStream, error) {
-	return nil, localFailure(profile.FailureCategoryInvalidRequest, "only the eight unary profile operations are supported")
-}
-
-func (channel *rpcChannel) Invoke(ctx context.Context, method string, request, response any, _ ...grpc.CallOption) error {
+func (channel *rpcChannel) Invoke(ctx context.Context, method string, input, output proto.Message) error {
 	state := ctx.Value(callKey{}).(*callState)
-	input := request.(proto.Message)
-	output := response.(proto.Message)
 	if proto.Size(input) > state.requestLimit {
 		return state.fail(profile.FailureCategoryLimit, "encoded request exceeds client limit")
 	}
@@ -83,7 +76,7 @@ func (channel *rpcChannel) Invoke(ctx context.Context, method string, request, r
 	setTimeoutHeader(query)
 	query.Header.Set("authorization", "Bearer "+channel.client.config.BearerToken)
 	query.GetBody = nil
-	reply, failure := channel.client.owner.RoundTrip(query)
+	reply, failure := channel.client.roundTrip(query)
 	if failure != nil {
 		return state.fail(profile.FailureCategoryTransport, "HTTP/2 request failed; outcome may be unknown")
 	}
