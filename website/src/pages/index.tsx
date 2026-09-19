@@ -14,6 +14,7 @@ const sections = [
 export default function Home(): React.ReactNode {
   return <Layout title="Development documentation" description="Current repository documentation; guide acceptance and released snapshots remain explicitly separate.">
     <main className="container foundation-home">
+      <p className="lsf-eyebrow">Bounded execution. Explicit authority.</p>
       <h1>Latent Service Fabric documentation</h1>
       <p>This is the current <strong>development</strong> corpus, not a released documentation snapshot or a runtime service.</p>
       <p>Existing references remain authoritative. The finite migration still requires reviewed practical guides, released snapshots, accessibility/search and protected publication.</p>
