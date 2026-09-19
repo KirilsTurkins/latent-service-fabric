@@ -59,6 +59,11 @@ WIT-value media type `application/vnd.latent.wit-values.v1+json` and arguments
 201 response plus two body bytes; blob returns `["4"]`. Callee `answer`, `fail`
 and `spin` have no input arguments. Its contract is `tests:local/api@1.0.0`.
 Use the deployed profile's finite budgets, never direct provider access.
+The node's five-second execution maximum also bounds the incoming gRPC timeout:
+select an RPC timeout at most 5,000 milliseconds, rather than inheriting a
+longer SDK default. Held calls use 3,000 milliseconds, except the explicit
+500-millisecond deadline case. Do not increase the node ceiling to make an
+incorrectly configured client pass.
 
 Choose caller-known activation IDs prefixed with `LANGUAGE-`. Retain every
 actually admitted ID in the final result; do not include IDs rejected before
@@ -67,6 +72,11 @@ the explicit operation ID. The policy document is an empty rule set that grants
 no execution authority; create uses the explicit generation precondition zero.
 Verify its observed receipt, lookup and exact manual replay, then reject an
 incompatible replay/precondition rather than silently changing it.
+The current policy RPC emits no audit acknowledgement, as specified by the
+shared client profile. Assert that acknowledgement, raw status and attempt
+sequence remain absent. Durable node auditing for other operations does not
+create a policy acknowledgement. Controlled transport tests independently
+exercise known, uncertain and future audit metadata with full-width attempts.
 
 ## Controlled pending operations
 
@@ -97,8 +107,10 @@ already-terminal. Never report local wait cancellation as proven guest cleanup.
 The participant exits zero with one JSON line and no stderr. Its schema is
 `latent.sdk.provider.workflow.result.v1`, with exactly `language`, `assertions`,
 `activationIds`, `operationId`, `auditAttempt`, `transport` and `schemaVersion`.
-`transport` is `numeric-loopback-http2-protobuf-v1`; `auditAttempt` is an actually
-observed positive canonical decimal `uint64` string. Keep 6–16 unique admitted
+`transport` is `numeric-loopback-http2-protobuf-v1`; `auditAttempt` is `null`
+when absent, or an actually observed positive canonical decimal `uint64`
+string when supplied. Current policy calls must retain `null`, never invent
+an attempt from the operation ID or node audit counters. Keep 6–16 unique admitted
 activation IDs and no private payloads, credentials or diagnostics.
 
 Every following assertion is required and must represent an executed check:
@@ -121,3 +133,6 @@ time and cleanup limits. The runner deadline is 240 seconds; the participant
 gets at most 90 seconds. Result output is at most 32 KiB, cumulative participant
 output 64 KiB and the final evidence 64 KiB. These small deterministic checks
 are not load campaigns, universal latency claims or production certification.
+Failure reporting accepts only a bounded structured participant stage/reason
+token and finite category/gRPC code. Arbitrary stderr, server messages and
+additional fields are not copied into operator diagnostics.
