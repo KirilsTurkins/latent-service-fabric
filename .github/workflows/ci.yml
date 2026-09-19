@@ -31,6 +31,8 @@ jobs:
       renderer: ${{ steps.select.outputs.renderer }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Classify the complete change
         id: select
         run: python3 tools/ci_profile.py
@@ -42,6 +44,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5
@@ -61,6 +65,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           components: rustfmt, clippy
@@ -161,6 +167,22 @@ jobs:
         uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
+      - name: Validate browser boundary with live ingress
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 5
+        run: |
+          node --test tools/tests/browser_hydration.test.mjs
+          node tools/browser-boundary/build.mjs examples/renderer-profile "$RUNNER_TEMP/browser-boundary"
+          LSF_BROWSER_BUILD="$RUNNER_TEMP/browser-boundary" LSF_BROWSER_NODE="$(command -v node)" LSF_BROWSER_CHROME="$(command -v google-chrome)" LSF_BROWSER_TOOLCHAIN="$PWD/examples/renderer-profile" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite browser-boundary
+      - name: Retain bounded browser boundary observations
+        if: always() && needs.profile.outputs.renderer == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: browser-boundary-observations
+          path: |
+            ${{ runner.temp }}/browser-boundary/build-receipt.json
+            ${{ runner.temp }}/browser-boundary/browser-receipt.json
+          if-no-files-found: error
       - name: Build the public Angular renderer fixture
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 10
@@ -284,6 +306,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -334,6 +358,8 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -384,6 +410,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@9376cdc5a5e25b16da71af47712785cf06b0d6d4 # 1.94.1
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -413,6 +441,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5
@@ -528,6 +558,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5

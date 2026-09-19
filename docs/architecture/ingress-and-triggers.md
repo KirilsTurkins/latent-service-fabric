@@ -24,6 +24,11 @@ shared durable consumer ownership; current HTTP application types use a bounded
 collector/invocation/delivery owner, preserve repeated headers and obtain identity
 from host context. Capsules own no protocol listener.
 
+Browser-facing HTTP also enforces the closed
+[same-origin and hydration policy](../security/browser-boundary.md). It shares
+the existing transport/asset/cache owners; browser origin metadata is neither
+RPC authentication nor a tenant/publication grant.
+
 ## Trigger lifecycle
 
 ```text

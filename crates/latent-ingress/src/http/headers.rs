@@ -40,10 +40,17 @@ fn private_input(name: &str) -> bool {
         "traceparent",
         "tracestate",
         "baggage",
+        "x-real-ip",
+        "remote-user",
+        "x-remote-user",
+        "x-original-url",
+        "x-rewrite-url",
     ]
     .iter()
     .any(|field| name.eq_ignore_ascii_case(field))
         || prefix(name, "x-forwarded-")
+        || prefix(name, "x-auth-request-")
+        || prefix(name, "x-authenticated-")
 }
 
 fn field(header: HeaderView<'_>) -> Result<(), HttpError> {
