@@ -70,9 +70,16 @@ LSF_WEB_COMPONENT="$BUILD/application.wasm" LSF_BROWSER_BUILD="$BUILD" \
 Install the pinned renderer dependencies with `npm ci --ignore-scripts` first,
 and select a fresh ignored `BUILD` directory. Normal CI runs both named tests
 from the current successful Cargo inventory and retains both receipts; a missing
-test is not accepted as an empty successful filter. The local strict Clippy run
-was interrupted when Docker Desktop stopped after browser success and is not
-claimed passing; exact-head CI must independently complete it.
+test is not accepted as an empty successful filter. The initial local strict
+Clippy command was interrupted when Docker Desktop stopped. After recovery,
+the repository's no-dependency strict check exposed oversized startup futures;
+explicitly boxing the two shared fixture startup paths and catalog-open boundary
+fixed those failures without changing request behavior or suppressing a lint.
+At integration `f75482ebd1a4c9da0faf648641cba68bce104837` (fixture fix `8535403a`),
+`cargo clippy --locked -p latentd --lib --tests --all-features --no-deps -- -D warnings`
+passed, and both actual-browser cases passed again (2 passed, 0 failed/ignored,
+7.61 seconds). The client and application component bytes were unchanged.
+Exact-head CI must independently complete before merge.
 
 ## Qualification boundary
 
