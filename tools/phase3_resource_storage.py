@@ -6,13 +6,13 @@ from pathlib import Path
 import stat
 import time
 
-from tools.phase2_operator_process import require
+from tools.phase2_operator_process import WorkflowError, require
 from tools.phase3_resource_profile import digest
 
 
 def storage_snapshot(root, deadline, maximum_files=8192, maximum_bytes=2 * 1024**3):
     require(root.is_dir() and not root.is_symlink(), "resource-storage-root")
-    pending, records, identities, groups = [root], [], set(), {}
+    pending, records, identities, groups, directory_counts = [root], [], set(), {}, {}
     visited = total = allocated = unique_bytes = 0
     began = time.monotonic_ns()
     while pending:
@@ -23,6 +23,10 @@ def storage_snapshot(root, deadline, maximum_files=8192, maximum_bytes=2 * 1024*
                 require(visited <= maximum_files and not entry.is_symlink(), "resource-storage-entry-bound")
                 path = Path(entry.path)
                 if entry.is_dir(follow_symlinks=False):
+                    relative = path.relative_to(root)
+                    if len(relative.parts) <= 4:
+                        parent = relative.parent.as_posix()
+                        directory_counts[parent] = directory_counts.get(parent, 0) + 1
                     pending.append(path)
                     continue
                 info = entry.stat(follow_symlinks=False)
@@ -42,7 +46,15 @@ def storage_snapshot(root, deadline, maximum_files=8192, maximum_bytes=2 * 1024*
                                 "device": info.st_dev, "inode": info.st_ino})
     return {"files": len(records), "uniqueInodes": len(identities), "logicalBytes": total,
             "uniqueInodeLogicalBytes": unique_bytes, "allocatedBytes": allocated if os.name == "posix" else None,
-            "groups": groups, "metadataDigest": digest(sorted(records, key=lambda row: row["path"])),
+            "groups": groups, "directoryCounts": directory_counts,
+            "metadataDigest": digest(sorted(records, key=lambda row: row["path"])),
             "beganMonotonicNanos": str(began), "finishedMonotonicNanos": str(time.monotonic_ns()),
             "consistency": "non-atomic-stat-scan-no-content-or-secret-read",
             "scope": "owned-node-directory-including-durable-audit-not-host-filesystem-dedup"}
+
+
+def failure_storage(root):
+    try:
+        return {"available": True, "snapshot": storage_snapshot(root, time.monotonic() + 2)}
+    except Exception as error:
+        return {"available": False, "reason": str(error) if isinstance(error, WorkflowError) else type(error).__name__}

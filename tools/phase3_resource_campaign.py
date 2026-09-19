@@ -28,7 +28,7 @@ from tools.phase3_resource_identity import file_identity, inventory, source_iden
 from tools.phase3_resource_node import ResourceClient, apply_dormant, configure, delete_deployments, pages, settled_samples
 from tools.phase3_resource_os import Probe
 from tools.phase3_resource_profile import LIMITS, PROFILES, SCHEMA, canonical, digest, policy_capacity, validate_receipt
-from tools.phase3_resource_storage import storage_snapshot
+from tools.phase3_resource_storage import failure_storage, storage_snapshot
 from tools.phase3_resource_workload import measured_work, mode
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -207,6 +207,7 @@ def node_run(args, result, cancellation, temporary, deadline):
         try:
             if node is not None:
                 result["nodeFailureStderr"] = bytes(node.buffers[1])[-8192:].decode("utf-8", "replace")
+                result["failureStorage"] = failure_storage(directories["node"])
                 node.close()
                 result["nodeForcedCleanup"] = {"processId": node.owner.process.pid,
                     "closed": node.closed, "reaped": node.owner.finished,

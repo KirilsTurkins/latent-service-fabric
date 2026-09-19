@@ -6,20 +6,37 @@ import copy
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
 import time
 import unittest
 from unittest.mock import patch
 
-from tools.phase2_operator_process import WorkflowError
+from tools.build_process_signals import owned_cancellation
+from tools.phase2_operator_process import Process, WorkflowError
+from tools.phase3_resource_identity import file_identity
+from tools.phase3_resource_os import Probe
 from tools.phase3_resource_render import rendered
 from tools.phase3_resource_profile import PROFILES
-from tools.phase3_resource_storage import storage_snapshot
-from tools.phase3_resource_web import configure, warm_cache_observed
+from tools.phase3_resource_storage import failure_storage, storage_snapshot
+from tools.phase3_resource_web import configure, observed_summary, warm_cache_observed
 from tools.phase3_web_scenario import MEDIA
 
 
 class StorageTests(unittest.TestCase):
+    def test_failed_run_retains_finite_on_disk_stage_counts_not_active_owner_claims(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            staging = root / "data/provider-blobs-unit/staging"
+            for name in ("0001", "0002"):
+                (staging / name).mkdir(parents=True)
+                (staging / name / "data").write_bytes(b"same")
+            observed = failure_storage(root)
+            self.assertTrue(observed["available"])
+            self.assertEqual(observed["snapshot"]["directoryCounts"]["data/provider-blobs-unit/staging"], 2)
+            self.assertEqual(observed["snapshot"]["logicalBytes"], 8)
+            self.assertFalse(failure_storage(root / "missing")["available"])
+
     def test_actual_files_and_hardlinks_have_separate_logical_and_inode_counts(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -73,6 +90,38 @@ class RenderIdentityTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
+    def test_unavailable_preparation_metrics_are_not_zero_or_full_population(self):
+        observed = observed_summary([3, None, 5])
+        self.assertEqual((observed["minimum"], observed["maximum"], observed["count"]), (3, 5, 2))
+        self.assertEqual((observed["sampleCount"], observed["unavailableCount"]), (3, 1))
+        unavailable = observed_summary([None])
+        self.assertIsNone(unavailable["maximum"])
+        self.assertEqual(unavailable["unavailableCount"], 1)
+
+    @unittest.skipUnless(sys.platform == "linux", "owned Linux protected process")
+    def test_protected_child_descriptors_are_unavailable_not_zero(self):
+        with tempfile.TemporaryDirectory() as temporary, owned_cancellation() as cancellation:
+            executable = Path(sys.executable).resolve()
+            child = "import ctypes,json,time; assert ctypes.CDLL(None).prctl(4,0,0,0,0)==0; print(json.dumps({'ready':True}),flush=True); time.sleep(30)"
+            script = f"import subprocess,sys,time; subprocess.Popen([sys.executable,'-c',{child!r}]); time.sleep(30)"
+            process = Process([str(executable), "-c", script], Path(temporary), dict(os.environ), cancellation)
+            try:
+                self.assertEqual(process.line(time.monotonic() + 5), {"ready": True})
+                probe = Probe(process, file_identity(executable))
+                observed = probe.sample()
+                self.assertEqual(observed["observedProcesses"], 2)
+                descendant = next(row for row in observed["processTree"] if row["processId"] != probe.pid)
+                self.assertGreater(descendant["rssBytes"], 0)
+                if "descriptors" in descendant["unavailable"]:
+                    self.assertIsNone(descendant["handles"])
+                    self.assertIsNone(observed["metrics"]["handles"])
+                    self.assertIsNone(observed["metrics"]["listeners"])
+                else:
+                    self.assertGreater(descendant["handles"], 0)
+            finally:
+                process.close()
+            self.assertTrue(process.owner.finished)
+
     def test_web_preparation_budgets_its_observer_without_changing_runtime_limits(self):
         for name in ("web-smoke", "web-campaign"):
             settings = {"workers": {"runtime": 1, "control": 1}, "cells": [{}], "catalogs": {},

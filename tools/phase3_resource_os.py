@@ -73,53 +73,90 @@ class Probe:
         before = proc_stat(read(root / "stat"))
         require(before["startTimeTicks"] == self.identity["startTimeTicks"]
                 and before["group"] == before["session"] == self.pid, "resource-process-replaced")
-        pending, rows, known = [self.pid], [], set()
-        while pending:
-            process_id = pending.pop()
-            require(process_id not in known and len(known) < LIMITS["maximumProcesses"],
-                    "resource-process-tree-bound")
-            known.add(process_id)
+        pending, rows, known, disappeared_processes = [self.pid], [], set(), []
+        tree_complete = True
+
+        def inspect(process_id):
+            nonlocal tree_complete
+            unavailable = {}
             directory = Path(f"/proc/{process_id}")
             current = proc_stat(read(directory / "stat"))
             require(current["group"] == current["session"] == self.pid, "resource-descendant-group")
             status = dict(line.split(":", 1) for line in read(directory / "status").splitlines())
             sockets, descriptors, disappeared, tasks = set(), 0, 0, 0
-            with os.scandir(directory / "fd") as entries:
-                for entry in entries:
-                    descriptors += 1
-                    require(descriptors <= LIMITS["maximumDescriptors"], "resource-descriptor-bound")
-                    try:
-                        target = os.readlink(entry.path)
-                    except FileNotFoundError:
-                        disappeared += 1
-                        continue
-                    require(len(target) <= 4096, "resource-link-bound")
-                    matched = re.fullmatch(r"socket:\[([0-9]{1,20})\]", target)
-                    if matched:
-                        sockets.add(matched[1])
+            try:
+                with os.scandir(directory / "fd") as entries:
+                    for entry in entries:
+                        descriptors += 1
+                        require(descriptors <= LIMITS["maximumDescriptors"], "resource-descriptor-bound")
+                        try:
+                            target = os.readlink(entry.path)
+                        except FileNotFoundError:
+                            disappeared += 1
+                            continue
+                        require(len(target) <= 4096, "resource-link-bound")
+                        matched = re.fullmatch(r"socket:\[([0-9]{1,20})\]", target)
+                        if matched:
+                            sockets.add(matched[1])
+            except PermissionError:
+                require(process_id != self.pid, "resource-root-descriptors-unavailable")
+                sockets, descriptors, disappeared = None, None, None
+                unavailable["descriptors"] = "permission-denied-protected-descendant-not-zero"
             children = set()
-            with os.scandir(directory / "task") as entries:
-                for entry in entries:
-                    tasks += 1
-                    require(tasks <= LIMITS["maximumTasks"], "resource-task-bound")
-                    children.update(int(value) for value in read(Path(entry.path) / "children").split())
-            pending.extend(sorted(children))
-            tables = {kind: read(directory / "net" / kind, 1048576).splitlines()
-                      for kind in ("tcp", "tcp6", "udp", "udp6")}
-            memory = {"rssBytes": int(status["VmRSS"].split()[0]) * 1024,
-                      "highWaterRssBytes": int(status["VmHWM"].split()[0]) * 1024}
-            rows.append({"processId": process_id, "startTimeTicks": current["startTimeTicks"],
-                         "threads": int(status["Threads"]), "tasks": tasks,
-                         "handles": descriptors, "sockets": len(sockets), "disappearedDescriptors": disappeared,
-                         **network_counts(tables, sockets), **memory})
+            try:
+                with os.scandir(directory / "task") as entries:
+                    for entry in entries:
+                        tasks += 1
+                        require(tasks <= LIMITS["maximumTasks"], "resource-task-bound")
+                        children.update(int(value) for value in read(Path(entry.path) / "children").split())
+            except (PermissionError, FileNotFoundError):
+                tasks = None
+                tree_complete = False
+                unavailable["tasksAndDescendants"] = "unreadable-or-exited-during-non-atomic-scan"
+            network = {key: None for key in ("listeners", "tcpConnections", "udpSockets")}
+            if sockets is not None:
+                try:
+                    tables = {kind: read(directory / "net" / kind, 1048576).splitlines()
+                              for kind in ("tcp", "tcp6", "udp", "udp6")}
+                    network = network_counts(tables, sockets)
+                except PermissionError:
+                    require(process_id != self.pid, "resource-root-network-unavailable")
+                    unavailable["network"] = "permission-denied-protected-descendant-not-zero"
+            memory = {key: int(status[field].split()[0]) * 1024 if field in status else None
+                      for key, field in (("rssBytes", "VmRSS"), ("highWaterRssBytes", "VmHWM"))}
+            if any(value is None for value in memory.values()):
+                require(process_id != self.pid, "resource-root-memory-unavailable")
+                unavailable["memory"] = "descendant-unmapped-or-exiting-not-zero"
+            row = {"processId": process_id, "startTimeTicks": current["startTimeTicks"],
+                   "threads": int(status["Threads"]), "tasks": tasks,
+                   "handles": descriptors, "sockets": len(sockets) if sockets is not None else None,
+                   "disappearedDescriptors": disappeared, "unavailable": unavailable, **network, **memory}
+            return row, children
+
+        while pending:
+            process_id = pending.pop()
+            require(process_id not in known and len(known) < LIMITS["maximumProcesses"],
+                    "resource-process-tree-bound")
+            known.add(process_id)
+            try:
+                row, children = inspect(process_id)
+                pending.extend(sorted(children))
+                rows.append(row)
+            except (FileNotFoundError, ProcessLookupError):
+                require(process_id != self.pid, "resource-root-exited-during-scan")
+                tree_complete = False
+                disappeared_processes.append(process_id)
         after = proc_stat(read(root / "stat"))
         require(after["startTimeTicks"] == before["startTimeTicks"], "resource-process-replaced")
-        metrics = {key: sum(row[key] for row in rows) for key in
+        metrics = {key: sum(row[key] for row in rows) if tree_complete
+                   and all(row[key] is not None for row in rows) else None for key in
                    ("threads", "tasks", "handles", "sockets", "listeners", "tcpConnections",
                     "udpSockets", "rssBytes", "highWaterRssBytes", "disappearedDescriptors")}
-        metrics["processes"] = len(rows)
+        metrics["processes"] = len(rows) if tree_complete else None
         return {"identity": self.identity, "beganMonotonicNanos": str(began),
                 "finishedMonotonicNanos": str(time.monotonic_ns()), "metrics": metrics, "processTree": rows,
+                "treeComplete": tree_complete, "observedProcesses": len(rows),
+                "disappearedProcesses": disappeared_processes,
                 "procBytesRead": LIMITS["maximumProcBytes"] - remaining,
                 "consistency": "non-atomic-finite-scan", "unavailable": {
                     "rendererHeapBytes": "guest-JS-allocator-not-exported",

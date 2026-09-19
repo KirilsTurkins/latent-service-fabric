@@ -40,6 +40,8 @@ cache hit counter and unchanged resident entry/source/image/metadata totals;
 it is not mislabeled as an authenticated native disk-cache hit. The qualified
 SDK `e07abf72` baseline is integrated as merge `70c41c09`, with its root admission
 implementation unchanged. New runs identify that source separately.
+The parent's development reconciliation `5f38a9d5` is subsequently integrated
+as `a6970f55`; workspace version and lockfile changes require a fresh build.
 
 The v1 smoke's requested 16-deployment population is retained in v2, not lowered
 to hide its failure. The unexecuted larger v1 profile's 64-deployment population
@@ -135,6 +137,20 @@ successful web preparation/render churn, standalone event/secret/child coverage,
 JS heap counters and OCI resolver/token/redirect campaigns remain gaps at this
 checkpoint. The earlier real HTTP/blob/secret/child Rust fixture observations
 are separate from standalone acceptance.
+
+### Protected compiler observation failure
+
+[Web smoke v2 / 04](phase3-resource-evidence/2026-09-19-web-smoke-v2-04.json)
+at `324f7110` retained 15 samples, including the real compiler child, before
+`PermissionError` aborted collection after 6175667650 ns of preparation.
+The compiler deliberately enables Linux `NotDumpable`; no ptrace capability,
+security-profile relaxation or alternate unprotected compiler is introduced.
+The corrected sampler records unreadable protected-child descriptors/network
+metrics as **unavailable**, including unavailable aggregate counters and explicit
+sample denominators. It still retains readable process/thread/RSS observations,
+rejects unavailable root-node descriptor inspection, and never substitutes zero.
+An exiting child or unreadable descendant list marks tree totals incomplete.
+This failure remains immutable and does not establish preparation success.
 
 Historical results: [checkpoint](phase3-resource-checkpoint.md),
 [attempt ledger](phase3-resource-evidence/README.md),

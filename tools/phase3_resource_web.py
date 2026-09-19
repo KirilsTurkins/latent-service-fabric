@@ -12,7 +12,7 @@ from tools.phase3_resource_profile import digest, integer, quiescent, summary, v
 from tools.phase3_resource_render import RenderClient, finish, prepare_observed, spawn
 from tools.phase3_resource_os import Probe
 from tools.phase3_resource_schedule import run_open_loop
-from tools.phase3_resource_storage import storage_snapshot
+from tools.phase3_resource_storage import failure_storage, storage_snapshot
 from tools.phase3_resource_workload import overload_counts
 from tools.phase3_web_qualification import cancel_render, native_cache_audit
 from tools.phase3_web_scenario import (
@@ -41,6 +41,12 @@ def warm_cache_observed(before, after):
             and integer(after["entries"]) > 0 and integer(after["compiledImageBytes"]) > 0,
             "resource-angular-prepared-cache-hit")
     return {"before": before, "after": after, "scope": "in-memory-prepared-cache-not-native-disk-cache"}
+
+
+def observed_summary(values):
+    known = [value for value in values if value is not None]
+    measured = summary(known) if known else {"count": 0, "minimum": None, "maximum": None, "p50": None, "p95": None}
+    return {**measured, "sampleCount": len(values), "unavailableCount": len(values) - len(known)}
 
 
 def web_run(args, result, cancellation, temporary, deadline):
@@ -157,6 +163,7 @@ def web_run(args, result, cancellation, temporary, deadline):
             result["lastControlFailure"] = client.last_failure
         if node is not None:
             result["nodeFailureStderr"] = bytes(node.buffers[1])[-8192:].decode("utf-8", "replace")
+            result["failureStorage"] = failure_storage(directories["node"])
             node.close()
             result["nodeForcedCleanup"] = {"reaped": node.owner.finished, "exitCode": node.owner.process.returncode}
 
@@ -195,6 +202,10 @@ def validate_web(value):
                     "resource-angular-sample-owner")
             if phase != "active":
                 require(quiescent(row), "resource-angular-retained-owner")
+                scoped = [entry for entry in row["inventory"]["topology"]["entries"]
+                          if entry["ownership"] == "activation-scoped"]
+                require(scoped and all(integer(entry["activeCount"]) == 0 for entry in scoped),
+                        "resource-angular-retained-runtime-owner")
     for count in profile["dormantSteps"]:
         require(sum(row["phase"] == "dormant" and row["dormantDeployments"] == count for row in samples)
                 == profile["samplesPerPhase"], "resource-angular-density-samples")
@@ -226,6 +237,8 @@ def validate_web(value):
             "resource-angular-cleanup")
     require(value["overloadClassification"] == overload_counts(value["overload"]), "resource-angular-overload")
     dormant = [row for row in samples if row["phase"] == "dormant"]
+    resident_cache = [row["inventory"]["cacheSummary"] for row in samples
+                      if row["phase"] in ("warm", "recovery", "unrouted")]
     checks = {"requestedDormantPopulationsAdmitted": True,
               "dormantProcessesPlateau": len({row["os"]["metrics"]["processes"] for row in dormant}) == 1,
               "dormantThreadsPlateau": len({row["os"]["metrics"]["threads"] for row in dormant}) == 1,
@@ -233,10 +246,12 @@ def validate_web(value):
               "liveRendererCellsObserved": any(integer(cell["active"]) > 0 for row in samples if row["phase"] == "active"
                                                 for cell in row["inventory"]["cellCapacity"]),
               "activeOwnershipReturns": all(quiescent(row) for row in samples if row["phase"] == "recovery")}
+    checks["preparedCachePlateau"] = len({tuple(integer(cache[key]) for key in
+        ("entries", "sourceBytes", "compiledImageBytes", "metadataBytes")) for cache in resident_cache}) == 1
     if value["checks"]:
         require(value["checks"] == checks, "resource-angular-checks-changed")
     value["checks"] = checks
-    value["analysis"] = {"osRanges": {phase: {key: summary([row["os"]["metrics"][key]
+    value["analysis"] = {"osRanges": {phase: {key: observed_summary([row["os"]["metrics"][key]
         for row in samples if row["phase"] == phase]) for key in
         ("processes", "threads", "listeners", "sockets", "handles", "rssBytes")}
         for phase in ("fixed", "dormant", "preparation", "prepared", "warm", "active", "recovery", "unrouted")},
