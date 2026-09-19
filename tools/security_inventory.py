@@ -8,6 +8,7 @@ import tomllib
 from urllib.parse import urlsplit
 
 from tools.security_common import POLICY, decode_json, digest, read_file, require, tracked_paths
+from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, legacy_manifest, maven_packages, nuget_packages
 
 MANIFEST_NAMES = frozenset({
     "Cargo.toml", "Cargo.lock", "package.json", "package-lock.json", "npm-shrinkwrap.json",
@@ -17,6 +18,7 @@ MANIFEST_NAMES = frozenset({
     "pom.xml", "gradle.lockfile", "packages.lock.json", "packages.config", "Directory.Packages.props",
     "Gemfile", "Gemfile.lock", "composer.json", "composer.lock", "conanfile.txt", "conanfile.py",
     "vcpkg.json", "CMakeLists.txt", "Directory.Build.props", "Directory.Build.targets", "NuGet.Config", "nuget.config",
+    "dependencies.lock.json",
 })
 
 
@@ -34,6 +36,7 @@ class Package:
 def is_manifest(path: str) -> bool:
     name = PurePosixPath(path).name
     return (name in MANIFEST_NAMES or name.endswith((".csproj", ".fsproj", ".vbproj", ".gradle", ".gradle.kts"))
+            or (name.lower().startswith("nuget.") and name.lower().endswith(".config"))
             or (name.startswith("requirements") and name.endswith((".txt", ".in", ".lock"))))
 
 
@@ -117,6 +120,10 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
             if not any(candidate == optional_directory or candidate.startswith(optional_directory + "/") for candidate in paths):
                 records.append({"path": path, "coverage": "not-shipped-at-source-revision", "packages": 0})
                 continue
+        if entry["kind"] == "c-sources" and legacy_c_tree(repo, entry, set(paths)):
+            records.append({"path": path, "coverage": "reviewed-no-external-packages", "packages": 0,
+                            "boundary": "Exact reviewed legacy C interface tree, not a transport implementation."})
+            continue
         payload = read_file(repo, path)
         if entry["kind"] == "cargo":
             cargo_paths, record = cargo_inventory(repo, entry)
@@ -128,6 +135,18 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
             covered.add(entry["lock"])
         elif entry["kind"] == "pypi":
             current = pypi_packages(repo, path)
+        elif entry["kind"] in {"go-locked", "maven-locked", "nuget-locked"}:
+            if legacy_manifest(repo, entry, set(paths)):
+                current = []
+            else:
+                reader = {"go-locked": go_packages, "maven-locked": maven_packages, "nuget-locked": nuget_packages}[entry["kind"]]
+                current = [Package(ecosystem, name, version, entry["lock"])
+                           for ecosystem, name, version in reader(repo, entry)]
+                covered.add(entry["lock"])
+                if entry["kind"] == "go-locked":
+                    covered.add(entry["sum"])
+        elif entry["kind"] == "c-sources":
+            current = [Package(ecosystem, name, version, path) for ecosystem, name, version in c_packages(repo, path)]
         elif entry["kind"] == "no-external-packages":
             require(digest(payload.replace(b"\r\n", b"\n")) == entry["sha256"], "unreviewed-sdk-manifest-change")
             current = []
@@ -137,6 +156,8 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
         covered.add(path)
         records.append({"path": path, "coverage": "OSV" if current else "reviewed-no-external-packages",
                         "sha256": digest(payload), "packages": len(current)})
+        if entry["kind"] == "c-sources":
+            records[-1]["boundary"] = "OSV source-commit and PyPI queries; upstream native advisories need separate review."
     for entry in configuration.get("non_manifest_modules", []):
         path = entry["path"]
         require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == entry["sha256"], "unreviewed-manifest-lookalike")

@@ -161,13 +161,16 @@ class SecurityFixtureTests(unittest.TestCase):
         with patch("tools.security_inventory.tracked_paths", return_value=legacy_paths):
             packages, records = inventory(ROOT)
         absent = {entry["path"] for entry in records if entry["coverage"] == "not-shipped-at-source-revision"}
-        self.assertEqual(absent, {"examples/renderer-profile/package.json", ".github/security/requirements.txt"})
+        self.assertEqual(absent, {"examples/renderer-profile/package.json", ".github/security/requirements.txt", "website/package.json"})
         self.assertTrue(any(package.path == "controls/.github/security/requirements.txt" for package in packages))
         self.assertFalse(any(package.path.startswith("examples/renderer-profile/") for package in packages))
         for partial in ("examples/renderer-profile/README.md", ".github/security/unexpected.json"):
             with self.subTest(partial=partial), patch("tools.security_inventory.tracked_paths", return_value=[*legacy_paths, partial]):
                 with self.assertRaisesRegex(SecurityError, "unreviewed-or-missing-dependency-manifest"):
                     inventory(ROOT)
+        with patch("tools.security_inventory.tracked_paths", return_value=[*legacy_paths, "website/README.md"]):
+            with self.assertRaises(OSError):
+                inventory(ROOT)
 
     def test_node_sdk_inventory_includes_pinned_runtime_and_development_dependencies(self) -> None:
         manifest = {"dependencies": {"@bufbuild/protobuf": "2.15.0"},

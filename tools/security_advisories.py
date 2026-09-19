@@ -103,8 +103,14 @@ def query_osv(packages: list[Package], transport=osv_transport) -> tuple[list[Fi
     for offset in range(0, len(packages), 100):
         require(time.monotonic() - started <= 240, "osv-deadline")
         batch = packages[offset:offset + 100]
-        request = json.dumps({"queries": [{"package": {"ecosystem": package.ecosystem, "name": package.name},
-                                          "version": package.version} for package in batch]}, separators=(",", ":")).encode()
+        queries = []
+        for package in batch:
+            if package.ecosystem == "GIT":
+                require(re.fullmatch(r"[0-9a-f]{40}", package.version) is not None, "invalid-osv-source-commit")
+                queries.append({"commit": package.version})
+            else:
+                queries.append({"package": {"ecosystem": package.ecosystem, "name": package.name}, "version": package.version})
+        request = json.dumps({"queries": queries}, separators=(",", ":")).encode()
         response, header_date = transport(request)
         now = datetime.now(timezone.utc)
         observed = parsedate_to_datetime(header_date)
