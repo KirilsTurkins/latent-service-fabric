@@ -89,7 +89,14 @@ impl HttpOwner {
             let _ = task.await;
         }
         self.task.take();
-        self.handle.0.joined.store(true, Ordering::Release);
+        let assets_joined = match self.handle.0.assets.get() {
+            Some(assets) => assets.shutdown(deadline).await,
+            None => true,
+        };
+        if !assets_joined {
+            self.handle.0.failed.store(true, Ordering::Release);
+        }
+        self.handle.0.joined.store(assets_joined, Ordering::Release);
         if self.handle.0.failed.load(Ordering::Acquire) {
             Err(super::failure())
         } else {

@@ -4,7 +4,7 @@ use latent_ingress::http::{cache::ResponseCache, HttpPool, EXCHANGE_RESERVATION_
 use serde::Serialize;
 use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
-    Arc,
+    Arc, OnceLock,
 };
 use tokio::sync::watch;
 
@@ -19,6 +19,7 @@ pub(super) struct State {
     pub signal: watch::Sender<Signal>,
     pub pool: HttpPool,
     pub response_cache: Option<ResponseCache>,
+    pub assets: OnceLock<Arc<super::assets::Store>>,
     pub connections: AtomicUsize,
     pub maximum_connections: usize,
     pub maximum_bytes: usize,
@@ -52,6 +53,8 @@ pub struct HttpSnapshot {
     pub response_cache_entries: usize,
     pub response_cache_owners: usize,
     pub response_cache_reserved_bytes: usize,
+    /// Independent asset byte/work ceiling, in addition to transport buffers.
+    pub assets: Option<super::AssetSnapshot>,
 }
 impl HttpSnapshot {
     #[must_use]
@@ -67,6 +70,7 @@ impl HttpSnapshot {
             && self.response_cache_entries == 0
             && self.response_cache_owners == 0
             && self.response_cache_reserved_bytes == 0
+            && self.assets.is_none_or(super::AssetSnapshot::clean)
     }
 }
 impl HttpHandle {
@@ -88,6 +92,7 @@ impl HttpHandle {
             )
             .map_err(|_| super::failure())?,
             response_cache,
+            assets: OnceLock::new(),
             connections: AtomicUsize::new(0),
             maximum_connections: limits.maximum_connections,
             maximum_bytes: limits.maximum_buffer_bytes,
@@ -121,6 +126,7 @@ impl HttpHandle {
             response_cache_entries: cache.entries,
             response_cache_owners: cache.owners,
             response_cache_reserved_bytes: cache.reserved_bytes,
+            assets: self.0.assets.get().map(|store| store.snapshot()),
         }
     }
     pub(super) fn accepting(&self) -> bool {
@@ -142,6 +148,9 @@ impl HttpHandle {
         if signal >= Signal::Draining {
             if let Some(cache) = &self.0.response_cache {
                 cache.close();
+            }
+            if let Some(assets) = self.0.assets.get() {
+                assets.stop();
             }
         }
         self.0.signal.send_if_modified(|old| {
