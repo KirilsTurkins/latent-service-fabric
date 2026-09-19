@@ -18,8 +18,8 @@ SPEC.loader.exec_module(versions)
 class VersionParsingTests(unittest.TestCase):
     def test_extracts_versions(self) -> None:
         self.assertEqual(
-            versions.extract(r"\bgo(\d+\.\d+\.\d+)\b", "go version go1.23.2 linux/amd64", "Go"),
-            "1.23.2",
+            versions.extract(r"\bgo(\d+\.\d+\.\d+)\b", "go version go1.27.1 linux/amd64", "Go"),
+            "1.27.1",
         )
         self.assertEqual(
             versions.extract(r"^Version\s+(\S+)$", "Version 5.8.3", "TypeScript"),
@@ -52,12 +52,12 @@ class VersionProbeTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["go", "version"],
             0,
-            stdout="go version go1.23.2 linux/amd64\n",
+            stdout="go version go1.27.1 linux/amd64\n",
         )
         with mock.patch.object(versions.subprocess, "run", return_value=completed) as run:
             self.assertEqual(
                 versions.run(["go", "version"], "Go"),
-                "go version go1.23.2 linux/amd64",
+                "go version go1.27.1 linux/amd64",
             )
 
         run.assert_called_once_with(

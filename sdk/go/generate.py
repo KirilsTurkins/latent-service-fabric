@@ -10,13 +10,15 @@ import subprocess
 import sys
 import tempfile
 
+from dependencies import go_environment, pinned_version
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SDK = ROOT / "sdk" / "go"
 TOOLS = SDK / "target" / "tools"
 PLUGINS = {
-    "protoc-gen-go": ("google.golang.org/protobuf/cmd/protoc-gen-go", "v1.36.6"),
-    "protoc-gen-go-grpc": ("google.golang.org/grpc/cmd/protoc-gen-go-grpc", "v1.5.1"),
+    "protoc-gen-go": ("google.golang.org/protobuf/cmd/protoc-gen-go", "v1.36.12"),
+    "protoc-gen-go-grpc": ("google.golang.org/grpc/cmd/protoc-gen-go-grpc", "v1.6.2"),
 }
 SOURCES = {
     "latent/control/v1/common.proto": "controlv1",
@@ -26,8 +28,9 @@ SOURCES = {
 }
 
 
-def run(command: list[str], environment: dict[str, str], timeout: int = 120) -> str:
-    return subprocess.run(command, cwd=ROOT, env=environment, check=True,
+def run(command: list[str], environment: dict[str, str], timeout: int = 120,
+        directory: Path = ROOT) -> str:
+    return subprocess.run(command, cwd=directory, env=environment, check=True,
                           capture_output=True, text=True, timeout=timeout).stdout.strip()
 
 
@@ -35,17 +38,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     arguments = parser.parse_args()
-    environment = dict(os.environ, GOTOOLCHAIN="local", GOBIN=str(TOOLS))
-    if run(["go", "version"], environment).split()[2] != "go1.23.2":
-        raise ValueError("Go generation requires repository-pinned Go 1.23.2")
+    environment = go_environment()
+    pinned_version()
     if run(["buf", "--version"], environment) != "1.72.0":
         raise ValueError("Go generation requires repository-pinned Buf 1.72.0")
     TOOLS.mkdir(parents=True, exist_ok=True)
     suffix = ".exe" if os.name == "nt" else ""
     for name, (module, version) in PLUGINS.items():
         executable = TOOLS / (name + suffix)
-        if not executable.exists():
-            run(["go", "install", f"{module}@{version}"], environment, 180)
+        run(["go", "build", "-trimpath", "-o", str(executable), module],
+            environment, 180, SDK)
         if version.removeprefix("v") != run([str(executable), "--version"], environment).split()[-1].removeprefix("v"):
             raise ValueError(f"unexpected {name} version")
     options = ["module=latent.dev/sdk/go"] + [
