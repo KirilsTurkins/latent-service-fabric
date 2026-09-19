@@ -20,6 +20,7 @@ pub(super) struct State {
     pub pool: HttpPool,
     pub response_cache: Option<ResponseCache>,
     pub assets: OnceLock<Arc<super::assets::Store>>,
+    pub response_cache: Option<ResponseCache>,
     pub connections: AtomicUsize,
     pub maximum_connections: usize,
     pub maximum_bytes: usize,
@@ -55,6 +56,9 @@ pub struct HttpSnapshot {
     pub response_cache_reserved_bytes: usize,
     /// Independent asset byte/work ceiling, in addition to transport buffers.
     pub assets: Option<super::AssetSnapshot>,
+    pub response_cache_entries: usize,
+    pub response_cache_owners: usize,
+    pub response_cache_reserved_bytes: usize,
 }
 impl HttpSnapshot {
     #[must_use]
@@ -71,6 +75,9 @@ impl HttpSnapshot {
             && self.response_cache_owners == 0
             && self.response_cache_reserved_bytes == 0
             && self.assets.is_none_or(super::AssetSnapshot::clean)
+            && self.response_cache_entries == 0
+            && self.response_cache_owners == 0
+            && self.response_cache_reserved_bytes == 0
     }
 }
 impl HttpHandle {
@@ -93,6 +100,7 @@ impl HttpHandle {
             .map_err(|_| super::failure())?,
             response_cache,
             assets: OnceLock::new(),
+            response_cache,
             connections: AtomicUsize::new(0),
             maximum_connections: limits.maximum_connections,
             maximum_bytes: limits.maximum_buffer_bytes,
@@ -127,6 +135,9 @@ impl HttpHandle {
             response_cache_owners: cache.owners,
             response_cache_reserved_bytes: cache.reserved_bytes,
             assets: self.0.assets.get().map(|store| store.snapshot()),
+            response_cache_entries: cache.entries,
+            response_cache_owners: cache.owners,
+            response_cache_reserved_bytes: cache.reserved_bytes,
         }
     }
     pub(super) fn accepting(&self) -> bool {
@@ -151,6 +162,9 @@ impl HttpHandle {
             }
             if let Some(assets) = self.0.assets.get() {
                 assets.stop();
+            }
+            if let Some(cache) = &self.0.response_cache {
+                cache.close();
             }
         }
         self.0.signal.send_if_modified(|old| {

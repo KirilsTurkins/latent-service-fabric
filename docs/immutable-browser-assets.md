@@ -89,3 +89,38 @@ cargo clippy -p latentd --all-targets --all-features --locked --no-deps -- -D wa
 The asset tests cover exact URL parsing, bounded preconditions/encoding negotiation, eviction with pinned bytes, cache corruption/refetch, source corruption, symlink and root substitution, release replacement, GET/HEAD/304/error framing, current policy/revocation checks, tenant isolation, capacity rejection, and disconnect while a blocking owner is deterministically held. Real socket tests use a node with no capsule, renderer, deployment, or HTTP trigger, and verify zero active activations and live Wasmtime stores alongside drained transport/read ownership.
 
 The storage tests inject an explicitly non-cryptographic test authority; they do not stand in for signature verification. Signed browser/SSR admission and cryptographic policy recovery remain independently covered by the existing package and policy tests. All asset tests are registered in the ordinary `latentd` test suite; no permanent issue-specific CI workflow is required.
+
+## Integration with the shared response cache
+
+The September 19 integration merges development at
+`420bb0d451d6b9de26ef3207aa93deb7681c75ec` (PR #335 / issue #232) into
+the original asset branch. The two caches remain independent node-wide owners:
+immutable asset bytes do not become rendered response entries, and neither
+cache holds an admission grant. HTTP snapshots expose both sets of accounting;
+drain stops both admissions, and a clean shutdown requires both to be empty.
+
+The added real-socket coexistence regression enables the existing public-origin
+response-cache profile, serves a verified asset without any renderer or route,
+checks that only the asset cache retains bytes, then verifies both owners stop
+and report clean shutdown. The existing response-cache tests remain responsible
+for fill, revocation and personalized-request bypass behavior.
+
+The overlapping resource-fixture CI repair uses development's single maintained
+`objcopy`/identity/launch block and its real-ELF regression tests unchanged. The
+superseded asset-branch helper and duplicate documentation are removed; there is
+no second staging pipeline or resource-profile limit change.
+
+Focused integration validation on September 19 used Rust 1.97.1 and Linux
+x86-64 in an isolated 2-CPU, 8-GiB validation container (debug information off):
+
+| Check | Observed result |
+| --- | --- |
+| `cargo fmt --all --check` | Passed on the Windows worktree |
+| `cargo test -p latentd --lib --all-features --locked standalone::http` | 24 passed, 6 explicitly component-gated tests ignored |
+| `LSF_WEB_COMPONENT=... cargo test -p latentd --lib --all-features --locked actual_http_component -- --ignored --test-threads=1` | All 5 passed against a freshly built and validated public web component |
+| `cargo clippy -p latentd --all-targets --all-features --locked --no-deps -- -D warnings` | Passed |
+| Resource binary, resource gate/clock and Cargo-artifact Python regressions | All 42 passed, including real ELF preparation |
+
+The Angular-component-specific ignored test was not rerun for this narrow
+integration. These observations do not replace exact-head PR CI or constitute
+a production browser/SSR qualification; issue #235 covers the browser boundary.
