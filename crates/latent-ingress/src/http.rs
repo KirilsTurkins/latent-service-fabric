@@ -5,6 +5,7 @@
 
 mod body;
 mod bounded;
+pub mod browser;
 pub mod cache;
 mod codec;
 mod context;
