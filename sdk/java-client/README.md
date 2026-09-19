@@ -110,14 +110,26 @@ deadline tasks and encoded/decoded owners are bounded by admitted calls;
 connection timers belong to the reusable channel. No unbounded application
 executor or thread/channel-per-call is installed.
 
+A channel is not one immutable TCP socket: gRPC can reconnect after a failed
+connection or GOAWAY to serve a later explicit call. It does not replay Invoke
+or ApplyPolicy on REFUSED_STREAM, GOAWAY or Unavailable. Controlled TCP tests
+count each operation exactly once, then execute a fresh explicit status call
+and observe socket retirement. RPC deadlines bound calls, not the lifetime of
+an otherwise retained channel; use shutdown/close to retire the client and its
+remaining transport owners rather than assuming the last RPC closed its socket.
+
 ## Deadlines, cancellation and ownership
 
 `CallOptions.timeoutMillis` starts one monotonic deadline at method entry,
 before validation, snapshot, connection and RPC. Absent uses the finite configured
-default; zero expires without dispatch. The invocation's absolute Unix deadline
-can only shorten this budget. There is no deadline restart after connect or
-response conversion. Unsupported clock representations fail explicitly; they
-are never narrowed or wrapped. The maintained provider fixture's execution
+default; zero expires without dispatch. Any explicit unsigned relative timeout
+above the configured RPC cap fails locally with `Limit`, including high-bit u64
+values; it is not misclassified as a negative duration or silently reduced.
+The invocation's absolute Unix deadline is compared as unsigned u64 and can only
+shorten the finite local budget. Future high-bit deadlines, including u64 maximum,
+keep their original exact protobuf bits; only the local remaining time is capped.
+Only bounded local milliseconds are converted to nanoseconds. There is no
+deadline restart after connect or response conversion. The maintained provider fixture's execution
 ceiling also caps `grpc-timeout` at 5000 milliseconds: examples use 3000, and the
 held-deadline case uses 500. Do not raise that fixture ceiling or silently retry
 with a different timeout when the server rejects an incompatible configuration.

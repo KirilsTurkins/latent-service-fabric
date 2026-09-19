@@ -4,7 +4,33 @@ Validated implementation: `b7e270d3faaa08aef7837f83133be8d0b6b0426f`, following
 code milestones `a13b335d` and `29abda86`, PR #367, branch
 `feat/262-bounded-java-client`. Base: development `9c271713` plus the complete
 shared-profile dependency through `e4096670`. These checks ran on 2026-09-19;
-no issue closure, merge or parent acceptance is claimed.
+no issue closure, merge or parent acceptance is claimed. The real-node receipt
+below belongs to that original implementation, not automatically to later heads.
+
+## Unsigned-clock review follow-up
+
+`a900ad83ea951b03a3fb6ae558df8462b554aa87` corrects native invocation deadline
+handling. Controlled real TCP calls transmit `9223372036854775808` and
+`18446744073709551615` unchanged, while the peer observes the finite local RPC
+budget. A held maximum-deadline request still reaches its original 500ms local
+deadline. Expired absolute values open no connection. Relative timeouts above
+the configured cap, including signed-positive overflow-range and high-bit u64
+values, uniformly fail locally with `Limit` and the original recovery identity.
+
+Six additional schedules test both Invoke and ApplyPolicy against actual
+HTTP/2 REFUSED_STREAM, GOAWAY with last-stream zero, and gRPC Unavailable.
+`resetGoAwayAndUnavailableNeverReplay` counts exactly one original request,
+requires an explicit subsequent status call to succeed, and observes real socket
+closure after client shutdown. GOAWAY uses a fresh TCP connection for that new
+call; reconnection is not prohibited or confused with retry of the failed call.
+
+After Docker recovery, pinned Linux Temurin 21.0.11+10 passes all 68 shared
+vectors, legacy/lifetime checks, 49 protobuf cases and the expanded eleven TCP
+suites. Production/example Java 21 strict lint passes. Windows Temurin 25.0.3+9
+with `--release 21` also exercises the expanded suites. Interrupted Docker work
+is not counted as either successful or failed evidence. No dependency changes,
+new real-node qualification, stronger socket-lifetime guarantee or parent
+integration/CI result is inferred from these focused regressions.
 
 ## Executed local checks
 
