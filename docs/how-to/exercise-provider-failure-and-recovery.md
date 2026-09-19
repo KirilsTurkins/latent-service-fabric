@@ -24,11 +24,21 @@ No paid hosted provider, existing user container or operator credential is used.
 
 ## Prerequisites and complete source
 
-Start in a clean, private checkout of reviewed development source, using
+The commands select development source
+`3c2f3e7d84aca662a71f621ece35c2cdc8be9c30`, the merged base reviewed for this
+documentation handoff. Start in a new, clean, private checkout at that exact
+commit; do not reset an existing worktree. Use
 [Rust 1.97.1 and the pinned contributor tools](../development/toolchain.md),
 Python 3.13.5, OpenSSL, GNU `timeout` and a working Docker CLI/daemon. The selected
 real-provider targets are Linux x86_64 gated; a Windows build with zero matching
 tests is not execution evidence. Use only this checkout's Cargo target.
+
+Source/parser checks at this base are not a new provider execution receipt.
+The retained 19-test run below uses `05360c50`; its Cargo lock differs from the
+newer base. Standalone startup/browser-resolution integration belongs to
+[#344](https://github.com/KirilsTurkins/latent-service-fabric/pull/344), inspected
+at `bcd902cdde567745c8783ce995188cc105a12fd9`, not to these embedding commands.
+That feature branch is not incorporated or qualified by this documentation PR.
 
 Follow these maintained sources while running the scenarios; do not copy their
 test credentials or synthetic package trust into an installed node:
@@ -57,7 +67,8 @@ umask 077
 test "$(uname -s)" = Linux
 test "$(uname -m)" = x86_64
 test -z "$(git status --porcelain=v1 --untracked-files=normal)"
-SOURCE_COMMIT=$(git -c gc.auto=0 rev-parse HEAD)
+SOURCE_COMMIT=3c2f3e7d84aca662a71f621ece35c2cdc8be9c30
+test "$(git -c gc.auto=0 rev-parse HEAD)" = "$SOURCE_COMMIT"
 export CARGO_TARGET_DIR="$PWD/target"
 PROVIDER_REVIEW=$(mktemp -d "${TMPDIR:-/tmp}/lsf-provider-guide.XXXXXXXX")
 timeout --kill-after=15s 1800s cargo test --locked --all-features \
@@ -220,11 +231,14 @@ resolved review directory. Do not remove an installed node's state, credentials,
 provider inventory or another worktree's target.
 
 The retained evidence is actual CI execution at `05360c50eb6c40212111ad0d87198db5dead78a5`
-for reviewed PR head `edec84fa`, not execution at the guide commit. A fresh check
-matches 18 source objects, including the complete relevant crate/WIT trees,
+for reviewed PR head `edec84fa`, not execution at the guide commit. The original
+check matches 18 source objects, including the complete relevant crate/WIT trees,
 runner/support files and lock/toolchain inputs, against guide source `22dc2f07`.
-Local Windows checks of the new instructions do not claim a new Linux provider
-run. Rendered/newcomer review and the standalone configured-node walkthrough
+At the newly selected `3c2f3e7d` base, 17 of those objects still match, but
+`Cargo.lock` has changed. Preserve the original record; do not extend its result
+to the newer dependency graph without executing the selected suites again.
+Local Windows checks of the instructions do not claim a new Linux provider run.
+Human newcomer review and the standalone configured-node walkthrough
 remain pending, as do the remaining local/HTTP/call/utility paths in the
 [guide acceptance inventory](../development/operator-guide-acceptance.md).
 

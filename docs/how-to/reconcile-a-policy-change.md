@@ -20,12 +20,15 @@ an operator deployment.
 
 ## Prerequisites and version
 
-Use the same clean reviewed Linux source and paired CLI/node as the
+Use the same clean Linux source `3c2f3e7d84aca662a71f621ece35c2cdc8be9c30`
+and paired CLI/node as the
 [delivery walkthrough](../learn/deliver-and-recover-a-capsule.md).
 Python 3.13.5 and the pinned Rust toolchain are the contributor profile. No Docker
 or external provider is needed for this particular workflow. The script creates
 only private test configuration, protected explicit test credentials and one
 ephemeral loopback listener; it neither installs systemd nor changes `/etc`.
+The source/parser checks at this base do not replace the older runtime receipt
+below. Use a new checkout, not a reset of an operator's existing worktree.
 
 For a real installation, use independently publisher-authenticated native
 binaries and an operator-provisioned protected client config. Reading a policy,
@@ -43,6 +46,7 @@ From the clean repository root, after the paired source build:
 set -euo pipefail
 umask 077
 test -z "$(git status --porcelain=v1 --untracked-files=normal)"
+test "$(git -c gc.auto=0 rev-parse HEAD)" = 3c2f3e7d84aca662a71f621ece35c2cdc8be9c30
 export CARGO_TARGET_DIR="$PWD/target"
 POLICY_REVIEW=$(mktemp -d "${TMPDIR:-/tmp}/latent-policy-guide.XXXXXXXX")
 timeout --kill-after=15s 180s python3 tools/run_capability_policy_workflow.py \

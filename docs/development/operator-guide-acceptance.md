@@ -30,15 +30,25 @@ receipts as execution of the newer runtime or complete six-client qualification.
 No startup/runtime fix, new guide scenario, native version pair or publication
 is part of this handoff.
 
+The resumed documentation review integrates development
+`3c2f3e7d84aca662a71f621ece35c2cdc8be9c30` through guide merge `44ac10db`.
+That base also contains the merged Java client. The three contributor workflows
+pin this full base commit instead of implicitly running a moving branch.
+All eight operator collectors and the policy runner still match the retained
+`05360c50` source. Seventeen of the 18 provider source objects match; `Cargo.lock`
+does not. The historical JSON receipts remain unchanged and do not qualify
+the newer dependency graph or binaries. Source/parser and documentation-site
+checks are separate from actual node/provider/client execution.
+
 ## Current guide checkpoint
 
 | Guide | Complete source and intended outcome | Evidence available here | Still required |
 | --- | --- | --- | --- |
 | [Native release promotion](../operations/native-release-promotion.md) | Existing native release workflow/gate, installer and real VM harness; review a genuinely versioned foundation, pin its authenticated TAR, qualify the final version and hand publication to the parent | [Frozen f8d summary](../evidence/native-runtime-f8d0c51a.json) and [separate reviewed edec candidate](../evidence/native-runtime-edec84fa.json), actual CI/security and both VM profiles, distinct boot IDs and lifecycle/rootless receipt hashes; independent candidate attestation/hash recheck | Genuine rc.1/final artifacts and their exact-source CI, actual upgrade/downgrade VM phase, release identity, protected publication, rendered newcomer/maintainer review |
 | [Maintained security monitoring](../operations/maintained-security-monitoring.md) | Existing scoped baseline, settings inventory and all-lock/SDK graph contract; distinguish configuration, registration and actual both-ref execution | [Dated read-only GitHub API receipt](../evidence/operator-release-prerequisites-2026-09-19.json), [actual integrated-source settings execution](../evidence/operator-settings-2026-09-19.json), source-checked coordinator/settings/scan contract at `edec84fa` | Default-release activation, reviewed required checks, actual manual and unchanged-lock scheduled receipts, security owner's outstanding permission/push-protection evidence, rendered review |
-| [Deliver and recover a capsule](../learn/deliver-and-recover-a-capsule.md) | Existing finite CLI/node/registry workflow, actual publication/rollout/recovery identities and failure diagnosis | [Real retained operator, outage, publication and enforced-profile receipts](../evidence/core-operator-walkthrough-35454985599.json); original file hashes and eight collector Git-object matches | Fresh displayed-command/source checks, rendered newcomer review and remaining first-node/capsule-authoring paths; source-contributor evidence is not installed-bundle qualification |
+| [Deliver and recover a capsule](../learn/deliver-and-recover-a-capsule.md) | Existing finite CLI/node/registry workflow, actual publication/rollout/recovery identities and failure diagnosis | [Real retained operator, outage, publication and enforced-profile receipts](../evidence/core-operator-walkthrough-35454985599.json); original file hashes and eight collector Git-object matches | Runtime execution at the newly pinned base, human newcomer review and remaining first-node/capsule-authoring paths; source-contributor evidence is not installed-bundle qualification |
 | [Reconcile a policy change](../how-to/reconcile-a-policy-change.md) | Existing real CLI/node control-plane workflow; historical receipts never restore revoked authority | Actual CI log receipt: 15 CLI calls, two starts, zero guest invocations and clean policy-owner shutdown, with explicit runtime checkout identity | Rendered/newcomer review; actual guest/provider allowed/denied/failure/budget/rotation paths remain separate |
-| [Exercise provider failure and recovery](../how-to/exercise-provider-failure-and-recovery.md) | Existing real TLS S3/Vault/NATS services, actual guest calls and local trigger manager; distinguish denial, rotation, possible effects, bounded ownership and recovery | [19 executed real-provider tests](../evidence/provider-walkthrough-35454985599.json), owned-cleanup confirmations and 18 matching source objects/trees, separate runtime/guide identities | Rendered/newcomer review, standalone management configuration walkthrough and remaining local/HTTP/call/utility guides; contributor embedding tests are not a separate-node client or native installation qualification |
+| [Exercise provider failure and recovery](../how-to/exercise-provider-failure-and-recovery.md) | Existing real TLS S3/Vault/NATS services, actual guest calls and local trigger manager; distinguish denial, rotation, possible effects, bounded ownership and recovery | [19 executed real-provider tests](../evidence/provider-walkthrough-35454985599.json), owned-cleanup confirmations and 18 source matches at `22dc2f07`; 17 matches plus changed Cargo lock at the newly pinned base | Runtime execution at the newly pinned base, human newcomer review, standalone management configuration walkthrough and remaining local/HTTP/call/utility guides; contributor embedding tests are not a separate-node client or native installation qualification |
 
 The frozen receipt summary still records artifact source and harness as **f8d**.
 It does not relabel the older diagnostic source `260c3e4e` / harness `3925d416`
@@ -70,13 +80,21 @@ That does not automatically complete a guide: select the actual displayed source
 match the owned test receipt and inspect the rendered scenario. The same rule
 applies when parent integration moves beyond this authoring base.
 
-At the guide checkpoint, [#366's real-client harness](https://github.com/KirilsTurkins/latent-service-fabric/pull/366)
-still declares language participants and executed receipts pending, and
-[#372's Angular reference workflow](https://github.com/KirilsTurkins/latent-service-fabric/pull/372)
-still declares full published/browser/cancellation/revision qualification pending.
+At this review, [#366's real-client harness](https://github.com/KirilsTurkins/latent-service-fabric/pull/366)
+has head `07563fdcd5053ac1622567e1b1b01d5a0aec599e` and records earlier actual
+Rust, Node and Java participant runs. Those are not a passing current six-client
+integration; the parent owns the remaining .NET/C/Go/provider CI work.
+[#344's provider startup/browser-resolution integration](https://github.com/KirilsTurkins/latent-service-fabric/pull/344)
+has head `bcd902cdde567745c8783ce995188cc105a12fd9` on
+`feat/226-management-angular-t1` and is not merged into this guide branch.
+[#372's Angular reference workflow](https://github.com/KirilsTurkins/latent-service-fabric/pull/372),
+head `85b5a0db6ab5d5b0f339ac61d50d4fe8b485fd78`, still declares full protected
+published/browser/cancellation/revision qualification pending. These are bounded
+source checkpoints, not claims about a later owner head or permission to merge it.
 The retained native-parent CI run's Angular steps are **skipped**, not passed.
 Do not use its compiling six-language semantic fixtures or the new CLI guides
 as evidence that #358/#361's actual network/browser walkthroughs executed.
+A Node-controlled SSR/browser receipt is not protected Angular T1 qualification.
 
 Do not collapse language lifecycle differences into a website-specific retry
 policy: Rust drop, TypeScript `AbortSignal`, Go contexts, Java futures, .NET tokens

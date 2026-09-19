@@ -24,11 +24,18 @@ performance or hostile-multitenancy guarantees.
 
 ## Prerequisites, version and complete source
 
-Use a clean, private checkout of the reviewed development source on Linux x86_64,
+The commands below select development source
+`3c2f3e7d84aca662a71f621ece35c2cdc8be9c30`, the merged base reviewed for this
+documentation handoff. Use a new, clean, private checkout at that exact commit
+on Linux x86_64; do not reset an existing worktree to follow this guide. Use
 the [pinned contributor toolchain](../development/toolchain.md), Python **3.13.5**,
-OpenSSL and the Docker CLI/daemon for the owned registry fixture. The node needs
+OpenSSL, GNU `timeout` and the Docker CLI/daemon for the owned registry fixture. The node needs
 readable Linux pressure observations and local filesystem locking/synchronization.
 Do not run in another user's worktree or reuse their mutable Cargo target.
+
+The commands have source/parser checks, not a new execution receipt at this base.
+The retained runtime evidence below is from `05360c50`, whose Cargo lock differs
+from this newer source. Matching collector code does not qualify rebuilt binaries.
 
 The complete scenario is [the operator runner](../../tools/run_phase2_operator_workflow.py),
 [node/CLI sequence](../../tools/phase2_operator_scenario.py),
@@ -56,7 +63,8 @@ publisher-authentication-before-code sequence.
 set -euo pipefail
 umask 077
 test -z "$(git status --porcelain=v1 --untracked-files=normal)"
-SOURCE_COMMIT=$(git -c gc.auto=0 rev-parse HEAD)
+SOURCE_COMMIT=3c2f3e7d84aca662a71f621ece35c2cdc8be9c30
+test "$(git -c gc.auto=0 rev-parse HEAD)" = "$SOURCE_COMMIT"
 export CARGO_TARGET_DIR="$PWD/target"
 timeout --kill-after=15s 1800s cargo build -p latent -p latentd \
   --all-features --locked --jobs 2
