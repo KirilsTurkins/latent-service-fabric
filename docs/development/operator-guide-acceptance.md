@@ -11,8 +11,13 @@ the child-guide requirements below still independently reviewable.
 
 The authoring worktree starts at native candidate
 `f8d0c51a9a76bf123fa8b397fb3a0e15099cd3f5` and integrates parent source
-`edec84fa` in guide merge `1ed9ef3c`. Parent-owned native CI/VM identities remain
-separate. No guide-authored app, SDK, native installer or security-workflow
+`edec84fa` in guide merge `1ed9ef3c`. The parent subsequently squash-merges #360
+as development commit `f4231d0785ca9538878d6c3c72573ed837aaa5cf` at
+2026-09-19 17:16:25 UTC; guide merge `1a04aeb1` includes that development ancestry.
+The reviewed head and squash have identical Git trees, not identical commits.
+The [separate integrated candidate record](../evidence/native-runtime-edec84fa.json)
+keeps the actual native source/harness `edec84fa`, PR CI checkout `05360c50` and
+squash identity distinct. No guide-authored app, SDK, native installer or security-workflow
 change is introduced here. [#370's site foundation](https://github.com/KirilsTurkins/latent-service-fabric/pull/370)
 owns the single-source build/coverage implementation; other guides consume their
 actual subsystem owners, not a new parallel protocol or browser test suite.
@@ -21,16 +26,20 @@ actual subsystem owners, not a new parallel protocol or browser test suite.
 
 | Guide | Complete source and intended outcome | Evidence available here | Still required |
 | --- | --- | --- | --- |
-| [Native release promotion](../operations/native-release-promotion.md) | Existing native release workflow/gate, installer and real VM harness; review a genuinely versioned foundation, pin its authenticated TAR, qualify the final version and hand publication to the parent | [Exact f8d candidate summary](../evidence/native-runtime-f8d0c51a.json), real same-source CI/VM run links, distinct boot IDs and lifecycle/rootless receipt hashes; read-only prerequisite inspection | Parent-integrated source qualification, genuine rc.1/final artifacts and actual upgrade/downgrade VM phase, release identity, protected publication, rendered newcomer/maintainer review |
+| [Native release promotion](../operations/native-release-promotion.md) | Existing native release workflow/gate, installer and real VM harness; review a genuinely versioned foundation, pin its authenticated TAR, qualify the final version and hand publication to the parent | [Frozen f8d summary](../evidence/native-runtime-f8d0c51a.json) and [separate reviewed edec candidate](../evidence/native-runtime-edec84fa.json), actual CI/security and both VM profiles, distinct boot IDs and lifecycle/rootless receipt hashes; independent candidate attestation/hash recheck | Genuine rc.1/final artifacts and their exact-source CI, actual upgrade/downgrade VM phase, release identity, protected publication, rendered newcomer/maintainer review |
 | [Maintained security monitoring](../operations/maintained-security-monitoring.md) | Existing scoped baseline, settings inventory and all-lock/SDK graph contract; distinguish configuration, registration and actual both-ref execution | [Dated read-only GitHub API receipt](../evidence/operator-release-prerequisites-2026-09-19.json), [actual integrated-source settings execution](../evidence/operator-settings-2026-09-19.json), source-checked coordinator/settings/scan contract at `edec84fa` | Default-release activation, reviewed required checks, actual manual and unchanged-lock scheduled receipts, security owner's outstanding permission/push-protection evidence, rendered review |
 | [Deliver and recover a capsule](../learn/deliver-and-recover-a-capsule.md) | Existing finite CLI/node/registry workflow, actual publication/rollout/recovery identities and failure diagnosis | [Real retained operator, outage, publication and enforced-profile receipts](../evidence/core-operator-walkthrough-35454985599.json); original file hashes and eight collector Git-object matches | Fresh displayed-command/source checks, rendered newcomer review and remaining first-node/capsule-authoring paths; source-contributor evidence is not installed-bundle qualification |
 | [Reconcile a policy change](../how-to/reconcile-a-policy-change.md) | Existing real CLI/node control-plane workflow; historical receipts never restore revoked authority | Actual CI log receipt: 15 CLI calls, two starts, zero guest invocations and clean policy-owner shutdown, with explicit runtime checkout identity | Rendered/newcomer review; actual guest/provider allowed/denied/failure/budget/rotation paths remain separate |
 
-The native receipt summary records both artifact source and harness as **f8d**.
+The frozen receipt summary still records artifact source and harness as **f8d**.
 It does not relabel the older diagnostic source `260c3e4e` / harness `3925d416`
-as same-head, clear later renderer advisories, or inherit results from a parent's
-new integration commit. Neither receipt is a release trust policy. Full trusted
-roots, attestation inputs and approved source identity are provisioned separately.
+as same-head or inherit results from the later integration. The edec record
+separately records actual all-lock RustSec and security success, both packaged
+VM profiles and the merged source relationship. Both native records retain
+`acceptanceComplete:false` for the missing genuine version pair; neither is a
+release trust policy. The Windows recheck authenticates downloaded data with
+independently provisioned GitHub CLI/roots; it executes no downloaded installer
+and claims no new VM run. Full trust inputs remain separately provisioned.
 
 ## Map the existing finite coverage rows, without declaring them complete
 
@@ -39,7 +48,7 @@ has 27 required outcomes. Do not add synthetic completed rows or use a future
 phase/release tag as a prerequisite for honest development documentation.
 The table maps the actual issue acceptance, not a substitute checklist.
 
-| Child and existing rows | Authoritative starting points / owning evidence | Acceptance remaining after these two guides |
+| Child and existing rows | Authoritative starting points / owning evidence | Acceptance remaining at this guide checkpoint |
 | --- | --- | --- |
 | [#357](https://github.com/KirilsTurkins/latent-service-fabric/issues/357): `evaluate-boundary`, `install-auth-readiness`, `contributor-checks`, `author-capsule`, `package-sign-publish`, `rollout-uncertain-recovery` | [Source quickstart](standalone-quickstart.md), [native installation](../installation.md), [capsule authoring](../component-development/creating-a-capsule.md), [delivery/recovery](../phase-2-operator-workflows.md), existing `tools/run_phase2_operator_workflow.py` and native VM harness | Real newcomer first-node/publish/invoke/error/cleanup walkthrough, capsule/package/sign/verify/publication identities and rollout/lost-response/revocation recovery at the displayed source. Native release coordination supports this work but is not the whole first-node guide. |
 | [#358](https://github.com/KirilsTurkins/latent-service-fabric/issues/358): `client-rust`, `client-typescript`, `client-go`, `client-c`, `client-java`, `client-dotnet` | [SDK boundary/index](../../sdk/README.md), shared #227 and each of #228/#230/#260/#261/#262/#263; each client owner's real-node harness and #351/#352 source-backed examples | All six actual language-native build/link/setup/invoke/identity/status/cancel/deadline/uncertain-response/management-page/receipt/shutdown paths, bad auth/tenant and application failure, exact toolchains and newcomer review. No network-client acceptance from a guest binding, compilation or test double. |

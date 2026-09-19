@@ -40,7 +40,11 @@ prerequisite for publishing existing alpha docs or labelled development guides.
 
 Use a clean checkout of the parent-reviewed integrated source, including the
 scoped security baseline, isolated native-fixture Cargo manifest/lock registration
-and all-lock RustSec checking. Old candidate CI predates that additional coverage.
+and all-lock RustSec checking. Frozen f8d candidate CI predates that additional
+coverage. [The reviewed edec integration](../evidence/native-runtime-edec84fa.json)
+has its own successful CI/security and both native VM profiles. The parent
+squash-merged its identical tree as development `f4231d07`; that does not retag
+the edec binary or turn its candidate certificate into release authority.
 Do not run these steps from another agent's worktree or a moving branch checkout.
 
 The authoritative implementation is the [release workflow](../../.github/workflows/native-runtime-release.yml),
@@ -278,6 +282,19 @@ authentication, both native VM profiles, reboot/retention/recovery/removal and
 rootless execution. It explicitly leaves genuine cross-version upgrade,
 unsupported binary downgrade, release-identity qualification and publication
 unperformed. Its old CI does not satisfy the later all-lock security requirement
-or qualify a parent's integration commit. The [guide review handoff](../development/operator-guide-acceptance.md)
+or qualify a parent's integration commit.
+
+The [separate merged-candidate evidence](../evidence/native-runtime-edec84fa.json)
+records actual native run `35455114202` at source/harness `edec84fa`, including
+both real changed boot IDs and retained publication identities, with CI
+`35454985599` and security `35454985745`. The PR jobs execute checkout `05360c50`;
+the parent squash `f4231d07` is not their recorded source. A fresh Windows
+data-only check accepts the exact candidate certificate, rejects the old source
+digest and matches all three authenticated assets plus both original VM receipt
+hashes. It does not execute the downloaded bootstrap or claim a new local VM.
+This candidate also has no declared predecessor and incomplete version-pair
+acceptance. The parent still owns the genuine rc.1/final commission.
+
+The [guide review handoff](../development/operator-guide-acceptance.md)
 separates retained execution, command/source checks and pending rendered human
 review; none of these future parent dispatches is recorded as executed.
