@@ -1094,6 +1094,11 @@
         "name": "audit_status",
         "type": "string",
         "optional": true
+      },
+      {
+        "name": "audit_attempt_sequence",
+        "type": "uint64",
+        "optional": true
       }
     ],
     "ClientFailure": [
@@ -1141,6 +1146,11 @@
       {
         "name": "unsupported_wire_value",
         "type": "UnsupportedWireValue",
+        "optional": true
+      },
+      {
+        "name": "audit_attempt_sequence",
+        "type": "uint64",
         "optional": true
       }
     ]

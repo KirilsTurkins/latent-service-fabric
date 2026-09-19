@@ -16,7 +16,7 @@ final class ProfileLifetime {
     }
 
     private static Management.ResponseMetadata metadata(String operationId, Management.OutcomeKnowledge outcome) {
-        return new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.ofNullable(operationId)), outcome, Optional.empty(), Optional.empty());
+        return new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.ofNullable(operationId)), outcome, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     private static <Response> CompletableFuture<Management.ClientResponse<Response>> ready(Response value) {
@@ -26,7 +26,7 @@ final class ProfileLifetime {
     private static Management.ClientFailure failure(String operationId, boolean dispatched, Management.FailureCategory category) {
         return new Management.ClientFailure(category, "local-fixture-failure", Optional.empty(), Optional.empty(), dispatched,
                 dispatched ? Management.OutcomeKnowledge.UNKNOWN : Management.OutcomeKnowledge.NOT_DISPATCHED,
-                new Management.RequestIdentity(Optional.empty(), Optional.of(operationId)), Optional.empty(), Optional.empty(), Optional.empty());
+                new Management.RequestIdentity(Optional.empty(), Optional.of(operationId)), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     private static final class FixtureClient implements Management.ClientProfile {

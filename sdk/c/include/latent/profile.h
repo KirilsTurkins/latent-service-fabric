@@ -423,6 +423,8 @@ typedef struct latent_profile_response_metadata {
     latent_profile_audit_ack audit_ack;
     bool has_audit_status;
     latent_string audit_status;
+    bool has_audit_attempt_sequence;
+    uint64_t audit_attempt_sequence;
 } latent_profile_response_metadata;
 
 typedef struct latent_profile_client_failure {
@@ -441,6 +443,8 @@ typedef struct latent_profile_client_failure {
     latent_string audit_status;
     bool has_unsupported_wire_value;
     latent_profile_unsupported_wire_value unsupported_wire_value;
+    bool has_audit_attempt_sequence;
+    uint64_t audit_attempt_sequence;
 } latent_profile_client_failure;
 
 typedef struct latent_profile_client latent_profile_client;
