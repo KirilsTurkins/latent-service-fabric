@@ -2,9 +2,13 @@
 
 ## Status
 
-Proposed for parent review under [#346](https://github.com/KirilsTurkins/latent-service-fabric/issues/346).
-The user approved Docusaurus and these ownership boundaries. This record does
-not approve a deployment, a completed guide, or a runtime support claim.
+Accepted after parent architecture and implementation review under
+[#346](https://github.com/KirilsTurkins/latent-service-fabric/issues/346).
+The review checks the direct source plugins, exact-commit link resolution,
+bounded path and asset handling, finite coverage validation and both supported
+base-path builds. The user approved Docusaurus and these ownership boundaries.
+Acceptance does not approve a deployment, a completed guide, or a runtime
+support claim; the named delivery gates remain independently required.
 
 ## Context and finite scope
 
