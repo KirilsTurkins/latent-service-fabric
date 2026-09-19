@@ -145,8 +145,11 @@ Current policy RPCs emit no audit acknowledgement; the participant verifies
 absence rather than inventing durability. Provider examples select the node's
 5,000-millisecond timeout profile rather than the longer general SDK default.
 
-This is not installed-bundle or Angular/browser evidence. The public-ingress
-browser example remains a separate #230 acceptance requirement. The
+This native evidence does not qualify an installed bundle or browser. The separate
+[public application browser test](../testing/sdk-browser-application.md) does:
+the maintained Angular fixture invokes an exact shared HTTP application route,
+not a management proxy, and verifies omitted credentials and forbidden RPC paths.
+It does not claim production Angular Wasm SSR or end-user authentication. The
 [package README](../../sdk/typescript-client/README.md) records commands and the
 Node-versus-browser boundary. The SDK does not duplicate an Angular renderer or
 install a generic privileged browser proxy.

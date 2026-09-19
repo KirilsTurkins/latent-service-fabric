@@ -86,11 +86,21 @@ listener. The Node package is not a privileged RPC proxy, Angular renderer,
 credential broker or new browser authentication mechanism. The maintained
 Angular build/rendering path remains owned by the web profile.
 
-The controlled-peer suite and the separate real-node provider workflow are
-different evidence. The latter executes all 18 shared assertions, nine retained
-activations and four physically closed upstream holds. Neither qualifies a
-browser. Phase 3 #230 remains open until the public-ingress browser example is
-integrated and evidenced; no privileged transport is added to a client bundle.
+The maintained [Angular browser companion](../../examples/browser-boundary/client/application.ts)
+calls only `POST /api/greeting` on its own origin. It omits credentials, rejects
+redirects, copies at most 256 response bytes and uses one 3-second local deadline.
+The existing Angular fixture supplies rendering/hydration; the client entry alone
+injects the browser fetch function. No Node SDK import or generic RPC proxy enters
+the bundle. This is an anonymous application example, not browser user login.
+
+The controlled-peer suite, native provider workflow and browser test are separate
+evidence. Linux passes 20 transport tests and all 18 real-provider assertions,
+with nine retained activations and four physically closed upstream holds. The
+[actual browser evidence](../../docs/testing/sdk-browser-application.md) additionally
+proves the real web WIT component, exact public route, omitted cookies/credentials,
+rejected management paths and hydration/navigation through shared HTTP ingress.
+Its controlled Node SSR output is not production Angular Wasm SSR qualification;
+that remains #226/#236. Exact-head CI and central review remain required.
 
 ## Reproducible checks
 
