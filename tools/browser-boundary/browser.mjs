@@ -3,7 +3,8 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
 
-const [toolchain, chrome, origin, home, wrongMime, receipt] = process.argv.slice(2);
+const [toolchain, chrome, origin, home, wrongMime, receipt, mode = 'assets-only'] = process.argv.slice(2);
+assert.ok(['assets-only', 'public-application'].includes(mode));
 const {chromium} = createRequire(path.join(path.resolve(toolchain), 'package.json'))('playwright-core');
 const browser = await chromium.launch({executablePath: chrome, headless: true,
   args: process.platform === 'linux' && process.getuid() === 0 ? ['--no-sandbox'] : []});
@@ -30,6 +31,46 @@ try {
   assert.equal(await page.evaluate(async url => (await fetch(url, {method: 'POST', mode: 'same-origin', body: ''})).status, origin + home), 405);
   await page.locator('#count').click();
   await page.waitForFunction(() => document.getElementById('count').textContent === 'Count 1', null, {timeout: 5000});
+  if (mode === 'public-application') {
+    await context.addCookies([{name: 'browserFixtureState', value: 'not-authentication', url: origin}]);
+    const [applicationRequest, applicationResponse] = await Promise.all([
+      page.waitForRequest(request => request.url() === origin + '/api/greeting', {timeout: 10000}),
+      page.waitForResponse(response => response.url() === origin + '/api/greeting', {timeout: 10000}),
+      page.locator('#public-greeting').click(),
+    ]);
+    await page.waitForFunction(() => document.getElementById('public-result').textContent === 'Hello Browser', null, {timeout: 5000});
+    assert.equal(applicationRequest.method(), 'POST');
+    assert.equal(applicationRequest.postData(), '{"name":"Browser"}');
+    const requestHeaders = await applicationRequest.allHeaders();
+    assert.equal(requestHeaders.origin, origin);
+    assert.equal(requestHeaders.authorization, undefined);
+    assert.equal(requestHeaders.cookie, undefined);
+    assert.equal(applicationResponse.status(), 200);
+    assert.equal(applicationResponse.headers()['x-app-principal'], 'browser-fixture');
+    assert.equal(applicationResponse.headers()['cache-control'], 'no-store');
+    assert.equal(applicationResponse.headers()['access-control-allow-origin'], undefined);
+    for (const forbidden of ['/latent.invocation.v1.InvocationService/Invoke',
+      '/latent.control.v1.PolicyService/ApplyPolicy', '/admin', '/api/greeting/extra']) {
+      assert.equal(await page.evaluate(async target => (await fetch(target, {
+        method: 'POST', mode: 'same-origin', credentials: 'omit', body: '', redirect: 'error',
+      })).status, forbidden), 404);
+    }
+    assert.equal(await page.evaluate(async () => (await fetch('/api/greeting', {
+      method: 'GET', mode: 'same-origin', credentials: 'omit',
+    })).status), 404);
+    assert.equal(await page.evaluate(async () => (await fetch('/api/greeting', {
+      method: 'POST', mode: 'same-origin', credentials: 'omit', body: '{"name":"Browser"}',
+      headers: {'content-type': 'application/json', authorization: 'Bearer synthetic-not-a-credential'},
+    })).status), 401);
+    const anonymous = await page.evaluate(async () => {
+      const response = await fetch('/api/greeting', {
+        method: 'POST', mode: 'same-origin', credentials: 'include', body: '{"name":"Browser"}',
+        headers: {'content-type': 'application/json'}, redirect: 'error', cache: 'no-store',
+      });
+      return {status: response.status, principal: response.headers.get('x-app-principal'), body: await response.json()};
+    });
+    assert.deepEqual(anonymous, {status: 200, principal: 'browser-fixture', body: {greeting: 'Hello Browser'}});
+  }
   await page.evaluate(async wrongMime => {
     globalThis.violations = [];
     document.addEventListener('securitypolicyviolation', event => {
@@ -63,6 +104,11 @@ try {
   assert.deepEqual(errors, []);
   const observations = {browser: browser.version(), liveSharedIngress: true,
     controlledNodeSsr: true, componentRenderClaimed: false, originalDomReused: true,
+    publicApplicationQualified: mode === 'public-application',
+    applicationComponentInvoked: mode === 'public-application',
+    managementRpcAbsent: mode === 'public-application',
+    browserFetchCredentialsOmitted: mode === 'public-application',
+    cookiesDoNotAuthenticate: mode === 'public-application',
     navigationHydrated: true, escapedDataRoundTrip: true, inlineAndRemoteScriptsBlocked: true,
     baseOverrideBlocked: true, wrongScriptMimeBlocked: true, sameOriginPostReachedMethodPolicy: true, errors: errors.length};
   await writeFile(receipt, JSON.stringify(observations));
