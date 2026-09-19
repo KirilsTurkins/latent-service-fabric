@@ -3,6 +3,7 @@
 pub mod audit;
 mod invoke;
 mod package;
+pub mod phase3;
 pub mod policy;
 pub mod release;
 pub mod rollout;
@@ -16,7 +17,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand, ValueEnum};
 
-pub use invoke::InvokeArgs;
+pub use invoke::{InvokeArgs, InvokeBudgetProfile};
 pub use management::{
     ActivationCommand, ApplyArgs, DeploymentCommand, DigestArgs, NodeCommand, PublishArgs,
     ReleaseCommand, RouteCommand, ServicePageArgs, ValidateCommand,
@@ -64,6 +65,10 @@ pub enum OutputFormat {
 
 #[derive(Subcommand)]
 pub enum Command {
+    #[command(subcommand)]
+    Trigger(phase3::TriggerCommand),
+    #[command(subcommand)]
+    Capability(phase3::CapabilityCommand),
     /// Manage bounded tenant policies and provider binding metadata.
     Policy(policy::PolicyArgs),
     #[command(subcommand)]

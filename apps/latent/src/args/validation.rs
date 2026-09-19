@@ -24,6 +24,8 @@ impl Cli {
             path_argument(path)?;
         }
         match &self.command {
+            Command::Trigger(command) => command.validate(),
+            Command::Capability(command) => command.validate(),
             Command::Policy(command) => command.validate(),
             Command::Rollout(command) => rollout(command),
             Command::Audit(super::audit::AuditCommand::Query(args)) => {

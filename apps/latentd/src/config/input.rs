@@ -22,6 +22,14 @@ pub(super) fn load(path: &Path) -> Result<NodeConfig, PlatformError> {
         "configurationFileProtection",
     )?;
     let mut config = decode(&bytes)?;
+    if let Some(providers) = &mut config.providers {
+        super::providers::anchor(
+            providers,
+            absolute
+                .parent()
+                .ok_or_else(|| invalid("configurationPath"))?,
+        )?;
+    }
     if let Some(http) = &mut config.http_ingress {
         super::http::anchor(
             http,
