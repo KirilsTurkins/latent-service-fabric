@@ -1,6 +1,7 @@
 use super::*;
 use crate::args::Cli;
 use clap::Parser;
+use prost::Message;
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -126,6 +127,21 @@ fn descriptive_denials_and_full_width_revision_facts_are_not_execution_permissio
         mutate(&mut value);
         assert!(projection::checked(&value, 4096).is_err());
     }
+}
+
+#[test]
+fn protobuf_decoded_single_reason_keeps_bounded_allocation_and_closed_semantics() {
+    let encoded = denial().encode_to_vec();
+    let decoded = proto::ExplainCapabilityGrantResponse::decode(encoded.as_slice()).unwrap();
+    projection::checked(&decoded, 4096).unwrap();
+    assert_eq!(decoded.reasons.len(), 1);
+    assert!(decoded.reasons.capacity() <= 4);
+    let mut excess = decoded;
+    excess.reasons.push("policy-denied".into());
+    assert!(projection::checked(&excess, 4096).is_err());
+    excess.reasons = Vec::with_capacity(5);
+    excess.reasons.push("policy-denied".into());
+    assert!(projection::checked(&excess, 4096).is_err());
 }
 
 #[test]

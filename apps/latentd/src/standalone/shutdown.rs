@@ -191,7 +191,7 @@ impl StandaloneNode {
             });
         }
         let provider_report = if let Some(providers) = &self.providers {
-            match providers.shutdown(forced_deadline.into_std()).await {
+            match providers.shutdown(drain_deadline.into_std()).await {
                 Ok(report) => Some(report),
                 Err(error) => {
                     failure.get_or_insert(error);
@@ -201,9 +201,10 @@ impl StandaloneNode {
         } else {
             None
         };
-        let policy_report = if let Some(policies) = &self.policies {
+        let policies = self.policies.take();
+        let policy_report = if let Some(policies) = &policies {
             let report = policies.shutdown(drain_deadline.into_std()).await;
-            if !report.clean() {
+            if !report.work_completed || report.active_jobs != 0 {
                 failure.get_or_insert_with(|| {
                     error(
                         PlatformErrorCode::DeadlineExceeded,
@@ -275,14 +276,6 @@ impl StandaloneNode {
             report.providers = provider_report;
             report.http = http_handle.as_ref().map(super::http::HttpHandle::snapshot);
         }
-        if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
-            failure.get_or_insert_with(|| {
-                error(
-                    PlatformErrorCode::Internal,
-                    "node resources were not reclaimed",
-                )
-            });
-        }
         // This diagnostic contains no caller identifiers, payload, or private error.
         let _ = self.telemetry.try_emit_log(LogRecord {
             severity: if failure.is_none() && report.is_ok() {
@@ -317,6 +310,17 @@ impl StandaloneNode {
         }
         if let Ok(report) = &mut report {
             report.compiler = compiler_observer.snapshot();
+            if let (Some(policies), Some(previous)) = (&policies, policy_report) {
+                report.policies = Some(policies.snapshot(previous.work_completed));
+            }
+        }
+        if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
+            failure.get_or_insert_with(|| {
+                error(
+                    PlatformErrorCode::Internal,
+                    "node resources were not reclaimed",
+                )
+            });
         }
         if let Some(error) = failure {
             return Err(error);

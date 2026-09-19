@@ -14,6 +14,7 @@ from tools.phase3_management_scenario import (
     MEDIA_TYPE, PROVIDER_CREDENTIAL, configure_provider_node, installed_descriptors,
     invocation_budget, invoke_guest,
 )
+from tools.run_phase3_management_workflow import inspection
 
 
 def descriptors():
@@ -99,6 +100,8 @@ class ProviderWorkflowTests(unittest.TestCase):
             self.assertEqual(invoke_guest(client, target, 4, handle=18446744073709551615)[1],
                              18446744073709551615)
             client.call.assert_called_once()
+            self.assertEqual(client.call.call_args.args[:3], ("--rpc-timeout-ms", "5000", "invoke"))
+            self.assertIn("phase3", client.call.call_args.args)
             self.assertEqual(json.loads((client.directory / "invoke-0.json").read_bytes()),
                              [4, "", "18446744073709551615"])
             for ordinal, output in enumerate(("18446744073709551616", "01", "-1", "1\n", "\u0661"), 1):
@@ -119,6 +122,23 @@ class ProviderWorkflowTests(unittest.TestCase):
         connection = MemoryConnection(b"GET /denied HTTP/1.1\r\nHost: localhost\r\n\r\n")
         self.assertEqual(request(connection), (False, False))
         self.assertTrue(connection.output.startswith(b"HTTP/1.1 403 Forbidden"))
+
+    def test_inspection_can_repeat_after_restart_without_replacing_client_inputs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            client = SimpleNamespace(directory=Path(temporary), calls=0, call=Mock())
+            targets = {name: {"route": f"guest-{name}"} for name in ("http", "blob")}
+            page = {"data": {"executionPermission": False, "capabilities": [{}], "revision": {"revisionId": "same"}}}
+            allowed = {"data": {"allowed": True, "executionPermission": False}}
+            denied = {"data": {"allowed": False, "executionPermission": False}}
+
+            def call(*arguments):
+                client.calls += 1
+                return (page, page, allowed, denied)[(client.calls - 1) % 4]
+
+            client.call.side_effect = call
+            self.assertEqual(inspection(client, targets, 32123), inspection(client, targets, 32123))
+            self.assertEqual(client.calls, 8)
+            self.assertEqual(len(list(client.directory.glob("resource-*.json"))), 4)
 
     def test_http_fixture_rejects_oversize_duplicate_and_incomplete_input(self):
         for data in (b"x" * 8193, b"GET / HTTP/1.1\r\nHost: one\r\nHost: two\r\n\r\n",

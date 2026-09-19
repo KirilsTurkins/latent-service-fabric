@@ -65,7 +65,7 @@ pub struct NodeSettings {
     pub(crate) audit: Option<latent_audit::AuditLimits>,
     pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
-    pub(crate) providers: Option<ConfiguredProviders>,
+    pub(crate) providers: Option<Box<ConfiguredProviders>>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) budget_profile: latent_core::BudgetProfile,
     pub(crate) delegation_limits: latent_core::DelegationLimits,
@@ -128,6 +128,16 @@ impl NodeConfig {
     /// Validates settings without creating directories, listeners, or workers.
     pub fn derive(&self) -> Result<NodeSettings, PlatformError> {
         derive::settings(self)
+    }
+}
+
+impl NodeSettings {
+    #[must_use]
+    pub fn control_blocking_threads(&self) -> usize {
+        1 + usize::from(
+            self.rollouts.is_some()
+                && (self.capability_policies.is_some() || self.providers.is_some()),
+        )
     }
 }
 

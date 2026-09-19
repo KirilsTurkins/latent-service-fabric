@@ -59,6 +59,7 @@ async fn configured(
     let root = tempfile::tempdir().unwrap();
     let publication = package::publish(root.path(), name).await;
     let mut ceiling = support::budget();
+    ceiling.cpu_fuel = 10_000_000_000;
     ceiling.outbound_requests = 8;
     ceiling.blob_read_bytes = 65536;
     ceiling.blob_write_bytes = 65536;

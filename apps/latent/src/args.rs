@@ -17,7 +17,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand, ValueEnum};
 
-pub use invoke::InvokeArgs;
+pub use invoke::{InvokeArgs, InvokeBudgetProfile};
 pub use management::{
     ActivationCommand, ApplyArgs, DeploymentCommand, DigestArgs, NodeCommand, PublishArgs,
     ReleaseCommand, RouteCommand, ServicePageArgs, ValidateCommand,

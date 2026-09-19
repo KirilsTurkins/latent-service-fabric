@@ -48,6 +48,7 @@ fn protected_provider_configuration_is_opt_in_closed_and_side_effect_free() {
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
     let config = super::NodeConfig::load(&path).unwrap();
     let settings = config.derive().unwrap();
+    assert_eq!(settings.control_blocking_threads(), 1);
     assert_eq!(settings.providers.unwrap().definitions().unwrap().len(), 1);
     assert!(!directory.path().join("data").exists());
     let unprotected = super::input::decode(&serde_json::to_vec(&original).unwrap()).unwrap();
@@ -78,4 +79,9 @@ fn protected_provider_configuration_is_opt_in_closed_and_side_effect_free() {
         std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
         assert!(super::NodeConfig::load(&path).unwrap().derive().is_err());
     }
+    let mut combined = original;
+    combined["rollouts"] = json!({"mode":"manual"});
+    std::fs::write(&path, serde_json::to_vec(&combined).unwrap()).unwrap();
+    let combined = super::NodeConfig::load(&path).unwrap().derive().unwrap();
+    assert_eq!(combined.control_blocking_threads(), 2);
 }

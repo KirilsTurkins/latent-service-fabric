@@ -22,7 +22,8 @@ from tools.phase3_management_scenario import (
 
 def probe(client, target, which, expected, text="", handle=0):
     result, value = invoke_guest(client, target, which, text, handle)
-    require(result["outcomeKnown"] and value == expected, "provider-invocation-result")
+    require(result["outcomeKnown"] and value == expected,
+            f"provider-invocation-result-case-{which}-expected-{expected}-returned-{value}")
     return result["data"]["activationId"]
 
 
@@ -35,7 +36,7 @@ def inspection(client, targets, port):
                 "capability-sampled-page")
         records[name] = value
     for suffix, allowed in (("allowed", True), ("denied", False)):
-        resource = client.directory / f"resource-{suffix}.json"
+        resource = client.directory / f"resource-{client.calls}-{suffix}.json"
         write_json(resource, {"kind": "http", "origin": {"scheme": "http", "host": "localhost", "port": port},
                               "method": "GET", "path": f"/{suffix}"})
         value = client.call("capability", "explain", "--deployment", targets["http"]["route"],
@@ -73,6 +74,11 @@ def run(args):
             before = inspection(client, targets, port)
             stop(client, node)
             shutdown.append(stopped_record(node))
+            restart_after = time.monotonic() + 6
+            while time.monotonic() < restart_after:
+                client.cancellation.check()
+                require(time.monotonic() < client.deadline, "workflow-deadline")
+                time.sleep(min(0.025, max(0, restart_after - time.monotonic())))
             node = connect(client, args.node, node_root, config, TENANT, 2)
             after = inspection(client, targets, port)
             require(all(before[name]["revision"] == after[name]["revision"] for name in targets),
