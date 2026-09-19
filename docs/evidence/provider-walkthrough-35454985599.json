@@ -1,0 +1,196 @@
+{
+  "schemaVersion": "latent.provider-guide-evidence.v1",
+  "scope": "retained-real-provider-conformance-not-complete-operator-guide-acceptance",
+  "observedAtUtc": "2026-09-19T17:39:45.540982+00:00",
+  "repository": "KirilsTurkins/latent-service-fabric",
+  "execution": {
+    "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35454985599",
+    "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35454985599/job/105928606202",
+    "conclusion": "success",
+    "reviewedHead": "edec84fa17460b11e166cbb25a9e51f7ea15e78b",
+    "runtimeSource": "05360c50eb6c40212111ad0d87198db5dead78a5",
+    "guideSourceChecked": "22dc2f07286f6f251e917929b36aaca6b876792c",
+    "sourceRecordKind": "GitHub Actions job logs and exact Git objects, not release publisher provenance",
+    "sameCommitClaimed": false,
+    "newLocalLinuxRunClaimed": false,
+    "separateLatentdClientWalkthroughClaimed": false
+  },
+  "toolchain": {
+    "runner": "ubuntu-24.04",
+    "rust": "1.97.1",
+    "python": "3.13.5"
+  },
+  "fixtureImages": {
+    "s3": "quay.io/minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2",
+    "vault": "hashicorp/vault@sha256:783103ba38c5e3edcaa9bbbcb0ff80fc93c690361f03fd487e89227da6c3efa9",
+    "nats": "nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc"
+  },
+  "providerResults": {
+    "s3_blobs": {
+      "testNames": [
+        "real_s3_guest_multipart_ranges_credentials_and_restart",
+        "real_s3_wrong_credentials_are_not_retried"
+      ],
+      "cleanup": "Removed owned S3 server, payload storage and temporary inventory",
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filteredOut": 4,
+      "testSeconds": 2.67
+    },
+    "vault_secrets": {
+      "testNames": [
+        "audit::real_vault_audit_and_status_redact_token_and_value_material",
+        "real_vault_versions_rotation_revocation_and_guest_cleanup",
+        "transport::real_vault_transport_cancellation_outage_tls_and_healthy_reuse"
+      ],
+      "cleanup": "Removed owned Vault server and temporary TLS files",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filteredOut": 5,
+      "testSeconds": 1.62
+    },
+    "nats_events": {
+      "testNames": [
+        "audit::real_nats_audit_preserves_broker_ack_and_uncertainty_without_event_or_credentials",
+        "faults::real_nats_lost_ack_cancelled_guest_outage_and_fresh_connection_recovery",
+        "real_nats_credentials_tls_budget_and_retained_receipt_ownership",
+        "real_nats_guest_ack_denial_duplicates_and_connection_reuse"
+      ],
+      "cleanup": "Removed owned NATS server, bounded stream storage and TLS files",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filteredOut": 4,
+      "testSeconds": 3.99
+    },
+    "nats_triggers": {
+      "testNames": [
+        "acceptance::real_nats_declared_failure_terminates_and_transient_poison_exhausts_three_deliveries",
+        "acceptance::real_nats_idle_256_triggers_keep_two_connections_and_zero_guest_stores",
+        "acceptance::real_nats_invalid_payload_terminates_without_guest_execution",
+        "acceptance::real_nats_overload_reserves_before_pull_and_recovers_without_prefetch",
+        "acceptance::real_nats_routes_change_future_deliveries_and_revocation_is_tenant_scoped",
+        "real_nats_trigger_executes_two_tenants_and_reuses_bounded_connections",
+        "recovery::real_nats_lost_ack_receipt_remains_uncertain_when_the_broker_already_committed",
+        "recovery::real_nats_lost_ack_restart_redelivers_and_can_execute_the_guest_twice",
+        "recovery::real_nats_shutdown_during_guest_execution_keeps_ownership_through_cleanup",
+        "recovery::real_nats_shutdown_reclaims_pending_delivery_without_running_guest_or_acknowledging"
+      ],
+      "cleanup": "Removed owned NATS server, bounded stream storage and TLS files",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filteredOut": 0,
+      "testSeconds": 36.12
+    }
+  },
+  "sourceBindings": [
+    {
+      "path": "tools/run_s3_blob_tests.py",
+      "gitObject": "43a336868a448371d722c8fb8f56eee008ea3275",
+      "type": "blob"
+    },
+    {
+      "path": "tools/run_vault_secret_tests.py",
+      "gitObject": "9b50f605aa3774c1eee3e95acd8e6ddc663b7563",
+      "type": "blob"
+    },
+    {
+      "path": "tools/run_nats_event_tests.py",
+      "gitObject": "4abbf5e2a62895242bab72306806d0a9a83ba340",
+      "type": "blob"
+    },
+    {
+      "path": "tools/s3_test_support.py",
+      "gitObject": "b32213a581aa40831a9038a5893a292d40525f38",
+      "type": "blob"
+    },
+    {
+      "path": "tools/vault_test_support.py",
+      "gitObject": "e376ef1427337b10e7ebee486e0a9041e765b6b1",
+      "type": "blob"
+    },
+    {
+      "path": "tools/nats_test_support.py",
+      "gitObject": "26ecf664196f3efbf34aea1e2a32ac54076f447d",
+      "type": "blob"
+    },
+    {
+      "path": "tools/run_oci_registry_tests.py",
+      "gitObject": "ecf64b58bebf2ff6a5e6322a9afedce2301d178a",
+      "type": "blob"
+    },
+    {
+      "path": "crates/latent-blobs",
+      "gitObject": "55c4cf8cfaa235a7b2b3e69b9500d6856128606b",
+      "type": "tree"
+    },
+    {
+      "path": "crates/latent-vault",
+      "gitObject": "e68e543d09cdc749a6903736e6146288e38591e3",
+      "type": "tree"
+    },
+    {
+      "path": "crates/latent-nats",
+      "gitObject": "267e5979ead4133bdb147e2f3316feb893aafbda",
+      "type": "tree"
+    },
+    {
+      "path": "crates/latent-capabilities",
+      "gitObject": "6aad740fb4538489524a6501d0d9f69c16b646cb",
+      "type": "tree"
+    },
+    {
+      "path": "crates/latent-wasmtime",
+      "gitObject": "5bd98da504f3d56a17ebf91db68badcc33ca0904",
+      "type": "tree"
+    },
+    {
+      "path": "crates/latent-node",
+      "gitObject": "9dc35500f18f1ef7cf48fc710e2d90bcc0f2e74c",
+      "type": "tree"
+    },
+    {
+      "path": "crates/latent-http",
+      "gitObject": "663302f0f8922627ddb4de69d3c058ef277e95a2",
+      "type": "tree"
+    },
+    {
+      "path": "wit",
+      "gitObject": "dd5aec89bdd6c8adea5bb85cd08868d276d7c465",
+      "type": "tree"
+    },
+    {
+      "path": "Cargo.lock",
+      "gitObject": "b88e22863b90d1dcaef32fe05f52fe827858e9fd",
+      "type": "blob"
+    },
+    {
+      "path": "Cargo.toml",
+      "gitObject": "f7b9dc65d4f1f1e1a4dceaa082e9ee3394bf9fb3",
+      "type": "blob"
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "gitObject": "3ffe268a428b7d214311785bb37fc0ee6ea9c336",
+      "type": "blob"
+    }
+  ],
+  "evidenceMethod": "Re-read successful job log; selected only named test outcomes, finite counts and owned-cleanup confirmations; compared selected runtime Git blobs and complete crate/WIT trees with the guide source",
+  "secretsRetained": false,
+  "notClaimed": [
+    "new execution of the assembled guide commands on the Windows authoring host",
+    "production provider credentials, hosted-account setup or a standalone management configuration walkthrough",
+    "native bundle installation, compiler isolation or a release version-pair VM",
+    "entire adversarial coverage from the filtered real-provider tests",
+    "rendered newcomer or maintainer acceptance of all required guide criteria",
+    "transactional guest state, outbox, durable workflows or exactly-once delivery",
+    "configured limits or individual test durations as performance guarantees"
+  ]
+}

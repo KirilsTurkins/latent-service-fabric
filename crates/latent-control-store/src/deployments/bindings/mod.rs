@@ -4,6 +4,7 @@ mod inspection;
 pub(in crate::deployments) mod model;
 mod source;
 pub(in crate::deployments) use source::Generations;
+mod startup;
 mod update;
 pub use model::{BindingDefinition, BindingLimits, ConfiguredBindingProvider};
 pub use update::PreparedBindingUpdate;

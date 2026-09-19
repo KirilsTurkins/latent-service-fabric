@@ -11,7 +11,7 @@ use std::sync::{
     Arc, RwLock, Weak,
 };
 
-struct WorkPermit(Arc<AtomicBool>);
+pub(super) struct WorkPermit(pub(super) Arc<AtomicBool>);
 impl Drop for WorkPermit {
     fn drop(&mut self) {
         self.0.store(false, Ordering::Release);
