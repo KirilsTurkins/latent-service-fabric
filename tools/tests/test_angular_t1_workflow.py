@@ -12,9 +12,11 @@ from unittest.mock import Mock, patch
 
 from tools.phase2_operator_process import WorkflowError, read_json, write_json
 from tools.phase3_web_assets import immutable_assets, revoked_assets
+from tools.phase3_web_qualification import trigger_lifecycle
+from tools.run_angular_t1_workflow import QualificationClient
 from tools.phase3_web_scenario import (
     MEDIA, MIB, PREPARATION_MILLIS, budget, configure_angular_node, deployment_manifest,
-    fixture_metadata, invocation_arguments, invoke, prepare, tree_inventory,
+    fixture_metadata, invocation_arguments, invoke, prepare, selected_client_asset, tree_inventory,
 )
 
 
@@ -24,6 +26,44 @@ def client(root):
 
 
 class AngularT1WorkflowTests(unittest.TestCase):
+    def test_trigger_deletion_checks_one_explicit_mutation_and_its_retained_generation(self):
+        triggers = {"alice.angular.test": "alice", "bob.angular.test": "bob", "foreign.angular.test": "foreign"}
+        responses = [
+            {"data": {"nextPageToken": None, "triggers": [
+                {"manifest": {"metadata": {"name": name}}} for name in triggers.values()]}},
+            {"data": {"stateVersion": "7", "trigger": {"generation": "6"}}},
+            {"outcomeKnown": True, "data": {"generation": "6", "stateVersion": "8"}},
+            {"outcomeKnown": True, "data": {"disposition": "found", "executionPermission": False,
+                                          "receipt": {"objectGeneration": "6", "stateVersion": "8"}}},
+            {"data": {"trigger": None}},
+        ]
+        caller = client(Path("unused"))
+        caller.call.side_effect = responses
+        with patch("tools.phase3_web_qualification.http_response") as request:
+            result = trigger_lifecycle(caller, None, triggers)
+            self.assertTrue(result["removedGenerationPreserved"])
+            self.assertEqual(caller.call.call_count, 5)
+            self.assertEqual(caller.call.call_args_list[2].args,
+                             ("trigger", "delete", "bob", "--operation-id", "delete-bob-trigger",
+                              "--expected-generation", "6", "--expected-state-version", "7"))
+            request.assert_called_once_with(caller, None, "bob.angular.test", expected=404)
+        uncertain = copy.deepcopy(responses)
+        uncertain[2]["outcomeKnown"] = False
+        caller.call.reset_mock(side_effect=True)
+        caller.call.side_effect = uncertain
+        with self.assertRaisesRegex(WorkflowError, "angular-trigger-delete-outcome"):
+            trigger_lifecycle(caller, None, triggers)
+        self.assertEqual(caller.call.call_count, 3)
+
+    def test_failure_diagnostic_adds_only_a_fixed_operation_name(self):
+        caller = QualificationClient.__new__(QualificationClient)
+        with patch("tools.phase2_operator_process.Client.call", side_effect=WorkflowError("bounded-code")) as invoked:
+            with self.assertRaisesRegex(WorkflowError, "^web-renew-evidence:bounded-code$"):
+                caller.call("--rpc-timeout-ms", "30000", "web", "renew-evidence", "--evidence", "/private/node/path")
+            self.assertEqual(invoked.call_count, 1)
+            with self.assertRaisesRegex(WorkflowError, "^unclassified:bounded-code$"):
+                caller.call("/private/node/path", "secret-value")
+
     def test_asset_checks_pin_publication_bytes_and_never_use_rendered_html(self):
         publication = "publication:sha256:" + "a" * 64
         content = b"actual immutable browser bytes"
@@ -135,8 +175,10 @@ class AngularT1WorkflowTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             selected = "publication:sha256:" + "a" * 64
-            record = {"service": "angular-hello", "componentDigest": "sha256:" + "b" * 64}
-            html = b'<h1 ngh="0">workflow-operator</h1>'
+            record = {"service": "angular-hello", "componentDigest": "sha256:" + "b" * 64,
+                      "assets": [{"path": "/client/main.js", "mediaType": "text/javascript"}]}
+            html = ('<h1 ngh="0">workflow-operator</h1><script type="module" src="/_lsf/assets/'
+                    + selected + '/client/main.js"></script>').encode()
             values = [{"status": 200, "body-base64": base64.b64encode(html).decode()}]
             caller = client(root)
             caller.call.return_value = {"outcomeKnown": True, "data": {
@@ -148,6 +190,15 @@ class AngularT1WorkflowTests(unittest.TestCase):
             caller.call.return_value["data"]["resolvedRevision"]["publicationId"] = None
             with self.assertRaisesRegex(WorkflowError, "selected-render-publication"):
                 invoke(caller, record, selected, "second")
+
+    def test_rendered_script_must_use_the_exact_selected_publication(self):
+        publication = "publication:sha256:" + "a" * 64
+        record = {"assets": [{"path": "/client/main.js", "mediaType": "text/javascript"}]}
+        selected = "/_lsf/assets/" + publication + "/client/main.js"
+        selected_client_asset(record, publication, '<script src="' + selected + '"></script>')
+        for locator in ("/client/main.js", selected.replace("a" * 64, "b" * 64), selected + "?alias=1"):
+            with self.subTest(locator=locator), self.assertRaisesRegex(WorkflowError, "angular-client-asset-publication"):
+                selected_client_asset(record, publication, '<script src="' + locator + '"></script>')
 
     def test_fixture_requires_actual_observation_and_independent_package_identity(self):
         metadata = {"schemaVersion": "latent.phase3.angular.fixture.v1", "tenant": "tests",

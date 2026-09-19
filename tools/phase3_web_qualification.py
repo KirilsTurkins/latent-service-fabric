@@ -7,7 +7,7 @@ import time
 from tools.phase2_operator_process import Process, require, write_json
 from tools.phase3_web_scenario import (
     deploy, deployment_manifest, http_response, idle_inventory, invocation_arguments, invoke, prepare,
-    publication_receipt, publish, trigger,
+    publication_receipt, publish, selected_client_asset, trigger,
 )
 
 
@@ -188,8 +188,8 @@ def reject_staged_web_rollout(client, record, publication, deployment):
 
 
 def http_rendering(client, node, record, publication, deployment, revision):
-    for host in ("alice.angular.test", "bob.angular.test", "foreign.angular.test"):
-        trigger(client, record, publication, deployment, revision, host)
+    triggers = {host: trigger(client, record, publication, deployment, revision, host)
+                for host in ("alice.angular.test", "bob.angular.test", "foreign.angular.test")}
     html_by_subject = {}
     for host, subject, forbidden in (("alice.angular.test", "Alice&lt;unsafe&gt;", "Hello Bob"),
                                      ("bob.angular.test", "Bob", "Alice&lt;unsafe&gt;"),
@@ -198,8 +198,37 @@ def http_rendering(client, node, record, publication, deployment, revision):
         html = body.decode("utf-8")
         require("ngh=" in html and subject in html and forbidden not in html
                 and "lsf-private-server-fixture-234" not in html, "http-render-principal-or-private-state")
+        selected_client_asset(record, publication, html)
         html_by_subject[host] = html
     http_response(client, node, "foreign.angular.test", expected=403)
+    lifecycle = trigger_lifecycle(client, node, triggers)
     idle_inventory(client)
     return {"responses": 3, "isolatedPrincipals": 2, "foreignTenantDenied": True,
-            "hydratedMarkup": all("ngh=" in html for html in html_by_subject.values())}
+            "hydratedMarkup": all("ngh=" in html for html in html_by_subject.values()),
+            "triggerLifecycle": lifecycle}
+
+
+def trigger_lifecycle(client, node, triggers):
+    page = client.call("trigger", "list", "--page-size", "8")["data"]
+    require(page["nextPageToken"] is None and
+            {entry["manifest"]["metadata"]["name"] for entry in page["triggers"]} == set(triggers.values()),
+            "angular-trigger-page")
+    name = triggers["bob.angular.test"]
+    state = client.call("trigger", "get", name)["data"]
+    generation = state["trigger"]["generation"]
+    operation = "delete-bob-trigger"
+    result = client.call("trigger", "delete", name, "--operation-id", operation,
+                         "--expected-generation", generation, "--expected-state-version", state["stateVersion"])
+    require(result["outcomeKnown"] and result["data"]["generation"] == generation,
+            "angular-trigger-delete-outcome")
+    lookup = client.call("trigger", "operation", operation)
+    require(lookup["outcomeKnown"] and lookup["data"]["disposition"] == "found"
+            and lookup["data"]["executionPermission"] is False
+            and lookup["data"]["receipt"]["objectGeneration"] == generation
+            and lookup["data"]["receipt"]["stateVersion"] == result["data"]["stateVersion"],
+            "angular-trigger-delete-receipt")
+    require(client.call("trigger", "get", name, codes=(6,))["data"]["trigger"] is None,
+            "angular-trigger-delete-retained-route")
+    http_response(client, node, "bob.angular.test", expected=404)
+    return {"listedTriggers": len(page["triggers"]), "deletedRouteAbsent": True,
+            "deletionOperationRetained": True, "removedGenerationPreserved": True}

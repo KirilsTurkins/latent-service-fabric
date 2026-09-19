@@ -97,6 +97,77 @@ fn web_receipt_validates_closed_semantics_capacity_and_lossless_generation() {
 }
 
 #[test]
+fn web_status_roundtrip_preserves_admission_renewal_and_terminal_history() {
+    use proto::{ReleaseEligibilityReason as Eligibility, ReleaseLifecycleReason as Reason};
+    use proto::{ReleaseLifecycleState as State, ReleaseLiveEligibility as Live};
+
+    let published = receipt();
+    for (state, reason, generation, live, eligibility) in [
+        (
+            State::Admitted,
+            Reason::Admitted,
+            1,
+            Live::Eligible,
+            Eligibility::Verified,
+        ),
+        (
+            State::Admitted,
+            Reason::EvidenceRenewed,
+            2,
+            Live::Eligible,
+            Eligibility::Verified,
+        ),
+        (
+            State::Revoked,
+            Reason::OperatorRevocation,
+            2,
+            Live::Denied,
+            Eligibility::Revoked,
+        ),
+        (
+            State::Retired,
+            Reason::OperatorRetirement,
+            2,
+            Live::Denied,
+            Eligibility::Retired,
+        ),
+    ] {
+        let response = proto::GetWebPublicationResponse {
+            record: Some(proto::WebLifecycleRecord {
+                publication: published.publication.clone(),
+                package_digest: format!("sha256:{}", "a".repeat(64)),
+                web_manifest_digest: format!("sha256:{}", "c".repeat(64)),
+                assets_digest: format!("sha256:{}", "d".repeat(64)),
+                state: state as i32,
+                generation,
+                actor: published.actor.clone(),
+                reason: reason as i32,
+                operation_id: "selected-web-operation".into(),
+                evidence_revision_digest: Some(format!("sha256:{}", "e".repeat(64))),
+            }),
+            eligibility: live as i32,
+            eligibility_reason: eligibility as i32,
+            renderer: Some(proto::WebRendererDescriptor {
+                component_digest: format!("sha256:{}", "f".repeat(64)),
+                profile: proto::WebRendererProfile::AngularSsrComponentV1 as i32,
+                profile_digest: latent_manifest::renderer_profile_digest(
+                    latent_manifest::RendererProfile::AngularSsrComponentV1,
+                )
+                .to_string(),
+                component_bytes: 24 * 1024 * 1024,
+            }),
+        };
+        let decoded =
+            proto::GetWebPublicationResponse::decode(response.encode_to_vec().as_slice()).unwrap();
+        projection::checked(&decoded, 8192).unwrap();
+        assert_eq!(
+            decoded.project()["record"]["generation"],
+            generation.to_string()
+        );
+    }
+}
+
+#[test]
 fn web_receipt_cannot_substitute_tenant_publication_operation_or_transition() {
     let original = receipt();
     let selected = original.publication.clone().unwrap();

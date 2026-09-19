@@ -34,6 +34,24 @@ from tools.phase3_web_scenario import (
 from tools.run_security_profile_workflow import command, rejection_checks, replace_config
 
 
+class QualificationClient(Client):
+    operations = frozenset({
+        ("node", "get"), ("audit", "query"), ("activation", "get"), ("activation", "cancel"),
+        ("web", "publish"), ("web", "get"), ("web", "prepare"), ("web", "operation"),
+        ("web", "renew-evidence"), ("web", "revoke"), ("deployment", "get"),
+        ("deployment", "apply"), ("trigger", "get"), ("trigger", "apply"),
+        ("trigger", "list"), ("trigger", "delete"), ("trigger", "operation"), ("rollout", "start"),
+    })
+
+    def call(self, *arguments, **options):
+        operation = next((family + "-" + action for family, action in zip(arguments, arguments[1:])
+                          if (family, action) in self.operations), "unclassified")
+        try:
+            return super().call(*arguments, **options)
+        except WorkflowError as failure:
+            raise WorkflowError(operation + ":" + str(failure)) from None
+
+
 def report_stage(name):
     print("Angular T1: " + name, file=sys.stderr, flush=True)
 
@@ -66,7 +84,7 @@ def run(args):
         node_root, client_root = root / "node", root / "client"
         for directory in (node_root, client_root):
             directory.mkdir(mode=0o700)
-        client = Client(args.cli, client_root, cancellation, time.monotonic() + 1200)
+        client = QualificationClient(args.cli, client_root, cancellation, time.monotonic() + 1200)
         identity = {name + "Digest": file_digest(getattr(args, name), 1024 * MIB, cancellation, client.deadline)
                     for name in ("cli", "node", "compiler")}
         original_fixture = tree_inventory(args.fixture_root, client)
@@ -105,12 +123,16 @@ def run(args):
             cancellations = failure_recovery(client, records["angular"], publications["angular"])
             report_stage("render-failure-and-cancellation-recovery-complete")
             deployment, renewed = renewal(client, args.fixture_root, records["angular"], publications["angular"], deployment)
+            report_stage("evidence-renewal-and-stale-grant-checks-complete")
             deployment, revision, revoked = independent_publications(client, records, publications, deployment)
+            report_stage("independent-publication-revocation-and-cas-rollback-checked")
             assets["revoked"] = revoked_assets(client, node, records["alternate"], publications["alternate"])
             http = http_rendering(client, node, records["angular"], publications["angular"], deployment, revision)
             report_stage("selected-lifecycle-and-http-checks-complete")
             audit_pages(client, {"publish-angular", "publish-alternate", "renew-angular", "revoke-alternate"})
             before_restart = idle_inventory(client)
+            previous_hits = native_cache_audit(client, records["angular"], "cache-hit")
+            previous_hit_sequence = max(int(hit["sequence"]) for hit in previous_hits)
             stop(client, node)
             shutdown.append(stopped_record(node))
             node = None
@@ -120,6 +142,8 @@ def run(args):
             prepare(client, publications["angular"], 2)
             invoke(client, records["angular"], publications["angular"], "angular-restarted")
             warm_native = native_cache_audit(client, records["angular"], "cache-hit")
+            warm_native = [hit for hit in warm_native if int(hit["sequence"]) > previous_hit_sequence]
+            require(warm_native, "angular-native-cache-hit-not-observed-after-restart")
             prepare(client, publications["alternate"], 2, wait=5000, codes=(4,))
             assets["restarted"] = immutable_assets(client, node, records["angular"], publications["angular"])
             assets["revokedAfterRestart"] = revoked_assets(client, node, records["alternate"], publications["alternate"])
@@ -147,6 +171,7 @@ def run(args):
                       "immutableAssets": assets,
                       "nativeCacheFilesUnchangedOnRestart": True, "cliProcesses": client.calls,
                       "nativeCacheMisses": cold_native, "authenticatedNativeCacheHits": warm_native,
+                      "preRestartNativeCacheHitHighWatermark": str(previous_hit_sequence),
                       "shutdown": shutdown, "temporaryOutputsRemoved": True}
         finally:
             client.node = None

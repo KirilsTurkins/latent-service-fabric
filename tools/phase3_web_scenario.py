@@ -179,6 +179,13 @@ def invocation_arguments(client, record, path, activation_id, route="angular"):
             "--activation-id", activation_id, "--input", source, "--budget", resources]
 
 
+def selected_client_asset(record, publication, html):
+    expected = ["/_lsf/assets/" + publication + asset["path"] for asset in record["assets"]
+                if asset["mediaType"] == "text/javascript"]
+    scripts = re.findall(r'<script\b[^>]*\bsrc="([^"]+)"', html)
+    require(len(expected) == 1 and scripts == expected, "angular-client-asset-publication")
+
+
 def invoke(client, record, publication, activation_id, path="/", route="angular", codes=(0,)):
     result = client.call(*invocation_arguments(client, record, path, activation_id, route), codes=codes)
     if codes != (0,):
@@ -193,6 +200,7 @@ def invoke(client, record, publication, activation_id, path="/", route="angular"
     html = base64.b64decode(values[0]["body-base64"], validate=True).decode("utf-8")
     require("ngh=" in html and "workflow-operator" in html
             and "lsf-private-server-fixture-234" not in html, "actual-angular-render")
+    selected_client_asset(record, publication, html)
     pin = result["data"]["resolvedRevision"]
     require(pin["publicationId"] == publication
             and pin["releaseDigest"] == record["componentDigest"], "selected-render-publication")
