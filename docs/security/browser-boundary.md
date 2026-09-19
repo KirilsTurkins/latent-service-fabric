@@ -249,3 +249,6 @@ coverage. Ordinary test output marks missing component/browser prerequisites as
 ignored, not successful execution. CI runs the browser probe from its current
 Cargo artifact inventory and retains the compact observations; a missing test,
 browser, fixture or receipt is a failure, not substituted security evidence.
+
+See the [bounded local validation observations](../testing/browser-boundary.md)
+for exact tested code, dependency heads, counts and redacted artifact identities.
