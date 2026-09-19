@@ -13,6 +13,21 @@ impl Guest for Capsule {
         if request.path == "/trap" {
             unreachable!("deliberate web contract fixture trap");
         }
+        if request.path == "/cache" {
+            // Explicit immutable public fixture: no activation/context-derived
+            // output. Other paths deliberately remain uncachable diagnostics.
+            return Response {
+                profile: Profile::BufferedV1,
+                status: 200,
+                headers: vec![Header {
+                    name: "cache-control".into(),
+                    value: b"public, max-age=60".to_vec(),
+                }],
+                media_type: Some("text/plain".into()),
+                representation_length: None,
+                body_base64: "cHVibGlj".into(),
+            };
+        }
         let principal = bindings::latent::context::context::principal();
         let mut headers = request.headers;
         headers.push(Header {

@@ -1,5 +1,6 @@
 use super::{
     bounded::Optional,
+    cache::{CacheHit, CacheRequest},
     codec, headers,
     model::{Profile, RequestData},
     pool::Lease,
@@ -18,6 +19,7 @@ pub struct Collector {
     version: HttpVersion,
     body: Vec<u8>,
     failed: bool,
+    cache_sensitive: bool,
     // Fields drop in declaration order: free all retained data before refunding.
     lease: Arc<Lease>,
 }
@@ -26,6 +28,13 @@ impl Collector {
         let method = Method::parse(head.method)?;
         let headers = headers::request(&head, method)?;
         let target = CanonicalTarget::parse(head.scheme, head.authority, head.target)?;
+        // Record credential presence before application-header filtering. Never
+        // retain credentials themselves or permit a stripped token to enable a hit.
+        let cache_sensitive = head.headers.iter().any(|header| {
+            ["authorization", "proxy-authorization", "cookie"]
+                .iter()
+                .any(|name| header.name.eq_ignore_ascii_case(name))
+        });
         Ok(Self {
             lease,
             target,
@@ -34,6 +43,7 @@ impl Collector {
             version: head.version,
             body: Vec::new(),
             failed: false,
+            cache_sensitive,
         })
     }
     #[must_use]
@@ -100,6 +110,7 @@ impl Collector {
         Ok(Request {
             lease: self.lease,
             context,
+            cache_sensitive: self.cache_sensitive,
             data: RequestData {
                 profile: Profile::BufferedV1,
                 method: self.method,
@@ -117,7 +128,8 @@ impl Collector {
 
 pub struct Request {
     context: TrustedContext,
-    data: RequestData,
+    pub(super) data: RequestData,
+    pub(super) cache_sensitive: bool,
     lease: Arc<Lease>,
 }
 impl Request {
@@ -171,9 +183,30 @@ impl Invocation {
     /// A validated application outcome becomes an owned delivery, never a claim
     /// that a socket write or browser consumption has already succeeded.
     pub fn complete(self, outcome: Outcome<'_>) -> Result<Delivery, HttpError> {
+        self.complete_cached(outcome, None)
+    }
+    /// The exact validated outcome is staged, but cannot be published until
+    /// successful local transport completion. A failed fill never fails delivery.
+    pub fn complete_cached(
+        self,
+        outcome: Outcome<'_>,
+        cache: Option<CacheRequest>,
+    ) -> Result<Delivery, HttpError> {
         self.lease.check()?;
-        // Keep this owner's lease through its field cleanup even when delivery
-        // construction fails; a moved sole lease could refund before input drop.
-        Delivery::new(self.lease.clone(), self.method, outcome)
+        let mut delivery = Delivery::new(self.lease.clone(), self.method, outcome)?;
+        if let (Some(request), Outcome::Returned { bytes, .. }) = (cache, outcome) {
+            delivery.stage(request, bytes);
+        }
+        Ok(delivery)
+    }
+    /// A hit still becomes a bounded, cancellable transport delivery. The cached
+    /// read remains charged until decoding/copying into this exchange completes.
+    pub fn complete_cache_hit(self, hit: CacheHit) -> Result<Delivery, HttpError> {
+        let mut delivery = self.complete(Outcome::Returned {
+            bytes: hit.wire(),
+            media_type: super::VALUE_MEDIA_TYPE,
+        })?;
+        delivery.cache_age = Some(hit.age().to_string());
+        Ok(delivery)
     }
 }
