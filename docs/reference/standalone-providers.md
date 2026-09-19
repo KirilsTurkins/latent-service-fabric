@@ -54,6 +54,13 @@ definitions fail closed; this profile does not silently migrate bindings.
 Shutdown retires capabilities and reports actual pool, broker, I/O and blob
 reclamation counters. A failed or incomplete cleanup is not reported as clean.
 
+Combining the resident rollout worker with capability policy/provider work
+requires two bounded control blocking slots, not one. The CLI derives this
+fixed node-wide ceiling; embedders can use `NodeSettings::control_blocking_threads`.
+Otherwise the rollout worker would occupy the only slot and starve protected
+credential reads, blob work and policy operations. This adds no per-service
+thread, pool or listener.
+
 ## Shared SDK/management fixture contract
 
 Use `tools/build_guest_capsules.py`, not a synthetic component or a new provider
@@ -77,10 +84,12 @@ python3 tools/run_phase3_management_workflow.py \
 ```
 
 The exporter requires an absolute, absent output directory. It writes
-`policy.json`, `fixture.json`, `rust-http/package`, `rust-blob/package`, and
-`rust-{http,blob}/evidence/index.json`. The summary contains exact package and
+`policy.json`, `fixture.json`, `rust-{http,blob,callee}/package`, and
+`rust-{http,blob,callee}/evidence/index.json`. The summary contains exact package and
 component digests plus the actual build observations. Test signatures expire;
 export immediately before the workflow. No private signing keys are exported.
+The shared deployment helper deploys only HTTP/blob; SDK runners may deploy
+the maintained `rust-callee` package separately for `answer`, `fail`, and `spin`.
 
 `tools/phase3_management_scenario.py` is the shared setup interface:
 
@@ -103,12 +112,30 @@ HTTP cases 0/1/2 are GET/HEAD/POST to `http://localhost:PORT/allowed` and return
 2201/201/2201; `/denied` returns guest denial 10 without contacting the peer.
 Blob case 0 writes, seals and reads four bytes and returns 4; case 1 abandons a
 writer and returns 1; case 2 verifies a closed handle and returns 10.
+The configured operator credential derives an administrator principal named
+`workflow-operator`; the fixture grants match that exact authenticated identity.
+Invocation RPC timeouts must be at most the configured 5000 ms ceiling. The
+CLI helper selects `--budget-profile phase3` explicitly, without changing node
+authority or enabling unsupported state/effect budget dimensions.
 
 Keep SDK runners separate (for example `tools/run_rust_sdk_workflow.py`) and
 reuse setup only. Client, node and HTTP peer have disjoint working directories;
 the client uses transport credentials and never reads node data or provider
 credential files. The management runner checks invocation, grant revocation,
 inspection, restart identity, no hidden provider retries, and clean shutdown.
+The shutdown report distinguishes live work from persistent blob inventory:
+`blobHandles` and `blobWork` must be zero, while `blobStages` reports abandoned,
+still-accounted durable staging records. Clean shutdown neither deletes those
+records nor refunds their disk reservation. Existing blob reclamation remains
+an explicit bounded store operation, not a hidden per-application worker.
+Policy read ownership is sampled after dormant catalog plans are destroyed.
+Restart waits six seconds for the configured five-second supply-chain clock
+lease; this is a bounded test setup wait, not an RPC retry or renewed deadline.
 Its compact receipt is deliberately scoped to HTTP/blob acceptance and reports
 `angularT1Qualified: false`. It does not close full #226, qualify Angular T1,
 or replace the pending selected-publication/web/trigger integration tests.
+
+The existing contract gate builds the guests once and runs this workflow with
+fresh short-lived evidence. CI retains `phase3-management/provider-receipt.json`
+alongside the existing bounded conformance diagnostics, keeping the existing
+`phase-1-bounded-conformance-<commit>` artifact name for compatibility.

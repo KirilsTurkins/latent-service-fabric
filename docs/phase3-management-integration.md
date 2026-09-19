@@ -38,6 +38,13 @@ command; an absent operation is not evidence of rollback. All diagnostic 64-bit
 counters and generations are JSON decimal strings. Capability output always
 reports `executionPermission: false`; a sampled allow is not an executable grant.
 
+Invocation keeps the Phase 1 budget grammar by default. Use
+`invoke --budget-profile phase3 --budget budget.json` for the delivered child-call,
+outbound-request and blob byte dimensions. State/effect dimensions remain
+unsupported. This option only validates requested amounts; the node still
+selects its actual accounting profile and independently intersects authority
+and resource ceilings.
+
 ## Validation and qualification boundary
 
 The focused CLI and wire management tests cover closed input grammar, response
@@ -54,6 +61,14 @@ the public HTTP-trigger contract. The [provider bootstrap and shared fixture
 contract](reference/standalone-providers.md) documents SDK reuse without copying
 node setup or provider implementations. This initial runner deliberately reports
 HTTP/blob scope, not completed web/trigger or Angular acceptance.
+
+The [bounded provider evidence](evidence/phase3-226-provider.json) records the
+actual Linux run: 31 separate CLI operations, four authorized upstream requests,
+denied-path and revoked-grant checks, exact revision preservation on restart,
+and joined node/provider owners with zero live activation/handle/work counters.
+Two independent workflow executions passed. The receipt retains durable blob
+staging inventory and the audit restart's unknown historical-loss flag rather
+than claiming either was erased.
 
 Angular remains gated to the delivered T0 runtime until the actual #234 build
 has passed protected T1 configuration, enforced publisher/builder/SBOM admission,
