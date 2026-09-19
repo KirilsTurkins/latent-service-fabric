@@ -14,6 +14,9 @@ on:
       - tools/native_vm_guest.py
       - tools/native-vm-profile.json
       - tools/native-fixture/**
+      - tools/prepare_native_workspace.py
+      - tools/native_release_gate.py
+      - tools/tests/test_native_release_gate.py
 
 permissions:
   contents: read
@@ -37,6 +40,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - name: Prepare private exact-source host workspace without changing runner ACLs
+        run: python3 tools/prepare_native_workspace.py
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5
@@ -48,7 +53,7 @@ jobs:
         run: python3 -m pip install --requirement tools/requirements.lock
       - name: Fast native artifact and installer safety checks
         run: |
-          python3 -m unittest tools.tests.test_native_runtime
+          python3 -m unittest tools.tests.test_native_runtime tools.tests.test_native_release_gate
           python3 tools/validate_workflow_actions.py
           python3 tools/validate_docs.py
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -79,10 +84,12 @@ jobs:
         env:
           NATIVE_VERSION: ${{ steps.identity.outputs.version }}
         run: |
+          cd "$NATIVE_WORKSPACE"
           version="$NATIVE_VERSION"
           python3 tools/build_native_runtime.py --commit "$GITHUB_SHA" --version "$version" --output "$PWD/target/native-release"
       - name: Build separately authenticated public-only VM fixture helper
         run: |
+          cd "$NATIVE_WORKSPACE"
           cargo +1.97.1 fmt --manifest-path tools/native-fixture/Cargo.toml -- --check
           cargo +1.97.1 build --locked --release --manifest-path tools/native-fixture/Cargo.toml \
             --target x86_64-unknown-linux-gnu --target-dir target/native-fixture-build --jobs 2
@@ -92,24 +99,24 @@ jobs:
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
         with:
           subject-path: |
-            target/native-release/SHA256SUMS
-            target/native-test-tools/fixture-helper
+            ${{ env.NATIVE_WORKSPACE }}/target/native-release/SHA256SUMS
+            ${{ env.NATIVE_WORKSPACE }}/target/native-test-tools/fixture-helper
       - name: Retain offline attestation material
         env:
           ATTESTATION_BUNDLE: ${{ steps.attest.outputs.bundle-path }}
-        run: install -m 0644 "$ATTESTATION_BUNDLE" target/native-release/SHA256SUMS.sigstore.json
+        run: install -m 0644 "$ATTESTATION_BUNDLE" "$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json"
       - name: Retain authenticated candidate, not a published release
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-runtime-candidate-${{ github.sha }}
-          path: target/native-release/
+          path: ${{ env.NATIVE_WORKSPACE }}/target/native-release/
           if-no-files-found: error
           retention-days: 14
       - name: Retain test tooling separately from the runtime bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-runtime-test-tools-${{ github.sha }}
-          path: target/native-test-tools/
+          path: ${{ env.NATIVE_WORKSPACE }}/target/native-test-tools/
           if-no-files-found: error
           retention-days: 14
       - name: Retain bounded build failure
@@ -117,7 +124,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-runtime-build-failure-${{ github.sha }}
-          path: target/native-build-failure.*
+          path: ${{ env.NATIVE_WORKSPACE }}/target/native-build-failure.*
           if-no-files-found: ignore
           retention-days: 7
   native-vm:
@@ -135,14 +142,16 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - name: Prepare private exact-source host workspace without changing runner ACLs
+        run: python3 tools/prepare_native_workspace.py
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: native-runtime-candidate-${{ github.sha }}
-          path: target/native-candidate
+          path: ${{ env.NATIVE_WORKSPACE }}/target/native-candidate
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: native-runtime-test-tools-${{ github.sha }}
-          path: target/native-test-tools
+          path: ${{ env.NATIVE_WORKSPACE }}/target/native-test-tools
       - name: Provision host QEMU and independent verification trust
         env:
           GH_TOKEN: ${{ github.token }}
@@ -150,16 +159,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client
           if test -c /dev/kvm; then sudo setfacl -m "u:$(id -un):rw" /dev/kvm; fi
-          mkdir -m 0700 -p "$RUNNER_TEMP/native-trust"
           gh --version
-          gh attestation trusted-root > "$RUNNER_TEMP/native-trust/trusted_root.jsonl"
+          gh attestation trusted-root > "$NATIVE_TRUST/trusted_root.jsonl"
       - name: Boot clean native guest, invoke, reboot, retain and purge
         env:
           NATIVE_VERSION: ${{ needs.candidate.outputs.version }}
           NATIVE_PROFILE: ${{ matrix.profile }}
         run: |
+          cd "$NATIVE_WORKSPACE"
           python3 tools/run_native_vm.py --release-directory "$PWD/target/native-candidate" \
-            --trusted-root "$RUNNER_TEMP/native-trust/trusted_root.jsonl" --verifier "$(readlink -f "$(command -v gh)")" \
+            --trusted-root "$NATIVE_TRUST/trusted_root.jsonl" --verifier "$(readlink -f "$(command -v gh)")" \
             --version "$NATIVE_VERSION" --commit "$GITHUB_SHA" --source-ref "$GITHUB_REF" \
             --purpose candidate --profile "$NATIVE_PROFILE" --fixture-helper "$PWD/target/native-test-tools/fixture-helper" \
             --output "$PWD/target/native-vm/$NATIVE_PROFILE.json"
@@ -168,6 +177,6 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-runtime-vm-${{ matrix.profile }}-${{ github.sha }}
-          path: target/native-vm/*.json
+          path: ${{ env.NATIVE_WORKSPACE }}/target/native-vm/*.json
           if-no-files-found: error
           retention-days: 14

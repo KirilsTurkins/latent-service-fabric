@@ -100,8 +100,10 @@ def build(arguments) -> dict:
     print('{"nativeBuildStage":"dependency-and-license-inventory"}', flush=True)
     metadata = json.loads(run(["cargo", "+" + toolchain, "metadata", "--locked", "--format-version", "1",
                                "--filter-platform", verify.TARGET], maximum=16_777_216, stdout_only=True))
-    sbom, licenses = dependency_inventory(metadata, tomllib.loads((ROOT / "Cargo.lock").read_text()), commit, epoch)
+    license_policy = document(files.read(ROOT / "packaging/linux/license-sources.json"))
+    sbom, licenses = dependency_inventory(metadata, tomllib.loads((ROOT / "Cargo.lock").read_text()), commit, epoch, license_policy)
     assets.update(licenses)
+    assets["licenses/sources.json"] = ROOT / "packaging/linux/license-sources.json"
     provenance = {"_type": "https://in-toto.io/Statement/v1", "predicateType": "https://slsa.dev/provenance/v1",
                   "subject": [{"name": name, "digest": {"sha256": files.digest(path)}}
                               for name, path in sorted(assets.items()) if name.startswith(("bin/", "examples/echo/"))],

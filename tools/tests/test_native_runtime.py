@@ -20,7 +20,7 @@ from unittest.mock import patch
 from tools.native_runtime import archive, configuration, files, lifecycle, verify
 from tools.native_runtime.common import InstallError, document, encode, execute
 from tools.native_runtime.layout import Layout
-from tools.native_runtime_build import bootstrap
+from tools.native_runtime_build import bootstrap, shared_license
 
 ROOT = Path(__file__).resolve().parents[2]
 LINUX = sys.platform == "linux"
@@ -75,6 +75,27 @@ def selected(root: Path, version: str = "0.1.0-test.1", previous: dict | None = 
 
 
 class ManifestTests(unittest.TestCase):
+    def test_shared_license_requires_reviewed_exact_monorepo_source_and_digest(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            donor = {"name": "example", "version": "1.0.0", "source": "registry+example", "repository": "https://example.invalid/repo",
+                     "license": "MIT", "manifest_path": str(root / "Cargo.toml")}
+            package = {**donor, "name": "example-child"}
+            source = {"packages": {"example-child": "1.0.0"}, "repository": donor["repository"], "sourceCommit": "a" * 40,
+                      "license": "MIT", "sha256": "b" * 64, "sourceUrl": "https://example.invalid/repo/exact/LICENSE",
+                      "donor": {"name": "example", "version": "1.0.0", "file": "LICENSE"}}
+            policy = {"schemaVersion": "latent.native-shared-license-sources.v1", "sources": [source]}
+            checksums = {(entry["name"], entry["version"], entry["source"]): "c" * 64 for entry in (package, donor)}
+            with patch.object(files, "read", return_value=encode({"git": {"sha1": "a" * 40}})), \
+                    patch.object(files, "digest", return_value="b" * 64):
+                path, evidence = shared_license(package, [donor], checksums, policy)
+                self.assertEqual(path, root / "LICENSE")
+                self.assertEqual(evidence["donorCrateSha256"], "c" * 64)
+                for change in ({"repository": "https://example.invalid/other"}, {"sourceCommit": "d" * 40},
+                               {"sha256": "d" * 64}, {"license": "Apache-2.0"}, {"packages": {"example-child": "2.0.0"}}):
+                    with self.assertRaises(InstallError):
+                        shared_license(package, [donor], checksums, {**policy, "sources": [{**source, **change}]})
+
     def test_vm_driver_uses_pinned_image_and_actual_reboot(self):
         profile = json.loads((ROOT / "tools/native-vm-profile.json").read_text())
         self.assertRegex(profile["imageSha256"], "^[0-9a-f]{64}$")

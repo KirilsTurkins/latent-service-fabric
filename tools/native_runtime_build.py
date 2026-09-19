@@ -12,7 +12,7 @@ import re
 import tarfile
 import zipfile
 
-from tools.native_runtime.common import encode, require
+from tools.native_runtime.common import document, encode, require
 from tools.native_runtime import files, verify
 
 
@@ -53,7 +53,32 @@ def elf_identity(path: Path, run) -> list[str]:
     return dependencies
 
 
-def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int) -> tuple[dict, dict[str, Path]]:
+def shared_license(package: dict, packages: list[dict], checksums: dict, policy: dict) -> tuple[Path, dict]:
+    require(policy.get("schemaVersion") == "latent.native-shared-license-sources.v1", "shared-license-source-policy-required")
+    matches = [source for source in policy["sources"]
+               if source["packages"].get(package["name"]) == package["version"]]
+    require(len(matches) == 1, "dependency-license-text-missing-" + package["name"] + "-" + package["version"])
+    source = matches[0]
+    donors = [entry for entry in packages if entry["name"] == source["donor"]["name"]
+              and entry["version"] == source["donor"]["version"]]
+    require(len(donors) == 1, "shared-license-donor-missing")
+    donor = donors[0]
+    for entry in (package, donor):
+        require(entry.get("repository", "").removesuffix(".git") == source["repository"]
+                and entry.get("license") == source["license"]
+                and checksums.get((entry["name"], entry["version"], entry.get("source"))), "shared-license-source-identity-mismatch")
+        vcs = document(files.read(Path(entry["manifest_path"]).parent / ".cargo_vcs_info.json", 8192))
+        require(vcs.get("git", {}).get("sha1") == source["sourceCommit"], "shared-license-exact-revision-required")
+    name = verify.relative(source["donor"]["file"])
+    require("/" not in name, "shared-license-root-file-required")
+    path = Path(donor["manifest_path"]).parent / name
+    require(files.digest(path) == source["sha256"], "shared-license-reviewed-root-digest-mismatch")
+    return path, {"sourceUrl": source["sourceUrl"], "sha256": source["sha256"], "donor": source["donor"],
+                  "donorCrateSha256": checksums[(donor["name"], donor["version"], donor["source"])]}
+
+
+def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,
+                         license_policy: dict) -> tuple[dict, dict[str, Path]]:
     packages = {entry["id"]: entry for entry in metadata["packages"]}
     roots = {entry["id"] for entry in metadata["packages"] if entry["name"] in {"latent", "latentd", "latent-wasmtime"}}
     nodes = {entry["id"]: entry for entry in metadata["resolve"]["nodes"]}
@@ -90,7 +115,10 @@ def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int) ->
                 declared = declared if declared.is_absolute() else directory / declared
                 require(declared.resolve().is_relative_to(directory.resolve()), "license-outside-package")
                 candidates.add(declared)
-            require(candidates, "dependency-license-text-missing")
+            if not candidates:
+                shared, origin = shared_license(package, list(packages.values()), checksums, license_policy)
+                candidates.add(shared)
+                entry["comment"] = "Shared monorepo root license from the exact published revision: " + encode(origin).decode().strip()
             for path in sorted(candidates):
                 name = f"licenses/{package['name']}-{package['version']}/{path.name}"
                 verify.relative(name)
