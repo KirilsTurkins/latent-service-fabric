@@ -14,7 +14,7 @@ from tools.angular_build.inputs import decode, read
 
 ROOT = Path(__file__).resolve().parents[2]
 NODE_VERSION = '24.19.0'
-ADAPTER_FILES = ('Cargo.toml', 'src/abi.rs', 'src/lib.rs', 'src/wire.rs', 'wit/adapter.wit',
+ADAPTER_FILES = ('Cargo.toml', 'src/abi.rs', 'src/lib.rs', 'src/wire.rs', 'src/backend.rs', 'wit/adapter.wit',
                  'runtime/bridge.js', 'runtime/timers.js')
 
 
@@ -39,7 +39,8 @@ def fixed_materials() -> list[dict]:
                if path.suffix in ('.py', '.mjs', '.js')]
     recipe += [(name, ROOT / name) for name in ('Cargo.toml', '.cargo/config.toml', 'rust-toolchain.toml')]
     return [table(files, 'adapter-source')[0], table(recipe, 'build-recipe')[0],
-            table([(name, ROOT / name) for name in ('wit/platform/web/package.wit', 'wit/platform/context/package.wit')], 'public-wit')[0],
+            table([(name, ROOT / name) for name in ('wit/platform/web/package.wit', 'wit/platform/context/package.wit',
+                                                   'wit/platform/http-v2/package.wit', 'wit/platform/web-http/package.wit')], 'public-wit')[0],
             file_identity(adapter / 'wit/adapter.wit', 'private-wit', 65536),
             file_identity(ROOT / 'Cargo.lock', 'dependency-lock', 4 * 1024 * 1024),
             table([(name, ROOT / name) for name in ('tools/toolchain.toml', 'examples/renderer-profile/profile.json')], 'toolchain-config')[0]]

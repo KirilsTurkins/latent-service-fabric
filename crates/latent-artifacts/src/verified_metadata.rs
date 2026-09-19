@@ -17,6 +17,7 @@ pub struct VerifiedArtifactMetadata {
     manifest: CapsuleManifest,
     contracts: Vec<ContractDescriptor>,
     verified_digest: ReleaseDigest,
+    web_execution_projection: bool,
 }
 
 impl VerifiedArtifactMetadata {
@@ -68,7 +69,18 @@ impl VerifiedArtifactMetadata {
             manifest,
             contracts,
             verified_digest,
+            web_execution_projection: false,
         }
+    }
+
+    pub(crate) fn with_web_execution_projection(mut self) -> Self {
+        self.web_execution_projection = true;
+        self
+    }
+
+    #[must_use]
+    pub const fn is_web_execution_projection(&self) -> bool {
+        self.web_execution_projection
     }
 
     #[must_use]

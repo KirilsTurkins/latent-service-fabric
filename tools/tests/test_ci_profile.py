@@ -31,7 +31,12 @@ class ClassificationTests(unittest.TestCase):
                      "tools/tests/test_build_angular_package.py", "tools/tests/test_angular_build_runner.py",
                      "tools/run_angular_renderer_tests.py", "apps/latentd/src/config/renderer.rs",
                      "crates/latent-packaging/src/semantics/web.rs", "crates/latent-manifest/src/renderer.rs",
-                     "crates/latent-node/src/lib.rs", "crates/latent-ingress/src/http.rs"]:
+                     "crates/latent-node/src/lib.rs", "crates/latent-ingress/src/http.rs",
+                     "tools/run_angular_t1_workflow.py", "tools/phase3_web_qualification.py",
+                     "tools/tests/test_angular_t1_workflow.py", "tools/ci_rust_artifacts.py",
+                     "apps/latent/src/args/web.rs", "apps/latent/src/management/web/execute.rs",
+                     "api/proto/latent/control/v1/release.proto",
+                     "crates/latent-wire/src/management/release/web.rs"]:
             with self.subTest(path=path):
                 self.assertTrue(profile.classify_paths([path]).renderer)
         for path in ["examples/browser-boundary/shared/hydration.ts", "tools/browser-boundary/build.mjs",

@@ -2,6 +2,11 @@
 
 ADRs record decisions that constrain implementations and compatibility. Accepted ADRs may be superseded only by another ADR.
 
+[ADR-0041](0041-publish-single-source-version-bound-documentation.md) proposes the
+single-source Docusaurus ownership, finite guide coverage and one-writer
+publication contract. It does not claim the migration, guide review or live
+deployment is complete.
+
 Acceptance records architectural direction, not feature availability. Phase 1,
 its performance extension, and Phase 2 are complete. Verified package admission,
 OCI transfer, publisher/builder/SBOM policy, isolated compilation, bounded native
@@ -129,3 +134,7 @@ the bounded application mapping remains unchanged.
 installs the closed Angular adapter in fresh generic Stores with explicit profile
 identity, finite callback/binary budgets and the existing HTTP cleanup ownership.
 T1 remains gated on observed Angular build and web deployment authority.
+
+[ADR-0042](0042-bound-angular-render-data-through-the-capability-broker.md)
+proposes one explicitly requested, broker-mediated HTTP data step inside the
+fresh Angular render activation, without ambient JavaScript networking.

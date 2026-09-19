@@ -14,6 +14,7 @@ fn healthy_final_starts_share_reads_and_exclude_generation_cutover() {
             owner: Arc::clone(&owner),
             row: Arc::clone(&row),
             generation: record.generation,
+            projection: None,
         },
         None,
     )

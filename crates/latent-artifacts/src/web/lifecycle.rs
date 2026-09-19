@@ -60,4 +60,60 @@ pub struct WebPublicationStatus {
     pub record: WebLifecycleRecord,
     pub eligibility: ReleaseLiveEligibility,
     pub eligibility_reason: ReleaseEligibilityReason,
+    pub renderer: Option<super::WebRenderer>,
+}
+
+impl WebOperationReceipt {
+    pub fn validate(&self) -> Result<(), latent_core::PlatformError> {
+        self.publication.scope.validate()?;
+        if self.format_version != 1
+            || self.publication.scope.tenant().is_none()
+            || self.actor.subject.capacity() > 256
+            || self.operation_id.capacity() > 128
+            || self.disposition != ReleaseOperationDisposition::Committed
+            || self.expected_generation.checked_add(1) != Some(self.resulting_generation)
+        {
+            return Err(super::invalid("web-operation-receipt"));
+        }
+        crate::ReleaseMutationContext {
+            scope: self.publication.scope.clone(),
+            actor: self.actor.clone(),
+            operation: Some(crate::ReleaseOperationPrecondition {
+                operation_id: self.operation_id.clone(),
+                expected_generation: self.expected_generation,
+            }),
+        }
+        .validate()?;
+        let valid = match self.action {
+            ReleaseLifecycleAction::Publish => {
+                self.expected_generation == 0 && self.reason == ReleaseLifecycleReason::Admitted
+            }
+            ReleaseLifecycleAction::RenewEvidence => {
+                self.expected_generation > 0
+                    && self.reason == ReleaseLifecycleReason::EvidenceRenewed
+            }
+            ReleaseLifecycleAction::Revoke => {
+                self.expected_generation > 0
+                    && matches!(
+                        self.reason,
+                        ReleaseLifecycleReason::OperatorRevocation
+                            | ReleaseLifecycleReason::SecurityIncident
+                            | ReleaseLifecycleReason::CorruptContent
+                    )
+            }
+            ReleaseLifecycleAction::Retire => {
+                self.expected_generation > 0
+                    && matches!(
+                        self.reason,
+                        ReleaseLifecycleReason::Superseded
+                            | ReleaseLifecycleReason::EndOfSupport
+                            | ReleaseLifecycleReason::OperatorRetirement
+                    )
+            }
+        };
+        if !valid {
+            return Err(super::invalid("web-operation-transition"));
+        }
+        Ok(())
+    }
 }

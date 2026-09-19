@@ -80,23 +80,40 @@ manifests without running package managers, builds, setup scripts or SDK code.
 
 | Surface | Advisory coverage and boundary |
 | --- | --- |
-| Root `Cargo.toml` / `Cargo.lock` and all declared workspace members, including Rust SDKs | RustSec resolved crate versions; every workspace member must appear in the lock |
-| TypeScript SDK and renderer example npm manifests/locks | OSV for every resolved direct/transitive/dev entry; registry.npmjs.org HTTPS sources only |
+| Root workspace and reviewed isolated native-VM fixture | RustSec scans every tracked `Cargo.lock`, with separate lock hashes and findings; every workspace member and isolated fixture must appear in its lock |
+| TypeScript SDK, renderer example and isolated documentation website npm manifests/locks | OSV for every resolved direct/transitive/dev entry; registry.npmjs.org HTTPS sources only |
 | `tools/requirements.lock`, source scanner requirements, and caller scanner requirements | OSV exact PyPI versions; unresolved ranges/options fail |
-| Go, Java/Gradle and both .NET projects | Reviewed exact manifest hashes establish the current no-external-package state; any change requires inventory review, not an empty advisory success |
-| C/C-guest | No package-manager graph; platform C library, compiler, bindgen and generated ABI review remain outside advisory coverage |
+| Go client and generator modules | OSV for the complete recorded `go list -m -json all` graph and its exact Go standard-library version; normalized manifest/sum hashes, per-module checksums and generator bindings must agree |
+| Java client and generators | OSV Maven coordinates for every pinned runtime/generator archive, including supported platforms; the reviewed Gradle manifest hash binds the data-only graph to its build logic |
+| .NET projects | Registered transport projects require resolved NuGet locks, exact direct versions, complete transitive edges and content hashes; only reviewed exact legacy project hashes establish no-external-package status |
+| Native C transport | OSV source-commit queries for pinned nghttp2, its bundled sfparse runtime, nanopb and protoc, plus exact PyPI generator/test versions; release archives also require digests and canonical upstream URLs. Upstream native advisory review remains necessary |
+| C guest and operating-system libraries | No independent package-manager graph; platform C library, external toolchain and generated ABI review remain separate |
 
-Missing locks, empty resolved graphs, manifest/lock drift, Git/private package
-sources and new unsupported manifests fail closed. Benchmark `setup.py` modules
+Missing locks, empty resolved graphs, manifest/lock drift, unreviewed Git/private
+package sources and new unsupported manifests fail closed. Benchmark `setup.py` modules
 are explicitly hashed as non-distribution helpers and are never executed.
-The renderer example and source security directory may be entirely absent on an
+The renderer example, website and source security directory may be entirely absent on an
 older maintained ref; that is recorded as `not-shipped-at-source-revision`.
-If any file in either directory exists, its expected manifest/lock is mandatory.
+If any file in one of those directories exists, its expected manifest/lock is mandatory.
 The **caller** scanner requirements are always queried, even if the scanned
-branch predates the baseline. New SDK dependencies need a resolved-graph parser
-and fixtures before their manifest hash is approved. Operating-system packages,
-standard libraries, JDK/.NET/Go toolchains and dynamically acquired provider
-artifacts are not covered by a zero-package SDK record.
+branch predates the baseline. New SDK dependencies need a resolved-graph parser,
+explicit inventory registration and fixtures before approval. Old Go/Gradle
+manifests are accepted only at their exact reviewed no-dependency hashes and only
+without a new lock. The legacy C interface allowance binds every C-tree path and
+normalized file digest to one of two reviewed historical trees; adding transport
+code cannot silently preserve that allowance. NuGet source configuration files
+and custom `dependencies.lock.json` files participate in manifest discovery.
+
+[The SDK readers](../../tools/security_sdk_graphs.py) execute no Go, Gradle,
+MSBuild, C compiler, Python package or project code. Ordinary SDK CI must separately
+regenerate/check the complete Go graph and perform locked package preparation;
+the scanner does not assert that a hand-edited graph is a build result. Maven
+build-logic changes require a new exact reviewed hash. NuGet conditional imports,
+unresolved versions and additional dependency-loading directives fail rather than
+being evaluated. Operating-system packages, JDK/.NET runtime distributions and
+dynamically acquired provider artifacts are not covered by a zero-package record.
+The Go standard-library query is version-specific advisory matching, not a
+toolchain archive-authenticity or compiler-safety claim.
 
 Every RustSec job freshly clones [`RustSec/advisory-db`](https://github.com/RustSec/advisory-db)
 `main`, independently resolves remote `main`, and requires identical full commits.
@@ -112,7 +129,15 @@ not misrepresent that as a tool-reported commit. Yanked-crate network checks are
 not covered; advisory and warning results are.
 
 Non-Rust graphs query the official [OSV batch endpoint](https://google.github.io/osv.dev/post-v1-querybatch/)
-with package ecosystem/name/version only, not repository files or credentials.
+with package ecosystem/name/version or an exact reviewed native-source commit,
+not repository files or credentials. Commit-query results retain the repository
+identity in local findings; an empty response is not proof that every upstream
+native advisory is represented by OSV. Native dependency upgrades still require
+the SDK maintainer's upstream advisory and archive-to-source identity review.
+The nghttp2 graph must include exactly its reviewed sfparse source and both
+bundled file hashes. Removing that runtime dependency, adding an unknown bundle
+or changing its source/file shape fails the scan. The ordinary C preparation
+step separately checks those hashes against the authenticated release archive.
 Responses require a current HTTP Date (within one hour), exactly one result per
 query and no incomplete pagination, errors or unknown result fields. Transport,
 schema and freshness failures are not converted into an empty success. An empty
