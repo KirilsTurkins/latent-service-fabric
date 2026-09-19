@@ -53,10 +53,12 @@ impl Harness {
                 .as_str()
                 .unwrap()
                 .to_owned();
-            node_fixture::Fixture::start_public_application(root, value, component, &authority)
-                .await
+            Box::pin(node_fixture::Fixture::start_public_application(
+                root, value, component, &authority,
+            ))
+            .await
         } else {
-            node_fixture::Fixture::start(root, value, None).await
+            Box::pin(node_fixture::Fixture::start(root, value, None)).await
         };
         assert!(
             node.node.http_snapshot().unwrap().assets.is_some(),
