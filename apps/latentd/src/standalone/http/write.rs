@@ -1,4 +1,4 @@
-use latent_ingress::http::Delivery;
+use latent_ingress::http::{browser, Delivery, Scheme};
 use std::io;
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
@@ -6,7 +6,11 @@ pub(super) async fn delivery<W: AsyncWrite + Unpin>(
     socket: &mut W,
     mut delivery: Delivery,
     close: bool,
+    scheme: Scheme,
 ) -> io::Result<()> {
+    delivery
+        .enforce_browser_profile(scheme)
+        .map_err(|_| io::ErrorKind::InvalidData)?;
     let mut head = Vec::with_capacity(32 * 1024);
     head.extend_from_slice(format!("HTTP/1.1 {} Response\r\n", delivery.status()).as_bytes());
     if close {
@@ -19,8 +23,10 @@ pub(super) async fn delivery<W: AsyncWrite + Unpin>(
         head.extend_from_slice(b"Content-Type: ");
         head.extend_from_slice(media.as_bytes());
         head.extend_from_slice(b"\r\n");
+    } else {
+        head.extend_from_slice(b"Content-Type: application/octet-stream\r\n");
     }
-    for header in delivery.headers() {
+    for header in delivery.headers().chain(browser::security_headers(scheme)) {
         head.extend_from_slice(header.name.as_bytes());
         head.extend_from_slice(b": ");
         head.extend_from_slice(header.value);
@@ -56,9 +62,20 @@ pub(super) async fn delivery<W: AsyncWrite + Unpin>(
     delivery.finish().map_err(|_| io::ErrorKind::TimedOut)?;
     Ok(())
 }
-pub(super) async fn error<W: AsyncWrite + Unpin>(socket: &mut W, status: u16) -> io::Result<()> {
+pub(super) async fn error<W: AsyncWrite + Unpin>(
+    socket: &mut W,
+    status: u16,
+    scheme: Scheme,
+) -> io::Result<()> {
     // Only fixed local status numbers, never request text, token or guest error.
-    let head = format!("HTTP/1.1 {status} Rejected\r\nConnection: close\r\nContent-Length: 0\r\nCache-Control: no-store\r\n\r\n");
+    let mut head = format!("HTTP/1.1 {status} Rejected\r\nConnection: close\r\nContent-Length: 0\r\nCache-Control: no-store\r\n");
+    for header in browser::security_headers(scheme) {
+        head.push_str(header.name);
+        head.push_str(": ");
+        head.push_str(std::str::from_utf8(header.value).expect("static security header"));
+        head.push_str("\r\n");
+    }
+    head.push_str("\r\n");
     socket.write_all(head.as_bytes()).await?;
     socket.flush().await
 }

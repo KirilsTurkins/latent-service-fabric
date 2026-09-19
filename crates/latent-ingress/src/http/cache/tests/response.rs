@@ -1,6 +1,42 @@
 use super::*;
 
 #[test]
+fn browser_policy_rejection_discards_a_pending_fill_before_any_local_delivery() {
+    let cache = cache();
+    let pool = pool();
+    let request = make_request(&pool, "tenant-a", "public", &[]);
+    let key = ticket(&cache, &request, 1);
+    let bytes = wire(200, b"not explicit UTF-8 HTML", &public());
+    let mut value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    value[0]["media-type"] = serde_json::json!({"some":"text/html"});
+    let bytes = serde_json::to_vec(&value).unwrap();
+    let mut delivery = request
+        .into_invocation()
+        .unwrap()
+        .complete_cached(
+            Outcome::Returned {
+                bytes: &bytes,
+                media_type: VALUE_MEDIA_TYPE,
+            },
+            Some(key),
+        )
+        .unwrap();
+    assert_eq!(cache.snapshot().owners, 1);
+    delivery
+        .enforce_browser_profile(crate::http::Scheme::Https)
+        .unwrap();
+    assert_eq!(delivery.status(), 502);
+    assert_eq!(
+        delivery.cause(),
+        crate::http::DeliveryCause::InvalidGuestResponse
+    );
+    assert_eq!(cache.snapshot().owners, 0);
+    finish(delivery);
+    assert_eq!(cache.snapshot().entries, 0);
+    assert_eq!(pool.snapshot().reserved_bytes, 0);
+}
+
+#[test]
 fn no_store_private_cookies_unknown_vary_and_ttl_extensions_never_publish() {
     let cache = cache();
     let pool = pool();
