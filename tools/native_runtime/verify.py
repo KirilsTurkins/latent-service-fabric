@@ -29,7 +29,8 @@ REQUIRED = {"bin/latent", "bin/latentd", "bin/latent-aot-compiler", "lsf-install
             "config/external-capsule-v1.json", "LICENSE", "NOTICE", "INSTALL.md",
             "sbom.spdx.json", "build-provenance.json", "release-source.json",
             "examples/echo/echo-capsule.wasm", "examples/echo/capsule.json",
-            "examples/echo/contracts.json", "examples/echo/deployment.json", "examples/echo/input.json"}
+            "examples/echo/contracts.json", "examples/echo/deployment.json", "examples/echo/input.json",
+            "examples/echo/wit/echo.wit", "examples/echo/wit/context.wit", "examples/echo/wit/log.wit"}
 
 
 def version(value: str) -> str:

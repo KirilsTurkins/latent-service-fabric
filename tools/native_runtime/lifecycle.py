@@ -50,7 +50,7 @@ def read_state(layout: Layout) -> dict | None:
                            "releases", "roots", "unitSha256"}, "installed-state-members")
     require(value["schemaVersion"] == "latent.native-installation.v1" and value["system"] == layout.system
             and re.fullmatch(r"[0-9a-f]{32}", value["installationId"])
-            and value["status"] in {"installed", "removing-stopped", "removed"}, "installed-state-identity")
+            and value["status"] in {"installed", "removing-stopped", "removed", "purged"}, "installed-state-identity")
     version(value["currentVersion"])
     require(isinstance(value["releases"], dict) and 1 <= len(value["releases"]) <= 4
             and value["currentVersion"] in value["releases"], "installed-release-history")
@@ -140,6 +140,9 @@ def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: P
         prefix_inventory(layout)
         require(not os.path.lexists(layout.prefix / "purge.json"), "finish-interrupted-purge-before-installation")
         state = read_state(layout)
+        if state is not None and state["status"] == "purged":
+            require(all(not os.path.lexists(path) for path in layout.roots().values()), "purged-installation-has-untracked-roots")
+            state = None
         if state:
             require(state["status"] != "removing-stopped", "finish-interrupted-removal-before-installation")
             compatible(state, release, upgrade, profile)
@@ -253,9 +256,11 @@ def remove(layout: Layout, *, purge: str | None = None) -> dict:
         state = read_state(layout)
         require(state is not None, "installation-state-required")
         if purge is not None:
-            require(purge == state["installationId"] and state["status"] == "removed", "purge-requires-removal-and-exact-installation-id")
+            require(purge == state["installationId"] and state["status"] in {"removed", "purged"}, "purge-requires-removal-and-exact-installation-id")
             journal = layout.prefix / "purge.json"
-            if not journal.exists():
+            if state["status"] == "purged":
+                require(all(not os.path.lexists(path) for path in layout.roots().values()), "purged-installation-has-untracked-roots")
+            elif not journal.exists():
                 validate_roots(layout, state, identity)
                 files.create(journal, encode({"installationId": purge}))
             else:
@@ -266,13 +271,17 @@ def remove(layout: Layout, *, purge: str | None = None) -> dict:
                     require(files.identity(path, {0, os.geteuid(), identity[0]}) == state["roots"][name],
                             "installation-root-substitution")
                     files.remove_tree(path)
+            state["status"] = "purged"
+            files.replace(layout.state, encode(state), 0o644)
             with files.directory(layout.prefix, {0, os.geteuid()}) as parent:
-                os.unlink("installed.json", dir_fd=parent)
-                os.unlink("purge.json", dir_fd=parent)
+                if os.path.lexists(journal):
+                    require(document(files.read(journal, owners={0, os.geteuid()})) == {"installationId": purge}, "purge-journal-mismatch")
+                    os.unlink("purge.json", dir_fd=parent)
                 os.fsync(parent)
             return {"schemaVersion": "latent.native-removal.v1", "purged": True, "accountRetained": layout.system,
                     "installationId": state["installationId"]}
         require(not os.path.lexists(layout.prefix / "purge.json"), "finish-interrupted-purge")
+        require(state["status"] != "purged", "installation-already-purged")
         validate_roots(layout, state, identity)
         if layout.system and state["status"] == "installed":
             require(files.digest(UNIT) == state["unitSha256"], "operator-modified-unit-not-removed")

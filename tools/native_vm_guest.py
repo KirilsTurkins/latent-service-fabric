@@ -16,6 +16,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tarfile
 import threading
 import time
 
@@ -27,6 +28,7 @@ CONFIG = Path("/etc/lsf")
 REPOSITORY = "KirilsTurkins/latent-service-fabric"
 LAST = "initialization"
 CHECKS = []
+DETAILS = {}
 
 
 class Failure(Exception):
@@ -217,6 +219,29 @@ def clean_stop(invocation=None):
     passed("systemd-invocation-scoped-clean-shutdown-and-process-reap")
 
 
+def backup_and_restore(plan, name):
+    require(systemctl("show", "lsf.service", "--property=MainPID", "--value") == "0", "backup-requires-stopped-node")
+    original = protected_hashes()
+    backup = ROOT / (name + ".tar")
+    run(["/usr/bin/tar", "--create", "--file", backup, "--numeric-owner", "--one-file-system", "--directory", "/",
+         "etc/lsf", "var/lib/lsf", "var/cache/lsf", "opt/lsf/installed.json"], timeout=60)
+    require(backup.stat().st_size <= 134_217_728 and backup.stat().st_mode & 0o077 == 0, "private-bounded-consistent-backup-required")
+    with tarfile.open(backup) as saved:
+        count = 0
+        total = 0
+        for entry in saved:
+            count += 1
+            total += entry.size
+            require(count <= 8192 and total <= 134_217_728 and not entry.name.startswith("/")
+                    and ".." not in entry.name.split("/") and (entry.isdir() or entry.isfile()), "unsafe-test-backup")
+    node = CONFIG / "node.json"
+    node.write_bytes(b'{"deliberatelyInterruptedOperatorEdit":true}\n')
+    require(bootstrap(plan, "preflight", codes=None, identity=service_identity())[0] != 0, "invalid-recovery-config-accepted")
+    run(["/usr/bin/tar", "--extract", "--same-owner", "--same-permissions", "--file", backup, "--directory", "/"], timeout=60)
+    require(protected_hashes() == original, "stopped-compatible-backup-restore-changed-protected-state")
+    passed("stopped-consistent-backup-and-exact-compatible-set-restore")
+
+
 def protected_hashes(config=CONFIG):
     names = ["node.json", "client/client.json"]
     if (config / "private/native-aot.key").exists():
@@ -272,9 +297,10 @@ def publish(plan):
     deployment["spec"]["release"] = release["digest"]
     deployment["spec"]["publication"] = release["publication"]["id"]
     directory = Path(plan.get("localDirectory", str(ROOT)))
-    write(directory / "deployment.json", deployment)
+    deployment_path = directory / ("deployment-" + plan["version"] + ".json")
+    write(deployment_path, deployment)
     snapshot = cli(plan, "deployment", "get", "native-retained", "--operation-snapshot", codes=(6,))["data"]
-    cli(plan, "deployment", "apply", directory / "deployment.json", "--operation-id", "native-deploy",
+    cli(plan, "deployment", "apply", deployment_path, "--operation-id", "native-deploy",
         "--expected-generation", "0", "--expected-state-version", str(snapshot["stateVersion"]))
     retained = {"componentDigest": release["digest"], "publicationId": release["publication"]["id"], "deployment": "native-retained"}
     invoke(plan, retained, "first")
@@ -311,7 +337,20 @@ def negative_configuration(plan):
         require(digest(key) == before, "host-key-regenerated")
         passed("protected-aot-key-rejection-without-regeneration")
     bootstrap(plan, "readiness", identity=identity)
+    run(["/usr/bin/unshare", "--mount", "--propagation", "private", "/usr/bin/python3", "-I", ROOT / "guest.py",
+         "--phase", "unsupported-host"], timeout=100)
     passed("protected-credentials-unsupported-profile-and-failed-authenticated-readiness")
+
+
+def unsupported_host(plan):
+    require(os.geteuid() == 0, "private-host-probe-namespace-requires-test-controller-root")
+    fake = ROOT / "unsupported-os-release"
+    fake.write_bytes(b'ID=unsupported-native-test\nVERSION_ID="0"\n')
+    fake.chmod(0o644)
+    run(["/usr/bin/mount", "--bind", fake, "/usr/lib/os-release"])
+    status, result = bootstrap(plan, "preflight", codes=None, identity=service_identity())
+    require(status != 0 and result.get("diagnostic") == "supported-distribution-is-ubuntu-24.04", "unsupported-host-not-rejected-by-real-probe")
+    passed("real-host-probe-refuses-unsupported-os-in-private-mount-namespace")
 
 
 def initial(plan):
@@ -343,7 +382,22 @@ def initial(plan):
     process_id = int(systemctl("show", "lsf.service", "--property=MainPID", "--value"))
     status = Path(f"/proc/{process_id}/status").read_text()
     require(f"Uid:\t{service_identity()[0]}\t" in status, "runtime-runs-as-wrong-user")
+    for name in ("latent", "latentd", "latent-aot-compiler"):
+        binary = PREFIX / "current/bin" / name
+        require(binary.stat().st_uid == 0 and not binary.stat().st_mode & 0o022, "runtime-binary-not-root-protected")
+        require(run(["/usr/bin/test", "-w", binary], codes=None, identity=service_identity())[0] == 1, "service-can-write-native-binary")
+    listeners = run(["/usr/bin/ss", "-ltnH"])[1]
+    require(b"127.0.0.1:50051" in listeners and b"0.0.0.0:50051" not in listeners and b"[::]:50051" not in listeners,
+            "native-management-listener-not-loopback-only")
     retained = publish(plan)
+    group = systemctl("show", "lsf.service", "--property=ControlGroup", "--value")
+    require(group.startswith("/system.slice/lsf.service"), "node-not-owned-by-systemd-unit-cgroup")
+    processes = Path("/sys/fs/cgroup") / group.lstrip("/") / "cgroup.procs"
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and set(processes.read_text().split()) != {str(process_id)}:
+        time.sleep(0.1)
+    require(set(processes.read_text().split()) == {str(process_id)}, "compiler-child-not-reaped-after-preparation")
+    passed("root-protected-native-binaries-loopback-management-and-reaped-compiler-children")
     protected = protected_hashes()
     negative_configuration(plan)
     bootstrap(plan, "install", "--start")
@@ -368,12 +422,7 @@ def retained(plan):
     invoke(plan, state["retained"], "after-real-reboot")
     passed("actual-changed-boot-id-and-retained-deployment")
     clean_stop()
-    backup = ROOT / "stopped-backup"
-    backup.mkdir(mode=0o700)
-    for path in (CONFIG, Path("/var/lib/lsf"), Path("/var/cache/lsf")):
-        shutil.copytree(path, backup / path.parent.name, symlinks=False)
-    require(digest(backup / "etc/node.json") == state["protected"]["node.json"], "consistent-backup-identity")
-    passed("stopped-node-consistent-protected-backup")
+    backup_and_restore(plan, "retained-backup")
     time.sleep(6)
     systemctl("start", "lsf.service")
     bootstrap(plan, "readiness", identity=service_identity())
@@ -397,6 +446,51 @@ def retained(plan):
     require(all(not path.exists() for path in (CONFIG, Path("/var/lib/lsf"), Path("/var/cache/lsf")))
             and (ROOT / "outside/sentinel").read_bytes() == b"not-owned-by-installation", "purge-boundary")
     passed("separate-purge-validates-id-and-paths-and-resumes-without-outside-deletion")
+
+
+def upgrade(plan):
+    require("predecessor" in plan, "approved-native-predecessor-required")
+    previous = plan["predecessor"]
+    authenticate(previous)
+    bootstrap(previous, "install", "--start", "--enable")
+    retained = publish(previous)
+    original = protected_hashes()
+    original_node = value(CONFIG / "node.json")
+    next_plan = {**plan}
+    if plan["profile"] == "external-capsule-v1":
+        next_plan["admissionPolicy"] = previous["admissionPolicy"]
+    require(bootstrap(next_plan, "install", codes=None)[0] != 0, "cross-version-install-without-explicit-upgrade-accepted")
+    require(protected_hashes() == original and not (PREFIX / "transaction.json").exists(), "rejected-upgrade-mutated-protected-state")
+    clean_stop()
+    backup_and_restore(previous, "pre-upgrade-backup")
+    time.sleep(6)
+    systemctl("start", "lsf.service")
+    target = value(Path(plan["releaseDirectory"]) / "release.json")
+    flags = ["--upgrade", "--start"]
+    if plan["profile"] == "external-capsule-v1":
+        flags += ["--approve-compiler-sha256", target["engine"]["compilerSha256"]]
+    result = bootstrap(next_plan, "install", *flags)[1]
+    require(result["version"] == plan["version"] and result["activationReady"] is True, "compatible-upgrade-not-activated")
+    after = value(CONFIG / "node.json")
+    if plan["profile"] == "external-capsule-v1":
+        require(after["isolatedAot"]["compilerDigest"] == "sha256:" + target["engine"]["compilerSha256"], "approved-compiler-identity-not-installed")
+        after["isolatedAot"]["compilerDigest"] = original_node["isolatedAot"]["compilerDigest"]
+    require(after == original_node and all(digest(CONFIG / name) == checksum for name, checksum in original.items() if name != "node.json"),
+            "upgrade-changed-unapproved-config-credentials-key-or-policy")
+    require(systemctl("is-enabled", "lsf.service") == "enabled", "upgrade-lost-existing-boot-enablement")
+    invoke(plan, retained, "after-compatible-upgrade")
+    retained_hashes = protected_hashes()
+    status, denied = bootstrap(previous, "install", "--upgrade", codes=None)
+    require(status != 0 and denied.get("diagnostic") == "unsupported-upgrade-or-downgrade-no-files-changed", "unsupported-downgrade-not-rejected")
+    require(protected_hashes() == retained_hashes and not (PREFIX / "transaction.json").exists(), "unsupported-downgrade-mutated-installed-state")
+    invoke(plan, retained, "after-unsupported-downgrade-rejection")
+    passed("declared-authenticated-native-version-upgrade-and-unsupported-downgrade-refusal")
+    DETAILS["upgrade"] = {"fromVersion": previous["version"], "fromCommit": previous["sourceCommit"],
+                          "toVersion": plan["version"], "toCommit": plan["sourceCommit"], "retained": retained,
+                          "onlyApprovedCompilerDigestChanged": True, "unsupportedDowngradeRejected": True}
+    clean_stop()
+    bootstrap(plan, "remove")
+    bootstrap(plan, "purge", "--confirm-installation", result["installationId"])
 
 
 def rootless(plan):
@@ -451,17 +545,17 @@ def rootless(plan):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", required=True, choices=("initial", "retained", "rootless"))
+    parser.add_argument("--phase", required=True, choices=("initial", "retained", "rootless", "upgrade", "unsupported-host"))
     arguments = parser.parse_args()
     os.umask(0o077)
-    report = {"schemaVersion": "latent.native-vm-guest.v1", "phase": arguments.phase, "passed": False, "checks": CHECKS}
+    report = {"schemaVersion": "latent.native-vm-guest.v1", "phase": arguments.phase, "passed": False, "checks": CHECKS, "details": DETAILS}
     try:
         plan = value(PLAN)
         if arguments.phase == "initial":
             initial(plan)
         else:
             authenticate(plan)
-            (retained if arguments.phase == "retained" else rootless)(plan)
+            {"retained": retained, "rootless": rootless, "upgrade": upgrade, "unsupported-host": unsupported_host}[arguments.phase](plan)
         report.update({"passed": True, "profile": plan["profile"], "sourceCommit": plan["sourceCommit"],
                        "kernel": os.uname().release, "python": sys.version.split()[0], "uid": os.geteuid(),
                        "bootId": Path("/proc/sys/kernel/random/boot_id").read_text().strip()})

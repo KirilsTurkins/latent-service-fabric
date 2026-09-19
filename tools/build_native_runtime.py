@@ -14,6 +14,7 @@ import shutil
 import sys
 import tempfile
 import tomllib
+import traceback
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -42,8 +43,9 @@ def build(arguments) -> dict:
                    "CARGO_PROFILE_RELEASE_DEBUG": "0", "CARGO_PROFILE_RELEASE_STRIP": "debuginfo",
                    "RUSTFLAGS": "-C target-cpu=x86-64"}
 
-    def run(command, timeout=60, maximum=1_048_576):
-        status, captured = execute(command, timeout=timeout, maximum=maximum, cwd=str(ROOT), environment=environment)
+    def run(command, timeout=60, maximum=1_048_576, stdout_only=False):
+        status, captured = execute(command, timeout=timeout, maximum=maximum, cwd=str(ROOT), environment=environment,
+                                   stdout_only=stdout_only)
         if status != 0:
             (ROOT / "target").mkdir(exist_ok=True)
             files.replace(ROOT / "target/native-build-failure.txt", captured[-65536:])
@@ -65,7 +67,9 @@ def build(arguments) -> dict:
                      "-p", "latent", "-p", "latentd", "-p", "latent-wasmtime",
                      "--bin", "latent", "--bin", "latentd", "--bin", "latent-aot-compiler"]
     started = datetime.now(timezone.utc).isoformat()
+    print('{"nativeBuildStage":"native-executables"}', flush=True)
     run(build_command, timeout=7200, maximum=8_388_608)
+    print('{"nativeBuildStage":"maintained-echo"}', flush=True)
     run([sys.executable, "tools/build_echo_capsule.py"], timeout=1800, maximum=2_097_152)
     binary_root = Path(environment["CARGO_TARGET_DIR"]) / verify.TARGET / "release"
     materialized = Path(tempfile.mkdtemp(prefix="native-bundle-inputs-", dir=ROOT / "target"))
@@ -74,6 +78,7 @@ def build(arguments) -> dict:
         require((binary_root / name).is_file() and not (binary_root / name).is_symlink(), "build-output-not-regular")
         shutil.copyfile(binary_root / name, materialized / name)
         assets["bin/" + name] = materialized / name
+    print('{"nativeBuildStage":"elf-and-identity"}', flush=True)
     dependencies = sorted({dependency for path in assets.values() for dependency in elf_identity(path, run)})
     abi = document(files.read(ROOT / "wit/host-abi-phase3-v4.json"))
     identity = {"version": arguments.version, "sourceCommit": commit, "target": verify.TARGET,
@@ -83,14 +88,18 @@ def build(arguments) -> dict:
                            "dynamicDependencies": dependencies}}
     for name in ("echo-capsule.wasm", "capsule.json", "contracts.json", "deployment.json", "input.json"):
         assets["examples/echo/" + name] = Path(environment["CARGO_TARGET_DIR"]) / "capsules/echo" / name
+    for name, source in (("echo", "examples/echo-contract/wit/echo.wit"),
+                         ("context", "wit/platform/context/package.wit"), ("log", "wit/platform/log/package.wit")):
+        assets["examples/echo/wit/" + name + ".wit"] = ROOT / source
     for name in ("LICENSE", "NOTICE"):
         assets[name] = ROOT / name
     assets.update({"systemd/lsf.service": ROOT / "packaging/linux/lsf.service",
                    "INSTALL.md": ROOT / "packaging/linux/INSTALL.md",
                    "config/local-experimental-v1.json": ROOT / "packaging/linux/local-experimental-v1.json",
                    "config/external-capsule-v1.json": ROOT / "packaging/linux/external-capsule-v1.json"})
+    print('{"nativeBuildStage":"dependency-and-license-inventory"}', flush=True)
     metadata = json.loads(run(["cargo", "+" + toolchain, "metadata", "--locked", "--format-version", "1",
-                               "--filter-platform", verify.TARGET], maximum=16_777_216))
+                               "--filter-platform", verify.TARGET], maximum=16_777_216, stdout_only=True))
     sbom, licenses = dependency_inventory(metadata, tomllib.loads((ROOT / "Cargo.lock").read_text()), commit, epoch)
     assets.update(licenses)
     provenance = {"_type": "https://in-toto.io/Statement/v1", "predicateType": "https://slsa.dev/provenance/v1",
@@ -109,6 +118,7 @@ def build(arguments) -> dict:
                                  "metadata": {"startedOn": started, "finishedOn": datetime.now(timezone.utc).isoformat()}}}}
     compatibility = document(files.read(ROOT / "packaging/linux/compatibility.json"))
     require(not run(["git", "status", "--porcelain", "--untracked-files=all"]).strip(), "source-changed-during-build")
+    print('{"nativeBuildStage":"bounded-native-archive"}', flush=True)
     manifest = assemble(output, ROOT, identity, assets, compatibility, provenance, sbom, epoch)
     require(run(["git", "rev-parse", "HEAD"]).decode().strip() == commit
             and not run(["git", "status", "--porcelain", "--untracked-files=all"]).strip(), "source-changed-during-assembly")
@@ -133,8 +143,14 @@ def main() -> int:
     arguments = parser.parse_args()
     try:
         result = build(arguments)
-    except (InstallError, OSError, ValueError, KeyError) as error:
-        print(json.dumps({"buildFailed": True, "diagnostic": str(error) if isinstance(error, InstallError) else "build-prerequisite-failure"}), file=sys.stderr)
+    except (InstallError, OSError, ValueError, TypeError, KeyError) as error:
+        frames = [{"file": Path(frame.filename).name, "line": frame.lineno, "function": frame.name}
+                  for frame in traceback.extract_tb(error.__traceback__)[-5:]]
+        failure = {"buildFailed": True, "diagnostic": str(error) if isinstance(error, InstallError) else "build-prerequisite-failure",
+                   "exceptionType": type(error).__name__, "frames": frames}
+        (ROOT / "target").mkdir(exist_ok=True)
+        files.replace(ROOT / "target/native-build-failure.json", json.dumps(failure).encode())
+        print(json.dumps(failure), file=sys.stderr)
         return 1
     print(json.dumps(result, sort_keys=True))
     return 0

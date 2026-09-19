@@ -13,6 +13,7 @@ on:
       - tools/run_native_vm.py
       - tools/native_vm_guest.py
       - tools/native-vm-profile.json
+      - tools/native-fixture/**
 
 permissions:
   contents: read
@@ -80,11 +81,19 @@ jobs:
         run: |
           version="$NATIVE_VERSION"
           python3 tools/build_native_runtime.py --commit "$GITHUB_SHA" --version "$version" --output "$PWD/target/native-release"
+      - name: Build separately authenticated public-only VM fixture helper
+        run: |
+          cargo +1.97.1 fmt --manifest-path tools/native-fixture/Cargo.toml -- --check
+          cargo +1.97.1 build --locked --release --manifest-path tools/native-fixture/Cargo.toml \
+            --target x86_64-unknown-linux-gnu --target-dir target/native-fixture-build --jobs 2
+          install -D -m 0755 target/native-fixture-build/x86_64-unknown-linux-gnu/release/latent-native-vm-fixture target/native-test-tools/fixture-helper
       - name: Attest candidate checksum inventory, not release authority
         id: attest
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
         with:
-          subject-path: target/native-release/SHA256SUMS
+          subject-path: |
+            target/native-release/SHA256SUMS
+            target/native-test-tools/fixture-helper
       - name: Retain offline attestation material
         env:
           ATTESTATION_BUNDLE: ${{ steps.attest.outputs.bundle-path }}
@@ -96,19 +105,30 @@ jobs:
           path: target/native-release/
           if-no-files-found: error
           retention-days: 14
+      - name: Retain test tooling separately from the runtime bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-runtime-test-tools-${{ github.sha }}
+          path: target/native-test-tools/
+          if-no-files-found: error
+          retention-days: 14
       - name: Retain bounded build failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-runtime-build-failure-${{ github.sha }}
-          path: target/native-build-failure.txt
+          path: target/native-build-failure.*
           if-no-files-found: ignore
           retention-days: 7
   native-vm:
-    name: Native packaged-artifact systemd and rootless VM
+    name: Native VM (${{ matrix.profile }})
     needs: candidate
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [local-experimental-v1, external-capsule-v1]
     permissions:
       contents: read
     steps:
@@ -119,6 +139,10 @@ jobs:
         with:
           name: native-runtime-candidate-${{ github.sha }}
           path: target/native-candidate
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: native-runtime-test-tools-${{ github.sha }}
+          path: target/native-test-tools
       - name: Provision host QEMU and independent verification trust
         env:
           GH_TOKEN: ${{ github.token }}
@@ -132,16 +156,18 @@ jobs:
       - name: Boot clean native guest, invoke, reboot, retain and purge
         env:
           NATIVE_VERSION: ${{ needs.candidate.outputs.version }}
+          NATIVE_PROFILE: ${{ matrix.profile }}
         run: |
           python3 tools/run_native_vm.py --release-directory "$PWD/target/native-candidate" \
             --trusted-root "$RUNNER_TEMP/native-trust/trusted_root.jsonl" --verifier "$(readlink -f "$(command -v gh)")" \
             --version "$NATIVE_VERSION" --commit "$GITHUB_SHA" --source-ref "$GITHUB_REF" \
-            --purpose candidate --profile local-experimental-v1 --output "$PWD/target/native-vm/ordinary.json"
+            --purpose candidate --profile "$NATIVE_PROFILE" --fixture-helper "$PWD/target/native-test-tools/fixture-helper" \
+            --output "$PWD/target/native-vm/$NATIVE_PROFILE.json"
       - name: Retain compact redacted real VM evidence and failures
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: native-runtime-vm-${{ github.sha }}
+          name: native-runtime-vm-${{ matrix.profile }}-${{ github.sha }}
           path: target/native-vm/*.json
           if-no-files-found: error
           retention-days: 14

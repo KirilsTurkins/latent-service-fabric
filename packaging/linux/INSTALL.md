@@ -332,3 +332,7 @@ identities, refuses links, mounts, unexpected types and excessive walks, and
 deletes only that installation's owned roots. Interrupted purge is resumable with
 the same ID. The dedicated account and installer lock directory are retained to
 avoid UID reuse and lock-inode races. Purge is irreversible without a backup.
+The non-secret `installed.json` becomes a `purged` tombstone before the purge
+journal is removed. This makes interruption during finalization safely resumable;
+it contains no retained credentials or catalog contents. A fresh installation
+after completed purge gets a new installation ID and fresh credentials.

@@ -235,6 +235,10 @@ class FileTests(unittest.TestCase):
             execute([sys.executable, "-c", "print('x' * 10000)"], maximum=128)
         status, output = execute([sys.executable, "-c", "print('bounded')"])
         self.assertEqual((status, output), (0, b"bounded\n"))
+        status, output = execute([sys.executable, "-c", "import sys; print('diagnostic', file=sys.stderr); print('{}')"], stdout_only=True)
+        self.assertEqual((status, output), (0, b"{}\n"))
+        with self.assertRaisesRegex(InstallError, "output-limit"):
+            execute([sys.executable, "-c", "import sys; print('x' * 10000, file=sys.stderr)"], stdout_only=True, maximum=128)
 
     def test_archive_exact_files_and_modes(self):
         with selected(self.root) as release:
@@ -439,9 +443,31 @@ class LifecycleTests(unittest.TestCase):
                 lifecycle.remove(self.layout, purge="not-this-installation")
             lifecycle.remove(self.layout, purge=installed["installationId"])
             self.assertTrue(all(not path.exists() for path in self.layout.roots().values()))
-            self.assertFalse(self.layout.state.exists())
+            self.assertEqual(lifecycle.read_state(self.layout)["status"], "purged")
+            lifecycle.remove(self.layout, purge=installed["installationId"])
             replacement = self.install(release)
             self.assertNotEqual(replacement["installationId"], installed["installationId"])
+
+    def test_interrupted_purge_finalization_keeps_a_resumable_tombstone(self):
+        with selected(self.root) as release:
+            installed = self.install(release)
+            lifecycle.remove(self.layout)
+            unlink = os.unlink
+
+            def interrupted(name, **options):
+                if name == "purge.json":
+                    raise OSError("synthetic-interruption-after-durable-purge")
+                return unlink(name, **options)
+
+            with patch("tools.native_runtime.lifecycle.os.unlink", side_effect=interrupted):
+                with self.assertRaises(OSError):
+                    lifecycle.remove(self.layout, purge=installed["installationId"])
+            self.assertEqual(lifecycle.read_state(self.layout)["status"], "purged")
+            self.assertTrue((self.layout.prefix / "purge.json").exists())
+            with self.assertRaisesRegex(InstallError, "interrupted-purge"):
+                self.install(release)
+            lifecycle.remove(self.layout, purge=installed["installationId"])
+            self.assertFalse((self.layout.prefix / "purge.json").exists())
 
     def test_substituted_root_and_modified_binary_are_not_removed(self):
         with selected(self.root) as release:

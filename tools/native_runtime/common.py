@@ -43,35 +43,38 @@ def encode(value: dict) -> bytes:
 
 def execute(arguments: list[str], *, timeout: float = 30, maximum: int = 262_144,
             identity: tuple[int, int] | None = None, pass_fds: tuple = (),
-            environment: dict | None = None, cwd: str = "/") -> tuple[int, bytes]:
+            environment: dict | None = None, cwd: str = "/", stdout_only: bool = False) -> tuple[int, bytes]:
     require(os.name == "posix", "linux-required")
     options = {}
     if identity is not None and os.geteuid() == 0:
         options = {"user": identity[0], "group": identity[1], "extra_groups": [], "umask": 0o077}
     process = subprocess.Popen(
         arguments, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, close_fds=True, pass_fds=pass_fds,
+        stderr=subprocess.PIPE if stdout_only else subprocess.STDOUT, close_fds=True, pass_fds=pass_fds,
         start_new_session=True, cwd=cwd,
         env=environment or {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "LANG": "C.UTF-8"},
         **options,
     )
     output = bytearray()
+    diagnostic = bytearray()
     deadline = time.monotonic() + timeout
     try:
         with selectors.DefaultSelector() as selector:
             selector.register(process.stdout, selectors.EVENT_READ)
+            if stdout_only:
+                selector.register(process.stderr, selectors.EVENT_READ)
             while selector.get_map():
                 remaining = deadline - time.monotonic()
                 require(remaining > 0, "command-timeout")
                 for key, _events in selector.select(min(remaining, 0.1)):
-                    data = os.read(key.fd, min(65536, maximum + 1 - len(output)))
+                    data = os.read(key.fd, min(65536, maximum + 1 - len(output) - len(diagnostic)))
                     if not data:
                         selector.unregister(key.fileobj)
                     else:
-                        output.extend(data)
-                        require(len(output) <= maximum, "command-output-limit")
+                        (output if key.fileobj is process.stdout else diagnostic).extend(data)
+                        require(len(output) + len(diagnostic) <= maximum, "command-output-limit")
             process.wait(timeout=max(0.001, deadline - time.monotonic()))
-        return process.returncode, bytes(output)
+        return process.returncode, bytes(output) + (bytes(diagnostic) if process.returncode != 0 else b"")
     except subprocess.TimeoutExpired as error:
         raise InstallError("command-timeout") from error
     finally:
@@ -81,3 +84,5 @@ def execute(arguments: list[str], *, timeout: float = 30, maximum: int = 262_144
             pass
         process.wait(timeout=5)
         process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()

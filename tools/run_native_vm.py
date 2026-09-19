@@ -22,7 +22,7 @@ import urllib.request
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools.native_runtime import files, verify
+from tools.native_runtime import archive, files, verify
 from tools.native_runtime.common import InstallError, document, encode, execute, require
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -137,6 +137,51 @@ class Guest:
             self.diagnostic.close()
 
 
+def fresh_fixture(args, release, policy, root, name):
+    require(args.fixture_helper is not None, "fresh-native-fixture-helper-required")
+    approved = document(files.read(policy, 8192, owners={0, os.geteuid()}))
+    helper_policy = document(files.read(root / "publisher-policy.json", 8192, owners={0, os.geteuid()}))
+    verified_command = verify.verification_command(str(args.verifier), args.fixture_helper,
+                                                   args.release_directory / "SHA256SUMS.sigstore.json", args.trusted_root, helper_policy)
+    checked(verified_command, timeout=60, maximum=2_097_152)
+    args.fixture_helper.chmod(0o755)
+    extracted = root / (name + "-bundled")
+    extracted.mkdir(mode=0o700)
+    trust = verify.PublisherTrust(policy, args.trusted_root, args.verifier, args.purpose == "candidate")
+    with verify.release(release, approved["version"], trust) as authenticated:
+        archive.extract(authenticated.archive_fd, extracted, authenticated.metadata["files"])
+        archive.check_tree(extracted, authenticated.metadata["files"])
+    fixture = root / name
+    checked([args.fixture_helper, "--test-only", extracted, fixture], timeout=120)
+    metadata = document(files.read(fixture / "fixture.json"))
+    require(metadata.get("privateKeysExported") is False and metadata.get("runtimeDefaultTrust") is False
+            and metadata.get("syntheticTestTrust") is True and metadata.get("actualBuildProvenanceClaim") is False,
+            "public-test-trust-not-runtime-authority")
+    files.remove_tree(extracted, maximum=8192)
+    return fixture
+
+
+def fixture_inputs(guest, fixture, location):
+    inputs = []
+    count = 0
+    for directory, directories, filenames in os.walk(fixture):
+        require(len(Path(directory).relative_to(fixture).parts) <= 8, "test-fixture-depth")
+        for name in directories:
+            require(not (Path(directory) / name).is_symlink(), "test-fixture-symlink")
+        for name in filenames:
+            count += 1
+            path = Path(directory) / name
+            require(count <= 128 and not path.is_symlink() and path.stat().st_size <= 16_777_216, "test-fixture-file-limit")
+            relative = path.relative_to(fixture).as_posix()
+            verify.relative(relative)
+            require(relative in {"policy.json", "fixture.json"} or relative.startswith(("package/", "evidence/")),
+                    "untracked-test-trust-material")
+            destination = location + "/" + relative
+            guest.ssh(["sudo", "install", "-d", "-m", "0755", str(Path(destination).parent)])
+            inputs.append((path, destination, "0644"))
+    return inputs
+
+
 def provision(guest, args, policy, root, report):
     release = args.release_directory
     metadata = document(files.read(release / "release.json"))
@@ -157,25 +202,35 @@ def provision(guest, args, policy, root, report):
             "publisherPolicy": "/opt/lsf-verification/policy.json", "trustedRoot": "/opt/lsf-verification/trusted_root.jsonl",
             "verifier": "/opt/lsf-verification/gh"}
     if args.profile == "external-capsule-v1":
-        require(args.fixture_directory is not None, "independently-provisioned-fresh-example-test-trust-required")
-        fixture = args.fixture_directory
-        count = 0
-        for directory, directories, filenames in os.walk(fixture):
-            require(len(Path(directory).relative_to(fixture).parts) <= 8, "test-fixture-depth")
-            for name in directories:
-                require(not (Path(directory) / name).is_symlink(), "test-fixture-symlink")
-            for name in filenames:
-                count += 1
-                path = Path(directory) / name
-                require(count <= 128 and not path.is_symlink() and path.stat().st_size <= 16_777_216, "test-fixture-file-limit")
-                relative = path.relative_to(fixture).as_posix()
-                verify.relative(relative)
-                destination = "/opt/lsf-verification/admission/" + relative
-                guest.ssh(["sudo", "install", "-d", "-m", "0755", str(Path(destination).parent)])
-                inputs.append((path, destination, "0644"))
+        fixture = args.fixture_directory or fresh_fixture(args, release, policy, root, "admission")
+        inputs += fixture_inputs(guest, fixture, "/opt/lsf-verification/admission")
         plan.update({"admissionPolicy": "/opt/lsf-verification/admission/policy.json",
                      "packageDirectory": "/opt/lsf-verification/admission/package",
                      "packageEvidence": "/opt/lsf-verification/admission/evidence/index.json"})
+    if args.predecessor_directory is not None:
+        previous_policy = document(files.read(args.predecessor_policy, 8192, owners={0, os.geteuid()}))
+        verify.publisher_policy(previous_policy, previous_policy["version"], args.purpose == "candidate")
+        require(previous_policy["purpose"] == args.purpose and previous_policy["version"] != args.version, "distinct-approved-native-predecessor-required")
+        previous_trust = verify.PublisherTrust(args.predecessor_policy, args.trusted_root, args.verifier, args.purpose == "candidate")
+        with verify.release(args.predecessor_directory, previous_policy["version"], previous_trust) as previous:
+            predecessor = {"version": previous.metadata["version"], "sourceCommit": previous.metadata["sourceCommit"],
+                           "archiveSha256": previous.metadata["archive"]["sha256"]}
+            require(predecessor in metadata["compatibility"]["upgradeFrom"], "release-does-not-declare-exact-predecessor")
+            previous_archive = previous.metadata["archive"]["name"]
+        guest.ssh(["sudo", "install", "-d", "-m", "0755", "/opt/lsf-native-test/predecessor"])
+        inputs += [(args.predecessor_directory / name, "/opt/lsf-native-test/predecessor/" + name, "0644") for name in
+                   (previous_archive, "release.json", "lsf-install.pyz", "SHA256SUMS", "SHA256SUMS.sigstore.json")]
+        inputs.append((args.predecessor_policy, "/opt/lsf-verification/predecessor-policy.json", "0644"))
+        plan["predecessor"] = {**plan, "version": previous_policy["version"], "sourceCommit": previous_policy["sourceCommit"],
+                               "sourceRef": previous_policy["sourceRef"], "releaseDirectory": "/opt/lsf-native-test/predecessor",
+                               "publisherPolicy": "/opt/lsf-verification/predecessor-policy.json"}
+        if args.profile == "external-capsule-v1":
+            older_fixture = fresh_fixture(args, args.predecessor_directory, args.predecessor_policy, root, "predecessor-admission")
+            inputs += fixture_inputs(guest, older_fixture, "/opt/lsf-verification/predecessor-admission")
+            plan["predecessor"].update({"admissionPolicy": "/opt/lsf-verification/predecessor-admission/policy.json",
+                                        "packageDirectory": "/opt/lsf-verification/predecessor-admission/package",
+                                        "packageEvidence": "/opt/lsf-verification/predecessor-admission/evidence/index.json"})
+        report["predecessor"] = predecessor
     files.create(root / "plan.json", encode(plan))
     inputs.append((root / "plan.json", "/opt/lsf-native-test/plan.json", "0644"))
     for ordinal, (source, destination, mode) in enumerate(inputs):
@@ -192,12 +247,14 @@ def run(args):
     require(sys.platform == "linux" and verify.SOURCE.fullmatch(args.commit), "native-linux-exact-source-vm-controller-required")
     profile = document(files.read(PROFILE))
     require(args.output.is_relative_to(ROOT / "target") and not args.output.exists(), "new-owned-vm-receipt-path-required")
+    require((args.predecessor_directory is None) == (args.predecessor_policy is None), "predecessor-bundle-and-independent-policy-required-together")
     args.output.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     policy = verify.publisher_policy({"schemaVersion": "latent.native-publisher-policy.v1", "repository": verify.REPOSITORY,
                                       "workflow": verify.RELEASE_WORKFLOW if args.purpose == "release" else verify.CANDIDATE_WORKFLOW,
                                       "sourceRef": args.source_ref, "sourceCommit": args.commit, "version": args.version,
                                       "purpose": args.purpose}, args.version, args.purpose == "candidate")
     report = {"schemaVersion": "latent.native-vm-result.v1", "passed": False, "acceptanceComplete": False,
+              "acceptanceScope": "single-profile-native-vm",
               "sourceCommit": args.commit, "version": args.version, "profile": args.profile, "purpose": args.purpose,
               "image": {key: profile[key] for key in ("imageUrl", "imageSha256", "distribution", "architecture")},
               "guestResults": [], "gaps": ["declared-compatible-native-version-pair-not-yet-selected"]}
@@ -227,9 +284,13 @@ def run(args):
                 guest.ssh(["sudo", "systemctl", "reboot", "--no-block"], codes=(0, 255), timeout=15)
                 report["rebootedBootId"] = guest.ready(old_boot=boot)
                 phase("retained")
+                if args.predecessor_directory is not None:
+                    phase("upgrade")
+                    report["gaps"] = []
                 if args.profile == "local-experimental-v1":
                     phase("rootless", "lsf-test")
                 report["passed"] = True
+                report["acceptanceComplete"] = not report["gaps"]
             finally:
                 guest.close()
                 if guest.serial.exists():
@@ -243,7 +304,7 @@ def run(args):
     files.create(args.output, encode(report))
     print(json.dumps({"passed": report["passed"], "acceptanceComplete": report["acceptanceComplete"],
                       "profile": args.profile, "receipt": str(args.output), "diagnostic": report.get("diagnostic")}))
-    return 0 if report["passed"] and not args.require_upgrade else 1
+    return 0 if report["passed"] and (not args.require_upgrade or report["acceptanceComplete"]) else 1
 
 
 def main():
@@ -252,6 +313,9 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--verifier", type=Path, default=Path("/usr/bin/gh"))
     parser.add_argument("--fixture-directory", type=Path)
+    parser.add_argument("--fixture-helper", type=Path)
+    parser.add_argument("--predecessor-directory", type=Path)
+    parser.add_argument("--predecessor-policy", type=Path)
     parser.add_argument("--commit", required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--source-ref", required=True)
