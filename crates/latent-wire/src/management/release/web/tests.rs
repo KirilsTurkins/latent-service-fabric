@@ -134,15 +134,15 @@ fn named_rpc_responses_preserve_the_preflighted_wire_fields_and_owned_size() {
     .unwrap();
     let published = proto::PublishWebPackageResponse {
         operation: common.operation.clone(),
-        audit_ack: common.audit_ack.clone(),
+        audit_ack: common.audit_ack,
     };
     let changed = proto::ChangeWebLifecycleResponse {
         operation: common.operation.clone(),
-        audit_ack: common.audit_ack.clone(),
+        audit_ack: common.audit_ack,
     };
     let renewed = proto::RenewWebEvidenceResponse {
         operation: common.operation.clone(),
-        audit_ack: common.audit_ack.clone(),
+        audit_ack: common.audit_ack,
     };
     let expected = common.encode_to_vec();
     for encoded in [

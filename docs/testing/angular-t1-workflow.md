@@ -58,6 +58,12 @@ queries, bounded response captures and a compact redacted receipt. A cold
 `web prepare` may wait at most 300000 milliseconds. Guest invocations remain
 bounded to five seconds; preparation does not allocate an application Store.
 
+Explicit deployment selectors resolve either the existing capsule record or the
+exact tenant-scoped web record. Web normalization returns only the associated
+renderer digest, not execution permission or a synthetic capsule entry. Historical
+identity remains resolvable for durable operation replay; deployment compilation
+and invocation still require the current sealed web-publication authority.
+
 The intended gate covers rejected protected configurations, enforced
 publisher/builder/SBOM admission, cold isolated compilation, authenticated native
 cache reuse, exact selected deployment/render, cancellation and failure recovery,
