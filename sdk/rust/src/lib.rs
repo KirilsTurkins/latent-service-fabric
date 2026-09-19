@@ -10,6 +10,7 @@ use latent_core::{
 };
 
 pub use latent_core::{ErrorDetail, PlatformError};
+pub mod management;
 mod publication;
 pub use publication::{PublicationIdentity, PublicationRef, ReleaseSelector};
 

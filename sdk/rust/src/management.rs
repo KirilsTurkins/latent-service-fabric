@@ -392,6 +392,12 @@ pub struct RequestIdentity {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct UnsupportedWireValue {
+    pub field: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ResponseMetadata {
     pub identity: RequestIdentity,
     pub outcome: OutcomeKnowledge,
@@ -410,6 +416,7 @@ pub struct ClientFailure {
     pub identity: RequestIdentity,
     pub audit_ack: Option<AuditAck>,
     pub audit_status: Option<String>,
+    pub unsupported_wire_value: Option<UnsupportedWireValue>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -469,7 +476,6 @@ pub trait ClientProfile: Send + Sync {
         request: GetPolicyOperationRequest,
         options: CallOptions,
     ) -> ClientFuture<'_, GetPolicyOperationResponse>;
-
 }
 
 impl std::fmt::Display for ClientFailure {
@@ -480,6 +486,7 @@ impl std::fmt::Display for ClientFailure {
 
 impl std::error::Error for ClientFailure {}
 
+#[must_use]
 pub fn parse_u64_decimal(value: &str) -> Option<u64> {
     let parsed = value.parse::<u64>().ok()?;
     (parsed.to_string() == value).then_some(parsed)

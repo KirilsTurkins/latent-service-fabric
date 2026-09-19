@@ -1064,6 +1064,17 @@
         "optional": true
       }
     ],
+    "UnsupportedWireValue": [
+      {
+        "name": "field",
+        "type": "string"
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "maximum_bytes": 256
+      }
+    ],
     "ResponseMetadata": [
       {
         "name": "identity",
@@ -1125,6 +1136,11 @@
       {
         "name": "audit_status",
         "type": "string",
+        "optional": true
+      },
+      {
+        "name": "unsupported_wire_value",
+        "type": "UnsupportedWireValue",
         "optional": true
       }
     ]

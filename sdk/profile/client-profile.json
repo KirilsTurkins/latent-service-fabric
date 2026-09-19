@@ -38,6 +38,10 @@
       {"name": "activation_id", "type": "string", "optional": true},
       {"name": "operation_id", "type": "string", "optional": true}
     ],
+    "UnsupportedWireValue": [
+      {"name": "field", "type": "string"},
+      {"name": "value", "type": "string", "maximum_bytes": 256}
+    ],
     "ResponseMetadata": [
       {"name": "identity", "type": "RequestIdentity", "required": true},
       {"name": "outcome", "type": "OutcomeKnowledge"},
@@ -53,7 +57,8 @@
       {"name": "outcome", "type": "OutcomeKnowledge"},
       {"name": "identity", "type": "RequestIdentity", "required": true},
       {"name": "audit_ack", "type": "AuditAck", "optional": true},
-      {"name": "audit_status", "type": "string", "optional": true}
+      {"name": "audit_status", "type": "string", "optional": true},
+      {"name": "unsupported_wire_value", "type": "UnsupportedWireValue", "optional": true}
     ]
   }
 }

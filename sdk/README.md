@@ -1,6 +1,9 @@
 # SDK surfaces
 
-The external client SDK directories contain interface-only programming models.
+The external client SDK directories separate portable programming models from
+executable transport packages. Rust network delivery and its transport-specific
+documentation are tracked in [#228](https://github.com/KirilsTurkins/latent-service-fabric/issues/228);
+model validation alone does not establish transport readiness.
 The [common executable client profile](profile/README.md) supplies a complete,
 protobuf-derived eight-operation facade in all six languages, including policy,
 redacted provider inspection, preconditioned mutation and recovery. Its models
@@ -38,8 +41,9 @@ activation never ran.
 
 The delivered [activation manager](../docs/activation-lifecycle.md) and
 [invocation adapter](../docs/protocol/invocation-service.md) enforce these server
-identity and lineage rules. The SDKs provide interfaces and executable test
-doubles; applications still need a transport implementation.
+identity and lineage rules. The legacy SDK surfaces and shared profile include
+executable test doubles; network packages and their separate delivery evidence
+determine which executable clients are available.
 
 All six client surfaces cancel and query status by known activation ID.
 Cancellation has three successful RPC dispositions: `accepted`,
@@ -56,7 +60,7 @@ distinguishes useful responses, deadline misses and eventual cleanup.
 Its benchmark client results do not add transports, automatic cancellation
 forwarding or retries to these SDK interfaces.
 
-### C callback contract
+### Legacy C callback contract
 
 The C vtable's `cancel` takes an activation ID, reason, callback, and user data.
 Its callback receives exactly one of a cancellation response or transport
@@ -72,6 +76,10 @@ anything they retain. Callbacks may run inline. The implementation must deliver
 one completion callback per operation, including transport failure. Client and
 user-data lifetime must cover outstanding callbacks; `destroy` requires those
 operations to have completed.
+
+The additive `<latent/profile.h>` facade has explicitly released local call
+handles and its own [callback lifetime contract](profile/README.md#c-callback-and-response-lifetime).
+Do not mix its handle ownership with the legacy interface described here.
 
 ### Compatibility
 
@@ -100,6 +108,12 @@ workload is required. These checks establish that the interface can express the
 contract. Actual wire conversion and server behavior are covered separately by
 the invocation adapter tests and the completed
 [Phase 1 conformance gate](../docs/phase-1-completion.md).
+
+The shared Phase 3 suite adds 66 protobuf-selected vectors, 16 strict unsigned
+decimal boundaries, and local cancellation/response ownership/recovery fixtures
+in every language. The existing runners execute these suites, including ordinary
+public Rust crate tests. See the [profile validation commands](profile/README.md#executable-semantic-fixtures)
+and [bounded local evidence](profile/EVIDENCE.md) for exact coverage and limits.
 
 ## Phase 2 management boundary
 
@@ -131,9 +145,11 @@ must remain distinct from opaque invocation payloads and authorization grants.
 A request boundary requires exactly one selector. The DTOs preserve absent,
 present empty and contradictory values for validation; they never choose a
 fallback, enumerate candidates, infer a tenant or pick the newest publication.
-Rust uses the canonical typed PublicationId parser and rejects malformed IDs
-before constructing that typed reference. Other interfaces retain strings for
-the future transport validator. `ReleaseSelector.componentDigest` maps to the
+The legacy Rust convenience surface uses the canonical typed PublicationId
+parser and rejects malformed IDs before constructing that typed reference.
+The common profile, like the other five facades, retains raw strings and
+presence for explicit validation by the adapter; it never normalizes an invalid
+ID. `ReleaseSelector.componentDigest` maps to the
 specific RPC's legacy digest field; it is not an alternative wire schema.
 
 Successful responses and common invocation receipts add an optional captured
@@ -148,7 +164,8 @@ Rust struct literals need the new optional receipt field. Go keyed literals keep
 nil defaults; TypeScript fields remain optional. Java retains old constructors
 with Optional.empty; .NET retains old construction with a null default. Record
 shapes and the C response/receipt layouts change: rebuild binary consumers and
-producers together. No stable C ABI or executable management transport is claimed.
+producers together. This model compatibility section does not claim a stable C
+ABI or establish executable management transport readiness.
 All six small contract suites exercise coexistence, distinct tenant scope,
 legacy presence, present-invalid selection and full-width 64-bit receipt values.
 The Phase 3 shared SDK profiles and real-client tickets consume these models

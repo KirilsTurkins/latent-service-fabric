@@ -1,6 +1,8 @@
 import argparse
+import difflib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -180,7 +182,7 @@ def rust_models(profile, messages, enums):
                "    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {",
                "        formatter.write_str(&self.message)", "    }", "}", "",
                "impl std::error::Error for ClientFailure {}", "",
-               "pub fn parse_u64_decimal(value: &str) -> Option<u64> {",
+               "#[must_use]", "pub fn parse_u64_decimal(value: &str) -> Option<u64> {",
                "    let parsed = value.parse::<u64>().ok()?;",
                "    (parsed.to_string() == value).then_some(parsed)", "}", ""]
     return "\n".join(output)
@@ -200,6 +202,9 @@ def go_models(profile, messages, enums):
     for operation in profile["operations"]:
         output += [f"\t{operation['name']}(ctx context.Context, request {operation['request']}, options CallOptions) (ClientResponse[{operation['response']}], error)"]
     output += ["}", "", "func (failure *ClientFailure) Error() string { return failure.Message }", "",
+               "func (failure *ClientFailure) Unwrap() error {", "\tswitch failure.Category {",
+               "\tcase FailureCategoryLocalCancelled:", "\t\treturn context.Canceled",
+               "\tcase FailureCategoryDeadline:", "\t\treturn context.DeadlineExceeded", "\tdefault:", "\t\treturn nil", "\t}", "}", "",
                "func ParseU64Decimal(value string) (uint64, bool) {",
                "\tparsed, failure := strconv.ParseUint(value, 10, 64)",
                "\treturn parsed, failure == nil && strconv.FormatUint(parsed, 10) == value", "}", ""]
@@ -226,7 +231,7 @@ def ts_models(profile, messages, enums):
                "export function parseU64Decimal(value: string): bigint {",
                '  if (typeof value !== "string" || !/^(0|[1-9][0-9]{0,19})$/.test(value)) {',
                '    throw new RangeError("invalid uint64 decimal");', "  }", "  const parsed = BigInt(value);",
-               "  if (parsed > 18446744073709551615n) throw new RangeError(\"uint64 overflow\");",
+               "  if (parsed > 18446744073709551615n || parsed.toString(10) !== value) throw new RangeError(\"invalid uint64 decimal\");",
                "  return parsed;", "}", "", "export function formatU64Decimal(value: bigint): string {",
                '  if (typeof value !== "bigint" || value < 0n || value > 18446744073709551615n) {',
                '    throw new RangeError("invalid uint64 bigint");', "  }", "  return value.toString(10);", "}", ""]
@@ -250,6 +255,15 @@ def java_models(profile, messages, enums):
                "        private static final long serialVersionUID = 1L;", "        private final ClientFailure failure;", "",
                "        public ClientException(ClientFailure failure) {", "            super(failure.message());", "            this.failure = failure;", "        }", "",
                "        public ClientFailure failure() { return failure; }", "    }", "",
+               "    public static final class ClientCancellationException extends java.util.concurrent.CancellationException {",
+               "        private static final long serialVersionUID = 1L;", "        private final ClientFailure failure;", "",
+               "        public ClientCancellationException(ClientFailure failure) {", "            super(failure.message());", "            this.failure = failure;", "        }", "",
+               "        public ClientFailure failure() { return failure; }", "    }", "",
+               "    public static Optional<ClientFailure> clientFailure(Throwable failure) {",
+               "        for (int depth = 0; failure != null && depth < 8; depth++) {",
+               "            if (failure instanceof ClientException typed) return Optional.of(typed.failure());",
+               "            if (failure instanceof ClientCancellationException typed) return Optional.of(typed.failure());",
+               "            failure = failure.getCause();", "        }", "        return Optional.empty();", "    }", "",
                "    public static long parseU64Decimal(String value) {",
                '        if (!value.matches("0|[1-9][0-9]{0,19}")) throw new NumberFormatException("invalid uint64 decimal");',
                "        return Long.parseUnsignedLong(value);", "    }", "",
@@ -283,11 +297,19 @@ def dotnet_models(profile, messages, enums):
                "public sealed class ClientException : Exception", "{", "    /// <summary>Retained, redacted failure and recovery facts.</summary>",
                "    public ClientFailure Failure { get; }", "", "    /// <summary>Retains failure facts without changing operation knowledge.</summary>",
                "    public ClientException(ClientFailure failure) : base(failure.Message) { Failure = failure; }", "}", "",
+               "/// <summary>Local cancellation with retained dispatch and recovery facts.</summary>",
+               "public sealed class ClientCancellationException : OperationCanceledException", "{",
+               "    /// <summary>The independent failure and recovery facts.</summary>", "    public ClientFailure Failure { get; }", "",
+               "    /// <summary>Retains local cancellation without implying server cleanup.</summary>",
+               "    public ClientCancellationException(ClientFailure failure, CancellationToken cancellationToken)",
+               "        : base(failure.Message, cancellationToken) { Failure = failure; }", "}", "",
                "/// <summary>Lossless canonical unsigned decimal conversion for shared fixtures.</summary>", "public static class UnsignedDecimal", "{",
                "    /// <summary>Parses zero through UInt64.MaxValue without signs, whitespace or leading zeroes.</summary>",
                "    public static ulong Parse(string value)", "    {",
                "        if (value.Length == 0 || value.Length > 20 || (value.Length > 1 && value[0] == '0'))",
                '            throw new FormatException("invalid uint64 decimal");',
+               "        foreach (char digit in value)",
+               "            if (digit < '0' || digit > '9') throw new FormatException(\"invalid uint64 digit\");",
                "        return ulong.Parse(value, NumberStyles.None, CultureInfo.InvariantCulture);", "    }", "",
                "    /// <summary>Formats all unsigned bits as canonical decimal.</summary>",
                "    public static string Format(ulong value) => value.ToString(CultureInfo.InvariantCulture);", "}", ""]
@@ -340,7 +362,7 @@ def c_models(profile, messages, enums):
 
 def generated_files():
     profile, messages, enums = read_contract()
-    return {
+    outputs = {
         "sdk/rust/src/management.rs": rust_models(profile, messages, enums),
         "sdk/go/profile/models.go": go_models(profile, messages, enums),
         "sdk/typescript-client/src/management.ts": ts_models(profile, messages, enums),
@@ -349,6 +371,14 @@ def generated_files():
         "sdk/c/include/latent/profile.h": c_models(profile, messages, enums),
         "sdk/profile/contract.json": json.dumps({"profile": profile["profile"], "operations": profile["operations"], "messages": messages, "enums": enums}, indent=2) + "\n",
     }
+    from generate_fixtures import generate
+
+    outputs.update(generate(profile, messages, enums))
+    for path, source in outputs.items():
+        formatter = ["rustfmt", "--edition", "2021"] if path.endswith(".rs") else ["gofmt"] if path.endswith(".go") else None
+        if formatter:
+            outputs[path] = subprocess.run(formatter, input=source, text=True, capture_output=True, check=True, timeout=30).stdout
+    return outputs
 
 
 def main():
@@ -356,11 +386,18 @@ def main():
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--patch", action="store_true")
     parser.add_argument("--write", action="store_true")
+    parser.add_argument("--only", action="append", default=[])
     arguments = parser.parse_args()
     if sum((arguments.check, arguments.patch, arguments.write)) != 1:
         parser.error("choose exactly one of --check, --patch, --write")
+    outputs = generated_files()
+    unknown = set(arguments.only) - outputs.keys()
+    if unknown:
+        parser.error("unknown generated paths: " + ", ".join(sorted(unknown)))
+    if arguments.only:
+        outputs = {path: expected for path, expected in outputs.items() if path in arguments.only}
     changes = []
-    for path, expected in generated_files().items():
+    for path, expected in outputs.items():
         actual = (ROOT / path).read_text(encoding="utf-8") if (ROOT / path).exists() else None
         if actual == expected:
             continue
@@ -372,16 +409,16 @@ def main():
             if actual is None:
                 changes[-1] = f"*** Add File: {ROOT.as_posix()}/{path}\n" + "\n".join("+" + line for line in expected.splitlines())
             else:
-                changes[-1] = (f"*** Update File: {ROOT.as_posix()}/{path}\n@@\n"
-                               + "\n".join("-" + line for line in actual.splitlines()) + "\n"
-                               + "\n".join("+" + line for line in expected.splitlines()))
+                difference = list(difflib.unified_diff(actual.splitlines(), expected.splitlines(), lineterm=""))[2:]
+                changes[-1] = (f"*** Update File: {ROOT.as_posix()}/{path}\n"
+                               + "\n".join("@@" if line.startswith("@@") else line for line in difference))
     if arguments.patch:
         print("*** Begin Patch\n" + "\n".join(changes) + "\n*** End Patch")
     elif arguments.check and changes:
         print("stale generated files: " + ", ".join(changes), file=sys.stderr)
         return 1
     else:
-        print(f"client profile: {len(generated_files())} generated files verified")
+        print(f"client profile: {len(outputs)} generated files verified")
     return 0
 
 
