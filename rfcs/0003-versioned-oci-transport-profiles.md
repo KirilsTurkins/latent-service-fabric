@@ -12,11 +12,12 @@ LSF will version OCI registry transport interoperability independently from the
 permanent authority and ownership rules established by ADR-0021.
 
 The already delivered registry behavior is named `lsf-oci-static-v1`. It remains
-the supported profile while Phase 3 develops a second opt-in profile,
+supported alongside the second opt-in profile,
 `lsf-oci-bearer-v1`, for standard Bearer challenge authentication, bounded DNS
-and explicitly authorized redirects. The second profile is **selected but not yet
-implemented or supported**. #269 owns token acquisition/refresh and #270 owns DNS,
-redirect handling and the real-registry conformance matrix.
+and explicitly authorized redirects. #269 owns token acquisition/refresh and
+#270 owns DNS, redirect handling and the real-registry conformance matrix. Their
+implementation and [exact evidence boundaries](../docs/reference/oci-network-profile.md)
+are now documented separately; selection alone is not compatibility evidence.
 
 Profile expansion never lets an untrusted registry response grant new network or
 credential authority. Every token realm, DNS destination, redirect destination,
@@ -119,8 +120,9 @@ push/pull/native-referrer path is currently demonstrated by repository tests.
 
 ### `lsf-oci-bearer-v1` - selected Phase 3 profile
 
-This profile is unavailable until #269 and #270 implement and validate it. It
-extends, rather than weakens, the permanent invariants.
+This profile requires the explicit #269/#270 implementation and validation. It
+extends, rather than weakens, the permanent invariants. The network constructor
+never silently upgrades an existing static caller.
 
 Configuration must provide finite policy for:
 
@@ -170,8 +172,11 @@ are rejected under finite hop/URL/header limits.
 
 `RegistryLimits::operation_timeout` is the current outer operation budget and is
 carried as one absolute deadline through the selected profile. Existing
-`connect_timeout`, `request_timeout` and `cleanup_timeout` remain inner ceilings;
-they may shorten a stage but never extend the operation deadline.
+`connect_timeout` and `request_timeout` remain inner ceilings; they may shorten a
+stage but never extend the operation deadline. Abandoned known sessions transfer
+to the existing reserved cleanup owner with its independent, finite
+`cleanup_timeout`. This is cleanup-only DELETE ownership, not a renewed upload
+budget or a replay of an uncertain mutation; capacity stays charged until it ends.
 
 The Phase 3 implementation must place finite ceilings on at least:
 
@@ -198,7 +203,7 @@ work**. A selected row is not a support claim until its required tests pass.
 | Registry/version | LSF profile | Auth topology | Push/pull | Native referrers | Evidence status |
 | --- | --- | --- | --- | --- | --- |
 | Zot minimal 2.1.18, pinned image digest `sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395` | `lsf-oci-static-v1` | one ephemeral TLS loopback origin, explicit Basic credential | demonstrated | demonstrated | delivered repository fixture |
-| Harbor 2.15.2 | `lsf-oci-bearer-v1` | private project behind Registry v2 Bearer challenge; token realm must match fixture-approved authority | required by #269/#270 | required by #270 | selected, **not yet supported** |
+| Harbor 2.15.2 | `lsf-oci-bearer-v1` | private project, approved same-origin token realm, explicit DNS/TLS, local storage | demonstrated | demonstrated | owned fixture; redirect policy separately verified with controlled TLS peers |
 | Distribution 3.1.1 | none for complete LSF evidence discovery | varies | package transfer can interoperate | current LSF docs record native referrers unavailable | explicit complete-profile exclusion |
 
 The Harbor fixture is reproducible only when #270 records the exact Harbor 2.15.2

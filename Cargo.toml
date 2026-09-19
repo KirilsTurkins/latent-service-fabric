@@ -12,6 +12,7 @@ members = [
     "crates/latent-artifacts",
     "crates/latent-packaging",
     "crates/latent-oci",
+    "crates/latent-network",
     "crates/latent-signing",
     "crates/latent-policy",
     "crates/latent-routing",

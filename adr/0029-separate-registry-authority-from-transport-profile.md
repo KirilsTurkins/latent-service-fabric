@@ -48,8 +48,8 @@ The permanent invariants from ADR-0021 are:
 - `lsf-oci-static-v1` is the **delivered** profile matching current
   `HttpOciRegistry`: operator-supplied addresses, anonymous/Basic/preissued Bearer,
   no runtime DNS/token exchange/redirects, and native OCI 1.1 referrers.
-- `lsf-oci-bearer-v1` is the **selected but not yet supported** Phase 3 profile.
-  It may add explicitly approved Bearer token authorities, bounded DNS and
+- `lsf-oci-bearer-v1` is the explicitly selected Phase 3 profile.
+  It adds explicitly approved Bearer token authorities, bounded DNS and
   operation-specific authorized redirects while retaining every permanent
   invariant above.
 
@@ -61,7 +61,9 @@ Harbor 2.15.2 is selected as the additional real-registry conformance target for
 not a compatibility claim. #269/#270 must execute authenticated exact push,
 digest-pinned pull and native-referrer evidence discovery and record the tested
 fixture identities/topology before Harbor or `lsf-oci-bearer-v1` is documented as
-supported.
+supported. The #269/#270 implementation now provides that owned-fixture path;
+its exact [network conformance boundary](../docs/reference/oci-network-profile.md)
+does not certify untested hosted storage topologies.
 
 Distribution 3.1.1 remains an explicit complete-profile exclusion under the
 current LSF evidence-discovery requirement because the repository's existing
@@ -91,9 +93,12 @@ requested profile is unknown, partially configured, unavailable or unsupported.
 
 `RegistryLimits::operation_timeout` remains the outer transfer budget. Token
 acquisition, resolution, connect, redirects, uploads, content transfer and
-referrer discovery consume the same original absolute deadline. Per-connect,
-per-request and cleanup timeouts can shorten a stage but cannot reset that
-budget.
+referrer discovery consume the same original absolute deadline. Per-connect and
+per-request timeouts can shorten a stage but cannot reset that budget. An
+abandoned known upload session transfers to its previously reserved cleanup owner
+with the existing separate finite cleanup timeout. This cleanup-only DELETE
+cannot resume an upload or retry an uncertain mutation; the original operation
+does not acquire a new transfer budget. Its physical ownership remains charged.
 
 Resolver jobs/answers/cache entries, token jobs/cache entries, sockets, redirects,
 request/response metadata, upload sessions, retained bytes, package leases and
@@ -134,9 +139,11 @@ ADR-0021's delivered implementation and historical Zot evidence remain valid and
 are reclassified as evidence for `lsf-oci-static-v1`; they are not evidence for
 DNS, Bearer challenge acquisition or redirects.
 
-The Harbor row remains selected-only until #269/#270 pass. Failed or adverse
-conformance results must be retained as limitations rather than converted into a
-support claim by changing profile wording.
+The Harbor row requires #269/#270 conformance evidence. The implementation records
+real authenticated push/pull/native referrers through explicit DNS and TLS, with
+denied destination policy, and separate controlled-peer redirect evidence.
+Harbor local storage does not itself exercise object-storage redirects. Failed
+or adverse results remain limitations rather than a reason to broaden support.
 
 The OCI package format, publisher/build/SBOM verification, catalog admission,
 ordinary invocation availability and guest networking authority are unchanged by

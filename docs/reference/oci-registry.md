@@ -39,27 +39,27 @@ choices.
 `lsf-oci-bearer-v1` has an implemented
 [bounded authentication layer](oci-bearer-read-auth.md): challenge parsing,
 coalesced token acquisition/refresh, explicit identity/credential epochs and
-preauthenticated writes without replay. Complete transport qualification still
-requires #270's bounded DNS, authorized redirects and topology conformance.
+preauthenticated writes without replay. Its explicit
+[network policy](oci-network-profile.md) adds bounded DNS, connected-peer checks
+and authorized credential-free content redirects, with real topology conformance.
 Static credential callers remain on the static profile; an upgrade does not
 silently authorize DNS, token services or redirect targets.
 
-The support matrix distinguishes delivered evidence from selected future tests:
+The support matrix names the exact demonstrated fixture topologies:
 
 | Registry/version | Profile | Authentication/topology | Push/pull | Native referrers | Current status |
 | --- | --- | --- | --- | --- | --- |
 | Zot minimal 2.1.18, pinned `sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395` | `lsf-oci-static-v1` | ephemeral TLS loopback origin, explicit Basic credential | demonstrated | demonstrated | supported repository fixture |
-| Harbor 2.15.2 | `lsf-oci-bearer-v1` | private project using Registry v2 Bearer challenge; token authority must be explicitly approved | required by #269/#270 | required by #270 | selected conformance target; **not yet supported** |
+| Harbor 2.15.2 | `lsf-oci-bearer-v1` | private project, approved same-origin token realm, explicit DNS and verified TLS; local storage | demonstrated | demonstrated | supported owned fixture; storage redirects separately tested with controlled TLS peers |
 | Distribution 3.1.1 | no complete LSF evidence profile | deployment-specific | package transfer can interoperate | unavailable in the currently documented tested surface | explicit complete-profile exclusion |
 
-Harbor 2.15.2 is selected because Harbor uses Registry v2 token authentication;
-selection is not proof of LSF compatibility. The #270 fixture must record exact
-release/container identities, use disposable TLS and a disposable private project
-with least-privilege credentials, record the approved registry/token endpoint
-topology, bound local container resources, and destroy only resources it owns.
-Support is reported only after exact push, digest-pinned pull and native-referrer
-discovery pass on that fixture. A failure of the native referrers requirement is
-retained as a limitation; it does not authorize silent mutable fallback.
+The Harbor fixture records exact release/container and source identities, uses
+disposable TLS, a private project and least-privilege credentials, bounds local
+container resources, and destroys only resources it owns. It proves exact push,
+digest-pinned pull, native referrers and denied DNS authority. Its local storage
+does not prove compatibility with hosted object-storage redirects: see the
+[precise network evidence boundary](oci-network-profile.md#maintained-conformance-and-limitations).
+No mutable fallback is authorized.
 
 Permanent rules apply to every profile: server-controlled challenges, DNS replies,
 redirects, links and manifests cannot grant endpoint or credential authority;
@@ -97,8 +97,9 @@ configured client when needed. Authentication failures remain errors.
 The Bearer extension never makes a registry-supplied realm authoritative. Its
 configuration separately approves the token authority, service/audience,
 repository/actions, tenant, principal and credential epoch. Hostname destinations
-still require explicit addresses and redirects remain disabled until #270;
-unknown or unavailable transport behavior does not gain network authority.
+require explicit addresses with the ordinary constructors. Only the separate
+`new_with_network` policy enables bounded DNS and approved content redirects;
+unknown or unavailable behavior does not gain network authority.
 
 HTTPS is the normal transport. `allow_insecure_loopback` permits HTTP only for a
 numeric loopback address when explicitly enabled for local tests. It cannot
@@ -136,12 +137,14 @@ session, and registry-side expiry must reclaim it. Shutdown closes admission and
 waits for owned work until the supplied deadline; a deadline error does not
 claim that remote cleanup completed.
 
-For future profiles, token acquisition, DNS, redirects and upload continuations
-must all consume the same original absolute operation deadline. Existing
-`connect_timeout`, `request_timeout` and `cleanup_timeout` are inner ceilings,
-not fresh budgets after each continuation. Resolver work, token cache entries,
-sockets, redirect metadata and still-running cleanup remain charged until actual
-retirement or an explicitly bounded ownership transfer.
+Token acquisition, DNS, redirects and upload continuations consume the same
+original absolute operation deadline. `connect_timeout` and `request_timeout`
+are inner ceilings, not fresh budgets after each continuation. An abandoned
+known session transfers to the previously reserved cleanup owner, whose DELETE
+has the separate bounded `cleanup_timeout`; this cannot resume the upload or
+replay an uncertain mutation. Resolver work, token cache entries, sockets,
+redirect metadata and cleanup remain charged until actual retirement or that
+explicitly bounded ownership transfer.
 
 ## Optional raw download cache
 

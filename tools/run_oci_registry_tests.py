@@ -66,7 +66,9 @@ def openssl_path() -> str:
     raise RuntimeError("OpenSSL is required to generate short-lived test certificates")
 
 
-def certificates(directory: Path) -> None:
+def certificates(directory: Path, *, dns_names: tuple[str, ...] = ()) -> None:
+    if len(dns_names) > 8 or any(not re.fullmatch(r'[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?', name) for name in dns_names):
+        raise RuntimeError('invalid fixture certificate DNS name')
     executable = openssl_path()
     command([executable, "req", "-x509", "-newkey", "rsa:2048", "-nodes",
              "-keyout", str(directory / "ca.key"), "-out", str(directory / "ca.pem"),
@@ -79,7 +81,8 @@ def certificates(directory: Path) -> None:
     extensions = directory / "server.ext"
     extensions.write_text("basicConstraints=critical,CA:FALSE\n"
                           "keyUsage=critical,digitalSignature,keyEncipherment\n"
-                          "extendedKeyUsage=serverAuth\nsubjectAltName=IP:127.0.0.1\n",
+                          "extendedKeyUsage=serverAuth\nsubjectAltName=IP:127.0.0.1"
+                          + ''.join(',DNS:' + name for name in dns_names) + '\n',
                           encoding="ascii")
     command([executable, "x509", "-req", "-in", str(directory / "server.csr"),
              "-CA", str(directory / "ca.pem"), "-CAkey", str(directory / "ca.key"),
