@@ -11,6 +11,15 @@ so the next exact-head run can distinguish configuration, startup and shutdown
 failures. This is diagnostic coverage, not a claim that the startup failure's
 root cause has been fixed. Local successful workflows remain separate evidence.
 
+The subsequent run at `1c9198ef` passes the complete contracts/provider workflow,
+catalog, SDK, documentation, registry and security jobs. Its Rust job instead
+identifies oversized shared test-startup futures after the provider/assets merge.
+The startup allocation boundaries are boxed in `0af1589e`, without a lint waiver
+or a change to request execution. Strict Linux node Clippy passes with that same
+fix integrated at `26751357`; the next hosted PR head must still pass every job.
+The earlier intermittent startup exit remains recorded rather than relabelled
+as resolved by this independent lint fix.
+
 This delivery extends the existing authenticated management services. It does
 not change the policy language, manufacture provider registrations, or turn a
 receipt or inspection response into execution authority.
