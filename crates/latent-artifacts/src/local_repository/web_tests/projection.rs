@@ -17,6 +17,65 @@ fn component() -> ReleaseDigest {
 }
 
 #[test]
+fn only_catalog_verified_web_metadata_selects_public_world_validation() {
+    use latent_manifest::{
+        JsonManifestCodec, ManifestCodec, ManifestValidator, Phase1ManifestValidator,
+    };
+
+    let root = TempRoot::new();
+    let repo = Arc::new(open(&root));
+    let publication = renderer(&repo, "projection-validation", b"public assets");
+    let source = repo.clone().owned_preparation_source().unwrap();
+    let artifact = source
+        .fetch_blocking_selected(
+            &component(),
+            Some(&publication.id),
+            repo.repository_read_limits(),
+        )
+        .unwrap();
+    let supplied = crate::VerifiedArtifactMetadata::from_artifact(artifact).unwrap();
+    assert!(!supplied.is_web_execution_projection());
+    assert!(Phase1ManifestValidator
+        .validate_capsule(supplied.manifest())
+        .is_err());
+    let mut deployment = JsonManifestCodec::default()
+        .decode_deployment(include_bytes!(
+            "../../../../../examples/echo-contract/deployment.json"
+        ))
+        .unwrap();
+    deployment.metadata.tenant = Some(tenant());
+    deployment.metadata.namespace = None;
+    deployment.service = latent_core::ServiceId(supplied.manifest().metadata.name.clone());
+    deployment.release = component();
+    deployment.publication = Some(publication.id.clone());
+    deployment.grants.clear();
+    deployment.resources = supplied
+        .manifest()
+        .execution
+        .resource_budget_ceiling
+        .clone();
+    for revoked in [false, true] {
+        if revoked {
+            revoke(&repo, &publication).unwrap();
+        }
+        let historical = repo
+            .selected_historical_snapshot(&component(), Some(&publication.id))
+            .unwrap();
+        assert!(historical.metadata().is_web_execution_projection());
+        Phase1ManifestValidator
+            .validate_web_execution_projection(&deployment, historical.metadata().manifest())
+            .unwrap();
+        assert_eq!(
+            matches!(
+                historical.into_parts().1,
+                HistoricalExecutionState::Denied(_)
+            ),
+            revoked
+        );
+    }
+}
+
+#[test]
 fn exact_web_projection_keeps_package_authority_separate_from_executable_deduplication() {
     let root = TempRoot::new();
     let repo = Arc::new(open(&root));

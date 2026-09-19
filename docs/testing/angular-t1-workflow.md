@@ -64,6 +64,12 @@ renderer digest, not execution permission or a synthetic capsule entry. Historic
 identity remains resolvable for durable operation replay; deployment compilation
 and invocation still require the current sealed web-publication authority.
 
+The verified metadata retains a catalog-only web-projection marker, including
+denied historical rows on restart. Only that path validates the exact public
+web world against the tenant's deployment; ordinary capsule input retains its
+tenant-world namespace requirement. Copying metadata or verifying component bytes
+does not create this marker, and the marker itself supplies no execution grant.
+
 The intended gate covers rejected protected configurations, enforced
 publisher/builder/SBOM admission, cold isolated compilation, authenticated native
 cache reuse, exact selected deployment/render, cancellation and failure recovery,
