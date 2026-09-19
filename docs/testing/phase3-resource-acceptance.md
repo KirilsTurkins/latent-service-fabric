@@ -22,8 +22,8 @@ volume, failed receipt, previous binary or user directory is removed.
 | --- | --- | --- | --- | --- | --- |
 | `smoke` v2 | 1 / 2 | 4, 16 plus 3 fixture deployments | 64 | 2 x 8 arrivals, 10 ms interval, 6 outstanding | 240 s |
 | `campaign` v2 | 2 / 2 | 4, 16, 32 plus 3 fixture deployments | 96 | 8 x 24 arrivals, 5 ms interval, 8 outstanding | 900 s |
-| `web-smoke` v1 | 1 / 2 | 2, 4 actual Angular deployments | No capability policy owner | 2 x 4 arrivals, 10 ms interval, 5 outstanding | 600 s |
-| `web-campaign` v1 | 2 / 2 | 2, 4, 8 actual Angular deployments | No capability policy owner | 4 x 8 arrivals, 5 ms interval, 6 outstanding | 900 s |
+| `web-smoke` v2 | 1 / 2 | 2, 4 actual Angular deployments | No capability policy owner | 2 x 4 arrivals, 10 ms interval, 5 outstanding | 600 s |
+| `web-campaign` v2 | 2 / 2 | 2, 4, 8 actual Angular deployments | No capability policy owner | 4 x 8 arrivals, 5 ms interval, 6 outstanding | 900 s |
 
 Both web tiers use the existing protected `external-capsule-v1` profile and
 256 MiB per-cell memory ceiling, a 300-second isolated preparation ceiling,
@@ -31,6 +31,15 @@ and five-second invocation budgets. Success, exception, explicit cancellation,
 client disconnect, overload, recovery, shared ingress and unrouting are distinct
 populations. An actual JS allocator heap counter is unavailable; OS RSS and
 configured Wasm memory ceilings must not be mislabeled as that counter.
+
+Web v2 retains the failed v1 populations and deadlines but budgets **two control
+jobs**: one preparation owner and one read-only observer. Preparation retains
+at most 64 non-atomic samples, spaced at least one second apart, not a claim of
+exhaustive peak memory. Warm preparation verifies the actual in-memory prepared
+cache hit counter and unchanged resident entry/source/image/metadata totals;
+it is not mislabeled as an authenticated native disk-cache hit. The qualified
+SDK `e07abf72` baseline is integrated as merge `70c41c09`, with its root admission
+implementation unchanged. New runs identify that source separately.
 
 The v1 smoke's requested 16-deployment population is retained in v2, not lowered
 to hide its failure. The unexecuted larger v1 profile's 64-deployment population

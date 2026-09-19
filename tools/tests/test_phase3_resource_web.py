@@ -9,10 +9,13 @@ from pathlib import Path
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 from tools.phase2_operator_process import WorkflowError
 from tools.phase3_resource_render import rendered
+from tools.phase3_resource_profile import PROFILES
 from tools.phase3_resource_storage import storage_snapshot
+from tools.phase3_resource_web import configure, warm_cache_observed
 from tools.phase3_web_scenario import MEDIA
 
 
@@ -70,6 +73,30 @@ class RenderIdentityTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
+    def test_web_preparation_budgets_its_observer_without_changing_runtime_limits(self):
+        for name in ("web-smoke", "web-campaign"):
+            settings = {"workers": {"runtime": 1, "control": 1}, "cells": [{}], "catalogs": {},
+                        "cache": {}, "audit": {}, "securityProfile": "external-capsule-v1"}
+            with patch("tools.phase3_resource_web.configure_angular_node", return_value=("config", settings)), \
+                    patch("tools.phase3_resource_web.replace_config") as write:
+                _path, actual = configure(None, None, None, None, PROFILES[name])
+                self.assertEqual(actual["workers"], {"runtime": PROFILES[name]["cells"], "control": 2})
+                self.assertEqual(actual["cache"], {"entries": 2, "preparations": 1})
+                self.assertEqual(actual["securityProfile"], "external-capsule-v1")
+                write.assert_called_once_with("config", actual)
+                with self.assertRaisesRegex(WorkflowError, "observer-control-budget"):
+                    configure(None, None, None, None, {**PROFILES[name], "controlJobs": 1})
+
+    def test_warm_cache_claim_needs_a_measured_hit_not_a_native_cache_label(self):
+        before = {"hits": "0", "entries": "1", "misses": "1", "sourceBytes": "32",
+                  "compiledImageBytes": "64", "metadataBytes": "16"}
+        after = {**before, "hits": "1"}
+        result = warm_cache_observed(before, after)
+        self.assertEqual(result["scope"], "in-memory-prepared-cache-not-native-disk-cache")
+        for changed in (before, {**after, "misses": "2"}, {**after, "compiledImageBytes": "0"}):
+            with self.assertRaises(WorkflowError):
+                warm_cache_observed(before, changed)
+
     def test_expensive_matrix_is_manual_and_failed_receipts_are_retained(self):
         source = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text()
         self.assertIn('run_phase3_resources:\n', source)

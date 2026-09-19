@@ -103,20 +103,24 @@ def prepare_observed(client, publication, result):
     process = Process(command, client.directory, client.environment, client.cancellation, maximum=32768)
     client.calls += 1
     observation = {"kind": "cold-isolated-preparation", "processId": process.owner.process.pid,
-                   "maximumWaitMillis": 300000, "reaped": False}
+                   "maximumWaitMillis": 300000, "reaped": False,
+                   "maximumSamples": result["profile"]["maximumPreparationSamples"],
+                   "sampleIntervalMillis": result["profile"]["preparationSampleIntervalMillis"],
+                   "samplingScope": "bounded-non-atomic-observations-not-an-exhaustive-memory-peak"}
     result["preparation"] = observation
     try:
-        samples = 0
+        samples, next_sample = 0, began
         while not process.owner.exited():
             client.cancellation.check()
             require(time.monotonic() < client.deadline and time.monotonic_ns() - began < 310_000_000_000,
                     "resource-render-preparation-deadline")
             process.drain()
             client.node.drain()
-            if samples < 8:
+            if samples < observation["maximumSamples"] and time.monotonic_ns() >= next_sample:
                 observed = sample(client, client.probe, "preparation", client.dormant, False)
                 result["samples"].append(observed)
                 samples += 1
+                next_sample = time.monotonic_ns() + observation["sampleIntervalMillis"] * 1_000_000
             time.sleep(0.1)
         completed = process.complete(min(client.deadline, time.monotonic() + 5))
         value = json.loads(completed.stdout)

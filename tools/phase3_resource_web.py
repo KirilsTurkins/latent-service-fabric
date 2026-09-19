@@ -22,6 +22,27 @@ from tools.phase3_web_scenario import (
 from tools.run_security_profile_workflow import replace_config
 
 
+def configure(client, directory, fixture, compiler, profile):
+    require(profile["controlJobs"] == 2, "resource-angular-observer-control-budget")
+    config, settings = configure_angular_node(client, directory, fixture, compiler)
+    settings["workers"].update(runtime=profile["cells"], control=profile["controlJobs"])
+    settings["cells"][0].update(capacity=profile["cells"], queueCapacity=2)
+    settings["catalogs"]["deployments"] = profile["dormantSteps"][-1] + 1
+    settings["cache"].update(entries=2, preparations=1)
+    settings["audit"].update(records=4096, diskBytes=33554432)
+    replace_config(config, settings)
+    return config, settings
+
+
+def warm_cache_observed(before, after):
+    require(integer(after["hits"]) > integer(before["hits"])
+            and all(after[key] == before[key] for key in
+                    ("entries", "misses", "sourceBytes", "compiledImageBytes", "metadataBytes"))
+            and integer(after["entries"]) > 0 and integer(after["compiledImageBytes"]) > 0,
+            "resource-angular-prepared-cache-hit")
+    return {"before": before, "after": after, "scope": "in-memory-prepared-cache-not-native-disk-cache"}
+
+
 def web_run(args, result, cancellation, temporary, deadline):
     require(args.compiler is not None and args.compiler.is_absolute(), "resource-angular-compiler-required")
     result["compiler"] = file_identity(args.compiler)
@@ -37,13 +58,7 @@ def web_run(args, result, cancellation, temporary, deadline):
     client.observations, client.samples = result["calls"], result["samples"]
     client.sampled_activations, client.heat = set(), "setup"
     profile = result["profile"]
-    config, settings = configure_angular_node(client, directories["node"], args.fixture_root, args.compiler)
-    settings["workers"]["runtime"] = profile["cells"]
-    settings["cells"][0].update(capacity=profile["cells"], queueCapacity=2)
-    settings["catalogs"]["deployments"] = profile["dormantSteps"][-1] + 1
-    settings["cache"].update(entries=2, preparations=1)
-    settings["audit"].update(records=4096, diskBytes=33554432)
-    replace_config(config, settings)
+    config, settings = configure(client, directories["node"], args.fixture_root, args.compiler, profile)
     result.update(configuration=settings, configurationDigest=digest(settings))
     node = None
     try:
@@ -80,10 +95,15 @@ def web_run(args, result, cancellation, temporary, deadline):
         result["storage"].append({"phase": "dormant", **storage_snapshot(directories["node"], deadline)})
         prepare_observed(client, publications["angular"], result)
         result["nativeCacheMisses"] = native_cache_audit(client, records["angular"], "cache-miss")
+        before_warm = sample(client, client.probe, "prepared", len(names), False)
+        result["samples"].append(before_warm)
         began = time.monotonic_ns()
         prepare(client, publications["angular"], 1, wait=15000)
         result["warmPreparationNanos"] = str(time.monotonic_ns() - began)
-        result["nativeCacheHits"] = native_cache_audit(client, records["angular"], "cache-hit")
+        after_warm = sample(client, client.probe, "warm-preparation", len(names), False)
+        result["samples"].append(after_warm)
+        result["warmPreparedCache"] = warm_cache_observed(before_warm["inventory"]["cacheSummary"],
+                                                         after_warm["inventory"]["cacheSummary"])
         result["storage"].append({"phase": "prepared", **storage_snapshot(directories["node"], deadline)})
         for heat in ("cold", "warm"):
             client.heat = heat
@@ -162,8 +182,11 @@ def validate_web(value):
             "resource-angular-profile")
     require(value["catalog"]["components"] == 1 and value["catalog"]["packages"] == 2
             and value["catalog"]["publications"] == 2, "resource-angular-distinct-catalog-counts")
-    require(value["catalog"]["dormantPopulations"] and [row["admitted"] for row in value["catalog"]["dormantPopulations"]]
-            == profile["dormantSteps"], "resource-angular-density-populations")
+    require(value["catalog"]["dormantPopulations"] and all(
+        [row[key] for row in value["catalog"]["dormantPopulations"]] == profile["dormantSteps"]
+        for key in ("requested", "admitted")), "resource-angular-density-populations")
+    require(value["configuration"]["workers"]["control"] == profile["controlJobs"] == 2,
+            "resource-angular-observer-control-budget")
     for phase in ("fixed", "dormant", "warm", "active", "recovery", "unrouted"):
         selected = [row for row in samples if row["phase"] == phase]
         require(bool(selected), "resource-angular-missing-phase")
@@ -181,8 +204,23 @@ def validate_web(value):
         validate_schedule(cycle["arrivals"], profile["arrivalsPerCycle"], profile["arrivalIntervalMillis"] * 1_000_000)
         require(any(row["disposition"] == "completed" and row["result"]["category"] == "success"
                     for row in cycle["arrivals"]), "resource-angular-churn-no-success")
-    require(value["preparation"]["reaped"] and value["nativeCacheMisses"] and value["nativeCacheHits"],
+    require(value["preparation"]["reaped"] and value["preparation"]["exitCode"] == 0
+            and value["preparation"]["result"]["category"] == "success" and value["nativeCacheMisses"],
             "resource-angular-preparation-evidence")
+    warm_cache = value["warmPreparedCache"]
+    require(warm_cache == warm_cache_observed(warm_cache["before"], warm_cache["after"]),
+            "resource-angular-cache-evidence")
+    require(sum(row["phase"] == "recovery" for row in samples) == profile["cycles"] * profile["samplesPerPhase"],
+            "resource-angular-recovery-population")
+    require(all(row["terminal"] == "cancelled" for row in value["cancellations"])
+            and {row["disconnect"] for row in value["cancellations"]} == {False, True},
+            "resource-angular-cancellation-populations")
+    for heat, count, category in (("cold", 1, "success"), ("warm", 1, "success"),
+                                  ("failure", profile["cycles"], "platform-failure"),
+                                  ("recovery", profile["cycles"], "success"), ("post-overload", 1, "success")):
+        selected = [row for row in value["calls"] if row["heat"] == heat]
+        require(len(selected) == count and all(row["processReaped"] and row["result"]["category"] == category
+                and row["result"]["outcomeKnown"] for row in selected), "resource-angular-call-population")
     require(value["shutdown"]["reaped"] is True and value["shutdown"]["record"]["clean"] is True
             and value["temporaryOutputsRemoved"] is True and value["fixtureUnchanged"] is True,
             "resource-angular-cleanup")
@@ -201,7 +239,11 @@ def validate_web(value):
     value["analysis"] = {"osRanges": {phase: {key: summary([row["os"]["metrics"][key]
         for row in samples if row["phase"] == phase]) for key in
         ("processes", "threads", "listeners", "sockets", "handles", "rssBytes")}
-        for phase in ("fixed", "dormant", "warm", "active", "recovery", "unrouted")},
+        for phase in ("fixed", "dormant", "preparation", "prepared", "warm", "active", "recovery", "unrouted")},
+        "cacheRanges": {phase: {key: summary([integer(row["inventory"]["cacheSummary"][key])
+            for row in samples if row["phase"] == phase]) for key in
+            ("entries", "sourceBytes", "compiledImageBytes", "metadataBytes", "preparing", "evictions")}
+            for phase in ("fixed", "dormant", "prepared", "warm", "recovery", "unrouted")},
         "latencyNanos": {heat: summary([integer(row["elapsedNanos"]) for row in value["calls"]
             if row["heat"] == heat]) for heat in ("cold", "warm", "failure", "recovery")},
         "rendererHeapBytes": None, "rendererHeapReason": "JS-allocator-not-exported-RSS-is-not-heap",
