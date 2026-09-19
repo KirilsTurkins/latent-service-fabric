@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "latent.operator-settings-walkthrough.v1",
+  "sourceCommit": "1ed9ef3c7890f2794e137c37a5e7df71deac0577",
+  "sourceFile": "tools/security_settings.py",
+  "sourceFileWindowsSha256": "3b11756668e34d14d66144cf58f0ef3e1ce4e3d4d85fab6bc6dbf49ed371cee2",
+  "execution": {
+    "command": "python tools/security_settings.py",
+    "platform": "Windows PowerShell",
+    "python": "3.13.5",
+    "githubCli": "2.96.0",
+    "exitCode": 0,
+    "perRequestTimeoutSeconds": 30,
+    "readOnly": true,
+    "enableFlagUsed": false
+  },
+  "report": {
+    "auto_merge_capability": true,
+    "code_scanning_default_setup": {
+      "languages": [
+        "actions",
+        "c-cpp",
+        "csharp",
+        "go",
+        "java-kotlin",
+        "javascript",
+        "javascript-typescript",
+        "python",
+        "rust",
+        "typescript"
+      ],
+      "query_suite": "default",
+      "runner_label": null,
+      "runner_type": "standard",
+      "schedule": null,
+      "state": "not-configured",
+      "threat_model": "remote",
+      "updated_at": null
+    },
+    "default_branch": "release",
+    "dependabot_security_updates": {
+      "enabled": true,
+      "paused": false
+    },
+    "development_required_checks": [
+      "CI result"
+    ],
+    "observed_at": "2026-09-19T17:10:48.907784+00:00",
+    "private_vulnerability_reporting": {
+      "enabled": true
+    },
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "scheduled_definition_on_default": false,
+    "schema": 1,
+    "security_and_analysis": {
+      "dependabot_security_updates": {
+        "status": "enabled"
+      },
+      "secret_scanning": {
+        "status": "enabled"
+      },
+      "secret_scanning_non_provider_patterns": {
+        "status": "disabled"
+      },
+      "secret_scanning_push_protection": {
+        "status": "enabled"
+      },
+      "secret_scanning_validity_checks": {
+        "status": "disabled"
+      }
+    },
+    "settings_enabled": true,
+    "vulnerability_alerts": true,
+    "workflow_permissions": {
+      "can_approve_pull_request_reviews": false,
+      "default_workflow_permissions": "read"
+    }
+  },
+  "boundary": "actual read-only services inventory; no setting, branch protection, workflow, schedule, tag or release changed; successful settings status does not prove activation"
+}

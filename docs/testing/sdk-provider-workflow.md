@@ -7,9 +7,9 @@ internals or a handwritten JSON/RPC proxy. Each run owns one finite node,
 operator setup client, participant and controlled HTTP upstream. It is a
 Linux x86-64 development qualification, not an installed-bundle or browser test.
 
-Implementation is staged: the harness alone is not passing real-node evidence.
-Each language must implement the complete participant contract and execute it
-successfully before its SDK ticket can close. Controlled malformed-wire peers
+The six-client execution receipt below is separate from the harness source.
+Each language must satisfy its complete participant contract and required CI
+before its SDK ticket can close. Controlled malformed-wire peers
 remain separate focused tests; this runner does not pretend that malformed
 responses came from the real node.
 
@@ -144,7 +144,7 @@ records fresh Java and C executions at integration `3584f589`. Both passed all
 18 participant assertions, retained nine actual activation identities and the
 original mutation operation, and independently closed all four started upstream
 holds. Each peer observed six authenticated requests and no unexpected requests;
-both nodes and clients were reaped with clean provider shutdown. The current
+both nodes and clients were reaped with clean provider shutdown. That checkpoint's
 Java SDK tree matches reviewed `c8229d5a`; C matches `bf466a53`. Original
 raw-receipt hashes and exact executable/fixture identities distinguish these
 executions from earlier receipts.
@@ -195,3 +195,19 @@ finite exhaustion and abandoned-owner cleanup. All 60 lifecycle tests and
 the admission tests pass locally. This source-level checkpoint still requires
 fresh complete matrix execution and exact-head CI before the shared gate or
 any remaining SDK acceptance is declared complete.
+
+## Executed six-client result
+
+The subsequent run at source `e07abf72cbf78c8c27df7a54cfb2859c007c9397`
+passes the maintained complete matrix: Rust, TypeScript, Go, C, Java and .NET
+each execute all 18 assertions against the same CLI/node and signed fixture
+identities. The [frozen aggregate and raw receipts](../evidence/phase3-sdk-matrix-e07abf72/README.md)
+retain all 54 activation IDs, six exact operation receipts and all 24 physically
+closed upstream holds. Every participant and node exits cleanly; no unexpected
+upstream request is observed. This run follows the read-only admission wait fix,
+without retrying an invocation or changing the held-deadline scenario.
+
+The historical failed attempts above remain failures, not results of this run.
+This is real separate-node development qualification, not browser or installed
+bundle qualification. The frozen result does not replace exact-head CI after
+subsequent integration changes.
