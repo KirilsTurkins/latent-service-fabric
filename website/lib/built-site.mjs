@@ -1,8 +1,27 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
-import {parse} from 'parse5';
-import {assetRoute, createRepositoryIndex, git, htmlElements, readSource, repositoryRoot, repositoryUrl, requireValue, sha256} from './repository.mjs';
+import {parse, parseFragment} from 'parse5';
+import {visit} from 'unist-util-visit';
+import {assetRoute, createRepositoryIndex, git, htmlElements, parseDocument, readSource, repositoryRoot, repositoryUrl, requireValue, resolveLink, sha256} from './repository.mjs';
+import {transformDocument} from '../plugins/repository-links.mjs';
+
+function expectedSourceLinks(index, page, manifest) {
+  const options = {baseUrl: manifest.baseUrl, assets: manifest.assets};
+  const tree = transformDocument(parseDocument(readSource(index.root, page.source).toString('utf8'), page.source), index, page.source, options);
+  const links = new Set();
+  function collect(url) {
+    if (url?.startsWith(`${repositoryUrl}/blob/`) || url?.startsWith(`${repositoryUrl}/tree/`)) links.add(url);
+  }
+  visit(tree, node => {
+    if (node.type === 'link') collect(node.url);
+    for (const attribute of node.attributes ?? []) if (attribute.name === 'href') collect(attribute.value);
+    if (node.type === 'html') htmlElements(parseFragment(node.value), element => {
+      for (const attribute of element.attrs ?? []) if (attribute.name === 'href') collect(resolveLink(index, page.source, attribute.value, options));
+    });
+  });
+  return links;
+}
 
 export function validatePublicJavaScript(output) {
   const directory = path.join(output, 'assets/js');
@@ -39,6 +58,7 @@ export function validateBuiltSite(output) {
   requireValue(JSON.stringify(manifest.pages) === JSON.stringify(current.pages), 'Built document bytes/routes are stale; rebuild this checkout');
   const publicJavaScript = validatePublicJavaScript(output);
   const documents = new Map();
+  let checkedSourceLinks = 0;
   const requiredRoutes = ['/', ...manifest.pages.map(page => page.route)];
   for (const route of requiredRoutes) {
     const target = outputPath(output, `${manifest.baseUrl.slice(0, -1)}${route}`, manifest.baseUrl);
@@ -48,13 +68,19 @@ export function validateBuiltSite(output) {
     const links = [];
     htmlElements(parse(html), element => {
       for (const attribute of element.attrs ?? []) {
-        if (attribute.name === 'id') identifiers.add(attribute.value);
+        if (attribute.name === 'id' || (element.tagName === 'a' && attribute.name === 'name')) identifiers.add(attribute.value);
         if (['href', 'src'].includes(attribute.name)) links.push(attribute.value);
       }
     });
     documents.set(route, {identifiers, links});
     const page = manifest.pages.find(entry => entry.route === route);
-    if (page) requireValue(links.includes(`${repositoryUrl}/edit/${manifest.revision}/${page.source}`), `Missing exact-revision edit link: ${page.source}`);
+    if (page) {
+      requireValue(links.includes(`${repositoryUrl}/edit/${manifest.revision}/${page.source}`), `Missing exact-revision edit link: ${page.source}`);
+      for (const expected of expectedSourceLinks(current, page, manifest)) {
+        requireValue(links.includes(expected), `Missing or stale commit-bound source link: ${page.source}`);
+        checkedSourceLinks += 1;
+      }
+    }
   }
   let checkedLinks = 0;
   for (const [route, document] of documents) {
@@ -77,7 +103,7 @@ export function validateBuiltSite(output) {
     requireValue(sha256(fs.readFileSync(target)) === asset.sha256, `Copied asset changed bytes: ${asset.path}`);
     requireValue(sha256(readSource(repositoryRoot, asset.path, asset.maxBytes)) === asset.sha256, `Built asset input is stale: ${asset.path}`);
   }
-  return {manifest, pages: documents.size, checkedLinks, publicJavaScript};
+  return {manifest, pages: documents.size, checkedLinks, checkedSourceLinks, publicJavaScript};
 }
 
 export async function serveBuiltSite(output, baseUrl) {

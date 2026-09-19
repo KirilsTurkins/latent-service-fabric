@@ -50,7 +50,7 @@ try {
       await page.screenshot({path: path.join(websiteRoot, `.generated/${variant}-mobile.png`)});
       assert.equal((await page.request.get(`${prefix}/not-a-real-page/`)).status(), 404);
       assert.deepEqual(errors, []);
-      results.push({variant, source: result.manifest.revision, dirty: result.manifest.dirty, baseUrl: result.manifest.baseUrl, pages: result.pages, checkedLinks: result.checkedLinks, publicJavaScript: result.publicJavaScript, nestedReloads: 5, approvedAssetBytes: 'unchanged', mermaid: 'rendered', browserErrors: 0, screenshots: [`${variant}-home.png`, `${variant}-mobile.png`]});
+      results.push({variant, source: result.manifest.revision, dirty: result.manifest.dirty, baseUrl: result.manifest.baseUrl, pages: result.pages, checkedLinks: result.checkedLinks, checkedSourceLinks: result.checkedSourceLinks, publicJavaScript: result.publicJavaScript, nestedReloads: 5, approvedAssetBytes: 'unchanged', mermaid: 'rendered', browserErrors: 0, screenshots: [`${variant}-home.png`, `${variant}-mobile.png`]});
     } finally {
       await context.close();
       await server.close();

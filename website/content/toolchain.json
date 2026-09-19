@@ -3,6 +3,7 @@
   "reviewedAt": "2026-09-19",
   "node": {"version": "24.19.0", "repository": "nodejs/node", "tag": "v24.19.0", "commit": "cdc1b38d40cb567b7ad0b39c86addf830a0af0ae"},
   "npm": "12.0.1",
+  "npmSource": {"repository": "npm/cli", "commit": "868e586497cdc17b66eb9a8424bad67136e789f9"},
   "docusaurus": {"version": "3.10.2", "repository": "facebook/docusaurus", "tag": "v3.10.2", "commit": "f37f9035584917a97a260b91fc2842cba4f8b94f"},
   "react": {"version": "19.3.0", "repository": "react/react", "commit": "1d34f91dfde6bba84d08b683aaba164c7194dacb"},
   "typescript": {"version": "5.9.3", "repository": "microsoft/TypeScript", "commit": "c63de15a992d37f0d6cec03ac7631872838602cb"},

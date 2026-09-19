@@ -2,17 +2,18 @@ import type {Config} from '@docusaurus/types';
 import type {Options, ThemeConfig} from '@docusaurus/preset-classic';
 import path from 'node:path';
 import {prepare} from './lib/prepare.mjs';
-import {repositoryUrl, websiteRoot} from './lib/repository.mjs';
+import {repositoryUrl, sha256, websiteRoot} from './lib/repository.mjs';
 import {remarkRepositoryLinks, rehypeRepositoryLinks} from './plugins/repository-links.mjs';
 
 const prepared = prepare();
 const pluginOptions = {index: prepared.index, assets: prepared.assets, baseUrl: prepared.baseUrl};
 const repositoryRemark = () => remarkRepositoryLinks(pluginOptions);
 const repositoryRehype = () => rehypeRepositoryLinks(pluginOptions);
+const inputIdentity = {fingerprint: sha256(JSON.stringify({revision: prepared.index.revision, pages: prepared.index.pages, assets: prepared.assets, baseUrl: prepared.baseUrl}))};
 const commonDocs = {
   numberPrefixParser: false as const,
-  beforeDefaultRemarkPlugins: [repositoryRemark],
-  beforeDefaultRehypePlugins: [repositoryRehype],
+  beforeDefaultRemarkPlugins: [[repositoryRemark, inputIdentity]],
+  beforeDefaultRehypePlugins: [[repositoryRehype, inputIdentity]],
   showLastUpdateAuthor: false,
   showLastUpdateTime: false,
 };

@@ -10,7 +10,7 @@ It is not the complete [migration gate #345](https://github.com/KirilsTurkins/la
 a released documentation snapshot, a Node hosting product, or runtime qualification.
 
 ```mermaid
-flowchart LR
+flowchart TD
   Source["docs/ and adr/"] --> Validation["Bounded source and link checks"]
   Validation --> Output["Static website output"]
   Output --> Reader["Reader browser"]
@@ -93,9 +93,11 @@ navigation, nested-page reloads, SVG/Mermaid loading and a narrow viewport at bo
 paths. Unexpected external browser requests and JavaScript errors fail. Unknown
 pages return 404 rather than silently falling back to the homepage. This is
 foundation browser evidence, not #354's complete accessibility/search campaign.
-Stale source identities/document bytes and private build paths in public JavaScript
-also fail. Docusaurus serializes its configuration: the private input index is
-held in server-only closures, not serializable plugin options.
+Stale source identities/document bytes, incorrect commit-bound source links and
+private build paths in public JavaScript also fail. Docusaurus serializes its
+configuration: the private input index is held in server-only closures, not
+serializable plugin options. A public input fingerprint invalidates compiler
+caches when revisions, document bytes/routes, approved assets or base paths change.
 
 `website/.generated/build-evidence.json` retains compact counts, source SHA,
 dirty flag and base paths. Each output has `site-manifest.json` with page and
@@ -201,7 +203,8 @@ coordinated registration with #282's SDK/ecosystem inventory, not an empty scan.
 
 @KirilsTurkins owns framework/plugin upgrades and review. Verify official
 registry/upstream identities, update exact pins and the isolated lock in a PR,
-then run the complete commands above plus `npm audit`. No automatic dependency
+then run the complete commands above plus fresh npm/OSV checks of every locked
+dependency. No automatic dependency
 merge or workflow approval is added. Three narrow reviewed overrides remove
 actual lodash-es, serialize-javascript and SockJS/uuid advisory matches; the
 toolchain record names their exact upstream commits and compatibility rationale.
