@@ -127,7 +127,9 @@ pub(super) fn deletion(
             .expected_state_version
             .and_then(|value| value.checked_add(1))
             != Some(state)
-        || generation.checked_add(1) != Some(actual_generation)
+        || generation == 0
+        || actual_generation != generation
+        || actual_generation >= state
     {
         return Err(invalid_response());
     }

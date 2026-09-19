@@ -8,6 +8,10 @@ let calls = 0;
 export async function render(request: {path: string}, context: {principal: {subject: string}}) {
   calls++;
   if (calls !== 1 || SERVER_ONLY.charCodeAt(calls) !== 115) throw new Error('fresh-server-state-required');
+  if (request.path === '/exception') throw new Error('qualification-render-failure');
+  if (request.path === '/spin') {
+    for (;;) {}
+  }
   const name = request.path === '/large-hydration' ? 'x'.repeat(40000) : context.principal.subject;
   const html = await renderApplication(
     serverContext => bootstrapApplication(App, {providers: [provideZonelessChangeDetection(),

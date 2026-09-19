@@ -76,6 +76,7 @@ fn compact_capability_revokes_generation_and_owner_without_store_maps() {
             owner: Arc::clone(&owner),
             row: Arc::clone(&row),
             generation: 1,
+            projection: None,
         },
         None,
     )

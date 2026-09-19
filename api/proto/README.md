@@ -34,6 +34,10 @@ subset through a bounded loopback listener with configured credentials.
 Phase 3 [HTTP trigger management](../../docs/reference/http-triggers.md) now
 implements scoped Apply/Get/List/Delete and operation lookup on this listener.
 It requires exact publication, deployment revision and object-generation pins.
+The [componentless web methods](../../docs/reference/management-services.md#web-publication-and-preparation)
+add exact web publication/lifecycle control and one bounded shared preparation
+wait. These methods preserve the legacy release protocol and never turn a web
+receipt or digest into capsule admission authority.
 Other trigger kinds, the public application listener and clustered
 registration/watch remain separate later deliveries.
 

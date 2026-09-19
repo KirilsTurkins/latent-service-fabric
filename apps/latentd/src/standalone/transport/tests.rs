@@ -3,6 +3,7 @@ mod gates;
 mod network;
 mod ownership;
 mod shutdown;
+mod web_preparation;
 
 use std::future::Future;
 use std::sync::Arc;
