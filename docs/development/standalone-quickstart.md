@@ -1,5 +1,10 @@
 # Standalone echo quickstart
 
+For the task-oriented delivery/recovery learning path and exact executed-evidence
+boundary, start with [Deliver, invoke and recover a capsule](../learn/deliver-and-recover-a-capsule.md).
+Native rootless/server installation remains a separate
+[verified-bundle path](../installation.md), with no container-runtime prerequisite.
+
 The first sequence retains the Phase 1 trusted-local compatibility workflow.
 For authenticated packages, managed receipts, canary promotion and rollback,
 use the [bounded Phase 2 workflow](#bounded-phase-2-operator-workflow) below.
@@ -285,8 +290,9 @@ this bounded integration schedule only. The signed build observation is syntheti
 test data, not evidence of a real production build. Actual observed-build tests
 and historical Phase 1 measurements retain their separate purposes. The
 [Phase 2 completion review](../phase-2-completion.md) combines the relevant
-evidence and records the completed gate's limitations; Phase 3 providers remain
-planned. The retained passing run is a fixed integration observation, not a
+evidence and records the completed gate's limitations; this Phase 2 scenario
+does not qualify the additional Phase 3 provider/client/browser paths. The
+retained passing run is a fixed integration observation, not a
 zero-error availability guarantee. Its preceding unclassified `Unavailable`
 attempt remains in the [attempt ledger](../../benchmarks/phase2/2026-09-13/attempts.json).
 The supplied source commit identifies the binary build's base; run from a clean

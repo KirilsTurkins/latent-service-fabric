@@ -172,7 +172,10 @@ def package_inputs(directory: Path, profile: dict, source: Path, component: Path
     manifest["exports"] = [profile["contract"]]
     manifest["imports"] = [{"contract": profile["capability"], "optional": False}] if profile["capability"] else []
     limits = manifest["execution"]["limits"]
-    limits.update(cpuFuel=100_000_000 if profile["name"] in {"service", "callee"} else 1_000_000_000_000,
+    fuel = 100_000_000 if profile["name"] in {"service", "callee"} else 1_000_000_000_000
+    if profile["name"] in {"http", "blob"}:
+        fuel = 10_000_000_000
+    limits.update(cpuFuel=fuel,
                   memoryBytes=4_194_304 if profile["name"] in {"service", "callee"} else 16_777_216, wallTimeLimitMillis=5000,
                   childCalls=16 if profile["name"] == "service" else 0,
                   outboundRequests=8 if profile["name"] in {"http", "streaming", "blob", "secrets", "events"} else 0,

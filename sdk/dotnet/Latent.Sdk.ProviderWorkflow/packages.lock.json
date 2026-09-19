@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net8.0": {
+      "Google.Protobuf": {
+        "type": "Transitive",
+        "resolved": "3.31.1",
+        "contentHash": "gSnJbUmGiOTdWddPhqzrEscHq9Ls6sqRDPB9WptckyjTUyx70JOOAaDLkFff8gManZNN3hllQ4aQInnQyq/Z/A=="
+      },
+      "Grpc.Core.Api": {
+        "type": "Transitive",
+        "resolved": "2.71.0",
+        "contentHash": "QquqUC37yxsDzd1QaDRsH2+uuznWPTS8CVE2Yzwl3CvU4geTNkolQXoVN812M2IwT6zpv3jsZRc9ExJFNFslTg=="
+      },
+      "latent.sdk": {
+        "type": "Project"
+      },
+      "latent.sdk.transport": {
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.31.1, )",
+          "Grpc.Core.Api": "[2.71.0, )",
+          "Latent.Sdk": "[0.1.0-alpha.3, )"
+        }
+      }
+    }
+  }
+}

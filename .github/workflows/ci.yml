@@ -507,12 +507,14 @@ jobs:
           path: target/capsules/web-contract/component.wasm
           if-no-files-found: error
           retention-days: 1
-      - name: Retain bounded Phase 1 conformance diagnostics
+      - name: Retain bounded conformance and provider diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: phase-1-bounded-conformance-${{ github.sha }}
-          path: target/phase1-conformance/
+          path: |
+            target/phase1-conformance/
+            target/phase3-management/provider-receipt.json
           if-no-files-found: warn
           retention-days: 14
       - name: Retain Phase 1 measurement collector smoke diagnostics
@@ -567,7 +569,12 @@ jobs:
           python-version: 3.13.5
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version: 1.23.2
+          go-version: 1.27.1
+          cache-dependency-path: sdk/go/go.sum
+      - uses: bufbuild/buf-setup-action@a47c93e0b1648d5651a065437926377d060baa99 # v1
+        with:
+          version: 1.72.0
+          github_token: ${{ github.token }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24.19.0
@@ -579,7 +586,7 @@ jobs:
           java-version: "21.0.11+10.0.LTS"
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
-          dotnet-version: 8.0.423
+          dotnet-version: 8.0.425
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: "0.16.0"

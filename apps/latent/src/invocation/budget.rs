@@ -1,7 +1,11 @@
 use serde::Deserialize;
 
 use super::proto;
-use crate::{args::InvokeArgs, error::Failure, input};
+use crate::{
+    args::{InvokeArgs, InvokeBudgetProfile},
+    error::Failure,
+    input,
+};
 
 #[derive(Deserialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
@@ -71,8 +75,12 @@ pub(super) fn resolve(args: &InvokeArgs) -> Result<proto::ResourceBudget, Failur
         log_bytes: budget.log_bytes,
         effect_count: budget.effect_count,
     };
-    latent_wire::invocation::budget_from_proto(result)
-        .validate_phase1_request()
+    let profile = match args.budget_profile {
+        InvokeBudgetProfile::Phase1 => latent_core::BudgetProfile::Phase1,
+        InvokeBudgetProfile::Phase3 => latent_core::BudgetProfile::Phase3,
+    };
+    profile
+        .validate_request(&latent_wire::invocation::budget_from_proto(result))
         .map_err(|_| invalid())?;
     if result.cpu_fuel > 10_000_000_000
         || result.memory_bytes > 1024 * 1024 * 1024
@@ -87,5 +95,8 @@ pub(super) fn resolve(args: &InvokeArgs) -> Result<proto::ResourceBudget, Failur
 }
 
 fn invalid() -> Failure {
-    Failure::local("invalid-budget", "Invalid Phase 1 resource budget.")
+    Failure::local(
+        "invalid-budget",
+        "Invalid resource budget for the selected profile.",
+    )
 }

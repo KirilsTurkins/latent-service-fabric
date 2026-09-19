@@ -25,6 +25,7 @@ use super::{
 use crate::config::NodeSettings;
 
 mod control;
+mod recovery;
 #[cfg(test)]
 mod tests;
 
@@ -38,6 +39,7 @@ pub(super) struct Catalogs {
     rollouts: Option<super::rollouts::RolloutRuntime>,
     policies: Option<super::policies::PolicyRuntime>,
     capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
+    providers: Option<Box<super::providers::ProviderRuntime>>,
     clock: Arc<dyn ActivationClock>,
 }
 
@@ -71,6 +73,7 @@ impl Catalogs {
             || settings.audit.is_some() != self.audit.is_some()
             || settings.rollouts.is_some() != self.rollouts.is_some()
             || settings.capability_policies.is_some() != self.policies.is_some()
+            || settings.providers.is_some() != self.providers.is_some()
             || self.policies.as_ref().is_some_and(|owner| {
                 let handle = owner.handle();
                 !handle
@@ -149,6 +152,7 @@ impl Catalogs {
             rollouts: None,
             policies: None,
             capabilities: None,
+            providers: None,
             clock: Arc::new(SystemActivationClock),
         })
     }
@@ -221,6 +225,7 @@ impl Catalogs {
         });
         let mut rollouts = None;
         let mut policies = None;
+        let mut providers = None;
         let opened = async {
             let artifacts = Arc::new(if let Some(authority) = &supply_chain {
                 let authority: Arc<dyn latent_artifacts::AdmissionAuthority> =
@@ -274,6 +279,9 @@ impl Catalogs {
                 deployments
             };
             let deployments = Arc::new(deployments);
+            if settings.providers.is_none() && !deployments.binding_definitions()?.is_empty() {
+                return Err(mode_error());
+            }
             if let Some(settings) = settings.rollouts {
                 rollouts = Some(super::rollouts::RolloutRuntime::start(
                     deployments.clone(),
@@ -308,13 +316,31 @@ impl Catalogs {
                     std::time::Instant::now() + std::time::Duration::from_secs(30),
                 )
                 .await?;
-                latent_artifacts::reconcile_release_audit(&audit.handle(), artifacts.as_ref())
-                    .await?;
-                latent_capabilities::broker::reconcile_capability_audit(
+                recovery::reconcile(
                     &audit.handle(),
+                    artifacts.as_ref(),
                     std::time::Instant::now() + std::time::Duration::from_secs(30),
                 )
                 .await?;
+            }
+            if settings.providers.is_some() {
+                providers = Some(Box::new(
+                    super::providers::ProviderRuntime::open(
+                        settings,
+                        &artifacts,
+                        &deployments,
+                        policies
+                            .as_ref()
+                            .ok_or_else(mode_error)?
+                            .handle()
+                            .store()
+                            .clone(),
+                        audit.as_ref().ok_or_else(mode_error)?.handle(),
+                        clock.clone(),
+                        runtime.ok_or_else(mode_error)?.clone(),
+                    )
+                    .await?,
+                ));
             }
             Ok::<_, PlatformError>((artifacts, deployments))
         }
@@ -322,6 +348,11 @@ impl Catalogs {
         let (artifacts, deployments) = match opened {
             Ok(catalogs) => catalogs,
             Err(failure) => {
+                if let Some(providers) = &providers {
+                    let _ = providers
+                        .shutdown(std::time::Instant::now() + settings.shutdown_grace)
+                        .await;
+                }
                 if let Some(rollouts) = &rollouts {
                     let _ = rollouts.shutdown(settings.shutdown_grace).await;
                 }
@@ -347,7 +378,8 @@ impl Catalogs {
             audit,
             rollouts,
             policies,
-            capabilities: None,
+            capabilities: providers.as_ref().map(|owner| owner.runtime.clone()),
+            providers,
             clock,
         })
     }
@@ -398,6 +430,11 @@ impl StandaloneNode {
         let mut node = match Self::compose(&mut settings, &catalogs, clock) {
             Ok(node) => node,
             Err(failure) => {
+                if let Some(providers) = &catalogs.providers {
+                    let _ = providers
+                        .shutdown(std::time::Instant::now() + settings.shutdown_grace)
+                        .await;
+                }
                 if let Some(rollouts) = &catalogs.rollouts {
                     let _ = rollouts.shutdown(settings.shutdown_grace).await;
                 }
@@ -420,6 +457,7 @@ impl StandaloneNode {
         node.audit = catalogs.audit.take();
         node.rollouts = catalogs.rollouts.take();
         node.policies = catalogs.policies.take();
+        node.providers = catalogs.providers.take();
         if let Err(failure) =
             Box::pin(node.start_services(&settings, catalogs, control_runtime, threads)).await
         {
@@ -672,19 +710,14 @@ impl StandaloneNode {
                 ..LocalActivationServices::default()
             },
         )?;
-        if settings.budget_profile == latent_core::BudgetProfile::Phase3 {
-            if let Some(capabilities) = &catalogs.capabilities {
-                capabilities.install_local_services(
-                    manager.local_service_invoker(settings.admission.budget_ceiling.clone())?,
-                )?;
-            }
-        }
+        install_local_services(settings, catalogs, &manager)?;
         Ok(Self {
             transport: None,
             http: None,
             audit: None,
             rollouts: None,
             policies: None,
+            providers: None,
             supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),
             capabilities: super::CapabilityLifetime(catalogs.capabilities.clone()),
             cleanup: Some(ActivationCleanupOwner::start_with_observer(
@@ -711,6 +744,21 @@ impl StandaloneNode {
             cleanup_grace: settings.manager.cleanup_grace,
         })
     }
+}
+
+fn install_local_services(
+    settings: &NodeSettings,
+    catalogs: &Catalogs,
+    manager: &LocalActivationManager,
+) -> Result<(), PlatformError> {
+    if settings.budget_profile == latent_core::BudgetProfile::Phase3 {
+        if let Some(capabilities) = &catalogs.capabilities {
+            capabilities.install_local_services(
+                manager.local_service_invoker(settings.admission.budget_ceiling.clone())?,
+            )?;
+        }
+    }
+    Ok(())
 }
 
 fn factory(

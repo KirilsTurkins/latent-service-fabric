@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from tools.security_advisories import query_osv, rustsec
 from tools.security_common import SecurityError, digest
-from tools.security_inventory import Package, cargo_inventory, is_manifest
+from tools.security_inventory import Package, cargo_inventory, inventory, is_manifest
 from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, legacy_manifest, maven_packages, nuget_packages
 
 
@@ -181,6 +181,119 @@ class SdkGraphTests(unittest.TestCase):
             with self.subTest(content=content), self.assertRaises(SecurityError):
                 nuget_packages(self.root, entry)
 
+    def runtime_fixture(self, properties: str = "", framework: str = "") -> dict:
+        entry, _ = self.nuget_fixture()
+        original = (self.root / "Client.csproj").read_text()
+        self.write("Client.csproj", original.replace("</PropertyGroup>", properties + "</PropertyGroup>")
+                   .replace("</ItemGroup>", framework + "</ItemGroup>"))
+        return {**entry, "runtime_identifier": "linux-x64"}
+
+    def test_explicit_dotnet_frameworks_are_pinned_visible_and_never_evaluated(self) -> None:
+        entry = self.runtime_fixture('<RuntimeFrameworkVersion>8.0.31</RuntimeFrameworkVersion><RollForward>Disable</RollForward>',
+                                     '<FrameworkReference Include="Microsoft.AspNetCore.App" />')
+        with patch("tools.security_common.run", side_effect=AssertionError("no MSBuild evaluation")):
+            packages = set(nuget_packages(self.root, entry))
+        self.assertEqual(packages, {("NuGet", "Fixture.Protocol", "1.2.3"), ("NuGet", "Fixture.Codec", "2.3.4"),
+                                   ("NuGet", "Microsoft.NETCore.App.Ref", "8.0.31"),
+                                   ("NuGet", "Microsoft.NETCore.App.Runtime.linux-x64", "8.0.31"),
+                                   ("NuGet", "Microsoft.AspNetCore.App.Ref", "8.0.31"),
+                                   ("NuGet", "Microsoft.AspNetCore.App.Runtime.linux-x64", "8.0.31")})
+
+    def test_runtime_metadata_does_not_allow_inference_floating_versions_or_frameworks(self) -> None:
+        version = '<RuntimeFrameworkVersion>8.0.31</RuntimeFrameworkVersion>'
+        roll = '<RollForward>Disable</RollForward>'
+        for properties, framework in (
+            (version, ''), (roll, ''), (version + version + roll, ''),
+            (version + roll + roll, ''), (version.replace('8.0.31', '8.0.*') + roll, ''),
+            (version.replace('8.0.31', '$(Version)') + roll, ''), (version.replace('8.0.31', '9.0.1') + roll, ''),
+            (version + roll.replace('Disable', 'LatestPatch'), ''),
+            ('', '<FrameworkReference Include="Microsoft.AspNetCore.App" />'),
+            (version + roll, '<FrameworkReference Include="Microsoft.WindowsDesktop.App" />'),
+            (version + roll, '<FrameworkReference Include="Microsoft.AspNetCore.App" Version="8.0.31" />'),
+            (version + roll, '<FrameworkReference Include="Microsoft.AspNetCore.App" Condition="true" />'),
+            (version + roll, '<FrameworkReference Include="Microsoft.AspNetCore.App" /><FrameworkReference Include="Microsoft.AspNetCore.App" />'),
+        ):
+            entry = self.runtime_fixture(properties, framework)
+            with self.subTest(properties=properties, framework=framework), self.assertRaises(SecurityError):
+                nuget_packages(self.root, entry)
+        for platform in (None, "win-x64", "$(RuntimeIdentifier)"):
+            entry = self.runtime_fixture(version + roll)
+            entry["runtime_identifier"] = platform
+            with self.subTest(platform=platform), self.assertRaises(SecurityError):
+                nuget_packages(self.root, entry)
+
+    def test_nuget_new_properties_cannot_hide_msbuild_imports_conditions_or_metadata(self) -> None:
+        for original, replacement in (
+            ('<Project Sdk="Microsoft.NET.Sdk">', '<Project Sdk="Microsoft.NET.Sdk" InitialTargets="Hidden">'),
+            ('<PropertyGroup>', '<PropertyGroup Condition="true">'),
+            ('</PropertyGroup>', '<Import Project="hidden.props" /></PropertyGroup>'),
+            ('</PropertyGroup>', '<RuntimeFrameworkVersion Condition="true">8.0.31</RuntimeFrameworkVersion></PropertyGroup>'),
+            ('</PropertyGroup>', '<RuntimeFrameworkVersion><PackageReference Include="Hidden" Version="1.0.0" /></RuntimeFrameworkVersion></PropertyGroup>'),
+            ('Include="Fixture.Protocol"', 'Include="Fixture.Protocol" Update="Hidden"'),
+            ('Include="../Models/Models.csproj"', 'Include="../Models/Models.csproj" AdditionalProperties="Hidden=1"'),
+            ('Include="../Models/Models.csproj"', 'Include="$(Hidden)/Models.csproj"'),
+            ('Include="../Models/Models.csproj"', 'Include="../*/Models.csproj"'),
+        ):
+            entry, _ = self.nuget_fixture()
+            source = (self.root / "Client.csproj").read_text()
+            self.write("Client.csproj", source.replace(original, replacement))
+            with self.subTest(replacement=replacement), self.assertRaises(SecurityError):
+                nuget_packages(self.root, entry)
+
+    def test_nuget_runtime_pins_do_not_replace_missing_locks_or_project_edges(self) -> None:
+        entry, lock = self.nuget_fixture()
+        del lock["dependencies"]["net8.0"]["models"]
+        self.write("packages.lock.json", lock)
+        with self.assertRaisesRegex(SecurityError, "incomplete-nuget-project-graph"):
+            nuget_packages(self.root, entry)
+        entry = self.runtime_fixture('<RuntimeFrameworkVersion>8.0.31</RuntimeFrameworkVersion><RollForward>Disable</RollForward>')
+        (self.root / "packages.lock.json").unlink()
+        with self.assertRaises(OSError):
+            nuget_packages(self.root, entry)
+
+    def test_dotnet_configuration_and_manifest_are_reviewed_byte_identities(self) -> None:
+        entry, _ = self.nuget_fixture()
+        project = (self.root / "Client.csproj").read_bytes()
+        self.write("Transport/Client.csproj", project.decode())
+        entry.update(path="Transport/Client.csproj", manifest_sha256=digest(project))
+        self.write("global.json", {"sdk": {"version": "8.0.425", "rollForward": "disable"}})
+        self.write("nuget.transport.config", '<configuration><packageSources><clear /></packageSources></configuration>')
+        entry["configuration"] = [{"path": path, "sha256": digest((self.root / path).read_bytes())}
+                                  for path in ("global.json", "nuget.transport.config")]
+        self.assertEqual(len(nuget_packages(self.root, entry)), 2)
+        for path in ("global.json", "nuget.transport.config", "Transport/Client.csproj"):
+            original = (self.root / path).read_bytes()
+            (self.root / path).write_bytes(original + b" ")
+            with self.subTest(path=path), self.assertRaises(SecurityError):
+                nuget_packages(self.root, entry)
+            (self.root / path).write_bytes(original)
+        entry["configuration"].pop()
+        with self.assertRaisesRegex(SecurityError, "invalid-dotnet-configuration"):
+            nuget_packages(self.root, entry)
+
+    def test_actual_dotnet_projects_have_complete_registered_package_and_runtime_graphs(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        packages, records = inventory(root)
+        observed = {(item.name, item.version) for item in packages if item.path.startswith("sdk/dotnet/")}
+        self.assertEqual(observed, {("Google.Protobuf", "3.31.1"), ("Grpc.Core.Api", "2.71.0"), ("Grpc.Tools", "2.71.0"),
+                                   ("Microsoft.NETCore.App.Ref", "8.0.31"), ("Microsoft.NETCore.App.Runtime.linux-x64", "8.0.31"),
+                                   ("Microsoft.AspNetCore.App.Ref", "8.0.31"), ("Microsoft.AspNetCore.App.Runtime.linux-x64", "8.0.31")})
+        self.assertEqual(sum(item["coverage"] == "OSV" for item in records if item["path"].startswith("sdk/dotnet/")), 3)
+
+    def test_dotnet_legacy_absence_cannot_hide_partial_transport_or_orphan_configuration(self) -> None:
+        from tools.security_common import tracked_paths
+        root = Path(__file__).resolve().parents[2]
+        owned = ("sdk/dotnet/Latent.Sdk.Transport/", "sdk/dotnet/Latent.Sdk.Transport.Tests/", "sdk/dotnet/Latent.Sdk.ProviderWorkflow/")
+        config = {"sdk/dotnet/global.json", "sdk/dotnet/nuget.transport.config"}
+        legacy = [path for path in tracked_paths(root) if not path.startswith(owned) and path not in config]
+        with patch("tools.security_inventory.tracked_paths", return_value=legacy):
+            packages, records = inventory(root)
+        self.assertFalse(any(item.path.startswith("sdk/dotnet/") for item in packages))
+        self.assertEqual(sum(item["coverage"] == "not-shipped-at-source-revision" and item["path"].startswith("sdk/dotnet/") for item in records), 3)
+        for extra in (*config, "sdk/dotnet/Latent.Sdk.Transport/README.md"):
+            with self.subTest(extra=extra), patch("tools.security_inventory.tracked_paths", return_value=[*legacy, extra]), self.assertRaises(SecurityError):
+                inventory(root)
+
     def test_c_unknown_dependency_url_or_source_commit_fails(self) -> None:
         for failure in ("extra", "url", "commit", "purl", "digest"):
             lock = self.c_fixture()
@@ -241,7 +354,7 @@ class SdkGraphTests(unittest.TestCase):
 
     def test_custom_resolved_graph_and_nuget_sources_select_dependency_scan(self) -> None:
         for path in ("sdk/go/dependencies.lock.json", "sdk/java-client/dependencies.lock.json", "sdk/c/dependencies.lock.json",
-                     "sdk/dotnet/nuget.transport.config", "website/package-lock.json"):
+                     "sdk/dotnet/nuget.transport.config", "sdk/dotnet/global.json", "website/package-lock.json"):
             with self.subTest(path=path):
                 self.assertTrue(is_manifest(path))
 

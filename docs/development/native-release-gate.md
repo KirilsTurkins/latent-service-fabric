@@ -6,6 +6,23 @@ claim that a binary release or its full acceptance evidence already exists.
 The parent integrator chooses the final reviewed commit and new version only
 after exact-head CI. Do not move the historical source-only `0.1.0-alpha.3` tag.
 
+## Unpublished native predecessor
+
+The reviewed source version `0.1.0-alpha.4-rc.1` is the intended unpublished
+foundation for a real native upgrade pair. Its compatibility inventory deliberately
+has no predecessor: this is not an assertion that source-only alpha.3 installations
+can migrate. The workspace and isolated native-fixture lockfiles carry the same
+new local crate version without updating third-party package selections.
+
+After this exact source passes maintained CI and review, the integrator can create
+its immutable annotated tag, commission the release workflow on the maintained
+default branch, and dispatch that tag with `publish=false`. The resulting
+authenticated archive and two-profile VM receipts are prerequisites for recording
+the exact predecessor version and source commit in the later alpha.4 source.
+Only that genuinely distinct version pair can qualify compatible upgrade and
+unsupported downgrade rejection. No tag, archive publication, upgrade receipt or
+Phase 3 completion is implied by this version-preparation commit.
+
 ## Publisher identity and offline verification
 
 The publisher is `KirilsTurkins/latent-service-fabric`, specifically

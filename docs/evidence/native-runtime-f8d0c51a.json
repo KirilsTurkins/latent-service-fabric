@@ -1,0 +1,132 @@
+{
+  "schemaVersion": "latent.native-candidate-evidence.v1",
+  "scope": "same-source-candidate-not-complete-release-acceptance",
+  "sourceCommit": "f8d0c51a9a76bf123fa8b397fb3a0e15099cd3f5",
+  "harnessSourceCommit": "f8d0c51a9a76bf123fa8b397fb3a0e15099cd3f5",
+  "version": "0.1.0-alpha.3",
+  "historicalReleaseChanged": false,
+  "frozenAtUtc": "2026-09-19T16:21:28.9645254Z",
+  "frozenHandoffSha256": "57d7b12a284c084dd5fadea05954a47bb5a0cad3b76685a5fc02945721c24bad",
+  "handoffUrl": "https://github.com/KirilsTurkins/latent-service-fabric/pull/360#issuecomment-5743451935",
+  "ci": {
+    "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35452602669",
+    "conclusion": "success",
+    "workflow": ".github/workflows/ci.yml"
+  },
+  "native": {
+    "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35452652006",
+    "conclusion": "success",
+    "workflow": ".github/workflows/native-runtime.yml",
+    "focusedLinuxTestsPassed": 37,
+    "focusedLinuxTestsSkipped": 0
+  },
+  "securityBoundary": {
+    "existingRustSecRun": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35452602675",
+    "existingRustSecConclusion": "success",
+    "allLockCoverageClaimed": false,
+    "wholeTreeAdvisoryClearanceClaimed": false,
+    "integrationRequirement": "PR371 isolated native fixture manifest/lock registration and all-lock RustSec; integrated source and renderer advisory remediation need their own checks"
+  },
+  "archive": {
+    "name": "lsf-0.1.0-alpha.3-x86_64-unknown-linux-gnu.tar.gz",
+    "sha256": "6deac19f52777453ce40514ca51bae8671e39041df2afdf23100e60b4eb9073a",
+    "size": 26470029,
+    "files": 444
+  },
+  "engine": {
+    "compilerSha256": "e8e9f53454cbce46518aac57ee08957b8dbdcca5f20f11e9becae1840c7f8485",
+    "dynamicDependencies": ["ld-linux-x86-64.so.2", "libc.so.6", "libgcc_s.so.1", "libm.so.6"],
+    "hostAbiProfile": "lsf-host-abi-phase3-v4",
+    "wasmtimeVersion": "47.0.4"
+  },
+  "toolchain": {
+    "lockSha256": "e88a736fd5ecbed970b9da2defbb4c5a51d09c9e84c92560e3163f3f286fc1c3",
+    "rust": "1.97.1"
+  },
+  "authentication": {
+    "attestationSha256": "dee248d0b5999a317cc7593c12c872d84dd1bcb542b69fb1457a30848314be8a",
+    "checksumsSha256": "fb75c216158d7f39b24dd427ea025e51307af5c45d61fc41aabbf40ccb92be14",
+    "githubHostedRunnerRequired": true,
+    "issuer": "https://token.actions.githubusercontent.com",
+    "method": "github-artifact-attestation",
+    "policy": {
+      "purpose": "candidate",
+      "repository": "KirilsTurkins/latent-service-fabric",
+      "schemaVersion": "latent.native-publisher-policy.v1",
+      "sourceCommit": "f8d0c51a9a76bf123fa8b397fb3a0e15099cd3f5",
+      "sourceRef": "refs/heads/feat/308-native-runtime-bundle",
+      "version": "0.1.0-alpha.3",
+      "workflow": ".github/workflows/native-runtime.yml"
+    },
+    "predicateType": "https://slsa.dev/provenance/v1",
+    "trustedRootSha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+    "verifierSha256": "553949e2efa12842771efe6012aa4de21f1d591530ec17fc435f610f10e017ee",
+    "verifierVersion": "2.100.0"
+  },
+  "environment": {
+    "distribution": "ubuntu-24.04",
+    "imageUrl": "https://cloud-images.ubuntu.com/noble/20260911/noble-server-cloudimg-amd64.img",
+    "imageSha256": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+    "hostKernel": "6.17.0-1022-azure",
+    "guestKernel": "6.8.0-139-generic",
+    "guestPython": "3.12.3",
+    "acceleration": "kvm",
+    "guestCompilerRequired": false,
+    "guestContainerRuntimeRequired": false,
+    "noGuestPackageInstallation": true,
+    "ghTrustedBeforeBundle": true,
+    "sshHostKeyPinnedBeforeBoot": true
+  },
+  "profiles": {
+    "local-experimental-v1": {
+      "artifactName": "native-runtime-vm-local-experimental-v1-f8d0c51a9a76bf123fa8b397fb3a0e15099cd3f5",
+      "receiptSha256": "6f6176999aa4432e076e5285886ce69d61ed5883617301690a5148969d756a56",
+      "passed": true,
+      "acceptanceComplete": false,
+      "gaps": ["declared-compatible-native-version-pair-not-yet-selected"],
+      "initialBootId": "189c5ae4-9631-4839-8dec-78217a4c3121",
+      "rebootedBootId": "e1a5e96e-1fd9-4d7c-aa0a-cfbb435469b2",
+      "passedPhases": ["initial", "retained", "rootless"],
+      "retainedPublicationId": "publication:sha256:2bc0504805fb80bf33bc50b7d9d41de8a1b6b149a587b20cb8ea5c4cdba0f4c0",
+      "rootlessUid": 1000
+    },
+    "external-capsule-v1": {
+      "artifactName": "native-runtime-vm-external-capsule-v1-f8d0c51a9a76bf123fa8b397fb3a0e15099cd3f5",
+      "receiptSha256": "8ce15d6b1d3005efa24d5c91bc529cd5a25eb46ab5a9124206e5a1211e0fe75e",
+      "passed": true,
+      "acceptanceComplete": false,
+      "gaps": ["declared-compatible-native-version-pair-not-yet-selected"],
+      "initialBootId": "27ad0a0a-f189-4ae5-83cb-f966d54b0214",
+      "rebootedBootId": "3bf11005-8933-4815-ab92-74de47ee08c5",
+      "passedPhases": ["initial", "retained"],
+      "retainedPublicationId": "publication:sha256:19812b93be232b41b81dc271581d6ffdd365a4459ab1f1dfc54c5b18a6ce57ef"
+    }
+  },
+  "executedScope": [
+    "offline publisher authentication before downloaded bootstrap with tamper, unsigned, wrong repository and wrong source rejection",
+    "protected credentials, exact AOT key preservation and real isolated external-profile compiler",
+    "actual packaged echo publication, deployment and invocation through non-root loopback systemd node",
+    "same-version process, configuration, credentials, key and publication preservation",
+    "real changed boot identity and retained invocation without republishing",
+    "invocation-scoped clean stop and compiler/process reaping",
+    "stopped CAS-hardlink-preserving backup, corrupt configuration denial and full-set restore",
+    "removal retaining state, reinstall recovering exact publication and separately confirmed resumable purge",
+    "rootless foreground invocation, live-removal exclusion, clean stop and removal/purge without a service"
+  ],
+  "independentWindowsVerification": {
+    "ghVersion": "2.96.0",
+    "exactCertificateIdentityAccepted": true,
+    "wrongSourceDigestRejected": true,
+    "authenticatedAssetHashesChecked": 3,
+    "networkIsolationClaimed": false,
+    "downloadedInstallerExecuted": false
+  },
+  "notExecuted": [
+    "genuine 0.1.0-alpha.4-rc.1 to 0.1.0-alpha.4 compatible upgrade in a VM",
+    "unsupported cross-version binary downgrade rejection in a VM",
+    "release workflow tag identity qualification",
+    "final integrated or versioned source qualification",
+    "release publication"
+  ],
+  "secretsRetained": false
+}
