@@ -86,7 +86,7 @@ manifests without running package managers, builds, setup scripts or SDK code.
 | Go client and generator modules | OSV for the complete recorded `go list -m -json all` graph and its exact Go standard-library version; normalized manifest/sum hashes, per-module checksums and generator bindings must agree |
 | Java client and generators | OSV Maven coordinates for every pinned runtime/generator archive, including supported platforms; the reviewed Gradle manifest hash binds the data-only graph to its build logic |
 | .NET projects | Registered transport projects require resolved NuGet locks, exact direct versions, complete transitive edges and content hashes; only reviewed exact legacy project hashes establish no-external-package status |
-| Native C transport | OSV source-commit queries for pinned nghttp2, nanopb and protoc, plus exact PyPI generator/test versions; release archives also require digests and canonical upstream URLs. Upstream native advisory review remains necessary |
+| Native C transport | OSV source-commit queries for pinned nghttp2, its bundled sfparse runtime, nanopb and protoc, plus exact PyPI generator/test versions; release archives also require digests and canonical upstream URLs. Upstream native advisory review remains necessary |
 | C guest and operating-system libraries | No independent package-manager graph; platform C library, external toolchain and generated ABI review remain separate |
 
 Missing locks, empty resolved graphs, manifest/lock drift, unreviewed Git/private
@@ -134,6 +134,10 @@ not repository files or credentials. Commit-query results retain the repository
 identity in local findings; an empty response is not proof that every upstream
 native advisory is represented by OSV. Native dependency upgrades still require
 the SDK maintainer's upstream advisory and archive-to-source identity review.
+The nghttp2 graph must include exactly its reviewed sfparse source and both
+bundled file hashes. Removing that runtime dependency, adding an unknown bundle
+or changing its source/file shape fails the scan. The ordinary C preparation
+step separately checks those hashes against the authenticated release archive.
 Responses require a current HTTP Date (within one hour), exactly one result per
 query and no incomplete pagination, errors or unknown result fields. Transport,
 schema and freshness failures are not converted into an empty success. An empty
