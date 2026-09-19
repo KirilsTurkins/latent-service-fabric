@@ -4,9 +4,9 @@ from __future__ import annotations
 import json
 import time
 
-from tools.phase2_operator_process import Process, require
+from tools.phase2_operator_process import Process, require, write_json
 from tools.phase3_web_scenario import (
-    deploy, http_response, idle_inventory, invocation_arguments, invoke, prepare,
+    deploy, deployment_manifest, http_response, idle_inventory, invocation_arguments, invoke, prepare,
     publication_receipt, publish, trigger,
 )
 
@@ -30,7 +30,7 @@ def admission(client, fixture):
                 and {key: value for key, value in replay.items() if key != "replayed"}
                 == {key: value for key, value in receipt.items() if key != "replayed"}, "web-publish-replay")
         lookup = client.call("web", "operation", "publish-" + name)
-        require(lookup["outcomeKnown"] and lookup["data"]["operation"] == receipt,
+        require(lookup["outcomeKnown"] and lookup["data"]["operation"] == replay,
                 "web-operation-durable-identity")
         publications[name] = receipt["publication"]["id"]
     require(publications["angular"] != publications["alternate"], "web-publication-collapsed")
@@ -103,11 +103,12 @@ def cancel_render(client, record, activation, disconnect=False):
             process.close()
         else:
             result = client.call("activation", "cancel", activation, "--reason", "T1 qualification")
-            require(result["outcomeKnown"], "angular-cancellation-uncertain")
+            require(result["outcomeKnown"] and result["data"]["disposition"] == "accepted",
+                    "angular-cancellation-uncertain")
             finished = process.complete(min(client.deadline, time.monotonic() + 8))
             response = json.loads(finished.stdout)
             require(finished.returncode == 4 and response["category"] == "platform-failure"
-                    and response["error"]["code"] == "Cancelled", "angular-cancelled-result")
+                    and response["error"]["code"] == "cancelled", "angular-cancelled-result")
         terminal = None
         for _ in range(32):
             terminal = client.call("activation", "get", activation)["data"]
@@ -155,6 +156,7 @@ def renewal(client, fixture, record, publication, deployment):
 
 def independent_publications(client, records, publications, deployment):
     alternate = publications["alternate"]
+    reject_staged_web_rollout(client, records["alternate"], alternate, deployment)
     prepare(client, alternate, 1)
     candidate = deploy(client, records["alternate"], alternate, "select-alternate", deployment["generation"])
     invoke(client, records["alternate"], alternate, "angular-selected-alternate")
@@ -170,8 +172,23 @@ def independent_publications(client, records, publications, deployment):
     return reverted, rendered["revision"], revoked
 
 
+def reject_staged_web_rollout(client, record, publication, deployment):
+    candidate = client.directory / "unsupported-web-rollout.json"
+    write_json(candidate, deployment_manifest(record, publication, "web-candidate", 2500))
+    before = client.call("deployment", "get", "web-candidate", "--operation-snapshot", codes=(6,))["data"]
+    result = client.call("rollout", "start", "web-unsupported", "--base", "angular",
+                         "--expected-base-generation", deployment["generation"], "--candidate", candidate,
+                         "--weights", "2500,10000", "--operation-id", "reject-web-rollout",
+                         "--expected-revision", "0", codes=(4,))
+    require(result["outcomeKnown"] and result["error"]["code"] == "incompatible-contract",
+            "web-staged-rollout-not-explicitly-unsupported")
+    after = client.call("deployment", "get", "web-candidate", "--operation-snapshot", codes=(6,))["data"]
+    require(after["deployment"] is None and after["stateVersion"] == before["stateVersion"],
+            "unsupported-web-rollout-mutated-catalog")
+
+
 def http_rendering(client, node, record, publication, deployment, revision):
-    for host in ("alice.angular.test", "bob.angular.test"):
+    for host in ("alice.angular.test", "bob.angular.test", "foreign.angular.test"):
         trigger(client, record, publication, deployment, revision, host)
     html_by_subject = {}
     for host, subject, forbidden in (("alice.angular.test", "Alice&lt;unsafe&gt;", "Hello Bob"),
@@ -182,7 +199,7 @@ def http_rendering(client, node, record, publication, deployment, revision):
         require("ngh=" in html and subject in html and forbidden not in html
                 and "lsf-private-server-fixture-234" not in html, "http-render-principal-or-private-state")
         html_by_subject[host] = html
-    http_response(client, node, "foreign.angular.test", expected=503)
+    http_response(client, node, "foreign.angular.test", expected=403)
     idle_inventory(client)
     return {"responses": 3, "isolatedPrincipals": 2, "foreignTenantDenied": True,
             "hydratedMarkup": all("ngh=" in html for html in html_by_subject.values())}

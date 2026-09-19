@@ -43,9 +43,11 @@ using the canonical WIT JSON positional request and buffered response.
 ## Separate client/node runner
 
 ```sh
+cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked \
+  --target-dir /target/angular-compiler
 python3 tools/run_angular_t1_workflow.py \
   --cli /target/debug/latent --node /target/debug/latentd \
-  --compiler /target/tools/latent-aot-compiler \
+  --compiler /target/angular-compiler/release/latent-aot-compiler \
   --fixture-root /target/angular-fixture
 ```
 
@@ -57,6 +59,9 @@ directories, at most 256 CLI processes over 1200 seconds, finite audit/status
 queries, bounded response captures and a compact redacted receipt. A cold
 `web prepare` may wait at most 300000 milliseconds. Guest invocations remain
 bounded to five seconds; preparation does not allocate an application Store.
+The optimized compiler avoids the observed cold debug-compiler timeout without
+increasing that fixed preparation allowance. A changed adapter/profile digest
+requires new produced bytes and native qualification, not an old cache receipt.
 
 Explicit deployment selectors resolve either the existing capsule record or the
 exact tenant-scoped web record. Web normalization returns only the associated
@@ -81,6 +86,8 @@ Native HTTP rendering is not a real-browser hydration claim.
 
 The actual maintained build and real-clock signed exporter pass locally. CLI,
 transport, policy and artifact tests exercise the bounded management surfaces.
+Protected configuration, enforced evidence admission, isolated native preparation
+and exact selected deployment have also passed in the separate-process runner.
 The end-to-end T1 compiler/cache/render runner is still under qualification;
 the published runtime remains T0-only. No interrupted Docker run is counted as
 a pass. Immutable asset delivery depends on #336 integration and the browser

@@ -1,4 +1,5 @@
 """Bounds and fixture identities, not a substitute for real T1 qualification."""
+import base64
 import copy
 import json
 from pathlib import Path
@@ -10,8 +11,8 @@ from unittest.mock import Mock
 
 from tools.phase2_operator_process import WorkflowError, read_json, write_json
 from tools.phase3_web_scenario import (
-    MIB, PREPARATION_MILLIS, budget, configure_angular_node, deployment_manifest,
-    fixture_metadata, invocation_arguments, prepare, tree_inventory,
+    MEDIA, MIB, PREPARATION_MILLIS, budget, configure_angular_node, deployment_manifest,
+    fixture_metadata, invocation_arguments, invoke, prepare, tree_inventory,
 )
 
 
@@ -82,6 +83,8 @@ class AngularT1WorkflowTests(unittest.TestCase):
             self.assertNotIn("principal", request[0])
             self.assertNotIn("tenant", request[0])
             self.assertEqual(request[0]["path"], "/spin")
+            self.assertEqual(request[0]["query"], {"none": None})
+            self.assertEqual(request[0]["media-type"], {"none": None})
             self.assertEqual(arguments[:3], ["--rpc-timeout-ms", "5000", "invoke"])
             self.assertNotIn("outboundRequests", read_json(root / "cancel-budget.json"))
 
@@ -99,6 +102,24 @@ class AngularT1WorkflowTests(unittest.TestCase):
             expired.deadline = time.monotonic() - 1
             with self.assertRaisesRegex(WorkflowError, "workflow-deadline"):
                 tree_inventory(root, expired)
+
+    def test_render_checks_the_actual_cli_publication_pin(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            selected = "publication:sha256:" + "a" * 64
+            record = {"service": "angular-hello", "componentDigest": "sha256:" + "b" * 64}
+            html = b'<h1 ngh="0">workflow-operator</h1>'
+            values = [{"status": 200, "body-base64": base64.b64encode(html).decode()}]
+            caller = client(root)
+            caller.call.return_value = {"outcomeKnown": True, "data": {
+                "payload": {"encoding": "base64", "mediaType": MEDIA,
+                            "data": base64.b64encode(json.dumps(values).encode()).decode()},
+                "resolvedRevision": {"publicationId": selected, "releaseDigest": record["componentDigest"],
+                                     "revisionId": "revision"}}}
+            self.assertEqual(invoke(caller, record, selected, "first")["revision"], "revision")
+            caller.call.return_value["data"]["resolvedRevision"]["publicationId"] = None
+            with self.assertRaisesRegex(WorkflowError, "selected-render-publication"):
+                invoke(caller, record, selected, "second")
 
     def test_fixture_requires_actual_observation_and_independent_package_identity(self):
         metadata = {"schemaVersion": "latent.phase3.angular.fixture.v1", "tenant": "tests",

@@ -33,6 +33,10 @@ from tools.phase3_web_scenario import (
 from tools.run_security_profile_workflow import command, rejection_checks, replace_config
 
 
+def report_stage(name):
+    print("Angular T1: " + name, file=sys.stderr, flush=True)
+
+
 def restarted(client, args, node_root, config, original):
     ready_after = time.monotonic() + 6
     weakened = copy.deepcopy(original)
@@ -70,6 +74,7 @@ def run(args):
         before = tree_inventory(node_root, client)
         profile = command(client, args.node, config, "check-config", True)
         require(tree_inventory(node_root, client) == before, "angular-check-config-created-storage")
+        report_stage("protected-configuration-checked")
         node = None
         shutdown = []
         try:
@@ -78,6 +83,7 @@ def run(args):
             foreign = foreign_profile(client, operator)
             publications = admission(client, args.fixture_root)
             tenant_denial(client, foreign, publications["angular"])
+            report_stage("signed-admission-and-tenant-checks-complete")
             dormant = idle_inventory(client)
             require(dormant["cache"]["entries"] == "0", "publication-eagerly-prepared-renderer")
             started = time.monotonic()
@@ -87,13 +93,17 @@ def run(args):
             require(prepared["cache"]["entries"] == "1"
                     and int(prepared["cache"]["compiledImageBytes"]) > 0, "angular-native-cache-empty")
             cold_native = native_cache_audit(client, records["angular"], "cache-miss")
+            report_stage("isolated-cold-preparation-complete")
             deployment = deploy(client, records["angular"], publications["angular"], "deploy-angular")
+            report_stage("selected-deployment-applied")
             invoke(client, records["angular"], publications["angular"], "angular-cold")
             invoke(client, records["angular"], publications["angular"], "angular-warm")
             cancellations = failure_recovery(client, records["angular"], publications["angular"])
+            report_stage("render-failure-and-cancellation-recovery-complete")
             deployment, renewed = renewal(client, args.fixture_root, records["angular"], publications["angular"], deployment)
             deployment, revision, revoked = independent_publications(client, records, publications, deployment)
             http = http_rendering(client, node, records["angular"], publications["angular"], deployment, revision)
+            report_stage("selected-lifecycle-and-http-checks-complete")
             audit_pages(client, {"publish-angular", "publish-alternate", "renew-angular", "revoke-alternate"})
             before_restart = idle_inventory(client)
             stop(client, node)
@@ -115,6 +125,7 @@ def run(args):
             native_after = {name: tree_inventory(node_root / name, client)
                             for name in ("native-blobs", "native-receipts")}
             require(native_before == native_after, "native-cache-restart-identity")
+            report_stage("authenticated-cache-and-restart-checks-complete")
             require(tree_inventory(args.fixture_root, client) == original_fixture, "actual-angular-fixture-mutated")
             require(client.calls <= 256, "angular-cli-call-bound")
             result = {"schemaVersion": "latent.angular.t1.workflow.v1", "passed": True,
@@ -123,6 +134,7 @@ def run(args):
                       "profile": profile, "rejectedConfigCommands": rejected + 2,
                       "rejectedAdmissionCases": 3, "publications": publications, "renewal": renewed,
                       "independentRevocation": revoked, "preparationMillis": preparation_millis,
+                      "unsupportedStagedRolloutRejected": True, "selectedDeploymentCasRollback": True,
                       "dormant": dormant, "prepared": prepared, "beforeRestart": before_restart,
                       "afterRestart": after_restart, "cancellations": cancellations, "http": http,
                       "nativeCacheFilesUnchangedOnRestart": True, "cliProcesses": client.calls,

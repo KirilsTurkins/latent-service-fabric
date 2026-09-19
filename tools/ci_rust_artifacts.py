@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run selected ignored libtests from the current job's successful Cargo inventory.
+"""Run selected ignored Rust tests from the current job's successful Cargo inventory.
 
 The workflow must create the inventory with the ordinary workspace/all-targets/
 all-features `cargo test --no-run --message-format=json` invocation on this checkout.
@@ -42,9 +42,14 @@ class Suite:
     filter: str
     names: frozenset[str]
     exact: bool
+    kind: str = "lib"
 
 
 SUITES = {
+    "angular-t1-fixture": Suite(
+        "apps/latentd/Cargo.toml", "phase3_angular_fixture", "tests/phase3_angular_fixture.rs",
+        "export_actual_angular_t1_fixtures",
+        frozenset({"export_actual_angular_t1_fixtures"}), True, "test"),
     "operator-fixture": Suite(
         "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
         POLICY_PREFIX + "export_operator_workflow_fixture",
@@ -149,10 +154,11 @@ def read_inventory(path: Path, repo: Path, suite: Suite) -> Artifact:
                 profile = message.get("profile")
                 if not isinstance(target, dict) or not isinstance(profile, dict):
                     raise ArtifactError("invalid-artifact-target")
-                if target.get("kind") != ["lib"] or profile.get("test") is not True:
+                if target.get("kind") != [suite.kind] or profile.get("test") is not True:
                     continue
-                if (target.get("name") != suite.target
-                        or absolute_path(target.get("src_path")) != expected_source.resolve(strict=True)):
+                if target.get("name") != suite.target:
+                    continue
+                if absolute_path(target.get("src_path")) != expected_source.resolve(strict=True):
                     raise ArtifactError("wrong-libtest-owner")
                 executable = absolute_path(message.get("executable"))
                 if not executable.is_relative_to(executable_root) or not executable.is_file():

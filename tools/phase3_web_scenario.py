@@ -170,8 +170,8 @@ def invocation_arguments(client, record, path, activation_id, route="angular"):
     source = client.directory / f"{activation_id}-input.json"
     resources = client.directory / f"{activation_id}-budget.json"
     write_json(source, [{"profile": "buffered-v1", "method": "get", "scheme": "http",
-                         "authority": "alice.angular.test", "path": path, "query": None,
-                         "headers": [], "media-type": None, "body-base64": ""}])
+                         "authority": "alice.angular.test", "path": path, "query": {"none": None},
+                         "headers": [], "media-type": {"none": None}, "body-base64": ""}])
     write_json(resources, {name: value for name, value in budget().items()
                            if name not in {"outboundRequests", "blobReadBytes", "blobWriteBytes"}})
     return ["--rpc-timeout-ms", "5000", "invoke", "--service", record["service"],
@@ -194,7 +194,7 @@ def invoke(client, record, publication, activation_id, path="/", route="angular"
     require("ngh=" in html and "workflow-operator" in html
             and "lsf-private-server-fixture-234" not in html, "actual-angular-render")
     pin = result["data"]["resolvedRevision"]
-    require(pin["publication"]["id"] == publication
+    require(pin["publicationId"] == publication
             and pin["releaseDigest"] == record["componentDigest"], "selected-render-publication")
     return {"activationId": activation_id, "publication": publication, "revision": pin["revisionId"],
             "htmlDigest": "sha256:" + hashlib.sha256(html.encode()).hexdigest()}
