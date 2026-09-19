@@ -78,3 +78,23 @@ denial and independent publication/policy revocation. T2/T3 are not supported.
 The immutable-assets and response-cache work in #336/#335 is a dependency, not
 an implementation copied into this change. Full #226 acceptance is not yet
 claimed by this milestone.
+
+## Selected web execution projection
+
+The concrete catalog now projects an exact SSR web publication into the common
+preparation metadata and lifecycle interface. This is not a capsule publication:
+the capsule index and legacy component-only lookup remain unchanged, and no
+`AdmissionGrant` is created from web receipts or digests. The sealed projection
+retains the actual web grant, its originating catalog and admission authority,
+the exact package/assets association, and its current lifecycle generation.
+Browser-only packages cannot acquire this projection.
+
+Immutable cache identity includes the selected publication and its derived
+metadata. Two packages sharing renderer bytes retain independent authority;
+renewal can reuse immutable bytes but cannot reuse the old start grant. Historical
+recovery verifies actual renderer bytes even for denied publications. Active
+proofs retain their bounded read charge until the last consumer releases them.
+Focused storage tests cover independent revocation, renewal, restart, foreign
+catalogs sharing an authority, tenant denial, pre-reserved reads and tampering.
+These tests use an explicitly injected storage-test authority, not fabricated
+Angular build evidence; protected T1 execution still requires the full gate above.

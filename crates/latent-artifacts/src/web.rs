@@ -12,6 +12,8 @@ mod read;
 mod tests;
 #[cfg(test)]
 pub(crate) use tests::browser_test_upload;
+#[cfg(all(test, target_os = "linux"))]
+pub(crate) use tests::renderer_test_upload;
 mod validate;
 
 pub use admission::{VerifiedWebAdmission, WebAdmissionBinding, WebAdmissionGrant};

@@ -14,12 +14,31 @@ use latent_core::TenantId;
 use std::collections::BTreeMap;
 
 pub(crate) fn browser_test_upload() -> crate::PackageAdmissionUpload {
-    let (layout, metadata) = package(&manifest(false));
+    test_upload(false, b"<h1>Example</h1>")
+}
+
+#[cfg(target_os = "linux")]
+pub(crate) fn renderer_test_upload(html: &[u8]) -> crate::PackageAdmissionUpload {
+    test_upload(true, html)
+}
+
+fn test_upload(renderer: bool, html: &[u8]) -> crate::PackageAdmissionUpload {
+    let mut document = manifest(renderer);
+    document.assets[0].digest = artifact_blob_digest(html).to_string();
+    document.assets[0].size = html.len() as u64;
+    document.assets_digest = asset_tree_digest(&document.assets).unwrap().to_string();
+    if let Some(renderer) = &mut document.renderer {
+        renderer.assets_digest.clone_from(&document.assets_digest);
+    }
+    let (layout, metadata) = package(&document);
     let mut layers = vec![
-        ("public/index.html".into(), b"<h1>Example</h1>".to_vec()),
+        ("public/index.html".into(), html.to_vec()),
         (WEB_MANIFEST_PATH.into(), metadata),
         ("metadata/private.json".into(), b"{}".to_vec()),
     ];
+    if renderer {
+        layers.push(("server/renderer.wasm".into(), b"\0asm\x0d\0\x01\0".to_vec()));
+    }
     layers.sort_by(|a: &(String, Vec<u8>), b| a.0.cmp(&b.0));
     let evidence = || crate::AdmissionEvidence {
         manifest: b"{}".to_vec(),

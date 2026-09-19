@@ -148,6 +148,8 @@ pub fn inspect_web_layout(
     routes(&manifest)?;
     Ok(CheckedWebLayout {
         package: package.digest().clone(),
+        name: config.name.clone(),
+        version: config.version.clone(),
         manifest_digest: artifact_blob_digest(bytes),
         assets_digest,
         manifest,

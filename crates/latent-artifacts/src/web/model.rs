@@ -65,6 +65,8 @@ pub struct WebRoute {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CheckedWebLayout {
     pub(super) package: PackageDigest,
+    pub(super) name: String,
+    pub(super) version: String,
     pub(super) manifest_digest: ArtifactBlobDigest,
     pub(super) assets_digest: ArtifactBlobDigest,
     pub(super) manifest: WebApplicationManifest,
@@ -74,6 +76,16 @@ impl CheckedWebLayout {
     #[must_use]
     pub fn package(&self) -> &PackageDigest {
         &self.package
+    }
+
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    #[must_use]
+    pub fn version(&self) -> &str {
+        &self.version
     }
 
     #[must_use]
@@ -125,6 +137,8 @@ impl CheckedWebLayout {
     pub fn retained_bytes(&self) -> usize {
         let mut bytes = std::mem::size_of::<Self>()
             + 1024
+            + self.name.capacity()
+            + self.version.capacity()
             + self.manifest.profile.capacity()
             + self.manifest.assets_digest.capacity();
         bytes += self.manifest.assets.capacity() * std::mem::size_of::<WebAsset>();
