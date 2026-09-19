@@ -120,3 +120,12 @@ updated tripwire accepts only the two exact, mutually exclusive reviewed
 generators and retains the single generated wasm-only unsafe allowance.
 The real source plus negative selector/world/import/handwritten-code cases pass
 18 focused boundary and workflow tests; the build-foundation validator passes.
+
+The later Rust job at `da00b9f6` reaches the maintained public-renderer fixture
+and fails because its copied WIT tree omits HTTP v0.2, now referenced by the
+optional adapter world. After adding that dependency, actual componentization
+also identifies the fixture's missing private `prepare` export. The fixture now
+returns an explicit null backend plan and copies the complete reviewed WIT
+dependency tree; it still has no HTTP import or provider authority. The corrected
+actual Angular fixture componentizes to 23752438 bytes with no imports. These
+fixture-only changes do not alter the production adapter or qualified package.
