@@ -92,6 +92,19 @@ impl Delivery {
     pub fn cause(&self) -> DeliveryCause {
         self.cause
     }
+    pub fn enforce_browser_profile(&mut self, scheme: super::Scheme) -> Result<(), HttpError> {
+        self.lease.check()?;
+        if self.headers_written || self.written != 0 {
+            return Err(HttpError::IncompleteDelivery);
+        }
+        if !super::browser::validate_response(&self.response, scheme) {
+            self.pending = None;
+            self.cache_age = None;
+            self.response = failure(502, self.method);
+            self.cause = DeliveryCause::InvalidGuestResponse;
+        }
+        Ok(())
+    }
     /// Downstream caches have no access to the operator's complete key or
     /// eligibility fence. Keep browser/proxy storage disabled even on local hits.
     pub fn headers(&self) -> impl Iterator<Item = HeaderView<'_>> {
