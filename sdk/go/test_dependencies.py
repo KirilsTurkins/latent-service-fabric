@@ -39,11 +39,11 @@ class DependencyLockTests(unittest.TestCase):
         self.assertEqual(document["schemaVersion"], 1)
         self.assertEqual(document["goVersion"], VERSION)
         self.assertEqual(document["module"], dependencies.MODULE)
-        self.assertEqual(len(document["modules"]), 3)
+        self.assertEqual(len(document["modules"]), 2)
         self.assertEqual(document["modules"][0]["path"], "example.com/transitive")
         self.assertEqual(set(document), {"schemaVersion", "module", "goVersion",
                                         "manifestSha256", "sumSha256", "modules", "tools"})
-        self.assertEqual(len(document["tools"]), 2)
+        self.assertEqual(len(document["tools"]), 1)
         self.assertTrue(set(dependencies.TOOL_MODULES.values()).issubset(
             {entry["path"] for entry in document["modules"]}))
         self.assertNotIn(dependencies.MODULE, [entry["path"] for entry in document["modules"]])

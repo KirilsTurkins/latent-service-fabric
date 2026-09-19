@@ -18,7 +18,6 @@ SDK = ROOT / "sdk" / "go"
 TOOLS = SDK / "target" / "tools"
 PLUGINS = {
     "protoc-gen-go": ("google.golang.org/protobuf/cmd/protoc-gen-go", "v1.36.12"),
-    "protoc-gen-go-grpc": ("google.golang.org/grpc/cmd/protoc-gen-go-grpc", "v1.6.2"),
 }
 SOURCES = {
     "latent/control/v1/common.proto": "controlv1",
@@ -50,6 +49,9 @@ def main() -> None:
             environment, 180, SDK)
         if version.removeprefix("v") != run([str(executable), "--version"], environment).split()[-1].removeprefix("v"):
             raise ValueError(f"unexpected {name} version")
+    rpc_plugin = TOOLS / ("protoc-gen-latent-go" + suffix)
+    run(["go", "build", "-trimpath", "-o", str(rpc_plugin), "./internal/rpcgen"],
+        environment, 180, SDK)
     options = ["module=latent.dev/sdk/go"] + [
         f"M{source}=latent.dev/sdk/go/internal/rpc/{package}"
         for source, package in SOURCES.items()
@@ -60,6 +62,7 @@ def main() -> None:
             {"local": str(TOOLS / (name + suffix)), "out": str(output), "opt": options}
             for name in PLUGINS
         ]}
+        template["plugins"].append({"local": str(rpc_plugin), "out": str(output), "opt": options})
         command = ["buf", "--timeout", "60s", "generate", str(ROOT / "api" / "proto"),
                    "--template", json.dumps(template)]
         for source in SOURCES:
