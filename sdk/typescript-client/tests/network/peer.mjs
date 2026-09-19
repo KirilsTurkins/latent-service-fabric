@@ -84,6 +84,7 @@ export async function peer() {
         if (request.operationId === "lost-operation") return;
         send(stream, descriptor.output, value, auditHeaders());
       } else if (operation === "getPolicyOperation") {
+        if (request.operationId === "rpc-not-found") { error(stream, 5); return; }
         const known = state.policies.get(request.operationId);
         send(stream, descriptor.output, known ? { receipt: known.value.receipt } : {});
       } else if (operation === "getPolicy") {

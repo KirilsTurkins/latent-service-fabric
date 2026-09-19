@@ -1,0 +1,21 @@
+[package]
+name = "latent-native-vm-fixture"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.94.1"
+publish = false
+
+[workspace]
+
+[dependencies]
+base64 = "=0.22.1"
+serde_json = "=1.0.150"
+latent-artifacts = { path = "../../crates/latent-artifacts" }
+latent-core = { path = "../../crates/latent-core" }
+latent-packaging = { path = "../../crates/latent-packaging" }
+latent-policy = { path = "../../crates/latent-policy" }
+latent-signing = { path = "../../crates/latent-signing" }
+
+[profile.release]
+debug = 0
+strip = "debuginfo"

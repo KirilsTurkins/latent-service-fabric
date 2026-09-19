@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "reviewedAt": "2026-09-19",
+  "node": {"version": "24.19.0", "repository": "nodejs/node", "tag": "v24.19.0", "commit": "cdc1b38d40cb567b7ad0b39c86addf830a0af0ae"},
+  "npm": "12.0.1",
+  "npmSource": {"repository": "npm/cli", "commit": "868e586497cdc17b66eb9a8424bad67136e789f9"},
+  "docusaurus": {"version": "3.10.2", "repository": "facebook/docusaurus", "tag": "v3.10.2", "commit": "f37f9035584917a97a260b91fc2842cba4f8b94f"},
+  "react": {"version": "19.3.0", "repository": "react/react", "commit": "1d34f91dfde6bba84d08b683aaba164c7194dacb"},
+  "typescript": {"version": "5.9.3", "repository": "microsoft/TypeScript", "commit": "c63de15a992d37f0d6cec03ac7631872838602cb"},
+  "playwright": {"version": "1.63.0", "repository": "microsoft/playwright", "commit": "1b025d7e20a026371cd5f98ba0cdce48892737c8"},
+  "reviewedOverrides": [
+    {"package": "lodash-es", "version": "4.18.1", "repository": "lodash/lodash", "commit": "d85490ebfb8f49ddc1eab84892aa33a3ef547894", "reason": "Remove GHSA-r5fr-rjxr-66jc and GHSA-f23m-r3pf-42rh matches while retaining lodash's ESM API."},
+    {"package": "serialize-javascript", "version": "7.0.5", "repository": "yahoo/serialize-javascript", "commit": "df3f1c1fa9ca16b050ae893cb63ac23c91deed55", "reason": "First patched release for GHSA-5c6j-r48x-rmvq and GHSA-qj8w-gfj5-8c6v; CommonJS callable API remains and Node >=20 is satisfied."},
+    {"package": "sockjs > uuid", "version": "11.1.1", "repository": "uuidjs/uuid", "commit": "7269a96c12a55a745bd4a7812c01cfd385ec6c46", "reason": "Patched CommonJS-compatible uuid for GHSA-w5hq-g745-h8pq; SockJS calls only the compatible v4() entry point."}
+  ],
+  "integrityAuthority": "package-lock.json records registry.npmjs.org tarball integrity for every resolved package; npm ci uses it with lifecycle scripts disabled.",
+  "mermaidPeer": {"package": "@mermaid-js/layout-elk", "version": "0.1.9", "reason": "Explicit compatible peer for the Docusaurus 3.10.2 Mermaid 11 theme; latest layout-elk 1.x requires Mermaid 12 and is not substituted."}
+}

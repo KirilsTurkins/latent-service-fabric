@@ -86,8 +86,14 @@ Four actual held provider requests separate local waiter drop, application
 Cancel, original deadline and shutdown. Recovery uses retained identities;
 shutdown waits for actual local call/task/socket owners. The operator runner
 independently checks terminal activations and provider/node reclamation.
-This executable is not by itself an execution receipt: actual-node results
-are retained separately by the shared qualification run.
+The shared qualification run passes all 18 assertions with nine admitted
+activation IDs and four physically closed upstream holds; PR #366 retains
+the source identities and independent clean node/provider shutdown receipts.
+Current policy RPCs emit no audit acknowledgement, so this participant asserts
+absence rather than inventing durability. It uses an explicit five-second RPC
+limit matching the node profile. Controlled peers separately verify audit
+metadata and malformed response handling. These are not installed-bundle,
+browser or whole-process RSS isolation claims.
 
 ## Checks
 

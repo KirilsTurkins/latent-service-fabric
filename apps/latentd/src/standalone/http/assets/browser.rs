@@ -110,6 +110,17 @@ fn publish(harness: &Harness, name: &str, files: &[(&str, &str, &[u8])], path: &
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires the controlled Angular browser build, Node and Chromium"]
 async fn actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress() {
+    run_browser(None).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires the public web component, controlled Angular build, Node and Chromium"]
+async fn actual_browser_application_uses_only_the_public_shared_http_contract() {
+    run_browser(Some(read(environment("LSF_WEB_COMPONENT"), 1024 * 1024))).await;
+}
+
+async fn run_browser(component: Option<Vec<u8>>) {
+    let application = component.is_some();
     let build = environment("LSF_BROWSER_BUILD");
     let node = environment("LSF_BROWSER_NODE");
     let chrome = environment("LSF_BROWSER_CHROME");
@@ -118,16 +129,19 @@ async fn actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live
     let address = selected.local_addr().unwrap();
     let authority = format!("localhost:{}", address.port());
     drop(selected);
-    let harness = Harness::configured(|value| {
-        value["httpIngress"]["bind"] = json!(address.to_string());
-        value["httpIngress"]["authentication"] = json!({"mode":"public-origins", "origins":[
+    let harness = Harness::configured_application(
+        |value| {
+            value["httpIngress"]["bind"] = json!(address.to_string());
+            value["httpIngress"]["authentication"] = json!({"mode":"public-origins", "origins":[
             {"authority":authority, "subject":"browser-fixture", "tenant":"tests"}]});
-        value["httpIngress"]["limits"]["maximumConnections"] = json!(8);
-        value["httpIngress"]["limits"]["maximumBufferBytes"] = json!(16 * 1024 * 1024);
-        value["httpIngress"]["limits"]["headerTimeoutMillis"] = json!(2000);
-        value["httpIngress"]["limits"]["idleTimeoutMillis"] = json!(2000);
-        value["httpIngress"]["limits"]["writeTimeoutMillis"] = json!(5000);
-    })
+            value["httpIngress"]["limits"]["maximumConnections"] = json!(8);
+            value["httpIngress"]["limits"]["maximumBufferBytes"] = json!(16 * 1024 * 1024);
+            value["httpIngress"]["limits"]["headerTimeoutMillis"] = json!(2000);
+            value["httpIngress"]["limits"]["idleTimeoutMillis"] = json!(2000);
+            value["httpIngress"]["limits"]["writeTimeoutMillis"] = json!(5000);
+        },
+        component,
+    )
     .await;
     let client = read(build.join("client.js"), 8 * 1024 * 1024);
     let script = publish(
@@ -156,7 +170,11 @@ async fn actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live
         ],
         "/index.html",
     );
-    let result_path = build.join("browser-receipt.json");
+    let result_path = build.join(if application {
+        "browser-application-receipt.json"
+    } else {
+        "browser-receipt.json"
+    });
     let output = result_path.clone();
     let runner =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tools/browser-boundary/browser.mjs");
@@ -171,6 +189,11 @@ async fn actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live
             .arg(page)
             .arg(wrong_mime)
             .arg(output)
+            .arg(if application {
+                "public-application"
+            } else {
+                "assets-only"
+            })
             .env_clear()
             .env("PATH", "/usr/bin:/bin")
             .env("HOME", "/tmp")
@@ -185,9 +208,12 @@ async fn actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live
     assert_eq!(receipt["originalDomReused"], true);
     assert_eq!(receipt["navigationHydrated"], true);
     assert_eq!(receipt["componentRenderClaimed"], false);
-    assert_eq!(
-        harness.node.node.backend.resource_snapshot().stores_created,
-        0
-    );
+    assert_eq!(receipt["publicApplicationQualified"], application);
+    let stores = harness.node.node.backend.resource_snapshot().stores_created;
+    if application {
+        assert!(stores >= 2, "the public POST must execute real components");
+    } else {
+        assert_eq!(stores, 0);
+    }
     harness.finish().await;
 }

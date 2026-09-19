@@ -111,7 +111,11 @@ export function exchange<Response>(stream: ClientHttp2Stream, frame: Buffer, opt
         if (code > 2147483647) throw new Error("invalid grpc status");
         grpcStatus = code;
         acknowledgement = audit(headers);
-        if (code !== 0) { finish(rpcFailure(code, headers, options.identity)); return; }
+        if (code !== 0) {
+          finish(rpcFailure(code, headers, options.identity,
+            options.operation === "getActivation" || options.operation === "getPolicyOperation"));
+          return;
+        }
         if (!buffer || used < 5 || buffer.readUInt32BE(1) !== used - 5) throw new Error("invalid unary frame");
         const value = decode(method(options.operation).output, buffer.subarray(5, used), options.maximum);
         validateResponse(options.operation, options.request, value, options.tenant);
