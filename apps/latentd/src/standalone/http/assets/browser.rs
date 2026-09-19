@@ -33,6 +33,8 @@ async fn browser_boundary_reclaims_two_incomplete_peers_and_continues_eligible_a
         value["httpIngress"]["authentication"] = json!({"mode":"public-origins", "origins":[
             {"authority":"web.example.test", "subject":"public", "tenant":"tests"}]});
         value["httpIngress"]["limits"]["maximumConnections"] = json!(2);
+        value["httpIngress"]["limits"]["headerTimeoutMillis"] = json!(1000);
+        value["httpIngress"]["limits"]["idleTimeoutMillis"] = json!(1000);
     })
     .await;
     let page = harness.publish("browser-residency", b"eligible");
@@ -44,6 +46,7 @@ async fn browser_boundary_reclaims_two_incomplete_peers_and_continues_eligible_a
     let (status, headers, body) = get(&harness, &page, "Sec-Fetch-Site: same-origin\r\n").await;
     assert_eq!((status, body), (200, b"eligible".to_vec()));
     assert!(headers.contains("content-security-policy:"));
+    node_fixture::wait(|| harness.owner.handle().snapshot().connections == 1).await;
     let mut second = TcpStream::connect(harness.owner.local_addr())
         .await
         .unwrap();
@@ -52,11 +55,12 @@ async fn browser_boundary_reclaims_two_incomplete_peers_and_continues_eligible_a
         .await
         .unwrap();
     assert!(
-        tokio::time::timeout(Duration::from_secs(2), excess.read_u8())
+        tokio::time::timeout(Duration::from_millis(500), excess.read_u8())
             .await
             .unwrap()
             .is_err()
     );
+    assert_eq!(harness.owner.handle().snapshot().connections, 2);
     node_fixture::trickle_until_closed(first, Duration::from_secs(2)).await;
     assert!(
         tokio::time::timeout(Duration::from_secs(2), second.read_u8())
