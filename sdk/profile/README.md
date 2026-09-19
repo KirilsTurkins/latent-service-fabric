@@ -25,7 +25,8 @@ python sdk/profile/generate.py --write
 
 `--write` is the reproducible regeneration command. `--patch` emits an
 `apply_patch` patch instead. There are no generator dependencies outside the
-Python standard library. Handwritten semantic tests are not overwritten.
+Python standard library; formatting uses the repository's pinned `rustfmt` and
+`gofmt` executables on `PATH`. Handwritten semantic tests are not overwritten.
 
 | Language | Complete facade | Lifetime/cancellation |
 | --- | --- | --- |
@@ -44,10 +45,10 @@ does not silently map an unknown cancellation enum to an old success variant.
 Network clients may expose generated protobuf objects and lossless conversions
 instead of duplicating storage. The conversion must retain every profile field.
 
-Rust integration adds `pub mod management;` to `sdk/rust/src/lib.rs`. The Rust
-transport owner performs that change; #227 deliberately does not edit `lib.rs`,
-`Cargo.toml` or `network*`. No wildcard root reexport is needed: it would collide
-with the legacy convenience types.
+Rust exports `pub mod management;` from `sdk/rust/src/lib.rs`; ordinary crate
+tests use that public API, not a hidden path include. The transport owner alone
+changes `Cargo.toml`, `network*` and the network export. No wildcard root reexport
+is needed: it would collide with the legacy convenience types.
 
 ## The eight required operations
 
@@ -156,7 +157,12 @@ No additional catalog migration or ambiguity resolution is implemented here.
 
 `ClientFailure` retains `category`, redacted `message`, optional raw `grpc_status`,
 optional typed `platform_error`, `dispatched`, `outcome`, `identity`, optional
-`audit_ack` and optional raw `audit_status`. `RequestIdentity` contains only
+`audit_ack`, optional raw `audit_status`, and optional `unsupported_wire_value`.
+`UnsupportedWireValue` holds a controlled field label and at most 256 bytes of
+untrusted future wire text. It is diagnostic data, never routing, principal or
+execution authority. Unsupported invocation phase/terminal/error codes may fail
+explicitly as Decode/InvalidResponse while retaining this bounded raw evidence;
+they must not become a known success. `RequestIdentity` contains only
 optional activation/operation IDs. Every invocation outcome retains its receipt;
 structured platform detail items are not flattened into a message or mistaken
 for declared guest errors. WIT provider errors stay in the declared typed
@@ -202,6 +208,16 @@ model; a transport must reject values outside its bounded clock representation
 without wraparound. Every transport retains a single absolute deadline through
 connect, send, wait, decode and local completion.
 
+Errors remain discoverable through each language's native cancellation surface:
+Go's `ClientFailure` supports `errors.As` and unwraps local cancellation/deadline
+categories for `errors.Is`; TypeScript's `ClientError` retains `failure`; Java's
+`ClientException` and `ClientCancellationException` retain the same record.
+`Management.clientFailure(Throwable)` follows a bounded cause chain, including
+JDKs that wrap a future's cancellation exception. .NET's
+`ClientCancellationException` retains the record and `CancellationToken` while
+remaining an `OperationCanceledException`. These local error categories do not
+convert a Cancel RPC response into a cancellation exception.
+
 ## C callback and response lifetime
 
 All eight vtable methods return a local `latent_profile_call*`, not an activation
@@ -227,3 +243,45 @@ streams. Transports own sockets, decoders and frames through consumption or drop
 they cannot refund still-retained resources merely because a waiter disappeared.
 Future streaming APIs need their own explicit body lifetime contract. No dormant
 application acquires a dedicated connection, listener, worker or provider pool.
+
+## Executable semantic fixtures
+
+[`fixtures.json`](fixtures.json) is the common canonical input, not a network
+JSON encoding. `generate_fixtures.py` materializes every case into each language's
+public DTOs and generates field-by-field native assertions. `generate.py --check`
+checks both model and vector reproducibility against protobuf and this input.
+The 66 shared cases cover nested typed failures, every operation's DTOs, retained
+publication/operation identity, absent/present-empty/present-zero values, u64
+maximum, unknown signed enum values, policy/provider pagination, audit absence
+and uncertainty, and contradictory oneofs. Sixteen decimal parser inputs cover
+exact boundaries, overflow, signs, leading zeroes, NUL and trailing whitespace.
+
+Each language also runs a handwritten all-eight-operation fixture client. Those
+tests exercise local cancellation or dropped waits after a retained mutation,
+receipt recovery without automatic replay, single-page behavior, zero timeout,
+and response ownership. The C fixture poisons caller inputs and callback buffers
+after their documented lifetime, copies retained results, tests inline callbacks,
+and releases handles only after callbacks return. Waits are bounded; these are
+not network servers, production policy stores or wire-decoder conformance tests.
+
+```text
+python sdk/profile/validate.py
+python -m unittest discover -s sdk/profile -p "test_*.py"
+cargo test -p latent-sdk --locked
+tools/validate_sdks.sh
+```
+
+The Python validator checks source selection, finite fixture sizes, unsigned and
+enum ranges, publication/presence cases and selected invalid-request markers.
+It does not duplicate the complete server authorization or closed-document
+validator. Native tests consume generated constructors, not a permissive JSON
+bridge; transport tickets must additionally prove lossless protobuf conversion
+and behavior against bounded peers and real nodes.
+
+The Go package tests and existing TypeScript, Java, .NET and C semantic entry
+points include the new suites; Rust integration tests import the public
+`latent_sdk::management` module. The shell runner uses its existing pinned Linux
+toolchain. The dedicated Python regeneration/validator command is separate from
+that runner; a CI owner can invoke it where pinned `rustfmt` and `gofmt` are
+available. No workflow or shared shell-runner changes are part of this ticket.
+See [local evidence and remaining integration boundaries](EVIDENCE.md).
