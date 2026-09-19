@@ -9,17 +9,25 @@ import re
 from tools.phase2_operator_process import require
 
 
-SCHEMA = "latent.phase3.resource-campaign.v1"
+SCHEMA = "latent.phase3.resource-campaign.v2"
 PROFILES = {
-    "smoke": {"id": "phase3-resource-smoke-v1", "dormantSteps": [4, 16], "cells": 2,
+    "smoke": {"id": "phase3-resource-smoke-v2", "kind": "provider", "dormantSteps": [4, 16], "cells": 1,
+              "policyReadOwners": 64,
               "samplesPerPhase": 3, "cycles": 2, "arrivalsPerCycle": 8,
               "arrivalIntervalMillis": 10, "maximumOutstanding": 6, "deadlineSeconds": 240},
-    "campaign": {"id": "phase3-resource-manual-v1", "dormantSteps": [4, 16, 64], "cells": 2,
+    "campaign": {"id": "phase3-resource-manual-v2", "kind": "provider", "dormantSteps": [4, 16, 32], "cells": 2,
+                 "policyReadOwners": 96,
                  "samplesPerPhase": 5, "cycles": 8, "arrivalsPerCycle": 24,
                  "arrivalIntervalMillis": 5, "maximumOutstanding": 8, "deadlineSeconds": 900},
+    "web-smoke": {"id": "phase3-resource-web-smoke-v1", "kind": "web", "dormantSteps": [2, 4], "cells": 1,
+                  "samplesPerPhase": 3, "cycles": 2, "arrivalsPerCycle": 4,
+                  "arrivalIntervalMillis": 10, "maximumOutstanding": 5, "deadlineSeconds": 600},
+    "web-campaign": {"id": "phase3-resource-web-manual-v1", "kind": "web", "dormantSteps": [2, 4, 8], "cells": 2,
+                     "samplesPerPhase": 3, "cycles": 4, "arrivalsPerCycle": 8,
+                     "arrivalIntervalMillis": 5, "maximumOutstanding": 6, "deadlineSeconds": 900},
 }
 LIMITS = {"maximumControls": 1024, "maximumSamples": 2048, "maximumReceiptBytes": 8388608,
-          "maximumFixtureFiles": 4096, "maximumFixtureBytes": 67108864,
+          "maximumFixtureFiles": 4096, "maximumFixtureBytes": 134217728,
           "maximumFileBytes": 536870912, "maximumProcBytes": 4194304,
           "maximumProcesses": 16, "maximumTasks": 256, "maximumDescriptors": 4096,
           "maximumNetworkRows": 8192, "sampleSeconds": 2, "shutdownSeconds": 10}
@@ -39,6 +47,14 @@ def digest(value):
     return "sha256:" + hashlib.sha256(canonical(value)).hexdigest()
 
 
+def policy_capacity(profile):
+    required = 2 * (profile["dormantSteps"][-1] + 2) + 2
+    require(required <= profile["policyReadOwners"] <= 128, "resource-policy-snapshot-capacity")
+    return {"configuredReadOwners": profile["policyReadOwners"], "requiredReadOwners": required,
+            "basis": "live-and-staged-capability-plans-plus-two-observation-owners",
+            "mutationResponseOwnersSeparate": 4}
+
+
 def integer(value):
     require(type(value) is int or isinstance(value, str) and
             re.fullmatch(r"0|[1-9][0-9]{0,19}", value) is not None, "resource-integer")
@@ -56,7 +72,7 @@ def summary(values):
             "p95": ordered[math.ceil(len(ordered) * 0.95) - 1]}
 
 
-def validate_schedule(rows, expected):
+def validate_schedule(rows, expected, interval_ns=None):
     require(len(rows) == expected and expected > 0, "resource-arrival-population")
     require([row["ordinal"] for row in rows] == list(range(expected)), "resource-arrival-identities")
     previous = -1
@@ -64,6 +80,7 @@ def validate_schedule(rows, expected):
         planned = integer(row["scheduledNanos"])
         require(planned >= previous, "resource-arrival-order")
         previous = planned
+        require(interval_ns is None or planned == row["ordinal"] * interval_ns, "resource-arrival-origin")
         require(row["disposition"] in ("completed", "client-shed"), "resource-arrival-unfinished")
         if row["disposition"] == "client-shed":
             require(row["startedNanos"] is None and row["finishedNanos"] is None
@@ -104,6 +121,13 @@ def validate_receipt(value):
     require(profile in PROFILES.values() and value["profileDigest"] == digest(profile), "resource-profile")
     require(value["ticketAcceptance"] == "pending" and value["limits"] == LIMITS,
             "resource-scope-escalation")
+    require(value["configurationDigest"] == digest(value["configuration"]), "resource-configuration-digest")
+    require(value["build"]["binaries"] == value["observedBinaries"], "resource-binary-association")
+    if profile["kind"] == "provider":
+        require(value["policyCapacity"] == policy_capacity(profile), "resource-policy-capacity-evidence")
+    else:
+        from tools.phase3_resource_web import validate_web
+        return validate_web(value)
     samples = value["samples"]
     require(0 < len(samples) <= LIMITS["maximumSamples"], "resource-sample-population")
     phases = {sample["phase"] for sample in samples}
@@ -118,13 +142,24 @@ def validate_receipt(value):
         require(integer(sample["os"]["metrics"]["processes"]) >= 1, "resource-empty-process-population")
         require(sample["os"]["metrics"]["rssBytes"] is not None, "resource-rss-unobservable")
     for cycle in value["cycles"]:
-        validate_schedule(cycle["arrivals"], profile["arrivalsPerCycle"])
+        validate_schedule(cycle["arrivals"], profile["arrivalsPerCycle"], profile["arrivalIntervalMillis"] * 1_000_000)
     require(len(value["cycles"]) == profile["cycles"], "resource-cycle-population")
     require(value["shutdown"]["reaped"] is True and value["shutdown"]["record"]["clean"] is True,
             "resource-node-not-reaped")
     require(value["peerShutdown"]["reaped"] is True and value["temporaryOutputsRemoved"] is True,
             "resource-runner-not-reaped")
     require(value["fixtureUnchanged"] is True, "resource-fixture-changed")
-    require(all(value["checks"].values()) and len(value["checks"]) >= 4, "resource-checks-incomplete")
+    from tools.phase3_resource_analysis import analyze
+    from tools.phase3_resource_workload import overload_counts
+    declared = value["checks"].copy()
+    analyze(value)
+    require(value["checks"] == declared and all(type(check) is bool and check for check in declared.values()),
+            "resource-checks-incomplete")
+    require(value["overloadClassification"] == overload_counts(value["overload"]), "resource-overload-evidence")
+    for requested in profile["dormantSteps"]:
+        require(sum(sample["phase"] == "dormant" and sample["dormantDeployments"] == requested
+                    for sample in samples) == profile["samplesPerPhase"], "resource-density-sample-population")
+    require(sum(sample["phase"] == "recovery" for sample in samples)
+            == profile["cycles"] * profile["samplesPerPhase"], "resource-recovery-sample-population")
     require(len(canonical(value)) <= LIMITS["maximumReceiptBytes"], "resource-receipt-bound")
     return True

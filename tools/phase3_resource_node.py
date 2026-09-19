@@ -8,7 +8,7 @@ import time
 from tools.phase2_operator_process import Client, Process, read_json, require, write_json
 from tools.phase2_operator_scenario import NODE_ID
 from tools.phase3_management_scenario import configure_provider_node
-from tools.phase3_resource_profile import LIMITS, digest, quiescent
+from tools.phase3_resource_profile import LIMITS, digest, policy_capacity, quiescent
 
 
 class ResourceClient(Client):
@@ -27,6 +27,7 @@ class ResourceClient(Client):
 
 
 def configure(directory, fixture, port, profile):
+    policy_capacity(profile)
     initial = configure_provider_node(directory, fixture, port)
     settings = read_json(initial)
     settings["cells"][0].update(capacity=profile["cells"], queueCapacity=2)
@@ -34,6 +35,9 @@ def configure(directory, fixture, port, profile):
     settings["retention"].update(terminalEntries=32, terminalTtlMillis=30000)
     settings["cache"].update(entries=2, preparations=1)
     settings["audit"].update(records=4096, diskBytes=33554432)
+    settings["capabilityPolicies"]["store"] = {
+        "maximumRecords": 128, "maximumOutcomes": 256, "maximumCatalogBytes": 4194304,
+        "maximumReadOwners": profile["policyReadOwners"], "maximumPageRecords": 16}
     for binding in settings["providers"]["bindings"]:
         binding.pop("route")
     output = directory / "resource-node.json"
@@ -117,9 +121,12 @@ def sample(client, probe, phase, dormant, capabilities=True):
 def settled_samples(client, probe, phase, dormant, count, capabilities=True):
     result = []
     for _sample in range(count):
+        began = time.monotonic_ns()
         for _attempt in range(20):
             observed = sample(client, probe, phase, dormant, capabilities)
             if quiescent(observed):
+                observed["settling"] = {"observations": _attempt + 1,
+                                        "elapsedNanos": str(time.monotonic_ns() - began)}
                 result.append(observed)
                 break
             time.sleep(0.025)
@@ -164,5 +171,6 @@ def finish(client, process):
     return {"category": value["category"], "exitCode": completed.returncode,
             "requestedActivationId": process.resource_activation, "activationId": activation,
             "requestDispatched": value["requestDispatched"], "outcomeKnown": value["outcomeKnown"],
-            "code": error.get("code"), "grpcCode": error.get("grpcCode"), "value": decoded,
+            "code": error.get("code"), "grpcCode": error.get("grpcCode"),
+            "message": error.get("message"), "value": decoded,
             "inputDigest": process.resource_input_digest, "processReaped": process.owner.finished}

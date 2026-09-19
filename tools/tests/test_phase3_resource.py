@@ -19,7 +19,7 @@ from tools.phase3_resource_identity import file_identity, inventory
 from tools.phase3_resource_fixture import validity
 from tools.phase3_resource_node import apply_dormant, configure
 from tools.phase3_resource_os import Probe, network_counts, proc_stat
-from tools.phase3_resource_profile import ACTIVE_COUNTERS, PROFILES, digest, integer, quiescent, summary, validate_schedule
+from tools.phase3_resource_profile import ACTIVE_COUNTERS, PROFILES, digest, integer, policy_capacity, quiescent, summary, validate_schedule
 from tools.phase3_resource_schedule import run_open_loop
 from tools.phase3_resource_rust import SUITE, artifact_from_cargo, validate_observations
 from tools.phase3_resource_workload import measured_work, overload_counts
@@ -138,6 +138,10 @@ class ScheduleTests(unittest.TestCase):
         changed[0]["ownerReaped"] = False
         with self.assertRaises(WorkflowError):
             validate_schedule(changed, 2)
+        changed = copy.deepcopy(rows)
+        changed[1]["scheduledNanos"] = "1"
+        with self.assertRaisesRegex(WorkflowError, "arrival-origin"):
+            validate_schedule(changed, 2, 1_000_000)
 
 
 class EvidenceTests(unittest.TestCase):
@@ -225,11 +229,22 @@ class EvidenceTests(unittest.TestCase):
             fixture.mkdir()
             (fixture / "policy.json").write_text("{}", encoding="ascii")
             for name, profile in PROFILES.items():
+                if profile["kind"] != "provider":
+                    continue
                 directory = root / name
                 directory.mkdir()
                 _path, settings = configure(directory, fixture, 12345, profile)
                 self.assertEqual(len(settings["providers"]["bindings"]), 2)
                 self.assertTrue(all("route" not in binding for binding in settings["providers"]["bindings"]))
+                self.assertEqual(settings["capabilityPolicies"]["store"]["maximumReadOwners"], profile["policyReadOwners"])
+
+    def test_live_and_staged_policy_populations_are_preflighted_without_changing_runtime_limits(self):
+        self.assertEqual(policy_capacity(PROFILES["smoke"])["requiredReadOwners"], 38)
+        self.assertEqual(policy_capacity(PROFILES["campaign"])["requiredReadOwners"], 70)
+        for changed in ({**PROFILES["smoke"], "policyReadOwners": 32},
+                        {**PROFILES["campaign"], "dormantSteps": [4, 16, 64], "policyReadOwners": 128}):
+            with self.assertRaisesRegex(WorkflowError, "policy-snapshot-capacity"):
+                policy_capacity(changed)
 
     def test_unobserved_counters_are_not_treated_as_zero(self):
         sample = quiet_sample()
@@ -274,6 +289,16 @@ class EvidenceTests(unittest.TestCase):
             with self.assertRaises((FileExistsError, PermissionError)):
                 write_receipt(output, {"actual": "not-the-original"})
             output.chmod(0o600)
+
+    def test_existing_sidecar_is_not_overwritten_or_paired_with_new_output(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "receipt.json"
+            sidecar = output.with_suffix(".json.sha256")
+            sidecar.write_text("existing-evidence\n")
+            with self.assertRaises(FileExistsError):
+                write_receipt(output, {"synthetic": True})
+            self.assertFalse(output.exists())
+            self.assertEqual(sidecar.read_text(), "existing-evidence\n")
 
     def test_inventory_is_bounded_nonempty_and_content_addressed(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -352,6 +377,17 @@ class RustInventoryTests(unittest.TestCase):
             for changes in ({"executable": str(source)}, {"target": {**artifact["target"], "kind": ["lib"]}}):
                 with self.assertRaises(WorkflowError):
                     artifact_from_cargo(encoded([{**artifact, **changes}, finished]), root)
+            isolated = root / "target/phase3-239"
+            isolated_executable = isolated / "debug/deps/synthetic-resource-artifact"
+            isolated_executable.parent.mkdir(parents=True)
+            isolated_executable.write_bytes(b"isolated-synthetic-artifact")
+            metadata = {**artifact, "executable": str(isolated_executable)}
+            actual, _profile = artifact_from_cargo(encoded([metadata, finished]), root, isolated)
+            self.assertEqual(actual.executable, isolated_executable)
+            with self.assertRaises(WorkflowError):
+                artifact_from_cargo(encoded([artifact, finished]), root, isolated)
+            with self.assertRaisesRegex(WorkflowError, "target-owner"):
+                artifact_from_cargo(encoded([metadata, finished]), root, root)
 
     def test_rust_measurement_cannot_pass_empty_active_or_recovery_populations(self):
         rows = []

@@ -27,11 +27,12 @@ SUITE = Suite("crates/latent-wasmtime/Cargo.toml", "phase3_resource", "tests/pha
               NAME, frozenset({NAME}), True)
 
 
-def artifact_from_cargo(output, root):
+def artifact_from_cargo(output, root, target=None, suite=SUITE):
     require(len(output) <= 2 * 1024 * 1024, "resource-rust-inventory-bytes")
-    target_root = (root / "target").resolve(strict=True)
-    expected_manifest = (root / SUITE.manifest).resolve(strict=True)
-    expected_source = (expected_manifest.parent / SUITE.source).resolve(strict=True)
+    target_root = (target or root / "target").resolve(strict=True)
+    require(target_root.is_relative_to((root / "target").resolve(strict=True)), "resource-rust-target-owner")
+    expected_manifest = (root / suite.manifest).resolve(strict=True)
+    expected_source = (expected_manifest.parent / suite.source).resolve(strict=True)
     found, finished, links = None, False, set()
     for ordinal, line in enumerate(output.splitlines()):
         require(ordinal < 20000 and len(line) <= 1048576 and not finished, "resource-rust-inventory-bound")
@@ -49,7 +50,7 @@ def artifact_from_cargo(output, root):
                 if candidate.is_absolute() and candidate.resolve().is_relative_to(target_root):
                     links.add(candidate.resolve())
                     require(len(links) <= 256, "resource-rust-link-bound")
-        elif message.get("reason") == "compiler-artifact" and message.get("target", {}).get("name") == SUITE.target:
+        elif message.get("reason") == "compiler-artifact" and message.get("target", {}).get("name") == suite.target:
             require(found is None and Path(message["manifest_path"]).resolve() == expected_manifest,
                     "resource-rust-artifact-owner")
             target, profile = message["target"], message["profile"]
@@ -141,11 +142,14 @@ def run(args):
                              "--no-run", "--message-format=json", "-j", "3"], ROOT, environment,
                             cancellation, 900, 2 * 1024 * 1024, commands)
             require(built.returncode == 0, "resource-rust-build-failed")
-            artifact, profile = artifact_from_cargo(built.stdout, ROOT)
+            target = Path(environment.get("CARGO_TARGET_DIR", ROOT / "target"))
+            artifact, profile = artifact_from_cargo(built.stdout, ROOT, target)
             result["cargoProfile"] = profile
             result["binary"] = file_identity(artifact.executable)
             require(source_identity(ROOT) == source, "resource-rust-source-changed")
             runtime_environment = cargo_environment(ROOT, artifact, environment)
+            runtime_environment["LD_LIBRARY_PATH"] = os.pathsep.join(
+                [str(artifact.executable.parent), str(target / "debug"), runtime_environment.get("LD_LIBRARY_PATH", "")])
             runtime_environment["LSF_PHASE3_RESOURCE_REPORT"] = str(args.report)
             command = [str(artifact.executable), NAME, "--exact"]
             listing = execute([*command, "--list"], artifact.package, runtime_environment,

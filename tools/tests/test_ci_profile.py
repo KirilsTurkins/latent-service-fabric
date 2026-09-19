@@ -33,6 +33,8 @@ class ClassificationTests(unittest.TestCase):
                      "crates/latent-packaging/src/semantics/web.rs", "crates/latent-manifest/src/renderer.rs",
                      "crates/latent-node/src/lib.rs", "crates/latent-ingress/src/http.rs",
                      "tools/run_angular_t1_workflow.py", "tools/phase3_web_qualification.py",
+                     "tools/run_phase3_resource_acceptance.py", "tools/phase3_resource_web.py",
+                     "tools/tests/test_phase3_resource_web.py",
                      "tools/tests/test_angular_t1_workflow.py", "tools/ci_rust_artifacts.py",
                      "apps/latent/src/args/web.rs", "apps/latent/src/management/web/execute.rs",
                      "api/proto/latent/control/v1/release.proto",

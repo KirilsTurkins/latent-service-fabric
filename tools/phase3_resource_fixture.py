@@ -12,13 +12,16 @@ from tools.phase3_resource_identity import file_identity
 from tools.phase3_resource_profile import integer
 
 
-def validity(root, duration, now=None):
+def validity(root, duration, now=None, names=("rust-http", "rust-blob", "rust-callee")):
     now = int(time.time()) if now is None else integer(now)
     required_until = now + integer(duration) + 10
     policy = read_json(root / "policy.json")
     windows = [{"kind": "policy", "issuedAt": integer(policy["validFrom"]),
                 "expiresAt": integer(policy["validUntil"])}]
-    for name in ("rust-http", "rust-blob", "rust-callee"):
+    require(0 < len(names) <= 3 and len(set(names)) == len(names), "resource-fixture-names")
+    for name in names:
+        require(name in ("rust-http", "rust-blob", "rust-callee", "angular", "alternate", "missing-sbom"),
+                "resource-fixture-name")
         directory = root / name / "evidence"
         index = read_json(directory / "index.json")
         for kind in ("signatures", "provenance"):

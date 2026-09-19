@@ -44,7 +44,7 @@ def run_open_loop(count, interval_ns, maximum_outstanding, launch, finish, tick,
                     active.append((process, row))
                 now = clock()
             pause(0.002)
-        validate_schedule(rows, count)
+        validate_schedule(rows, count, interval_ns)
         return rows
     finally:
         for process, _row in active:
