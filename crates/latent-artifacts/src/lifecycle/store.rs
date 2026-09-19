@@ -301,6 +301,7 @@ impl LifecycleStore {
             owner: Arc::clone(&self.owner),
             row: Arc::clone(&entry.row),
             generation: entry.stored.record.generation,
+            projection: None,
         };
         lifecycle.check_current()?;
         ReleaseUseEligibility::new(lifecycle, admission)

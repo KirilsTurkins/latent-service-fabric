@@ -18,10 +18,10 @@ impl DirectoryArtifactRepository {
             return self.require_legacy_publication(None, component);
         };
         let index = self.index.read().map_err(lock_error)?;
-        let entry = index
-            .by_publication
-            .get(id)
-            .ok_or_else(|| error(PlatformErrorCode::NotFound, "publication not found"))?;
+        let Some(entry) = index.by_publication.get(id) else {
+            drop(index);
+            return self.web_execution_publication(component, id, None);
+        };
         if entry.value.descriptor.release_digest != *component {
             return Err(corrupt("publication-component-mismatch"));
         }
@@ -41,15 +41,16 @@ impl DirectoryArtifactRepository {
         crate::publication::validate_component(component)?;
         let reference = if let Some(id) = publication {
             let index = self.index.read().map_err(lock_error)?;
-            let entry = index
-                .by_publication
-                .get(id)
-                .filter(|entry| {
-                    entry.publication.scope == scope
-                        || (entry.publication.scope == LifecycleScope::LocalUnscoped
-                            && self.admission.is_none())
-                })
-                .ok_or_else(|| error(PlatformErrorCode::NotFound, "publication not found"))?;
+            let Some(entry) = index.by_publication.get(id) else {
+                drop(index);
+                return self.web_execution_publication(component, id, Some(tenant));
+            };
+            if entry.publication.scope != scope
+                && !(entry.publication.scope == LifecycleScope::LocalUnscoped
+                    && self.admission.is_none())
+            {
+                return Err(error(PlatformErrorCode::NotFound, "publication not found"));
+            }
             if entry.value.descriptor.release_digest != *component {
                 return Err(corrupt("publication-component-mismatch"));
             }
@@ -93,6 +94,9 @@ impl DirectoryArtifactRepository {
         publication: Option<&PublicationId>,
     ) -> Result<Option<ArtifactPreparationIdentity>, PlatformError> {
         let reference = self.selected_publication(component, publication)?;
+        if self.is_web_publication(&reference)? {
+            return self.web_preparation_identity(&reference);
+        }
         self.publication_execution_eligibility(&reference)?;
         let index = self.index.read().map_err(lock_error)?;
         let entry = index
@@ -118,6 +122,9 @@ impl DirectoryArtifactRepository {
         publication: Option<&PublicationId>,
     ) -> Result<ArtifactPreparationReadBounds, PlatformError> {
         let reference = self.selected_publication(component, publication)?;
+        if self.is_web_publication(&reference)? {
+            return self.web_execution_read_bounds(&reference);
+        }
         self.publication_execution_eligibility(&reference)?;
         let index = self.index.read().map_err(lock_error)?;
         let entry = index
@@ -155,6 +162,9 @@ impl DirectoryArtifactRepository {
                 "stored component exceeds configured component byte limit",
             ));
         }
+        if self.is_web_publication(&reference)? {
+            return self.web_execution_fetch(&reference, limits);
+        }
         let verified = self.load_complete_entry_with_limits(
             &self.publication_path(&reference.id),
             Retention::Component,
@@ -191,6 +201,9 @@ impl DirectoryArtifactRepository {
     ) -> Result<HistoricalExecutionSnapshot, PlatformError> {
         let reference = self.selected_publication(component, publication)?;
         add(&self.verification_statistics.metadata_fetch_attempts, 1);
+        if self.is_web_publication(&reference)? {
+            return self.web_historical_execution(&reference);
+        }
         let verified =
             self.load_complete_entry(&self.publication_path(&reference.id), Retention::Metadata)?;
         self.verify_publication_index(&reference, &verified)?;
