@@ -1,4 +1,4 @@
-use crate::web::{CheckedWebLayout, WEB_CONTRACT, WEB_WORLD};
+use crate::web::{CheckedWebLayout, WebBackendProfile, WEB_CONTRACT, WEB_HTTP_CONTRACT};
 use crate::{
     preparation_metadata_fingerprint, ArtifactDescriptor, ContractDescriptor, FieldDescriptor,
     FunctionDescriptor, InterfaceDescriptor, PreparationMetadataFingerprint, PublicationRef,
@@ -52,6 +52,20 @@ impl Projection {
                 ),
             ]),
         };
+        let mut imports = vec![ContractImport {
+            contract: ContractId("latent:context/context@0.1.0".into()),
+            optional: false,
+        }];
+        let outbound_requests = match renderer.backend_profile {
+            WebBackendProfile::None => 0,
+            WebBackendProfile::ScopedHttpGetV1 => {
+                imports.push(ContractImport {
+                    contract: ContractId(WEB_HTTP_CONTRACT.into()),
+                    optional: false,
+                });
+                1
+            }
+        };
         let manifest = CapsuleManifest {
             api_version: MANIFEST_API_VERSION.into(),
             metadata: ObjectMetadata {
@@ -63,14 +77,11 @@ impl Projection {
             },
             semantic_version: layout.version().into(),
             component_digest: component,
-            world: ContractId(WEB_WORLD.into()),
+            world: ContractId(renderer.backend_profile.world().into()),
             exports: vec![ContractExport {
                 contract: ContractId(WEB_CONTRACT.into()),
             }],
-            imports: vec![ContractImport {
-                contract: ContractId("latent:context/context@0.1.0".into()),
-                optional: false,
-            }],
+            imports,
             execution: ExecutionRequirements {
                 backend: ExecutionBackendKind::WasmComponent,
                 threading: ThreadingModel::SingleThreaded,
@@ -80,7 +91,7 @@ impl Projection {
                     memory_bytes: 256 * 1024 * 1024,
                     wall_time_limit_millis: Some(5000),
                     child_calls: 0,
-                    outbound_requests: 0,
+                    outbound_requests,
                     state_read_bytes: 0,
                     state_write_bytes: 0,
                     blob_read_bytes: 0,

@@ -3,6 +3,7 @@ package latent:angular-renderer-internal@0.1.0;
 // Private composition edge. It is fully satisfied inside the immutable final
 // component, and must never become a node host import or a public SDK interface.
 interface engine {
+    prepare: func(input: string) -> string;
     render: func(input: string) -> string;
 }
 
@@ -14,4 +15,11 @@ world adapter {
 
 world renderer {
     export engine;
+}
+
+world adapter-http {
+    import engine;
+    import latent:context/context@0.1.0;
+    import latent:http/client@0.2.0;
+    export latent:web/application@0.1.0;
 }

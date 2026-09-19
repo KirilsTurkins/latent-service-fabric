@@ -90,8 +90,65 @@ fn manifest(renderer: bool) -> WebApplicationManifest {
             profile_digest: renderer_profile_digest(WebRendererProfile::WasmWebBufferedV1)
                 .to_string(),
             assets_digest,
+            backend_profile: super::WebBackendProfile::None,
         }),
     }
+}
+
+#[test]
+fn backend_data_requires_an_explicit_angular_profile_and_nonoptional_import() {
+    use super::{WebBackendProfile, WEB_HTTP_CONTRACT, WEB_HTTP_WORLD};
+    use latent_core::ContractId;
+    use latent_manifest::ContractImport;
+
+    let mut document = manifest(true);
+    assert!(!serde_json::to_string(&document)
+        .unwrap()
+        .contains("backendProfile"));
+    document.renderer.as_mut().unwrap().backend_profile = WebBackendProfile::ScopedHttpGetV1;
+    let (layout, bytes) = package(&document);
+    assert!(inspect_web_layout(&layout, &bytes).is_err());
+    let renderer = document.renderer.as_mut().unwrap();
+    renderer.profile = WebRendererProfile::AngularSsrComponentV1;
+    renderer.profile_digest = renderer_profile_digest(renderer.profile).to_string();
+    let (layout, bytes) = package(&document);
+    let checked = inspect_web_layout(&layout, &bytes).unwrap();
+    assert_eq!(
+        checked
+            .manifest()
+            .renderer
+            .as_ref()
+            .unwrap()
+            .backend_profile
+            .world(),
+        WEB_HTTP_WORLD
+    );
+    let mut value = serde_json::to_value(document).unwrap();
+    for unsupported in [
+        serde_json::Value::Null,
+        serde_json::json!("ambient-fetch"),
+        serde_json::json!({}),
+    ] {
+        value["renderer"]["backendProfile"] = unsupported;
+        assert!(serde_json::from_value::<WebApplicationManifest>(value.clone()).is_err());
+    }
+    let mut imports = vec![ContractImport {
+        contract: ContractId(WEB_HTTP_CONTRACT.into()),
+        optional: false,
+    }];
+    assert_eq!(
+        WebBackendProfile::from_imports(&imports).unwrap(),
+        WebBackendProfile::ScopedHttpGetV1
+    );
+    imports[0].optional = true;
+    assert!(WebBackendProfile::from_imports(&imports).is_err());
+    imports[0].optional = false;
+    imports.push(imports[0].clone());
+    assert!(WebBackendProfile::from_imports(&imports).is_err());
+    assert_eq!(
+        WebBackendProfile::from_imports(&[]).unwrap(),
+        WebBackendProfile::None
+    );
 }
 
 // Descriptor-only fixture: these tests establish layout, not executable surface

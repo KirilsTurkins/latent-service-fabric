@@ -1,6 +1,6 @@
 // This wrapper is compiled into the application artifact and observed as a
 // build material. The node's fixed adapter independently caps total output.
-import {render as applicationRender} from './server.js';
+import * as application from './server.js';
 import {clientAsset} from './assets.js';
 function bytes(text) {
   let count = 0;
@@ -26,8 +26,13 @@ function transfersState(attributes) {
   // IDs themselves are case-sensitive and must not be trimmed or lowercased.
   return type === 'application/json' || (values.get('id') ?? '').endsWith('-state');
 }
-export async function render(request, context) {
-  const result = await applicationRender(request, context);
+export async function prepare(request, context) {
+  if (typeof application.prepare !== 'function') return null;
+  return await application.prepare(request, context);
+}
+
+export async function render(request, context, backend = null) {
+  const result = await application.render(request, context, backend);
   if (!result || typeof result.html !== 'string' || result.html.length > 131072) throw new Error('angular-render-result');
   const html = result.html.replaceAll('__LSF_CLIENT_ASSET__', clientAsset);
   if (bytes(html) > 131072) throw new Error('angular-html-limit');

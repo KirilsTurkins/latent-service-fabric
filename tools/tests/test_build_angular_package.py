@@ -120,6 +120,20 @@ class AngularBuildInputTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(SnapshotError):
                 validate(value)
 
+    def test_backend_authority_is_an_explicit_closed_optional_profile(self):
+        from jsonschema import Draft202012Validator
+        validator = Draft202012Validator(json.loads((ROOT / 'schemas/angular-build.schema.json').read_bytes()))
+        validate(config())
+        for profile in ('none', 'scoped-http-get-v1'):
+            value = {**config(), 'backendProfile': profile}
+            validate(value)
+            validator.validate(value)
+        for profile in (None, True, 1, '', 'fetch', 'scoped-http-get-v2', {}, []):
+            value = {**config(), 'backendProfile': profile}
+            with self.subTest(profile=profile), self.assertRaises(SnapshotError):
+                validate(value)
+            self.assertFalse(validator.is_valid(value), profile)
+
     def test_capture_excludes_unlisted_files_and_uses_fixed_destination_bytes(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
