@@ -78,6 +78,9 @@ async fn main() -> ExitCode {
 }
 
 async fn run() -> Result<Value, &'static str> {
+    if !cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+        return Err("example-requires-protected-linux-profile");
+    }
     let arguments = Arguments::parse()?;
     let bytes = Zeroizing::new(
         latent_protected_files::read(
