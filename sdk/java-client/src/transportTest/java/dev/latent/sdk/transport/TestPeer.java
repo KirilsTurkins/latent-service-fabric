@@ -149,6 +149,9 @@ final class TestPeer implements AutoCloseable {
             reply(observer, PolicyOuterClass.GetPolicyResponse.getDefaultInstance());
         }
         @Override public void getPolicyOperation(PolicyOuterClass.GetPolicyOperationRequest request, StreamObserver<PolicyOuterClass.GetPolicyOperationResponse> observer) {
+            if (request.getOperationId().equals("retained-missing")) {
+                observer.onError(Status.NOT_FOUND.asRuntimeException()); return;
+            }
             var value = PolicyOuterClass.GetPolicyOperationResponse.newBuilder();
             var receipt = receipts.get(request.getOperationId());
             if (receipt != null) value.setReceipt(receipt.getReceipt());
@@ -162,6 +165,7 @@ final class TestPeer implements AutoCloseable {
     final class Capabilities extends CapabilityServiceGrpc.CapabilityServiceImplBase {
         @Override public void listCapabilities(Capability.ListCapabilitiesRequest request, StreamObserver<Capability.ListCapabilitiesResponse> observer) {
             reply(observer, Capability.ListCapabilitiesResponse.newBuilder().setPage(Common.PageResponse.getDefaultInstance())
+                    .setTenantUsage(Capability.CapabilityResourceUsage.newBuilder().setScope("tenant").putCounters("active_activations", -1L))
                     .setRevision(Capability.CapabilityInspectionRevision.newBuilder().setDeploymentId(request.getDeploymentId()).setPublicationId(PUBLICATION)
                             .setRouteGeneration(-1).setCatalogTransaction(-1)).addCapabilities(Capability.CapabilityDescriptor.newBuilder().setId("provider")
                             .setInspection(Capability.CapabilityBindingInspection.newBuilder().setProviderConfigurationEpoch(-1))).build());

@@ -296,7 +296,8 @@ public final class RpcClient implements Management.ClientProfile, LatentClient, 
                         int code = status.getCode().value();
                         var platform = Protocol.details(metadata, code);
                         if (response == null && invalid == null && Set.of(3, 5, 6, 7, 9, 10, 12, 16).contains(code)) observed = true;
-                        if (request instanceof Management.GetPolicyOperationRequest && code == 5) observed = false;
+                        if (code == 5 && (request instanceof Management.GetActivationRequest
+                                || request instanceof Management.GetPolicyOperationRequest)) observed = false;
                         if (audit.status().filter(value -> value.equals("outcome-unknown") || value.equals("audit-unavailable")).isPresent() && response == null) observed = false;
                         Management.FailureCategory category = invalid != null || status.isOk() ? Management.FailureCategory.DECODE
                                 : cancellation != null ? Management.FailureCategory.LOCAL_CANCELLED

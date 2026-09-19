@@ -43,6 +43,9 @@ public final class ProviderWorkflow {
         }
     }
     private void passed(String name) { assertions.put(name, true); }
+    private void absentAudit(Management.ResponseMetadata metadata) {
+        require(metadata.auditAck().isEmpty() && metadata.auditStatus().isEmpty() && metadata.auditAttemptSequence().isEmpty());
+    }
     private Management.InvokeRequest request(String provider, String suffix, String function, String tenant, boolean exhaustFuel) {
         return input.request(provider, "java-" + suffix, function, tenant, exhaustFuel);
     }
@@ -115,23 +118,27 @@ public final class ProviderWorkflow {
                 "lsf-capability-policy-v1", Management.CapabilityPolicyRecordKind.POLICY, "", false);
         var request = new Management.ApplyPolicyRequest(Optional.of(policy), Optional.of(0L), "java-policy-create");
         var created = await(client.applyPolicy(request, options()));
-        require(created.metadata().auditAck().isEmpty() && created.metadata().auditStatus().isEmpty()
-                && created.metadata().auditAttemptSequence().isEmpty() && created.metadata().outcome().equals(Management.OutcomeKnowledge.OBSERVED));
+        absentAudit(created.metadata());
+        require(created.metadata().outcome().equals(Management.OutcomeKnowledge.OBSERVED));
         var receipt = created.value().receipt().orElseThrow();
         require(receipt.operationId().equals("java-policy-create"));
         var inspected = await(client.getPolicy(new Management.GetPolicyRequest(policy.id(), policy.recordKind()), options())).value();
         require(inspected.policy().orElseThrow().generation() == receipt.generation());
         var recovered = await(client.getPolicyOperation(new Management.GetPolicyOperationRequest("java-policy-create"), options()));
+        absentAudit(recovered.metadata());
         require(recovered.value().receipt().equals(Optional.of(receipt)));
         var absent = await(client.getPolicyOperation(new Management.GetPolicyOperationRequest("java-unknown-operation"), options()));
         require(absent.value().receipt().isEmpty() && absent.metadata().outcome().equals(Management.OutcomeKnowledge.UNKNOWN));
         passed("mutationReceipt");
         stage = "exact-replay";
-        require(await(client.applyPolicy(request, options())).value().receipt().equals(Optional.of(receipt))); passed("exactReplay");
+        var replay = await(client.applyPolicy(request, options()));
+        absentAudit(replay.metadata());
+        require(replay.value().receipt().equals(Optional.of(receipt))); passed("exactReplay");
         stage = "precondition-conflict";
         var conflicting = new Management.ApplyPolicyRequest(request.policy(), Optional.of(0L), "java-stale-precondition");
         var failure = failed(client.applyPolicy(conflicting, options()));
-        require(failure.category().equals(Management.FailureCategory.RPC) && failure.outcome().equals(Management.OutcomeKnowledge.OBSERVED));
+        require(failure.category().equals(Management.FailureCategory.RPC) && failure.outcome().equals(Management.OutcomeKnowledge.OBSERVED)
+                && failure.auditAck().isEmpty() && failure.auditStatus().isEmpty() && failure.auditAttemptSequence().isEmpty());
         passed("preconditionConflict");
     }
 

@@ -81,6 +81,11 @@ public final class TransportTest {
             var inspection = get(client.listCapabilities(new Management.ListCapabilitiesRequest(Optional.empty(), Optional.empty(), Optional.empty(), "deployment-a", false), OPTIONS));
             check(inspection.value().revision().orElseThrow().publicationId().equals(Optional.of(TestPeer.PUBLICATION)), "inspection publication");
             check(inspection.value().capabilities().getFirst().inspection().orElseThrow().providerConfigurationEpoch() == -1, "provider epoch");
+            check(inspection.value().tenantUsage().orElseThrow().counters().get("active_activations") == -1L
+                    && inspection.value().nodeUsage().isEmpty(), "u64 counter map and absent node usage");
+            check(get(client.listCapabilities(new Management.ListCapabilitiesRequest(Optional.empty(), Optional.empty(),
+                    Optional.of(new Management.PageRequest(0, Optional.empty())), "deployment-a", false), OPTIONS))
+                    .value().capabilities().size() == 1, "capability zero page keeps default");
             var applied = get(client.applyPolicy(policy("create"), OPTIONS));
             check(applied.value().receipt().orElseThrow().generation() == -1 && applied.metadata().auditAck().isEmpty(), "mutation no invented audit");
             check(get(client.getPolicyOperation(new Management.GetPolicyOperationRequest("create"), OPTIONS)).value().receipt().orElseThrow().operationId().equals("create"), "operation recovery");
@@ -95,6 +100,15 @@ public final class TransportTest {
             check(failure(client.invoke(invoke("max", "echo"), new Management.CallOptions(Optional.of(-1L)))).category().equals(Management.FailureCategory.INVALID_REQUEST), "u64 duration checked");
             check(failure(client.listPolicies(new Management.ListPoliciesRequest(Management.CapabilityPolicyRecordKind.POLICY,
                     Optional.of(new Management.PageRequest(0, Optional.empty()))), OPTIONS)).category().equals(Management.FailureCategory.INVALID_REQUEST), "policy zero invalid");
+            check(failure(client.listPolicies(new Management.ListPoliciesRequest(Management.CapabilityPolicyRecordKind.POLICY,
+                    Optional.empty()), OPTIONS)).category().equals(Management.FailureCategory.INVALID_REQUEST), "policy page required");
+            check(failure(client.listPolicies(new Management.ListPoliciesRequest(Management.CapabilityPolicyRecordKind.POLICY,
+                    Optional.of(new Management.PageRequest(33, Optional.empty()))), OPTIONS)).category().equals(Management.FailureCategory.INVALID_REQUEST), "policy page hard maximum");
+            check(failure(client.listPolicies(new Management.ListPoliciesRequest(Management.CapabilityPolicyRecordKind.POLICY,
+                    Optional.of(new Management.PageRequest(1, Optional.of("x".repeat(118))))), OPTIONS)).category().equals(Management.FailureCategory.INVALID_REQUEST), "policy cursor hard maximum");
+            check(failure(client.listCapabilities(new Management.ListCapabilitiesRequest(Optional.empty(), Optional.empty(),
+                    Optional.of(new Management.PageRequest(129, Optional.empty())), "deployment-a", false), OPTIONS)).category()
+                    .equals(Management.FailureCategory.INVALID_REQUEST), "capability page hard maximum");
             var mutation = policy("missing-precondition");
             check(failure(client.applyPolicy(new Management.ApplyPolicyRequest(mutation.policy(), Optional.empty(), mutation.operationId()), OPTIONS)).identity().operationId()
                     .equals(Optional.of("missing-precondition")), "invalid mutation retains identity");
@@ -138,6 +152,14 @@ public final class TransportTest {
             var lost = failure(client.applyPolicy(policy("lost"), OPTIONS));
             check(lost.outcome().equals(Management.OutcomeKnowledge.UNKNOWN) && lost.identity().operationId().equals(Optional.of("lost")), "lost mutation uncertain");
             check(get(client.getPolicyOperation(new Management.GetPolicyOperationRequest("lost"), OPTIONS)).value().receipt().isPresent(), "lost receipt recovery");
+            var missingActivation = failure(client.getActivation(new Management.GetActivationRequest("retained-missing"), OPTIONS));
+            check(missingActivation.grpcStatus().equals(Optional.of(5)) && missingActivation.dispatched()
+                    && missingActivation.outcome().equals(Management.OutcomeKnowledge.UNKNOWN)
+                    && missingActivation.identity().activationId().equals(Optional.of("retained-missing")), "activation NotFound remains uncertain");
+            var missingOperation = failure(client.getPolicyOperation(new Management.GetPolicyOperationRequest("retained-missing"), OPTIONS));
+            check(missingOperation.grpcStatus().equals(Optional.of(5)) && missingOperation.dispatched()
+                    && missingOperation.outcome().equals(Management.OutcomeKnowledge.UNKNOWN)
+                    && missingOperation.identity().operationId().equals(Optional.of("retained-missing")), "operation NotFound remains uncertain");
             var create = policy("replay");
             check(get(client.applyPolicy(create, OPTIONS)).value().equals(get(client.applyPolicy(create, OPTIONS)).value()), "exact explicit replay");
             check(failure(client.applyPolicy(new Management.ApplyPolicyRequest(create.policy(), Optional.of(1L), create.operationId()), OPTIONS)).grpcStatus().equals(Optional.of(10)), "incompatible replay conflict");
@@ -252,6 +274,36 @@ public final class TransportTest {
         }
     }
 
+    static void concurrentShutdownAndClose() throws Exception {
+        try (var peer = new TestPeer(); var client = peer.client()) {
+            var pending = client.invoke(invoke("concurrent-close", "hold"), OPTIONS);
+            until(() -> peer.pending.containsKey("concurrent-close"));
+            var begin = new java.util.concurrent.CountDownLatch(1);
+            var workers = new java.util.concurrent.ThreadPoolExecutor(2, 2, 0, TimeUnit.SECONDS,
+                    new java.util.concurrent.ArrayBlockingQueue<Runnable>(2));
+            try {
+                var closing = CompletableFuture.supplyAsync(() -> {
+                    try { check(begin.await(1, TimeUnit.SECONDS), "close rendezvous"); }
+                    catch (InterruptedException failure) { throw new java.util.concurrent.CompletionException(failure); }
+                    client.close();
+                    return client.snapshot().closed();
+                }, workers);
+                var shutdown = CompletableFuture.supplyAsync(() -> {
+                    try {
+                        check(begin.await(1, TimeUnit.SECONDS), "shutdown rendezvous");
+                        return client.shutdown(Duration.ofSeconds(3));
+                    } catch (InterruptedException failure) { throw new java.util.concurrent.CompletionException(failure); }
+                }, workers);
+                begin.countDown();
+                check(get(closing) && get(shutdown).clean(), "concurrent lifecycle reaps real owners");
+                check(failure(pending).category().equals(Management.FailureCategory.LOCAL_CANCELLED), "concurrent close cancels outstanding wait");
+            } finally {
+                workers.shutdownNow();
+                check(workers.awaitTermination(1, TimeUnit.SECONDS), "test lifecycle workers reaped");
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         FixtureCodecTest.run();
         allOperationsAndSnapshots();
@@ -262,6 +314,7 @@ public final class TransportTest {
         malformedAndOversizedWire();
         legacyAndConfiguration();
         blockedCallbackShutdownReportsRealOwners();
-        System.out.println("Java transport: eight bounded TCP/protocol suites passed");
+        concurrentShutdownAndClose();
+        System.out.println("Java transport: nine bounded TCP/protocol suites passed");
     }
 }
