@@ -1981,7 +1981,19 @@ dependencies = [
 name = "latent-sdk"
 version = "0.1.0-alpha.3"
 dependencies = [
+ "http",
+ "http-body",
+ "hyper",
+ "hyper-util",
  "latent-core",
+ "latent-protected-files",
+ "latent-rpc",
+ "prost",
+ "serde_json",
+ "tokio",
+ "tonic",
+ "tower",
+ "zeroize",
 ]
 
 [[package]]

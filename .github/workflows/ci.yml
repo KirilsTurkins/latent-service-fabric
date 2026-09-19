@@ -171,9 +171,12 @@ jobs:
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 5
         run: |
-          node --test tools/tests/browser_hydration.test.mjs
+          node --test tools/tests/browser_hydration.test.mjs tools/tests/browser_application.test.mjs
           node tools/browser-boundary/build.mjs examples/renderer-profile "$RUNNER_TEMP/browser-boundary"
-          LSF_BROWSER_BUILD="$RUNNER_TEMP/browser-boundary" LSF_BROWSER_NODE="$(command -v node)" LSF_BROWSER_CHROME="$(command -v google-chrome)" LSF_BROWSER_TOOLCHAIN="$PWD/examples/renderer-profile" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite browser-boundary
+          cargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release
+          wasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o "$RUNNER_TEMP/browser-boundary/application.wasm"
+          wasm-tools validate "$RUNNER_TEMP/browser-boundary/application.wasm"
+          LSF_WEB_COMPONENT="$RUNNER_TEMP/browser-boundary/application.wasm" LSF_BROWSER_BUILD="$RUNNER_TEMP/browser-boundary" LSF_BROWSER_NODE="$(command -v node)" LSF_BROWSER_CHROME="$(command -v google-chrome)" LSF_BROWSER_TOOLCHAIN="$PWD/examples/renderer-profile" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite browser-boundary
       - name: Retain bounded browser boundary observations
         if: always() && needs.profile.outputs.renderer == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -182,6 +185,7 @@ jobs:
           path: |
             ${{ runner.temp }}/browser-boundary/build-receipt.json
             ${{ runner.temp }}/browser-boundary/browser-receipt.json
+            ${{ runner.temp }}/browser-boundary/browser-application-receipt.json
           if-no-files-found: error
       - name: Build the public Angular renderer fixture
         if: needs.profile.outputs.renderer == 'true'
@@ -568,7 +572,7 @@ jobs:
           go-version: 1.23.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22.16.0
+          node-version: 24.19.0
           cache: npm
           cache-dependency-path: sdk/typescript-client/package-lock.json
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
