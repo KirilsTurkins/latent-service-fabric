@@ -80,7 +80,7 @@ manifests without running package managers, builds, setup scripts or SDK code.
 
 | Surface | Advisory coverage and boundary |
 | --- | --- |
-| Root `Cargo.toml` / `Cargo.lock` and all declared workspace members, including Rust SDKs | RustSec resolved crate versions; every workspace member must appear in the lock |
+| Root workspace and reviewed isolated native-VM fixture | RustSec scans every tracked `Cargo.lock`, with separate lock hashes and findings; every workspace member and isolated fixture must appear in its lock |
 | TypeScript SDK, renderer example and isolated documentation website npm manifests/locks | OSV for every resolved direct/transitive/dev entry; registry.npmjs.org HTTPS sources only |
 | `tools/requirements.lock`, source scanner requirements, and caller scanner requirements | OSV exact PyPI versions; unresolved ranges/options fail |
 | Go client and generator modules | OSV for the complete recorded `go list -m -json all` graph and its exact Go standard-library version; normalized manifest/sum hashes, per-module checksums and generator bindings must agree |
