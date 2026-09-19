@@ -103,7 +103,8 @@ async fn serve<S: AsyncRead + AsyncWrite + Unpin>(socket: &mut S, shared: &Share
             Err(status) => {
                 let until =
                     age.min(Instant::now() + millis(shared.settings.limits.write_timeout_millis));
-                let _ = timeout_at(until, write::error(socket, status)).await;
+                let _ =
+                    timeout_at(until, write::error(socket, status, shared.settings.scheme)).await;
                 break;
             }
         }
@@ -122,11 +123,21 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
 ) -> Result<bool, u16> {
     let (used, end, deadline) = read_head(socket, shared, buffer, index == 0, age).await?;
     let mut head = head::parse(&buffer[..end], shared, deadline)?;
-    let selected = dispatch::select(&head, shared)?;
     let close = head.close || index + 1 == shared.settings.limits.maximum_requests_per_connection;
     if used - end > head.content_length {
         return Err(400);
     }
+    let path = head.collector.target().path();
+    if path == "/_lsf/assets" || path.starts_with(latent_artifacts::web::IMMUTABLE_ASSET_PREFIX) {
+        if used != end {
+            return Err(400);
+        }
+        return super::assets::exchange(socket, shared, head, &mut buffer[..end], deadline, close)
+            .await;
+    }
+    // The immutable namespace never reaches trigger lookup or cell reservation,
+    // including misses, malformed locators, HEAD, 304 and rejected methods.
+    let selected = dispatch::select(&head, shared)?;
     head.collector
         .append(&buffer[end..used])
         .map_err(|e| e.status().unwrap_or(0))?;
@@ -143,30 +154,37 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
         remaining -= n;
     }
     buffer.zeroize();
-    let mut activation = dispatch::begin(head, selected, shared)?;
-    let mut unexpected = [0u8; 1];
-    let result = tokio::select! {
-        biased;
-        () = tokio::time::sleep_until(deadline.monotonic().into()) => {
-            activation.interrupt(ActivationTransportInterruption::DeadlineExceeded);
-            return Err(0);
+    let delivery = match dispatch::begin(head, selected, shared)? {
+        dispatch::Begun::Cached(delivery) => delivery,
+        dispatch::Begun::Activation(mut activation) => {
+            let mut unexpected = [0u8; 1];
+            let result = tokio::select! {
+                biased;
+                () = tokio::time::sleep_until(deadline.monotonic().into()) => {
+                    activation.interrupt(ActivationTransportInterruption::DeadlineExceeded);
+                    return Err(0);
+                }
+                // EOF, write-half-close or premature pipelining cancels the
+                // activation. A cache hit has no activation owner to interrupt.
+                _ = socket.read(&mut unexpected) => {
+                    activation.interrupt(ActivationTransportInterruption::Disconnected);
+                    return Err(0);
+                }
+                result = &mut activation => result,
+            };
+            dispatch::complete(result.0, result.1)?
         }
-        // EOF (including a client write-half-close), error, or premature pipelined
-        // input cancels this profile. There is no second unbounded request queue.
-        _ = socket.read(&mut unexpected) => {
-            activation.interrupt(ActivationTransportInterruption::Disconnected);
-            return Err(0);
-        }
-        result = &mut activation => result,
     };
-    let delivery = dispatch::complete(result.0, result.1)?;
     let close = close || !shared.handle.accepting();
     let until = Instant::from_std(deadline.monotonic())
         .min(Instant::now() + millis(shared.settings.limits.write_timeout_millis));
-    timeout_at(until, write::delivery(socket, delivery, close))
-        .await
-        .map_err(|_| 0u16)?
-        .map_err(|_| 0u16)?;
+    timeout_at(
+        until,
+        write::delivery(socket, delivery, close, shared.settings.scheme),
+    )
+    .await
+    .map_err(|_| 0u16)?
+    .map_err(|_| 0u16)?;
     Ok(close)
 }
 async fn read_head<S: AsyncRead + Unpin>(

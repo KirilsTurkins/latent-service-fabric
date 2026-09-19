@@ -45,6 +45,10 @@ class Suite:
 
 
 SUITES = {
+    "browser-boundary": Suite(
+        "apps/latentd/Cargo.toml", "latentd", "src/lib_root.rs",
+        "standalone::http::assets::browser::actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress",
+        frozenset({"standalone::http::assets::browser::actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress"}), True),
     "operator-fixture": Suite(
         "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
         POLICY_PREFIX + "export_operator_workflow_fixture",

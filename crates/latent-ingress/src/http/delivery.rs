@@ -1,5 +1,6 @@
 use super::{
     bounded::{BoundedList, BoundedText, Optional},
+    cache::{CacheRequest, Pending},
     codec,
     model::{Profile, ResponseData},
     pool::Lease,
@@ -29,11 +30,13 @@ pub enum DeliveryCause {
 /// The payload and headers stay owned until actual delivery or drop. There is no
 /// conversion into an unguarded response body or freely cloned response object.
 pub struct Delivery {
-    response: ResponseData,
+    pub(super) response: ResponseData,
     cause: DeliveryCause,
     method: Method,
     headers_written: bool,
     written: usize,
+    pending: Option<Pending>,
+    pub(super) cache_age: Option<String>,
     // Payload/header allocations must be freed before their capacity is refunded.
     lease: Arc<Lease>,
 }
@@ -74,7 +77,12 @@ impl Delivery {
             method,
             headers_written: false,
             written: 0,
+            pending: None,
+            cache_age: None,
         })
+    }
+    pub(super) fn stage(&mut self, request: CacheRequest, wire: &[u8]) {
+        self.pending = request.stage(self, wire);
     }
     #[must_use]
     pub fn status(&self) -> u16 {
@@ -84,12 +92,36 @@ impl Delivery {
     pub fn cause(&self) -> DeliveryCause {
         self.cause
     }
+    pub fn enforce_browser_profile(&mut self, scheme: super::Scheme) -> Result<(), HttpError> {
+        self.lease.check()?;
+        if self.headers_written || self.written != 0 {
+            return Err(HttpError::IncompleteDelivery);
+        }
+        if !super::browser::validate_response(&self.response, scheme) {
+            self.pending = None;
+            self.cache_age = None;
+            self.response = failure(502, self.method);
+            self.cause = DeliveryCause::InvalidGuestResponse;
+        }
+        Ok(())
+    }
+    /// Downstream caches have no access to the operator's complete key or
+    /// eligibility fence. Keep browser/proxy storage disabled even on local hits.
     pub fn headers(&self) -> impl Iterator<Item = HeaderView<'_>> {
         self.response
             .headers
             .0
             .iter()
+            .filter(|header| !matches!(header.name.0.as_str(), "cache-control" | "age"))
             .map(super::model::Header::view)
+            .chain(std::iter::once(HeaderView {
+                name: "cache-control",
+                value: b"no-store",
+            }))
+            .chain(self.cache_age.as_ref().map(|age| HeaderView {
+                name: "age",
+                value: age.as_bytes(),
+            }))
     }
     #[must_use]
     pub fn media_type(&self) -> Option<&str> {
@@ -136,10 +168,13 @@ impl Delivery {
         Ok(())
     }
     /// Records completed local writes, not peer receipt or browser processing.
-    pub fn finish(self) -> Result<Delivered, HttpError> {
+    pub fn finish(mut self) -> Result<Delivered, HttpError> {
         self.lease.check()?;
         if !self.headers_written || self.written != self.response.body.0.len() {
             return Err(HttpError::IncompleteDelivery);
+        }
+        if let Some(pending) = self.pending.take() {
+            pending.publish();
         }
         Ok(Delivered {
             status: self.response.status,

@@ -31,6 +31,8 @@ jobs:
       renderer: ${{ steps.select.outputs.renderer }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Classify the complete change
         id: select
         run: python3 tools/ci_profile.py
@@ -42,6 +44,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5
@@ -61,6 +65,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           components: rustfmt, clippy
@@ -161,6 +167,22 @@ jobs:
         uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
+      - name: Validate browser boundary with live ingress
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 5
+        run: |
+          node --test tools/tests/browser_hydration.test.mjs
+          node tools/browser-boundary/build.mjs examples/renderer-profile "$RUNNER_TEMP/browser-boundary"
+          LSF_BROWSER_BUILD="$RUNNER_TEMP/browser-boundary" LSF_BROWSER_NODE="$(command -v node)" LSF_BROWSER_CHROME="$(command -v google-chrome)" LSF_BROWSER_TOOLCHAIN="$PWD/examples/renderer-profile" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite browser-boundary
+      - name: Retain bounded browser boundary observations
+        if: always() && needs.profile.outputs.renderer == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: browser-boundary-observations
+          path: |
+            ${{ runner.temp }}/browser-boundary/build-receipt.json
+            ${{ runner.temp }}/browser-boundary/browser-receipt.json
+          if-no-files-found: error
       - name: Build the public Angular renderer fixture
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 10
@@ -219,7 +241,7 @@ jobs:
         timeout-minutes: 10
         shell: bash
         run: |
-          python3 -m unittest tools.tests.test_ci_rust_artifacts
+          python3 -m unittest tools.tests.test_ci_rust_artifacts tools.tests.test_phase2_resource_binaries
           fixture_root="$(mktemp -d "${RUNNER_TEMP}/lsf-operator-fixture.XXXXXXXX")"
           mkdir -p "${RUNNER_TEMP}/phase2-gate"
           trap 'rm -rf -- "$fixture_root"' EXIT
@@ -236,11 +258,21 @@ jobs:
           python3 tools/run_phase2_offline_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/offline-receipt.json"
           LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/publication-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite publication-fixture
           python3 tools/run_publication_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/publication-inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/publication-receipt.json"
+          # Keep the frozen 512 MiB executable-hash limit without modifying
+          # Cargo's debug artifacts or their hard-linked copies. Hash and run
+          # these same runtime-only copies, never the unstripped originals.
+          resource_bin="${fixture_root}/resource-bin"
+          mkdir "${resource_bin}"
+          for binary in latent latentd; do
+            objcopy --strip-debug "${PWD}/target/debug/${binary}" "${resource_bin}/${binary}"
+            stat --format="Resource ${binary} fixture: %s bytes" "${resource_bin}/${binary}"
+          done
           LSF_PHASE2_RESOURCE_FIXTURE_ROOT="${fixture_root}/resource-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite resource-fixture
           python3 -m unittest tools.tests.test_phase2_gate_resource tools.tests.test_phase2_resource_clock
           LSF_GATE_FIXTURE_ROOT="${fixture_root}" python3 - <<'PY'
           import hashlib, json, os, pathlib, subprocess
           root = pathlib.Path.cwd()
+          binaries = pathlib.Path(os.environ["LSF_GATE_FIXTURE_ROOT"]) / "resource-bin"
           def digest(path):
               with path.open("rb") as source:
                   return "sha256:" + hashlib.file_digest(source, "sha256").hexdigest()
@@ -248,14 +280,14 @@ jobs:
               "schemaVersion": "latent.phase2.resource-build.v1",
               "sourceRevision": os.environ["GITHUB_SHA"],
               "cargoLockSha256": digest(root / "Cargo.lock"),
-              "cliSha256": digest(root / "target/debug/latent"),
-              "nodeSha256": digest(root / "target/debug/latentd"),
+              "cliSha256": digest(binaries / "latent"),
+              "nodeSha256": digest(binaries / "latentd"),
               "rustcVersion": subprocess.check_output(["rustc", "--version"], text=True).strip(),
               "buildProfile": "debug",
           }
           (pathlib.Path(os.environ["LSF_GATE_FIXTURE_ROOT"]) / "build.json").write_text(json.dumps(identity))
           PY
-          python3 tools/phase2_gate_resource.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+          python3 tools/phase2_gate_resource.py --cli "${resource_bin}/latent" --node "${resource_bin}/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
           python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
       - name: Retain compact Phase 2 gate receipts
         if: always()
@@ -274,6 +306,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -324,6 +358,8 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -374,6 +410,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@9376cdc5a5e25b16da71af47712785cf06b0d6d4 # 1.94.1
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -403,6 +441,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5
@@ -516,6 +556,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5

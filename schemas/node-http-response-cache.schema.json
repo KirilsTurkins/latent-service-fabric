@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/node-http-response-cache.schema.json",
+  "title": "Immutable public HTTP response cache approval",
+  "description": "Trusted node configuration, never guest response metadata. The operator attests immutable public output independent of secrets, mutable providers, authenticated sessions and request-specific trace/deadline state. The publication and release must match the exact admitted route.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dependencyProfile", "tenant", "publication", "release", "rendererProfile", "authority", "path", "generation", "maximumAgeSeconds", "vary"],
+  "properties": {
+    "dependencyProfile": {"const": "immutable-public-v1"},
+    "tenant": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[!-~]+$"},
+    "publication": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[!-~]+$"},
+    "release": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[!-~]+$"},
+    "rendererProfile": {"const": "buffered-v1"},
+    "authority": {"type": "string", "minLength": 1, "maxLength": 256},
+    "path": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^/[^?#]*$"},
+    "generation": {"type": "integer", "minimum": 1, "maximum": 18446744073709551615},
+    "maximumAgeSeconds": {"type": "integer", "minimum": 1, "maximum": 60},
+    "vary": {
+      "type": "array", "maxItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["name", "values"],
+        "properties": {
+          "name": {"enum": ["accept", "accept-language", "accept-encoding"]},
+          "values": {
+            "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true,
+            "items": {"type": "string", "maxLength": 128, "pattern": "^[ -~]*$"}
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+[package]
+name = "latent-network"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Explicit address policy and bounded DNS primitives without capability authority."
+
+[lints]
+workspace = true
+
+[dependencies]
+getrandom = "=0.4.3"
+hickory-proto = "=0.26.3"
+ipnet = { version = "=2.12.2", features = ["serde"] }
+serde.workspace = true
+tokio = { workspace = true, features = ["net", "io-util"] }

@@ -1,9 +1,17 @@
 //! Bounded protocol tests and real public-component node regressions.
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod angular;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod browser;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod browser_component;
+mod browser_config;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod cache;
+mod cache_config;
 mod config;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-mod fixture;
+pub(super) mod fixture;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod lifecycle;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]

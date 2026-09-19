@@ -98,7 +98,8 @@ fn exact_response_codec_preserves_cookies_media_octets_and_partial_writes() {
         fields,
         [
             ("set-cookie", b"a=1; HttpOnly".as_slice()),
-            ("set-cookie", b"b=2".as_slice())
+            ("set-cookie", b"b=2".as_slice()),
+            ("cache-control", b"no-store".as_slice())
         ]
     );
     assert_eq!(delivery.advance(1), Err(HttpError::IncompleteDelivery));
