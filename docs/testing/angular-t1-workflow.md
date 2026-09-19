@@ -95,15 +95,73 @@ not substitute for #236's real-browser application qualification.
 
 ## Current evidence boundary
 
-The actual maintained build and real-clock signed exporter pass locally. CLI,
-transport, policy and artifact tests exercise the bounded management surfaces.
-Protected configuration, enforced evidence admission, isolated native preparation
-and exact selected deployment have also passed in the separate-process runner.
-The end-to-end T1 compiler/cache/render runner is still under qualification;
-the published runtime remains T0-only. No interrupted Docker run is counted as
-a pass. The #336 asset implementation is integrated; its new actual workflow
-checks are pending the complete T1 run. The browser scenario work remains
-separate. Full #226 completion is not claimed here.
+The complete protected T1 workflow passed on Linux x86-64 on 2026-09-19 after
+integrating startup dependency `3a1f6189`. The qualified code is
+`c767d0a624172e72c1f44bb3d7064bb2c382231e`; the
+[unaltered run-12 receipt](../evidence/phase3-226-angular-t1.json) has SHA-256
+`451ae67ca62d9359203712b51a1acce1580460dad267a5ed16445d5bee5682ef`.
+Only this observed selected-publication path enables Angular under the explicit
+protected `external-capsule-v1` profile. It does not convert web identity into
+capsule authority or enable unsupported T2/T3 profiles.
+
+The retained execution used container `lsf-phase3-226-build`, its exclusive
+`lsf-phase3-226-target` volume, and these actual binaries:
+
+| Binary | Path in the owned container | SHA-256 |
+| --- | --- | --- |
+| CLI | `/target/debug/latent` | `8ad264f81ba482d2273e9324c3349c38a2942e25eb54dd4c3dca1defda099fb3` |
+| Node | `/target/debug/latentd` | `5c1bd294f9931d072a1867c205e1fadb0facf37287fb860cdb004464818654a6` |
+| Optimized compiler | `/target/phase3-226-release/release/latent-aot-compiler` | `4d736bd8b7a48f8ed7ff5175efd9b85fd56d5ef707520915b7aa8119f18c7b51` |
+
+The actual build is `/target/phase3-angular-t1-build/actual-selected-01`; a fresh
+real-clock signed export is `/target/phase3-angular-t1-fixture-12`. Neither is
+the separate #236 reference application. The immutable build observation is
+`sha256:3538f5810c2c53d012cded8e734cf0291f8d765553b4a37cf4ffbdc620e8a8e2`.
+The admitted renderer contains 23956338 bytes. Its package and component digests
+are retained in the native-cache observations, not inferred from a T0 run.
+
+Run 12 observes all of the following within the existing finite bounds:
+
+- Sixteen rejected protected-configuration commands and three enforced
+  publisher/builder/SBOM admission failures; exact durable publication replay.
+- Cold isolated preparation in 23703 milliseconds, then actual selected cold
+  and warm Angular renders. This timing is not release-performance evidence.
+- Render exceptions, hydration limits, explicit cancellation and client
+  disconnect, followed by successful renders and reclaimed cell/quota owners.
+- Evidence renewal invalidating old preparation and deployment generations,
+  independent revocation of a second package sharing the same component, and
+  exact deployment-CAS rollback without substituting a staged web canary.
+- Exact immutable client asset URLs and bytes, private-path and foreign-tenant
+  denial, principal isolation, and trigger deletion with its retained generation.
+- A restart cache hit at audit sequence `35`, strictly newer than the
+  pre-restart high-water mark `19`, with unchanged native blobs and receipts.
+  Revocation remains effective; both node processes report clean, reaped shutdown.
+
+The runner used 103 of its maximum 256 CLI processes. CI now builds its own
+optimized compiler, exports the current job's actual Angular build through the
+exact Cargo harness inventory, runs this workflow, and retains its compact
+receipt. It never shares a Cargo target with another worktree or substitutes
+cached test evidence. Exact-head CI and central review remain separate gates.
+
+Additional local validation: 563 CLI/node/Wasmtime library tests pass with 29
+explicitly ignored tests; the fresh signed exporter passes separately; 47
+workflow/inventory/schema/native-boundary tests pass. Strict all-target app
+Clippy and workspace formatting checks pass. No 100000-release workload ran.
+
+This evidence is not real-browser hydration, backend invocation during render,
+a true staged web canary, production hostile-multitenancy certification, or
+full #226/Phase 3 completion. Those parent-owned integration boundaries remain
+separate. Build reproducibility remains `not-checked`, and dependency inventory
+remains `declared-inputs-incomplete`.
+
+## Earlier attempts and corrections
+
+Run 09 completed actual T1 rendering, but did not require a strictly newer
+restart cache-hit sequence. Runs 10 and 11 reached the selected HTTP/lifecycle
+checks and then failed the restart deadline; their empty receipts are not
+passes. Run 12 uses the integrated audit/provider pre-enqueue startup fixes
+and the stronger post-restart observation check without retries of admitted
+work or increased compiler/guest ceilings.
 
 After integrating the provider startup fixes and optional backend profile,
 11 manifest and 115 wire tests pass, as does strict app-scope Linux Clippy.
@@ -111,8 +169,9 @@ The initial fresh build rejects the stale installed npm tree against the merged
 lockfile; it does not publish a package. Reprovisioning that exact lock in a
 dedicated Linux tool directory produces a new actual package successfully.
 An exporter launched before the output existed also failed and supplies no
-admission evidence. The later selected-publication context change requires
-another build and native qualification against its changed profile digest.
+admission evidence. The later selected-publication context change required
+another build and native qualification against its changed profile digest;
+run 12 uses that rebuilt `actual-selected-01` output, not the earlier artifact.
 
 The repository-contracts job on `ffea4260` rejects the optional backend ABI
 because its source tripwire still expects one unconditional generator. The

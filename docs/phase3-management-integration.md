@@ -133,6 +133,10 @@ Angular build evidence; protected T1 execution still requires the full gate abov
 The additional [actual Angular workflow](testing/angular-t1-workflow.md) consumes
 the maintained #234 builder's bytes and observation. Its exporter now passes
 publisher/builder/SBOM verification with the real system clock; it does not
-relabel the Angular recipe or claim reproducibility. This is admission evidence,
-not yet a completed isolated-compiler/render qualification. The committed
-runtime gate remains T0-only until the complete T1 path passes.
+relabel the Angular recipe or claim reproducibility. The retained run now passes
+protected T1 admission, isolated compilation, actual selected rendering,
+cancellation/reclamation, independent revocation and authenticated cache reuse
+after restart. The runtime permits this explicit protected T1 profile while
+retaining the closed engine shape and enforced admission/compiler owners.
+Real-browser hydration, backend-during-render and true staged web canaries
+remain separate parent-owned qualification, not claims of this #226 receipt.
