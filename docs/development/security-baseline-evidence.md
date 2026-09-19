@@ -169,13 +169,14 @@ pin policy for an older maintained branch.
 
 ### Full-snapshot secret triage
 
-The local full development snapshot scanned 4,073 text files and counted 222
-unscanned binary/archive files. It reports **16 unsuppressed generic-rule
-occurrences across three paths**. A changed-file PR pass does not clear them.
+The initial local full development snapshot scanned 4,073 text files and counted
+222 unscanned binary/archive files. It reported **16 unsuppressed generic-rule
+occurrences across three paths**. A changed-file PR pass did not clear them;
+the subsequent complete parent review is recorded below.
 
 - A benchmark README occurrence is consistent with an API-journal digest.
 - A local-secret test occurrence is consistent with an environment-variable name.
-- Fourteen occurrences in a historical benchmark aggregate need complete private
+- Fourteen occurrences in a historical benchmark aggregate needed complete private
   review. Private in-memory follow-up maps every matched value to
   `runs[*].direct_execution.prepared_handle`; none of these fourteen is a decoded
   finding. A digest-shaped preparation identifier is not, by shape alone, proof
@@ -198,9 +199,9 @@ revision must be distinguished when reviewing these local receipts.
 | --- | --- | --- |
 | Coherent pinned dependency baseline | Existing RustSec worker reused; both-ref schedule selection, fresh identities and stale/unavailable rejection tested | Promote coordinator to default `release`; capture actual periodic both-ref run |
 | SDK inventory and repository alerts | Resolved runtime/development dependencies inventoried, real renderer advisory removed, alerts and security proposals enabled | Promote existing release dependency fixes; review future manifest changes |
-| Secret/static coverage and protection | Reviewed scoped rules, redacted evidence, enabled secret scanning/push protection, unavailable-service equivalent documented | Complete private snapshot triage and review the exact static exception |
+| Secret/static coverage and protection | Reviewed scoped rules, redacted evidence, enabled secret scanning/push protection, complete private triage and exact static exception review | Final deployed both-ref hosted scan |
 | Relevant PR scope and isolation | Docs/SVG profile, read-only permissions, no security caches, complete diff and fail-closed aggregate tested | Parent checks final hosted head; no real fork run claimed |
-| Ownership and exceptions | Named owner, exact finding/package/path/fingerprint, review reference, maximum 30-day expiry and expired-entry failure | Owner approval of the one proposed compatibility waiver |
+| Ownership and exceptions | Named owner, exact finding/package/path/fingerprint, maximum 30-day expiry, fail-closed tests and parent review | Review or retire every exact waiver before 2026-10-03 |
 | Harmless pass/fail evidence | 34 hosted tests and eight native canary categories; unchanged-lock scheduling and fork permissions validated as fixtures | Actual both-ref hosted schedule/manual evidence and any required server push-rejection exercise |
 | Runbook and phase gates | Current settings, historical failure/pass runs, #279/#238 links and #240 requirement recorded | Deploy required security aggregate alongside `CI result`, then parent acceptance review |
 
@@ -213,3 +214,45 @@ fork/server-push protection evidence. The
 [#240 completion gate](https://github.com/KirilsTurkins/latent-service-fabric/issues/240)
 and [#238 integrated tests](https://github.com/KirilsTurkins/latent-service-fabric/issues/238)
 remain separate. No PR was merged and no issue was closed by this delivery.
+
+## Parent review and clean snapshot follow-up
+
+The parent approved the exact local reusable-workflow compatibility exception in
+[review 5742811649](https://github.com/KirilsTurkins/latent-service-fabric/pull/363#issuecomment-5742811649),
+then completed all sixteen private noncredential classifications in
+[review 5742881993](https://github.com/KirilsTurkins/latent-service-fabric/pull/363#issuecomment-5742881993).
+Raw scanner matches remained in memory only; no credential was probed.
+
+The preparation matches were compared in memory against every historical
+`runs[].direct_execution.prepared_handle`. The recorded producer at
+`7e03a2fafe1d3b2e42546140c8c22113a6998638` is
+[`authenticated_handle`](https://github.com/KirilsTurkins/latent-service-fabric/blob/7e03a2fafe1d3b2e42546140c8c22113a6998638/crates/latent-wasmtime/src/backend/preparation.rs).
+It hashes the release/engine/target profile and
+[`ArtifactPreparationIdentity::cache_digest`](https://github.com/KirilsTurkins/latent-service-fabric/blob/7e03a2fafe1d3b2e42546140c8c22113a6998638/crates/latent-artifacts/src/preparation.rs),
+which includes artifact metadata and a process-local epoch. This is an internal
+lookup identity, not a credential or executable authorization token; cache hits
+still need the separately owned exact identity and verified artifact. None of
+the fourteen findings was decoded. The other matches exactly equal the labelled
+API-journal SHA256 and the synthetic denied environment-variable name, not a
+secret value. Digest shape alone was not the basis of review.
+
+Commit `78093342c3d3ee94df7ca803819ce0c0327bb221` adds only exact
+content/scanner-location-bound exceptions and a regression for changed content,
+path, rule, location and expiry. All 35 security tests run locally: 34 pass and
+the Windows symlink-construction case is skipped. The sixteen secret-rule
+exceptions and one static compatibility exception all expire exclusively at
+UTC midnight on **2026-10-03**. No frozen evidence bytes, scanner rule or advisory
+exception were changed.
+
+| Selected snapshot | Observation UTC | Text / counted binary files | Unexcepted / exact exceptions | Source and controls |
+| --- | --- | --- | --- | --- |
+| Development integration `78093342` | 2026-09-19 15:02:38 | 4,084 / 222 | 0 / 16 | Both clean at `78093342` |
+| Maintained release `44891f41` | 2026-09-19 15:04:45 | 3,259 / 222 | 0 / 15 | Clean release source; clean `78093342` controls |
+
+Both are complete selected-text snapshot scans using verified Gitleaks 8.30.1,
+not history/binary scans or hosted results. The release does not contain the
+newer synthetic environment test, so fifteen exact exceptions apply there.
+Its previously detected Rust advisories and workflow-policy failures remain
+unresolved until normal promotion; a secret-rule pass does not clear them.
+Final-head CI, coordinator promotion, both-ref hosted coverage and required
+aggregate protection remain acceptance work for #282.

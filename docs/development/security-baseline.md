@@ -219,13 +219,19 @@ are accepted. Expiry is exclusive at UTC midnight, with a maximum 30-day lifetim
 expired or future entries fail every invocation, including docs-only scope checks.
 An expired unused entry must still be removed or explicitly re-reviewed.
 
-The initial policy proposes only one compatibility waiver: zizmor
+The initial policy proposed one compatibility waiver: zizmor
 `self-repository` on the exact job-level local RustSec call, expiring **2026-10-03**.
 GitHub resolves this reusable workflow at the caller commit, unlike a mutable
 workspace-relative action step. #281 currently validates `./` references, not the
-new `$/` syntax recommended by zizmor 1.30.1. The owner must review the waiver and
-update the pin policy or re-review before expiry; adding the file is not approval.
-There are no dependency or secret exceptions. Untriaged findings remain visible.
+new `$/` syntax recommended by zizmor 1.30.1. The parent reviewed that exact call
+in PR #363. Update the pin policy or re-review before expiry; adding an exception
+file alone is not approval. The same reviewed policy now includes 16 exact
+noncredential secret-rule occurrences: one labelled API-journal digest, one
+synthetic environment-variable name and fourteen historical preparation lookup
+identities. Their producer/ownership review and clean snapshot results are in the
+[evidence ledger](security-baseline-evidence.md). They expire on 2026-10-03 and
+cannot match a changed file, scanner location or rule. No dependency exception,
+general digest exemption or path allowlist exists.
 
 ## Settings and operator commands
 
@@ -295,8 +301,8 @@ does not prematurely change protection on other in-flight Phase 3 PRs.
 
 The renderer's initial advisory matches are removed by a reviewed, exact
 `@bytecodealliance/weval` 0.5.0 override, without changing the renderer's AOT-disabled
-profile or ComponentizeJS version. Older `release` lock findings, full-snapshot
-secret triage and deployment/evidence gaps are listed in the
+profile or ComponentizeJS version. Older `release` lock findings, completed
+full-snapshot secret triage and remaining deployment/evidence gaps are listed in the
 [evidence ledger](security-baseline-evidence.md), not silently excepted. A real
 fork execution and synthetic server push rejection were not performed by this
 delivery; static fork-permission fixtures and enabled-service API state should
