@@ -1,5 +1,16 @@
 # Phase 3 management integration (#226)
 
+## Hosted startup investigation
+
+The first contracts attempt at source `075db884` failed when a bounded Git status
+probe timed out. Its single rerun instead reached the real node/provider workflow
+and failed with `node-startup-exit` after fixture export. Neither failed run is
+accepted as a green gate or silently retried. The shared process owner now exposes
+only an allowlisted node stage/status code, never raw stderr, credentials or paths,
+so the next exact-head run can distinguish configuration, startup and shutdown
+failures. This is diagnostic coverage, not a claim that the startup failure's
+root cause has been fixed. Local successful workflows remain separate evidence.
+
 This delivery extends the existing authenticated management services. It does
 not change the policy language, manufacture provider registrations, or turn a
 receipt or inspection response into execution authority.
