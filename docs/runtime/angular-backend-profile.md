@@ -51,9 +51,20 @@ thread, listener or provider pool.
 
 The signed-profile admission unit, exact async import structural unit, both
 Wasm adapter feature builds, closed-input schema cases and executable shipped
-JavaScript ordering cases pass locally. The Python run has three environment
-skips: Windows symlink creation and two checks requiring the installed Angular
-tool tree. These are not substitutes for the required Linux build gate.
+JavaScript ordering cases pass locally. The initial Windows Python run has
+three environment skips. The subsequent Linux run, with the locked tool tree
+and Python requirements installed, passes all 13 tests without skips. The
+Linux native CLI/node build and strict all-feature node Clippy check also pass.
+
+The [maintained reference application](../../examples/angular-reference-application/README.md)
+has an actual observed Linux package build with the scoped backend feature:
+package `sha256:5e302eeed8f98721fcefe9e65692da55952e3b8ef6618c7b1a2432505e398e98`,
+SBOM `sha256:f6f1c076e172d711ae9e6f7379e64c4bbcfb6a6e56ead177e86420a30131eef0`,
+and six web outputs totaling 24,416,192 bytes. The build inspection explicitly
+reports `trustEvaluated: false` and `executionAuthorized: false`. It proves
+packaging and structural validation, not protected native execution or browser
+delivery. The application includes public and sealed-user views, a declared
+failure, bounded allowed/denied backend plans and hydration navigation.
 
 Actual signed application delivery, allowed/denied provider calls, authenticated
 content, cancellation/recovery, real-browser hydration/navigation, canary and
