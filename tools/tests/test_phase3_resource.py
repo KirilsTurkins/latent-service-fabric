@@ -13,6 +13,7 @@ from unittest.mock import patch
 from tools.build_process_signals import owned_cancellation
 from tools.phase2_operator_process import Process, WorkflowError
 from tools.phase3_resource_campaign import write_receipt
+from tools.phase3_resource_analysis import complete_populations
 from tools.phase3_resource_identity import file_identity, inventory
 from tools.phase3_resource_node import apply_dormant, configure
 from tools.phase3_resource_os import Probe, network_counts, proc_stat
@@ -137,6 +138,15 @@ class ScheduleTests(unittest.TestCase):
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_refused_density_is_not_a_proven_capacity_ceiling_or_campaign_pass(self):
+        profile = PROFILES["smoke"]
+        populations = [{"deployments": count + 3, "dormantRequested": count,
+                        "dormantAdded": count, "refusal": None} for count in profile["dormantSteps"]]
+        self.assertTrue(complete_populations(profile, {"dormantPopulations": populations}))
+        self.assertFalse(complete_populations(profile, {"dormantPopulations": populations[:1]}))
+        populations[-1].update(dormantAdded=12, deployments=15, refusal={"code": "resource-exhausted"})
+        self.assertFalse(complete_populations(profile, {"dormantPopulations": populations}))
+
     def test_admission_saturation_preserves_actual_population_and_stops_mutating(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)

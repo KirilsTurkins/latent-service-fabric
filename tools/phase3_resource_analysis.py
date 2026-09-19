@@ -5,6 +5,16 @@ from tools.phase2_operator_process import require
 from tools.phase3_resource_profile import ACTIVE_COUNTERS, integer, quiescent, summary
 
 
+def complete_populations(profile, catalog):
+    populations = catalog["dormantPopulations"]
+    return (len(populations) == len(profile["dormantSteps"])
+            and len({integer(entry["dormantAdded"]) for entry in populations}) > 1
+            and all(entry["refusal"] is None and integer(entry["dormantRequested"]) == requested
+                    and integer(entry["dormantAdded"]) == requested
+                    and integer(entry["deployments"]) == requested + 3
+                    for entry, requested in zip(populations, profile["dormantSteps"])))
+
+
 def analyze(result):
     samples = result["samples"]
     dormant = [sample for sample in samples if sample["phase"] == "dormant"]
@@ -22,7 +32,8 @@ def analyze(result):
         fixed_counts[key] = len(set(counts)) == 1
     provider_counts = [integer(sample["capabilities"]["nodeUsage"]["counters"]["broker_providers"])
                        for sample in dormant + recovery]
-    checks = {"dormantProcessesPlateau": fixed_counts["processes"],
+    checks = {"requestedDormantPopulationsAdmitted": complete_populations(result["profile"], result["catalog"]),
+              "dormantProcessesPlateau": fixed_counts["processes"],
               "dormantThreadsPlateau": fixed_counts["threads"],
               "dormantListenersPlateau": fixed_counts["listeners"],
               "providerObjectsPlateau": len(set(provider_counts)) == 1 and provider_counts[0] > 0,
