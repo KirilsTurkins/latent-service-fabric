@@ -6,6 +6,37 @@ mod browser;
 struct Capsule;
 impl Guest for Capsule {
     async fn handle(request: Request) -> Response {
+        if request.path == "/api/greeting" {
+            let accepted = matches!(
+                request.method,
+                bindings::exports::latent::web::application::Method::Post
+            ) && request.media_type.as_deref() == Some("application/json")
+                && request.body_base64 == "eyJuYW1lIjoiQnJvd3NlciJ9";
+            return Response {
+                profile: Profile::BufferedV1,
+                status: if accepted { 200 } else { 400 },
+                headers: vec![
+                    Header {
+                        name: "cache-control".into(),
+                        value: b"no-store".to_vec(),
+                    },
+                    Header {
+                        name: "x-app-principal".into(),
+                        value: bindings::latent::context::context::principal()
+                            .subject
+                            .into_bytes(),
+                    },
+                ],
+                media_type: Some("application/json".into()),
+                representation_length: None,
+                body_base64: if accepted {
+                    "eyJncmVldGluZyI6IkhlbGxvIEJyb3dzZXIifQ=="
+                } else {
+                    "eyJlcnJvciI6ImJhZC1yZXF1ZXN0In0="
+                }
+                .into(),
+            };
+        }
         if request.path == "/spin" {
             loop {
                 std::hint::black_box(0u8);
