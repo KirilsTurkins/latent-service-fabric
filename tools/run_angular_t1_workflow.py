@@ -165,7 +165,7 @@ def run(args):
                       "profile": profile, "rejectedConfigCommands": rejected + 2,
                       "rejectedAdmissionCases": 3, "publications": publications, "renewal": renewed,
                       "independentRevocation": revoked, "preparationMillis": preparation_millis,
-                      "unsupportedStagedRolloutRejected": True, "selectedDeploymentCasRollback": True,
+                      "compatibleStagedWebRollout": True, "selectedDeploymentCasRollback": True,
                       "dormant": dormant, "prepared": prepared, "beforeRestart": before_restart,
                       "afterRestart": after_restart, "cancellations": cancellations, "http": http,
                       "immutableAssets": assets,

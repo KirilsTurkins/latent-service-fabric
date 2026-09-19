@@ -1,1 +1,1 @@
-export const REFERENCE_VERSION = 'reference-v1';
+export const REFERENCE_VERSION = 'reference-green';
