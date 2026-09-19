@@ -13,6 +13,18 @@
     {"path": "sdk/java-client/settings.gradle.kts", "kind": "no-external-packages", "sha256": "d2bec319296b4d77e1218274e3fecd04bd47d07c92c0064f06876393c49df01b"},
     {"path": "sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj", "kind": "no-external-packages", "sha256": "48bcd87dca0595c0146b10aeb35c0870a7d4c858d9ae263e232f3fa0dc048d8f"},
     {"path": "sdk/dotnet/Latent.Sdk.SemanticTests/Latent.Sdk.SemanticTests.csproj", "kind": "no-external-packages", "sha256": "2ad35b92e0a92c308aecbb9419c868039c4b211929cba6b2194b17e6f023ee12"},
+    {
+      "path": "sdk/dotnet/Latent.Sdk.Transport/Latent.Sdk.Transport.csproj", "kind": "nuget-locked",
+      "lock": "sdk/dotnet/Latent.Sdk.Transport/packages.lock.json", "runtime_identifier": "linux-x64",
+      "manifest_sha256": "599bf7695966eaad2d8b6b0764024e6e900df47d01e1c7babb9a840f7a419150",
+      "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Transport",
+      "configuration": [
+        {"path": "sdk/dotnet/global.json", "sha256": "0a73555a23740b38c70e1275c3a3dfe11ab358ff23aba3dd1e13f8b83d4ece07"},
+        {"path": "sdk/dotnet/nuget.transport.config", "sha256": "f545a7e2ea14ac53cdfb91217cae67b8ff14275313f6298f9a3331d205b6c948"}
+      ]
+    },
+    {"path": "sdk/dotnet/Latent.Sdk.Transport.Tests/Latent.Sdk.Transport.Tests.csproj", "kind": "nuget-locked", "lock": "sdk/dotnet/Latent.Sdk.Transport.Tests/packages.lock.json", "runtime_identifier": "linux-x64", "manifest_sha256": "2c6e9ccd0bbc3002118dad77dad32d7518661f7094885a9f0cdcd70c566f32e3", "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Transport.Tests"},
+    {"path": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/Latent.Sdk.ProviderWorkflow.csproj", "kind": "nuget-locked", "lock": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/packages.lock.json", "runtime_identifier": "linux-x64", "manifest_sha256": "6b3a6119a62318ec4d436908ce963239d37204562c38e37e7bbb26ff3d9cf491", "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.ProviderWorkflow"},
     {"path": "sdk/c/dependencies.lock.json", "kind": "c-sources", "legacy_tree_sha256": ["16b7b65df6843df0226b983c5342213d2120432b575da9c48d1b984f25077181", "6fecacf750ff7993ff19b2d5a36a332972e67eb68a73769732766164768b874b"]}
   ],
   "non_manifest_modules": [
