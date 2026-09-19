@@ -136,22 +136,27 @@ pub(super) fn publish(
 }
 fn upload(page: &[u8]) -> PackageAdmissionUpload {
     let script = b"globalThis.assetTest = 1;\n";
-    let assets = vec![
-        WebAsset {
-            path: "/app.js".into(),
-            layer: "public/app.js".into(),
-            digest: artifact_blob_digest(script).to_string(),
-            size: script.len() as u64,
-            media_type: "text/javascript".into(),
-        },
-        WebAsset {
-            path: "/index.html".into(),
-            layer: "public/index.html".into(),
-            digest: artifact_blob_digest(page).to_string(),
-            size: page.len() as u64,
-            media_type: "text/html".into(),
-        },
-    ];
+    browser_upload(&[
+        ("/app.js", "text/javascript", script),
+        ("/index.html", "text/html", page),
+    ])
+}
+pub(super) fn browser_upload(files: &[(&str, &str, &[u8])]) -> PackageAdmissionUpload {
+    let mut assets: Vec<_> = files
+        .iter()
+        .map(|(path, media, bytes)| WebAsset {
+            path: (*path).into(),
+            layer: format!("public{path}"),
+            digest: artifact_blob_digest(bytes).to_string(),
+            size: bytes.len() as u64,
+            media_type: (*media).into(),
+        })
+        .collect();
+    assets.sort_by(|left, right| left.path.cmp(&right.path));
+    let media = assets
+        .iter()
+        .map(|asset| (asset.layer.clone(), asset.media_type.clone()))
+        .collect();
     let document = WebApplicationManifest {
         format_version: 1,
         profile: WEB_RELEASE_PROFILE.into(),
@@ -164,7 +169,7 @@ fn upload(page: &[u8]) -> PackageAdmissionUpload {
         }],
         renderer: None,
     };
-    let layers = vec![
+    let mut layers = vec![
         (
             "metadata/private.json".into(),
             b"{\"private\":true}".to_vec(),
@@ -173,12 +178,18 @@ fn upload(page: &[u8]) -> PackageAdmissionUpload {
             WEB_MANIFEST_PATH.into(),
             serde_json::to_vec(&document).unwrap(),
         ),
-        ("public/app.js".into(), script.to_vec()),
-        ("public/index.html".into(), page.to_vec()),
     ];
-    encode_upload(layers)
+    layers.extend(
+        files
+            .iter()
+            .map(|(path, _, bytes)| (format!("public{path}"), bytes.to_vec())),
+    );
+    encode_upload(layers, &media)
 }
-fn encode_upload(layers: Vec<(String, Vec<u8>)>) -> PackageAdmissionUpload {
+fn encode_upload(
+    layers: Vec<(String, Vec<u8>)>,
+    media: &BTreeMap<String, String>,
+) -> PackageAdmissionUpload {
     let config = PackageConfig {
         format_version: 1,
         kind: PackageKind::BrowserAssets,
@@ -191,14 +202,10 @@ fn encode_upload(layers: Vec<(String, Vec<u8>)>) -> PackageAdmissionUpload {
             .map(|(path, bytes)| PackageLayer {
                 path: path.clone(),
                 role: LayerRole::Asset,
-                media_type: if path == "public/index.html" {
-                    "text/html"
-                } else if path == "public/app.js" {
-                    "text/javascript"
-                } else {
-                    "application/json"
-                }
-                .into(),
+                media_type: media
+                    .get(path)
+                    .cloned()
+                    .unwrap_or_else(|| "application/json".into()),
                 digest: artifact_blob_digest(bytes),
                 size: bytes.len() as u64,
             })

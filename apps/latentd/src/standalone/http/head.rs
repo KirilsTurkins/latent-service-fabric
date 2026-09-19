@@ -3,7 +3,8 @@ use super::Shared;
 use crate::config::http::Authentication;
 use latent_core::{IncomingDeadline, InvocationPrincipal};
 use latent_ingress::http::{
-    Collector, HeaderView, HttpVersion, RawHead, MAX_HEADERS, MAX_HEADER_BYTES, MAX_REQUEST_BODY,
+    browser, Collector, HeaderView, HttpVersion, RawHead, MAX_HEADERS, MAX_HEADER_BYTES,
+    MAX_REQUEST_BODY,
 };
 
 pub(super) const MAX_HEAD: usize = 32 * 1024;
@@ -65,18 +66,7 @@ pub(super) fn parse(
         if field.name.eq_ignore_ascii_case("expect") {
             return Err(417);
         }
-        if field.name.eq_ignore_ascii_case("forwarded")
-            || field
-                .name
-                .get(..12)
-                .is_some_and(|s| s.eq_ignore_ascii_case("x-forwarded-"))
-        {
-            // Even approved proxy peers cannot supply identity. A configured
-            // proxy may attach transport metadata, which is discarded entirely.
-            if shared.settings.peers.is_empty() {
-                return Err(400);
-            }
-        }
+        validate_forwarded(field.name, !shared.settings.peers.is_empty())?;
         if field.name.eq_ignore_ascii_case("host") {
             if host.is_some() {
                 return Err(400);
@@ -101,6 +91,7 @@ pub(super) fn parse(
         };
         count += 1;
     }
+    browser::validate_input(&headers[..count])?;
     let collector = shared
         .handle
         .0
@@ -120,6 +111,13 @@ pub(super) fn parse(
     let principal = authenticate(shared, collector.target().authority(), authorization)?;
     let method =
         latent_ingress::http::Method::parse(request.method.ok_or(400u16)?).map_err(|_| 405u16)?;
+    admit_browser(
+        shared,
+        collector.target(),
+        &principal,
+        method,
+        &headers[..count],
+    )?;
     Ok(Head {
         collector,
         principal,
@@ -127,6 +125,42 @@ pub(super) fn parse(
         close: close.unwrap_or(false),
         method,
     })
+}
+fn validate_forwarded(name: &str, has_proxy_peers: bool) -> Result<(), u16> {
+    let forwarded = name.eq_ignore_ascii_case("forwarded")
+        || name
+            .get(..12)
+            .is_some_and(|prefix| prefix.eq_ignore_ascii_case("x-forwarded-"));
+    if forwarded && !has_proxy_peers {
+        return Err(400);
+    }
+    Ok(())
+}
+fn admit_browser(
+    shared: &Shared,
+    target: &latent_ingress::http::CanonicalTarget,
+    principal: &InvocationPrincipal,
+    method: latent_ingress::http::Method,
+    headers: &[HeaderView<'_>],
+) -> Result<(), u16> {
+    let origins = &shared.settings.browser_origins;
+    let approved = origins.iter().any(|origin| {
+        origin.authority == target.authority()
+            && principal
+                .tenant
+                .as_ref()
+                .is_some_and(|tenant| tenant.0 == origin.tenant)
+    });
+    if !origins.is_empty() && !approved {
+        return Err(403);
+    }
+    browser::admit(
+        target,
+        method,
+        headers,
+        approved,
+        matches!(shared.settings.authentication, Authentication::Bearer(_)),
+    )
 }
 fn authenticate(
     shared: &Shared,

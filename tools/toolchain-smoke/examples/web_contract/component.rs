@@ -1,6 +1,7 @@
 #![cfg(target_arch = "wasm32")]
 use bindings::exports::latent::web::application::{Guest, Header, Profile, Request, Response};
 use latent_component_bindings::web_guest as bindings;
+mod browser;
 
 struct Capsule;
 impl Guest for Capsule {
@@ -13,9 +14,20 @@ impl Guest for Capsule {
         if request.path == "/trap" {
             unreachable!("deliberate web contract fixture trap");
         }
+        if let Some(response) = browser::response(&request.path) {
+            return response;
+        }
         if request.path == "/cache" {
-            // Explicit immutable public fixture: no activation/context-derived
-            // output. Other paths deliberately remain uncachable diagnostics.
+            let cookie = request
+                .headers
+                .iter()
+                .find(|header| header.name == "cookie");
+            let body = match cookie.map(|header| header.value.as_slice()) {
+                Some(b"session=alice") => "YWxpY2U=",
+                Some(b"session=bob") => "Ym9i",
+                Some(_) => "cHJpdmF0ZQ==",
+                None => "cHVibGlj",
+            };
             return Response {
                 profile: Profile::BufferedV1,
                 status: 200,
@@ -25,7 +37,7 @@ impl Guest for Capsule {
                 }],
                 media_type: Some("text/plain".into()),
                 representation_length: None,
-                body_base64: "cHVibGlj".into(),
+                body_base64: body.into(),
             };
         }
         let principal = bindings::latent::context::context::principal();
