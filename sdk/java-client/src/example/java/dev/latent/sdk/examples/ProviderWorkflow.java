@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public final class ProviderWorkflow {
+    private static final java.util.logging.Logger DEPENDENCY_LOGGER = java.util.logging.Logger.getLogger("io.grpc");
     private final ProviderInput input;
     private final Map<String, Boolean> assertions = new LinkedHashMap<>();
     private final ArrayList<String> identities = new ArrayList<>();
@@ -213,6 +214,7 @@ public final class ProviderWorkflow {
     }
 
     public static void main(String[] args) {
+        DEPENDENCY_LOGGER.setLevel(java.util.logging.Level.OFF);
         ProviderWorkflow workflow = null;
         try {
             ProviderInput.require(args.length == 2 && args[0].equals("--config"), "configuration-arguments");
@@ -220,8 +222,13 @@ public final class ProviderWorkflow {
             System.out.println(new GsonBuilder().serializeNulls().create().toJson(workflow.execute()));
         } catch (Exception failure) {
             String stage = workflow == null ? "input" : workflow.stage;
-            String category = Management.clientFailure(failure).map(value -> ":category-" + value.category().value() + ":grpc-" + value.grpcStatus().orElse(-1)).orElse("");
-            System.err.println("java-sdk-provider-workflow-failed:" + stage + category);
+            Map<String, Object> diagnostic = new LinkedHashMap<>();
+            diagnostic.put("stage", "java-participant"); diagnostic.put("reason", stage);
+            Management.clientFailure(failure).ifPresent(value -> {
+                diagnostic.put("category", value.category().value());
+                value.grpcStatus().ifPresent(code -> diagnostic.put("grpcStatus", code));
+            });
+            System.err.println(new GsonBuilder().create().toJson(diagnostic));
             System.exit(1);
         }
     }

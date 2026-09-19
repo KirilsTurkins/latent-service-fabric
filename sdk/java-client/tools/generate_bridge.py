@@ -2,6 +2,7 @@ import argparse
 import difflib
 import json
 import re
+import sys
 from pathlib import Path
 
 
@@ -9,6 +10,13 @@ ROOT = Path(__file__).resolve().parents[3]
 SDK = ROOT / "sdk/java-client"
 CONTRACT = json.loads((ROOT / "sdk/profile/contract.json").read_text(encoding="utf-8"))
 PROFILE = json.loads((ROOT / "sdk/profile/client-profile.json").read_text(encoding="utf-8"))
+sys.path.insert(0, str(ROOT / "sdk/profile"))
+from generate import read_contract
+
+SOURCE_PROFILE, SOURCE_MESSAGES, SOURCE_ENUMS = read_contract()
+if (CONTRACT["operations"] != SOURCE_PROFILE["operations"] or CONTRACT["messages"] != SOURCE_MESSAGES
+        or CONTRACT["enums"] != SOURCE_ENUMS):
+    raise ValueError("shared contract is stale against authoritative protobuf")
 ENUMS = CONTRACT["enums"]
 MESSAGES = CONTRACT["messages"]
 WIRE = {}

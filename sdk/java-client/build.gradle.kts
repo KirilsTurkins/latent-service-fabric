@@ -29,9 +29,12 @@ sourceSets {
     }
 }
 
-dependencies {
-    api(fileTree("build/deps") { include("*.jar") })
-}
+val dependencyLock = groovy.json.JsonSlurper().parse(file("dependencies.lock.json")) as Map<*, *>
+val lockedArtifacts = (dependencyLock["artifacts"] as List<*>).map { it as Map<*, *> }
+val dependencyFiles = lockedArtifacts.filter { it["platform"] == "any" }
+    .map { file("build/deps/" + (it["path"] as String).substringAfterLast('/')) }
+
+dependencies { api(files(dependencyFiles)) }
 
 tasks.compileJava { dependsOn(prepareTransport); options.release.set(21) }
 tasks.compileTestJava { options.release.set(21) }

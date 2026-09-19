@@ -36,7 +36,7 @@ final class Protocol {
 
     static final class Invalid extends RuntimeException {
         private static final long serialVersionUID = 1L;
-        final Optional<Management.UnsupportedWireValue> unsupported;
+        final transient Optional<Management.UnsupportedWireValue> unsupported;
         Invalid() { super("invalid bounded protocol value"); unsupported = Optional.empty(); }
         Invalid(String field, String value) {
             super("unsupported bounded protocol value");

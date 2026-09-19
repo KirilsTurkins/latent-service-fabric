@@ -4,6 +4,7 @@ import json
 import os
 import platform
 import re
+import shutil
 import subprocess
 import sys
 import urllib.request
@@ -68,7 +69,12 @@ def prepare():
 
 
 def compile_java(tests):
-    classes = BUILD / "classes"
+    classes = BUILD / ("test-classes" if tests else "classes")
+    if classes.exists():
+        resolved = classes.resolve(strict=True)
+        if resolved.parent != BUILD.resolve(strict=True) or classes.is_symlink():
+            raise ValueError("Java class output escaped its owned build directory")
+        shutil.rmtree(resolved)
     classes.mkdir(parents=True, exist_ok=True)
     directories = [SDK / "src/main/java", SDK / "src/transport/java", SDK / "src/example/java"]
     if tests:
@@ -98,7 +104,16 @@ def main():
         run(["java", "-ea", "-cp", classpath, "dev.latent.sdk.InvocationIdentityTest"], 45)
         run(["java", "-ea", "-cp", classpath, "dev.latent.sdk.transport.TransportTest"], 60)
     else:
-        run(["jar", "--create", "--file", BUILD / "latent-java-client.jar", "-C", BUILD / "classes", "."])
+        manifest = BUILD / "manifest.mf"
+        class_path = "Class-Path: " + " ".join("deps/" + path.name for path in jars())
+        lines = ["Manifest-Version: 1.0", class_path[:70]]
+        class_path = class_path[70:]
+        while class_path:
+            lines.append(" " + class_path[:69])
+            class_path = class_path[69:]
+        manifest.write_text("\n".join(lines) + "\n\n", encoding="utf-8")
+        run(["jar", "--create", "--date=2026-01-01T00:00:00Z", "--file", BUILD / "latent-java-client.jar",
+             "--manifest", manifest, "--main-class", "dev.latent.sdk.examples.ProviderWorkflow", "-C", BUILD / "classes", "."])
 
 
 if __name__ == "__main__":
