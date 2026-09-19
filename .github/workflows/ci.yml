@@ -538,7 +538,7 @@ jobs:
           github_token: ${{ github.token }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22.16.0
+          node-version: 24.19.0
           cache: npm
           cache-dependency-path: sdk/typescript-client/package-lock.json
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
