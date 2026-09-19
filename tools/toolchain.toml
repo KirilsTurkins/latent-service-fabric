@@ -34,7 +34,7 @@ runner = "ubuntu-24.04"
 
 [sdk]
 go = "1.23.2"
-node = "22.16.0"
+node = "24.19.0"
 typescript = "5.8.3"
 java = "21.0.11+10"
 java_setup = "21.0.11+10.0.LTS"
