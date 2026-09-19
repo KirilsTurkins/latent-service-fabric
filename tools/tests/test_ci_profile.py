@@ -47,6 +47,8 @@ class ClassificationTests(unittest.TestCase):
             "adr/0021-decision.md", "research/future/plan.md", "rfcs/next.md",
             "crates/latent-core/README.md", "sdk/python-client/README.md",
             "examples/package-inputs/README.md", "schemas/README.md",
+            ".github/ISSUE_TEMPLATE/bug_report.yml", ".github/ISSUE_TEMPLATE/architecture.yml",
+            ".github/ISSUE_TEMPLATE/config.yml",
         ]
         self.assertEqual(profile.classify_paths(allowed).profile, "docs")
         denied = [
@@ -56,13 +58,27 @@ class ClassificationTests(unittest.TestCase):
             "schemas/capsule.schema.json", "crates/latent-core/src/lib.rs",
             "sdk/python-client/client.py", "Cargo.lock", "Cargo.toml",
             ".github/workflows/ci.yml", "tools/ci_profile.py", "tools/toolchain.toml",
-            ".github/ISSUE_TEMPLATE/bug_report.yml", "docs/../Cargo.toml",
+            ".github/ISSUE_TEMPLATE/other.yml", "docs/../Cargo.toml",
             "/docs/roadmap.md", "docs//roadmap.md", "docs\\roadmap.md",
             "docs/line\nbreak.md", "docs/./roadmap.md",
         ]
         for name in denied:
             with self.subTest(name=name):
                 self.assertEqual(profile.classify_paths(["README.md", name]).profile, "full")
+
+    def test_issue_form_mixed_with_sensitive_inputs_remains_full(self) -> None:
+        form = ".github/ISSUE_TEMPLATE/bug_report.yml"
+        for name in (
+            ".github/workflows/ci.yml",
+            "crates/latent-core/src/lib.rs",
+            "Cargo.lock",
+            "schemas/capsule.schema.json",
+            "examples/package-format/capsule.lsf",
+            "benchmarks/phase2/receipt.json",
+            "docs/testing/phase-2-resource-profile.md",
+        ):
+            with self.subTest(name=name):
+                self.assertEqual(profile.classify_paths([form, name]).profile, "full")
 
     def test_code_after_three_hundred_documentation_paths_is_not_truncated(self) -> None:
         names = [f"docs/page-{index}.md" for index in range(400)] + ["src/last.rs"]
@@ -213,6 +229,27 @@ class GitHistoryTests(unittest.TestCase):
         self.write("docs/testing/phase-2-resource-profile.md", "changed measurement input\n")
         frozen = self.commit()
         self.assertEqual(self.pr(deleted, frozen).profile, "full")
+
+    def test_known_issue_form_edit_and_delete_remain_documentation_profile(self) -> None:
+        path = ".github/ISSUE_TEMPLATE/bug_report.yml"
+        self.write(path, "name: first\n")
+        base = self.commit()
+        self.write(path, "name: second\n")
+        edited = self.commit()
+        self.assertEqual((self.pr(base, edited).profile, self.pr(base, edited).changed_files), ("docs", 1))
+        (self.repo / path).unlink()
+        deleted = self.commit()
+        self.assertEqual((self.pr(edited, deleted).profile, self.pr(edited, deleted).changed_files), ("docs", 1))
+
+    def test_known_issue_form_rename_to_unknown_path_requires_full(self) -> None:
+        source = ".github/ISSUE_TEMPLATE/bug_report.yml"
+        target = ".github/ISSUE_TEMPLATE/renamed.yml"
+        self.write(source, "name: form\n")
+        base = self.commit()
+        (self.repo / source).rename(self.repo / target)
+        head = self.commit()
+        result = self.pr(base, head)
+        self.assertEqual((result.profile, result.changed_files), ("full", 2))
 
     def test_executable_markdown_mode_requires_full(self) -> None:
         self.git("update-index", "--chmod=+x", "README.md")
