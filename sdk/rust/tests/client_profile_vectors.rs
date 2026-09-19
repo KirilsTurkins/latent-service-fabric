@@ -3076,6 +3076,10 @@ fn shared_profile_vectors() {
             value.unsupported_wire_value.is_none(),
             "local-cancel-before-dispatch.unsupported_wire_value.presence"
         );
+        assert!(
+            value.audit_attempt_sequence.is_none(),
+            "local-cancel-before-dispatch.audit_attempt_sequence.presence"
+        );
     }
     {
         let value = ClientFailure {
@@ -3093,6 +3097,7 @@ fn shared_profile_vectors() {
                 attempt_sequence: Some(18_446_744_073_709_551_615_u64),
             }),
             audit_status: Some("outcome-unknown".into()),
+            audit_attempt_sequence: Some(18_446_744_073_709_551_615_u64),
             ..Default::default()
         };
         assert_eq!(
@@ -3167,6 +3172,15 @@ fn shared_profile_vectors() {
         assert!(
             value.unsupported_wire_value.is_none(),
             "deadline-after-dispatch-is-uncertain.unsupported_wire_value.presence"
+        );
+        assert!(
+            value.audit_attempt_sequence.is_some(),
+            "deadline-after-dispatch-is-uncertain.audit_attempt_sequence.presence"
+        );
+        assert_eq!(
+            value.audit_attempt_sequence.unwrap(),
+            18_446_744_073_709_551_615_u64,
+            "deadline-after-dispatch-is-uncertain.audit_attempt_sequence"
         );
     }
     {
@@ -3281,6 +3295,10 @@ fn shared_profile_vectors() {
             value.unsupported_wire_value.is_none(),
             "rpc-conflict-retains-request-identity.unsupported_wire_value.presence"
         );
+        assert!(
+            value.audit_attempt_sequence.is_none(),
+            "rpc-conflict-retains-request-identity.audit_attempt_sequence.presence"
+        );
     }
     {
         let value = ClientFailure {
@@ -3362,6 +3380,10 @@ fn shared_profile_vectors() {
             "future-phase-not-authority",
             "decode-failure-retains-known-identity.unsupported_wire_value.value"
         );
+        assert!(
+            value.audit_attempt_sequence.is_none(),
+            "decode-failure-retains-known-identity.audit_attempt_sequence.presence"
+        );
     }
     {
         let value = ResponseMetadata {
@@ -3375,6 +3397,7 @@ fn shared_profile_vectors() {
                 attempt_sequence: Some(18_446_744_073_709_551_615_u64),
             }),
             audit_status: Some("outcome-unknown".into()),
+            audit_attempt_sequence: Some(18_446_744_073_709_551_615_u64),
         };
         assert!(
             value.identity.activation_id.is_none(),
@@ -3420,6 +3443,15 @@ fn shared_profile_vectors() {
             "outcome-unknown",
             "observed-receipt-audit-outcome-independent.audit_status"
         );
+        assert!(
+            value.audit_attempt_sequence.is_some(),
+            "observed-receipt-audit-outcome-independent.audit_attempt_sequence.presence"
+        );
+        assert_eq!(
+            value.audit_attempt_sequence.unwrap(),
+            18_446_744_073_709_551_615_u64,
+            "observed-receipt-audit-outcome-independent.audit_attempt_sequence"
+        );
     }
     {
         let value = ResponseMetadata {
@@ -3454,6 +3486,10 @@ fn shared_profile_vectors() {
         assert!(
             value.audit_status.is_none(),
             "policy-response-has-no-fabricated-audit.audit_status.presence"
+        );
+        assert!(
+            value.audit_attempt_sequence.is_none(),
+            "policy-response-has-no-fabricated-audit.audit_attempt_sequence.presence"
         );
     }
     {
@@ -3490,6 +3526,10 @@ fn shared_profile_vectors() {
             value.audit_status.is_none(),
             "missing-recovery-keeps-outcome-unknown.audit_status.presence"
         );
+        assert!(
+            value.audit_attempt_sequence.is_none(),
+            "missing-recovery-keeps-outcome-unknown.audit_attempt_sequence.presence"
+        );
     }
     {
         let value = ResponseMetadata {
@@ -3503,6 +3543,7 @@ fn shared_profile_vectors() {
                 attempt_sequence: Some(0_u64),
             }),
             audit_status: Some("future-audit-status".into()),
+            audit_attempt_sequence: Some(0_u64),
         };
         assert!(
             value.identity.activation_id.is_none(),
@@ -3544,6 +3585,150 @@ fn shared_profile_vectors() {
             value.audit_status.as_deref().unwrap(),
             "future-audit-status",
             "unknown-audit-enum-and-status.audit_status"
+        );
+        assert!(
+            value.audit_attempt_sequence.is_some(),
+            "unknown-audit-enum-and-status.audit_attempt_sequence.presence"
+        );
+        assert_eq!(
+            value.audit_attempt_sequence.unwrap(),
+            0_u64,
+            "unknown-audit-enum-and-status.audit_attempt_sequence"
+        );
+    }
+    {
+        let value = ResponseMetadata {
+            identity: RequestIdentity {
+                operation_id: Some("operation-a".into()),
+                ..Default::default()
+            },
+            outcome: OutcomeKnowledge(3),
+            audit_status: Some("future-state".into()),
+            audit_attempt_sequence: Some(18_446_744_073_709_551_615_u64),
+            ..Default::default()
+        };
+        assert!(
+            value.identity.activation_id.is_none(),
+            "unknown-audit-header-and-max-attempt.identity.activation_id.presence"
+        );
+        assert!(
+            value.identity.operation_id.is_some(),
+            "unknown-audit-header-and-max-attempt.identity.operation_id.presence"
+        );
+        assert_eq!(
+            value.identity.operation_id.as_deref().unwrap(),
+            "operation-a",
+            "unknown-audit-header-and-max-attempt.identity.operation_id"
+        );
+        assert_eq!(
+            value.outcome.0, 3,
+            "unknown-audit-header-and-max-attempt.outcome"
+        );
+        assert!(
+            value.audit_ack.is_none(),
+            "unknown-audit-header-and-max-attempt.audit_ack.presence"
+        );
+        assert!(
+            value.audit_status.is_some(),
+            "unknown-audit-header-and-max-attempt.audit_status.presence"
+        );
+        assert_eq!(
+            value.audit_status.as_deref().unwrap(),
+            "future-state",
+            "unknown-audit-header-and-max-attempt.audit_status"
+        );
+        assert!(
+            value.audit_attempt_sequence.is_some(),
+            "unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence"
+        );
+        assert_eq!(
+            value.audit_attempt_sequence.unwrap(),
+            18_446_744_073_709_551_615_u64,
+            "unknown-audit-header-and-max-attempt.audit_attempt_sequence"
+        );
+    }
+    {
+        let value = ClientFailure {
+            category: FailureCategory(4),
+            message: "rpc-failure".into(),
+            grpc_status: Some(13_i32),
+            dispatched: true,
+            outcome: OutcomeKnowledge(2),
+            identity: RequestIdentity {
+                operation_id: Some("operation-a".into()),
+                ..Default::default()
+            },
+            audit_status: Some("future-state".into()),
+            audit_attempt_sequence: Some(18_446_744_073_709_551_615_u64),
+            ..Default::default()
+        };
+        assert_eq!(
+            value.category.0, 4,
+            "failed-rpc-unknown-audit-header-and-max-attempt.category"
+        );
+        assert_eq!(
+            value.message, "rpc-failure",
+            "failed-rpc-unknown-audit-header-and-max-attempt.message"
+        );
+        assert!(
+            value.grpc_status.is_some(),
+            "failed-rpc-unknown-audit-header-and-max-attempt.grpc_status.presence"
+        );
+        assert_eq!(
+            value.grpc_status.unwrap(),
+            13_i32,
+            "failed-rpc-unknown-audit-header-and-max-attempt.grpc_status"
+        );
+        assert!(
+            value.platform_error.is_none(),
+            "failed-rpc-unknown-audit-header-and-max-attempt.platform_error.presence"
+        );
+        assert!(
+            value.dispatched,
+            "failed-rpc-unknown-audit-header-and-max-attempt.dispatched"
+        );
+        assert_eq!(
+            value.outcome.0, 2,
+            "failed-rpc-unknown-audit-header-and-max-attempt.outcome"
+        );
+        assert!(
+            value.identity.activation_id.is_none(),
+            "failed-rpc-unknown-audit-header-and-max-attempt.identity.activation_id.presence"
+        );
+        assert!(
+            value.identity.operation_id.is_some(),
+            "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id.presence"
+        );
+        assert_eq!(
+            value.identity.operation_id.as_deref().unwrap(),
+            "operation-a",
+            "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id"
+        );
+        assert!(
+            value.audit_ack.is_none(),
+            "failed-rpc-unknown-audit-header-and-max-attempt.audit_ack.presence"
+        );
+        assert!(
+            value.audit_status.is_some(),
+            "failed-rpc-unknown-audit-header-and-max-attempt.audit_status.presence"
+        );
+        assert_eq!(
+            value.audit_status.as_deref().unwrap(),
+            "future-state",
+            "failed-rpc-unknown-audit-header-and-max-attempt.audit_status"
+        );
+        assert!(
+            value.unsupported_wire_value.is_none(),
+            "failed-rpc-unknown-audit-header-and-max-attempt.unsupported_wire_value.presence"
+        );
+        assert!(
+            value.audit_attempt_sequence.is_some(),
+            "failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence"
+        );
+        assert_eq!(
+            value.audit_attempt_sequence.unwrap(),
+            18_446_744_073_709_551_615_u64,
+            "failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence"
         );
     }
     {

@@ -1810,9 +1810,12 @@ func TestSharedProfileVectors(tester *testing.T) {
 		if !(!(value.UnsupportedWireValue != nil)) {
 			tester.Fatal("local-cancel-before-dispatch.unsupported_wire_value.presence")
 		}
+		if !(!(value.AuditAttemptSequence != nil)) {
+			tester.Fatal("local-cancel-before-dispatch.audit_attempt_sequence.presence")
+		}
 	}
 	{
-		value := ClientFailure{Category: FailureCategory(2), Message: "deadline", GrpcStatus: fixturePointer(int32(4)), Dispatched: true, Outcome: OutcomeKnowledge(2), Identity: RequestIdentity{OperationId: fixturePointer("operation-a")}, AuditAck: fixturePointer(AuditAck{Status: AuditAckStatus(2), AttemptSequence: fixturePointer(uint64(18446744073709551615))}), AuditStatus: fixturePointer("outcome-unknown")}
+		value := ClientFailure{Category: FailureCategory(2), Message: "deadline", GrpcStatus: fixturePointer(int32(4)), Dispatched: true, Outcome: OutcomeKnowledge(2), Identity: RequestIdentity{OperationId: fixturePointer("operation-a")}, AuditAck: fixturePointer(AuditAck{Status: AuditAckStatus(2), AttemptSequence: fixturePointer(uint64(18446744073709551615))}), AuditStatus: fixturePointer("outcome-unknown"), AuditAttemptSequence: fixturePointer(uint64(18446744073709551615))}
 		if !(int32(value.Category) == 2) {
 			tester.Fatal("deadline-after-dispatch-is-uncertain.category")
 		}
@@ -1863,6 +1866,12 @@ func TestSharedProfileVectors(tester *testing.T) {
 		}
 		if !(!(value.UnsupportedWireValue != nil)) {
 			tester.Fatal("deadline-after-dispatch-is-uncertain.unsupported_wire_value.presence")
+		}
+		if !(value.AuditAttemptSequence != nil) {
+			tester.Fatal("deadline-after-dispatch-is-uncertain.audit_attempt_sequence.presence")
+		}
+		if !((*value.AuditAttemptSequence) == uint64(18446744073709551615)) {
+			tester.Fatal("deadline-after-dispatch-is-uncertain.audit_attempt_sequence")
 		}
 	}
 	{
@@ -1927,6 +1936,9 @@ func TestSharedProfileVectors(tester *testing.T) {
 		if !(!(value.UnsupportedWireValue != nil)) {
 			tester.Fatal("rpc-conflict-retains-request-identity.unsupported_wire_value.presence")
 		}
+		if !(!(value.AuditAttemptSequence != nil)) {
+			tester.Fatal("rpc-conflict-retains-request-identity.audit_attempt_sequence.presence")
+		}
 	}
 	{
 		value := ClientFailure{Category: FailureCategory(5), Message: "invalid-response", Dispatched: true, Outcome: OutcomeKnowledge(2), Identity: RequestIdentity{ActivationId: fixturePointer("activation-a"), OperationId: fixturePointer("operation-a")}, UnsupportedWireValue: fixturePointer(UnsupportedWireValue{Field: "phase", Value: "future-phase-not-authority"})}
@@ -1975,9 +1987,12 @@ func TestSharedProfileVectors(tester *testing.T) {
 		if !((*value.UnsupportedWireValue).Value == "future-phase-not-authority") {
 			tester.Fatal("decode-failure-retains-known-identity.unsupported_wire_value.value")
 		}
+		if !(!(value.AuditAttemptSequence != nil)) {
+			tester.Fatal("decode-failure-retains-known-identity.audit_attempt_sequence.presence")
+		}
 	}
 	{
-		value := ResponseMetadata{Identity: RequestIdentity{OperationId: fixturePointer("operation-a")}, Outcome: OutcomeKnowledge(3), AuditAck: fixturePointer(AuditAck{Status: AuditAckStatus(2), AttemptSequence: fixturePointer(uint64(18446744073709551615))}), AuditStatus: fixturePointer("outcome-unknown")}
+		value := ResponseMetadata{Identity: RequestIdentity{OperationId: fixturePointer("operation-a")}, Outcome: OutcomeKnowledge(3), AuditAck: fixturePointer(AuditAck{Status: AuditAckStatus(2), AttemptSequence: fixturePointer(uint64(18446744073709551615))}), AuditStatus: fixturePointer("outcome-unknown"), AuditAttemptSequence: fixturePointer(uint64(18446744073709551615))}
 		if !(!(value.Identity.ActivationId != nil)) {
 			tester.Fatal("observed-receipt-audit-outcome-independent.identity.activation_id.presence")
 		}
@@ -2008,6 +2023,12 @@ func TestSharedProfileVectors(tester *testing.T) {
 		if !((*value.AuditStatus) == "outcome-unknown") {
 			tester.Fatal("observed-receipt-audit-outcome-independent.audit_status")
 		}
+		if !(value.AuditAttemptSequence != nil) {
+			tester.Fatal("observed-receipt-audit-outcome-independent.audit_attempt_sequence.presence")
+		}
+		if !((*value.AuditAttemptSequence) == uint64(18446744073709551615)) {
+			tester.Fatal("observed-receipt-audit-outcome-independent.audit_attempt_sequence")
+		}
 	}
 	{
 		value := ResponseMetadata{Identity: RequestIdentity{OperationId: fixturePointer("operation-a")}, Outcome: OutcomeKnowledge(3)}
@@ -2028,6 +2049,9 @@ func TestSharedProfileVectors(tester *testing.T) {
 		}
 		if !(!(value.AuditStatus != nil)) {
 			tester.Fatal("policy-response-has-no-fabricated-audit.audit_status.presence")
+		}
+		if !(!(value.AuditAttemptSequence != nil)) {
+			tester.Fatal("policy-response-has-no-fabricated-audit.audit_attempt_sequence.presence")
 		}
 	}
 	{
@@ -2050,9 +2074,12 @@ func TestSharedProfileVectors(tester *testing.T) {
 		if !(!(value.AuditStatus != nil)) {
 			tester.Fatal("missing-recovery-keeps-outcome-unknown.audit_status.presence")
 		}
+		if !(!(value.AuditAttemptSequence != nil)) {
+			tester.Fatal("missing-recovery-keeps-outcome-unknown.audit_attempt_sequence.presence")
+		}
 	}
 	{
-		value := ResponseMetadata{Identity: RequestIdentity{OperationId: fixturePointer("operation-a")}, Outcome: OutcomeKnowledge(91), AuditAck: fixturePointer(AuditAck{Status: AuditAckStatus(91), AttemptSequence: fixturePointer(uint64(0))}), AuditStatus: fixturePointer("future-audit-status")}
+		value := ResponseMetadata{Identity: RequestIdentity{OperationId: fixturePointer("operation-a")}, Outcome: OutcomeKnowledge(91), AuditAck: fixturePointer(AuditAck{Status: AuditAckStatus(91), AttemptSequence: fixturePointer(uint64(0))}), AuditStatus: fixturePointer("future-audit-status"), AuditAttemptSequence: fixturePointer(uint64(0))}
 		if !(!(value.Identity.ActivationId != nil)) {
 			tester.Fatal("unknown-audit-enum-and-status.identity.activation_id.presence")
 		}
@@ -2082,6 +2109,93 @@ func TestSharedProfileVectors(tester *testing.T) {
 		}
 		if !((*value.AuditStatus) == "future-audit-status") {
 			tester.Fatal("unknown-audit-enum-and-status.audit_status")
+		}
+		if !(value.AuditAttemptSequence != nil) {
+			tester.Fatal("unknown-audit-enum-and-status.audit_attempt_sequence.presence")
+		}
+		if !((*value.AuditAttemptSequence) == uint64(0)) {
+			tester.Fatal("unknown-audit-enum-and-status.audit_attempt_sequence")
+		}
+	}
+	{
+		value := ResponseMetadata{Identity: RequestIdentity{OperationId: fixturePointer("operation-a")}, Outcome: OutcomeKnowledge(3), AuditStatus: fixturePointer("future-state"), AuditAttemptSequence: fixturePointer(uint64(18446744073709551615))}
+		if !(!(value.Identity.ActivationId != nil)) {
+			tester.Fatal("unknown-audit-header-and-max-attempt.identity.activation_id.presence")
+		}
+		if !(value.Identity.OperationId != nil) {
+			tester.Fatal("unknown-audit-header-and-max-attempt.identity.operation_id.presence")
+		}
+		if !((*value.Identity.OperationId) == "operation-a") {
+			tester.Fatal("unknown-audit-header-and-max-attempt.identity.operation_id")
+		}
+		if !(int32(value.Outcome) == 3) {
+			tester.Fatal("unknown-audit-header-and-max-attempt.outcome")
+		}
+		if !(!(value.AuditAck != nil)) {
+			tester.Fatal("unknown-audit-header-and-max-attempt.audit_ack.presence")
+		}
+		if !(value.AuditStatus != nil) {
+			tester.Fatal("unknown-audit-header-and-max-attempt.audit_status.presence")
+		}
+		if !((*value.AuditStatus) == "future-state") {
+			tester.Fatal("unknown-audit-header-and-max-attempt.audit_status")
+		}
+		if !(value.AuditAttemptSequence != nil) {
+			tester.Fatal("unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence")
+		}
+		if !((*value.AuditAttemptSequence) == uint64(18446744073709551615)) {
+			tester.Fatal("unknown-audit-header-and-max-attempt.audit_attempt_sequence")
+		}
+	}
+	{
+		value := ClientFailure{Category: FailureCategory(4), Message: "rpc-failure", GrpcStatus: fixturePointer(int32(13)), Dispatched: true, Outcome: OutcomeKnowledge(2), Identity: RequestIdentity{OperationId: fixturePointer("operation-a")}, AuditStatus: fixturePointer("future-state"), AuditAttemptSequence: fixturePointer(uint64(18446744073709551615))}
+		if !(int32(value.Category) == 4) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.category")
+		}
+		if !(value.Message == "rpc-failure") {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.message")
+		}
+		if !(value.GrpcStatus != nil) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.grpc_status.presence")
+		}
+		if !((*value.GrpcStatus) == int32(13)) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.grpc_status")
+		}
+		if !(!(value.PlatformError != nil)) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.platform_error.presence")
+		}
+		if !(value.Dispatched == true) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.dispatched")
+		}
+		if !(int32(value.Outcome) == 2) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.outcome")
+		}
+		if !(!(value.Identity.ActivationId != nil)) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.identity.activation_id.presence")
+		}
+		if !(value.Identity.OperationId != nil) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id.presence")
+		}
+		if !((*value.Identity.OperationId) == "operation-a") {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id")
+		}
+		if !(!(value.AuditAck != nil)) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.audit_ack.presence")
+		}
+		if !(value.AuditStatus != nil) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.audit_status.presence")
+		}
+		if !((*value.AuditStatus) == "future-state") {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.audit_status")
+		}
+		if !(!(value.UnsupportedWireValue != nil)) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.unsupported_wire_value.presence")
+		}
+		if !(value.AuditAttemptSequence != nil) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence")
+		}
+		if !((*value.AuditAttemptSequence) == uint64(18446744073709551615)) {
+			tester.Fatal("failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence")
 		}
 	}
 	{

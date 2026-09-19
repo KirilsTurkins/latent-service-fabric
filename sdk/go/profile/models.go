@@ -354,10 +354,11 @@ type UnsupportedWireValue struct {
 }
 
 type ResponseMetadata struct {
-	Identity    RequestIdentity
-	Outcome     OutcomeKnowledge
-	AuditAck    *AuditAck
-	AuditStatus *string
+	Identity             RequestIdentity
+	Outcome              OutcomeKnowledge
+	AuditAck             *AuditAck
+	AuditStatus          *string
+	AuditAttemptSequence *uint64
 }
 
 type ClientFailure struct {
@@ -371,6 +372,7 @@ type ClientFailure struct {
 	AuditAck             *AuditAck
 	AuditStatus          *string
 	UnsupportedWireValue *UnsupportedWireValue
+	AuditAttemptSequence *uint64
 }
 
 type ClientResponse[Response any] struct {
