@@ -53,7 +53,7 @@ pub struct StandaloneNode {
     audit: Option<audit::AuditRuntime>,
     rollouts: Option<rollouts::RolloutRuntime>,
     policies: Option<policies::PolicyRuntime>,
-    providers: Option<providers::ProviderRuntime>,
+    providers: Option<Box<providers::ProviderRuntime>>,
     cleanup: Option<ActivationCleanupOwner>,
     sampler: Option<load::LoadSampler>,
     telemetry_runtime: Option<TelemetryRuntime>,
@@ -105,7 +105,7 @@ impl StandaloneNode {
     #[must_use]
     pub fn configured_providers(&self) -> &[ProviderDescriptor] {
         self.providers
-            .as_ref()
+            .as_deref()
             .map_or(&[], providers::ProviderRuntime::descriptors)
     }
 

@@ -104,7 +104,7 @@ def publish_and_deploy_guests(client, fixture, node, http_port):
             and summary["tenant"] == TENANT and summary["mediaType"] == MEDIA_TYPE,
             "provider-fixture-profile")
     records = {entry["name"]: entry for entry in summary["fixtures"]}
-    require(set(records) == {"rust-http", "rust-blob"} and len(summary["fixtures"]) == 2,
+    require(set(records) == {"rust-http", "rust-blob", "rust-callee"} and len(summary["fixtures"]) == 3,
             "provider-fixture-guests")
     deployed = {}
     for name in ("http", "blob"):
@@ -129,7 +129,7 @@ def publish_and_deploy_guests(client, fixture, node, http_port):
         operations = ["send"] if name == "http" else ["create", "open", "write", "read", "seal"]
         policy_path = client.directory / f"{name}-policy.json"
         write_json(policy_path, {"formatVersion": 1, "tenant": TENANT, "rules": [{
-            "id": "allow", "effect": "allow", "principals": [{"kind": "user", "subject": "workflow-operator"}],
+            "id": "allow", "effect": "allow", "principals": [{"kind": "administrator", "subject": "workflow-operator"}],
             "services": [SERVICE], "publications": [publication], "capability": descriptor["capability"],
             "operations": operations, "resources": resources,
             "ceiling": {"operations": 32, "inputBytes": 65536, "outputBytes": 65536, "wallTimeMillis": 5000}}]})
@@ -163,9 +163,9 @@ def invoke_guest(client, target, which, text="", handle=0, codes=(0,)):
     budget = client.directory / f"budget-{serial}.json"
     write_json(path, [which, text, str(handle)])
     write_json(budget, target["budget"])
-    result = client.call("invoke", "--service", target["service"], "--route", target["route"],
+    result = client.call("--rpc-timeout-ms", "5000", "invoke", "--service", target["service"], "--route", target["route"],
                          "--contract", target["contract"], "--function", target["function"],
-                         "--input", path, "--budget", budget, codes=codes)
+                         "--input", path, "--budget", budget, "--budget-profile", "phase3", codes=codes)
     if result.get("category") != "success":
         return result, None
     payload = result["data"]["payload"]

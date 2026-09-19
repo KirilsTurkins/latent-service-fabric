@@ -256,14 +256,13 @@ pub fn catalog(root: &Path, policy: SupplyChainPolicy) -> Arc<DirectoryArtifactR
         )
         .unwrap(),
     );
-    let catalog = Arc::new(
+    Arc::new(
         DirectoryArtifactRepository::open_enforced(
             root.join("catalog"),
-            Default::default(),
-            Default::default(),
+            latent_artifacts::DirectoryArtifactRepositoryConfig::default(),
+            latent_artifacts::AdmissionStorageLimits::default(),
             authority,
         )
         .unwrap(),
-    );
-    catalog
+    )
 }

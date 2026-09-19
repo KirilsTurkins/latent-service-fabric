@@ -40,7 +40,7 @@ fn export_signed_provider_workflow_fixtures() {
     let signers = package::Signers::new("https://latent.dev/build/rust-guest/v1");
     write(&root.join("policy.json"), &signers.policy_document);
     let mut fixtures = Vec::new();
-    for name in ["rust-http", "rust-blob"] {
+    for name in ["rust-http", "rust-blob", "rust-callee"] {
         let bundle = package::bundle(&package::input(name));
         let observation = package::observation(name);
         let upload = signers.upload(&bundle, &observation);

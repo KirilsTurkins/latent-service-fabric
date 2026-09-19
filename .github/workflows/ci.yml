@@ -473,12 +473,14 @@ jobs:
           path: target/capsules/web-contract/component.wasm
           if-no-files-found: error
           retention-days: 1
-      - name: Retain bounded Phase 1 conformance diagnostics
+      - name: Retain bounded conformance and provider diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: phase-1-bounded-conformance-${{ github.sha }}
-          path: target/phase1-conformance/
+          path: |
+            target/phase1-conformance/
+            target/phase3-management/provider-receipt.json
           if-no-files-found: warn
           retention-days: 14
       - name: Retain Phase 1 measurement collector smoke diagnostics

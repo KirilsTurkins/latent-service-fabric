@@ -6,7 +6,10 @@ use std::{
 use super::{ProviderDescriptor, ProviderShutdownReport};
 use latent_artifacts::DirectoryArtifactRepository;
 use latent_audit::AuditHandle;
-use latent_blobs::{local::LocalBlobStore, provider::LocalBlobProvider};
+use latent_blobs::{
+    local::{LocalBlobLimits, LocalBlobStore},
+    provider::LocalBlobProvider,
+};
 use latent_capabilities::broker::{
     io::{IoLimits, IoRuntime},
     pools::{ProviderPoolLimits, ProviderPools},
@@ -87,7 +90,7 @@ impl ProviderRuntime {
                     .join(format!("provider-blobs-{}", blob.identity.id));
                 let namespace = blob.namespace.clone();
                 let job = owner.pools.control_blocking(move || {
-                    LocalBlobStore::open(&root, &namespace, Default::default())
+                    LocalBlobStore::open(&root, &namespace, LocalBlobLimits::default())
                 })?;
                 let store = job.wait().await?.map_err(|_| unavailable())?;
                 let provider = LocalBlobProvider::install(
@@ -188,9 +191,7 @@ impl ProviderRuntime {
             && io.metadata_bytes == 0
             && io.buffers == 0
             && io.streams == 0
-            && blob.stages == 0
-            && blob.handles == 0
-            && blob.active_work == 0;
+            && blob_quiescent(&blob);
         Ok(ProviderShutdownReport {
             clean,
             control_owners: pools.control_owners,
@@ -224,4 +225,34 @@ fn unavailable() -> PlatformError {
         PlatformErrorCode::Unavailable,
         "configured-provider-unavailable",
     )
+}
+
+fn blob_quiescent(snapshot: &latent_blobs::local::LocalBlobSnapshot) -> bool {
+    snapshot.handles == 0 && snapshot.active_work == 0 && !snapshot.poisoned
+}
+
+#[cfg(test)]
+mod tests {
+    use super::blob_quiescent;
+    use latent_blobs::local::LocalBlobSnapshot;
+
+    #[test]
+    fn shutdown_retains_charged_durable_stages_without_claiming_live_handle_reclamation() {
+        let mut snapshot = LocalBlobSnapshot {
+            stages: 2,
+            reserved_stage_bytes: 8192,
+            accounted_disk_bytes: 32768,
+            closed: true,
+            ..LocalBlobSnapshot::default()
+        };
+        assert!(blob_quiescent(&snapshot));
+        snapshot.handles = 1;
+        assert!(!blob_quiescent(&snapshot));
+        snapshot.handles = 0;
+        snapshot.active_work = 1;
+        assert!(!blob_quiescent(&snapshot));
+        snapshot.active_work = 0;
+        snapshot.poisoned = true;
+        assert!(!blob_quiescent(&snapshot));
+    }
 }

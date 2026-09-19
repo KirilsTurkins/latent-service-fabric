@@ -73,7 +73,9 @@ pub(super) fn present<'de, Document: Deserialize<'de>, Input: Deserializer<'de>>
     Document::deserialize(input).map(Some)
 }
 
-pub(super) fn derive(config: &NodeConfig) -> Result<Option<ConfiguredProviders>, PlatformError> {
+pub(super) fn derive(
+    config: &NodeConfig,
+) -> Result<Option<Box<ConfiguredProviders>>, PlatformError> {
     let Some(providers) = &config.providers else {
         return Ok(None);
     };
@@ -129,7 +131,7 @@ pub(super) fn derive(config: &NodeConfig) -> Result<Option<ConfiguredProviders>,
         }
     }
     providers.definitions()?;
-    Ok(Some(providers.clone()))
+    Ok(Some(Box::new(providers.clone())))
 }
 
 impl ProviderIdentity {

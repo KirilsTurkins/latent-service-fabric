@@ -38,7 +38,7 @@ pub(super) struct Catalogs {
     rollouts: Option<super::rollouts::RolloutRuntime>,
     policies: Option<super::policies::PolicyRuntime>,
     capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
-    providers: Option<super::providers::ProviderRuntime>,
+    providers: Option<Box<super::providers::ProviderRuntime>>,
     clock: Arc<dyn ActivationClock>,
 }
 
@@ -324,7 +324,7 @@ impl Catalogs {
                 .await?;
             }
             if settings.providers.is_some() {
-                providers = Some(
+                providers = Some(Box::new(
                     super::providers::ProviderRuntime::open(
                         settings,
                         &artifacts,
@@ -340,7 +340,7 @@ impl Catalogs {
                         runtime.ok_or_else(mode_error)?.clone(),
                     )
                     .await?,
-                );
+                ));
             }
             Ok::<_, PlatformError>((artifacts, deployments))
         }
@@ -706,13 +706,7 @@ impl StandaloneNode {
                 ..LocalActivationServices::default()
             },
         )?;
-        if settings.budget_profile == latent_core::BudgetProfile::Phase3 {
-            if let Some(capabilities) = &catalogs.capabilities {
-                capabilities.install_local_services(
-                    manager.local_service_invoker(settings.admission.budget_ceiling.clone())?,
-                )?;
-            }
-        }
+        install_local_services(settings, catalogs, &manager)?;
         Ok(Self {
             transport: None,
             http: None,
@@ -746,6 +740,21 @@ impl StandaloneNode {
             cleanup_grace: settings.manager.cleanup_grace,
         })
     }
+}
+
+fn install_local_services(
+    settings: &NodeSettings,
+    catalogs: &Catalogs,
+    manager: &LocalActivationManager,
+) -> Result<(), PlatformError> {
+    if settings.budget_profile == latent_core::BudgetProfile::Phase3 {
+        if let Some(capabilities) = &catalogs.capabilities {
+            capabilities.install_local_services(
+                manager.local_service_invoker(settings.admission.budget_ceiling.clone())?,
+            )?;
+        }
+    }
+    Ok(())
 }
 
 fn factory(
