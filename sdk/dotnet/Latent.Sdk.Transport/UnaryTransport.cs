@@ -59,7 +59,10 @@ public sealed partial class BoundedClient
         {
             Profile.ClientFailure failure = state.Failure(state.GrpcStatus == 4 ? Profile.FailureCategory.Deadline : Profile.FailureCategory.Rpc,
                 "remote RPC failed; recover by the original identity");
-            throw new Profile.ClientException(ReadPlatformError(response, state, failure, cancellationToken));
+            failure = ReadPlatformError(response, state, failure, cancellationToken);
+            bool observed = state.GrpcStatus is 3 or 5 or 6 or 7 or 9 or 10 or 12 or 16 &&
+                !(state.GrpcStatus == 5 && state.RecoveryRead) && state.AuditStatus is not ("outcome-unknown" or "audit-unavailable");
+            throw new Profile.ClientException(failure with { Outcome = observed ? Profile.OutcomeKnowledge.Observed : Profile.OutcomeKnowledge.Unknown });
         }
         if (payload is null) throw state.Error(Profile.FailureCategory.Decode, "unary response message is missing");
         var message = (IMessage)Activator.CreateInstance(typeof(Response))!;

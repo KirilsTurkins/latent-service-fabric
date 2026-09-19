@@ -16,6 +16,7 @@ internal sealed class CallState
     internal readonly int RequestLimit;
     internal readonly int ResponseLimit;
     internal readonly bool Recovery;
+    internal readonly bool RecoveryRead;
     internal readonly TimeSpan Timeout;
     internal readonly long Deadline;
     internal readonly CancellationToken Caller;
@@ -40,6 +41,7 @@ internal sealed class CallState
             case Profile.GetActivationRequest activation:
                 Identity = new(Known(activation.ActivationId), null);
                 Recovery = true;
+                RecoveryRead = true;
                 break;
             case Profile.ApplyPolicyRequest policy:
                 Identity = new(null, Known(policy.OperationId));
@@ -47,6 +49,7 @@ internal sealed class CallState
             case Profile.GetPolicyOperationRequest operation:
                 Identity = new(null, Known(operation.OperationId));
                 Recovery = true;
+                RecoveryRead = true;
                 break;
             case Profile.ListCapabilitiesRequest:
                 RequestLimit = Math.Min(config.MaxRequestBytes, 8192);

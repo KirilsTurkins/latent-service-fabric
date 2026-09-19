@@ -141,6 +141,7 @@ internal static partial class Program
             rpc = raw;
             Profile.ClientFailure failure = await Failure(client.InvokeAsync(Invoke(), Defaults).AsTask(), raw == "4" ? Profile.FailureCategory.Deadline : Profile.FailureCategory.Rpc, true);
             Check(failure.GrpcStatus == int.Parse(raw) && failure.AuditAck is null && failure.AuditAttemptSequence == ulong.MaxValue, "raw RPC/audit evidence changed");
+            Check(failure.Outcome == (raw is "3" or "5" or "7" or "9" or "12" or "16" ? Profile.OutcomeKnowledge.Observed : Profile.OutcomeKnowledge.Unknown), "RPC rejection knowledge changed");
             Check(failure.PlatformError is not null && !failure.PlatformError.Message.Contains(Token) && failure.PlatformError.DetailItems[0].Fields["diagnostic"] == "[redacted]", "credential was exposed in diagnostics");
         }
         rpc = "0";
