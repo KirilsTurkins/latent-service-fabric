@@ -45,8 +45,10 @@ public sealed partial class BoundedClient : Profile.IClientProfile
         where WireRequest : IMessage, new() where WireResponse : IMessage
     {
         var state = new CallState(config, request, options, caller);
-        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(caller, lifetime.Token);
-        deadline.CancelAfter(state.Remaining);
+        using var expiry = new CancellationTokenSource();
+        state.Expiry = expiry.Token;
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(caller, lifetime.Token, expiry.Token);
+        expiry.CancelAfter(TimeSpan.FromMilliseconds(Math.Ceiling(state.Remaining.TotalMilliseconds)));
         bool admitted = false;
         try
         {

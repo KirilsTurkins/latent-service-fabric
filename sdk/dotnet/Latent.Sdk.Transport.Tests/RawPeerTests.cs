@@ -74,6 +74,61 @@ internal static partial class Program
         return packet;
     }
 
+    private static async Task StalledRawPeers()
+    {
+        foreach (bool cancel in new[] { false, true })
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start(4);
+            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(4));
+            using var caller = new CancellationTokenSource();
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var retired = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            int requests = 0;
+            bool physicalClose = false;
+            Task peer = Task.Run(async () =>
+            {
+                using TcpClient accepted = await listener.AcceptTcpClientAsync(deadline.Token);
+                using NetworkStream socket = accepted.GetStream();
+                byte[] preface = new byte[24];
+                await socket.ReadExactlyAsync(preface, deadline.Token);
+                Check(preface.AsSpan().SequenceEqual("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8), "stalled peer did not observe HTTP/2");
+                await socket.WriteAsync(Frame(4, 0, 0, [0, 3, 0, 0, 0, 2]), deadline.Token);
+                while (true)
+                {
+                    byte[] header = new byte[9];
+                    if (await socket.ReadAsync(header.AsMemory(0, 1), deadline.Token) == 0) { physicalClose = true; break; }
+                    await socket.ReadExactlyAsync(header.AsMemory(1), deadline.Token);
+                    int length = header[0] << 16 | header[1] << 8 | header[2];
+                    Check(length <= 16384, "stalled peer frame bound");
+                    byte[] payload = new byte[length];
+                    await socket.ReadExactlyAsync(payload, deadline.Token);
+                    if (header[3] == 4 && (header[4] & 1) == 0) await socket.WriteAsync(Frame(4, 1, 0, []), deadline.Token);
+                    if (header[3] == 6 && (header[4] & 1) == 0) await socket.WriteAsync(Frame(6, 1, 0, payload), deadline.Token);
+                    if (header[3] == 1) { requests++; started.TrySetResult(); }
+                    if (header[3] == 3) retired.TrySetResult();
+                }
+            });
+            try
+            {
+                await using BoundedClient client = await BoundedClient.ConnectAsync(Options("http://" + listener.LocalEndpoint, inflight: 2, recovery: 1, queue: 1));
+                Task pending = client.InvokeAsync(Invoke("raw-held"), new(400), caller.Token).AsTask();
+                await started.Task.WaitAsync(deadline.Token);
+                Profile.ClientFailure queued = await Failure(client.InvokeAsync(Invoke("raw-queued"), new(30)).AsTask(), Profile.FailureCategory.Deadline, false);
+                Check(queued.Identity.ActivationId == "raw-queued" && queued.Outcome == Profile.OutcomeKnowledge.NotDispatched, "queued deadline lost original identity");
+                if (cancel) caller.Cancel();
+                Profile.ClientFailure failure = await Failure(pending, cancel ? Profile.FailureCategory.LocalCancelled : Profile.FailureCategory.Deadline, true);
+                Check(failure.Identity.ActivationId == "raw-held" && failure.Outcome == Profile.OutcomeKnowledge.Unknown, "raw local failure invented an outcome");
+                await retired.Task.WaitAsync(deadline.Token);
+                await Until(() => client.Snapshot().WireStreams == 0);
+                await client.DisposeAsync();
+                await peer.WaitAsync(deadline.Token);
+                Check(requests == 1 && physicalClose && !listener.Pending() && client.Snapshot().Reaped, "raw deadline/cancel replayed or leaked a physical owner");
+            }
+            finally { deadline.Cancel(); listener.Stop(); }
+        }
+    }
+
     private static Task FrameFragments()
     {
         byte[] packet = Frame(4, 0, 0, [0, 3, 0, 0, 0, 8, 0, 4, 0, 1, 0, 0])

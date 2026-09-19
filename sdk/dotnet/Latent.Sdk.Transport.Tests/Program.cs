@@ -17,7 +17,7 @@ internal static partial class Program
             foreach (Func<Task> scenario in new Func<Task>[]
             {
                 EightOperations, CancellationAndQueue, DeadlinesAndShutdown, NoReplay, LostMutation,
-                MalformedAndBounds, AuditAndRawStatus, ConnectionOwnership, ZeroLengthReads, FrameFragments
+                MalformedAndBounds, AuditAndRawStatus, ConnectionOwnership, ZeroLengthReads, FrameFragments, StalledRawPeers
             })
             {
                 await scenario().WaitAsync(TimeSpan.FromSeconds(30));

@@ -136,13 +136,25 @@ internal static partial class Program
         }
         audit = "future-state";
         attempt = "18446744073709551615";
-        foreach (string raw in new[] { "-2026", "3", "4", "5", "7", "8", "9", "12", "13", "14", "16", "2026" })
+        foreach (string raw in new[] { "-2147483648", "-2026", "1", "3", "4", "5", "6", "7", "8", "9", "10", "12", "13", "14", "15", "16", "2026", "2147483647" })
         {
             rpc = raw;
             Profile.ClientFailure failure = await Failure(client.InvokeAsync(Invoke(), Defaults).AsTask(), raw == "4" ? Profile.FailureCategory.Deadline : Profile.FailureCategory.Rpc, true);
             Check(failure.GrpcStatus == int.Parse(raw) && failure.AuditAck is null && failure.AuditAttemptSequence == ulong.MaxValue, "raw RPC/audit evidence changed");
-            Check(failure.Outcome == (raw is "3" or "5" or "7" or "9" or "12" or "16" ? Profile.OutcomeKnowledge.Observed : Profile.OutcomeKnowledge.Unknown), "RPC rejection knowledge changed");
+            Check(failure.Outcome == (raw is "3" or "5" or "6" or "7" or "9" or "10" or "12" or "16" ? Profile.OutcomeKnowledge.Observed : Profile.OutcomeKnowledge.Unknown), "RPC rejection knowledge changed");
             Check(failure.PlatformError is not null && !failure.PlatformError.Message.Contains(Token) && failure.PlatformError.DetailItems[0].Fields["diagnostic"] == "[redacted]", "credential was exposed in diagnostics");
+        }
+        rpc = "5";
+        Profile.ClientFailure missing = await Failure(client.GetActivationAsync(new("activation-a"), Defaults).AsTask(), Profile.FailureCategory.Rpc, true);
+        Check(missing.Outcome == Profile.OutcomeKnowledge.Unknown, "not-retained activation proved nonexecution");
+        missing = await Failure(client.GetPolicyOperationAsync(new("operation-a"), Defaults).AsTask(), Profile.FailureCategory.Rpc, true);
+        Check(missing.Outcome == Profile.OutcomeKnowledge.Unknown, "not-retained mutation proved nonexecution");
+        rpc = "9";
+        foreach (string uncertain in new[] { "outcome-unknown", "audit-unavailable" })
+        {
+            audit = uncertain;
+            Profile.ClientFailure uncertainFailure = await Failure(client.ApplyPolicyAsync(Apply(), Defaults).AsTask(), Profile.FailureCategory.Rpc, true);
+            Check(uncertainFailure.Outcome == Profile.OutcomeKnowledge.Unknown && uncertainFailure.AuditStatus == uncertain, "uncertain audit became an observed rejection");
         }
         rpc = "0";
         foreach (string invalid in new[] { "", "01", "-1", "18446744073709551616" })

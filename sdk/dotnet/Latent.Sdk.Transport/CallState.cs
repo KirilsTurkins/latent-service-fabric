@@ -20,6 +20,7 @@ internal sealed class CallState
     internal readonly TimeSpan Timeout;
     internal readonly long Deadline;
     internal readonly CancellationToken Caller;
+    internal CancellationToken Expiry;
 
     internal CallState(ClientOptions config, object request, Profile.CallOptions options, CancellationToken caller)
     {
@@ -81,7 +82,7 @@ internal sealed class CallState
     {
         if (Caller.IsCancellationRequested)
             return new Profile.ClientCancellationException(Failure(Profile.FailureCategory.LocalCancelled, "local wait cancelled; remote outcome may remain unknown"), Caller);
-        if (Remaining == TimeSpan.Zero)
+        if (Expiry.IsCancellationRequested || Remaining == TimeSpan.Zero)
             return new Profile.ClientCancellationException(Failure(Profile.FailureCategory.Deadline, "original local deadline expired; recover by the original identity"), cancellationToken);
         return Error(Profile.FailureCategory.Transport, "client connection closed; recover by the original identity");
     }
