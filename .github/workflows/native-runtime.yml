@@ -74,3 +74,11 @@ jobs:
           path: target/native-release/
           if-no-files-found: error
           retention-days: 14
+      - name: Retain bounded build failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-runtime-build-failure-${{ github.sha }}
+          path: target/native-build-failure.txt
+          if-no-files-found: ignore
+          retention-days: 7

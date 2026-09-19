@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import sys
 import tomllib
 
@@ -41,6 +42,9 @@ def build(arguments) -> dict:
 
     def run(command, timeout=60, maximum=1_048_576):
         status, captured = execute(command, timeout=timeout, maximum=maximum, cwd=str(ROOT), environment=environment)
+        if status != 0:
+            (ROOT / "target").mkdir(exist_ok=True)
+            files.replace(ROOT / "target/native-build-failure.txt", captured[-65536:])
         require(status == 0, "native-build-command-failed-" + Path(command[0]).name)
         return captured
 
@@ -51,7 +55,9 @@ def build(arguments) -> dict:
     environment["SOURCE_DATE_EPOCH"] = str(epoch)
     compiler = run(["rustc", "+" + toolchain, "--version", "--verbose"]).decode()
     require(f"release: {toolchain}\n" in compiler and f"host: {verify.TARGET}\n" in compiler, "actual-toolchain-identity-mismatch")
-    require(run(["wasm-tools", "--version"]).decode().strip() == "wasm-tools " + baseline["contracts"]["wasm-tools"],
+    wasm_tools = run(["wasm-tools", "--version"]).decode().strip()
+    require(re.fullmatch(r"wasm-tools " + re.escape(baseline["contracts"]["wasm-tools"])
+                         + r"(?: \([^()\r\n]{1,128}\))?", wasm_tools),
             "pinned-wasm-tools-required")
     build_command = ["cargo", "+" + toolchain, "build", "--locked", "--release", "--target", verify.TARGET,
                      "-p", "latent", "-p", "latentd", "-p", "latent-wasmtime",
@@ -85,7 +91,8 @@ def build(arguments) -> dict:
                               for name, path in sorted(assets.items()) if name.startswith(("bin/", "examples/echo/"))],
                   "predicate": {"buildDefinition": {"buildType": "https://github.com/KirilsTurkins/latent-service-fabric/native-build/v1",
                   "externalParameters": {"version": arguments.version, "sourceCommit": commit, "target": verify.TARGET},
-                  "internalParameters": {"rustc": compiler, "command": build_command, "rustflags": environment["RUSTFLAGS"],
+                  "internalParameters": {"rustc": compiler, "wasmTools": wasm_tools,
+                                         "command": build_command, "rustflags": environment["RUSTFLAGS"],
                                          "hostKernel": platform.release(), "distribution": "ubuntu-24.04",
                                          "crossHostReproducibilityTested": False},
                   "resolvedDependencies": [{"uri": "git+https://github.com/KirilsTurkins/latent-service-fabric",
