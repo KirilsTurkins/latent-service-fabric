@@ -183,6 +183,9 @@
             "angular-ssr-component-v1"
           ]
         },
+        "backendProfile": {
+          "enum": ["none", "scoped-http-get-v1"]
+        },
         "profileDigest": {
           "type": "string",
           "minLength": 71,
@@ -195,7 +198,13 @@
           "maxLength": 71,
           "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"backendProfile": {"const": "scoped-http-get-v1"}}, "required": ["backendProfile"]},
+          "then": {"properties": {"profile": {"const": "angular-ssr-component-v1"}}}
+        }
+      ]
     }
   },
   "title": "LSF exact web application package metadata",

@@ -37,6 +37,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     telemetry.validate().map_err(|_| invalid("telemetry"))?;
     let wasmtime = runtime::wasmtime(config, &capacity)?;
     let http = super::http::derive(config, capacity.reservations as usize)?;
+    let providers = super::providers::derive(config)?;
     let runtime_profile = std::sync::Arc::new(wasmtime.detected_runtime_profile()?);
     let artifacts = artifact_limits(config, management.max_page_size);
     let isolated_aot = config
@@ -58,6 +59,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         audit: super::audit::derive(config.audit.as_ref())?,
         rollouts: super::rollouts::derive(config.rollouts.as_ref(), config.audit.is_some())?,
         capability_policies: super::capability_policies::derive(config.capability_policies)?,
+        providers,
         node,
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,

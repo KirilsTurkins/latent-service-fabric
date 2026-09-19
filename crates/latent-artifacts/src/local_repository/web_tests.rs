@@ -34,6 +34,15 @@ impl AdmissionRecheck for Grant {
     fn check(&self) -> Result<(), PlatformError> {
         Ok(())
     }
+    fn check_web_grant(&self, grant: &dyn WebAdmissionGrant) -> Result<(), PlatformError> {
+        if !grant.as_any().is::<Grant>() {
+            return Err(super::super::error(
+                latent_core::PlatformErrorCode::PermissionDenied,
+                "mock-web-grant",
+            ));
+        }
+        grant.check_current()
+    }
 }
 impl AdmissionAuthority for Host {
     fn verify(
@@ -99,6 +108,9 @@ impl AdmissionAuthority for Host {
 fn tenant() -> TenantId {
     TenantId("tests".into())
 }
+
+#[path = "web_tests/projection.rs"]
+mod projection;
 fn context(operation: &str, generation: u64) -> ReleaseMutationContext {
     ReleaseMutationContext {
         scope: LifecycleScope::Tenant(tenant()),

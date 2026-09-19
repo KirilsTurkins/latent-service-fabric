@@ -3,6 +3,8 @@ use latent_rpc::{control::v1 as control, invocation::v1 as invocation};
 use prost::Message;
 
 pub enum Operation {
+    Trigger(Box<crate::management::triggers::TriggerOperation>),
+    Capability(Box<crate::management::capabilities::CapabilityOperation>),
     Policy(Box<crate::management::policies::PolicyOperation>),
     GetReleaseLifecycle(control::GetReleaseLifecycleRequest),
     LookupReleaseReceipt(control::GetReleaseOperationRequest),
@@ -33,6 +35,8 @@ pub enum Operation {
 impl Operation {
     pub fn encoded_len(&self) -> usize {
         match self {
+            Self::Trigger(operation) => operation.encoded_len(),
+            Self::Capability(operation) => operation.encoded_len(),
             Self::Policy(operation) => operation.encoded_len(),
             Self::GetReleaseLifecycle(request) => request.encoded_len(),
             Self::LookupReleaseReceipt(request) => request.encoded_len(),

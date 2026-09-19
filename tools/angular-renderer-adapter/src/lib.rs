@@ -2,6 +2,8 @@
 
 #[allow(unsafe_code)] // Only wit-bindgen's generated canonical ABI and export.
 mod abi;
+#[cfg(feature = "backend-http")]
+mod backend;
 mod wire;
 
 use abi::exports::latent::web::application::{Guest, Header, Method, Profile, Request, Response};
@@ -14,6 +16,8 @@ struct Adapter;
 impl Guest for Adapter {
     async fn handle(request: Request) -> Response {
         let input = wire::request(&request);
+        #[cfg(feature = "backend-http")]
+        let input = wire::render_request(&request, backend::load(&input).await);
         let result = abi::latent::angular_renderer_internal::engine::render(&input);
         assert!(
             result.len() <= MAX_RESULT_FRAME_BYTES,

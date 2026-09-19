@@ -312,9 +312,13 @@ impl DirectoryArtifactRepository {
             verification_statistics: VerificationStatistics::default(),
             publish_lock: Mutex::new(PublicationState::default()),
             admission_work: Mutex::new(()),
+            web: web::WebCatalog::new(
+                admission
+                    .as_ref()
+                    .map(|configured| Arc::clone(&configured.authority)),
+            )?,
             admission,
             lifecycle: OnceLock::new(),
-            web: web::WebCatalog::new()?,
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_parent_sync_once: AtomicBool::new(false),
