@@ -13,7 +13,7 @@ let args = command === 'start'
 let program = path.join(websiteRoot, 'node_modules/@docusaurus/core/bin/docusaurus.mjs');
 if (command === 'test-build') { program = path.join(websiteRoot, 'scripts/test-build.mjs'); args = []; }
 if (command === 'test-theme') { program = path.join(websiteRoot, 'scripts/test-theme.mjs'); args = []; }
-if (command === 'browser-install') { program = path.join(websiteRoot, 'node_modules/playwright/cli.js'); args = ['install', 'chromium']; }
+if (command === 'browser-install') { program = path.join(websiteRoot, 'node_modules/playwright/cli.js'); args = ['install', 'chromium', '--only-shell']; }
 const child = spawn(process.execPath, [program, ...args], {
   cwd: websiteRoot,
   stdio: 'inherit',

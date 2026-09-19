@@ -7,13 +7,13 @@ import {generatedDirectory} from '../lib/prepare.mjs';
 import {assetRoute, readSource, repositoryRoot, sha256, websiteRoot} from '../lib/repository.mjs';
 import {loadPalette, palettePath, validatePalette} from '../lib/palette.mjs';
 import {assertColorPair, assertFocus, assertReflow, assertTextContrast, cssHex, textSamples} from '../lib/theme-review.mjs';
-import {reviewNativeZoom} from '../lib/native-zoom-review.mjs';
+import {reviewZoomReflow} from '../lib/zoom-reflow-review.mjs';
 
 const palette = loadPalette();
 const inventory = JSON.parse(readSource(repositoryRoot, 'docs/assets/illustrations.json'));
 const directory = generatedDirectory('.generated/theme-review');
 const results = [];
-const nativeZoom = [];
+const zoomReflow = [];
 const browser = await chromium.launch({headless: true, timeout: 15000});
 
 async function visit(page, url) {
@@ -208,11 +208,11 @@ try {
           }
         } finally { await context.close(); }
       }
-      nativeZoom.push(...await reviewNativeZoom(prefix, variant, directory));
+      zoomReflow.push(...await reviewZoomReflow(browser, prefix, variant, directory));
     } finally { await server.close(); }
   }
 } finally { await browser.close(); }
 
-const evidence = {schema: 1, measuredAt: new Date().toISOString(), paletteSha256: sha256(readSource(repositoryRoot, palettePath)), pairings: validatePalette(palette), results, nativeZoom, limitations: ['Chromium on Windows only; no complete accessibility certification or screen-reader campaign.', 'Native browser zoom is exercised through the public tabs.setZoom API in an isolated test extension, not an operating-system keyboard shortcut.', 'SVG text remains a two-dimensional diagram: full-size link and zoom are required for narrow displays.', 'Wiki source snapshot is inventoried, not migrated or republished.']};
+const evidence = {schema: 1, measuredAt: new Date().toISOString(), browser: browser.version(), paletteSha256: sha256(readSource(repositoryRoot, palettePath)), pairings: validatePalette(palette), results, zoomReflow, limitations: ['Chromium headless shell on Windows only; no complete accessibility certification or screen-reader campaign.', '200% rendering is exercised by halving the CSS viewport and doubling DPR, not by native browser zoom controls. Native browser zoom remains a manual acceptance check.', 'SVG text remains a two-dimensional diagram: full-size link and zoom are required for narrow displays.', 'Wiki source snapshot is inventoried, not migrated or republished.']};
 fs.writeFileSync(path.join(directory, 'evidence.json'), `${JSON.stringify(evidence, null, 2)}\n`);
-console.log(JSON.stringify({results, nativeZoom, screenshots: path.relative(websiteRoot, directory)}));
+console.log(JSON.stringify({results, zoomReflow, screenshots: path.relative(websiteRoot, directory)}));

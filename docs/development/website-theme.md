@@ -102,7 +102,7 @@ as a UI fixture. It is not a page-existence proxy for teaching quality.
 `test:theme` serves the actual production outputs on bounded loopback servers,
 with same-origin requests only. It checks computed text colors, code line
 numbers, hover/selection, a deliberately invisible-text negative canary, system
-and stored themes, keyboard focus/navigation, mobile layout, native 200% zoom, reduced motion,
+and stored themes, keyboard focus/navigation, mobile layout, 200% equivalent reflow, reduced motion,
 Mermaid and before/after SVG rendering. Both project and root base paths are
 required. SVG labels, viewBox boundaries and markers are checked; originals and
 copies are inspected as external images, including narrow embedding and full-size
@@ -112,20 +112,18 @@ built-site check. A timeout/interrupted test is neither a pass nor proof of fail
 in the product.
 
 The responsive fixture additionally uses a 640 CSS-pixel viewport. A separate
-**native 200% browser zoom** check uses Chromium's public `tabs.setZoom` API in
-an isolated, local test-only extension and temporary profile. It verifies the
-reported zoom factor, the halved CSS viewport, doubled device-pixel ratio,
-reflow, reading and mobile navigation at that actual zoom. It never accesses
-the user's browser profile. The extension is not shipped in the website or
-loaded into an existing browser. Its only permission is `tabs`; it accepts only
-one exact owned loopback page. Chromium and the headless shell come from the
-same pinned Playwright browser revision, installed by `browser:install`.
-The test has a five-minute total deadline and closes its own browsers and
-verified in-worktree temporary profile; it changes no OS/user zoom setting.
-[Playwright's extension support](https://playwright.dev/docs/chrome-extensions)
-and [Chromium's public tabs API](https://developer.chrome.com/docs/extensions/reference/api/tabs)
-are the maintained interfaces. SVG inspection also doubles the full-size image
-width. Retain dated screenshots and manual
+**200% rendering-equivalent** check uses 640 by 450 CSS pixels at device-pixel
+ratio 2, producing the layout and physical screenshot dimensions of a 1280 by
+900 viewport at 200% zoom. It verifies the dimensions, reflow, reading and
+mobile navigation in both modes and base paths. This is not native browser
+zoom: operating-system/browser controls remain a manual acceptance check.
+The pinned full Chromium could not navigate even a local production page on
+the initial Windows review host, with or without a test extension; those
+timeouts are not passes and do not establish a product failure. The unqualified
+extension harness is not retained or required by the working headless-shell
+suite. No test accesses a user's browser profile or changes an OS setting.
+The test has a five-minute total deadline and closes its own browser/servers.
+SVG inspection also doubles the full-size image width. Retain dated screenshots and manual
 observations with the exact reviewed checkpoint; automated checks do not certify
 all accessibility, browsers, assistive technologies or future content. See
 [WCAG reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html) for the
