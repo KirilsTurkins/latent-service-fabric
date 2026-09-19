@@ -220,9 +220,15 @@ checking its identity; do not delete another worktree, shared scanner state,
 retained native backups, protected trust or any user's workloads.
 
 This guide records the real read-only checkpoint, not an executed activation.
-The parent still owns default promotion, required checks and actual manual/
-scheduled coordinator runs. Existing focused baseline tests belong to their
-recorded source, and the f8d native receipts do not validate the new inventory.
+The [actual settings walkthrough](../evidence/operator-settings-2026-09-19.json)
+runs the unmodified helper from integrated guide commit `1ed9ef3c` using Windows
+PowerShell, Python 3.13.5 and GitHub CLI 2.96.0. It confirms enabled services,
+read-only workflow defaults and the still-missing default coordinator/protection;
+it changes nothing. This is the helper's actual execution, not a Linux shell or
+runtime walkthrough. The parent still owns default promotion, required checks
+and actual manual/scheduled coordinator runs. Existing focused baseline tests
+belong to their recorded source, and the f8d native receipts do not validate the
+new inventory.
 [Rendered guide review and remaining child outcomes](../development/operator-guide-acceptance.md)
 stay pending separately. Development documentation may be published honestly
 before #240 closes; that does not close #282 or waive native release gates.

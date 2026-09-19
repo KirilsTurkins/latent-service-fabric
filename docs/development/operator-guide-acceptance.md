@@ -10,9 +10,10 @@ learning paths. This is a partial delivery under
 the child-guide requirements below still independently reviewable.
 
 The authoring worktree starts at native candidate
-`f8d0c51a9a76bf123fa8b397fb3a0e15099cd3f5`; parent integration and its new CI/VM
-identity are separate. No app, SDK, native installer or security-workflow change
-is introduced here. [#370's site foundation](https://github.com/KirilsTurkins/latent-service-fabric/pull/370)
+`f8d0c51a9a76bf123fa8b397fb3a0e15099cd3f5` and integrates parent source
+`edec84fa` in guide merge `1ed9ef3c`. Parent-owned native CI/VM identities remain
+separate. No guide-authored app, SDK, native installer or security-workflow
+change is introduced here. [#370's site foundation](https://github.com/KirilsTurkins/latent-service-fabric/pull/370)
 owns the single-source build/coverage implementation; other guides consume their
 actual subsystem owners, not a new parallel protocol or browser test suite.
 
@@ -21,7 +22,9 @@ actual subsystem owners, not a new parallel protocol or browser test suite.
 | Guide | Complete source and intended outcome | Evidence available here | Still required |
 | --- | --- | --- | --- |
 | [Native release promotion](../operations/native-release-promotion.md) | Existing native release workflow/gate, installer and real VM harness; review a genuinely versioned foundation, pin its authenticated TAR, qualify the final version and hand publication to the parent | [Exact f8d candidate summary](../evidence/native-runtime-f8d0c51a.json), real same-source CI/VM run links, distinct boot IDs and lifecycle/rootless receipt hashes; read-only prerequisite inspection | Parent-integrated source qualification, genuine rc.1/final artifacts and actual upgrade/downgrade VM phase, release identity, protected publication, rendered newcomer/maintainer review |
-| [Maintained security monitoring](../operations/maintained-security-monitoring.md) | Existing scoped baseline, settings inventory and all-lock/SDK graph contract; distinguish configuration, registration and actual both-ref execution | [Dated read-only GitHub API receipt](../evidence/operator-release-prerequisites-2026-09-19.json); source-checked coordinator/settings/scan contract at `edec84fa` | Default-release activation, reviewed required checks, actual manual and unchanged-lock scheduled receipts, security owner's outstanding permission/push-protection evidence, rendered review |
+| [Maintained security monitoring](../operations/maintained-security-monitoring.md) | Existing scoped baseline, settings inventory and all-lock/SDK graph contract; distinguish configuration, registration and actual both-ref execution | [Dated read-only GitHub API receipt](../evidence/operator-release-prerequisites-2026-09-19.json), [actual integrated-source settings execution](../evidence/operator-settings-2026-09-19.json), source-checked coordinator/settings/scan contract at `edec84fa` | Default-release activation, reviewed required checks, actual manual and unchanged-lock scheduled receipts, security owner's outstanding permission/push-protection evidence, rendered review |
+| [Deliver and recover a capsule](../learn/deliver-and-recover-a-capsule.md) | Existing finite CLI/node/registry workflow, actual publication/rollout/recovery identities and failure diagnosis | [Real retained operator, outage, publication and enforced-profile receipts](../evidence/core-operator-walkthrough-35454985599.json); original file hashes and eight collector Git-object matches | Fresh displayed-command/source checks, rendered newcomer review and remaining first-node/capsule-authoring paths; source-contributor evidence is not installed-bundle qualification |
+| [Reconcile a policy change](../how-to/reconcile-a-policy-change.md) | Existing real CLI/node control-plane workflow; historical receipts never restore revoked authority | Actual CI log receipt: 15 CLI calls, two starts, zero guest invocations and clean policy-owner shutdown, with explicit runtime checkout identity | Rendered/newcomer review; actual guest/provider allowed/denied/failure/budget/rotation paths remain separate |
 
 The native receipt summary records both artifact source and harness as **f8d**.
 It does not relabel the older diagnostic source `260c3e4e` / harness `3925d416`
@@ -49,6 +52,14 @@ That does not automatically complete a guide: select the actual displayed source
 match the owned test receipt and inspect the rendered scenario. The same rule
 applies when parent integration moves beyond this authoring base.
 
+At the guide checkpoint, [#366's real-client harness](https://github.com/KirilsTurkins/latent-service-fabric/pull/366)
+still declares language participants and executed receipts pending, and
+[#372's Angular reference workflow](https://github.com/KirilsTurkins/latent-service-fabric/pull/372)
+still declares full published/browser/cancellation/revision qualification pending.
+The retained native-parent CI run's Angular steps are **skipped**, not passed.
+Do not use its compiling six-language semantic fixtures or the new CLI guides
+as evidence that #358/#361's actual network/browser walkthroughs executed.
+
 Do not collapse language lifecycle differences into a website-specific retry
 policy: Rust drop, TypeScript `AbortSignal`, Go contexts, Java futures, .NET tokens
 and C callbacks do not by themselves acknowledge server cancellation. Preserve
@@ -64,7 +75,7 @@ workflow. Planned distributed state/cluster/freshness semantics remain planned.
 ## Integrate the pages and evidence into the site
 
 After the parent merges the required source/foundation, the coverage owner adds
-the two runbooks and matching JSON evidence to the applicable existing rows,
+these runbooks and matching JSON evidence to the applicable existing rows,
 especially `install-auth-readiness`, `operator-security-recovery` and
 `trust-resource-architecture`. Retain reference-only sources as references;
 do not mark an entire row accepted from this partial release/activation slice.
