@@ -89,7 +89,7 @@ impl Node {
         let journal = settings.manager.journal;
         let correlations = settings.observer.maximum_active_correlations;
         let started = Instant::now();
-        let catalogs = Catalogs::open(&settings).await.map_err(platform)?;
+        let catalogs = Box::pin(Catalogs::open(&settings)).await.map_err(platform)?;
         let catalog_open = started.elapsed().as_nanos().to_string();
         let artifacts = catalogs.artifacts.clone();
         let deployments = catalogs.deployments.clone();
