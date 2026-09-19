@@ -57,6 +57,9 @@ impl PolicyRuntime {
     }
     pub(super) async fn shutdown(&self, deadline: Instant) -> PolicyShutdownReport {
         let completed = self.handle.shutdown(deadline).await;
+        self.snapshot(completed)
+    }
+    pub(super) fn snapshot(&self, completed: bool) -> PolicyShutdownReport {
         PolicyShutdownReport {
             work_completed: completed,
             active_jobs: self.handle.active_jobs(),

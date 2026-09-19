@@ -2,6 +2,7 @@
 
 mod association;
 mod bounds;
+pub(crate) mod capabilities;
 mod execute;
 mod node;
 pub(crate) mod phase2;
@@ -10,6 +11,7 @@ mod prepare;
 mod response;
 #[cfg(test)]
 mod tests;
+pub(crate) mod triggers;
 
 pub use execute::execute;
 pub use prepare::{prepare, validate};

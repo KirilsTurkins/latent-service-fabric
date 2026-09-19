@@ -194,6 +194,8 @@ fn name(command: &Command) -> &'static str {
         RouteCommand as Route, ValidateCommand as V,
     };
     match command {
+        Command::Trigger(command) => command.name(),
+        Command::Capability(command) => command.name(),
         Command::Policy(command) => command.name(),
         Command::Package(command) => command.name(),
         Command::Validate(V::Capsule(_)) => "validate capsule",

@@ -106,6 +106,7 @@ pub struct Fixture {
     _provider: HttpProvider,
     pub pools: Arc<ProviderPools>,
     pub io: Arc<IoRuntime>,
+    ceiling: latent_core::ResourceBudget,
     _directory: tempfile::TempDir,
 }
 impl Fixture {
@@ -143,7 +144,7 @@ impl Fixture {
                 component::bytes(&format!("http://localhost:{port}{path}")),
                 &[component::CONTRACT],
             );
-            artifact.manifest.execution.resource_budget_ceiling = ceiling;
+            artifact.manifest.execution.resource_budget_ceiling = ceiling.clone();
             artifact.manifest.imports.push(ContractImport {
                 contract: ContractId(component::CAP.into()),
                 optional: false,
@@ -173,6 +174,15 @@ impl Fixture {
             .execution_eligibility_selected(&release, Some(&receipt.publication.id))
             .unwrap()
             .unwrap();
+        ceiling = ceiling.intersect(
+            &catalog
+                .fetch_verified_metadata_selected(&release, Some(&receipt.publication.id))
+                .await
+                .unwrap()
+                .manifest()
+                .execution
+                .resource_budget_ceiling,
+        );
         let policies = Arc::new(
             PolicyStore::open(
                 &directory.path().join("policies"),
@@ -299,14 +309,13 @@ impl Fixture {
             _provider: provider,
             pools,
             io,
+            ceiling,
             _directory: directory,
         }
     }
     pub fn request(&self, id: &str, method: u32) -> (ExecutionRequest, Control) {
         let id = ActivationId(id.into());
-        let mut grant = support::budget();
-        grant.outbound_requests = 8;
-        grant.wall_time_limit_millis = Some(5000);
+        let grant = self.ceiling.clone();
         let budget = ActivationBudget::with_profile(
             EffectiveActivationBudget::admit_profile_at(
                 latent_core::BudgetProfile::Phase3,

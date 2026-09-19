@@ -22,6 +22,7 @@ python3 tools/check_tool_versions.py
 
 npm --prefix sdk/typescript-client run build -- --noEmit
 npm --prefix sdk/typescript-client run test:semantic
+npm --prefix sdk/typescript-client run test:transport
 
 mapfile -t java_sources < <(find sdk/java-client/src/main/java sdk/java-client/src/test/java -type f -name '*.java' | sort)
 if (( ${#java_sources[@]} == 0 )); then

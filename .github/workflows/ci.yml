@@ -453,6 +453,12 @@ jobs:
           version: "0.16.0"
       - name: Install verified guest binding generator
         run: python3 tools/install_guest_bindgen.py "${RUNNER_TEMP}/lsf-guest-tools" >> "${GITHUB_PATH}"
+      - name: Set up the native SDK provider participant
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: sdk/typescript-client/package-lock.json
       - name: Validate contracts, echo component, and generated bindings
         run: |
           unset CARGO_INCREMENTAL
@@ -473,12 +479,15 @@ jobs:
           path: target/capsules/web-contract/component.wasm
           if-no-files-found: error
           retention-days: 1
-      - name: Retain bounded Phase 1 conformance diagnostics
+      - name: Retain bounded conformance and provider diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: phase-1-bounded-conformance-${{ github.sha }}
-          path: target/phase1-conformance/
+          path: |
+            target/phase1-conformance/
+            target/phase3-management/provider-receipt.json
+            target/phase3-sdk/
           if-no-files-found: warn
           retention-days: 14
       - name: Retain Phase 1 measurement collector smoke diagnostics
@@ -534,7 +543,7 @@ jobs:
           go-version: 1.23.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22.16.0
+          node-version: 24.19.0
           cache: npm
           cache-dependency-path: sdk/typescript-client/package-lock.json
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
