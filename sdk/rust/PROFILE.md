@@ -74,9 +74,11 @@ A missing operation receipt, including a NotFound recovery RPC, remains Unknown.
 
 An observed valid receipt is independent of audit availability. Known audit
 header text maps to its existing numeric `AuditAckStatus` and is also retained
-as `audit_status`; future bounded text stays raw, with `UNSPECIFIED` marking that
-no recognized numeric tag exists. Its attempt sequence remains exact. This is
-not a coercion to Durable/Disabled or a new server code. Absent audit metadata
+as `audit_status`. The independent optional u64 `audit_attempt_sequence` retains
+the exact sequence on both response metadata and failures, including when future
+bounded status text has no recognized numeric tag. Unknown header text leaves
+`audit_ack` absent: no `UNSPECIFIED`, Durable or other enum is fabricated. Known
+headers retain `AuditAck` as well as both independent raw fields. Absent audit metadata
 stays absent. A malformed audit header can fail decoding while the independently
 validated receipt outcome and operation identity remain observed/recoverable.
 Already-known identities survive response-validation errors.
@@ -106,7 +108,7 @@ those remain with the parent Rust transport delivery and its real-node suite.
 
 Initial adapter milestone `53134a51` on parent transport `5892bb4d` passed 49
 protobuf cases, nine TCP tests, targeted formatting and strict SDK-only Clippy
-on Windows/Rust 1.97.1. The tenth TCP test intentionally requires the parent's
+on Windows/Rust 1.97.1. The future-status response and failure TCP tests require the parent's
 announced bounded raw-audit acceptance change; it fails against that older base
 instead of hiding the integration gap. No workflow, package manifest, shared
 SDK runner or other transport implementation file is changed beyond the
