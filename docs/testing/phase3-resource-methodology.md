@@ -64,6 +64,12 @@ disconnects. The blob guest returns `10` for an invalid-state handle, not `11`
 checking expectations, records the peer observation, and does not count these
 guest-returned error values as successful provider work.
 
+Likewise, `grpcCode: resource-exhausted` on a transport failure is not the same
+as a platform `code: resource-exhausted` with known nonacceptance. The overload
+episode records both populations and unknown outcomes separately; it never
+retries an ambiguous mutation or attributes a transport limit to the node's
+activation queue without observation.
+
 A requested dormant population can receive `resource-exhausted` before the
 catalog's configured entry ceiling. The collector stops that population at the
 first definite refusal, pages the actual committed population and retains
@@ -71,8 +77,10 @@ requested versus admitted counts. It neither retries that mutation nor infers
 a proven capacity ceiling or which owner refused when the CLI does not expose
 it. Subsequent diagnostic samples use the **actual** admitted count, but a
 refused or incomplete requested population makes the overall campaign fail.
-The parent is investigating #344 audit-busy enqueue/reconciliation handling;
-an old failure is not reclassified as successful density evidence.
+The parent's `bec5d8bf` startup recovery fix is included in the post-merge
+[checkpoint](phase3-resource-checkpoint.md). The density refusal persists in
+that actual run; neither the startup fix nor successful active-owner recovery
+reclassifies a refused population as successful density evidence.
 
 CLI latency includes process creation, connection setup, RPC, possible queueing
 and preparation, provider work, and actual process reap. It is **not** isolated
@@ -143,8 +151,9 @@ immutable arrival identities, deadline/error cleanup, false-empty rejection,
 missing-counter rejection, inode-scoped socket accounting, bounded input
 inventory and immutable output refusal. Linux also measures and reaps a real
 owned process. These synthetic regression fixtures are not benchmark evidence.
-No shared SDK runner, Angular T1 implementation, merge or issue closure belongs
-to this resource worker.
+No shared SDK runner, Angular T1 implementation, PR merge or issue closure
+belongs to this resource worker. Requested parent-branch integration is recorded
+separately from this worker's resource changes.
 
 `tools/phase3_resource_rust.py` builds the dedicated `phase3_resource` integration
 test, selects only the executable named by successful Cargo JSON metadata,
