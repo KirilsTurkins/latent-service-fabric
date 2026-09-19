@@ -165,3 +165,22 @@ provided. `cargo clippy --locked -p latentd --lib --tests --all-features
 not full provider-workflow or Angular qualification. Exact-head CI must still
 complete before merge; earlier unclassified exits are not retroactively
 attributed to this finding.
+
+A later independently retained attempt still failed before launching the Go
+participant. A direct repeated startup regression then reproduced the exact
+cause on startup 8: `ResourceExhausted` / `capability-busy`. The provider control
+task was briefly holding its bounded job registry while bootstrap tried to
+enqueue the local blob-store open. This was not an exhausted worker quota or
+a failed, already-started filesystem operation.
+
+Bootstrap now waits only for that exact pre-enqueue contention under its
+original 30-second deadline. The pool's ordinary nonblocking admission API and
+capacity failures are unchanged. A successfully admitted job is awaited once;
+neither an uncertain result nor any already-started filesystem work is replayed.
+Three deterministic admission tests pass. A normal-CI protected local-blob test
+starts and shuts down 32 nodes; a separate explicitly supplied synthetic signed
+HTTP/blob configuration passes another 32 starts/shutdowns. Both tests passed
+together on Linux (64 actual startups, 5.94 seconds), and strict latentd Clippy
+passed. The signed configuration remains an explicit ignored-test input, never
+an installed credential or trust default. The complete provider/SDK workflows
+and exact-head CI remain separate gates.
