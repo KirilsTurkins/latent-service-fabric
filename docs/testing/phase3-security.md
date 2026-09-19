@@ -164,6 +164,14 @@ with verified stopped-container evidence. This matters for Playwright's
 detached browser descendants: a process-group-only wrapper cannot honestly
 claim to own them. The test container adds no production T2 guest-host feature.
 
+The private container-entry protocol also returns bounded negative receipts.
+The host CLI exits **nonzero** for `latent.phase3.security.failure.v1` and retains
+`passed: false`, the public failing stage/classification, validated cases, the
+active attempted case and the cases/workflows not executed. An accepted command
+is distinct from an accepted test result. Only a verified outer stop can mark
+container cleanup complete. Transport/OS failures before a receipt remain
+unclassified failures, not invented zero-test successes.
+
 ## Inventory, bounds and retention
 
 - Selection uses Cargo's successful terminal JSON inventory, exact package,
