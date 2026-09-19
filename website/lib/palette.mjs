@@ -66,7 +66,7 @@ export function paletteCss(palette) {
     const selector = mode === 'light' ? ':root, [data-theme="light"]' : '[data-theme="dark"]';
     const declarations = Object.entries(tokens).map(([name, value]) => `  --lsf-${name.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)}: ${value};`);
     return `${selector} {\n  color-scheme: ${mode};\n${declarations.join('\n')}\n}`;
-  }).join('\n\n') + '\n';
+  }).join('\n\n') + `\n\n:root {\n  --lsf-diagram-canvas: ${palette.modes.dark.canvas};\n  --lsf-diagram-text: ${palette.modes.dark.text};\n}\n`;
 }
 
 export function prismTheme(tokens) {
@@ -79,6 +79,22 @@ export function prismTheme(tokens) {
     codeVariable: ['variable', 'property', 'symbol', 'attr-name', 'operator', 'punctuation'],
   };
   return {plain: {color: tokens.codeText, backgroundColor: tokens.codeSurface}, styles: Object.entries(groups).map(([token, types]) => ({types, style: {color: tokens[token]}}))};
+}
+
+export function mermaidOptions(tokens) {
+  return {
+    securityLevel: 'strict',
+    fontFamily: 'system-ui, sans-serif',
+    flowchart: {htmlLabels: false},
+    themeVariables: {
+      darkMode: true, background: tokens.canvas,
+      primaryColor: tokens.surface, primaryTextColor: tokens.text, primaryBorderColor: tokens.border,
+      secondaryColor: tokens.raised, secondaryTextColor: tokens.text, secondaryBorderColor: tokens.border,
+      tertiaryColor: tokens.surface, tertiaryTextColor: tokens.text, tertiaryBorderColor: tokens.border,
+      lineColor: tokens.link, textColor: tokens.text, nodeTextColor: tokens.text,
+      edgeLabelBackground: tokens.surface, clusterBkg: tokens.raised, clusterBorder: tokens.border,
+    },
+  };
 }
 
 export function preparePalette() {

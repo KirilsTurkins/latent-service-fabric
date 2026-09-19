@@ -4,7 +4,7 @@ import path from 'node:path';
 import {prepare} from './lib/prepare.mjs';
 import {repositoryUrl, sha256, websiteRoot} from './lib/repository.mjs';
 import {remarkRepositoryLinks, rehypeRepositoryLinks} from './plugins/repository-links.mjs';
-import {preparePalette, prismTheme} from './lib/palette.mjs';
+import {mermaidOptions, preparePalette, prismTheme} from './lib/palette.mjs';
 
 const prepared = prepare();
 const theme = preparePalette();
@@ -58,7 +58,10 @@ const config: Config = {
   themes: ['@docusaurus/theme-mermaid'],
   themeConfig: {
     colorMode: {defaultMode: 'light', respectPrefersColorScheme: true},
+    mermaid: {theme: {light: 'base', dark: 'base'}, options: mermaidOptions(theme.palette.modes.dark)},
     announcementBar: {
+      backgroundColor: 'var(--lsf-raised)',
+      textColor: 'var(--lsf-text)',
       id: 'development-foundation',
       content: 'Development documentation — not a released snapshot. Foundation only; guide, migration and runtime acceptance remain separate.',
       isCloseable: false,

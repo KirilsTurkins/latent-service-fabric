@@ -54,7 +54,7 @@ def read_json(root: Path, relative: str) -> dict:
 
 def git(root: Path, *arguments: str) -> str:
     result = subprocess.run(["git", "-c", "gc.auto=0", *arguments], cwd=root, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
-    require(len(result.stdout) <= 256 * 1024, "illustration git inventory exceeds bound")
+    require(len(result.stdout) <= 8 * 1024 * 1024, "illustration git inventory exceeds bound")
     return result.stdout.decode("utf-8").strip()
 
 
@@ -112,7 +112,7 @@ def prepare(root: Path = ROOT) -> tuple[dict, dict, list[tuple[str, bytes]]]:
         for consumer in entry["consumers"]:
             require(Path(entry["path"]).name in read_bytes(root, consumer).decode("utf-8"), f"missing presentation consumer: {consumer}")
         outputs.append((entry["path"], render(sources[entry["source"]], inventory["replacements"], tokens)))
-    tracked = set(git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "*.svg").strip("\0").split("\0"))
+    tracked = {name for name in git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard").strip("\0").split("\0") if name.lower().endswith(".svg")}
     expected = set(sources) | {name for name, _ in outputs}
     require(tracked <= expected, f"SVG missing an explicit disposition: {sorted(tracked - expected)}")
     require(set(sources) <= tracked, "historical SVG missing from repository inventory")

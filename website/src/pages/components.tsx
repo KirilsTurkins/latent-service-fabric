@@ -34,7 +34,7 @@ export default function Components(): React.ReactNode {
         <h2 id="tabs">Standard tabs</h2>
         <Tabs aria-label="Review specimen" defaultValue="contract">
           <TabItem value="contract" label="Contract"><p>The selected tab has a filled surface and underline, as well as its tab semantics.</p></TabItem>
-          <TabItem value="evidence" label="Evidence"><p>Arrow keys switch the standard Docusaurus tabs. This is not the future per-language control.</p></TabItem>
+          <TabItem value="evidence" label="Evidence"><p>Arrow keys move focus; Enter selects the standard Docusaurus tab. This is not the future per-language control.</p></TabItem>
         </Tabs>
       </section>
       <section aria-labelledby="callouts">

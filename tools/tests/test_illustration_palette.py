@@ -52,7 +52,7 @@ class IllustrationPaletteTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown semantic"):
             palette_tool.render(b'<rect fill="#123456"/>', {"#123456": "missing"}, {})
         original_git = palette_tool.git
-        with patch.object(palette_tool, "git", side_effect=lambda *arguments: original_git(*arguments) + "\0website/static/brand/unreviewed.svg"):
+        with patch.object(palette_tool, "git", side_effect=lambda *arguments: original_git(*arguments) + "\0website/static/brand/unreviewed.SvG"):
             with self.assertRaisesRegex(ValueError, "missing an explicit disposition"):
                 palette_tool.prepare()
         original_read = palette_tool.read_bytes

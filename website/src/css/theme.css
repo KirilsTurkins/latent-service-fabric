@@ -1,4 +1,4 @@
-:root, [data-theme='light'], [data-theme='dark'] {
+:root, html[data-theme='light'], html[data-theme='dark'] {
   --ifm-color-primary: var(--lsf-link);
   --ifm-color-primary-dark: var(--lsf-link-hover);
   --ifm-color-primary-darker: var(--lsf-link-hover);
@@ -71,6 +71,8 @@ div[role='banner'] { --ifm-color-primary: var(--lsf-link); }
 .theme-code-block button { color: var(--lsf-code-text); background: var(--lsf-code-surface); border-color: var(--lsf-border); opacity: 1; }
 .theme-code-block pre { max-height: 36rem; }
 .theme-code-block pre:focus-visible { outline-offset: -4px; }
+.theme-code-block [class*='codeLineNumber']::before { color: var(--lsf-code-comment); opacity: 1; }
+.docusaurus-mermaid-container { color: var(--lsf-diagram-text); background: var(--lsf-diagram-canvas); padding: 1rem; border: 1px solid var(--lsf-border); border-radius: 0.5rem; }
 .pagination-nav__link { border-color: var(--lsf-border); }
 .pagination-nav__link:hover { border-color: var(--lsf-link); background: var(--lsf-raised); }
 .tabs { gap: 0.375rem; padding: 0.5rem; }

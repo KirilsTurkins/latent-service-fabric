@@ -1,6 +1,19 @@
 import assert from 'node:assert/strict';
 import {contrast} from './palette.mjs';
 
+export function cssHex(value) {
+  if (/^#[0-9a-f]{6}$/i.test(value)) return value.toUpperCase();
+  assert.match(value, /^rgba?\(/);
+  const channels = value.match(/[\d.]+/g).map(Number);
+  assert.ok(channels.length === 3 || channels[3] === 1, 'Expected an opaque computed theme color');
+  return `#${channels.slice(0, 3).map(channel => Math.round(channel).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
+
+export function assertColorPair(foreground, background, minimum = 4.5) {
+  const ratio = contrast(cssHex(foreground), cssHex(background));
+  assert.ok(ratio >= minimum, `Computed color contrast: ${foreground}/${background} = ${ratio}`);
+}
+
 export async function textSamples(page, scope = 'body') {
   return page.evaluate(selector => {
     const root = document.querySelector(selector);
@@ -52,9 +65,12 @@ export async function assertFocus(page) {
     const rectangle = element.getBoundingClientRect();
     const style = getComputedStyle(element);
     const topmost = document.elementFromPoint(rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2);
-    return {label: element.textContent.slice(0, 60), visible: rectangle.width > 0 && rectangle.height > 0 && rectangle.top >= 0 && rectangle.bottom <= innerHeight + 1 && rectangle.left >= 0 && rectangle.right <= innerWidth + 1, unobscured: element === topmost || element.contains(topmost), outline: style.outlineStyle, width: Number.parseFloat(style.outlineWidth)};
+    let parent = element.parentElement;
+    while (parent?.parentElement && getComputedStyle(parent).backgroundColor === 'rgba(0, 0, 0, 0)') parent = parent.parentElement;
+    return {label: element.textContent.slice(0, 60), visible: rectangle.width > 0 && rectangle.height > 0 && rectangle.top >= 0 && rectangle.bottom <= innerHeight + 1 && rectangle.left >= 0 && rectangle.right <= innerWidth + 1, unobscured: element === topmost || element.contains(topmost), outline: style.outlineStyle, width: Number.parseFloat(style.outlineWidth), color: style.outlineColor, background: getComputedStyle(parent).backgroundColor};
   });
   assert.ok(focus.visible && focus.unobscured && focus.outline !== 'none' && focus.width >= 3, `Missing/obscured keyboard focus: ${JSON.stringify(focus)}`);
+  assertColorPair(focus.color, focus.background, 3);
 }
 
 export async function assertReflow(page) {

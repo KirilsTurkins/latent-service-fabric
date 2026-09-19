@@ -22,6 +22,7 @@ export default function Home(): React.ReactNode {
         <section key={label}><h2><Link to={route}>{label}</Link></h2><p>{description}</p></section>,
       )}</div>
       <p><Link to="/decisions/">Architecture decisions</Link> record constraints and status, not proof that a feature is delivered.</p>
+      <p><Link to="/components/">Theme component review</Link> is a presentation fixture, not guide or runtime acceptance.</p>
     </main>
   </Layout>;
 }

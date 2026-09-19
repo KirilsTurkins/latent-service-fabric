@@ -5,8 +5,8 @@ import {chromium} from '@playwright/test';
 import {serveBuiltSite, validateBuiltSite} from '../lib/built-site.mjs';
 import {generatedDirectory} from '../lib/prepare.mjs';
 import {assetRoute, readSource, repositoryRoot, sha256, websiteRoot} from '../lib/repository.mjs';
-import {contrast, loadPalette, palettePath, validatePalette} from '../lib/palette.mjs';
-import {assertFocus, assertReflow, assertTextContrast, textSamples} from '../lib/theme-review.mjs';
+import {loadPalette, palettePath, validatePalette} from '../lib/palette.mjs';
+import {assertColorPair, assertFocus, assertReflow, assertTextContrast, cssHex, textSamples} from '../lib/theme-review.mjs';
 
 const palette = loadPalette();
 const inventory = JSON.parse(readSource(repositoryRoot, 'docs/assets/illustrations.json'));
@@ -49,10 +49,24 @@ try {
         try {
           await visit(page, `${prefix}/components/`);
           assert.equal(await page.locator('html').getAttribute('data-theme'), mode);
-          assert.equal((await page.evaluate(() => window.__lsfFirstFrame)).theme, mode, 'System theme must initialize before the first rendered body frame');
+          const firstFrame = await page.evaluate(() => window.__lsfFirstFrame);
+          assert.equal(firstFrame.theme, mode, 'System theme must initialize before the first rendered body frame');
+          assertColorPair(firstFrame.color, firstFrame.background);
+          assert.equal(cssHex(firstFrame.background), palette.modes[mode].canvas);
           const actual = await page.evaluate(() => Object.fromEntries(Array.from(getComputedStyle(document.documentElement)).filter(name => name.startsWith('--lsf-')).map(name => [name, getComputedStyle(document.documentElement).getPropertyValue(name).trim()])));
           for (const [token, value] of Object.entries(palette.modes[mode])) assert.equal(actual[`--lsf-${token.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)}`].toUpperCase(), value, token);
           const reading = assertTextContrast(await textSamples(page));
+          const lineNumber = await page.locator('[class*="codeLineNumber"]').first().evaluate(element => ({color: getComputedStyle(element, '::before').color, opacity: getComputedStyle(element, '::before').opacity, background: getComputedStyle(element).backgroundColor}));
+          assert.equal(lineNumber.opacity, '1');
+          assertColorPair(lineNumber.color, lineNumber.background);
+          const selection = await page.locator('main p').first().evaluate(element => ({color: getComputedStyle(element, '::selection').color, background: getComputedStyle(element, '::selection').backgroundColor}));
+          assertColorPair(selection.color, selection.background);
+          await page.getByRole('button', {name: 'Exercise control', exact: true}).hover();
+          assertTextContrast(await textSamples(page, '.lsf-controls'));
+          await page.getByRole('link', {name: 'links remain visibly underlined', exact: true}).hover();
+          assertTextContrast(await textSamples(page, 'main'));
+          await page.mouse.move(0, 0);
+          await page.evaluate(() => window.scrollTo(0, 0));
           await screenshot(page, `${variant}-${mode}-gallery`);
           await page.locator('.lsf-muted').evaluate(element => { element.style.color = getComputedStyle(document.body).backgroundColor; });
           assert.throws(() => assertTextContrast([{text: 'invisible canary', foreground: palette.modes[mode].canvas, background: palette.modes[mode].canvas}]), /contrast/);
@@ -61,6 +75,8 @@ try {
           await page.locator('.lsf-muted').evaluate(element => element.style.removeProperty('color'));
           await page.getByRole('tab', {name: 'Contract', exact: true}).focus();
           await page.keyboard.press('ArrowRight');
+          assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Evidence');
+          await page.keyboard.press('Enter');
           assert.equal(await page.getByRole('tab', {name: 'Evidence', exact: true}).getAttribute('aria-selected'), 'true');
           await assertFocus(page);
           await page.getByRole('button', {name: 'Exercise control', exact: true}).focus();
@@ -96,6 +112,19 @@ try {
           await visit(page, `${prefix}/docs/architecture/overview/`);
           assertTextContrast(await textSamples(page));
           assert.equal(await page.locator('article img[src*="-presentation.svg"]').count(), 2);
+          await visit(page, `${prefix}/docs/development/website/`);
+          await page.locator('.docusaurus-mermaid-container svg').waitFor({state: 'visible'});
+          assert.equal(await page.locator('.docusaurus-mermaid-container foreignObject').count(), 0);
+          const mermaid = await page.locator('.docusaurus-mermaid-container').evaluate(element => ({color: getComputedStyle(element).color, background: getComputedStyle(element).backgroundColor}));
+          assertColorPair(mermaid.color, mermaid.background);
+          const mermaidText = await page.locator('.docusaurus-mermaid-container svg text').evaluateAll(elements => elements.map(element => getComputedStyle(element).fill));
+          assert.ok(mermaidText.length >= 4);
+          for (const color of mermaidText) {
+            assert.equal(cssHex(color), palette.modes.dark.text);
+            assertColorPair(color, palette.modes.dark.surface);
+            assertColorPair(color, palette.modes.dark.raised);
+          }
+          await screenshot(page, `${variant}-${mode}-mermaid`);
           await visit(page, `${prefix}/components/`);
           await page.setViewportSize({width: 390, height: 844});
           await assertReflow(page);
@@ -127,12 +156,25 @@ try {
             const geometry = await page.evaluate(() => {
               const svg = document.querySelector('svg');
               const viewBox = svg.viewBox.baseVal;
-              const texts = [...svg.querySelectorAll('text')].map(element => { const box = element.getBBox(); return {text: element.textContent.trim().slice(0, 80), left: box.x, right: box.x + box.width, top: box.y, bottom: box.y + box.height}; });
+              const texts = [...svg.querySelectorAll('text')].map(element => { const box = element.getBBox(); return {text: element.textContent.trim().slice(0, 80), color: getComputedStyle(element).fill, left: box.x, right: box.x + box.width, top: box.y, bottom: box.y + box.height}; });
               const missingMarkers = [...svg.querySelectorAll('[marker-end]')].filter(element => !svg.querySelector(element.getAttribute('marker-end').slice(4, -1))).length;
               return {width: viewBox.width, height: viewBox.height, texts, missingMarkers};
             });
             assert.equal(geometry.missingMarkers, 0);
             assert.ok(geometry.texts.every(text => text.left >= 0 && text.right <= geometry.width && text.top >= 0 && text.bottom <= geometry.height), `SVG text clipped by viewBox: ${entry.path}`);
+            if (label === 'after') {
+              for (const text of geometry.texts) {
+                for (const background of ['canvas', 'surface', 'raised', 'successSurface', 'warningSurface']) assertColorPair(text.color, palette.modes.dark[background]);
+              }
+              for (let index = 0; index < geometry.texts.length; index += 1) {
+                const current = geometry.texts[index];
+                for (const other of geometry.texts.slice(index + 1)) {
+                  const overlapWidth = Math.min(current.right, other.right) - Math.max(current.left, other.left);
+                  const overlapHeight = Math.min(current.bottom, other.bottom) - Math.max(current.top, other.top);
+                  assert.ok(overlapWidth <= 0.5 || overlapHeight <= 0.5, `Overlapping SVG labels: ${current.text} / ${other.text}`);
+                }
+              }
+            }
             await screenshot(page, `${variant}-${path.basename(entry.path, '.svg')}-${label}`);
           }
           for (const mode of ['light', 'dark']) {

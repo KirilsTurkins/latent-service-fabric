@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import {approvedPairs, contrast, loadPalette, paletteCss, prismTheme, syntaxTokens, validatePalette} from '../lib/palette.mjs';
+import {approvedPairs, contrast, loadPalette, mermaidOptions, paletteCss, prismTheme, syntaxTokens, validatePalette} from '../lib/palette.mjs';
 import {websiteRoot} from '../lib/repository.mjs';
 
 test('semantic palette covers both modes and every approved text/control pairing', () => {
@@ -47,4 +47,6 @@ test('generated CSS and Prism derive from the same tokens without independent co
   const changed = structuredClone(palette);
   changed.modes.dark.accent = '#F2CA68';
   assert.notEqual(paletteCss(changed), paletteCss(palette));
+  assert.equal(mermaidOptions(palette.modes.dark).themeVariables.primaryTextColor, palette.modes.dark.text);
+  assert.equal(mermaidOptions(palette.modes.dark).flowchart.htmlLabels, false);
 });
