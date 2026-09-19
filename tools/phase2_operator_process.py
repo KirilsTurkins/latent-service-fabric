@@ -27,6 +27,21 @@ def require(condition, reason):
         raise WorkflowError(reason)
 
 
+def startup_diagnostic(stderr):
+    if len(stderr) > 160:
+        return "unavailable"
+    match = re.fullmatch(rb"latentd: ([a-z-]{1,32}): ([a-z-]{1,40})\r?\n", stderr)
+    if match is None:
+        return "unavailable"
+    stage, code = (value.decode("ascii") for value in match.groups())
+    if stage not in {"configuration", "execution-profile", "startup", "signal", "runtime", "status", "shutdown"}:
+        return "unavailable"
+    if code not in {"invalid-argument", "unavailable", "permission-denied", "resource-exhausted",
+                    "corrupt-artifact", "internal", "deadline-exceeded", "state-conflict"}:
+        return "unavailable"
+    return f"{stage}-{code}"
+
+
 def diagnostic_code(value):
     """Keep only the CLI's bounded code token, never messages or error details."""
     if not isinstance(value, dict) or value.get("schemaVersion") != "latent.cli.result.v1":
@@ -163,7 +178,9 @@ class Process:
                 self.buffers[0] = bytearray(tail)
                 return json.loads(line)
             require(len(buffer) <= 16384, "node-startup-size")
-            require(not self.owner.exited(), "node-startup-exit")
+            if self.owner.exited():
+                self.drain()
+                raise WorkflowError("node-startup-exit-" + startup_diagnostic(bytes(self.buffers[1])))
             time.sleep(0.01)
         raise WorkflowError("node-startup-deadline")
 

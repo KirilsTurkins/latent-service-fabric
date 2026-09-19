@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.phase2_operator_process import WorkflowError
+from tools.phase2_operator_process import WorkflowError, startup_diagnostic
 from tools.sdk_provider_http_fixture import mode
 from tools.sdk_provider_scenario import ASSERTIONS, participant_diagnostic, validate_result
 
@@ -65,6 +65,14 @@ class ParticipantContractTests(unittest.TestCase):
                       b'{"stage":"provider","reason":"Authorization: Bearer token"}',
                       b'{"stage":"provider","reason":"failed","message":"secret"}'):
             self.assertEqual(participant_diagnostic(value), "unavailable")
+
+    def test_startup_failure_exposes_only_the_nodes_closed_stage_and_code(self):
+        self.assertEqual(startup_diagnostic(b"latentd: startup: unavailable\n"), "startup-unavailable")
+        self.assertEqual(startup_diagnostic(b"latentd: configuration: invalid-argument\r\n"),
+                         "configuration-invalid-argument")
+        for value in (b"", b"x" * 161, b"latentd: secret-value: unavailable\n",
+                      b"latentd: startup: secret-value\n", b"latentd: startup: unavailable\nsecret\n"):
+            self.assertEqual(startup_diagnostic(value), "unavailable")
 
 
 if __name__ == "__main__":
