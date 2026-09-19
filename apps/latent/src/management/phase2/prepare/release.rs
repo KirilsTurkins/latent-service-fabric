@@ -80,7 +80,7 @@ pub(in crate::management) fn release(
         _ => Err(invalid_input()),
     }
 }
-fn parent(path: &Path) -> Result<&Path, Failure> {
+pub(in crate::management) fn parent(path: &Path) -> Result<&Path, Failure> {
     if path == Path::new("-") {
         return Err(invalid_input());
     }
@@ -89,7 +89,9 @@ fn parent(path: &Path) -> Result<&Path, Failure> {
         .filter(|parent| !parent.as_os_str().is_empty())
         .unwrap_or(Path::new(".")))
 }
-fn convert_evidence(value: ReleaseEvidenceUpload) -> proto::ReleaseEvidenceUpload {
+pub(in crate::management) fn convert_evidence(
+    value: ReleaseEvidenceUpload,
+) -> proto::ReleaseEvidenceUpload {
     let convert = |entries: Vec<latent_artifacts::AdmissionEvidence>| {
         entries
             .into_iter()

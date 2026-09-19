@@ -22,6 +22,7 @@ python3 tools/check_tool_versions.py
 
 npm --prefix sdk/typescript-client run build -- --noEmit
 npm --prefix sdk/typescript-client run test:semantic
+npm --prefix sdk/typescript-client run test:transport
 
 mapfile -t java_sources < <(find sdk/java-client/src/main/java sdk/java-client/src/test/java -type f -name '*.java' | sort)
 if (( ${#java_sources[@]} == 0 )); then
@@ -30,6 +31,7 @@ if (( ${#java_sources[@]} == 0 )); then
 fi
 javac --release 21 -d "${OUTPUT}/java" "${java_sources[@]}"
 java -cp "${OUTPUT}/java" dev.latent.sdk.InvocationIdentityTest
+python3 sdk/java-client/tools/build.py test
 
 dotnet build sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj \
     --configuration Release \

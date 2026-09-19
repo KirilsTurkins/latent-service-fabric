@@ -112,7 +112,7 @@ pub(super) fn matches(attempt: &AuditOperationAttempt, receipt: &ReleaseOperatio
         && attempt.expected_generation == receipt.expected_generation
 }
 
-fn scope(value: &LifecycleScope) -> AuditScope {
+pub(super) fn scope(value: &LifecycleScope) -> AuditScope {
     match value {
         LifecycleScope::Tenant(tenant) => AuditScope::Tenant(tenant.clone()),
         LifecycleScope::LocalUnscoped => AuditScope::Node,
@@ -126,7 +126,7 @@ pub(super) fn lifecycle_scope(value: &AuditScope) -> LifecycleScope {
     }
 }
 
-fn actor(value: ReleaseActorKind) -> AuditActorKind {
+pub(super) fn actor(value: ReleaseActorKind) -> AuditActorKind {
     match value {
         ReleaseActorKind::User => AuditActorKind::User,
         ReleaseActorKind::Service => AuditActorKind::Service,
@@ -138,7 +138,7 @@ fn actor(value: ReleaseActorKind) -> AuditActorKind {
     }
 }
 
-fn action(value: ReleaseLifecycleAction) -> AuditControlAction {
+pub(super) fn action(value: ReleaseLifecycleAction) -> AuditControlAction {
     match value {
         ReleaseLifecycleAction::Publish => AuditControlAction::Publish,
         ReleaseLifecycleAction::Revoke => AuditControlAction::Revoke,
@@ -147,7 +147,7 @@ fn action(value: ReleaseLifecycleAction) -> AuditControlAction {
     }
 }
 
-fn reason(value: ReleaseLifecycleReason) -> AuditReason {
+pub(super) fn reason(value: ReleaseLifecycleReason) -> AuditReason {
     match value {
         ReleaseLifecycleReason::Admitted => AuditReason::Admitted,
         ReleaseLifecycleReason::EvidenceRenewed => AuditReason::EvidenceRenewed,

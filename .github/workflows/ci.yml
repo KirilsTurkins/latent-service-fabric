@@ -171,9 +171,12 @@ jobs:
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 5
         run: |
-          node --test tools/tests/browser_hydration.test.mjs
+          node --test tools/tests/browser_hydration.test.mjs tools/tests/browser_application.test.mjs
           node tools/browser-boundary/build.mjs examples/renderer-profile "$RUNNER_TEMP/browser-boundary"
-          LSF_BROWSER_BUILD="$RUNNER_TEMP/browser-boundary" LSF_BROWSER_NODE="$(command -v node)" LSF_BROWSER_CHROME="$(command -v google-chrome)" LSF_BROWSER_TOOLCHAIN="$PWD/examples/renderer-profile" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite browser-boundary
+          cargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release
+          wasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o "$RUNNER_TEMP/browser-boundary/application.wasm"
+          wasm-tools validate "$RUNNER_TEMP/browser-boundary/application.wasm"
+          LSF_WEB_COMPONENT="$RUNNER_TEMP/browser-boundary/application.wasm" LSF_BROWSER_BUILD="$RUNNER_TEMP/browser-boundary" LSF_BROWSER_NODE="$(command -v node)" LSF_BROWSER_CHROME="$(command -v google-chrome)" LSF_BROWSER_TOOLCHAIN="$PWD/examples/renderer-profile" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite browser-boundary
       - name: Retain bounded browser boundary observations
         if: always() && needs.profile.outputs.renderer == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -182,6 +185,7 @@ jobs:
           path: |
             ${{ runner.temp }}/browser-boundary/build-receipt.json
             ${{ runner.temp }}/browser-boundary/browser-receipt.json
+            ${{ runner.temp }}/browser-boundary/browser-application-receipt.json
           if-no-files-found: error
       - name: Build the public Angular renderer fixture
         if: needs.profile.outputs.renderer == 'true'
@@ -289,6 +293,31 @@ jobs:
           PY
           python3 tools/phase2_gate_resource.py --cli "${resource_bin}/latent" --node "${resource_bin}/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
           python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+      - name: Build the optimized isolated Angular compiler
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 25
+        env:
+          CARGO_BUILD_JOBS: 2
+          CARGO_TARGET_DIR: ${{ runner.temp }}/angular-t1-compiler
+        run: cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked
+      - name: Export actual signed Angular T1 fixtures
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 5
+        env:
+          LSF_ANGULAR_BUILD_DIR: ${{ runner.temp }}/angular-build/actual
+          LSF_ANGULAR_T1_FIXTURE_ROOT: ${{ runner.temp }}/angular-t1-fixture
+        run: python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite angular-t1-fixture
+      - name: Qualify actual Angular on the protected T1 node
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 22
+        run: |
+          python3 -m unittest tools.tests.test_angular_t1_workflow
+          mkdir "$RUNNER_TEMP/angular-t1-bin"
+          for binary in latent latentd; do
+            objcopy --strip-debug "$PWD/target/debug/$binary" "$RUNNER_TEMP/angular-t1-bin/$binary"
+          done
+          objcopy --strip-debug "$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler" "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler"
+          python3 tools/run_angular_t1_workflow.py --cli "$RUNNER_TEMP/angular-t1-bin/latent" --node "$RUNNER_TEMP/angular-t1-bin/latentd" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --fixture-root "$RUNNER_TEMP/angular-t1-fixture" > "$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json"
       - name: Retain compact Phase 2 gate receipts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -568,7 +597,7 @@ jobs:
           go-version: 1.23.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22.16.0
+          node-version: 24.19.0
           cache: npm
           cache-dependency-path: sdk/typescript-client/package-lock.json
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4

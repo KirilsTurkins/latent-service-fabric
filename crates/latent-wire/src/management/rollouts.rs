@@ -60,6 +60,7 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
                 },
                 &tenant,
                 self.services.artifacts.as_ref(),
+                self.web.as_deref(),
                 &limits,
             ),
         )
