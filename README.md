@@ -69,6 +69,12 @@ tools/                 Pinned validation, generation, spike, benchmark, and gate
 
 ## Binaries
 
+For the native prebuilt distribution contract, start with
+[native standalone installation](docs/installation.md). It separates verified
+offline bundles, rootless local evaluation and persistent systemd servers from
+application development and contributor builds. The page explicitly records
+pending release/VM gates; the historical `0.1.0-alpha.3` release remains source-only.
+
 - `latentd`: standalone Linux node through `serve --config PATH`, plus the finite local `phase0-spike invoke-once` harness and `verify-recovery` containment proof.
 - `latent-control`: clustered control-plane application placeholder.
 - `latent`: bounded local package build/inspect/verification and OCI transfer; authenticated release lifecycle, managed deployment receipts, rollout/canary/rollback, audit, invocation/cancellation/status, routing and node commands.
