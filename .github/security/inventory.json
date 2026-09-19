@@ -2,6 +2,7 @@
   "schema": 1,
   "manifests": [
     {"path": "Cargo.toml", "kind": "cargo", "lock": "Cargo.lock"},
+    {"path": "tools/native-fixture/Cargo.toml", "kind": "cargo", "lock": "tools/native-fixture/Cargo.lock", "isolated": true, "manifest_sha256": "7b43528d2c654a4cd136a5584a452406a4b67285aa1e99c8d96da57126639751", "absent_when_directory_missing": "tools/native-fixture"},
     {"path": "sdk/typescript-client/package.json", "kind": "npm", "lock": "sdk/typescript-client/package-lock.json"},
     {"path": "examples/renderer-profile/package.json", "kind": "npm", "lock": "examples/renderer-profile/package-lock.json", "absent_when_directory_missing": "examples/renderer-profile"},
     {"path": "website/package.json", "kind": "npm", "lock": "website/package-lock.json", "absent_when_directory_missing": "website"},

@@ -8,9 +8,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools.security_advisories import query_osv
+from tools.security_advisories import query_osv, rustsec
 from tools.security_common import SecurityError, digest
-from tools.security_inventory import Package, is_manifest
+from tools.security_inventory import Package, cargo_inventory, is_manifest
 from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, legacy_manifest, maven_packages, nuget_packages
 
 
@@ -244,6 +244,41 @@ class SdkGraphTests(unittest.TestCase):
                      "sdk/dotnet/nuget.transport.config", "website/package-lock.json"):
             with self.subTest(path=path):
                 self.assertTrue(is_manifest(path))
+
+    def test_isolated_rust_fixture_requires_reviewed_manifest_and_its_own_lock(self) -> None:
+        manifest = '[package]\nname="fixture"\nversion="0.0.0"\n[workspace]\n'
+        lock = 'version=4\n[[package]]\nname="fixture"\nversion="0.0.0"\n'
+        self.write("tools/fixture/Cargo.toml", manifest)
+        self.write("tools/fixture/Cargo.lock", lock)
+        entry = {"path": "tools/fixture/Cargo.toml", "lock": "tools/fixture/Cargo.lock",
+                 "isolated": True, "manifest_sha256": digest(manifest.encode())}
+        covered, record = cargo_inventory(self.root, entry)
+        self.assertEqual(covered, {entry["path"], entry["lock"]})
+        self.assertEqual(record["packages"], 1)
+        self.assertEqual(record["coverage"], "RustSec")
+        self.write(entry["path"], manifest + '[dependencies]\nunreviewed="1"\n')
+        with self.assertRaisesRegex(SecurityError, "unreviewed-isolated-cargo-manifest"):
+            cargo_inventory(self.root, entry)
+
+    def test_rustsec_audits_every_tracked_lock_without_hiding_fixture_findings(self) -> None:
+        paths = ["Cargo.lock", "tools/fixture/Cargo.lock"]
+        for path in paths:
+            self.write(path, 'version=4\n[[package]]\nname="fixture"\nversion="0.0.0"\n')
+        observed = []
+        def audit(payload, path, binary, database, identity, scratch):
+            observed.append(path)
+            return (["fixture-finding"] if path != "Cargo.lock" else []), {"lock_sha256": digest(payload), "packages": 1}
+        with patch("tools.security_advisories.tracked_paths", return_value=[*paths, "docs/Cargo.lock.fixture"]), \
+             patch("tools.security_advisories.verify_tool", return_value=self.root / "cargo-audit"), \
+             patch("tools.security_advisories.fetch_rustsec", return_value=(self.root / "database", {"commit": "a" * 40})), \
+             patch("tools.security_advisories.audit_lock", side_effect=audit):
+            findings, receipt = rustsec(self.root, self.root, self.root)
+        self.assertEqual(observed, paths)
+        self.assertEqual(findings, ["fixture-finding"])
+        self.assertEqual([row["path"] for row in receipt["locks"]], paths)
+        with patch("tools.security_advisories.tracked_paths", return_value=[paths[1]]):
+            with self.assertRaisesRegex(SecurityError, "missing-or-excessive-rust-lockfiles"):
+                rustsec(self.root, self.root, self.root)
 
 
 if __name__ == "__main__":

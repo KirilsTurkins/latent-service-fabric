@@ -10,7 +10,7 @@ import time
 import tomllib
 import urllib.request
 
-from tools.security_common import decode_json, digest, read_file, require, run
+from tools.security_common import decode_json, digest, read_file, require, run, tracked_paths
 from tools.security_findings import Finding, finding
 from tools.security_install import verify_tool
 from tools.security_inventory import Package, inventory
@@ -75,10 +75,16 @@ def audit_lock(payload: bytes, path: str, binary: Path, database: Path, identity
 
 
 def rustsec(repo: Path, scratch: Path, tools: Path) -> tuple[list[Finding], dict]:
-    payload = read_file(repo, "Cargo.lock")
+    paths = sorted(path for path in tracked_paths(repo) if Path(path).name == "Cargo.lock")
+    require("Cargo.lock" in paths and 0 < len(paths) <= 32, "missing-or-excessive-rust-lockfiles")
     binary = verify_tool("cargo-audit", tools)
     database, identity = fetch_rustsec(scratch)
-    return audit_lock(payload, "Cargo.lock", binary, database, identity, scratch)
+    findings, locks = [], []
+    for path in paths:
+        current, record = audit_lock(read_file(repo, path), path, binary, database, identity, scratch)
+        findings.extend(current)
+        locks.append({"path": path, **record})
+    return findings, {"database": identity, "locks": locks}
 
 
 def osv_transport(payload: bytes) -> tuple[bytes, str]:

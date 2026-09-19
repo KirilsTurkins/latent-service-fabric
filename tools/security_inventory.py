@@ -46,10 +46,17 @@ def cargo_inventory(repo: Path, entry: dict) -> tuple[set[str], dict]:
     lock = tomllib.loads(payload.decode())
     packages = lock.get("package", [])
     require(isinstance(packages, list) and len(packages) > 0, "empty-cargo-lock")
-    members = manifest["workspace"]["members"]
-    require(isinstance(members, list) and 0 < len(members) <= 256, "invalid-cargo-members")
     covered = {entry["path"], entry["lock"]}
     names = {item["name"] for item in packages if "source" not in item}
+    if entry.get("isolated") is True:
+        require(manifest.get("workspace") == {}
+                and digest(read_file(repo, entry["path"]).replace(b"\r\n", b"\n")) == entry["manifest_sha256"],
+                "unreviewed-isolated-cargo-manifest")
+        require(manifest["package"]["name"] in names, "isolated-package-missing-from-lock")
+        members = []
+    else:
+        members = manifest["workspace"]["members"]
+        require(isinstance(members, list) and 0 < len(members) <= 256, "invalid-cargo-members")
     for member in members:
         require(isinstance(member, str) and not any(char in member for char in "*?["), "unreviewed-workspace-glob")
         path = f"{member}/Cargo.toml"
