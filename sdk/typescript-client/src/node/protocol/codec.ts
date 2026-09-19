@@ -53,12 +53,14 @@ function input(schema: DescMessage, raw: unknown, budget: Budget, depth: number)
 function fieldInput(field: DescField, value: unknown, budget: Budget, depth: number): unknown {
   if (field.fieldKind === "map") {
     const entries = Object.entries(record(value));
-    if (entries.length > 32 || field.mapKey !== ScalarType.STRING || field.scalar !== ScalarType.STRING) throw new ShapeError();
+    if (entries.length > 32 || field.mapKey !== ScalarType.STRING
+      || (field.scalar !== ScalarType.STRING && field.scalar !== ScalarType.UINT64)) throw new ShapeError();
     const result: RecordValue = Object.create(null);
     for (const [key, item] of entries) {
-      if (Buffer.byteLength(key, "utf8") > 128 || typeof item !== "string" || Buffer.byteLength(item, "utf8") > 1024) throw new ShapeError();
+      if (Buffer.byteLength(key, "utf8") > 128
+        || (field.scalar === ScalarType.STRING && (typeof item !== "string" || Buffer.byteLength(item, "utf8") > 1024))) throw new ShapeError();
       scalarInput(ScalarType.STRING, false, key, budget);
-      result[key] = scalarInput(ScalarType.STRING, false, item, budget);
+      result[key] = scalarInput(field.scalar, false, item, budget);
     }
     return result;
   }

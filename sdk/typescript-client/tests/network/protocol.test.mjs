@@ -46,6 +46,17 @@ test("wire codec preserves empty versus absent IDs, all u64 bits and unknown enu
   assert.throws(() => encode(schema, invalid, 65536));
 });
 
+test("provider usage maps retain full-width unsigned counters and reject lossy input", () => {
+  const schema = method("listCapabilities").output;
+  const usage = { scope: "tenant", counters: { empty: 0n, maximum: 18446744073709551615n }, unavailable: [] };
+  const value = decode(schema, encode(schema, { capabilities: [], page: {}, tenantUsage: usage }, 65536), 65536);
+  assert.equal(value.tenantUsage.counters.empty, 0n);
+  assert.equal(value.tenantUsage.counters.maximum, 18446744073709551615n);
+  for (const invalid of [-1n, 18446744073709551616n, Number.MAX_SAFE_INTEGER, "1"]) {
+    assert.throws(() => encode(schema, { tenantUsage: { ...usage, counters: { invalid } } }, 65536));
+  }
+});
+
 test("returned payloads own only their exact bytes, not the reserved receive buffer", () => {
   const schema = method("invoke").input;
   const encoded = encode(schema, request("owned", "bytes"), 65536);
