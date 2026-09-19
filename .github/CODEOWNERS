@@ -1,0 +1,4 @@
+/.github/ @KirilsTurkins
+/tools/security* @KirilsTurkins
+/tools/tests/test_security* @KirilsTurkins
+/docs/development/security-baseline* @KirilsTurkins
