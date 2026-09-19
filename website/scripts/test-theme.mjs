@@ -6,9 +6,11 @@ import {serveBuiltSite, validateBuiltSite} from '../lib/built-site.mjs';
 import {generatedDirectory} from '../lib/prepare.mjs';
 import {assetRoute, readSource, repositoryRoot, sha256, websiteRoot} from '../lib/repository.mjs';
 import {loadPalette, palettePath, validatePalette} from '../lib/palette.mjs';
-import {assertColorPair, assertFocus, assertReflow, assertTextContrast, cssHex, textSamples} from '../lib/theme-review.mjs';
+import {assertColorPair, assertFocus, assertReflow, assertTextContrast, cssHex, reviewEnvironment, textSamples} from '../lib/theme-review.mjs';
+import {assertControlContrast, controlSamples} from '../lib/control-review.mjs';
 import {reviewZoomReflow} from '../lib/zoom-reflow-review.mjs';
 
+const controlSelector = '.lsf-controls button:not(:disabled), .lsf-controls input:not([type="checkbox"]), .lsf-controls select, .tabs__item';
 const palette = loadPalette();
 const inventory = JSON.parse(readSource(repositoryRoot, 'docs/assets/illustrations.json'));
 const directory = generatedDirectory('.generated/theme-review');
@@ -73,6 +75,8 @@ try {
           const actual = await page.evaluate(() => Object.fromEntries(Array.from(getComputedStyle(document.documentElement)).filter(name => name.startsWith('--lsf-')).map(name => [name, getComputedStyle(document.documentElement).getPropertyValue(name).trim()])));
           for (const [token, value] of Object.entries(palette.modes[mode])) assert.equal(actual[`--lsf-${token.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)}`].toUpperCase(), value, token);
           const reading = assertTextContrast(await textSamples(page));
+          const controls = assertControlContrast(await controlSamples(page, controlSelector));
+          assert.equal(controls.samples, 5, 'Review both tabs, button, text field and select');
           const lineNumber = await page.locator('[class*="codeLineNumber"]').first().evaluate(element => ({color: getComputedStyle(element, '::before').color, opacity: getComputedStyle(element, '::before').opacity, background: getComputedStyle(element).backgroundColor}));
           assert.equal(lineNumber.opacity, '1');
           assertColorPair(lineNumber.color, lineNumber.background);
@@ -80,6 +84,7 @@ try {
           assertColorPair(selection.color, selection.background);
           await page.getByRole('button', {name: 'Exercise control', exact: true}).hover();
           assertTextContrast(await textSamples(page, '.lsf-controls'));
+          const hoveredControls = assertControlContrast(await controlSamples(page, controlSelector));
           await page.getByRole('link', {name: 'links remain visibly underlined', exact: true}).hover();
           assertTextContrast(await textSamples(page, 'main'));
           await page.mouse.move(0, 0);
@@ -90,11 +95,33 @@ try {
           const canary = await textSamples(page, '.lsf-muted');
           assert.throws(() => assertTextContrast(canary), /contrast/);
           await page.locator('.lsf-muted').evaluate(element => element.style.removeProperty('color'));
+          const field = page.getByRole('textbox', {name: 'Review label', exact: true});
+          const fieldStyle = await field.getAttribute('style');
+          try {
+            await field.evaluate(element => {
+              element.style.background = 'var(--lsf-canvas)';
+              element.style.borderColor = 'var(--lsf-canvas)';
+            });
+            const missingBoundary = await controlSamples(page, controlSelector);
+            assert.throws(() => assertControlContrast(missingBoundary), /Control boundary contrast/);
+            await field.evaluate((element, original) => {
+              element.style.cssText = original || '';
+              element.style.color = getComputedStyle(element).backgroundColor;
+            }, fieldStyle);
+            const invisibleValue = await controlSamples(page, controlSelector);
+            assert.throws(() => assertControlContrast(invisibleValue), /Control text contrast/);
+          } finally {
+            await field.evaluate((element, original) => {
+              if (original === null) element.removeAttribute('style');
+              else element.setAttribute('style', original);
+            }, fieldStyle);
+          }
           await page.getByRole('tab', {name: 'Contract', exact: true}).focus();
           await page.keyboard.press('ArrowRight');
           assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Evidence');
           await page.keyboard.press('Enter');
           assert.equal(await page.getByRole('tab', {name: 'Evidence', exact: true}).getAttribute('aria-selected'), 'true');
+          assertControlContrast(await controlSamples(page, controlSelector));
           await assertFocus(page);
           await page.getByRole('button', {name: 'Exercise control', exact: true}).focus();
           await page.keyboard.press('Enter');
@@ -102,6 +129,13 @@ try {
           assert.match(await page.getByRole('status').innerText(), /exercised 1 times/);
           await page.screenshot({path: path.join(directory, `${variant}-${mode}-keyboard-focus.png`), animations: 'disabled'});
           assert.equal(await page.getByRole('button', {name: 'Unavailable (disabled)', exact: true}).isDisabled(), true);
+          const checkbox = page.getByRole('checkbox', {name: 'Mark this local specimen', exact: true});
+          await checkbox.focus();
+          await page.keyboard.press('Space');
+          assert.equal(await checkbox.isChecked(), true);
+          await assertFocus(page);
+          await page.keyboard.press('Space');
+          assert.equal(await checkbox.isChecked(), false);
           await visit(page, `${prefix}/components/`);
           let keyboardStops = 0;
           for (let step = 0; step < 32; step += 1) {
@@ -159,7 +193,7 @@ try {
           await screenshot(page, `${variant}-${mode}-reflow-200`);
           assert.equal(await page.evaluate(() => [...document.querySelectorAll('*')].filter(element => getComputedStyle(element).animationName !== 'none').length), 0);
           assert.deepEqual(errors, []);
-          results.push({variant, mode, source: built.manifest.revision, dirty: built.manifest.dirty, reading, keyboardStops, firstPaint: 'system theme with hydration held; persisted theme on reload', reflow: '390px mobile and 640 CSS px equivalent to 1280px at 200%', requests: 'same-origin only', errors: 0});
+          results.push({variant, mode, source: built.manifest.revision, dirty: built.manifest.dirty, reading, controls, hoveredControls, keyboardStops, firstPaint: 'system theme with hydration held; persisted theme on reload', reflow: '390px mobile and 640 CSS px equivalent to 1280px at 200%', requests: 'same-origin only', errors: 0});
         } finally {
           allowHydration = true;
           for (const resume of hydrationRequests.splice(0)) resume();
@@ -237,6 +271,6 @@ try {
   }
 } finally { await browser.close(); }
 
-const evidence = {schema: 1, measuredAt: new Date().toISOString(), browser: browser.version(), paletteSha256: sha256(readSource(repositoryRoot, palettePath)), pairings: validatePalette(palette), results, zoomReflow, illustrations, limitations: ['Chromium headless shell on Windows only; no complete accessibility certification or screen-reader campaign.', '200% rendering is exercised by halving the CSS viewport and doubling DPR, not by native browser zoom controls. Native browser zoom remains a manual acceptance check.', 'SVG text remains a two-dimensional diagram: full-size link and zoom are required for narrow displays.', 'Wiki source snapshot is inventoried, not migrated or republished.']};
+const evidence = {schema: 1, measuredAt: new Date().toISOString(), browser: browser.version(), environment: reviewEnvironment(), paletteSha256: sha256(readSource(repositoryRoot, palettePath)), pairings: validatePalette(palette), results, zoomReflow, illustrations, limitations: ['Chromium headless only on the recorded host; no complete accessibility certification, native-control popup review or screen-reader campaign.', '200% rendering is exercised by halving the CSS viewport and doubling DPR, not by native browser zoom controls. Native browser zoom remains a manual acceptance check.', 'SVG text remains a two-dimensional diagram: full-size link and zoom are required for narrow displays.', 'Wiki source snapshot is inventoried, not migrated or republished.']};
 fs.writeFileSync(path.join(directory, 'evidence.json'), `${JSON.stringify(evidence, null, 2)}\n`);
 console.log(JSON.stringify({results, zoomReflow, screenshots: path.relative(websiteRoot, directory)}));

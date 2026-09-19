@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
-import {contrast} from './palette.mjs';
+import os from 'node:os';
+import {contrast} from './contrast.mjs';
 
 export function cssHex(value) {
   if (/^#[0-9a-f]{6}$/i.test(value)) return value.toUpperCase();
-  assert.match(value, /^rgba?\(/);
-  const channels = value.match(/[\d.]+/g).map(Number);
-  assert.ok(channels.length === 3 || channels[3] === 1, 'Expected an opaque computed theme color');
+  const match = /^(rgb|rgba)\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)(?:\s*,\s*(\d+(?:\.\d+)?))?\s*\)$/.exec(value);
+  assert.ok(match, 'Unsupported computed theme color');
+  const channels = match.slice(2, 5).map(Number);
+  assert.ok(channels.every(channel => channel >= 0 && channel <= 255), 'Invalid computed color channel');
+  assert.ok((match[1] === 'rgb' && match[5] === undefined)
+    || (match[1] === 'rgba' && Number(match[5]) === 1), 'Expected an opaque computed theme color');
   return `#${channels.slice(0, 3).map(channel => Math.round(channel).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
 }
 
@@ -79,4 +83,8 @@ export async function assertFocus(page) {
 export async function assertReflow(page) {
   const dimensions = await page.evaluate(() => ({content: document.documentElement.scrollWidth, viewport: innerWidth}));
   assert.ok(dimensions.content <= dimensions.viewport + 1, `Page-wide horizontal overflow: ${JSON.stringify(dimensions)}`);
+}
+
+export function reviewEnvironment() {
+  return {platform: process.platform, architecture: process.arch, osRelease: os.release(), node: process.version};
 }
