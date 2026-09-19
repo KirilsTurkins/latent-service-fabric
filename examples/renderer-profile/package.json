@@ -21,6 +21,9 @@
   "engines": {
     "node": "24.19.0"
   },
+  "overrides": {
+    "@bytecodealliance/weval": "0.5.0"
+  },
   "scripts": {
     "build": "node node_modules/@angular/compiler-cli/bundles/src/bin/ngc.js -p tsconfig.json && node build.mjs && node componentize.mjs"
   }

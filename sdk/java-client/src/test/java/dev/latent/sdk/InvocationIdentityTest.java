@@ -118,6 +118,8 @@ public final class InvocationIdentityTest {
 
     public static void main(String[] args) throws Exception {
         PublicationIdentityTest.run();
+        ProfileVectors.run();
+        ProfileLifetime.run();
         pendingCancellation();
         lostResponse();
         optionalIdentity();
