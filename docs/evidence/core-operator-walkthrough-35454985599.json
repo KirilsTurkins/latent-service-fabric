@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "latent.core-operator-guide-evidence.v1",
+  "scope": "retained-real-cli-node-workflows-with-fresh-source-binding-check-not-a-new-runtime-run",
+  "ciRun": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35454985599",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35454985599/job/105928606202",
+  "reviewedPullRequestHead": "edec84fa17460b11e166cbb25a9e51f7ea15e78b",
+  "runtimeCiCheckout": "05360c50eb6c40212111ad0d87198db5dead78a5",
+  "guideSourceBindingCheckedAt": "1ed9ef3c7890f2794e137c37a5e7df71deac0577",
+  "sameCommitClaimed": false,
+  "capabilityPolicySourceCheck": {
+    "path": "tools/run_capability_policy_workflow.py",
+    "runtimeCiCheckout": "05360c50eb6c40212111ad0d87198db5dead78a5",
+    "guideBaseCommit": "1ed9ef3c7890f2794e137c37a5e7df71deac0577",
+    "sha256": "0db72276676bd30bfc1a1ed9bb01c3e0e634c25d02dd6af1f62067a070c27518",
+    "gitObjectSha": "31612b76b771540d1d7b387c803f5ee791ba1ad7",
+    "exactSourceMatch": true
+  },
+  "artifact": {
+    "name": "phase-2-gate-05360c50eb6c40212111ad0d87198db5dead78a5",
+    "id": 10587444603,
+    "archiveSha256ReportedByGitHub": "f88e88492bae0d6f099d7f2041299bff6e78d4386d5e83383c79dfc03be020ad",
+    "archiveSizeReportedByGitHub": 22317
+  },
+  "build": {
+    "cliDigest": "sha256:e579506ebb921268113231be547199ea5069295867e429aea1486f27cdf95070",
+    "nodeDigest": "sha256:bdc0c85706a56cbb8723cba20556ed29d026ae9d4aa275c07ee5e4b4ecfc73d3",
+    "cargoLockDigest": "sha256:59b2b6ad36257d13ffd951e8aa0405275c8273b41cec96faf6801447a74f8327",
+    "workspaceManifestDigest": "sha256:af13dc83d4dc49dd2cbc542bdcf4df7d4099e985bcdc2ac9dd989766bf13d9dd",
+    "rustToolchainDigest": "sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc",
+    "sourceCommit": "05360c50eb6c40212111ad0d87198db5dead78a5",
+    "sourceCommitKind": "supplied-build-identity"
+  },
+  "rustcVersionFromResourceReceipt": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "collectorChecks": [
+    {
+      "path": "tools/run_phase2_operator_workflow.py",
+      "sha256": "4419751f1167d74edb740ee3a849433f4ac05758d2e8a65dcd550fbdb7b121ff",
+      "guideBaseGitObjectMatches": true
+    },
+    {
+      "path": "tools/phase2_operator_scenario.py",
+      "sha256": "333e81e04624ed5c6b50b6a60592b3fc5891c90bf9341ca689774bf72ce79d54",
+      "guideBaseGitObjectMatches": true
+    },
+    {
+      "path": "tools/phase2_operator_process.py",
+      "sha256": "8221a0f622a5dd33aa8c1c4dbf1d445c0054a4d11e601c33803249966aa0aeeb",
+      "guideBaseGitObjectMatches": true
+    },
+    {
+      "path": "tools/phase2_operator_canary.py",
+      "sha256": "ec720f7877e50c9516165236a274fa641a39dd6b023f7d27146a35e66d2efb13",
+      "guideBaseGitObjectMatches": true
+    },
+    {
+      "path": "tools/build_process.py",
+      "sha256": "b35ce78e569b2d1fdf9901544ab742e27e5de77f9345b1be7921eecbd897f8a6",
+      "guideBaseGitObjectMatches": true
+    },
+    {
+      "path": "tools/build_process_linux.py",
+      "sha256": "cc1f571e292f7c9b87a191452aaf34abe53121e786db34fc12fdc2c415aebfed",
+      "guideBaseGitObjectMatches": true
+    },
+    {
+      "path": "tools/build_process_signals.py",
+      "sha256": "a35dcd64465af55c4d6477b3f5cfd8a7c9fd2c999bfba21b68538e4f10c755a5",
+      "guideBaseGitObjectMatches": true
+    },
+    {
+      "path": "tools/run_oci_registry_tests.py",
+      "sha256": "4b1750b866d874aedab1fa36366f1d4a4e4956ea6ffea84f28b929d6f3795f1e",
+      "guideBaseGitObjectMatches": true
+    }
+  ],
+  "receipts": {
+    "operator": {
+      "file": "operator-receipt.json",
+      "sha256": "76bb130e2c23145f9c4f04b1b37ab5188bc67addfa5fb9be2346a05e41685930",
+      "passed": true,
+      "cliProcesses": 114,
+      "successfulInvocations": 18,
+      "temporaryOutputsRemoved": true,
+      "syntheticTestEvidence": true,
+      "shutdownCount": 2,
+      "allShutdownsCleanAndReaped": true,
+      "packages": 2,
+      "registryOwnership": "runner-owned",
+      "revocationVerified": true,
+      "zeroDataCanaryVerdict": "CANARY_VERDICT_NO_DATA",
+      "healthyCanaryVerdict": "CANARY_VERDICT_HEALTHY",
+      "healthyCandidateSamples": 12,
+      "healthyBaselineSamples": 4,
+      "deadlineOperationLookupDisposition": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_UNKNOWN",
+      "retainedRouteSurvivedRestart": true
+    },
+    "offline": {
+      "file": "offline-receipt.json",
+      "sha256": "da5a97a71c498f3885ecf23ab55bb48cee0de545336ae89ca8e1dfdc181a0157",
+      "passed": true,
+      "cliProcesses": 24,
+      "successfulInvocations": 2,
+      "temporaryOutputsRemoved": true,
+      "syntheticTestEvidence": true,
+      "shutdownCount": 1,
+      "allShutdownsCleanAndReaped": true,
+      "deniedInvocations": 1,
+      "sameCapturedInvocationIdentityBeforeAndDuringOutage": true,
+      "outageTransferCode": "package-operation-failed",
+      "revokedInvokeCode": "permission-denied",
+      "registryStoppedByOwner": true,
+      "nodeReaped": true
+    },
+    "publication": {
+      "file": "publication-receipt.json",
+      "sha256": "151d782763a5fe53ee730c6a8b188c3eb852d7770a494b9457c9ee8e41cacfed",
+      "passed": true,
+      "cliProcesses": 76,
+      "successfulInvocations": 8,
+      "temporaryOutputsRemoved": true,
+      "syntheticTestEvidence": true,
+      "shutdownCount": 3,
+      "allShutdownsCleanAndReaped": true,
+      "deniedInvocations": 1
+    },
+    "security-profile": {
+      "file": "security-profile-receipt.json",
+      "sha256": "0e61b696dbc569a21a42a46a3c2496d58c8a88da89ebd5a1f73b1e902105c309",
+      "passed": true,
+      "cliProcesses": 9,
+      "successfulInvocations": 3,
+      "temporaryOutputsRemoved": true,
+      "syntheticTestEvidence": true,
+      "shutdownCount": 2,
+      "allShutdownsCleanAndReaped": true,
+      "profile": {
+        "schemaVersion": "latent.standalone.config-check.v1",
+        "profile": "external-capsule-v1",
+        "threatClass": "T1",
+        "guestBoundary": "in-process-wasmtime",
+        "admission": "enforced",
+        "protectedCredentialFile": true,
+        "hostAbiProfile": "lsf-host-abi-phase3-v4",
+        "wasmtimeVersion": "47.0.4",
+        "target": "x86_64-unknown-linux-gnu",
+        "compiler": "isolated-aot-compiler-v1",
+        "compilerSandbox": "lsf-linux-x86_64-landlock3-seccomp-v1",
+        "authenticatedNativeLoading": true
+      },
+      "rejectedCommands": 16
+    }
+  },
+  "capabilityPolicyWorkflow": {
+    "evidenceKind": "redacted-job-log-record",
+    "observedAtUtc": "2026-09-19T16:49:25.3497891Z",
+    "schemaVersion": "latent.capability-policy.workflow.v1",
+    "passed": true,
+    "cliCalls": 15,
+    "nodeStarts": 2,
+    "guestInvokes": 0,
+    "replayedRevision": "2",
+    "recoveredRevocation": "4",
+    "ownersReaped": true
+  },
+  "notClaimed": [
+    "native installed-bundle or VM qualification from these CLI receipts",
+    "native compatible-version upgrade or GitHub release publication",
+    "actual publisher build provenance from synthetic fixture observations",
+    "six executable network-client qualification",
+    "Angular browser workflow; renderer steps were skipped in this CI run",
+    "complete rendered newcomer guide acceptance"
+  ]
+}
