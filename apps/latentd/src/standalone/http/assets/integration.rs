@@ -22,10 +22,10 @@ use tokio::{
     time::Instant,
 };
 
-struct Harness {
-    owner: HttpOwner,
-    node: node_fixture::Fixture,
-    repository: Arc<DirectoryArtifactRepository>,
+pub(super) struct Harness {
+    pub(super) owner: HttpOwner,
+    pub(super) node: node_fixture::Fixture,
+    pub(super) repository: Arc<DirectoryArtifactRepository>,
     current: Arc<AtomicBool>,
     storage: TempDir,
 }
@@ -33,7 +33,13 @@ impl Harness {
     async fn new() -> Self {
         Self::configured(|_| {}).await
     }
-    async fn configured(configure: impl FnOnce(&mut serde_json::Value)) -> Self {
+    pub(super) async fn configured(configure: impl FnOnce(&mut serde_json::Value)) -> Self {
+        Self::configured_application(configure, None).await
+    }
+    pub(super) async fn configured_application(
+        configure: impl FnOnce(&mut serde_json::Value),
+        component: Option<Vec<u8>>,
+    ) -> Self {
         let root = TempDir::new().unwrap();
         let mut value = node_fixture::config(&root);
         configure(&mut value);
@@ -41,8 +47,17 @@ impl Harness {
             .unwrap()
             .derive()
             .unwrap();
-        // No capsule, renderer, deployment or HTTP trigger exists in this node.
-        let node = node_fixture::Fixture::start(root, value, None).await;
+        value["httpIngress"]["bind"] = serde_json::json!("127.0.0.1:0");
+        let node = if let Some(component) = component {
+            let authority = value["httpIngress"]["authentication"]["origins"][0]["authority"]
+                .as_str()
+                .unwrap()
+                .to_owned();
+            node_fixture::Fixture::start_public_application(root, value, component, &authority)
+                .await
+        } else {
+            node_fixture::Fixture::start(root, value, None).await
+        };
         assert!(
             node.node.http_snapshot().unwrap().assets.is_some(),
             "production startup installs one shared asset owner"
@@ -82,7 +97,7 @@ impl Harness {
     fn store(&self) -> Arc<Store> {
         Arc::clone(self.owner.handle().0.assets.get().unwrap())
     }
-    fn publish(&self, operation: &str, bytes: &[u8]) -> String {
+    pub(super) fn publish(&self, operation: &str, bytes: &[u8]) -> String {
         let reference = fixture::publish(&self.repository, operation, bytes);
         self.repository
             .select_web_publication(&reference)
@@ -118,7 +133,7 @@ impl Harness {
         let status = headers.split_whitespace().nth(1).unwrap().parse().unwrap();
         (status, headers, bytes[end..].to_vec())
     }
-    async fn finish(self) {
+    pub(super) async fn finish(self) {
         node_fixture::wait(|| {
             let snapshot = self.owner.handle().snapshot();
             snapshot.connections == 0
@@ -204,7 +219,9 @@ async fn real_get_head_conditionals_and_atomic_release_replacement_never_need_a_
     assert_eq!(bytes, b"<h1>one</h1>");
     assert!(headers.contains("Content-Type: text/html\r\n"));
     assert!(headers.contains("Cache-Control: private, max-age=31536000, immutable"));
-    assert!(headers.contains("X-Content-Type-Options: nosniff"));
+    assert!(headers
+        .to_ascii_lowercase()
+        .contains("x-content-type-options: nosniff"));
     let first_tag = etag(&headers).to_owned();
     let (_, head, body) = h.call("HEAD", &first, "", node_fixture::TOKEN).await;
     assert!(head.contains("Content-Length: 12\r\n"));

@@ -76,9 +76,13 @@ async fn actual_http_component_cache_preserves_admission_revocation_and_owner_re
         fixture.node.http_snapshot().unwrap().response_cache_entries,
         1
     );
-    for cookie in ["Cookie: session=alice\r\n", "Cookie: session=bob\r\n"] {
+    for (cookie, personal) in [
+        ("Cookie: session=alice\r\n", b"alice".as_slice()),
+        ("Cookie: session=bob\r\n", b"bob".as_slice()),
+    ] {
         let reply = public_call(&fixture, "/cache", cookie).await;
         assert_eq!(reply.0, 200);
+        assert_eq!(reply.2, personal);
         assert!(!reply.1.contains("\r\nage: "));
     }
     fixture.idle().await;
@@ -86,6 +90,9 @@ async fn actual_http_component_cache_preserves_admission_revocation_and_owner_re
         fixture.node.backend.resource_snapshot().stores_created,
         stores + 2
     );
+    let still_public = public_call(&fixture, "/cache", "").await;
+    assert_eq!(still_public.2, b"public");
+    assert!(still_public.1.contains("\r\nage: "));
     assert_eq!(call(&fixture, "/cache").await.0, 401);
     let selected = fixture
         .deployments

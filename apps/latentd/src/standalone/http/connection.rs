@@ -103,7 +103,8 @@ async fn serve<S: AsyncRead + AsyncWrite + Unpin>(socket: &mut S, shared: &Share
             Err(status) => {
                 let until =
                     age.min(Instant::now() + millis(shared.settings.limits.write_timeout_millis));
-                let _ = timeout_at(until, write::error(socket, status)).await;
+                let _ =
+                    timeout_at(until, write::error(socket, status, shared.settings.scheme)).await;
                 break;
             }
         }
@@ -177,10 +178,13 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     let close = close || !shared.handle.accepting();
     let until = Instant::from_std(deadline.monotonic())
         .min(Instant::now() + millis(shared.settings.limits.write_timeout_millis));
-    timeout_at(until, write::delivery(socket, delivery, close))
-        .await
-        .map_err(|_| 0u16)?
-        .map_err(|_| 0u16)?;
+    timeout_at(
+        until,
+        write::delivery(socket, delivery, close, shared.settings.scheme),
+    )
+    .await
+    .map_err(|_| 0u16)?
+    .map_err(|_| 0u16)?;
     Ok(close)
 }
 async fn read_head<S: AsyncRead + Unpin>(

@@ -161,6 +161,26 @@ jobs:
         uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
+      - name: Validate browser boundary with live ingress
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 5
+        run: |
+          node --test tools/tests/browser_hydration.test.mjs tools/tests/browser_application.test.mjs
+          node tools/browser-boundary/build.mjs examples/renderer-profile "$RUNNER_TEMP/browser-boundary"
+          cargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release
+          wasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o "$RUNNER_TEMP/browser-boundary/application.wasm"
+          wasm-tools validate "$RUNNER_TEMP/browser-boundary/application.wasm"
+          LSF_WEB_COMPONENT="$RUNNER_TEMP/browser-boundary/application.wasm" LSF_BROWSER_BUILD="$RUNNER_TEMP/browser-boundary" LSF_BROWSER_NODE="$(command -v node)" LSF_BROWSER_CHROME="$(command -v google-chrome)" LSF_BROWSER_TOOLCHAIN="$PWD/examples/renderer-profile" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite browser-boundary
+      - name: Retain bounded browser boundary observations
+        if: always() && needs.profile.outputs.renderer == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: browser-boundary-observations
+          path: |
+            ${{ runner.temp }}/browser-boundary/build-receipt.json
+            ${{ runner.temp }}/browser-boundary/browser-receipt.json
+            ${{ runner.temp }}/browser-boundary/browser-application-receipt.json
+          if-no-files-found: error
       - name: Build the public Angular renderer fixture
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 10
