@@ -56,12 +56,14 @@ async function terminal(client, activationId) {
 }
 
 async function management(client, config, assertions) {
-  stage = "management";
+  stage = "policy-first-page";
   const first = await client.listPolicies({ recordKind: 1, page: { pageSize: 1 } });
   check(first.value.policies.length === 1 && first.value.page.nextPageToken, "bounded-first-page");
+  stage = "policy-next-page";
   const second = await client.listPolicies({ recordKind: 1, page: { pageSize: 1, pageToken: first.value.page.nextPageToken } });
   check(second.value.policies.length === 1 && second.value.policies[0].id !== first.value.policies[0].id, "bounded-next-page");
   assertions.boundedPages = true;
+  stage = "provider-inspection";
   const providers = await client.listCapabilities({ deploymentId: config.targets.http.route, page: { pageSize: 1 }, includeNodeUsage: false });
   check(providers.value.capabilities.length === 1 && providers.value.capabilities[0].contract === "latent:http/client@0.2.0", "provider-inspection");
   assertions.providerInspection = true;
@@ -69,23 +71,30 @@ async function management(client, config, assertions) {
   const id = "typescript-example-policy";
   const original = { operationId, expectedGeneration: 0n, policy: { id, metadata: { name: id, tenant: config.tenant, labels: {}, annotations: {} },
     document: config.policyDocument, generation: 0n, language: "lsf-capability-policy-v1", recordKind: 1, contentDigest: "", revoked: false } };
+  stage = "policy-mutation";
   const created = await client.applyPolicy(original);
-  check(created.metadata.auditAck?.status === 1 && created.metadata.auditAck.attemptSequence > 0n
-    && created.value.receipt.operationId === operationId, "durable-mutation-receipt");
+  check(created.metadata.auditAck === undefined && created.metadata.auditStatus === undefined
+    && created.metadata.auditAttemptSequence === undefined, "policy-audit-absence");
+  check(created.value.receipt.operationId === operationId, "mutation-receipt-identity");
+  stage = "policy-inspection";
   const policy = await client.getPolicy({ id, recordKind: 1 });
   check(policy.value.policy.generation === created.value.receipt.generation, "policy-inspection");
+  stage = "operation-recovery";
   const receipt = await client.getPolicyOperation({ operationId });
   check(isDeepStrictEqual(receipt.value.receipt, created.value.receipt), "operation-recovery");
+  stage = "operation-absence";
   const absent = await client.getPolicyOperation({ operationId: "typescript-unknown-operation" });
   check(absent.value.receipt === undefined && absent.metadata.outcome === Knowledge.Unknown, "absent-receipt-is-unknown");
   assertions.mutationReceipt = true;
+  stage = "policy-replay";
   const replay = await client.applyPolicy(original);
   check(isDeepStrictEqual(replay.value.receipt, created.value.receipt), "exact-manual-replay");
   assertions.exactReplay = true;
+  stage = "policy-conflict";
   await rejected(client.applyPolicy({ ...original, operationId: "typescript-stale-precondition" }),
     (failure) => failure.category === Category.Rpc && failure.outcome === Knowledge.Observed, "precondition-conflict");
   assertions.preconditionConflict = true;
-  return { operationId, auditAttempt: created.metadata.auditAck.attemptSequence.toString() };
+  return { operationId, auditAttempt: null };
 }
 
 async function held(client, config, kind, assertions, activationIds) {
