@@ -23,6 +23,11 @@ Routine PR CI runs `run_phase0_outcome_matrix.sh` immediately after contract
 validation in the same job; baseline collection remains manual. See the
 [current CI layout](../docs/testing/phase0-ci-layout.md).
 
+`build_angular_package.py` is the maintained [observed Angular build](../docs/component-development/angular-build.md)
+recipe. `run_angular_build_tests.py` selects the actual produced-package,
+admission and generic-rendering tests from existing Cargo harnesses;
+`check_angular_hydration.mjs` verifies their exact output in a browser.
+
 `run_phase0_hot_path_profiles.sh` is the manual native-Linux evidence command
 for issue 40. It requires a clean source tree, a durable published branch/tag
 whose reachable commit and tree are verified before execution (with an

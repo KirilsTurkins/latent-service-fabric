@@ -1,0 +1,256 @@
+use crate::http::{
+    BearerIdentity, RegistryActions, RegistryConfig, RegistryCredentials, RegistryLimits,
+};
+use latent_core::TenantId;
+use rustls::pki_types::PrivatePkcs8KeyDer;
+use std::{
+    net::SocketAddr,
+    sync::{
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc, Mutex,
+    },
+    time::Duration,
+};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpListener,
+    sync::Semaphore,
+    task::{JoinHandle, JoinSet},
+    time::timeout,
+};
+use tokio_rustls::{server::TlsStream, TlsAcceptor};
+
+pub(super) struct State {
+    pub tokens: AtomicUsize,
+    pub reads: AtomicUsize,
+    pub writes: AtomicUsize,
+    pub disconnected: AtomicUsize,
+    pub hold: AtomicBool,
+    pub release: Semaphore,
+    pub token_body: Mutex<Option<Vec<u8>>>,
+    pub challenge: Mutex<Option<String>>,
+    pub write_status: AtomicUsize,
+}
+
+pub(super) struct Peer {
+    pub address: SocketAddr,
+    pub state: Arc<State>,
+    certificate: Vec<u8>,
+    worker: JoinHandle<()>,
+}
+
+impl Peer {
+    pub async fn new() -> Self {
+        let certificate = rcgen::generate_simple_self_signed(vec!["127.0.0.1".into()]).unwrap();
+        let der = certificate.cert.der().clone();
+        let tls = rustls::ServerConfig::builder_with_provider(Arc::new(
+            rustls::crypto::ring::default_provider(),
+        ))
+        .with_safe_default_protocol_versions()
+        .unwrap()
+        .with_no_client_auth()
+        .with_single_cert(
+            vec![der.clone()],
+            PrivatePkcs8KeyDer::from(certificate.signing_key.serialize_der()).into(),
+        )
+        .unwrap();
+        let acceptor = TlsAcceptor::from(Arc::new(tls));
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let state = Arc::new(State {
+            tokens: 0.into(),
+            reads: 0.into(),
+            writes: 0.into(),
+            disconnected: 0.into(),
+            hold: false.into(),
+            release: Semaphore::new(0),
+            token_body: Mutex::new(None),
+            challenge: Mutex::new(None),
+            write_status: 201.into(),
+        });
+        let shared = Arc::clone(&state);
+        let worker = tokio::spawn(async move {
+            let mut connections = JoinSet::new();
+            loop {
+                tokio::select! {
+                    accepted = listener.accept(), if connections.len() < 32 => {
+                        let (socket, _) = accepted.unwrap();
+                        let acceptor = acceptor.clone();
+                        let shared = Arc::clone(&shared);
+                        connections.spawn(async move {
+                            let result = timeout(Duration::from_secs(5), async {
+                                if let Ok(mut socket) = acceptor.accept(socket).await {
+                                    serve(&mut socket, &shared, address).await;
+                                }
+                            }).await;
+                            assert!(result.is_ok(), "bounded test peer timed out");
+                        });
+                    }
+                    joined = connections.join_next(), if !connections.is_empty() => {
+                        joined.unwrap().unwrap();
+                    }
+                }
+            }
+        });
+        Self {
+            address,
+            state,
+            certificate: der.to_vec(),
+            worker,
+        }
+    }
+
+    pub fn config(&self, actions: RegistryActions) -> RegistryConfig {
+        RegistryConfig {
+            origin: format!("https://{}", self.address),
+            repository: "tenant/package".into(),
+            credentials: RegistryCredentials::BearerChallenge {
+                realm: format!("https://{}/token", self.address),
+                service: "registry.test".into(),
+                identity: identity(1),
+                actions,
+                username: "public-test-user".into(),
+                password: "public-test-password".into(),
+                addresses: vec![],
+            },
+            addresses: vec![],
+            additional_root_certificates: vec![self.certificate.clone()],
+            allow_insecure_loopback: false,
+            limits: RegistryLimits {
+                max_in_flight: 8,
+                max_retained_bytes: 1024 * 1024,
+                connect_timeout: Duration::from_secs(1),
+                request_timeout: Duration::from_secs(3),
+                operation_timeout: Duration::from_secs(4),
+                ..RegistryLimits::default()
+            },
+        }
+    }
+
+    pub async fn wait_tokens(&self, count: usize) {
+        wait_until(|| self.state.tokens.load(Ordering::Acquire) >= count).await;
+    }
+}
+
+impl Drop for Peer {
+    fn drop(&mut self) {
+        self.worker.abort();
+    }
+}
+
+pub(super) fn identity(epoch: u64) -> BearerIdentity {
+    BearerIdentity {
+        tenant: TenantId("tenant".into()),
+        principal: "operator".into(),
+        credential_epoch: epoch,
+    }
+}
+
+pub(super) async fn wait_until(mut predicate: impl FnMut() -> bool) {
+    timeout(Duration::from_secs(3), async {
+        while !predicate() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+}
+
+async fn serve(socket: &mut TlsStream<tokio::net::TcpStream>, state: &State, address: SocketAddr) {
+    let mut head = Vec::new();
+    while !head.ends_with(b"\r\n\r\n") {
+        let mut byte = [0];
+        if socket.read_exact(&mut byte).await.is_err() {
+            return;
+        }
+        head.push(byte[0]);
+        assert!(head.len() <= 32 * 1024);
+    }
+    let head = String::from_utf8(head).unwrap();
+    let lower = head.to_ascii_lowercase();
+    let length = lower
+        .lines()
+        .find_map(|line| line.strip_prefix("content-length: "))
+        .map_or(0, |value| value.parse::<usize>().unwrap());
+    assert!(length <= 65536);
+    let mut body = vec![0; length];
+    if socket.read_exact(&mut body).await.is_err() {
+        return;
+    }
+    if head.starts_with("GET /token?") {
+        assert!(lower.contains("authorization: basic "));
+        assert!(head.contains("service=registry.test"));
+        assert!(head.contains("scope=repository%3Atenant%2Fpackage%3Apull"));
+        assert!(!head.contains("offline_token"));
+        let number = state.tokens.fetch_add(1, Ordering::AcqRel) + 1;
+        if state.hold.load(Ordering::Acquire) {
+            let mut byte = [0];
+            tokio::select! {
+                permit = state.release.acquire() => permit.unwrap().forget(),
+                _ = socket.read(&mut byte) => {
+                    state.disconnected.fetch_add(1, Ordering::AcqRel);
+                    return;
+                }
+            }
+        }
+        let body = state.token_body.lock().unwrap().clone().unwrap_or_else(|| {
+            format!("{{\"token\":\"fixture-token-{number}\",\"expires_in\":60}}").into_bytes()
+        });
+        reply(socket, 200, "Content-Type: application/json\r\n", &body).await;
+        return;
+    }
+    assert!(!lower.contains("authorization: basic "));
+    let read = head.starts_with("GET ") || head.starts_with("HEAD ");
+    if !read {
+        state.writes.fetch_add(1, Ordering::AcqRel);
+        assert!(lower.contains("authorization: bearer fixture-token-"));
+        let status = state.write_status.load(Ordering::Acquire);
+        if status == 0 {
+            return;
+        }
+        reply(socket, status, "", b"").await;
+        return;
+    }
+    state.reads.fetch_add(1, Ordering::AcqRel);
+    if !lower.contains("authorization: bearer fixture-token-") {
+        let challenge = state.challenge.lock().unwrap().clone().unwrap_or_else(|| {
+            format!("Bearer realm=\"https://{address}/token\",service=\"registry.test\",scope=\"repository:tenant/package:pull\"")
+        });
+        reply(
+            socket,
+            401,
+            &format!("WWW-Authenticate: {challenge}\r\n"),
+            b"",
+        )
+        .await;
+        return;
+    }
+    reply(
+        socket,
+        200,
+        "Content-Type: application/octet-stream\r\n",
+        if head.starts_with("HEAD ") {
+            b""
+        } else {
+            b"abc"
+        },
+    )
+    .await;
+}
+
+async fn reply(
+    socket: &mut TlsStream<tokio::net::TcpStream>,
+    status: usize,
+    headers: &str,
+    body: &[u8],
+) {
+    let head = format!(
+        "HTTP/1.1 {status} Reply\r\nConnection: close\r\nContent-Length: {}\r\n{headers}\r\n",
+        body.len()
+    );
+    if socket.write_all(head.as_bytes()).await.is_ok() {
+        let _ = socket.write_all(body).await;
+        let _ = socket.flush().await;
+        let _ = timeout(Duration::from_secs(1), socket.shutdown()).await;
+    }
+}

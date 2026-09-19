@@ -153,23 +153,27 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
         remaining -= n;
     }
     buffer.zeroize();
-    let mut activation = dispatch::begin(head, selected, shared)?;
-    let mut unexpected = [0u8; 1];
-    let result = tokio::select! {
-        biased;
-        () = tokio::time::sleep_until(deadline.monotonic().into()) => {
-            activation.interrupt(ActivationTransportInterruption::DeadlineExceeded);
-            return Err(0);
+    let delivery = match dispatch::begin(head, selected, shared)? {
+        dispatch::Begun::Cached(delivery) => delivery,
+        dispatch::Begun::Activation(mut activation) => {
+            let mut unexpected = [0u8; 1];
+            let result = tokio::select! {
+                biased;
+                () = tokio::time::sleep_until(deadline.monotonic().into()) => {
+                    activation.interrupt(ActivationTransportInterruption::DeadlineExceeded);
+                    return Err(0);
+                }
+                // EOF, write-half-close or premature pipelining cancels the
+                // activation. A cache hit has no activation owner to interrupt.
+                _ = socket.read(&mut unexpected) => {
+                    activation.interrupt(ActivationTransportInterruption::Disconnected);
+                    return Err(0);
+                }
+                result = &mut activation => result,
+            };
+            dispatch::complete(result.0, result.1)?
         }
-        // EOF (including a client write-half-close), error, or premature pipelined
-        // input cancels this profile. There is no second unbounded request queue.
-        _ = socket.read(&mut unexpected) => {
-            activation.interrupt(ActivationTransportInterruption::Disconnected);
-            return Err(0);
-        }
-        result = &mut activation => result,
     };
-    let delivery = dispatch::complete(result.0, result.1)?;
     let close = close || !shared.handle.accepting();
     let until = Instant::from_std(deadline.monotonic())
         .min(Instant::now() + millis(shared.settings.limits.write_timeout_millis));

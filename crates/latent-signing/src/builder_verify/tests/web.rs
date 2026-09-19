@@ -4,6 +4,8 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use latent_artifacts::package::PackageLimits;
 use serde_json::{json, Value};
 
+mod angular;
+
 fn subject(ssr: bool) -> PackageSigningSubject {
     // Existing format fixtures isolate builder authentication; they deliberately
     // do not claim executable web-profile or catalog admission conformance.
@@ -54,7 +56,8 @@ fn observation(subject: &PackageSigningSubject) -> WebBuildObservation {
             assembler: "lsf-web-package-assembly".into(),
             recipe_version: 1,
             input_mode: "explicit-supplied-files".into(),
-        },
+        }
+        .into(),
         started_at: 900,
         finished_at: 1000,
         reproducibility: "not-checked".into(),

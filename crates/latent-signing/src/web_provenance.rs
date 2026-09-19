@@ -1,10 +1,11 @@
-//! Explicit componentless web-output provenance. The assembly profile observes
-//! supplied files and package assembly; it does not claim to compile Angular.
+//! Explicit componentless web-output provenance. Supplied-file assembly and
+//! observed Angular compilation are independently approved build profiles.
 
+mod angular;
 mod model;
 mod validate;
 
-pub use model::{WebAssemblyRecipe, WebBuildObservation};
+pub use model::{AngularBuildRecipe, WebAssemblyRecipe, WebBuildObservation, WebBuildRecipe};
 pub(crate) use validate::validate_observation;
 
 use crate::{
@@ -18,6 +19,7 @@ use crate::{
 };
 
 pub const WEB_ASSEMBLY_BUILD_TYPE: &str = "https://latent.dev/build/web-package-assembly/v1";
+pub const ANGULAR_BUILD_TYPE: &str = "https://latent.dev/build/angular-component/v1";
 pub const WEB_PROVENANCE_PREDICATE_TYPE: &str = "https://latent.dev/web-provenance/v1";
 
 pub type UnverifiedWebProvenance = UnverifiedProvenance<WebBuildObservation>;
@@ -52,6 +54,14 @@ pub(crate) fn validate_output(
         || outputs.bytes() != observation.outputs_bytes
     {
         return Err(SignatureFailure::SubjectMismatch.into());
+    }
+    if let WebBuildRecipe::Angular(recipe) = &observation.parameters {
+        let Some((digest, size)) = subject.renderer() else {
+            return Err(SignatureFailure::SubjectMismatch.into());
+        };
+        if digest.as_str() != recipe.renderer_digest || size != recipe.renderer_size {
+            return Err(SignatureFailure::SubjectMismatch.into());
+        }
     }
     Ok(())
 }

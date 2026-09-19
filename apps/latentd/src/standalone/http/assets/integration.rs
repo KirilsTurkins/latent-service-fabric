@@ -31,8 +31,12 @@ struct Harness {
 }
 impl Harness {
     async fn new() -> Self {
+        Self::configured(|_| {}).await
+    }
+    async fn configured(configure: impl FnOnce(&mut serde_json::Value)) -> Self {
         let root = TempDir::new().unwrap();
-        let value = node_fixture::config(&root);
+        let mut value = node_fixture::config(&root);
+        configure(&mut value);
         let settings = serde_json::from_value::<NodeConfig>(value.clone())
             .unwrap()
             .derive()
@@ -140,6 +144,55 @@ fn etag(headers: &str) -> &str {
         .lines()
         .find_map(|line| line.strip_prefix("ETag: "))
         .unwrap()
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn assets_and_response_cache_keep_independent_accounting_and_both_stop_on_drain() {
+    let harness = Harness::configured(|value| {
+        value["httpIngress"]["authentication"] = serde_json::json!({
+            "mode": "public-origins",
+            "origins": [{"authority": node_fixture::AUTHORITY, "subject": "public-web", "tenant": "tests"}]
+        });
+        value["httpIngress"]["responseCache"] = serde_json::json!([{
+            "dependencyProfile": "immutable-public-v1",
+            "tenant": "tests", "publication": "unused-publication", "release": "unused-release",
+            "rendererProfile": "buffered-v1", "authority": node_fixture::AUTHORITY, "path": "/",
+            "generation": 1, "maximumAgeSeconds": 30, "vary": []
+        }]);
+    })
+    .await;
+    let path = harness.publish("joint-cache-owners", b"asset-only");
+    let handle = harness.owner.handle();
+    let cache = handle.0.response_cache.as_ref().unwrap().clone();
+    assert!(cache.observe_generation(1));
+    let mut socket = TcpStream::connect(harness.owner.local_addr())
+        .await
+        .unwrap();
+    socket
+        .write_all(
+            format!(
+                "GET {path} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
+                node_fixture::AUTHORITY
+            )
+            .as_bytes(),
+        )
+        .await
+        .unwrap();
+    let reply = node_fixture::response(&mut socket).await;
+    assert_eq!(reply.0, 200);
+    assert_eq!(reply.2, b"asset-only");
+    node_fixture::wait(|| handle.snapshot().connections == 0).await;
+    let snapshot = handle.snapshot();
+    assert_eq!(snapshot.assets.unwrap().cache_entries, 1);
+    assert!(snapshot.assets.unwrap().retained_buffer_bytes > 0);
+    assert_eq!(snapshot.response_cache_entries, 0);
+    assert_eq!(snapshot.response_cache_owners, 0);
+    assert_eq!(snapshot.response_cache_reserved_bytes, 0);
+    handle.stop_accepting();
+    assert!(!cache.observe_generation(2));
+    assert!(harness.store().stopped.load(Ordering::Acquire));
+    harness.finish().await;
+    assert!(handle.snapshot().clean());
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

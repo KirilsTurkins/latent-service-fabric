@@ -39,6 +39,7 @@ observation does not authorize raising a limit.
 | Audit | One durable owner: 512 records, 8 MiB disk, queue 8, query owners 2 |
 | Rollouts | One shared coordinator: active 2, retained 8, stages 4, receipts 32, metadata 1 MiB, queue 2 / 256 KiB, response owners 2 |
 | Canary | Windows 2, starts/window 32, total starts 64, live samples 4, snapshot owners 2; no active plan in this experiment |
+| Executable identity reads | At most 512 MiB per supplied binary, including the live node executable |
 | Receipt | At most 256 KiB, new file only |
 | Fixture inventory | At most 2,048 visited entries / 8 MiB of ordinary files |
 | Process observation | At most 256 tasks / 4,096 descriptors; each sample at most 2 seconds / 4 MiB of proc data |
@@ -139,6 +140,21 @@ publisher/builder proof age is 600 seconds, and the runner requires at least
 300 seconds of remaining proof freshness. These clocks are not extended by
 the experiment.
 
+CI prepares separate `latent` and `latentd` copies with `objcopy --strip-debug`
+in its private `resource-bin` directory before exporting the fresh resource
+fixture. Debug information can otherwise make an unstripped workspace binary
+exceed the frozen 512 MiB executable-hash ceiling. The originals in
+`target/debug`, including any hard-linked Cargo artifacts, remain untouched;
+there is no rebuild or release-profile substitution. `buildProfile: "debug"`
+continues to describe the compilation profile, not the presence of debug sections.
+
+Both the build identity and the runner's `--cli` / `--node` arguments select
+those same stripped copies. Full-file hashing and the live `/proc/<pid>/exe`
+byte/inode checks remain enabled. A stripped copy that still exceeds the ceiling
+is rejected; neither the profile revision nor any resource limit is increased.
+A failed copy stops the CI step without falling back to the original binary,
+and the existing fixture-owner cleanup removes the temporary copies.
+
 The build owner supplies a closed identity file describing the actual supplied
 binaries, using lowercase SHA-256 values with the `sha256:` prefix:
 
@@ -194,20 +210,3 @@ Their logical counters must not be inferred from this portable profile's RSS.
 The profile retains authoritative release/audit history after route removal:
 reclaimed execution objects and intentionally retained control data are distinct.
 Phase 3 provider and web capabilities are outside this gate experiment.
-
-## CI executable preparation
-
-CI stages `latent` and `latentd` in a fresh temporary directory using
-`tools/phase2_resource_binaries.py`. `objcopy --strip-debug` removes only debug
-sections from these copies; Cargo outputs and caches are not modified, and no
-second Rust build is performed. The copies must still fit the frozen
-`maximumBinaryBytes` limit (512 MiB). Preparation fails on an oversized output,
-an existing destination, a nonregular/nonexecutable input or output, a tool
-failure, or a timeout; it never raises the collector limit.
-
-The build identity hashes these exact copies, and the collector launches the
-same paths. Its own bounded hash checks and `/proc/<pid>/exe` identity/inode
-checks remain unchanged. `buildProfile` remains `debug`: stripping DWARF does
-not turn the unoptimized build into a release build. Runtime ownership, RSS,
-fixture, deadline and receipt checks retain the `phase2-dormant-32-r3` profile.
-The existing fixture cleanup trap owns the staged files.
