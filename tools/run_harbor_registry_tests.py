@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT))
 
 from tools.harbor_registry.config import IMAGES, INSTALLER_DIGEST, bounded_compose, installer_template, write_input
 from tools.harbor_registry.owner import Owner, command
+from tools.harbor_registry.dns import Fixture as DnsFixture
 from tools.run_oci_registry_tests import certificates
 import yaml
 
@@ -80,7 +81,27 @@ def provision(origin: str, root: Path, password: str) -> Path:
     return path
 
 
+def source_snapshot() -> dict:
+    return {'commit': command(['git', 'rev-parse', 'HEAD']),
+            'trackedClean': not bool(command(['git', 'status', '--porcelain', '--untracked-files=no'])),
+            'untrackedFiles': bool(command(['git', 'ls-files', '--others', '--exclude-standard']))}
+
+
+def source_receipt(before: dict, after: dict, binary: Path | None) -> dict:
+    stable = before == after
+    receipt = {'sourceCommit': before['commit'], 'sourceStable': stable,
+               'trackedTreeClean': stable and before['trackedClean'],
+               'sourceTreeClean': stable and before['trackedClean'] and not before['untrackedFiles'],
+               'testBinarySource': 'cargo test in this worktree' if binary is None else
+                                   'caller supplied; source correspondence not established'}
+    if binary is not None:
+        with binary.open('rb') as source:
+            receipt['testBinarySha256'] = hashlib.file_digest(source, 'sha256').hexdigest()
+    return receipt
+
+
 def run(arguments) -> dict:
+    before = source_snapshot()
     if arguments.test_binary is None and not arguments.check_fixture:
         subprocess.run(['cargo', 'test', '-p', 'latent-oci', '--test', 'registry', '--locked', '--no-run'],
                        cwd=ROOT, check=True, timeout=900)
@@ -93,16 +114,17 @@ def run(arguments) -> dict:
     owner = Owner(root, token)
     print('Preparing owned Harbor fixture: ' + token, flush=True)
     receipt = None
+    dns = None
     try:
         with socket.socket() as reservation:
             reservation.bind(('127.0.0.1', 0))
             port = reservation.getsockname()[1]
         fixture = root / 'fixtures'
         fixture.mkdir()
-        certificates(fixture)
+        certificates(fixture, dns_names=('harbor.test',) if arguments.network else ())
         password = 'Lsf1-' + secrets.token_hex(20)
         template = installer_template(ROOT / 'target/phase3-harbor/installer')
-        write_input(root, port, password, template)
+        write_input(root, port, password, template, network=arguments.network)
         owner.prepare()
         raw = yaml.safe_load((root / 'docker-compose.yml').read_bytes())
         compose = bounded_compose(raw, root, owner.project, token, port)
@@ -110,12 +132,18 @@ def run(arguments) -> dict:
         owner.launch()
         origin = f'https://127.0.0.1:{port}'
         credential = provision(origin, root, password)
+        if arguments.network:
+            origin = f'https://harbor.test:{port}'
+            dns = DnsFixture()
         if arguments.check_fixture:
             receipt = {'fixtureReady': True}
         else:
             environment = os.environ.copy()
             environment.update(LSF_OCI_TEST_ORIGIN=origin, LSF_OCI_TEST_CA_DER=str(fixture / 'ca.der'),
                                LSF_HARBOR_CREDENTIAL_FILE=str(credential))
+            environment.pop('LSF_OCI_DNS_SERVER', None)
+            if dns:
+                environment['LSF_OCI_DNS_SERVER'] = dns.address
             test = ([str(arguments.test_binary.resolve())] if arguments.test_binary else
                     ['cargo', 'test', '-p', 'latent-oci', '--test', 'registry', '--locked', '--'])
             result = subprocess.run([*test, '--exact', TEST, '--ignored', '--nocapture', '--test-threads=1'],
@@ -130,15 +158,22 @@ def run(arguments) -> dict:
             if len(reports) != 1:
                 raise RuntimeError('Harbor conformance evidence missing')
             receipt = json.loads(reports[0])
-        receipt.update(installerSha256=INSTALLER_DIGEST, images=IMAGES,
-                       sourceCommit=command(['git', 'rev-parse', 'HEAD']),
-                       trackedTreeClean=not bool(command(['git', 'status', '--porcelain', '--untracked-files=no'])))
+        receipt.update(installerSha256=INSTALLER_DIGEST, images=IMAGES)
+        receipt.update(source_receipt(before, source_snapshot(), arguments.test_binary))
+        if arguments.check_fixture:
+            receipt['testBinarySource'] = 'not executed; fixture readiness only'
+        if dns:
+            receipt['dnsQueries'] = dns.count
     finally:
-        owner.close()
-        owner.release_files()
-        if not root.resolve().is_relative_to(owned_base.resolve()):
-            raise RuntimeError('refusing unowned Harbor directory cleanup')
-        shutil.rmtree(root)
+        try:
+            if dns:
+                dns.close()
+        finally:
+            owner.close()
+            owner.release_files()
+            if not root.resolve().is_relative_to(owned_base.resolve()):
+                raise RuntimeError('refusing unowned Harbor directory cleanup')
+            shutil.rmtree(root)
     receipt['ownedContainersNetworksVolumesRemoved'] = True
     return receipt
 
@@ -147,6 +182,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--test-binary', type=Path)
     parser.add_argument('--check-fixture', action='store_true')
+    parser.add_argument('--network', action='store_true', help='exercise the explicit bounded DNS and connected-peer profile')
     parser.add_argument('--output', type=Path)
     arguments = parser.parse_args()
     receipt = run(arguments)

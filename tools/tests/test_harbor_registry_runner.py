@@ -3,12 +3,16 @@ from __future__ import annotations
 
 import copy
 import json
+import socket
+import struct
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
 from tools.harbor_registry import config, owner
+from tools.harbor_registry.dns import Fixture, response
+from tools.run_harbor_registry_tests import source_receipt
 
 TOKEN = 'a' * 32
 PROJECT = 'lsf-harbor-' + TOKEN
@@ -31,6 +35,45 @@ def services():
 
 
 class HarborRunnerTests(unittest.TestCase):
+    def test_source_receipt_does_not_claim_untracked_or_supplied_code_as_verified(self):
+        clean = {'commit': 'a' * 40, 'trackedClean': True, 'untrackedFiles': False}
+        self.assertTrue(source_receipt(clean, clean, None)['sourceTreeClean'])
+        changed = dict(clean, commit='b' * 40)
+        self.assertFalse(source_receipt(clean, changed, None)['trackedTreeClean'])
+        untracked = dict(clean, untrackedFiles=True)
+        self.assertFalse(source_receipt(untracked, untracked, None)['sourceTreeClean'])
+        dirty = dict(clean, trackedClean=False)
+        self.assertFalse(source_receipt(dirty, dirty, None)['sourceTreeClean'])
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / 'test-binary'
+            binary.write_bytes(b'not a source correspondence claim')
+            receipt = source_receipt(clean, clean, binary)
+            self.assertIn('not established', receipt['testBinarySource'])
+            self.assertEqual(len(receipt['testBinarySha256']), 64)
+
+    def test_dns_fixture_is_name_bound_and_retires_its_socket_and_thread(self):
+        query = struct.pack('!6H', 41, 0x100, 1, 0, 0, 0) + b'\x06harbor\x04test\0' + struct.pack('!HH', 1, 1)
+        expected = response(query)
+        self.assertEqual(expected[-4:], socket.inet_aton('127.0.0.1'))
+        fixture = Fixture()
+        try:
+            host, port = fixture.address.rsplit(':', 1)
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client:
+                client.settimeout(2)
+                client.sendto(query, (host, int(port)))
+                self.assertEqual(client.recv(512), expected)
+            self.assertEqual(fixture.count, 1)
+        finally:
+            fixture.close()
+        self.assertFalse(fixture.worker.is_alive())
+
+    def test_dns_fixture_rejects_unknown_names_compression_counts_and_oversize(self):
+        query = struct.pack('!6H', 41, 0x100, 1, 0, 0, 0) + b'\x06harbor\x04test\0' + struct.pack('!HH', 1, 1)
+        for packet in [b'', b'x' * 513, query.replace(b'harbor', b'secret'), query[:12] + b'\xc0\x0c\0\1\0\1',
+                       query[:4] + b'\0\2' + query[6:], query[:-4] + struct.pack('!HH', 16, 1)]:
+            with self.subTest(packet=packet), self.assertRaises(ValueError):
+                response(packet)
+
     def test_compose_is_scoped_pinned_finite_and_loopback_only(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

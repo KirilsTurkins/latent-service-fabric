@@ -12,6 +12,7 @@ workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-network = { path = "../latent-network" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }
 bytes = "=1.12.1"

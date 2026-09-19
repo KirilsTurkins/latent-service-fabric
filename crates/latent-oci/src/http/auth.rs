@@ -1,7 +1,7 @@
 mod cache;
 mod lifecycle;
 #[cfg(test)]
-mod security_tests;
+pub(super) mod security_tests;
 mod token;
 
 use super::{
@@ -39,11 +39,19 @@ pub(super) struct ConfiguredBearer {
     accounting: Arc<cache::Accounting>,
     acquisition: tokio::sync::Mutex<()>,
     waiters: tokio::sync::Semaphore,
-    client: reqwest::Client,
+    client: Option<reqwest::Client>,
+    owned: Option<Arc<super::network::OwnedClient>>,
 }
 
 impl ConfiguredBearer {
     pub(super) fn new(config: &RegistryConfig) -> Result<Option<Self>> {
+        Self::with_network(config, None)
+    }
+
+    pub(super) fn with_network(
+        config: &RegistryConfig,
+        network: Option<&super::network::Network>,
+    ) -> Result<Option<Self>> {
         let RegistryCredentials::BearerChallenge {
             realm: configured_realm,
             service,
@@ -81,7 +89,7 @@ impl ConfiguredBearer {
             .host_str()
             .and_then(|host| host.trim_matches(['[', ']']).parse::<IpAddr>().ok());
         if addresses.len() > MAX_AUTH_ADDRESSES
-            || (numeric.is_none() && addresses.is_empty())
+            || (network.is_none() && numeric.is_none() && addresses.is_empty())
             || addresses
                 .iter()
                 .any(|address| address.port() != port || address.ip().is_unspecified())
@@ -94,11 +102,16 @@ impl ConfiguredBearer {
             return Err(invalid("invalid-oci-bearer-scope"));
         }
         let authorization = super::transport::client::basic_authorization(username, password)?;
-        let client = super::transport::client::build_authority(
-            config,
-            realm.host_str().expect("checked bearer host"),
-            addresses,
-        )?;
+        let owned = network.map(|network| network.client(&realm)).transpose()?;
+        let client = if owned.is_some() {
+            None
+        } else {
+            Some(super::transport::client::build_authority(
+                config,
+                realm.host_str().expect("checked bearer host"),
+                addresses,
+            )?)
+        };
         Ok(Some(Self {
             realm,
             service: service.clone().into_boxed_str(),
@@ -121,6 +134,7 @@ impl ConfiguredBearer {
             acquisition: tokio::sync::Mutex::new(()),
             waiters: tokio::sync::Semaphore::new(config.limits.max_in_flight),
             client,
+            owned,
         }))
     }
 
@@ -181,8 +195,20 @@ impl ConfiguredBearer {
             query.append_pair("service", self.service.as_ref());
             query.append_pair("scope", self.scope.as_ref());
         }
+        if let Some(client) = &self.owned {
+            let mut headers = HeaderMap::new();
+            headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+            headers.insert(AUTHORIZATION, authorization);
+            let response = client
+                .send(Method::GET, request_url, headers, None, deadline)
+                .await?;
+            super::transport::expect_status(&response, &[StatusCode::OK])?;
+            return Ok(response);
+        }
         let response = self
             .client
+            .as_ref()
+            .ok_or_else(|| invalid("oci-token-client-unavailable"))?
             .get(request_url)
             .header(ACCEPT, HeaderValue::from_static("application/json"))
             .header(AUTHORIZATION, authorization)
