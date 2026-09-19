@@ -69,10 +69,63 @@ distinguish file count, logical bytes, unique inode bytes and allocated blocks;
 they include retained audit data and do not promise filesystem block dedup.
 Angular independently admits two packages/publications sharing one component.
 
-Execution results and an explicit mapping to all six ticket criteria will be
-added after actual runs. Until then, neither this matrix nor its tests establish
-acceptance. Any real `Unavailable` stops that profile and is retained for the
-parent's SDK/runtime diagnosis, without replaying mutations or claiming PASS.
+PR #376 now explicitly targets `development`, not the former stacked SDK base.
+The first new executions below identify source `4b94e524`; they are not evidence
+for a later merge of SDK #366 or for the eventual development merge commit.
+Any real `Unavailable` stops that profile and is retained for the parent's
+SDK/runtime diagnosis, without replaying mutations or claiming PASS.
+
+## Executed observations at `4b94e524`
+
+All three attempts used the same real node SHA-256
+`1724391b6cf80f21f2d8d6da5a0d317f5b67d602ada90bca47d7b70f83ecee6d`
+and CLI SHA-256
+`308d28776ed6d47911fa1091b276c3d5b9c12805531f0fb145e28739665d7889`.
+Each attempt retains its own build, fresh signed export, matrix and measurement
+receipt with original checksum sidecars. Times describe this shared Docker
+Desktop host only.
+
+| Profile / attempt | Actual observation | Disposition |
+| --- | --- | --- |
+| [Provider smoke v2 / 01](phase3-resource-evidence/2026-09-19-provider-smoke-v2-01.json) | 23 snapshots, all 4/16 added dormant deployments, two churn cycles, real HTTP/blob cold/warm/failure/cancel/recovery and clean shutdown in 32300 ms | Seven checkpoint checks passed; full ticket still pending |
+| [Provider campaign v2 / 02](phase3-resource-evidence/2026-09-19-provider-campaign-v2-02.json) | 67 snapshots, all 4/16/32 added dormant deployments and eight 24-arrival cycles; final HTTP recovery succeeded but blob recovery returned known `guest-trap` in 44305 ms | Failed `resource-real-provider-output`; node and peer force-reaped, not graceful shutdown |
+| [Web smoke v1 / 03](phase3-resource-evidence/2026-09-19-web-smoke-v1-03.json) | 10 snapshots, all 2/4 dormant actual Angular deployments; cold preparation returned gRPC `resource-exhausted` after 117167543 ns, before any render | Failed `resource-render-preparation-result`; unknown RPC outcome, no preparation/render PASS |
+
+In provider smoke, dormant processes/threads/listeners plateaued at 1/8/1,
+with 34 open descriptors and RSS 62783488 bytes. After churn, active ownership
+returned to zero; six recovery samples retained 36 descriptors and RSS
+81432576..81825792 bytes. These values distinguish warmed fixed resources from
+dormant density, not an allocator leak proof. Cold HTTP/blob elapsed times were
+1157651469/1819662791 ns; retained calls include all outcomes rather than only
+successes. Three overload RPCs returned gRPC exhaustion with unknown outcomes,
+not proof of known queue rejection. Shutdown was clean but reported **11 blob
+stages**, distinct from zero active blob handles/work.
+
+The larger provider failure is consistent with the finite retained-stage
+contract: the maintained blob guest repeatedly writes the same four bytes,
+duplicate seal closes its writer but leaves an inactive stage for explicit
+privileged reclamation, and the standalone store defaults to 16 stages. No
+standalone reclamation operation was found in the configured provider path.
+The guest unwraps creation errors into traps. All blob arrivals in cycles 2..7
+trapped, rather than demonstrating post-churn reusable write capacity. This
+source-based diagnosis is not a directly exported stage count from the failed
+node; that attempt has no graceful shutdown snapshot. Its last sample also
+reports 372 dropped audit observations, an explicit evidence limitation.
+Neither raising the production limit nor reducing the executed population is
+claimed as a fix.
+
+The first web runner overlapped `web prepare` with an inventory RPC while
+`workers.control` allowed only one control job. Transport derives its control
+job ceiling from that setting and rejects excess jobs. This explains a harness
+self-contention risk consistent with the observed gRPC exhaustion; the generic
+RPC error does not itself identify the limiting owner. A corrected observation
+budget must be a new profile/receipt, never a relabeling of this failure.
+
+No run above returned the parent's intermittent `Unavailable`. Web campaign,
+successful web preparation/render churn, standalone event/secret/child coverage,
+JS heap counters and OCI resolver/token/redirect campaigns remain gaps at this
+checkpoint. The earlier real HTTP/blob/secret/child Rust fixture observations
+are separate from standalone acceptance.
 
 Historical results: [checkpoint](phase3-resource-checkpoint.md),
 [attempt ledger](phase3-resource-evidence/README.md),
