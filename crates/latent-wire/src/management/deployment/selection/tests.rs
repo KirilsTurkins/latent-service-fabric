@@ -39,6 +39,7 @@ fn status() -> WebPublicationStatus {
             profile: WebRendererProfile::AngularSsrComponentV1,
             profile_digest: format!("sha256:{}", "e".repeat(64)),
             assets_digest: assets,
+            backend_profile: Default::default(),
         }),
     }
 }

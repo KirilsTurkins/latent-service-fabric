@@ -32,7 +32,22 @@ impl Phase1ManifestValidator {
         deployment: &DeploymentManifest,
         projection: &CapsuleManifest,
     ) -> ManifestResult<()> {
-        if projection.world.0 != "latent:web/application-service@0.1.0"
+        let expected_imports: &[&str] = match projection.world.0.as_str() {
+            "latent:web/application-service@0.1.0" => &["latent:context/context@0.1.0"],
+            "latent:web-http/application-service@0.1.0" => {
+                &["latent:context/context@0.1.0", "latent:http/client@0.2.0"]
+            }
+            _ => &[],
+        };
+        let imports_match = !expected_imports.is_empty()
+            && projection.imports.len() == expected_imports.len()
+            && expected_imports.iter().all(|expected| {
+                projection
+                    .imports
+                    .iter()
+                    .any(|imported| imported.contract.0 == *expected && !imported.optional)
+            });
+        if !imports_match
             || projection.metadata.tenant.is_none()
             || projection.runtime_requirements.renderer.is_none()
             || projection.exports.len() != 1
@@ -41,7 +56,7 @@ impl Phase1ManifestValidator {
             return Err(vec![ManifestViolation::new(
                 "$.component.world",
                 "invalid-web-execution-projection",
-                "web execution projections require the exact public world and renderer profile",
+                "web execution projections require the exact public world, imports and renderer profile",
             )]);
         }
         self.validate_deployment_pair(deployment, projection, true)

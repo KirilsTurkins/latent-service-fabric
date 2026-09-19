@@ -71,7 +71,11 @@ and invocation still require the current sealed web-publication authority.
 
 The verified metadata retains a catalog-only web-projection marker, including
 denied historical rows on restart. Only that path validates the exact public
-web world against the tenant's deployment; ordinary capsule input retains its
+web world and mandatory context import against the tenant's deployment. The
+optional `scoped-http-get-v1` projection uses only its exact public web-http world
+and mandatory context plus HTTP v0.2 imports; deployment ceilings still apply.
+This validator support is not evidence of backend invocation during rendering.
+Ordinary capsule input retains its
 tenant-world namespace requirement. Copying metadata or verifying component bytes
 does not create this marker, and the marker itself supplies no execution grant.
 
