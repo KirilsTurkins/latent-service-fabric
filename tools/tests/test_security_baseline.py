@@ -72,6 +72,26 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertNotEqual(original.fingerprint, column.fingerprint)
         self.assertEqual(original.fingerprint, portable.fingerprint)
 
+    def test_secret_exception_cannot_hide_changed_content_location_or_rule(self) -> None:
+        original = finding("gitleaks", "generic-api-key", "docs/fixture.md", line=1, column=4,
+                           content=b"public integrity identity\n")
+        _, entry = self.exception()
+        entry.update({key: value for key, value in original.public().items() if key not in {"line", "column"}})
+        entry["rationale"] = "Harmless public integrity fixture; never permits other contents or locations."
+        self.write("exceptions.json", json.dumps({"schema": 1, "exceptions": [entry]}))
+        exceptions = load_exceptions(self.root, date(2026, 9, 19))
+        changed = finding("gitleaks", "generic-api-key", "docs/fixture.md", line=1, column=4,
+                          content=b"different unreviewed material\n")
+        others = [changed, replace(original, path="docs/other.md"),
+                  replace(original, finding="different-rule"),
+                  finding("gitleaks", "generic-api-key", "docs/fixture.md", line=1, column=5,
+                          content=b"public integrity identity\n")]
+        remaining, waived = apply_exceptions([original, *others], exceptions)
+        self.assertEqual(waived, [original])
+        self.assertEqual(set(remaining), set(others))
+        with self.assertRaisesRegex(SecurityError, "expired-or-future-exception"):
+            load_exceptions(self.root, date(2026, 9, 25))
+
     def test_stale_database_head_age_and_future_timestamp_fail(self) -> None:
         current = int(datetime.now(timezone.utc).timestamp())
         security_advisories.validate_database_identity("a" * 40, "a" * 40, current, current)
