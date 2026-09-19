@@ -483,7 +483,10 @@ impl StandaloneNode {
                 capabilities.broker().clone(),
             )?;
         }
-        management.with_http_control(catalogs.deployments.clone())
+        management
+            .with_web_catalog(catalogs.artifacts.clone())?
+            .with_web_preparation(self.backend.clone())?
+            .with_http_control(catalogs.deployments.clone())
     }
 
     #[expect(

@@ -325,4 +325,107 @@ service ReleaseService {
   rpc GetReleaseOperation(GetReleaseOperationRequest) returns (GetReleaseOperationResponse);
   rpc ChangeReleaseLifecycle(ChangeReleaseLifecycleRequest) returns (ChangeReleaseLifecycleResponse);
   rpc RenewReleaseEvidence(RenewReleaseEvidenceRequest) returns (RenewReleaseEvidenceResponse);
+  rpc PublishWebPackage(PublishWebPackageRequest) returns (WebMutationResponse);
+  rpc GetWebPublication(GetWebPublicationRequest) returns (GetWebPublicationResponse);
+  rpc PrepareWebPublication(PrepareWebPublicationRequest) returns (PrepareWebPublicationResponse);
+  rpc GetWebOperation(GetWebOperationRequest) returns (GetWebOperationResponse);
+  rpc ChangeWebLifecycle(ChangeWebLifecycleRequest) returns (WebMutationResponse);
+  rpc RenewWebEvidence(RenewWebEvidenceRequest) returns (WebMutationResponse);
+}
+
+message WebOperationReceipt {
+  uint32 format_version = 1;
+  PublicationRef publication = 2;
+  string operation_id = 3;
+  ReleaseLifecycleAction action = 4;
+  ReleaseActor actor = 5;
+  uint64 expected_generation = 6;
+  uint64 resulting_generation = 7;
+  ReleaseOperationDisposition disposition = 8;
+  ReleaseLifecycleReason reason = 9;
+  string request_digest = 10;
+  bool replayed = 11;
+}
+
+message WebLifecycleRecord {
+  PublicationRef publication = 1;
+  string package_digest = 2;
+  string web_manifest_digest = 3;
+  string assets_digest = 4;
+  ReleaseLifecycleState state = 5;
+  uint64 generation = 6;
+  ReleaseActor actor = 7;
+  ReleaseLifecycleReason reason = 8;
+  string operation_id = 9;
+  optional string evidence_revision_digest = 10;
+}
+
+enum WebRendererProfile {
+  WEB_RENDERER_PROFILE_UNSPECIFIED = 0;
+  WEB_RENDERER_PROFILE_WASM_WEB_BUFFERED_V1 = 1;
+  WEB_RENDERER_PROFILE_ANGULAR_SSR_COMPONENT_V1 = 2;
+}
+
+message WebRendererDescriptor {
+  string component_digest = 1;
+  WebRendererProfile profile = 2;
+  string profile_digest = 3;
+  uint64 component_bytes = 4;
+}
+
+message PublishWebPackageRequest {
+  PackageAdmissionUpload package = 1;
+  ReleaseOperationPrecondition operation = 2;
+}
+
+message WebMutationResponse {
+  WebOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
+}
+
+message GetWebPublicationRequest {
+  PublicationRef publication = 1;
+}
+
+message GetWebPublicationResponse {
+  WebLifecycleRecord record = 1;
+  ReleaseLiveEligibility eligibility = 2;
+  ReleaseEligibilityReason eligibility_reason = 3;
+  optional WebRendererDescriptor renderer = 4;
+}
+
+message GetWebOperationRequest {
+  string operation_id = 1;
+}
+
+message GetWebOperationResponse {
+  ReleaseOperationLookupDisposition disposition = 1;
+  optional WebOperationReceipt operation = 2;
+  string tenant = 3;
+}
+
+message ChangeWebLifecycleRequest {
+  PublicationRef publication = 1;
+  ReleaseLifecycleAction action = 2;
+  ReleaseLifecycleReason reason = 3;
+  ReleaseOperationPrecondition operation = 4;
+}
+
+message RenewWebEvidenceRequest {
+  PublicationRef publication = 1;
+  ReleaseEvidenceUpload evidence = 2;
+  ReleaseOperationPrecondition operation = 3;
+}
+
+message PrepareWebPublicationRequest {
+  PublicationRef publication = 1;
+  uint64 lifecycle_generation = 2;
+  uint64 maximum_wait_millis = 3;
+}
+
+message PrepareWebPublicationResponse {
+  PublicationRef publication = 1;
+  uint64 lifecycle_generation = 2;
+  string component_digest = 3;
+  bool prepared = 4;
 }

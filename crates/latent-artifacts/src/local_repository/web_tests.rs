@@ -109,6 +109,8 @@ fn tenant() -> TenantId {
     TenantId("tests".into())
 }
 
+#[path = "web_tests/audit.rs"]
+mod audit;
 #[path = "web_tests/projection.rs"]
 mod projection;
 fn context(operation: &str, generation: u64) -> ReleaseMutationContext {

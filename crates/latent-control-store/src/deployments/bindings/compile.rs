@@ -325,6 +325,22 @@ async fn plan(
         ));
     }
     let publication = eligibility(catalog, record)?;
+    if publication.web_projection().is_some() {
+        if !record.deployment.grants.is_empty() {
+            return Err(denied());
+        }
+        return owner.broker.compile_invocation_plan(
+            &revision(record, catalog.generation),
+            Some(&record.deployment.id),
+            &[],
+            &publication,
+            &[],
+            &[],
+            &[],
+            None,
+            deadline,
+        );
+    }
     let comparison = PackageComparisonLimits::default();
     let consumer = bundle(record, owner, artifacts).await?;
     let surface = consumer.surface().ok_or_else(denied)?;

@@ -1,4 +1,4 @@
-mod conversion;
+pub(super) mod conversion;
 mod publication;
 mod requests;
 mod response;
