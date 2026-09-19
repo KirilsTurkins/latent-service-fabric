@@ -152,20 +152,26 @@ async function run() {
   const request = (name, suffix = name, functionName) => providerRequest(config.targets[name], config.tenant,
     `typescript-${suffix}`, name, config.upstreamUrl, functionName);
   try {
-    stage = "provider-invocation";
+    stage = "http-invocation";
     check(guestU64(await client.invoke(request("http"))) === "2201", "http-guest-result");
     activationIds.push("typescript-http"); assertions.httpGuest = true;
+    stage = "blob-invocation";
     check(guestU64(await client.invoke(request("blob"))) === "4", "blob-guest-result");
     activationIds.push("typescript-blob"); assertions.blobGuest = true;
+    stage = "declared-invocation";
     const declared = await client.invoke(request("callee", "declared", "fail"));
     check(declared.value.declaredError !== undefined, "declared-error-variant");
     activationIds.push("typescript-declared"); assertions.declaredError = true;
+    stage = "platform-invocation";
     const exhausted = request("callee", "platform", "spin"); exhausted.budget.cpuFuel = 1000n;
     check((await client.invoke(exhausted)).value.platformFailure !== undefined, "platform-failure-variant");
     activationIds.push("typescript-platform"); assertions.platformFailure = true;
+    stage = "tenant-denial";
     const wrongTenant = request("http", "wrong-tenant"); wrongTenant.target.tenant = "foreign";
     await rejected(foreign.invoke(wrongTenant), (failure) => failure.grpcStatus === 7, "wrong-tenant-not-denied"); assertions.wrongTenant = true;
+    stage = "credential-denial";
     await rejected(denied.invoke(request("http", "wrong-auth")), (failure) => failure.grpcStatus === 16, "wrong-credential-not-denied"); assertions.wrongCredential = true;
+    stage = "response-limit";
     await rejected(small.invoke(request("http", "limited")), (failure) => failure.category === Category.Limit && failure.identity.activationId === "typescript-limited", "response-limit-not-enforced");
     activationIds.push("typescript-limited"); assertions.responseLimit = true;
     await terminal(client, "typescript-limited");
