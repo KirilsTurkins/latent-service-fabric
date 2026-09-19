@@ -3,8 +3,9 @@
 Phase 3 issue [#269](https://github.com/KirilsTurkins/latent-service-fabric/issues/269)
 extends the original read-only PR #297 with scoped token caching, coalesced
 on-demand refresh, credential rotation and authenticated writes. The complete
-`lsf-oci-bearer-v1` transport qualification also requires #270's DNS and redirect
-conformance; these authentication changes do not authorize either implicitly.
+`lsf-oci-bearer-v1` transport adds the separately configured
+[DNS and redirect policy](oci-network-profile.md); authentication alone does not
+authorize either implicitly.
 
 The permanent authority rules in [OCI registry adapter](oci-registry.md) continue
 to apply. A registry-provided challenge is untrusted protocol data, not authority
@@ -43,7 +44,8 @@ let config = RegistryConfig {
 ```
 
 The token `realm` must be an exact HTTPS URL with a host and without userinfo,
-query or fragment. A hostname realm requires at least one explicit `SocketAddr`
+query or fragment. With the ordinary constructors, a hostname realm requires
+at least one explicit `SocketAddr`
 and accepts at most 16; every address must use the realm's effective port and
 must not be unspecified. Token requests use a separate HTTP client and resolver
 mapping from registry requests. Both clients disable ambient proxies, redirects,
@@ -194,5 +196,7 @@ The real test pushes tiny packages and detached evidence, pulls by digest,
 discovers native referrers, checks pull-only write denial and clean client
 shutdown. The receipt records image/installer identities, source revision,
 tracked-tree state and cleanup. A working-tree receipt is diagnostic, not an
-immutable release claim. DNS, redirects, foreign storage endpoints and broader
-topologies remain #270; no mutable referrers-tag fallback is introduced.
+immutable release claim. The separate [network conformance path](oci-network-profile.md)
+adds explicit DNS and controlled-peer redirect validation without claiming
+untested hosted-storage topology support. No mutable referrers-tag fallback is
+introduced.
