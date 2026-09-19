@@ -16,8 +16,11 @@ npm ci --prefix sdk/typescript-client --ignore-scripts
 python3 tools/check_tool_versions.py
 
 (
+    python3 sdk/go/generate.py
+    python3 sdk/go/generate.py --check
     cd sdk/go
     go test -timeout 30s ./...
+    go test -race -timeout 60s ./transport -run 'TestCancellationQueueAndReservedRecovery|TestConcurrentCloseReapsPendingAndQueuedCalls|TestFailedStartupAndAdoptedConnectionOwnership'
 )
 
 npm --prefix sdk/typescript-client run build -- --noEmit
