@@ -27,6 +27,8 @@ use crate::config::{NodeSettings, ProviderIdentity};
 
 #[path = "http.rs"]
 mod http;
+#[path = "startup.rs"]
+mod startup;
 
 pub(in crate::standalone) struct ProviderRuntime {
     pub runtime: Arc<ActivationCapabilityRuntime>,
@@ -76,7 +78,8 @@ impl ProviderRuntime {
             blobs: None,
             descriptors: Vec::with_capacity(2),
         };
-        let installed = tokio::time::timeout(Duration::from_secs(30), async {
+        let deadline = Instant::now() + Duration::from_secs(30);
+        let installed = tokio::time::timeout_at(deadline.into(), async {
             let mut providers = Vec::with_capacity(2);
             if let Some(http) = &config.http {
                 let (provider, secrets) = http::install(&owner.pools, http).await?;
@@ -88,10 +91,17 @@ impl ProviderRuntime {
                 let root = settings
                     .data_directory
                     .join(format!("provider-blobs-{}", blob.identity.id));
-                let namespace = blob.namespace.clone();
-                let job = owner.pools.control_blocking(move || {
-                    LocalBlobStore::open(&root, &namespace, LocalBlobLimits::default())
-                })?;
+                let job = startup::admit(
+                    || {
+                        let root = root.clone();
+                        let namespace = blob.namespace.clone();
+                        owner.pools.control_blocking(move || {
+                            LocalBlobStore::open(&root, &namespace, LocalBlobLimits::default())
+                        })
+                    },
+                    deadline,
+                )
+                .await?;
                 let store = job.wait().await?.map_err(|_| unavailable())?;
                 let provider = LocalBlobProvider::install(
                     owner.pools.clone(),
