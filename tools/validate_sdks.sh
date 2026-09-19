@@ -16,6 +16,11 @@ npm ci --prefix sdk/typescript-client --ignore-scripts
 python3 tools/check_tool_versions.py
 
 (
+    export GOTOOLCHAIN=local GOWORK=off GOENV=off GOFLAGS=-mod=readonly
+    export GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
+    export GOPRIVATE= GONOPROXY= GONOSUMDB=
+    python3 -m unittest discover -s sdk/go -p 'test_*.py'
+    python3 sdk/go/dependencies.py --check
     python3 sdk/go/generate.py
     python3 sdk/go/generate.py --check
     cd sdk/go
@@ -36,19 +41,8 @@ javac --release 21 -d "${OUTPUT}/java" "${java_sources[@]}"
 java -cp "${OUTPUT}/java" dev.latent.sdk.InvocationIdentityTest
 python3 sdk/java-client/tools/build.py test
 
-dotnet build sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj \
-    --configuration Release \
-    --nologo \
-    --output "${OUTPUT}/dotnet/bin" \
-    -p:BaseIntermediateOutputPath="${OUTPUT}/dotnet/obj/" \
-    -p:ContinuousIntegrationBuild=true
-
-dotnet build sdk/dotnet/Latent.Sdk.SemanticTests/Latent.Sdk.SemanticTests.csproj \
-    --configuration Release \
-    --nologo \
-    --artifacts-path "${OUTPUT}/dotnet-semantic" \
-    -p:ContinuousIntegrationBuild=true
-dotnet "${OUTPUT}/dotnet-semantic/bin/Latent.Sdk.SemanticTests/release/Latent.Sdk.SemanticTests.dll"
+python3 -m unittest discover -s sdk/dotnet -p 'test_validate.py'
+python3 sdk/dotnet/validate.py --check
 
 cat > "${OUTPUT}/c/header-smoke.c" <<'EOF_C'
 #include <latent/latent.h>
@@ -84,3 +78,6 @@ ZIG_LOCAL_CACHE_DIR="${ZIG_LOCAL_CACHE}" \
     zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
     -I sdk/c/include sdk/c/tests/invocation_identity.c -o "${OUTPUT}/c/invocation-identity"
 "${OUTPUT}/c/invocation-identity"
+
+python3 sdk/c/tools/validate.py --build-dir "${TARGET_ROOT}/c-sdk"
+python3 sdk/c/tools/validate.py --build-dir "${TARGET_ROOT}/c-sdk-asan" --sanitize

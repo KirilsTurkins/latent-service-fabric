@@ -61,7 +61,7 @@ final class ProviderInput {
 
     RpcClient client(String tenant, boolean denied, boolean limited) {
         return new RpcClient(new ClientConfig(field("endpoint"), tenant, denied ? "LSF-PUBLIC-WRONG-NODE-TOKEN-TEST-ONLY" : token,
-                4, 262144, limited ? 64 : 131072, 3000, 2000, 3000));
+                4, 262144, limited ? 64 : 131072, 5000, 2000, 3000));
     }
 
     Management.InvokeRequest request(String provider, String identity, String function, String tenant, boolean exhaustFuel) {

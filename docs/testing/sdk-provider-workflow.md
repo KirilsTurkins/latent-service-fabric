@@ -136,3 +136,62 @@ are not load campaigns, universal latency claims or production certification.
 Failure reporting accepts only a bounded structured participant stage/reason
 token and finite category/gRPC code. Arbitrary stderr, server messages and
 additional fields are not copied into operator diagnostics.
+
+## Current native-client checkpoint
+
+The [2026-09-19 native-client checkpoint](../evidence/phase3-sdk-native-checkpoint.json)
+records fresh Java and C executions at integration `3584f589`. Both passed all
+18 participant assertions, retained nine actual activation identities and the
+original mutation operation, and independently closed all four started upstream
+holds. Each peer observed six authenticated requests and no unexpected requests;
+both nodes and clients were reaped with clean provider shutdown. The current
+Java SDK tree matches reviewed `c8229d5a`; C matches `bf466a53`. Original
+raw-receipt hashes and exact executable/fixture identities distinguish these
+executions from earlier receipts.
+
+The subsequent Go attempt failed during shared-node startup, before the native
+participant launched. It is not a successful Go run, a client transport failure,
+or evidence of a completed matrix. Diagnosis of the intermittent
+`startup-resource-exhausted` result remains under the provider integration.
+The new audit-recovery regression fixes an independently demonstrated startup
+defect but does not by itself explain or close this remaining failure. Current
+combined Rust/Node revalidation, .NET participant execution and the maintained
+six-language CI matrix also remain required. No failed attempt is overwritten
+or silently retried into a passing claim.
+
+## Integrated six-client gate
+
+`tools/run_sdk_provider_matrix.sh build` builds the six maintained native
+participants before fresh signed fixtures are exported. `run CLI NODE FIXTURE`
+then requires all six separate-node workflows to pass against identical node,
+CLI and fixture hashes. `tools/verify_sdk_provider_matrix.py` rejects missing
+languages, false assertions, mismatched inputs or unreaped owners; individual
+receipts never substitute for this aggregate. The required contracts CI job
+installs the pinned language toolchains and executes this gate. A failed run
+removes any previous aggregate instead of leaving a stale successful result.
+
+Subsequent individual Go and .NET runs passed their 18 checks after the
+reviewed provider startup repairs. Initial combined attempts still failed:
+Rust/Node/Go/C completed one attempt before Java failed, and other attempts
+observed a zero-work `Unavailable` activation or a held-operation rendezvous
+deadline. Those partial attempts are not a six-client PASS. Ordinary Java
+calls now explicitly use the existing five-second node ceiling; the separate
+500-millisecond held-deadline case and client transport defaults are unchanged.
+
+The node's read-only publication selection and revision-policy check can meet
+the authority's existing nonblocking fence during durable clock-lease renewal.
+Only the exact `admission-authority-busy` pre-reservation condition may yield
+inside the existing activation owner. It retains one immutable catalog,
+original incoming deadline, cancellation and transport-stop state, with a
+shared five-second maximum and one short sleep per attempt. It reserves no
+execution cell or quota while waiting and creates no background owner. No
+successful admission, preparation, guest invocation or external action is
+replayed. Revocation, poisoned state, uncovered clocks and other unavailable
+conditions still fail closed; the low-level authority fence is unchanged.
+
+The focused lifecycle regressions cover resolution and policy contention,
+one pinned generation and one admission, cancellation, exact incoming expiry,
+finite exhaustion and abandoned-owner cleanup. All 60 lifecycle tests and
+the admission tests pass locally. This source-level checkpoint still requires
+fresh complete matrix execution and exact-head CI before the shared gate or
+any remaining SDK acceptance is declared complete.

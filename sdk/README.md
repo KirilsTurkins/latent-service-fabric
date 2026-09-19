@@ -97,6 +97,13 @@ compatibility is claimed. No Protobuf field numbers or types change.
 
 ## Executable contract fixtures
 
+The [.NET transport](dotnet/README.md) implements the complete native profile
+and legacy asynchronous client with one bounded owned HTTP/2 connection.
+Its [qualification](dotnet/EVIDENCE.md) separates 521 controlled-peer checks
+from an actual 18-assertion separate-node provider run. It is a Linux host
+client, not a .NET guest binding. The maintained six-language real-node gate
+is tracked in PR #366 and remains required before transport-ticket closure.
+
 `tools/validate_sdks.sh` compiles and runs small Go, TypeScript, Java, .NET, and
 C fake-client fixtures. Rust equivalents run through `cargo test -p latent-sdk`.
 They exercise pending invocation with status/cancel by caller ID, all three

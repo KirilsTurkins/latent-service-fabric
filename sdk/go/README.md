@@ -16,7 +16,7 @@ remains available through `transport.NewLegacy` or `client.Legacy()`; the full
 
 ## Build and focused validation
 
-The qualified development toolchain is Linux x86-64 with Go **1.23.2**, Buf
+The qualified development toolchain is Linux x86-64 with Go **1.27.1**, Buf
 **1.72.0**, and Python 3.10 or newer. The repository's development image supplies
 these tools. Other OS/architecture combinations are not qualified by this
 delivery; the native participant deliberately requires Linux file permissions.
@@ -35,12 +35,17 @@ go build -trimpath -o target/provider-workflow ./cmd/provider-workflow
 ```
 
 Generation uses only the authoritative common, policy, capability and invocation
-Protobuf sources. It installs local `protoc-gen-go v1.36.6` and
-`protoc-gen-go-grpc v1.5.1` under this SDK's ignored `target/tools`, verifies both
-versions, and compares byte-for-byte with a fresh staged generation in `--check`
-mode. `GOTOOLCHAIN=local` prevents silent compiler upgrades. First use requires
-access to the pinned Go modules; dependencies and checksums are in `go.mod` and
-`go.sum`. No generated RPC files or globally installed plugins are committed.
+Protobuf sources. It builds local `protoc-gen-go v1.36.12` and the maintained
+`internal/rpcgen` unary-interface generator under this SDK's ignored
+`target/tools`, verifies the upstream plugin version, and compares byte-for-byte
+with fresh staged generation in `--check` mode. The private generated interface
+accepts Protobuf messages without depending on grpc-go. `GOTOOLCHAIN=local`
+prevents silent compiler upgrades. First use requires access to the pinned Go
+modules; dependencies and checksums are in `go.mod` and `go.sum`.
+`python3 sdk/go/dependencies.py --check` reproduces the complete selected graph
+and generator from those manifests; security checks include all three selected
+modules and the Go standard library. No generated RPC files or globally
+installed plugins are committed.
 The repository's `tools/validate_sdks.sh` runs generation, checking, the Go suite
 and the focused race checks. A plain Go build before generation is not the
 clean-checkout build procedure.
@@ -65,21 +70,22 @@ using or closing that connection. Borrowed/shared gRPC connections are not a
 supported ownership mode.
 
 The owner has one reusable HTTP/2 connection, bounded call admission, and a
-single lifetime watcher. It never creates replacement connections. A private
-connection pool permits exactly one reservation attempt per RPC, including
-`REFUSED_STREAM` and GOAWAY failure paths. Neither invocation nor mutation is
-automatically retried. `Close` is concurrent-safe and idempotent: it stops
+single lifetime watcher. It never creates replacement connections. The Go 1.27
+standard-library `http.ClientConn` owns that one connection; after finite
+admission and one successful wire reservation, the client calls its `RoundTrip`
+exactly once. It does not use the retrying `http.Transport.RoundTrip` path.
+Controlled `REFUSED_STREAM` and GOAWAY peers each observe one request, not an
+automatic invocation or mutation replay. `Close` is concurrent-safe and
+idempotent: it stops
 admission, wakes queued calls, cancels local waits, closes the actual socket and
 waits for call and socket-I/O owners. It sends no implicit `Cancel` RPC.
 
 `Snapshot().Reaped` reports closed transport, retired call/queue/socket owners
 and the retired watcher. It is not proof of remote guest/provider retirement,
-zero process RSS or zero global Go runtime goroutines. The pinned HTTP/2 library
-can retain a fixed unused-connection cleanup timer for up to five seconds;
-its closed-state pending-reset counter can also remain nonzero without a live
-stream/socket owner. Live reset/concurrency slots still count against admission
-until the transport retires them. Neither case acquires deployment-specific
-workers or additional sockets.
+zero process RSS or zero global Go runtime goroutines. Library concurrency
+slots remain distinct from the SDK's active calls; live wire reservations count
+against admission until the standard-library connection retires them. This
+does not acquire deployment-specific workers or additional sockets.
 
 The explicit bearer is sent only on this connection. Config/client formatting
 and local errors are redacted; the client's own bearer is redacted from typed

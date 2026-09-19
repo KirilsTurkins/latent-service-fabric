@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"io"
+	"log"
 	"math"
 	"net"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/proto"
 	"latent.dev/sdk/go/internal/rpc/invocationv1"
 	"latent.dev/sdk/go/profile"
@@ -29,49 +29,80 @@ type controlledPeer struct {
 	requests atomic.Int64
 	mutex    sync.Mutex
 	sockets  []net.Conn
+	live     map[net.Conn]bool
 	wait     sync.WaitGroup
 	closed   chan struct{}
 }
 
-func newPeer(test *testing.T, handler http.HandlerFunc, configure ...func(*http2.Server)) *controlledPeer {
+type peerListener struct {
+	net.Listener
+	peer *controlledPeer
+}
+
+func (listener *peerListener) Accept() (net.Conn, error) {
+	socket, failure := listener.Listener.Accept()
+	if failure != nil {
+		return nil, failure
+	}
+	if listener.peer.accepted.Add(1) > 16 {
+		_ = socket.Close()
+		return nil, net.ErrClosed
+	}
+	listener.peer.mutex.Lock()
+	listener.peer.sockets = append(listener.peer.sockets, socket)
+	listener.peer.live[socket] = true
+	listener.peer.wait.Add(1)
+	listener.peer.mutex.Unlock()
+	return socket, nil
+}
+
+func newPeer(test *testing.T, handler http.HandlerFunc, configure ...func(*http.HTTP2Config)) *controlledPeer {
 	test.Helper()
 	listener, failure := net.Listen("tcp", "127.0.0.1:0")
 	if failure != nil {
 		test.Fatal(failure)
 	}
-	peer := &controlledPeer{listener: listener, endpoint: "http://" + listener.Addr().String(), closed: make(chan struct{})}
-	peer.wait.Add(1)
-	go func() {
-		defer peer.wait.Done()
-		for {
-			socket, failure := listener.Accept()
-			if failure != nil {
-				return
+	peer := &controlledPeer{listener: listener, endpoint: "http://" + listener.Addr().String(),
+		closed: make(chan struct{}), live: make(map[net.Conn]bool)}
+	protocols := &http.Protocols{}
+	protocols.SetUnencryptedHTTP2(true)
+	http2Config := &http.HTTP2Config{MaxConcurrentStreams: 32, MaxReadFrameSize: 16 * 1024,
+		MaxReceiveBufferPerConnection: 64 * 1024, MaxReceiveBufferPerStream: 64 * 1024}
+	for _, modify := range configure {
+		modify(http2Config)
+	}
+	server := &http.Server{
+		Protocols: protocols, HTTP2: http2Config, MaxHeaderBytes: 32 * 1024,
+		ReadHeaderTimeout: 2 * time.Second, ReadTimeout: 5 * time.Second,
+		WriteTimeout: 5 * time.Second, IdleTimeout: 5 * time.Second,
+		ErrorLog: log.New(io.Discard, "", 0),
+		Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			peer.requests.Add(1)
+			if request.ProtoMajor != 2 {
+				test.Error("controlled peer accepted a non-HTTP/2 request")
 			}
-			if peer.accepted.Add(1) > 16 {
-				_ = socket.Close()
+			handler(writer, request)
+		}),
+		ConnState: func(socket net.Conn, state http.ConnState) {
+			if state != http.StateClosed && state != http.StateHijacked {
 				return
 			}
 			peer.mutex.Lock()
-			peer.sockets = append(peer.sockets, socket)
+			if peer.live[socket] {
+				delete(peer.live, socket)
+				peer.wait.Done()
+			}
 			peer.mutex.Unlock()
-			peer.wait.Add(1)
-			go func() {
-				defer peer.wait.Done()
-				defer socket.Close()
-				server := &http2.Server{MaxConcurrentStreams: 32, MaxReadFrameSize: 16 * 1024, IdleTimeout: 5 * time.Second}
-				for _, modify := range configure {
-					modify(server)
-				}
-				server.ServeConn(socket, &http2.ServeConnOpts{Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-					peer.requests.Add(1)
-					handler(writer, request)
-				})})
-			}()
-		}
+		},
+	}
+	peer.wait.Add(1)
+	go func() {
+		defer peer.wait.Done()
+		_ = server.Serve(&peerListener{Listener: listener, peer: peer})
 	}()
 	test.Cleanup(func() {
 		_ = listener.Close()
+		_ = server.Close()
 		peer.mutex.Lock()
 		for _, socket := range peer.sockets {
 			_ = socket.Close()

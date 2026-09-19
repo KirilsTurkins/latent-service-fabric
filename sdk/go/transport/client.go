@@ -6,10 +6,12 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"golang.org/x/net/http2"
 	"latent.dev/sdk/go/internal/rpc/controlv1"
 	"latent.dev/sdk/go/internal/rpc/invocationv1"
 	"latent.dev/sdk/go/profile"
@@ -18,8 +20,8 @@ import (
 type Client struct {
 	config     Config
 	endpoint   *url.URL
-	channel    *http2.ClientConn
-	owner      *http2.Transport
+	channel    *http.ClientConn
+	owner      *http.Transport
 	socket     *ownedSocket
 	invocation invocationv1.InvocationServiceClient
 	policy     controlv1.PolicyServiceClient
@@ -64,7 +66,7 @@ func newClient(ctx context.Context, config Config, supplied *net.TCPConn, adopt 
 	if failure != nil {
 		return nil, failure
 	}
-	if ctx == nil || http2.VerboseLogs || (adopt && supplied == nil) {
+	if ctx == nil || http2DebugEnabled() || (adopt && supplied == nil) {
 		return nil, invalidConfig()
 	}
 	startup, cancel := context.WithTimeout(ctx, config.ConnectTimeout)
@@ -110,18 +112,37 @@ func newClient(ctx context.Context, config Config, supplied *net.TCPConn, adopt 
 	lifetime, stop := context.WithCancel(context.Background())
 	client := &Client{config: config, endpoint: endpoint, lifetime: lifetime, stop: stop,
 		wake: make(chan struct{}), fault: make(chan struct{}, 1), done: make(chan struct{}), watchDone: make(chan struct{})}
-	client.socket = &ownedSocket{Conn: connection, fault: client.fault}
-	owner := &http2.Transport{
-		AllowHTTP: true, DisableCompression: true, StrictMaxConcurrentStreams: true,
-		ConnPool:          &singleConnectionPool{client: client},
-		MaxHeaderListSize: config.MaxHeaderBytes, MaxReadFrameSize: 16 * 1024,
-		MaxDecoderHeaderTableSize: 4096, MaxEncoderHeaderTableSize: 4096,
-		WriteByteTimeout: config.ConnectTimeout,
+	client.socket = &ownedSocket{Conn: connection, fault: client.fault, settings: newPeerSettings()}
+	var protocols http.Protocols
+	protocols.SetUnencryptedHTTP2(true)
+	var handed atomic.Bool
+	owner := &http.Transport{
+		Protocols: &protocols, DisableCompression: true,
+		MaxResponseHeaderBytes: int64(config.MaxHeaderBytes),
+		DialContext: func(_ context.Context, network, address string) (net.Conn, error) {
+			if network != "tcp" || address != endpoint.Host || !handed.CompareAndSwap(false, true) {
+				return nil, errors.New("replacement connections are disabled")
+			}
+			return client.socket, nil
+		},
+		HTTP2: &http.HTTP2Config{
+			StrictMaxConcurrentRequests: true, MaxReadFrameSize: 16 * 1024,
+			MaxDecoderHeaderTableSize: 4096, MaxEncoderHeaderTableSize: 4096,
+			MaxReceiveBufferPerConnection: 64 * 1024, MaxReceiveBufferPerStream: 64 * 1024,
+			WriteByteTimeout: config.ConnectTimeout,
+		},
 	}
 	client.owner = owner
-	client.channel, failure = owner.NewClientConn(client.socket)
+	client.channel, failure = owner.NewClientConn(startup, endpoint.Scheme, endpoint.Host)
 	if failure == nil {
-		failure = client.channel.Ping(startup)
+		select {
+		case <-client.socket.settings.ready:
+			failure = client.channel.Err()
+		case <-client.fault:
+			failure = net.ErrClosed
+		case <-startup.Done():
+			failure = startup.Err()
+		}
 	}
 	if failure != nil {
 		stop()
@@ -136,7 +157,7 @@ func newClient(ctx context.Context, config Config, supplied *net.TCPConn, adopt 
 		}
 		return nil, localFailure(profile.FailureCategoryTransport, "HTTP/2 startup failed")
 	}
-	if client.channel.State().MaxConcurrentStreams <= uint32(config.ReservedRecovery) {
+	if client.socket.settings.maximum.Load() <= uint32(config.ReservedRecovery) {
 		stop()
 		_ = client.channel.Close()
 		return nil, localFailure(profile.FailureCategoryTransport, "peer cannot provide the configured recovery capacity")
@@ -179,7 +200,6 @@ func (client *Client) shutdown() {
 	client.closeOnce.Do(func() {
 		client.mutex.Lock()
 		client.closed = true
-		client.channel.SetDoNotReuse()
 		client.stop()
 		close(client.wake)
 		client.mutex.Unlock()
@@ -230,9 +250,8 @@ func (client *Client) acquire(ctx context.Context, recovery bool) (func(), error
 			}
 			return nil, localFailure(profile.FailureCategoryTransport, "client is closed")
 		}
-		wire := client.channel.State()
-		wireOwners := wire.StreamsActive + wire.StreamsPending + wire.StreamsReserved
-		limit := int(min(uint32(client.config.MaxInFlight), wire.MaxConcurrentStreams))
+		wireOwners := client.channel.InFlight()
+		limit := int(min(uint32(client.config.MaxInFlight), client.socket.settings.maximum.Load()))
 		if client.active < limit && wireOwners < limit &&
 			(recovery || client.normal < limit-client.config.ReservedRecovery) {
 			if waiting {
@@ -290,12 +309,11 @@ type Snapshot struct {
 func (client *Client) Snapshot() Snapshot {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
-	state := client.channel.State()
 	result := Snapshot{Closed: client.closed, InFlight: client.active, Queued: client.queued,
-		WireConcurrencySlots: state.StreamsActive + state.StreamsPending + state.StreamsReserved}
+		WireConcurrencySlots: client.channel.InFlight()}
 	select {
 	case <-client.watchDone:
-		result.Reaped = state.Closed && result.InFlight == 0 && result.Queued == 0 && client.socket.inFlight() == 0
+		result.Reaped = client.channel.Err() != nil && result.InFlight == 0 && result.Queued == 0 && client.socket.inFlight() == 0
 	default:
 	}
 	return result
@@ -303,10 +321,11 @@ func (client *Client) Snapshot() Snapshot {
 
 type ownedSocket struct {
 	net.Conn
-	fault  chan struct{}
-	mutex  sync.Mutex
-	active int
-	closed bool
+	fault    chan struct{}
+	mutex    sync.Mutex
+	active   int
+	closed   bool
+	settings *peerSettings
 }
 
 func (socket *ownedSocket) Read(buffer []byte) (int, error) {
@@ -315,6 +334,12 @@ func (socket *ownedSocket) Read(buffer []byte) (int, error) {
 	}
 	defer socket.end()
 	count, failure := socket.Conn.Read(buffer)
+	if count != 0 && socket.settings != nil {
+		if invalid := socket.settings.observe(buffer[:count]); invalid != nil {
+			count = 0
+			failure = invalid
+		}
+	}
 	if failure != nil {
 		select {
 		case socket.fault <- struct{}{}:
@@ -361,51 +386,49 @@ func (socket *ownedSocket) inFlight() int {
 	return socket.active
 }
 
-type singleConnectionPool struct {
-	client *Client
-}
-
-func (pool *singleConnectionPool) GetClientConn(request *http.Request, authority string) (*http2.ClientConn, error) {
+func (client *Client) roundTrip(request *http.Request) (*http.Response, error) {
 	state, valid := request.Context().Value(callKey{}).(*callState)
-	if !valid || authority != pool.client.endpoint.Host || !state.attempted.CompareAndSwap(false, true) {
+	if !valid || request.URL.Host != client.endpoint.Host || !state.attempted.CompareAndSwap(false, true) {
 		return nil, errors.New("automatic RPC resubmission is disabled")
 	}
 	poll := time.NewTicker(5 * time.Millisecond)
 	defer poll.Stop()
 	for {
-		pool.client.mutex.Lock()
+		client.mutex.Lock()
 		if request.Context().Err() != nil {
-			pool.client.mutex.Unlock()
+			client.mutex.Unlock()
 			return nil, request.Context().Err()
 		}
-		wire := pool.client.channel.State()
-		available := wire.StreamsActive+wire.StreamsPending+wire.StreamsReserved < pool.client.config.MaxInFlight
-		if pool.client.closed || wire.Closed || wire.Closing {
-			pool.client.mutex.Unlock()
+		available := client.channel.InFlight() < client.config.MaxInFlight && client.channel.Available() > 0
+		if client.closed || client.channel.Err() != nil {
+			client.mutex.Unlock()
 			return nil, errors.New("single connection is closed")
 		}
-		if available && pool.client.channel.ReserveNewRequest() {
+		if available && client.channel.Reserve() == nil {
 			setTimeoutHeader(request)
 			state.dispatched = true
-			pool.client.mutex.Unlock()
-			return pool.client.channel, nil
+			client.mutex.Unlock()
+			return client.channel.RoundTrip(request)
 		}
-		pool.client.mutex.Unlock()
+		client.mutex.Unlock()
 		select {
 		case <-request.Context().Done():
 			return nil, request.Context().Err()
-		case <-pool.client.lifetime.Done():
+		case <-client.lifetime.Done():
 			return nil, errors.New("single connection is closed")
 		case <-poll.C:
 		}
 	}
 }
 
-func (pool *singleConnectionPool) MarkDead(*http2.ClientConn) {
-	select {
-	case pool.client.fault <- struct{}{}:
-	default:
+func http2DebugEnabled() bool {
+	for _, setting := range strings.Split(os.Getenv("GODEBUG"), ",") {
+		name, value, present := strings.Cut(setting, "=")
+		if present && name == "http2debug" && value != "0" {
+			return true
+		}
 	}
+	return false
 }
 
 func contextFailure(failure error) *profile.ClientFailure {
