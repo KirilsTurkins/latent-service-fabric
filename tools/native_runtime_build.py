@@ -64,7 +64,8 @@ def shared_license(package: dict, packages: list[dict], checksums: dict, policy:
     require(len(donors) == 1, "shared-license-donor-missing")
     donor = donors[0]
     for entry in (package, donor):
-        require(entry.get("repository", "").removesuffix(".git") == source["repository"]
+        repository = (entry.get("repository") or source["repository"]).removesuffix(".git")
+        require((repository == source["repository"] or repository.startswith(source["repository"] + "/tree/"))
                 and entry.get("license") == source["license"]
                 and checksums.get((entry["name"], entry["version"], entry.get("source"))), "shared-license-source-identity-mismatch")
         vcs = document(files.read(Path(entry["manifest_path"]).parent / ".cargo_vcs_info.json", 8192))

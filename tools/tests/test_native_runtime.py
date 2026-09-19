@@ -91,6 +91,7 @@ class ManifestTests(unittest.TestCase):
                 path, evidence = shared_license(package, [donor], checksums, policy)
                 self.assertEqual(path, root / "LICENSE")
                 self.assertEqual(evidence["donorCrateSha256"], "c" * 64)
+                shared_license({**package, "repository": None}, [donor], checksums, policy)
                 for change in ({"repository": "https://example.invalid/other"}, {"sourceCommit": "d" * 40},
                                {"sha256": "d" * 64}, {"license": "Apache-2.0"}, {"packages": {"example-child": "2.0.0"}}):
                     with self.assertRaises(InstallError):
