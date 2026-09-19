@@ -164,12 +164,18 @@ public final class RpcClient implements Management.ClientProfile, LatentClient, 
             if (active.size() >= config.maximumCalls) return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.LIMIT, identity)));
             try {
                 long millis = options.timeoutMillis().orElse((long) config.timeoutMillis);
-                Protocol.require(millis >= 0 && millis <= Long.MAX_VALUE / 1000000);
-                millis = Math.min(millis, config.timeoutMillis);
+                if (Long.compareUnsigned(millis, config.timeoutMillis) > 0) {
+                    return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.LIMIT, identity)));
+                }
                 if (request instanceof Management.InvokeRequest invocation && invocation.deadlineUnixMillis().isPresent()) {
                     long absolute = invocation.deadlineUnixMillis().get();
-                    Protocol.require(absolute >= 0);
-                    millis = Math.min(millis, Math.max(0, absolute - System.currentTimeMillis()));
+                    long current = System.currentTimeMillis();
+                    Protocol.require(current >= 0);
+                    if (Long.compareUnsigned(absolute, current) <= 0) millis = 0;
+                    else {
+                        long available = absolute - current;
+                        if (Long.compareUnsigned(available, millis) < 0) millis = available;
+                    }
                 }
                 long remaining = TimeUnit.MILLISECONDS.toNanos(millis) - (System.nanoTime() - started);
                 if (remaining <= 0) return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.DEADLINE, identity)));

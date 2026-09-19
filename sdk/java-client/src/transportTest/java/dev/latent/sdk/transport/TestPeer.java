@@ -35,6 +35,7 @@ final class TestPeer implements AutoCloseable {
     final AtomicInteger cancellations = new AtomicInteger();
     final Set<Object> connections = ConcurrentHashMap.newKeySet();
     final Map<String, Invocation.InvokeRequest> requests = new ConcurrentHashMap<>();
+    final Map<String, Long> remainingDeadlines = new ConcurrentHashMap<>();
     final Map<String, StreamObserver<Invocation.InvokeResponse>> pending = new ConcurrentHashMap<>();
     final Map<String, Invocation.ActivationStatus> statuses = new ConcurrentHashMap<>();
     final Map<String, PolicyOuterClass.ApplyPolicyRequest> mutations = new ConcurrentHashMap<>();
@@ -81,6 +82,7 @@ final class TestPeer implements AutoCloseable {
             invocations.incrementAndGet(); captured = request;
             String identity = request.hasActivationId() ? request.getActivationId() : "server-assigned";
             requests.put(identity, request);
+            remainingDeadlines.put(identity, io.grpc.Context.current().getDeadline().timeRemaining(TimeUnit.NANOSECONDS));
             if (!request.getTarget().getTenant().equals("tenant-a")) {
                 observer.onError(Status.PERMISSION_DENIED.asRuntimeException()); return;
             }

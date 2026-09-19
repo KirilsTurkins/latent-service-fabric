@@ -49,6 +49,12 @@ public final class TransportTest {
                 "{}", 0, "latent-capability-policy-v1", Management.CapabilityPolicyRecordKind.POLICY, "", false)), Optional.of(0L), operation);
     }
 
+    static Management.InvokeRequest invokeUntil(String identity, String function, long deadline) {
+        var original = invoke(identity, function);
+        return new Management.InvokeRequest(original.activationId(), original.parentActivationId(), original.rootActivationId(), original.target(),
+                original.payload(), original.mediaType(), Optional.of(deadline), original.priority(), original.idempotencyKey(), original.budget(), original.metadata());
+    }
+
     static void allOperationsAndSnapshots() throws Exception {
         try (var peer = new TestPeer(); var client = peer.client()) {
             check(client.snapshot().activeCalls() == 0 && peer.connections.isEmpty(), "lazy connection");
@@ -97,7 +103,7 @@ public final class TransportTest {
     static void localLimitsAndDeadlines() throws Exception {
         try (var peer = new TestPeer(); var client = peer.client()) {
             check(failure(client.invoke(invoke("zero", "echo"), new Management.CallOptions(Optional.of(0L)))).category().equals(Management.FailureCategory.DEADLINE), "zero deadline");
-            check(failure(client.invoke(invoke("max", "echo"), new Management.CallOptions(Optional.of(-1L)))).category().equals(Management.FailureCategory.INVALID_REQUEST), "u64 duration checked");
+            check(failure(client.invoke(invoke("max", "echo"), new Management.CallOptions(Optional.of(-1L)))).category().equals(Management.FailureCategory.LIMIT), "u64 duration over configured cap");
             check(failure(client.listPolicies(new Management.ListPoliciesRequest(Management.CapabilityPolicyRecordKind.POLICY,
                     Optional.of(new Management.PageRequest(0, Optional.empty()))), OPTIONS)).category().equals(Management.FailureCategory.INVALID_REQUEST), "policy zero invalid");
             check(failure(client.listPolicies(new Management.ListPoliciesRequest(Management.CapabilityPolicyRecordKind.POLICY,
@@ -117,6 +123,60 @@ public final class TransportTest {
             check(timed.category().equals(Management.FailureCategory.DEADLINE) && timed.dispatched()
                     && timed.outcome().equals(Management.OutcomeKnowledge.UNKNOWN) && timed.identity().activationId().equals(Optional.of("timed")), "single deadline and uncertainty");
             check(peer.invocations.get() == 1, "no deadline retry");
+        }
+    }
+
+    static void unsignedDeadlineWireAndTimeoutLimits() throws Exception {
+        try (var peer = new TestPeer(); var client = new RpcClient(new ClientConfig(peer.endpoint(), "tenant-a", "test-only-java-token",
+                4, 1048576, 1048576, 2000, 1000, 3000))) {
+            for (long timeout : new long[] {2001, 30001, Long.MAX_VALUE, Long.MIN_VALUE, -1}) {
+                String identity = "option-" + Long.toUnsignedString(timeout);
+                var rejected = failure(client.invoke(invoke(identity, "echo"), new Management.CallOptions(Optional.of(timeout))));
+                check(rejected.category().equals(Management.FailureCategory.LIMIT) && !rejected.dispatched()
+                        && rejected.outcome().equals(Management.OutcomeKnowledge.NOT_DISPATCHED)
+                        && rejected.identity().activationId().equals(Optional.of(identity)), "unsigned option overlimit is uniform");
+            }
+            for (long absolute : new long[] {0, 1, System.currentTimeMillis() - 1}) {
+                check(failure(client.invoke(invokeUntil("expired", "echo", absolute), OPTIONS)).category()
+                        .equals(Management.FailureCategory.DEADLINE), "unsigned past deadline expires locally");
+            }
+            check(peer.connections.isEmpty(), "expired and overlimit clocks open no socket");
+            for (long absolute : new long[] {Long.MAX_VALUE, Long.MIN_VALUE, -1}) {
+                String identity = "clock-" + Long.toUnsignedString(absolute);
+                check(get(client.invoke(invokeUntil(identity, "echo", absolute), OPTIONS)).value().activationId().equals(identity), "full unsigned deadline executes");
+                var captured = peer.requests.get(identity);
+                check(captured.hasDeadlineUnixMillis() && captured.getDeadlineUnixMillis() == absolute, "absolute deadline wire bits unchanged");
+                long remaining = peer.remainingDeadlines.get(identity);
+                check(remaining > 0 && remaining <= TimeUnit.MILLISECONDS.toNanos(2001), "huge wire deadline retains finite local cap");
+            }
+            var pending = client.invoke(invokeUntil("clock-held", "hold", -1), new Management.CallOptions(Optional.of(500L)));
+            until(() -> peer.pending.containsKey("clock-held"));
+            var expired = failure(pending);
+            check(expired.category().equals(Management.FailureCategory.DEADLINE) && expired.dispatched()
+                    && expired.outcome().equals(Management.OutcomeKnowledge.UNKNOWN), "maximum wire deadline cannot extend local timeout");
+            check(peer.requests.get("clock-held").getDeadlineUnixMillis() == -1 && peer.invocations.get() == 4, "timeout does not rewrite or retry invocation");
+        }
+    }
+
+    static void resetGoAwayAndUnavailableNeverReplay() throws Exception {
+        for (var fault : FramedPeer.Fault.values()) {
+            for (boolean mutation : new boolean[] {false, true}) {
+                try (var peer = new FramedPeer(fault); var client = new RpcClient(ClientConfig.loopback(peer.endpoint(), "tenant-a", "test-only-java-token"))) {
+                    var rejected = mutation ? failure(client.applyPolicy(policy("one-attempt"), OPTIONS))
+                            : failure(client.invoke(invoke("one-attempt", "echo"), OPTIONS));
+                    peer.checkHealthy();
+                    check(rejected.grpcStatus().equals(Optional.of(14)) && rejected.dispatched()
+                            && rejected.outcome().equals(Management.OutcomeKnowledge.UNKNOWN), "wire refusal stays uncertain");
+                    check((mutation ? rejected.identity().operationId() : rejected.identity().activationId())
+                            .equals(Optional.of("one-attempt")), "wire refusal retains exact recovery identity");
+                    check(get(client.getActivation(new Management.GetActivationRequest("probe"), OPTIONS)).value().activationId().equals("probe"), "explicit subsequent status remains available");
+                    check(client.shutdown(Duration.ofSeconds(3)).clean(), "refused call channel retires");
+                    until(() -> peer.openSockets.get() == 0);
+                    peer.checkHealthy();
+                    check(peer.requests.get() == 1 && peer.probes.get() == 1, "no transparent Invoke or mutation replay");
+                    check(peer.connections.get() <= 2 && (fault != FramedPeer.Fault.GOAWAY || peer.connections.get() == 2), "bounded reconnect supports only the explicit new call");
+                }
+            }
         }
     }
 
@@ -308,6 +368,8 @@ public final class TransportTest {
         FixtureCodecTest.run();
         allOperationsAndSnapshots();
         localLimitsAndDeadlines();
+        unsignedDeadlineWireAndTimeoutLimits();
+        resetGoAwayAndUnavailableNeverReplay();
         cancellationCapacityAndShutdown();
         outcomesAuthAndRecovery();
         rawAuditAndTypedDetails();
@@ -315,6 +377,6 @@ public final class TransportTest {
         legacyAndConfiguration();
         blockedCallbackShutdownReportsRealOwners();
         concurrentShutdownAndClose();
-        System.out.println("Java transport: nine bounded TCP/protocol suites passed");
+        System.out.println("Java transport: eleven bounded TCP/protocol suites passed");
     }
 }
