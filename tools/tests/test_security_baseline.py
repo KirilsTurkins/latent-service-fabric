@@ -156,17 +156,22 @@ class SecurityFixtureTests(unittest.TestCase):
 
     def test_legacy_release_absent_features_do_not_hide_partial_or_unknown_manifests(self) -> None:
         from tools.security_common import tracked_paths
-        optional = ("examples/renderer-profile/", ".github/security/")
+        optional = ("examples/renderer-profile/", ".github/security/", "website/", "tools/native-fixture/")
         legacy_paths = [path for path in tracked_paths(ROOT) if not path.startswith(optional)]
         with patch("tools.security_inventory.tracked_paths", return_value=legacy_paths):
             packages, records = inventory(ROOT)
         absent = {entry["path"] for entry in records if entry["coverage"] == "not-shipped-at-source-revision"}
-        self.assertEqual(absent, {"examples/renderer-profile/package.json", ".github/security/requirements.txt"})
+        self.assertEqual(absent, {"examples/renderer-profile/package.json", ".github/security/requirements.txt",
+                                 "website/package.json", "tools/native-fixture/Cargo.toml"})
         self.assertTrue(any(package.path == "controls/.github/security/requirements.txt" for package in packages))
         self.assertFalse(any(package.path.startswith("examples/renderer-profile/") for package in packages))
         for partial in ("examples/renderer-profile/README.md", ".github/security/unexpected.json"):
             with self.subTest(partial=partial), patch("tools.security_inventory.tracked_paths", return_value=[*legacy_paths, partial]):
                 with self.assertRaisesRegex(SecurityError, "unreviewed-or-missing-dependency-manifest"):
+                    inventory(ROOT)
+        for partial in ("website/README.md", "tools/native-fixture/README.md"):
+            with self.subTest(partial=partial), patch("tools.security_inventory.tracked_paths", return_value=[*legacy_paths, partial]):
+                with self.assertRaises((OSError, SecurityError)):
                     inventory(ROOT)
 
     def test_node_sdk_inventory_includes_pinned_runtime_and_development_dependencies(self) -> None:

@@ -82,7 +82,7 @@ impl BindingLimits {
         Ok(())
     }
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
 pub(in crate::deployments) struct StoredBinding {
     pub manifest: String,

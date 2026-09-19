@@ -1,4 +1,4 @@
-//! Interface-only Rust SDK for LSF clients and guest-facing abstractions.
+//! Typed Rust SDK for LSF clients with an optional bounded RPC transport.
 
 #![forbid(unsafe_code)]
 
@@ -13,6 +13,9 @@ pub use latent_core::{ErrorDetail, PlatformError};
 pub mod management;
 mod publication;
 pub use publication::{PublicationIdentity, PublicationRef, ReleaseSelector};
+
+#[cfg(feature = "transport")]
+pub mod network;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvocationTarget {
