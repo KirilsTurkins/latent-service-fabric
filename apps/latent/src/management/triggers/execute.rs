@@ -30,31 +30,9 @@ fn check<T: Message>(value: &T, session: &Session) -> Result<(), Failure> {
 
 pub async fn execute(operation: TriggerOperation, session: &Session) -> Result<Outcome, Failure> {
     match operation {
-        TriggerOperation::Apply(request) => apply(request, session).await,
+        TriggerOperation::Apply(request) => apply(*request, session).await,
         TriggerOperation::Delete(request) => delete(request, session).await,
-        TriggerOperation::Get(request) => {
-            let id = request.id.clone();
-            let value = session
-                .call(client(session).get_trigger(session.request(request)?))
-                .await?
-                .into_inner();
-            check(&value, session)?;
-            let durability = response::durability(value.durability)?;
-            let trigger = value
-                .trigger
-                .map(|entry| response::trigger(entry, session.tenant(), Some(&id)))
-                .transpose()?;
-            let found = trigger.is_some();
-            let data = json!({"trigger":trigger, "stateVersion":value.state_version.to_string(),
-                "routeGeneration":value.route_generation.to_string(), "durability":durability});
-            let mut output = if found {
-                Outcome::success(data)
-            } else {
-                Outcome::not_found(data)
-            };
-            output.outcome_known = durability == "confirmed";
-            Ok(output)
-        }
+        TriggerOperation::Get(request) => get(request, session).await,
         TriggerOperation::List(request) => {
             let page = request.page.as_ref().ok_or_else(invalid_response)?;
             let maximum = page.page_size as usize;
@@ -66,7 +44,7 @@ pub async fn execute(operation: TriggerOperation, session: &Session) -> Result<O
                 .into_inner();
             check(&value, session)?;
             let next = value.page.ok_or_else(invalid_response)?.next_page_token;
-            response::page(&next, previous.as_ref(), 128)?;
+            response::page(next.as_ref(), previous.as_ref(), 128)?;
             if value.triggers.len() > maximum || (next.is_some() && value.triggers.is_empty()) {
                 return Err(invalid_response());
             }
@@ -129,6 +107,30 @@ pub async fn execute(operation: TriggerOperation, session: &Session) -> Result<O
             Ok(output)
         }
     }
+}
+
+async fn get(request: proto::GetTriggerRequest, session: &Session) -> Result<Outcome, Failure> {
+    let id = request.id.clone();
+    let value = session
+        .call(client(session).get_trigger(session.request(request)?))
+        .await?
+        .into_inner();
+    check(&value, session)?;
+    let durability = response::durability(value.durability)?;
+    let trigger = value
+        .trigger
+        .map(|entry| response::trigger(entry, session.tenant(), Some(&id)))
+        .transpose()?;
+    let found = trigger.is_some();
+    let data = json!({"trigger":trigger, "stateVersion":value.state_version.to_string(),
+        "routeGeneration":value.route_generation.to_string(), "durability":durability});
+    let mut output = if found {
+        Outcome::success(data)
+    } else {
+        Outcome::not_found(data)
+    };
+    output.outcome_known = durability == "confirmed";
+    Ok(output)
 }
 
 async fn apply(request: proto::ApplyTriggerRequest, session: &Session) -> Result<Outcome, Failure> {

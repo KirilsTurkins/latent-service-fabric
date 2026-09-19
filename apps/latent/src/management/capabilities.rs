@@ -127,7 +127,7 @@ pub async fn execute(
                 .as_ref()
                 .ok_or_else(invalid_response)?
                 .next_page_token;
-            page(next, previous.as_ref(), 160)?;
+            page(next.as_ref(), previous.as_ref(), 160)?;
             if next.is_some() && value.capabilities.is_empty() {
                 return Err(invalid_response());
             }

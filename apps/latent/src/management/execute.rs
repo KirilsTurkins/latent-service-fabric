@@ -23,9 +23,9 @@ macro_rules! call {
     }};
 }
 
-pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome, Failure> {
-    if matches!(
-        &operation,
+fn is_phase2(operation: &Operation) -> bool {
+    matches!(
+        operation,
         Operation::PublishRelease(_)
             | Operation::ApplyDeployment(_)
             | Operation::DeleteDeployment(_)
@@ -42,7 +42,11 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
             | Operation::LookupRolloutReceipt(_)
             | Operation::EvaluateRollout(_)
             | Operation::QueryAudit(_)
-    ) {
+    )
+}
+
+pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome, Failure> {
+    if is_phase2(&operation) {
         return super::phase2::execute(operation, session).await;
     }
     match operation {

@@ -71,8 +71,8 @@ impl TriggerCommand {
                 page_token,
                 ..
             } => {
-                optional(service, 128)?;
-                optional(page_token, 128)
+                optional(service.as_ref(), 128)?;
+                optional(page_token.as_ref(), 128)
             }
         }
     }
@@ -137,9 +137,9 @@ impl CapabilityCommand {
                 ..
             } => {
                 identifier(deployment, 256)?;
-                optional(provider, 128)?;
-                optional(contract_prefix, 128)?;
-                optional(page_token, 160)
+                optional(provider.as_ref(), 128)?;
+                optional(contract_prefix.as_ref(), 128)?;
+                optional(page_token.as_ref(), 160)
             }
             Self::Explain {
                 deployment,
@@ -156,7 +156,7 @@ impl CapabilityCommand {
     }
 }
 
-fn optional(value: &Option<String>, maximum: usize) -> Result<(), Failure> {
+fn optional(value: Option<&String>, maximum: usize) -> Result<(), Failure> {
     if let Some(value) = value {
         identifier(value, maximum)?;
         if !value.is_ascii() {

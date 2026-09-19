@@ -125,7 +125,8 @@ fn preparation_is_local_and_canonical_without_component_substitution() {
         match change {
             "tenant" => value["metadata"]["tenant"] = json!("tenant-b"),
             "publication" => {
-                value["spec"]["target"]["publication"] = json!(format!("sha256:{}", "a".repeat(64)))
+                value["spec"]["target"]["publication"] =
+                    json!(format!("sha256:{}", "a".repeat(64)));
             }
             "profile" => value["spec"]["configuration"]["profile"] = json!("future"),
             "credential" => value["spec"]["configuration"]["token"] = json!("must-not-be-accepted"),
@@ -180,7 +181,7 @@ fn receipts_bind_scope_publication_and_counters_without_rounding() {
     assert!(response::receipt_scope(&original, "tenant-a", "other", None).is_err());
     for mutate in [
         (|value: &mut proto::TriggerOperationReceipt| {
-            value.publication.as_mut().unwrap().tenant = "tenant-b".into()
+            value.publication.as_mut().unwrap().tenant = "tenant-b".into();
         }) as fn(&mut proto::TriggerOperationReceipt),
         |value| value.publication.as_mut().unwrap().id = value.component_digest.clone(),
         |value| value.actor = None,

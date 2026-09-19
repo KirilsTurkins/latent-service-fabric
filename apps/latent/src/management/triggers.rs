@@ -18,7 +18,7 @@ use serde_json::{json, Value};
 pub use execute::execute;
 
 pub enum TriggerOperation {
-    Apply(proto::ApplyTriggerRequest),
+    Apply(Box<proto::ApplyTriggerRequest>),
     Get(proto::GetTriggerRequest),
     List(proto::ListTriggersRequest),
     Delete(proto::DeleteTriggerRequest),
@@ -67,11 +67,11 @@ impl TriggerOperation {
     }
 }
 
-fn operation(value: &TriggerMutation) -> Option<proto::TriggerOperationPrecondition> {
-    Some(proto::TriggerOperationPrecondition {
+fn operation(value: &TriggerMutation) -> proto::TriggerOperationPrecondition {
+    proto::TriggerOperationPrecondition {
         operation_id: value.operation_id.clone(),
         expected_state_version: Some(value.expected_state_version),
-    })
+    }
 }
 
 pub fn prepare(command: &TriggerCommand, config: &ResolvedConfig) -> Result<Operation, Failure> {
@@ -97,11 +97,11 @@ pub fn prepare(command: &TriggerCommand, config: &ResolvedConfig) -> Result<Oper
             }
             let trigger = latent_wire::management::http_trigger_to_proto(manifest, 0)
                 .map_err(|_| invalid())?;
-            TriggerOperation::Apply(proto::ApplyTriggerRequest {
+            TriggerOperation::Apply(Box::new(proto::ApplyTriggerRequest {
                 trigger: Some(trigger),
                 expected_generation: Some(mutation.expected_generation),
-                operation: operation(mutation),
-            })
+                operation: Some(operation(mutation)),
+            }))
         }
         TriggerCommand::Get { id } => {
             TriggerOperation::Get(proto::GetTriggerRequest { id: id.clone() })
@@ -122,7 +122,7 @@ pub fn prepare(command: &TriggerCommand, config: &ResolvedConfig) -> Result<Oper
             TriggerOperation::Delete(proto::DeleteTriggerRequest {
                 id: id.clone(),
                 expected_generation: Some(mutation.expected_generation),
-                operation: operation(mutation),
+                operation: Some(operation(mutation)),
             })
         }
         TriggerCommand::Operation { operation_id } => {

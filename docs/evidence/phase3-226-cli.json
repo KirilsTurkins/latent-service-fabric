@@ -38,5 +38,12 @@
     "web publication management and sealed selected-publication execution projection",
     "full Angular T1 qualification, including dependency assets/cache paths",
     "exact-head CI and central acceptance review"
-  ]
+  ],
+  "ciFollowup": {
+    "run": "35446101805",
+    "job": "105905209402",
+    "initialHead": "49d03ace",
+    "result": "Clippy reported eight style/size findings; fixed in follow-up, exact-head rerun pending",
+    "otherCompletedJobs": ["Rust MSRV 1.94.1", "Cross-language SDK surfaces", "Documentation and SVGs", "Durable catalog acceptance"]
+  }
 }

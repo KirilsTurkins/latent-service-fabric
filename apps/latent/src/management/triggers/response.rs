@@ -57,11 +57,11 @@ pub(super) fn durability(value: i32) -> Result<&'static str, Failure> {
 }
 
 pub(in crate::management) fn page(
-    value: &Option<String>,
+    value: Option<&String>,
     previous: Option<&String>,
     maximum: usize,
 ) -> Result<(), Failure> {
-    if value.as_ref().is_some_and(|token| {
+    if value.is_some_and(|token| {
         token.is_empty()
             || token.capacity() > maximum
             || !token.is_ascii()
