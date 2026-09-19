@@ -89,9 +89,6 @@ func (channel *rpcChannel) Invoke(ctx context.Context, method string, request, r
 	}
 	defer reply.Body.Close()
 	data, hasMessage, bodyFailure := readUnary(reply.Body, state.responseLimit)
-	if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil {
-		return failure
-	}
 	statusValues := headerValues(reply.Header, reply.Trailer, "grpc-status")
 	if len(statusValues) == 1 {
 		raw, parseFailure := strconv.ParseInt(statusValues[0], 10, 32)
@@ -99,6 +96,9 @@ func (channel *rpcChannel) Invoke(ctx context.Context, method string, request, r
 			status := int32(raw)
 			state.grpcStatus = &status
 		}
+	}
+	if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil {
+		return failure
 	}
 	if bodyFailure != nil {
 		if errors.Is(bodyFailure, errBound) {
@@ -239,9 +239,19 @@ func (channel *rpcChannel) platformDetails(ctx context.Context, reply *http.Resp
 		data, failure = base64.RawStdEncoding.DecodeString(values[0])
 	}
 	wire := &controlv1.PlatformError{}
-	nodes := 512
-	if failure != nil || len(data) > 8192 || validateWire(ctx, data, wire.ProtoReflect().Descriptor(), &nodes, 0) != nil ||
-		(proto.UnmarshalOptions{RecursionLimit: 16}).Unmarshal(data, wire) != nil || wire.Code == "" {
+	maximumNodes := min(channel.client.config.MaxGraphNodes, 512)
+	nodes := maximumNodes
+	if failure != nil || len(data) > 8192 {
+		result.Category = profile.FailureCategoryDecode
+		return result
+	}
+	shapeFailure := validateWire(ctx, data, wire.ProtoReflect().Descriptor(), &nodes, 0)
+	if errors.Is(shapeFailure, errBound) || len(data)*3+(maximumNodes-nodes)*256 > channel.client.config.MaxGraphBytes {
+		result.Category = profile.FailureCategoryLimit
+		result.Message = "remote diagnostic exceeds client graph limit"
+		return result
+	}
+	if shapeFailure != nil || (proto.UnmarshalOptions{RecursionLimit: 16}).Unmarshal(data, wire) != nil || wire.Code == "" {
 		result.Category = profile.FailureCategoryDecode
 		return result
 	}
