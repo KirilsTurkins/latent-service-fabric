@@ -14,10 +14,14 @@ receive provider credentials. The node operator must separately configure
 the shared provider and matching policy/binding, package/admit the maintained
 guest, and deploy its route for the client's tenant:
 
-- [HTTP probe](../../examples/outbound-http/README.md):
-  `tests:http/api@1.0.0`, `run(0)`, bounded GET through the guest's grant.
-- [Blob probe](../../examples/local-blobs/README.md):
-  `tests:local-blobs/api@1.0.0`, `run(0, "0")`, bounded write/seal/read/close.
+- [Maintained Rust HTTP guest](../../tools/toolchain-smoke/examples/guest_http/component.rs):
+  `tests:http/api@1.0.0`, `run(0, URL, "0")`, bounded GET through the guest's grant.
+- [Maintained Rust blob guest](../../tools/toolchain-smoke/examples/guest_blob/component.rs):
+  `tests:local-blobs/api@1.0.0`, `run(0, "", "0")`, bounded write/seal/read/close.
+
+Both use the [guest SDK's supported WIT-value framing](../../docs/component-development/guest-sdk.md),
+with `application/vnd.latent.wit-values.v1+json`, a three-value argument array
+and a decimal-string `u64` result. They are not the older generated test probes.
 
 Standalone provider configuration and real-node qualification are part of
 #226/#228; the ordinary default node does not grant either capability. These
@@ -34,17 +38,18 @@ platforms fail closed. The client endpoint must be numeric loopback.
 ```sh
 cargo build -p latent-sdk --example provider_client --locked
 target/debug/examples/provider_client 127.0.0.1:9080 tests \
-  /home/operator/.config/latent/client-token http-call-001 http http-probe
+  /home/operator/.config/latent/client-token http-call-001 http generic guest-http \
+  http://localhost:8080/allowed
 target/debug/examples/provider_client 127.0.0.1:9080 tests \
-  /home/operator/.config/latent/client-token blob-call-001 blob blob-probe
+  /home/operator/.config/latent/client-token blob-call-001 blob generic guest-blob
 ```
 
-Supply the actual deployed service IDs instead of `http-probe`/`blob-probe`.
+Supply the actual deployed service/route IDs and policy-approved upstream URL.
 Choose a fresh activation ID for a new invocation and retain it before sending.
 The output is bounded JSON containing the outcome class, numeric guest result,
 resource consumption and local owner-retirement acknowledgement, not arbitrary
 guest output, secrets or server error detail. Blob success returns the decimal
-string `4101`; HTTP returns `status + 1000 * body_length` or its frozen guest
+string `4`; HTTP returns `status + 1000 * body_length` or its frozen guest
 error variant. `succeeded` means the RPC delivered an application result;
 applications must still check that guest result, not assume all values are a
 successful HTTP operation. Counters and `u64` guest values retain full width.
