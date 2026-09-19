@@ -32,10 +32,27 @@ queries. The Go subset is the three selected modules plus stdlib 1.27.1;
 generator, test-only and transitive modules are not dropped. These scans are
 time-bound observations, not a permanent vulnerability-free guarantee.
 
-The current implementation still needs the separate real-node provider runner
-and exact-head CI before ticket closure. The earlier participant binary and
-controlled-peer results below are retained as history, not substituted for
-current native qualification.
+The current native participant subsequently passed all 18 assertions on
+2026-09-19 against a separately owned authenticated node with freshly signed
+maintained HTTP/blob/callee guests. Integration source
+`07563fdcd5053ac1622567e1b1b01d5a0aec599e` used node SHA-256
+`871ceccebd4d1ab30606e7534df76b975cfb70d991e0f384686e7d106c71b5a6`
+and the participant identity recorded above. Nine activation IDs were retained,
+five upstream requests were authorized with zero unexpected requests, and all
+four held upstream sockets physically closed. The runner independently verified
+clean provider/node shutdown before reaping. Raw receipt SHA-256:
+`8eeed6accf1db0ff6ec5dab99eeaf5467d6016a9a5f828695ad730c3f6b98b1b`.
+
+The earlier separate-node attempt failed before this participant started:
+bootstrap returned `ResourceExhausted` under provider task-registry contention.
+That failure is retained in PR #366's native checkpoint, not counted as a Go
+pass. The later result uses the bounded pre-enqueue startup fix in PR #344;
+neither accepted provider work nor uncertain invocations were retried.
+
+The maintained six-language real-node CI gate in PR #366 and exact-head CI
+remain required before #260 closure. Earlier participant binaries and
+controlled-peer results below remain history, not substitutes for this native
+qualification or an installed-bundle/browser claim.
 
 ## Initial stack and reproducible setup
 
