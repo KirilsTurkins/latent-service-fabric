@@ -274,3 +274,52 @@ func TestRequestBoundsAndMutationPreconditionsBeforeDispatch(test *testing.T) {
 		}
 	}
 }
+
+func TestCapabilityPageDefaultsAndMissingRecoveryStayUnknown(test *testing.T) {
+	pages := make(chan *controlv1.PageRequest, 2)
+	peer := newPeer(test, func(writer http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case controlv1.CapabilityService_ListCapabilities_FullMethodName:
+			wire := &controlv1.ListCapabilitiesRequest{}
+			decodePeerRequest(test, request, wire)
+			pages <- wire.Page
+			peerReply(writer, &controlv1.ListCapabilitiesResponse{})
+		case invocationv1.InvocationService_GetActivation_FullMethodName, controlv1.PolicyService_GetPolicyOperation_FullMethodName:
+			peerFailure(writer, "5")
+		default:
+			test.Error("invalid pagination reached the peer")
+		}
+	})
+	client := testClient(test, peer)
+	for _, page := range []*profile.PageRequest{nil, {PageSize: 0, PageToken: pointer("")}} {
+		_, failure := client.ListCapabilities(context.Background(), profile.ListCapabilitiesRequest{DeploymentId: "deployment-a", Page: page}, profile.CallOptions{})
+		if failure != nil {
+			test.Fatalf("supported capability page default rejected: %v", failure)
+		}
+	}
+	if page := <-pages; page != nil {
+		test.Fatal("absent capability page was manufactured")
+	}
+	if page := <-pages; page == nil || page.PageSize != 0 || page.PageToken == nil || *page.PageToken != "" {
+		test.Fatal("present zero page or present empty cursor was normalized")
+	}
+	_, failure := client.GetActivation(context.Background(), profile.GetActivationRequest{ActivationId: "missing-a"}, profile.CallOptions{})
+	detail := assertFailure(test, failure, profile.FailureCategoryRpc, true)
+	if detail.GrpcStatus == nil || *detail.GrpcStatus != 5 || detail.Identity.ActivationId == nil || *detail.Identity.ActivationId != "missing-a" {
+		test.Fatal("missing activation lost status or recovery identity")
+	}
+	_, failure = client.GetPolicyOperation(context.Background(), profile.GetPolicyOperationRequest{OperationId: "missing-operation"}, profile.CallOptions{})
+	detail = assertFailure(test, failure, profile.FailureCategoryRpc, true)
+	if detail.GrpcStatus == nil || *detail.GrpcStatus != 5 || detail.Identity.OperationId == nil || *detail.Identity.OperationId != "missing-operation" {
+		test.Fatal("missing operation lost status or recovery identity")
+	}
+	for _, page := range []*profile.PageRequest{nil, {PageSize: 0}, {PageSize: 33}, {PageSize: 1, PageToken: pointer(strings.Repeat("x", 118))}} {
+		_, failure = client.ListPolicies(context.Background(), profile.ListPoliciesRequest{RecordKind: profile.CapabilityPolicyRecordKindPolicy, Page: page}, profile.CallOptions{})
+		assertFailure(test, failure, profile.FailureCategoryInvalidRequest, false)
+	}
+	_, failure = client.ListCapabilities(context.Background(), profile.ListCapabilitiesRequest{DeploymentId: "deployment-a", Page: &profile.PageRequest{PageSize: 1, PageToken: pointer(strings.Repeat("x", 161))}}, profile.CallOptions{})
+	assertFailure(test, failure, profile.FailureCategoryInvalidRequest, false)
+	if peer.requests.Load() != 4 {
+		test.Fatal("invalid page or missing recovery triggered a hidden request")
+	}
+}
