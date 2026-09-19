@@ -102,11 +102,20 @@ test("uncertain mutation retains ID, no receipt is unknown and explicit exact re
     const unknown = await client.getPolicyOperation({ operationId: "unknown" });
     assert.equal(unknown.value.receipt, undefined);
     assert.equal(unknown.metadata.outcome, Knowledge.Unknown);
+    for (const pending of [client.getPolicyOperation({ operationId: "rpc-not-found" }),
+      client.getActivation({ activationId: "never-observed" })]) {
+      await assert.rejects(pending, (error) => error.failure.grpcStatus === 5
+        && error.failure.outcome === Knowledge.Unknown);
+    }
     const list = await client.listPolicies({ recordKind: 1, page: { pageSize: 1 } });
     assert.equal(list.value.policies.length, 1);
     assert.equal(list.value.catalogGeneration, 18446744073709551615n);
     const bindings = await client.listCapabilities({ deploymentId: "deployed", page: { pageSize: 1 }, includeNodeUsage: false });
     assert.equal(bindings.value.capabilities[0].inspection.providerConfigurationEpoch, 18446744073709551615n);
+    const defaults = await client.listCapabilities({ deploymentId: "deployed" });
+    assert.equal(defaults.value.capabilities.length, 1);
+    const zero = await client.listCapabilities({ deploymentId: "deployed", page: { pageSize: 0 } });
+    assert.equal(zero.value.capabilities.length, 1);
   } finally { await client.shutdown(); await server.stop(); }
 });
 
