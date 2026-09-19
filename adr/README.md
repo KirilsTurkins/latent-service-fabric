@@ -129,3 +129,7 @@ the bounded application mapping remains unchanged.
 installs the closed Angular adapter in fresh generic Stores with explicit profile
 identity, finite callback/binary budgets and the existing HTTP cleanup ownership.
 T1 remains gated on observed Angular build and web deployment authority.
+
+[ADR-0042](0042-bound-angular-render-data-through-the-capability-broker.md)
+proposes one explicitly requested, broker-mediated HTTP data step inside the
+fresh Angular render activation, without ambient JavaScript networking.
