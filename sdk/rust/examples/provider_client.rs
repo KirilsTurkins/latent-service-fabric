@@ -103,6 +103,7 @@ async fn run() -> Result<Value, &'static str> {
         limits: ClientLimits {
             maximum_calls: 2,
             maximum_response_bytes: 16384,
+            rpc_timeout: Duration::from_secs(5),
             ..ClientLimits::default()
         },
     })
@@ -119,7 +120,7 @@ async fn run() -> Result<Value, &'static str> {
 }
 
 async fn execute(client: &RpcClient, arguments: Arguments) -> Result<Value, &'static str> {
-    let deadline = Instant::now() + Duration::from_secs(10);
+    let deadline = Instant::now() + Duration::from_secs(5);
     if arguments.mode == "status" {
         return Ok(
             match client

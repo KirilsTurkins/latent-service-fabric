@@ -6,7 +6,7 @@ use latent_sdk::{
     network::{ClientConfig, ClientLimits, RpcClient},
 };
 use serde_json::{json, Value};
-use std::{net::SocketAddr, path::Path};
+use std::{net::SocketAddr, path::Path, time::Duration};
 use zeroize::Zeroizing;
 
 pub const MEDIA: &str = "application/vnd.latent.wit-values.v1+json";
@@ -26,7 +26,7 @@ pub fn field<'value>(value: &'value Value, name: &str) -> Result<&'value str> {
 
 pub fn options() -> CallOptions {
     CallOptions {
-        timeout_millis: Some(10000),
+        timeout_millis: Some(5_000),
     }
 }
 
@@ -94,6 +94,7 @@ impl Configuration {
             limits: ClientLimits {
                 maximum_calls: 4,
                 maximum_response_bytes: if small { 64 } else { 65536 },
+                rpc_timeout: Duration::from_secs(5),
                 ..ClientLimits::default()
             },
         })
