@@ -138,27 +138,88 @@ def maven_packages(repo: Path, entry: dict) -> list[tuple[str, str, str]]:
     return sorted(packages)
 
 
+def nuget_project(project: element_tree.Element) -> None:
+    require(project.tag == "Project" and project.attrib == {"Sdk": "Microsoft.NET.Sdk"}, "unreviewed-project-sdk")
+    properties = {"TargetFramework", "ImplicitUsings", "Nullable", "TreatWarningsAsErrors", "RestorePackagesWithLockFile",
+                  "Deterministic", "OutputType", "RootNamespace", "AssemblyName", "LangVersion", "AllowUnsafeBlocks",
+                  "WarningsAsErrors", "EnableDefaultCompileItems", "RuntimeFrameworkVersion", "RollForward"}
+    attributes = {"PackageReference": {"Include", "Version", "PrivateAssets"}, "ProjectReference": {"Include"},
+                  "Protobuf": {"Include", "ProtoRoot", "GrpcServices", "Access"}, "Compile": {"Include"},
+                  "FrameworkReference": {"Include"}}
+    for group in project:
+        require(group.tag in {"PropertyGroup", "ItemGroup"} and not group.attrib, "unreviewed-project-dependency-logic")
+        for node in group:
+            require(not list(node), "unreviewed-project-dependency-logic")
+            if group.tag == "PropertyGroup":
+                require(node.tag in properties and not node.attrib and bool(node.text), "unreviewed-project-dependency-logic")
+            else:
+                require(node.tag in attributes and set(node.attrib) <= attributes[node.tag]
+                        and "Include" in node.attrib and not (node.text or "").strip(), "unreviewed-project-dependency-logic")
+            require(all(not any(marker in value for marker in ("$(", "@(", "%("))
+                        for value in [node.text or "", *node.attrib.values()]), "unreviewed-project-evaluation")
+
+
+def nuget_configuration(repo: Path, entry: dict) -> None:
+    configuration = entry.get("configuration")
+    if configuration is None:
+        return
+    root = PurePosixPath(entry["path"]).parent.parent
+    expected = {str(root / "global.json"), str(root / "nuget.transport.config")}
+    require(isinstance(configuration, list) and len(configuration) == 2, "invalid-dotnet-configuration")
+    seen = set()
+    for item in configuration:
+        require(isinstance(item, dict) and set(item) == {"path", "sha256"} and item["path"] in expected
+                and item["path"] not in seen and isinstance(item["sha256"], str) and SHA256.fullmatch(item["sha256"]),
+                "invalid-dotnet-configuration")
+        require(digest(normalized(read_file(repo, item["path"]))) == item["sha256"], "unreviewed-dotnet-configuration")
+        seen.add(item["path"])
+    require(seen == expected, "incomplete-dotnet-configuration")
+    toolchain = decode_json(read_file(repo, str(root / "global.json")))
+    require(isinstance(toolchain, dict) and set(toolchain) == {"sdk"} and isinstance(toolchain["sdk"], dict)
+            and set(toolchain["sdk"]) == {"version", "rollForward"}
+            and isinstance(toolchain["sdk"]["version"], str) and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", toolchain["sdk"]["version"])
+            and toolchain["sdk"]["rollForward"] == "disable", "unresolved-dotnet-sdk")
+
+
+def nuget_framework_packages(project: element_tree.Element, entry: dict) -> set[tuple[str, str, str]]:
+    versions = [node.text for node in project.iter("RuntimeFrameworkVersion")]
+    roll = [node.text for node in project.iter("RollForward")]
+    frameworks = [node.get("Include") for node in project.iter("FrameworkReference")]
+    if not versions and not roll and not frameworks:
+        require("runtime_identifier" not in entry, "undeclared-dotnet-runtime")
+        return set()
+    target = [node.text for node in project.iter("TargetFramework")]
+    require(len(versions) == 1 and isinstance(versions[0], str) and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", versions[0])
+            and roll == ["Disable"] and len(target) == 1 and isinstance(target[0], str)
+            and re.fullmatch(r"net[0-9]+\.[0-9]+", target[0]) and versions[0].startswith(target[0][3:] + "."),
+            "unresolved-dotnet-runtime")
+    require(entry.get("runtime_identifier") == "linux-x64", "unreviewed-dotnet-runtime-platform")
+    require(len(frameworks) == len(set(frameworks)) and set(frameworks) <= {"Microsoft.AspNetCore.App"},
+            "unreviewed-dotnet-framework")
+    return {("NuGet", framework + suffix, versions[0]) for framework in ["Microsoft.NETCore.App", *frameworks]
+            for suffix in (".Ref", ".Runtime.linux-x64")}
+
+
 def nuget_packages(repo: Path, entry: dict) -> list[tuple[str, str, str]]:
     payload = read_file(repo, entry["path"], 256 * 1024)
     require(b"<!" not in payload and b"<?" not in payload, "unsupported-project-xml")
     project = element_tree.fromstring(payload)
-    require(project.tag == "Project" and project.get("Sdk") == "Microsoft.NET.Sdk", "unreviewed-project-sdk")
+    nuget_project(project)
+    if "manifest_sha256" in entry:
+        require(digest(normalized(payload)) == entry["manifest_sha256"], "unreviewed-nuget-build-logic")
+    nuget_configuration(repo, entry)
     direct, references = {}, set()
-    tags = {"Project", "PropertyGroup", "ItemGroup", "TargetFramework", "ImplicitUsings", "Nullable",
-            "TreatWarningsAsErrors", "RestorePackagesWithLockFile", "Deterministic", "PackageReference",
-            "ProjectReference", "Protobuf", "OutputType", "RootNamespace", "AssemblyName", "LangVersion",
-            "AllowUnsafeBlocks", "WarningsAsErrors", "EnableDefaultCompileItems", "Compile"}
     for node in project.iter():
-        require("Condition" not in node.attrib and node.tag in tags,
-                "unreviewed-project-dependency-logic")
         if node.tag == "PackageReference":
             name, version = node.get("Include", ""), node.get("Version", "")
             require(re.fullmatch(r"[A-Za-z0-9_.-]+", name) and VERSION.fullmatch(version)
                     and name.lower() not in direct and not node.get("Update"), "unresolved-nuget-reference")
             direct[name.lower()] = version
         if node.tag == "ProjectReference":
-            name = PurePosixPath(node.get("Include", "").replace("\\", "/")).stem.lower()
-            require(bool(name), "invalid-project-reference")
+            path = node.get("Include", "").replace("\\", "/")
+            name = PurePosixPath(path).stem.lower()
+            require(re.fullmatch(r"[A-Za-z0-9_./-]+\.csproj", path) and not PurePosixPath(path).is_absolute()
+                    and name not in references, "invalid-project-reference")
             references.add(name)
     lock = decode_json(read_file(repo, entry["lock"]))
     require(isinstance(lock, dict) and set(lock) == {"version", "dependencies"} and lock["version"] == 1,
@@ -172,7 +233,7 @@ def nuget_packages(repo: Path, entry: dict) -> list[tuple[str, str, str]]:
         require(framework == declared_frameworks[0] or framework.startswith(declared_frameworks[0] + "/"),
                 "unreviewed-nuget-framework")
         require(isinstance(dependencies, dict) and 0 < len(dependencies) <= 1024, "invalid-nuget-package-count")
-        names, observed = {name.lower() for name in dependencies}, {}
+        names, observed, projects = {name.lower() for name in dependencies}, {}, set()
         require(len(names) == len(dependencies), "duplicate-nuget-name")
         for name, item in dependencies.items():
             require(re.fullmatch(r"[A-Za-z0-9_.-]+", name) and isinstance(item, dict)
@@ -181,6 +242,7 @@ def nuget_packages(repo: Path, entry: dict) -> list[tuple[str, str, str]]:
             require(isinstance(edges, dict) and all(edge.lower() in names for edge in edges), "incomplete-nuget-graph")
             if item["type"] == "Project":
                 require(name.lower() in references and set(item) <= {"type", "dependencies"}, "unreviewed-project-lock")
+                projects.add(name.lower())
                 continue
             version, checksum = item.get("resolved", ""), item.get("contentHash", "")
             require(isinstance(version, str) and VERSION.fullmatch(version), "unresolved-nuget-version")
@@ -189,8 +251,9 @@ def nuget_packages(repo: Path, entry: dict) -> list[tuple[str, str, str]]:
                 observed[name.lower()] = version
             packages.add(("NuGet", name, version))
         require(observed == direct, "nuget-manifest-lock-drift")
+        require(projects == references, "incomplete-nuget-project-graph")
     require(bool(packages), "empty-nuget-dependency-graph")
-    return sorted(packages)
+    return sorted(packages | nuget_framework_packages(project, entry))
 
 
 def c_packages(repo: Path, path: str) -> list[tuple[str, str, str]]:

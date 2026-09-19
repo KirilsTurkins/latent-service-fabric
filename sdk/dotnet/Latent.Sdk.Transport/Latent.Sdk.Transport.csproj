@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RuntimeFrameworkVersion>8.0.31</RuntimeFrameworkVersion>
+    <RollForward>Disable</RollForward>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Latent.Sdk/Latent.Sdk.csproj" />
+    <PackageReference Include="Google.Protobuf" Version="3.31.1" />
+    <PackageReference Include="Grpc.Core.Api" Version="2.71.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.71.0" PrivateAssets="All" />
+    <Protobuf Include="../../../api/proto/latent/control/v1/common.proto" ProtoRoot="../../../api/proto" GrpcServices="None" Access="Internal" />
+    <Protobuf Include="../../../api/proto/latent/control/v1/policy.proto" ProtoRoot="../../../api/proto" GrpcServices="Client" Access="Internal" />
+    <Protobuf Include="../../../api/proto/latent/control/v1/capability.proto" ProtoRoot="../../../api/proto" GrpcServices="Client" Access="Internal" />
+    <Protobuf Include="../../../api/proto/latent/invocation/v1/invocation.proto" ProtoRoot="../../../api/proto" GrpcServices="Client" Access="Internal" />
+  </ItemGroup>
+</Project>

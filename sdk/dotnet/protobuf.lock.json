@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "sdkVersion": "8.0.425",
+  "runtimeVersion": "8.0.31",
+  "grpcToolsVersion": "2.71.0",
+  "protocVersion": "libprotoc 29.0",
+  "tools": {
+    "protoc": "42e0917ffb9f1bd467dd0153886e76335c0ea5d2cffe10269bb189dc3daa5330",
+    "grpc_csharp_plugin": "986ed8d83e5abf359a2710ea445049dfc451716ff3eadaaf9c6c795518663643"
+  },
+  "inputs": {
+    "latent/control/v1/common.proto": "9433f47d1ae62dd09bbfc55e8a43f411897a0ffc6dc51919adc0ff4df9564085",
+    "latent/control/v1/policy.proto": "a38e6a958e7e50ee9b43e725d55cb7080cc47f4eaed42a6d5889ae4e67564b94",
+    "latent/control/v1/capability.proto": "edec0c1c0bd3413d8466024ed895f61fbc7c3efa08c756ec56d1e28669339109",
+    "latent/invocation/v1/invocation.proto": "6f803e8aa8d126b98b2e9b2ae285f97a6387c4d3b677230f0383f6854bf927aa"
+  },
+  "outputs": {
+    "latent/control/v1/Capability.cs": "49509599194e53fe80c603a29fa3012eeccda8db40585c7ae6d57185cb997856",
+    "latent/control/v1/CapabilityGrpc.cs": "0a10b6b641db7757f70a3d58cd0594291236cdd478e0f410e76675dbefc26fcd",
+    "latent/control/v1/Common.cs": "69bb5596a14f11afc9e85a416a1c8e02579973ccdf1531b861617a0dd2dd8681",
+    "latent/control/v1/Policy.cs": "afdbede1cf73ab98f40f15d5405248794fce162ce0bcfdfa10ad47d4c63f8a3e",
+    "latent/control/v1/PolicyGrpc.cs": "96a0983965db1176c453b87e3d6caded46a8d59feb6ca373ccbae124788fcf0d",
+    "latent/invocation/v1/Invocation.cs": "6e03900f7e253812e0c5b86c5f7fd1064b2eeed3ac241535dcb6a990b382a581",
+    "latent/invocation/v1/InvocationGrpc.cs": "a118a7ea78a30e86b1632af4857a94dd8c7beaf6f93a0a4cf4f483d4d6f4639d"
+  }
+}
