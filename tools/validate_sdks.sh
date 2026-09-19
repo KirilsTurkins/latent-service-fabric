@@ -31,6 +31,7 @@ if (( ${#java_sources[@]} == 0 )); then
 fi
 javac --release 21 -d "${OUTPUT}/java" "${java_sources[@]}"
 java -cp "${OUTPUT}/java" dev.latent.sdk.InvocationIdentityTest
+python3 sdk/java-client/tools/build.py test
 
 dotnet build sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj \
     --configuration Release \
