@@ -8,15 +8,17 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tools.build_process_signals import owned_cancellation
 from tools.phase2_operator_process import Process, WorkflowError
 from tools.phase3_resource_campaign import write_receipt
 from tools.phase3_resource_identity import file_identity, inventory
-from tools.phase3_resource_node import configure
+from tools.phase3_resource_node import apply_dormant, configure
 from tools.phase3_resource_os import Probe, network_counts, proc_stat
 from tools.phase3_resource_profile import ACTIVE_COUNTERS, PROFILES, digest, integer, quiescent, summary, validate_schedule
 from tools.phase3_resource_schedule import run_open_loop
+from tools.phase3_resource_rust import SUITE, artifact_from_cargo, validate_observations
 
 
 class Clock:
@@ -135,6 +137,31 @@ class ScheduleTests(unittest.TestCase):
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_admission_saturation_preserves_actual_population_and_stops_mutating(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            for kind in ("http", "blob"):
+                (directory / f"{kind}-deployment.json").write_text(
+                    json.dumps({"metadata": {"name": "guest-" + kind}}), encoding="ascii")
+            calls = []
+
+            def call(*arguments, **_keywords):
+                calls.append(arguments)
+                if arguments[1] == "get":
+                    return {"data": {"stateVersion": "1"}}
+                if len([entry for entry in calls if entry[1] == "apply"]) == 3:
+                    return {"category": "platform-failure", "outcomeKnown": True,
+                            "error": {"code": "resource-exhausted"}}
+                return {"category": "success", "outcomeKnown": True}
+
+            client = type("Client", (), {"directory": directory, "call": staticmethod(call)})()
+            with patch("tools.phase3_resource_node.pages", return_value=[{}] * 5):
+                observed = apply_dormant(client, 16, 0)
+            self.assertEqual(observed["applied"], 2)
+            self.assertEqual(observed["refusal"]["requestedDeployment"], "dormant-002")
+            self.assertEqual(observed["refusal"]["limitingOwner"], "not-exposed-by-CLI")
+            self.assertEqual(len(calls), 6)
+
     def test_dormant_density_does_not_create_per_deployment_provider_bindings(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -195,6 +222,8 @@ class EvidenceTests(unittest.TestCase):
     def test_inventory_is_bounded_nonempty_and_content_addressed(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            with self.assertRaisesRegex(WorkflowError, "resource-input-empty"):
+                inventory(root)
             (root / "input.json").write_text('{"actual":"fixture"}', encoding="ascii")
             observed = inventory(root)
             self.assertEqual(len(observed["files"]), 1)
@@ -237,6 +266,70 @@ class ProcTests(unittest.TestCase):
             self.assertTrue(process.owner.finished)
             with self.assertRaises(WorkflowError):
                 probe.sample()
+
+
+class RustInventoryTests(unittest.TestCase):
+    def test_exact_successful_cargo_artifact_is_required_not_a_binary_glob(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            manifest = root / SUITE.manifest
+            source = manifest.parent / SUITE.source
+            executable = root / "target/debug/deps/synthetic-resource-artifact"
+            for path in (manifest, source, executable):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"synthetic-unit-fixture")
+            artifact = {"reason": "compiler-artifact", "manifest_path": str(manifest),
+                        "target": {"name": SUITE.target, "kind": ["test"], "src_path": str(source)},
+                        "profile": {"test": True}, "executable": str(executable)}
+            finished = {"reason": "build-finished", "success": True}
+
+            def encoded(rows):
+                return b"\n".join(json.dumps(row).encode("ascii") for row in rows)
+
+            observed, profile = artifact_from_cargo(encoded([artifact, finished]), root)
+            self.assertEqual(observed.executable, executable)
+            self.assertTrue(profile["test"])
+            for rows in ([artifact], [finished], [artifact, artifact, finished],
+                         [artifact, {**finished, "success": False}], [artifact, finished, artifact]):
+                with self.assertRaises(WorkflowError):
+                    artifact_from_cargo(encoded(rows), root)
+            for changes in ({"executable": str(source)}, {"target": {**artifact["target"], "kind": ["lib"]}}):
+                with self.assertRaises(WorkflowError):
+                    artifact_from_cargo(encoded([{**artifact, **changes}, finished]), root)
+
+    def test_rust_measurement_cannot_pass_empty_active_or_recovery_populations(self):
+        rows = []
+        for provider in ("http", "blob", "secret", "child"):
+            for phase in ("fixed", "active", "recovery"):
+                rows.append({"provider": provider, "phase": phase,
+                             "os": {"rssBytes": 1, "threads": 1},
+                             "broker": {"sessions": int(phase == "active"), "handles": 0,
+                                        "calls": 0, "results": 0, "buffer_bytes": 0},
+                             "runtime": {"stores_created": 1, "live_stores": 0,
+                                         "live_host_states": 0, "live_component_instances": 0},
+                             "rendererHeapBytes": None, "allocatorRetainedBytes": None})
+        binary = {"sha256": "sha256:" + "a" * 64}
+        receipt = {"schemaVersion": "latent.phase3.resource-regression.v1", "status": "checkpoint-passed",
+                   "ticketAcceptance": "pending", "binarySha256": binary["sha256"], "observations": rows}
+        self.assertTrue(validate_observations(receipt, binary))
+        for removed in ([], [row for row in rows if row["provider"] != "child"],
+                        [row for row in rows if row["phase"] != "active"]):
+            with self.assertRaises(WorkflowError):
+                validate_observations({**receipt, "observations": removed}, binary)
+        for phase, key, value in (("active", "sessions", 0), ("recovery", "buffer_bytes", 1),
+                                  ("recovery", "calls", None)):
+            changed = copy.deepcopy(receipt)
+            for row in changed["observations"]:
+                if row["phase"] == phase:
+                    row["broker"][key] = value
+            with self.assertRaises(WorkflowError):
+                validate_observations(changed, binary)
+        changed = copy.deepcopy(receipt)
+        changed["observations"][0]["rendererHeapBytes"] = 0
+        with self.assertRaises(WorkflowError):
+            validate_observations(changed, binary)
+        with self.assertRaises(WorkflowError):
+            validate_observations(receipt, {"sha256": "sha256:" + "b" * 64})
 
 
 if __name__ == "__main__":

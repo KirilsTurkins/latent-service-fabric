@@ -48,6 +48,7 @@ def inventory(root, maximum_files=LIMITS["maximumFixtureFiles"],
                     row = file_identity(path, maximum_bytes - total)
                     total += row["bytes"]
                     rows.append({"path": path.relative_to(root).as_posix(), **row})
+    require(bool(rows), "resource-input-empty")
     rows.sort(key=lambda row: row["path"])
     return {"files": rows, "filesDigest": digest(rows), "bytes": total}
 
