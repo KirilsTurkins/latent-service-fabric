@@ -1,15 +1,62 @@
 """Release identity and real-receipt gates; no publication or network calls."""
 
 import copy
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from tools.native_release_gate import require_remote_tag, reviewed_ci, select_predecessor
-from tools.native_runtime.common import InstallError
+from tools.native_release_gate import receipts, require_remote_tag, reviewed_ci, select_predecessor
+from tools.native_runtime.common import InstallError, encode
 from tools.native_runtime.verify import RELEASE_WORKFLOW, REPOSITORY
+from tools.select_native_vm_artifact import candidate_source
+from tools.tests.test_native_runtime import fixture, policy_fixture
 
 
 class ReleaseGateTests(unittest.TestCase):
+    def test_receipt_gate_rejects_partial_wrong_artifact_or_diagnostic_only_runs(self):
+        manifest, _archive = fixture()
+        previous = {"version": "0.1.0-test.0", "sourceCommit": "b" * 40, "archiveSha256": "c" * 64}
+        manifest["compatibility"]["upgradeFrom"] = [previous]
+        reports = {}
+        for profile in ("local-experimental-v1", "external-capsule-v1"):
+            phases = ["initial", "retained", "upgrade"] + (["rootless"] if profile == "local-experimental-v1" else [])
+            results = [{"phase": phase, "passed": True, "sourceCommit": manifest["sourceCommit"], "kernel": "6.8.0-test"}
+                       for phase in phases]
+            results[2]["details"] = {"upgrade": {"fromVersion": previous["version"], "fromCommit": previous["sourceCommit"],
+                                                "toVersion": manifest["version"], "toCommit": manifest["sourceCommit"],
+                                                "unsupportedDowngradeRejected": True}}
+            reports[profile] = {"schemaVersion": "latent.native-vm-result.v1", "profile": profile, "purpose": "release",
+                                "passed": True, "acceptanceComplete": True, "gaps": [], "sourceCommit": manifest["sourceCommit"],
+                                "harnessSourceCommit": manifest["sourceCommit"], "version": manifest["version"],
+                                "archiveSha256": manifest["archive"]["sha256"], "initialBootId": "00000000-0000-0000-0000-000000000001",
+                                "rebootedBootId": "00000000-0000-0000-0000-000000000002", "guestResults": results,
+                                "predecessor": previous, "authentication": {"policy": policy_fixture(manifest)},
+                                "image": {"imageSha256": "d" * 64},
+                                "guestPrerequisites": {"noGuestPackageInstallation": True, "ghTrustedBeforeBundle": True,
+                                                       "sshHostKeyPinnedBeforeBoot": True}}
+        selected = "local-experimental-v1"
+        with patch("tools.native_release_gate.files.read", side_effect=lambda path, maximum: encode(reports[path.stem])), \
+                patch("tools.native_release_gate.files.digest", return_value="e" * 64):
+            self.assertEqual(set(receipts(Path("synthetic-structural-receipts"), manifest)), set(reports))
+            original = copy.deepcopy(reports[selected])
+            for change in ({"passed": False}, {"acceptanceComplete": False}, {"gaps": ["no-compatible-version-pair"]},
+                           {"purpose": "candidate"}, {"harnessSourceCommit": "f" * 40}, {"archiveSha256": "f" * 64},
+                           {"rebootedBootId": original["initialBootId"]}, {"guestResults": original["guestResults"][:-1]},
+                           {"predecessor": {**previous, "archiveSha256": "f" * 64}}, {"guestPrerequisites": {}}):
+                reports[selected] = {**original, **change}
+                with self.subTest(change=list(change)), self.assertRaises(InstallError):
+                    receipts(Path("synthetic-structural-receipts"), manifest)
+            reports[selected] = original
+
+    def test_vm_only_diagnostics_select_only_exact_own_candidate_workflows(self):
+        run = {"head_sha": "a" * 40, "head_branch": "feat/native", "event": "push",
+               "path": ".github/workflows/native-runtime.yml", "head_repository": {"full_name": REPOSITORY}}
+        self.assertEqual(candidate_source(run), ("a" * 40, "refs/heads/feat/native"))
+        for change in ({"event": "pull_request_target"}, {"path": RELEASE_WORKFLOW}, {"head_sha": "main"},
+                       {"head_repository": {"full_name": "attacker/fork"}}, {"head_branch": "feat/../../main"}):
+            with self.assertRaises(InstallError):
+                candidate_source({**run, **change})
+
     def test_remote_tag_must_resolve_boundedly_to_exact_commit(self):
         commit = "a" * 40
         tag = "b" * 40

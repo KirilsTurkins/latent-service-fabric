@@ -266,7 +266,8 @@ def invoke(plan, retained, stage):
     activation = "native-" + stage
     result = cli(plan, "invoke", "--service", "examples/echo", "--contract", "examples:echo/api@0.1.0",
                  "--function", "echo", "--input", prefix / "current/examples/echo/input.json",
-                 "--activation-id", activation, "--wall-time-ms", "5000", "--rpc-timeout-ms", "5000")
+                 "--activation-id", activation, "--cpu-fuel", "1000000", "--memory-bytes", "4194304",
+                 "--log-bytes", "16384", "--wall-time-ms", "5000", "--rpc-timeout-ms", "5000")
     data = result["data"]
     payload = data["payload"]
     require(data["activationId"] == activation and payload["encoding"] == "base64"

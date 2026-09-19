@@ -95,6 +95,14 @@ current artifact, the actual committed predecessor and all retention/upgrade
 phases, plus rootless coverage in the local-profile receipt. Fast mocked artifact
 tests and synthetic version-pair tests cannot replace these receipts.
 
+For diagnosis, a manually dispatched candidate run can select `artifact_run`
+from a prior own-repository native candidate run. This skips rebuilding and tests
+that same authenticated archive in fresh VMs. GitHub run/source metadata selects
+the exact original identity before verification; arbitrary PR or release-workflow
+artifacts are refused. Receipts distinguish artifact `sourceCommit` from
+`harnessSourceCommit`. Such cross-revision diagnostics are not exact-head release
+acceptance: the publication gate requires both to equal the final reviewed source.
+
 ## Parent-controlled publication
 
 Before dispatch, the parent must select and review:

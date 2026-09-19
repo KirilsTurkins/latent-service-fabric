@@ -71,7 +71,8 @@ def receipts(root: Path, manifest: dict) -> dict:
         require(report.get("schemaVersion") == "latent.native-vm-result.v1" and report.get("profile") == profile
                 and report.get("purpose") == "release" and report.get("passed") is True
                 and report.get("acceptanceComplete") is True and report.get("gaps") == [], "complete-real-native-vm-receipts-required")
-        require(report.get("sourceCommit") == manifest["sourceCommit"] and report.get("version") == manifest["version"]
+        require(report.get("sourceCommit") == manifest["sourceCommit"] and report.get("harnessSourceCommit") == manifest["sourceCommit"]
+                and report.get("version") == manifest["version"]
                 and report.get("archiveSha256") == manifest["archive"]["sha256"], "vm-receipt-exact-source-and-artifact-required")
         for name in ("initialBootId", "rebootedBootId"):
             require(isinstance(report.get(name), str) and re.fullmatch(r"[0-9a-f-]{36}", report[name]), "vm-boot-identity-required")

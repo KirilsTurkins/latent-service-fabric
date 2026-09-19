@@ -225,7 +225,8 @@ PY
   --expected-generation 0 --expected-state-version 0 --operation-id native-example-deploy
 "$CLI" --config "$CLIENT" --output json invoke --service examples/echo \
   --contract examples:echo/api@0.1.0 --function echo --input "$EXAMPLE/input.json" \
-  --activation-id native-example-first --wall-time-ms 5000 --rpc-timeout-ms 5000
+  --activation-id native-example-first --cpu-fuel 1000000 --memory-bytes 4194304 \
+  --log-bytes 16384 --wall-time-ms 5000 --rpc-timeout-ms 5000
 ```
 
 The zero deployment-state precondition is for a fresh node only. Read the current

@@ -255,6 +255,7 @@ def run(args):
                                       "purpose": args.purpose}, args.version, args.purpose == "candidate")
     report = {"schemaVersion": "latent.native-vm-result.v1", "passed": False, "acceptanceComplete": False,
               "acceptanceScope": "single-profile-native-vm",
+              "harnessSourceCommit": checked(["git", "-C", ROOT, "rev-parse", "HEAD"], maximum=1024).decode().strip(),
               "sourceCommit": args.commit, "version": args.version, "profile": args.profile, "purpose": args.purpose,
               "image": {key: profile[key] for key in ("imageUrl", "imageSha256", "distribution", "architecture")},
               "guestResults": [], "gaps": ["declared-compatible-native-version-pair-not-yet-selected"]}
