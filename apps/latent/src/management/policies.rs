@@ -118,7 +118,7 @@ pub fn prepare(args: &PolicyArgs, config: &ResolvedConfig) -> Result<Operation, 
             additional_policy,
         } => {
             let bytes = input::read(resource, 4096, "policy-resource")?;
-            domain::ResourceRequest::parse(&bytes).map_err(|_| invalid())?;
+            latent_wire::management::parse_inspection_resource(&bytes).map_err(|_| invalid())?;
             if publication_id
                 .parse::<latent_core::PublicationId>()
                 .is_err()

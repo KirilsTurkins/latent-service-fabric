@@ -9,6 +9,7 @@ mod observations;
 #[cfg(all(test, target_os = "linux"))]
 mod parity;
 mod policies;
+mod providers;
 mod rollouts;
 mod shutdown;
 mod start;
@@ -32,6 +33,7 @@ use latent_wire::invocation::{ActivationCleanupOwner, ActivationCleanupSnapshot}
 
 pub use audit::AuditShutdownReport;
 pub use policies::PolicyShutdownReport;
+pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
 
@@ -51,6 +53,7 @@ pub struct StandaloneNode {
     audit: Option<audit::AuditRuntime>,
     rollouts: Option<rollouts::RolloutRuntime>,
     policies: Option<policies::PolicyRuntime>,
+    providers: Option<Box<providers::ProviderRuntime>>,
     cleanup: Option<ActivationCleanupOwner>,
     sampler: Option<load::LoadSampler>,
     telemetry_runtime: Option<TelemetryRuntime>,
@@ -99,6 +102,13 @@ impl Drop for SupplyChainLifetime {
 }
 
 impl StandaloneNode {
+    #[must_use]
+    pub fn configured_providers(&self) -> &[ProviderDescriptor] {
+        self.providers
+            .as_deref()
+            .map_or(&[], providers::ProviderRuntime::descriptors)
+    }
+
     #[must_use]
     pub fn http_endpoint(&self) -> Option<SocketAddr> {
         self.http.as_ref().map(http::HttpOwner::local_addr)
