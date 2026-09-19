@@ -19,7 +19,7 @@ if __package__ in (None, ""):
 
 from tools.build_process import BuildProcessError, run_bounded
 from tools.build_process_signals import owned_cancellation
-from tools.phase3_security_artifacts import SecurityError, require, unique_object
+from tools.phase3_security_artifacts import SecurityError, require, unique_object, validate_failure_locations
 
 ROOT = Path(__file__).resolve().parents[1]
 LABEL = "latent.phase3-security.owner"
@@ -86,6 +86,7 @@ def run(args) -> dict:
                     and isinstance(report.get("classification"), str)
                     and re.fullmatch(r"[a-z0-9-]{1,80}", report["classification"]) is not None,
                     "container-failure-receipt")
+            validate_failure_locations(report.get("failureLocations", []))
         else:
             require(report.get("schemaVersion") == "latent.phase3.security.v1"
                     and report.get("passed") is True, "container-run-receipt")

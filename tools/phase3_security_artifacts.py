@@ -17,6 +17,7 @@ MAX_LIST_BYTES = 1024 * 1024
 MAX_LINK_PATHS = 256
 MAX_FILE_BYTES = 1024 * 1024 * 1024
 NAME = re.compile(r"[A-Za-z_][A-Za-z_0-9]*(?:::[A-Za-z_][A-Za-z_0-9]*)*\Z")
+FAILURE_FILE = re.compile(r"tools/[a-z][a-z0-9_]{0,63}\.py\Z")
 
 
 class SecurityError(ArtifactError):
@@ -26,6 +27,15 @@ class SecurityError(ArtifactError):
 def require(condition: bool, reason: str) -> None:
     if not condition:
         raise SecurityError(reason)
+
+
+def validate_failure_locations(value: object) -> None:
+    require(isinstance(value, list) and len(value) <= 8, "failure-location-count")
+    for location in value:
+        require(isinstance(location, dict) and set(location) == {"file", "line"}, "failure-location-fields")
+        require(isinstance(location["file"], str) and FAILURE_FILE.fullmatch(location["file"]) is not None,
+                "failure-location-file")
+        require(type(location["line"]) is int and 0 < location["line"] <= 1_000_000, "failure-location-line")
 
 
 @dataclass(frozen=True)

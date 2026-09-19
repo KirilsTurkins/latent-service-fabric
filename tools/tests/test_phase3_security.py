@@ -366,6 +366,29 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn("credential-fixture", diagnostic.getvalue())
         self.assertIn("fixture-or-process-error", diagnostic.getvalue())
 
+    def test_failure_locations_keep_source_coordinates_without_exception_text(self):
+        try:
+            artifacts.require(False, "credential-fixture-never-log")
+        except artifacts.SecurityError as error:
+            locations = security.failure_locations(error)
+        self.assertEqual([location["file"] for location in locations], ["tools/phase3_security_artifacts.py"])
+        artifacts.validate_failure_locations(locations)
+        encoded = json.dumps(locations)
+        self.assertNotIn("credential-fixture", encoded)
+        self.assertNotIn(str(security.ROOT), encoded)
+
+    def test_failure_locations_reject_private_paths_text_and_unbounded_metadata(self):
+        location = {"file": "tools/phase3_security_manual.py", "line": 1}
+        artifacts.validate_failure_locations([location])
+        invalid = [None, {}, [location] * 9, [{**location, "message": "credential-fixture-never-log"}]]
+        invalid.extend([{**location, "file": filename}] for filename in (
+            "../private.py", str(security.ROOT / "tools/phase3_security_manual.py"),
+            "tools/../private.py", "tools/nested/private.py", "tools/private.py\n"))
+        invalid.extend([{**location, "line": line}] for line in (True, 0, -1, 1_000_001, "1"))
+        for value in invalid:
+            with self.subTest(value=value), self.assertRaises(artifacts.SecurityError):
+                artifacts.validate_failure_locations(value)
+
     def test_mutated_manual_binary_prevents_a_final_fixture_identity_claim(self):
         arguments = argparse.Namespace(cli=Path("approved-cli"))
         runner = Mock(deadline=time.monotonic() + 5)
@@ -467,7 +490,8 @@ class ContainerTests(unittest.TestCase):
         after["State"]["Running"] = False
         report = {"schemaVersion": "latent.phase3.security.failure.v1", "profile": "manual", "passed": False,
                   "enclosingContainerStopRequired": True, "enclosingContainerOwner": "owned-fixture",
-                  "failedStage": "selected:case", "classification": "test-result-count"}
+                  "failedStage": "selected:case", "classification": "test-result-count",
+                  "failureLocations": [{"file": "tools/phase3_security.py", "line": 1}]}
         args = argparse.Namespace(container="named-fixture", owner="owned-fixture", arguments=["--inventory", "unused"])
         with patch.object(container, "inspect", side_effect=[before, after]), \
                 patch.object(container, "command", side_effect=[completed(json.dumps(report).encode()), completed()]):

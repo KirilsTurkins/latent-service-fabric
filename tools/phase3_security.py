@@ -12,6 +12,7 @@ import sys
 import tempfile
 import time
 import tomllib
+import traceback
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -19,7 +20,7 @@ if __package__ in (None, ""):
 from tools.build_process import BuildProcessError, run_bounded
 from tools.build_process_signals import owned_cancellation
 from tools.phase3_security_artifacts import (
-    MAX_LIST_BYTES, NAME, SecurityError, file_identity, listing, read_inventory, require,
+    FAILURE_FILE, MAX_LIST_BYTES, NAME, SecurityError, file_identity, listing, read_inventory, require,
     validate_custom, validate_result, validate_selection,
 )
 from tools.phase3_security_cases import GROUPS, selected
@@ -264,6 +265,20 @@ def failure_reason(error: BaseException) -> str:
     return str(error) if isinstance(error, (SecurityError, BuildProcessError)) else "fixture-or-process-error"
 
 
+def failure_locations(error: BaseException) -> list[dict]:
+    locations = []
+    for depth, (frame, line) in enumerate(traceback.walk_tb(error.__traceback__)):
+        if depth >= 128:
+            break
+        try:
+            filename = Path(frame.f_code.co_filename).relative_to(ROOT).as_posix()
+        except ValueError:
+            continue
+        if FAILURE_FILE.fullmatch(filename) is not None and 0 < line <= 1_000_000:
+            locations.append({"file": filename, "line": line})
+    return locations[-8:]
+
+
 def failure_report(args, runner: Runner, error: BaseException) -> dict:
     entries = [group.key + ":" + name for group in selected(args.profile)
                for name in ([group.target] if group.marker else
@@ -273,6 +288,7 @@ def failure_report(args, runner: Runner, error: BaseException) -> dict:
     return {"schemaVersion": "latent.phase3.security.failure.v1", "profile": args.profile, "passed": False,
             "requestedSourceCommit": args.source_commit if re.fullmatch(r"[0-9a-f]{40}", args.source_commit) else None,
             "failedStage": runner.current, "classification": failure_reason(error),
+            "failureLocations": failure_locations(error),
             "validatedCases": runner.validated_cases, "activeCase": runner.active_case,
             "activeCaseCommandAccepted": runner.active_case_completed if runner.active_case else None,
             "notExecutedCases": [name for name in entries if name not in completed and name != runner.active_case],
