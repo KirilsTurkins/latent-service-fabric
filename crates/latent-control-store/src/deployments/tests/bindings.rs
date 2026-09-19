@@ -6,6 +6,7 @@ mod local;
 mod package_fixture;
 mod publications;
 mod rejections;
+mod startup;
 use fixture::*;
 use latent_capabilities::broker::CapabilityPlanSource;
 use latent_routing::{RouteCompiler, RouteResolver, RouteSnapshotPublisher};

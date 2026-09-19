@@ -43,7 +43,7 @@ impl Harness {
             .unwrap();
         // No capsule, renderer, deployment or HTTP trigger exists in this node.
         value["httpIngress"]["bind"] = serde_json::json!("127.0.0.1:0");
-        let node = node_fixture::Fixture::start(root, value, None).await;
+        let node = Box::pin(node_fixture::Fixture::start(root, value, None)).await;
         assert!(
             node.node.http_snapshot().unwrap().assets.is_some(),
             "production startup installs one shared asset owner"

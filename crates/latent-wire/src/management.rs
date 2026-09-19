@@ -12,6 +12,7 @@ mod inventory;
 mod limits;
 mod policies;
 mod release;
+mod resource;
 mod rollouts;
 mod routes;
 mod triggers;
@@ -40,7 +41,9 @@ pub use latent_rpc::control::v1 as proto;
 pub use limits::ManagementLimits;
 pub use policies::PolicyResponseService;
 pub use release::{release_descriptor_from_proto, release_descriptor_to_proto};
+pub use resource::parse_inspection_resource;
 pub use rollouts::RolloutResponseService;
+pub use triggers::{http_trigger_from_proto, http_trigger_to_proto};
 
 /// All services share existing node-owned state. The adapter opens no listener.
 #[derive(Clone)]
