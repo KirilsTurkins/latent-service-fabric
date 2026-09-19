@@ -557,11 +557,13 @@ public sealed record UnsupportedWireValue(
 /// <param name="Outcome">The exact outcome value with preserved presence.</param>
 /// <param name="AuditAck">The exact audit_ack value with preserved presence.</param>
 /// <param name="AuditStatus">The exact audit_status value with preserved presence.</param>
+/// <param name="AuditAttemptSequence">The exact audit_attempt_sequence value with preserved presence.</param>
 public sealed record ResponseMetadata(
     RequestIdentity Identity,
     OutcomeKnowledge Outcome,
     AuditAck? AuditAck,
-    string? AuditStatus);
+    string? AuditStatus,
+    ulong? AuditAttemptSequence);
 
 /// <summary>Transport-neutral ClientFailure; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Category">The exact category value with preserved presence.</param>
@@ -574,6 +576,7 @@ public sealed record ResponseMetadata(
 /// <param name="AuditAck">The exact audit_ack value with preserved presence.</param>
 /// <param name="AuditStatus">The exact audit_status value with preserved presence.</param>
 /// <param name="UnsupportedWireValue">The exact unsupported_wire_value value with preserved presence.</param>
+/// <param name="AuditAttemptSequence">The exact audit_attempt_sequence value with preserved presence.</param>
 public sealed record ClientFailure(
     FailureCategory Category,
     string Message,
@@ -584,7 +587,8 @@ public sealed record ClientFailure(
     RequestIdentity Identity,
     AuditAck? AuditAck,
     string? AuditStatus,
-    UnsupportedWireValue? UnsupportedWireValue);
+    UnsupportedWireValue? UnsupportedWireValue,
+    ulong? AuditAttemptSequence);
 
 /// <summary>A fully owned unary response and independent recovery metadata.</summary>
 /// <typeparam name="Response">The response model.</typeparam>

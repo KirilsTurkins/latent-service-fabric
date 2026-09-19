@@ -309,7 +309,8 @@ public final class Management {
             RequestIdentity identity,
             OutcomeKnowledge outcome,
             Optional<AuditAck> auditAck,
-            Optional<String> auditStatus) { }
+            Optional<String> auditStatus,
+            Optional<Long> auditAttemptSequence) { }
 
     public record ClientFailure(
             FailureCategory category,
@@ -321,7 +322,8 @@ public final class Management {
             RequestIdentity identity,
             Optional<AuditAck> auditAck,
             Optional<String> auditStatus,
-            Optional<UnsupportedWireValue> unsupportedWireValue) { }
+            Optional<UnsupportedWireValue> unsupportedWireValue,
+            Optional<Long> auditAttemptSequence) { }
 
     public record ClientResponse<Response>(Response value, ResponseMetadata metadata) { }
 

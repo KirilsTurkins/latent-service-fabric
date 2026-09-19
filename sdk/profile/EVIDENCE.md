@@ -6,8 +6,8 @@ used. This records model/fixture evidence for #227, not transport delivery.
 
 | Check | Observed result |
 | --- | --- |
-| `python sdk/profile/validate.py` | 8 authoritative RPCs, 6 facades, 66 shared vectors and 16 unsigned boundaries validated; generated files current. |
-| `python -m unittest discover -s sdk/profile -p "test_*.py"` | 11 tests passed using Python 3.13.5. |
+| `python sdk/profile/validate.py` | 8 authoritative RPCs, 6 facades, 68 shared vectors and 16 unsigned boundaries validated; generated files current. |
+| `python -m unittest discover -s sdk/profile -p "test_*.py"` | 12 tests passed using Python 3.13.5. |
 | `cargo test -p latent-sdk --locked --tests` | 11 tests passed, including public `latent_sdk::management` vector/lifetime tests and unchanged legacy identity/publication tests, Rust 1.97.1. |
 | `cargo clippy -p latent-sdk --locked --all-targets -- -D warnings` | Passed. Generated vector assertions allow only the intentional long-function lint. |
 | `rustfmt --edition 2021 --check` on the three new Rust sources | Passed; generated Rust and Go also reproduce through pinned formatter output. |
@@ -17,7 +17,7 @@ used. This records model/fixture evidence for #227, not transport delivery.
 | Release build and execution of `Latent.Sdk.SemanticTests` | Zero warnings/errors; vectors/lifetime/legacy tests passed on .NET SDK 8.0.425. |
 | Zig 0.16.0 `cc -std=c11 -Wall -Wextra -Werror -pedantic` plus executable | Windows-native C vectors, callback ownership and legacy tests passed. |
 
-Every native suite checks the same 66 cases and canonical decimal inputs.
+Every native suite checks the same 68 cases and canonical decimal inputs.
 Important regression boundaries include exact `18446744073709551615`, values
 above JavaScript's safe number range, trailing LF/CRLF/NUL rejection, optional
 zero versus missing generation, unknown signed enum values, retained publication
@@ -25,6 +25,12 @@ and original operation receipts, independent audit uncertainty, and local
 cancellation that cannot establish server cleanup. Rust uses a bounded poll;
 Go/Java/.NET use finite wait guards; C checks callback/handle ownership without
 unbounded asynchronous work.
+
+The final audit correction adds independent optional u64
+`audit_attempt_sequence` to response metadata and failures. Shared vectors verify
+absent/zero/max presence, retain a known acknowledgement separately, and preserve
+unknown `future-state` plus a maximum attempt without fabricating any numeric
+acknowledgement. All six native suites rerun these same corrected cases.
 
 ## Reproduction and limits
 

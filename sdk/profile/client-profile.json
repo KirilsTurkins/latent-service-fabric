@@ -46,7 +46,8 @@
       {"name": "identity", "type": "RequestIdentity", "required": true},
       {"name": "outcome", "type": "OutcomeKnowledge"},
       {"name": "audit_ack", "type": "AuditAck", "optional": true},
-      {"name": "audit_status", "type": "string", "optional": true}
+      {"name": "audit_status", "type": "string", "optional": true},
+      {"name": "audit_attempt_sequence", "type": "uint64", "optional": true}
     ],
     "ClientFailure": [
       {"name": "category", "type": "FailureCategory"},
@@ -58,7 +59,8 @@
       {"name": "identity", "type": "RequestIdentity", "required": true},
       {"name": "audit_ack", "type": "AuditAck", "optional": true},
       {"name": "audit_status", "type": "string", "optional": true},
-      {"name": "unsupported_wire_value", "type": "UnsupportedWireValue", "optional": true}
+      {"name": "unsupported_wire_value", "type": "UnsupportedWireValue", "optional": true},
+      {"name": "audit_attempt_sequence", "type": "uint64", "optional": true}
     ]
   }
 }

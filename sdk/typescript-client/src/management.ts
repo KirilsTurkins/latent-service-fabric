@@ -347,6 +347,7 @@ export interface ResponseMetadata {
   readonly outcome: OutcomeKnowledge;
   readonly auditAck?: AuditAck;
   readonly auditStatus?: string;
+  readonly auditAttemptSequence?: bigint;
 }
 
 export interface ClientFailure {
@@ -360,6 +361,7 @@ export interface ClientFailure {
   readonly auditAck?: AuditAck;
   readonly auditStatus?: string;
   readonly unsupportedWireValue?: UnsupportedWireValue;
+  readonly auditAttemptSequence?: bigint;
 }
 
 export interface ClientResponse<Response> {

@@ -35,7 +35,7 @@ export function identity(value: unknown): profile.RequestIdentity {
   };
 }
 
-export type Audit = Pick<profile.ResponseMetadata, "auditAck" | "auditStatus">;
+export type Audit = Pick<profile.ResponseMetadata, "auditAck" | "auditStatus" | "auditAttemptSequence">;
 
 export function audit(headers: ReadonlyMap<string, string>): Audit {
   const status = headers.get("latent-audit-status");
@@ -44,13 +44,14 @@ export function audit(headers: ReadonlyMap<string, string>): Audit {
     if (attempt !== undefined) throw new Error("audit sequence without status");
     return {};
   }
-  if (!/^[a-z][a-z-]{0,63}$/.test(status)) throw new Error("invalid audit status");
+  if (!/^[\x21-\x7e]{1,64}$/.test(status)) throw new Error("invalid audit status");
   const codes: Record<string, number> = { durable: 1, "outcome-unknown": 2, "audit-unavailable": 3, disabled: 4 };
   const sequence = attempt === undefined ? undefined : profile.parseU64Decimal(attempt);
   if (sequence === 0n || ((status === "durable" || status === "outcome-unknown") && sequence === undefined)) throw new Error("invalid audit sequence");
   const code = codes[status];
   return {
     auditStatus: status,
+    ...(sequence === undefined ? {} : { auditAttemptSequence: sequence }),
     ...(code === undefined ? {} : { auditAck: { status: code, ...(sequence === undefined ? {} : { attemptSequence: sequence }) } }),
   };
 }
