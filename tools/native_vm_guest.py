@@ -316,7 +316,7 @@ def publish(plan):
     deployment["metadata"]["name"] = "native-retained"
     deployment["spec"]["release"] = release["digest"]
     deployment["spec"]["publication"] = release["publication"]["id"]
-    directory = Path(plan.get("localDirectory", str(ROOT)))
+    directory = Path(plan.get("inputDirectory", str(ROOT)))
     deployment_path = directory / ("deployment-" + plan["version"] + ".json")
     write(deployment_path, deployment)
     snapshot = cli(plan, "deployment", "get", "native-retained", "--operation-snapshot", codes=(6,))["data"]
@@ -515,7 +515,10 @@ def upgrade(plan):
 
 def rootless(plan):
     require(os.geteuid() != 0 and not CONFIG.exists(), "actual-rootless-identity-required")
-    plan = {**plan, "profile": "local-experimental-v1", "localDirectory": str(Path.home() / "lsf-evaluation")}
+    inputs = Path.home() / "lsf-evaluation-inputs"
+    inputs.mkdir(mode=0o700)
+    plan = {**plan, "profile": "local-experimental-v1", "localDirectory": str(Path.home() / "lsf-evaluation"),
+            "inputDirectory": str(inputs)}
     authenticate(plan)
     bootstrap(plan, "install", "--port", "50052")
     directory = Path(plan["localDirectory"])
@@ -540,7 +543,8 @@ def rootless(plan):
     try:
         bootstrap(plan, "readiness")
         publish(plan)
-        require(bootstrap(plan, "remove", codes=None)[0] != 0, "rootless-live-mutation-not-serialized")
+        status, rejected = bootstrap(plan, "remove", codes=None)
+        require(status != 0 and rejected.get("diagnostic") == "installation-busy", "rootless-live-mutation-not-serialized")
         os.killpg(process.pid, signal.SIGTERM)
         require(process.wait(timeout=90) == 0, "rootless-unclean-exit")
         reader.join(timeout=5)
@@ -560,6 +564,8 @@ def rootless(plan):
     bootstrap(plan, "remove")
     installation = bootstrap(plan, "status")[1]["installationId"]
     bootstrap(plan, "purge", "--confirm-installation", installation)
+    (inputs / ("deployment-" + plan["version"] + ".json")).unlink()
+    inputs.rmdir()
     passed("actual-unprivileged-foreground-no-systemd-serialization-and-clean-shutdown")
 
 
