@@ -214,12 +214,7 @@ pub(super) fn audit(metadata: &MetadataMap) -> Result<Option<AuditAcknowledgemen
         };
     };
     let state = state.to_str().map_err(|_| invalid())?;
-    if state.is_empty()
-        || state.len() > 64
-        || !state
-            .bytes()
-            .all(|byte| byte.is_ascii_lowercase() || byte == b'-')
-    {
+    if state.is_empty() || state.len() > 64 || !state.bytes().all(|byte| byte.is_ascii_graphic()) {
         return Err(RpcFailure::unsupported("audit.status", state));
     }
     let sequence = sequence

@@ -4,6 +4,7 @@ mod error;
 mod invocation;
 pub mod management;
 mod ownership;
+mod profile;
 
 #[cfg(test)]
 mod tests;

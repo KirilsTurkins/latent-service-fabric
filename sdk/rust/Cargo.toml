@@ -35,3 +35,7 @@ tokio = { workspace = true, features = ["net", "io-util", "rt-multi-thread", "te
 [[example]]
 name = "provider_client"
 required-features = ["transport"]
+
+[[example]]
+name = "provider_workflow"
+required-features = ["transport"]
