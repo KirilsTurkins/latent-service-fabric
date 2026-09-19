@@ -2,7 +2,9 @@
 use super::{invalid, CredentialRole, NodeConfig};
 use crate::standalone::http::tls;
 use latent_core::{InvocationPrincipal, Metadata, PlatformError, PrincipalKind, TenantId};
-use latent_ingress::http::{CanonicalTarget, Scheme, EXCHANGE_RESERVATION_BYTES};
+use latent_ingress::http::{
+    cache::PublicCachePolicy, CanonicalTarget, Scheme, EXCHANGE_RESERVATION_BYTES,
+};
 use serde::{Deserialize, Deserializer};
 use std::{
     collections::BTreeSet,
@@ -24,6 +26,8 @@ pub struct HttpIngressConfig {
     pub authentication: HttpAuthentication,
     #[serde(default)]
     pub limits: HttpIngressLimits,
+    #[serde(default)]
+    pub response_cache: Vec<PublicCachePolicy>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -105,6 +109,7 @@ pub(crate) struct HttpSettings {
     pub authentication: Authentication,
     pub limits: HttpIngressLimits,
     pub request_timeout_millis: u64,
+    pub response_cache: Vec<PublicCachePolicy>,
 }
 pub(super) fn present<'de, D: Deserializer<'de>>(
     d: D,
@@ -136,6 +141,7 @@ pub(super) fn derive(
         return Ok(None);
     };
     validate_limits(http, reservations)?;
+    validate_cache(http)?;
     let limits = http.limits;
     let (tls, scheme, peers) = match &http.transport {
         HttpTransport::Loopback if http.bind.ip().is_loopback() => (None, Scheme::Http, Vec::new()),
@@ -215,9 +221,37 @@ pub(super) fn derive(
         authentication,
         limits,
         request_timeout_millis: config.execution.maximum_wall_time_millis,
+        response_cache: http.response_cache.clone(),
     }))
 }
 
+fn validate_cache(http: &HttpIngressConfig) -> Result<(), PlatformError> {
+    if http.response_cache.is_empty() {
+        return Ok(());
+    }
+    let HttpAuthentication::PublicOrigins { origins } = &http.authentication else {
+        return Err(invalid("httpIngress.responseCache"));
+    };
+    let mut unique = BTreeSet::new();
+    if http.response_cache.len() > 32
+        || http.response_cache.iter().any(|policy| {
+            !policy.validate()
+                || !unique.insert((
+                    &policy.tenant,
+                    &policy.publication,
+                    &policy.authority,
+                    &policy.path,
+                ))
+                || policy.renderer_profile != latent_ingress::http::PROFILE
+                || !origins.iter().any(|origin| {
+                    origin.authority == policy.authority && origin.tenant == policy.tenant
+                })
+        })
+    {
+        return Err(invalid("httpIngress.responseCache"));
+    }
+    Ok(())
+}
 fn validate_limits(http: &HttpIngressConfig, reservations: usize) -> Result<(), PlatformError> {
     let limits = http.limits;
     if http.format_version != 1

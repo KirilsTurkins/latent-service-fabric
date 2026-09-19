@@ -1,6 +1,6 @@
 use super::HttpSettings;
 use crate::config::http::CONNECTION_BYTES;
-use latent_ingress::http::{HttpPool, EXCHANGE_RESERVATION_BYTES};
+use latent_ingress::http::{cache::ResponseCache, HttpPool, EXCHANGE_RESERVATION_BYTES};
 use serde::Serialize;
 use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
@@ -18,6 +18,7 @@ pub(super) enum Signal {
 pub(super) struct State {
     pub signal: watch::Sender<Signal>,
     pub pool: HttpPool,
+    pub response_cache: Option<ResponseCache>,
     pub connections: AtomicUsize,
     pub maximum_connections: usize,
     pub maximum_bytes: usize,
@@ -48,6 +49,9 @@ pub struct HttpSnapshot {
     pub exchanges: usize,
     pub maximum_buffer_bytes: usize,
     pub reserved_buffer_bytes: usize,
+    pub response_cache_entries: usize,
+    pub response_cache_owners: usize,
+    pub response_cache_reserved_bytes: usize,
 }
 impl HttpSnapshot {
     #[must_use]
@@ -60,11 +64,22 @@ impl HttpSnapshot {
             && self.connections == 0
             && self.exchanges == 0
             && self.reserved_buffer_bytes == 0
+            && self.response_cache_entries == 0
+            && self.response_cache_owners == 0
+            && self.response_cache_reserved_bytes == 0
     }
 }
 impl HttpHandle {
     pub(super) fn new(settings: &HttpSettings) -> Result<Self, latent_core::PlatformError> {
         let limits = settings.limits;
+        let response_cache = if settings.response_cache.is_empty() {
+            None
+        } else {
+            Some(
+                ResponseCache::new(settings.response_cache.clone())
+                    .map_err(|_| super::failure())?,
+            )
+        };
         Ok(Self(Arc::new(State {
             signal: watch::channel(Signal::Starting).0,
             pool: HttpPool::new(
@@ -72,6 +87,7 @@ impl HttpHandle {
                 limits.maximum_exchanges * EXCHANGE_RESERVATION_BYTES,
             )
             .map_err(|_| super::failure())?,
+            response_cache,
             connections: AtomicUsize::new(0),
             maximum_connections: limits.maximum_connections,
             maximum_bytes: limits.maximum_buffer_bytes,
@@ -83,6 +99,12 @@ impl HttpHandle {
     }
     pub(crate) fn snapshot(&self) -> HttpSnapshot {
         let pool = self.0.pool.snapshot();
+        let cache = self
+            .0
+            .response_cache
+            .as_ref()
+            .map(ResponseCache::snapshot)
+            .unwrap_or_default();
         let connections = self.0.connections.load(Ordering::Acquire);
         HttpSnapshot {
             listener_alive: self.0.listener_alive.load(Ordering::Acquire),
@@ -96,6 +118,9 @@ impl HttpHandle {
             exchanges: pool.active_exchanges,
             maximum_buffer_bytes: self.0.maximum_bytes,
             reserved_buffer_bytes: connections * CONNECTION_BYTES + pool.reserved_bytes,
+            response_cache_entries: cache.entries,
+            response_cache_owners: cache.owners,
+            response_cache_reserved_bytes: cache.reserved_bytes,
         }
     }
     pub(super) fn accepting(&self) -> bool {
@@ -114,6 +139,11 @@ impl HttpHandle {
         self.signal(Signal::Draining);
     }
     pub(super) fn signal(&self, signal: Signal) {
+        if signal >= Signal::Draining {
+            if let Some(cache) = &self.0.response_cache {
+                cache.close();
+            }
+        }
         self.0.signal.send_if_modified(|old| {
             if *old < signal {
                 *old = signal;
