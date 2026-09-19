@@ -31,7 +31,8 @@ pub async fn execute(operation: WebOperation, session: &Session) -> Result<Outco
                 .await?
                 .into_inner();
             mutation(
-                response,
+                response.operation,
+                response.audit_ack,
                 &selected,
                 &operation,
                 proto::ReleaseLifecycleAction::Publish as i32,
@@ -48,7 +49,15 @@ pub async fn execute(operation: WebOperation, session: &Session) -> Result<Outco
                 .call(client(session).change_web_lifecycle(session.request(request)?))
                 .await?
                 .into_inner();
-            mutation(response, &selected, &operation, action, reason, session)
+            mutation(
+                response.operation,
+                response.audit_ack,
+                &selected,
+                &operation,
+                action,
+                reason,
+                session,
+            )
         }
         WebOperation::Renew(request) => {
             let selected = request.publication.clone().ok_or_else(invalid_input)?;
@@ -58,7 +67,8 @@ pub async fn execute(operation: WebOperation, session: &Session) -> Result<Outco
                 .await?
                 .into_inner();
             mutation(
-                response,
+                response.operation,
+                response.audit_ack,
                 &selected,
                 &operation,
                 proto::ReleaseLifecycleAction::RenewEvidence as i32,
@@ -121,13 +131,18 @@ async fn prepare(
 }
 
 fn mutation(
-    response: proto::WebMutationResponse,
+    receipt: Option<proto::WebOperationReceipt>,
+    audit_ack: Option<proto::AuditAck>,
     publication: &proto::PublicationRef,
     operation: &proto::ReleaseOperationPrecondition,
     action: i32,
     reason: i32,
     session: &Session,
 ) -> Result<Outcome, Failure> {
+    let response = proto::WebMutationResponse {
+        operation: receipt,
+        audit_ack,
+    };
     projection::checked(&response, session.max_response_bytes())?;
     let receipt = response.operation.as_ref().ok_or_else(invalid_response)?;
     association(

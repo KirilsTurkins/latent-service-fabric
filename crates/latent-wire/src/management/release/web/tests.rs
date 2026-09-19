@@ -6,6 +6,7 @@ use latent_artifacts::{
     ReleaseLifecycleReason, ReleaseOperationDisposition,
 };
 use latent_core::TenantId;
+use prost::Message;
 use tonic::Code;
 
 fn receipt() -> WebOperationReceipt {
@@ -116,5 +117,46 @@ fn web_domain_receipt_cannot_claim_capsule_authority_foreign_scope_or_rejection(
                 .code(),
             Code::Internal
         );
+    }
+}
+
+#[test]
+fn named_rpc_responses_preserve_the_preflighted_wire_fields_and_owned_size() {
+    let common = conversion::mutation(
+        &WebMutationResult {
+            receipt: receipt(),
+            replay: false,
+        },
+        &TenantId("tests".into()),
+        &ManagementLimits::default(),
+        true,
+    )
+    .unwrap();
+    let published = proto::PublishWebPackageResponse {
+        operation: common.operation.clone(),
+        audit_ack: common.audit_ack.clone(),
+    };
+    let changed = proto::ChangeWebLifecycleResponse {
+        operation: common.operation.clone(),
+        audit_ack: common.audit_ack.clone(),
+    };
+    let renewed = proto::RenewWebEvidenceResponse {
+        operation: common.operation.clone(),
+        audit_ack: common.audit_ack.clone(),
+    };
+    let expected = common.encode_to_vec();
+    for encoded in [
+        published.encode_to_vec(),
+        changed.encode_to_vec(),
+        renewed.encode_to_vec(),
+    ] {
+        assert_eq!(encoded, expected);
+    }
+    for bytes in [
+        std::mem::size_of_val(&published),
+        std::mem::size_of_val(&changed),
+        std::mem::size_of_val(&renewed),
+    ] {
+        assert_eq!(bytes, std::mem::size_of_val(&common));
     }
 }

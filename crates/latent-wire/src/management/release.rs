@@ -35,8 +35,13 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
     async fn publish_web_package(
         &self,
         request: Request<proto::PublishWebPackageRequest>,
-    ) -> Result<Response<proto::WebMutationResponse>, Status> {
-        self.web_publish(request).await
+    ) -> Result<Response<proto::PublishWebPackageResponse>, Status> {
+        self.web_publish(request).await.map(|response| {
+            response.map(|value| proto::PublishWebPackageResponse {
+                operation: value.operation,
+                audit_ack: value.audit_ack,
+            })
+        })
     }
     async fn get_web_publication(
         &self,
@@ -53,14 +58,24 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
     async fn change_web_lifecycle(
         &self,
         request: Request<proto::ChangeWebLifecycleRequest>,
-    ) -> Result<Response<proto::WebMutationResponse>, Status> {
-        self.web_change(request).await
+    ) -> Result<Response<proto::ChangeWebLifecycleResponse>, Status> {
+        self.web_change(request).await.map(|response| {
+            response.map(|value| proto::ChangeWebLifecycleResponse {
+                operation: value.operation,
+                audit_ack: value.audit_ack,
+            })
+        })
     }
     async fn renew_web_evidence(
         &self,
         request: Request<proto::RenewWebEvidenceRequest>,
-    ) -> Result<Response<proto::WebMutationResponse>, Status> {
-        self.web_renew(request).await
+    ) -> Result<Response<proto::RenewWebEvidenceResponse>, Status> {
+        self.web_renew(request).await.map(|response| {
+            response.map(|value| proto::RenewWebEvidenceResponse {
+                operation: value.operation,
+                audit_ack: value.audit_ack,
+            })
+        })
     }
     async fn publish_release(
         &self,

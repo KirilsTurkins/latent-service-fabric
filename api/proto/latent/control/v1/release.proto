@@ -325,12 +325,12 @@ service ReleaseService {
   rpc GetReleaseOperation(GetReleaseOperationRequest) returns (GetReleaseOperationResponse);
   rpc ChangeReleaseLifecycle(ChangeReleaseLifecycleRequest) returns (ChangeReleaseLifecycleResponse);
   rpc RenewReleaseEvidence(RenewReleaseEvidenceRequest) returns (RenewReleaseEvidenceResponse);
-  rpc PublishWebPackage(PublishWebPackageRequest) returns (WebMutationResponse);
+  rpc PublishWebPackage(PublishWebPackageRequest) returns (PublishWebPackageResponse);
   rpc GetWebPublication(GetWebPublicationRequest) returns (GetWebPublicationResponse);
   rpc PrepareWebPublication(PrepareWebPublicationRequest) returns (PrepareWebPublicationResponse);
   rpc GetWebOperation(GetWebOperationRequest) returns (GetWebOperationResponse);
-  rpc ChangeWebLifecycle(ChangeWebLifecycleRequest) returns (WebMutationResponse);
-  rpc RenewWebEvidence(RenewWebEvidenceRequest) returns (WebMutationResponse);
+  rpc ChangeWebLifecycle(ChangeWebLifecycleRequest) returns (ChangeWebLifecycleResponse);
+  rpc RenewWebEvidence(RenewWebEvidenceRequest) returns (RenewWebEvidenceResponse);
 }
 
 message WebOperationReceipt {
@@ -379,6 +379,21 @@ message PublishWebPackageRequest {
 }
 
 message WebMutationResponse {
+  WebOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
+}
+
+message PublishWebPackageResponse {
+  WebOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
+}
+
+message ChangeWebLifecycleResponse {
+  WebOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
+}
+
+message RenewWebEvidenceResponse {
   WebOperationReceipt operation = 1;
   optional AuditAck audit_ack = 2;
 }
