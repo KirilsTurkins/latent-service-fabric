@@ -1,0 +1,1168 @@
+{
+  "profile": "latent.client.v1",
+  "operations": [
+    {
+      "name": "Invoke",
+      "service": "latent.invocation.v1.InvocationService",
+      "request": "InvokeRequest",
+      "response": "InvokeResponse",
+      "recovery": "activation_id"
+    },
+    {
+      "name": "Cancel",
+      "service": "latent.invocation.v1.InvocationService",
+      "request": "CancelRequest",
+      "response": "CancelResponse",
+      "recovery": "activation_id"
+    },
+    {
+      "name": "GetActivation",
+      "service": "latent.invocation.v1.InvocationService",
+      "request": "GetActivationRequest",
+      "response": "ActivationStatus",
+      "recovery": "activation_id"
+    },
+    {
+      "name": "GetPolicy",
+      "service": "latent.control.v1.PolicyService",
+      "request": "GetPolicyRequest",
+      "response": "GetPolicyResponse"
+    },
+    {
+      "name": "ListPolicies",
+      "service": "latent.control.v1.PolicyService",
+      "request": "ListPoliciesRequest",
+      "response": "ListPoliciesResponse"
+    },
+    {
+      "name": "ListCapabilities",
+      "service": "latent.control.v1.CapabilityService",
+      "request": "ListCapabilitiesRequest",
+      "response": "ListCapabilitiesResponse"
+    },
+    {
+      "name": "ApplyPolicy",
+      "service": "latent.control.v1.PolicyService",
+      "request": "ApplyPolicyRequest",
+      "response": "ApplyPolicyResponse",
+      "recovery": "operation_id",
+      "precondition": "expected_generation"
+    },
+    {
+      "name": "GetPolicyOperation",
+      "service": "latent.control.v1.PolicyService",
+      "request": "GetPolicyOperationRequest",
+      "response": "GetPolicyOperationResponse",
+      "recovery": "operation_id"
+    }
+  ],
+  "messages": {
+    "ResourceBudget": [
+      {
+        "name": "cpu_fuel",
+        "type": "uint64",
+        "number": 1
+      },
+      {
+        "name": "memory_bytes",
+        "type": "uint64",
+        "number": 2
+      },
+      {
+        "name": "child_calls",
+        "type": "uint32",
+        "number": 4
+      },
+      {
+        "name": "outbound_requests",
+        "type": "uint32",
+        "number": 5
+      },
+      {
+        "name": "state_read_bytes",
+        "type": "uint64",
+        "number": 6
+      },
+      {
+        "name": "state_write_bytes",
+        "type": "uint64",
+        "number": 7
+      },
+      {
+        "name": "blob_read_bytes",
+        "type": "uint64",
+        "number": 8
+      },
+      {
+        "name": "blob_write_bytes",
+        "type": "uint64",
+        "number": 9
+      },
+      {
+        "name": "log_bytes",
+        "type": "uint64",
+        "number": 10
+      },
+      {
+        "name": "effect_count",
+        "type": "uint32",
+        "number": 11
+      },
+      {
+        "name": "wall_time_limit_millis",
+        "type": "uint64",
+        "number": 12,
+        "optional": true
+      }
+    ],
+    "ErrorDetail": [
+      {
+        "name": "kind",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "fields",
+        "type": "string",
+        "number": 2,
+        "map": true
+      }
+    ],
+    "PlatformError": [
+      {
+        "name": "code",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "retryable",
+        "type": "bool",
+        "number": 3
+      },
+      {
+        "name": "detail_items",
+        "type": "ErrorDetail",
+        "number": 5,
+        "repeated": true
+      }
+    ],
+    "ObjectMetadata": [
+      {
+        "name": "name",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "tenant",
+        "type": "string",
+        "number": 2,
+        "optional": true
+      },
+      {
+        "name": "namespace",
+        "type": "string",
+        "number": 3,
+        "optional": true
+      },
+      {
+        "name": "labels",
+        "type": "string",
+        "number": 4,
+        "map": true
+      },
+      {
+        "name": "annotations",
+        "type": "string",
+        "number": 5,
+        "map": true
+      }
+    ],
+    "PageRequest": [
+      {
+        "name": "page_size",
+        "type": "uint32",
+        "number": 1
+      },
+      {
+        "name": "page_token",
+        "type": "string",
+        "number": 2,
+        "optional": true
+      }
+    ],
+    "PageResponse": [
+      {
+        "name": "next_page_token",
+        "type": "string",
+        "number": 1,
+        "optional": true
+      }
+    ],
+    "AuditAck": [
+      {
+        "name": "status",
+        "type": "AuditAckStatus",
+        "number": 1
+      },
+      {
+        "name": "attempt_sequence",
+        "type": "uint64",
+        "number": 2,
+        "optional": true
+      }
+    ],
+    "InvocationTarget": [
+      {
+        "name": "tenant",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "service",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "contract",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "function",
+        "type": "string",
+        "number": 4
+      },
+      {
+        "name": "route",
+        "type": "string",
+        "number": 5,
+        "optional": true
+      }
+    ],
+    "InvokeRequest": [
+      {
+        "name": "activation_id",
+        "type": "string",
+        "number": 1,
+        "optional": true
+      },
+      {
+        "name": "parent_activation_id",
+        "type": "string",
+        "number": 2,
+        "optional": true
+      },
+      {
+        "name": "root_activation_id",
+        "type": "string",
+        "number": 3,
+        "optional": true
+      },
+      {
+        "name": "target",
+        "type": "InvocationTarget",
+        "number": 4,
+        "optional": true
+      },
+      {
+        "name": "payload",
+        "type": "bytes",
+        "number": 5
+      },
+      {
+        "name": "media_type",
+        "type": "string",
+        "number": 6
+      },
+      {
+        "name": "deadline_unix_millis",
+        "type": "uint64",
+        "number": 7,
+        "optional": true
+      },
+      {
+        "name": "priority",
+        "type": "uint32",
+        "number": 8
+      },
+      {
+        "name": "idempotency_key",
+        "type": "string",
+        "number": 9,
+        "optional": true
+      },
+      {
+        "name": "budget",
+        "type": "ResourceBudget",
+        "number": 10,
+        "optional": true
+      },
+      {
+        "name": "metadata",
+        "type": "string",
+        "number": 11,
+        "map": true
+      }
+    ],
+    "BudgetConsumption": [
+      {
+        "name": "cpu_fuel",
+        "type": "uint64",
+        "number": 1
+      },
+      {
+        "name": "peak_memory_bytes",
+        "type": "uint64",
+        "number": 2
+      },
+      {
+        "name": "wall_time_micros",
+        "type": "uint64",
+        "number": 3
+      },
+      {
+        "name": "child_calls",
+        "type": "uint32",
+        "number": 4
+      },
+      {
+        "name": "outbound_requests",
+        "type": "uint32",
+        "number": 5
+      },
+      {
+        "name": "state_read_bytes",
+        "type": "uint64",
+        "number": 6
+      },
+      {
+        "name": "state_write_bytes",
+        "type": "uint64",
+        "number": 7
+      },
+      {
+        "name": "blob_read_bytes",
+        "type": "uint64",
+        "number": 8
+      },
+      {
+        "name": "blob_write_bytes",
+        "type": "uint64",
+        "number": 9
+      },
+      {
+        "name": "log_bytes",
+        "type": "uint64",
+        "number": 10
+      },
+      {
+        "name": "effect_count",
+        "type": "uint32",
+        "number": 11
+      }
+    ],
+    "Success": [
+      {
+        "name": "payload",
+        "type": "bytes",
+        "number": 1
+      },
+      {
+        "name": "media_type",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "committed_state_version",
+        "type": "string",
+        "number": 3,
+        "optional": true
+      },
+      {
+        "name": "effect_ids",
+        "type": "string",
+        "number": 4,
+        "repeated": true
+      },
+      {
+        "name": "metadata",
+        "type": "string",
+        "number": 5,
+        "map": true
+      }
+    ],
+    "DeclaredError": [
+      {
+        "name": "code",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "payload",
+        "type": "bytes",
+        "number": 3
+      },
+      {
+        "name": "media_type",
+        "type": "string",
+        "number": 4
+      },
+      {
+        "name": "metadata",
+        "type": "string",
+        "number": 5,
+        "map": true
+      }
+    ],
+    "InvokeResponse": [
+      {
+        "name": "activation_id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "revision_id",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "release_digest",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "route_generation",
+        "type": "uint64",
+        "number": 4
+      },
+      {
+        "name": "success",
+        "type": "Success",
+        "number": 5,
+        "optional": true,
+        "oneof": "result"
+      },
+      {
+        "name": "declared_error",
+        "type": "DeclaredError",
+        "number": 8,
+        "optional": true,
+        "oneof": "result"
+      },
+      {
+        "name": "platform_failure",
+        "type": "PlatformError",
+        "number": 9,
+        "optional": true,
+        "oneof": "result"
+      },
+      {
+        "name": "consumption",
+        "type": "BudgetConsumption",
+        "number": 7,
+        "optional": true
+      },
+      {
+        "name": "publication_id",
+        "type": "string",
+        "number": 10,
+        "optional": true
+      }
+    ],
+    "CancelRequest": [
+      {
+        "name": "activation_id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "number": 2
+      }
+    ],
+    "CancelResponse": [
+      {
+        "name": "disposition",
+        "type": "CancelDisposition",
+        "number": 2
+      },
+      {
+        "name": "terminal_state",
+        "type": "string",
+        "number": 3,
+        "optional": true
+      }
+    ],
+    "GetActivationRequest": [
+      {
+        "name": "activation_id",
+        "type": "string",
+        "number": 1
+      }
+    ],
+    "ActivationSuccessSummary": [
+      {
+        "name": "committed_state_version",
+        "type": "string",
+        "number": 1,
+        "optional": true
+      },
+      {
+        "name": "effect_ids",
+        "type": "string",
+        "number": 2,
+        "repeated": true
+      },
+      {
+        "name": "metadata",
+        "type": "string",
+        "number": 3,
+        "map": true
+      }
+    ],
+    "ActivationStatus": [
+      {
+        "name": "activation_id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "phase",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "terminal_state",
+        "type": "string",
+        "number": 3,
+        "optional": true
+      },
+      {
+        "name": "last_updated_unix_millis",
+        "type": "uint64",
+        "number": 4
+      },
+      {
+        "name": "metadata",
+        "type": "string",
+        "number": 5,
+        "map": true
+      },
+      {
+        "name": "succeeded",
+        "type": "ActivationSuccessSummary",
+        "number": 6,
+        "optional": true,
+        "oneof": "terminal_outcome"
+      },
+      {
+        "name": "declared_error",
+        "type": "DeclaredError",
+        "number": 7,
+        "optional": true,
+        "oneof": "terminal_outcome"
+      },
+      {
+        "name": "platform_failure",
+        "type": "PlatformError",
+        "number": 8,
+        "optional": true,
+        "oneof": "terminal_outcome"
+      },
+      {
+        "name": "final_consumption",
+        "type": "BudgetConsumption",
+        "number": 9,
+        "optional": true
+      },
+      {
+        "name": "terminal_at_unix_millis",
+        "type": "uint64",
+        "number": 10,
+        "optional": true
+      }
+    ],
+    "Policy": [
+      {
+        "name": "id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "metadata",
+        "type": "ObjectMetadata",
+        "number": 2,
+        "optional": true
+      },
+      {
+        "name": "document",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "generation",
+        "type": "uint64",
+        "number": 4
+      },
+      {
+        "name": "language",
+        "type": "string",
+        "number": 5
+      },
+      {
+        "name": "record_kind",
+        "type": "CapabilityPolicyRecordKind",
+        "number": 6
+      },
+      {
+        "name": "content_digest",
+        "type": "string",
+        "number": 7
+      },
+      {
+        "name": "revoked",
+        "type": "bool",
+        "number": 8
+      }
+    ],
+    "ApplyPolicyRequest": [
+      {
+        "name": "policy",
+        "type": "Policy",
+        "number": 1,
+        "optional": true
+      },
+      {
+        "name": "expected_generation",
+        "type": "uint64",
+        "number": 2,
+        "optional": true
+      },
+      {
+        "name": "operation_id",
+        "type": "string",
+        "number": 3
+      }
+    ],
+    "CapabilityPolicyOperation": [
+      {
+        "name": "operation_id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "tenant",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "record_kind",
+        "type": "CapabilityPolicyRecordKind",
+        "number": 4
+      },
+      {
+        "name": "generation",
+        "type": "uint64",
+        "number": 5
+      },
+      {
+        "name": "content_digest",
+        "type": "string",
+        "number": 6
+      },
+      {
+        "name": "revoked",
+        "type": "bool",
+        "number": 7
+      }
+    ],
+    "ApplyPolicyResponse": [
+      {
+        "name": "policy",
+        "type": "Policy",
+        "number": 1,
+        "optional": true
+      },
+      {
+        "name": "receipt",
+        "type": "CapabilityPolicyOperation",
+        "number": 2,
+        "optional": true
+      }
+    ],
+    "GetPolicyRequest": [
+      {
+        "name": "id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "record_kind",
+        "type": "CapabilityPolicyRecordKind",
+        "number": 2
+      }
+    ],
+    "GetPolicyResponse": [
+      {
+        "name": "policy",
+        "type": "Policy",
+        "number": 1,
+        "optional": true
+      }
+    ],
+    "GetPolicyOperationRequest": [
+      {
+        "name": "operation_id",
+        "type": "string",
+        "number": 1
+      }
+    ],
+    "GetPolicyOperationResponse": [
+      {
+        "name": "receipt",
+        "type": "CapabilityPolicyOperation",
+        "number": 1,
+        "optional": true
+      }
+    ],
+    "ListPoliciesRequest": [
+      {
+        "name": "record_kind",
+        "type": "CapabilityPolicyRecordKind",
+        "number": 1
+      },
+      {
+        "name": "page",
+        "type": "PageRequest",
+        "number": 2,
+        "optional": true
+      }
+    ],
+    "ListPoliciesResponse": [
+      {
+        "name": "policies",
+        "type": "Policy",
+        "number": 1,
+        "repeated": true
+      },
+      {
+        "name": "catalog_generation",
+        "type": "uint64",
+        "number": 2
+      },
+      {
+        "name": "page",
+        "type": "PageResponse",
+        "number": 3,
+        "optional": true
+      }
+    ],
+    "CapabilityInspectionPolicy": [
+      {
+        "name": "id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "revision",
+        "type": "uint64",
+        "number": 2
+      },
+      {
+        "name": "digest",
+        "type": "string",
+        "number": 3
+      }
+    ],
+    "CapabilityBindingInspection": [
+      {
+        "name": "definition_digest",
+        "type": "string",
+        "number": 1,
+        "optional": true
+      },
+      {
+        "name": "provider_binding",
+        "type": "CapabilityInspectionPolicy",
+        "number": 2,
+        "optional": true
+      },
+      {
+        "name": "policies",
+        "type": "CapabilityInspectionPolicy",
+        "number": 3,
+        "repeated": true
+      },
+      {
+        "name": "provider_profile",
+        "type": "string",
+        "number": 4
+      },
+      {
+        "name": "provider_configuration_digest",
+        "type": "string",
+        "number": 5
+      },
+      {
+        "name": "provider_configuration_epoch",
+        "type": "uint64",
+        "number": 6
+      },
+      {
+        "name": "state",
+        "type": "string",
+        "number": 7
+      }
+    ],
+    "CapabilityDescriptor": [
+      {
+        "name": "id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "contract",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "provider",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "operations",
+        "type": "string",
+        "number": 4,
+        "repeated": true
+      },
+      {
+        "name": "attributes",
+        "type": "string",
+        "number": 5,
+        "map": true
+      },
+      {
+        "name": "inspection",
+        "type": "CapabilityBindingInspection",
+        "number": 6,
+        "optional": true
+      }
+    ],
+    "ListCapabilitiesRequest": [
+      {
+        "name": "contract_prefix",
+        "type": "string",
+        "number": 1,
+        "optional": true
+      },
+      {
+        "name": "provider",
+        "type": "string",
+        "number": 2,
+        "optional": true
+      },
+      {
+        "name": "page",
+        "type": "PageRequest",
+        "number": 3,
+        "optional": true
+      },
+      {
+        "name": "deployment_id",
+        "type": "string",
+        "number": 4
+      },
+      {
+        "name": "include_node_usage",
+        "type": "bool",
+        "number": 5
+      }
+    ],
+    "CapabilityInspectionRevision": [
+      {
+        "name": "deployment_id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "revision_id",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "component_digest",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "publication_id",
+        "type": "string",
+        "number": 4,
+        "optional": true
+      },
+      {
+        "name": "route_generation",
+        "type": "uint64",
+        "number": 5
+      },
+      {
+        "name": "catalog_transaction",
+        "type": "uint64",
+        "number": 6
+      }
+    ],
+    "CapabilityResourceUsage": [
+      {
+        "name": "scope",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "counters",
+        "type": "uint64",
+        "number": 2,
+        "map": true
+      },
+      {
+        "name": "unavailable",
+        "type": "string",
+        "number": 3,
+        "repeated": true
+      }
+    ],
+    "ListCapabilitiesResponse": [
+      {
+        "name": "capabilities",
+        "type": "CapabilityDescriptor",
+        "number": 1,
+        "repeated": true
+      },
+      {
+        "name": "page",
+        "type": "PageResponse",
+        "number": 2,
+        "optional": true
+      },
+      {
+        "name": "revision",
+        "type": "CapabilityInspectionRevision",
+        "number": 3,
+        "optional": true
+      },
+      {
+        "name": "tenant_usage",
+        "type": "CapabilityResourceUsage",
+        "number": 4,
+        "optional": true
+      },
+      {
+        "name": "node_usage",
+        "type": "CapabilityResourceUsage",
+        "number": 5,
+        "optional": true
+      },
+      {
+        "name": "state",
+        "type": "string",
+        "number": 6
+      }
+    ],
+    "CapabilityInspectionCeiling": [
+      {
+        "name": "operations",
+        "type": "uint32",
+        "number": 1
+      },
+      {
+        "name": "input_bytes",
+        "type": "uint64",
+        "number": 2
+      },
+      {
+        "name": "output_bytes",
+        "type": "uint64",
+        "number": 3
+      },
+      {
+        "name": "wall_time_millis",
+        "type": "uint64",
+        "number": 4
+      }
+    ],
+    "PublicationRef": [
+      {
+        "name": "id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "tenant",
+        "type": "string",
+        "number": 2
+      }
+    ],
+    "ReleaseSelector": [
+      {
+        "name": "component_digest",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "publication",
+        "type": "PublicationRef",
+        "optional": true
+      }
+    ],
+    "PublicationIdentity": [
+      {
+        "name": "publication",
+        "type": "PublicationRef",
+        "required": true
+      },
+      {
+        "name": "component_digest",
+        "type": "string"
+      },
+      {
+        "name": "package_digest",
+        "type": "string"
+      }
+    ],
+    "CallOptions": [
+      {
+        "name": "timeout_millis",
+        "type": "uint64",
+        "optional": true
+      }
+    ],
+    "RequestIdentity": [
+      {
+        "name": "activation_id",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "operation_id",
+        "type": "string",
+        "optional": true
+      }
+    ],
+    "ResponseMetadata": [
+      {
+        "name": "identity",
+        "type": "RequestIdentity",
+        "required": true
+      },
+      {
+        "name": "outcome",
+        "type": "OutcomeKnowledge"
+      },
+      {
+        "name": "audit_ack",
+        "type": "AuditAck",
+        "optional": true
+      },
+      {
+        "name": "audit_status",
+        "type": "string",
+        "optional": true
+      }
+    ],
+    "ClientFailure": [
+      {
+        "name": "category",
+        "type": "FailureCategory"
+      },
+      {
+        "name": "message",
+        "type": "string"
+      },
+      {
+        "name": "grpc_status",
+        "type": "int32",
+        "optional": true
+      },
+      {
+        "name": "platform_error",
+        "type": "PlatformError",
+        "optional": true
+      },
+      {
+        "name": "dispatched",
+        "type": "bool"
+      },
+      {
+        "name": "outcome",
+        "type": "OutcomeKnowledge"
+      },
+      {
+        "name": "identity",
+        "type": "RequestIdentity",
+        "required": true
+      },
+      {
+        "name": "audit_ack",
+        "type": "AuditAck",
+        "optional": true
+      },
+      {
+        "name": "audit_status",
+        "type": "string",
+        "optional": true
+      }
+    ]
+  },
+  "enums": {
+    "AuditAckStatus": {
+      "UNSPECIFIED": 0,
+      "DURABLE": 1,
+      "OUTCOME_UNKNOWN": 2,
+      "AUDIT_UNAVAILABLE": 3,
+      "DISABLED": 4
+    },
+    "CancelDisposition": {
+      "UNSPECIFIED": 0,
+      "ACCEPTED": 1,
+      "ALREADY_TERMINAL": 2,
+      "NOT_FOUND": 3
+    },
+    "CapabilityPolicyRecordKind": {
+      "UNSPECIFIED": 0,
+      "POLICY": 1,
+      "PROVIDER_BINDING": 2
+    },
+    "FailureCategory": {
+      "UNSPECIFIED": 0,
+      "LOCAL_CANCELLED": 1,
+      "DEADLINE": 2,
+      "TRANSPORT": 3,
+      "RPC": 4,
+      "DECODE": 5,
+      "LIMIT": 6,
+      "INVALID_REQUEST": 7
+    },
+    "OutcomeKnowledge": {
+      "UNSPECIFIED": 0,
+      "NOT_DISPATCHED": 1,
+      "UNKNOWN": 2,
+      "OBSERVED": 3
+    }
+  }
+}

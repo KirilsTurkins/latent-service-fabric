@@ -1,6 +1,11 @@
 # SDK surfaces
 
 The external client SDK directories contain interface-only programming models.
+The [common executable client profile](profile/README.md) supplies a complete,
+protobuf-derived eight-operation facade in all six languages, including policy,
+redacted provider inspection, preconditioned mutation and recovery. Its models
+and fast semantic fixtures are separate from the network implementations owned
+by Rust #228, TypeScript #230, Go #260, C #261, Java #262 and .NET #263.
 The [Rust guest SDK](rust-guest/README.md) provides generated typed capability
 bindings and ownership helpers for actual Wasm components;
 [C guest fixtures](c-guest/README.md) validate generated ownership and ABI behavior.
@@ -105,14 +110,14 @@ deployment, rollout and audit workflows. See the
 RPCs do not change the six handwritten SDKs' invocation and guest interfaces;
 their existing identity/cancellation fixtures remain required.
 
-Capability/provider management models, usable Rust/TypeScript transports and
-maintained guest capability bindings are planned in
-[Phase 3 #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
-None is implemented merely by the presence of a WIT package or a compiling SDK
-interface. The node still exposes only its supported context/log/clock guest
-imports; general providers, application ingress and browser/SSR execution remain
-planned. Package and SDK release versions do not change the independently
-versioned WIT and Protobuf contracts.
+The [shared Phase 3 facade](profile/README.md) adds management models without
+changing these legacy interfaces. Its rich error model retains raw RPC status,
+dispatch uncertainty, activation/operation recovery IDs and independent audit
+acknowledgement. A legacy message/retryable error is not a lossless substitute.
+See [Phase 3 #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
+for transport and runtime delivery. Neither a WIT package nor a compiling SDK
+interface proves an executable transport shipped. Package and SDK release
+versions do not change independently versioned WIT and Protobuf contracts.
 
 ## Publication identity (Phase 3)
 
