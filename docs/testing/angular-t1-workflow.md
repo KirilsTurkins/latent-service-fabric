@@ -108,6 +108,15 @@ separate. Full #226 completion is not claimed here.
 After integrating the provider startup fixes and optional backend profile,
 11 manifest and 115 wire tests pass, as does strict app-scope Linux Clippy.
 The initial fresh build rejects the stale installed npm tree against the merged
-lockfile; it does not publish a package. Qualification must provision that exact
-lock and build new bytes. An exporter launched before the output existed also
-failed and supplies no admission evidence.
+lockfile; it does not publish a package. Reprovisioning that exact lock in a
+dedicated Linux tool directory produces a new actual package successfully.
+An exporter launched before the output existed also failed and supplies no
+admission evidence. The later selected-publication context change requires
+another build and native qualification against its changed profile digest.
+
+The repository-contracts job on `ffea4260` rejects the optional backend ABI
+because its source tripwire still expects one unconditional generator. The
+updated tripwire accepts only the two exact, mutually exclusive reviewed
+generators and retains the single generated wasm-only unsafe allowance.
+The real source plus negative selector/world/import/handwritten-code cases pass
+18 focused boundary and workflow tests; the build-foundation validator passes.
