@@ -105,10 +105,18 @@ def pypi_packages(repo: Path, path: str) -> list[Package]:
 def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[dict]]:
     configuration = decode_json(read_file(policy, "inventory.json"))
     require(configuration.get("schema") == 1, "invalid-inventory-policy")
+    paths = tracked_paths(repo)
     covered, packages, records = set(), [], []
     for entry in configuration["manifests"]:
         path = entry["path"]
         require(path not in covered, "duplicate-inventory-path")
+        optional_directory = entry.get("absent_when_directory_missing")
+        if optional_directory is not None:
+            require(optional_directory == str(PurePosixPath(path).parent) and optional_directory != ".",
+                    "invalid-optional-inventory-directory")
+            if not any(candidate == optional_directory or candidate.startswith(optional_directory + "/") for candidate in paths):
+                records.append({"path": path, "coverage": "not-shipped-at-source-revision", "packages": 0})
+                continue
         payload = read_file(repo, path)
         if entry["kind"] == "cargo":
             cargo_paths, record = cargo_inventory(repo, entry)
@@ -133,7 +141,12 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
         path = entry["path"]
         require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == entry["sha256"], "unreviewed-manifest-lookalike")
         covered.add(path)
-    discovered = {path for path in tracked_paths(repo) if is_manifest(path)}
+    discovered = {path for path in paths if is_manifest(path)}
     require(discovered == covered, "unreviewed-or-missing-dependency-manifest")
+    control_path = "controls/.github/security/requirements.txt"
+    control_packages = pypi_packages(policy, "requirements.txt")
+    packages.extend(Package(item.ecosystem, item.name, item.version, control_path) for item in control_packages)
+    records.append({"path": control_path, "coverage": "OSV-scanner-controls", "packages": len(control_packages),
+                    "sha256": digest(read_file(policy, "requirements.txt"))})
     require(0 < len(packages) <= 5000, "sdk-package-count-limit")
     return sorted(set(packages)), records

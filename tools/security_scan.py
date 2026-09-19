@@ -19,6 +19,12 @@ from tools.security_findings import apply_exceptions, load_exceptions
 from tools.security_install import tool_lock
 
 
+def revision_state(repo: Path, scratch: Path) -> tuple[str, bool]:
+    _, revision = run(["git", "-C", str(repo), "rev-parse", "HEAD"], scratch, timeout=15)
+    _, changes = run(["git", "-C", str(repo), "status", "--porcelain=v1", "--untracked-files=normal"], scratch, timeout=30)
+    return revision.decode().strip(), not bool(changes.strip())
+
+
 def scan(mode: str, repo: Path, scratch: Path, tools: Path, base: str = "") -> tuple[int, dict]:
     exceptions = load_exceptions()
     if mode == "rustsec":
@@ -30,11 +36,12 @@ def scan(mode: str, repo: Path, scratch: Path, tools: Path, base: str = "") -> t
     else:
         findings, observation = security_content.static(repo, scratch, tools)
     remaining, waived = apply_exceptions(findings, exceptions)
-    _, revision = run(["git", "-C", str(repo), "rev-parse", "HEAD"], scratch, timeout=15)
-    _, control = run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], scratch, timeout=15)
+    revision, source_clean = revision_state(repo, scratch)
+    control, control_clean = revision_state(ROOT, scratch)
     policy_hashes = {path.name: digest(read_file(POLICY, path.name)) for path in sorted(POLICY.iterdir()) if path.is_file()}
     report = {"schema": 1, "mode": mode, "status": "findings" if remaining else "pass",
-              "source_revision": revision.decode().strip(), "control_revision": control.decode().strip(),
+              "source_revision": revision, "source_worktree_clean": source_clean,
+              "control_revision": control, "control_worktree_clean": control_clean,
               "observed_at": datetime.now(timezone.utc).isoformat(), "policy_sha256": policy_hashes,
               "tools": tool_lock()["tools"], "observation": observation,
               "finding_count": len(remaining), "exception_count": len(waived),

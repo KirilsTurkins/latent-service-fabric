@@ -17,6 +17,7 @@ from tools.security_common import POLICY, ROOT, SecurityError, child_environment
 from tools.security_content import source_findings, stage_text
 from tools.security_findings import apply_exceptions, finding, load_exceptions
 from tools.security_inventory import Package, inventory, npm_packages, pypi_packages
+from tools.security_scan import revision_state
 
 
 class SecurityFixtureTests(unittest.TestCase):
@@ -132,6 +133,21 @@ class SecurityFixtureTests(unittest.TestCase):
             with self.assertRaisesRegex(SecurityError, "unreviewed-or-missing-dependency-manifest"):
                 inventory(ROOT)
 
+    def test_legacy_release_absent_features_do_not_hide_partial_or_unknown_manifests(self) -> None:
+        from tools.security_common import tracked_paths
+        optional = ("examples/renderer-profile/", ".github/security/")
+        legacy_paths = [path for path in tracked_paths(ROOT) if not path.startswith(optional)]
+        with patch("tools.security_inventory.tracked_paths", return_value=legacy_paths):
+            packages, records = inventory(ROOT)
+        absent = {entry["path"] for entry in records if entry["coverage"] == "not-shipped-at-source-revision"}
+        self.assertEqual(absent, {"examples/renderer-profile/package.json", ".github/security/requirements.txt"})
+        self.assertTrue(any(package.path == "controls/.github/security/requirements.txt" for package in packages))
+        self.assertFalse(any(package.path.startswith("examples/renderer-profile/") for package in packages))
+        for partial in ("examples/renderer-profile/README.md", ".github/security/unexpected.json"):
+            with self.subTest(partial=partial), patch("tools.security_inventory.tracked_paths", return_value=[*legacy_paths, partial]):
+                with self.assertRaisesRegex(SecurityError, "unreviewed-or-missing-dependency-manifest"):
+                    inventory(ROOT)
+
     def test_synthetic_source_rule_has_pass_and_fail_without_execution(self) -> None:
         path = "tools/fixture.py"
         self.write(path, "value = 1\n")
@@ -218,6 +234,11 @@ class SecurityFixtureTests(unittest.TestCase):
         self.write("exceptions.json", fixture.read_text())
         with self.assertRaisesRegex(SecurityError, "expired-or-future-exception"):
             load_exceptions(self.root, date(2026, 9, 19))
+
+    def test_local_modified_evidence_is_not_reported_as_an_exact_clean_revision(self) -> None:
+        for changes, clean in ((b"", True), (b" M Cargo.lock\n", False), (b"?? fixture.txt\n", False)):
+            with patch("tools.security_scan.run", side_effect=[(0, b"a" * 40 + b"\n"), (0, changes)]):
+                self.assertEqual(revision_state(self.root, self.root), ("a" * 40, clean))
 
 
 if __name__ == "__main__":
