@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import base64
 import json
 import os
 from pathlib import Path
@@ -15,6 +16,7 @@ from tools.phase2_operator_process import Process, WorkflowError
 from tools.phase3_resource_campaign import write_receipt
 from tools.phase3_resource_analysis import complete_populations
 from tools.phase3_resource_identity import file_identity, inventory
+from tools.phase3_resource_fixture import validity
 from tools.phase3_resource_node import apply_dormant, configure
 from tools.phase3_resource_os import Probe, network_counts, proc_stat
 from tools.phase3_resource_profile import ACTIVE_COUNTERS, PROFILES, digest, integer, quiescent, summary, validate_schedule
@@ -138,6 +140,27 @@ class ScheduleTests(unittest.TestCase):
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_expired_or_too_short_signatures_cannot_qualify_an_entire_campaign(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "policy.json").write_text(json.dumps({"validFrom": 99, "validUntil": 2000}))
+            for name in ("rust-http", "rust-blob", "rust-callee"):
+                directory = root / name / "evidence"
+                directory.mkdir(parents=True)
+                index = {}
+                for kind in ("signatures", "provenance"):
+                    statement = {"issuedAt": 100, "expiresAt": 1000}
+                    if kind == "provenance":
+                        statement = {"predicate": statement}
+                    envelope = {"payload": base64.b64encode(json.dumps(statement).encode("ascii")).decode("ascii")}
+                    (directory / f"{kind}.json").write_text(json.dumps(envelope))
+                    index[kind] = [{"payload": f"{kind}.json"}]
+                (directory / "index.json").write_text(json.dumps(index))
+            self.assertTrue(validity(root, 240, 100)["sufficient"])
+            self.assertFalse(validity(root, 900, 100)["sufficient"])
+            self.assertFalse(validity(root, 240, 1000)["sufficient"])
+            self.assertFalse(validity(root, 240, 99)["sufficient"])
+
     def test_refused_density_is_not_a_proven_capacity_ceiling_or_campaign_pass(self):
         profile = PROFILES["smoke"]
         populations = [{"deployments": count + 3, "dormantRequested": count,

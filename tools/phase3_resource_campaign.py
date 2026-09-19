@@ -23,6 +23,7 @@ from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_management_scenario import TENANT, publish_and_deploy_guests
 from tools.sdk_provider_scenario import publish_callee
 from tools.phase3_resource_analysis import analyze
+from tools.phase3_resource_fixture import validity
 from tools.phase3_resource_identity import file_identity, inventory, source_identity
 from tools.phase3_resource_node import ResourceClient, apply_dormant, configure, delete_deployments, pages, settled_samples
 from tools.phase3_resource_os import Probe
@@ -32,7 +33,7 @@ from tools.phase3_resource_workload import measured_work, mode
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_FILES = (
     "phase3_resource_campaign.py", "phase3_resource_analysis.py", "phase3_resource_identity.py",
-    "phase3_resource_node.py", "phase3_resource_os.py", "phase3_resource_peer.py",
+    "phase3_resource_node.py", "phase3_resource_os.py", "phase3_resource_peer.py", "phase3_resource_fixture.py",
     "phase3_resource_profile.py", "phase3_resource_schedule.py", "phase3_resource_workload.py",
     "phase2_operator_process.py", "phase2_operator_scenario.py", "phase3_management_scenario.py",
     "sdk_provider_scenario.py", "sdk_provider_http_fixture.py", "build_process_linux.py", "build_process_signals.py",
@@ -170,11 +171,19 @@ def node_run(args, result, cancellation, temporary, deadline):
         result["peerShutdown"] = peer_shutdown(peer)
         result["controlCommands"] = client.calls
     finally:
+        result["controlCommands"] = client.calls
         if hasattr(client, "last_failure"):
             result["lastControlFailure"] = client.last_failure
-        if node is not None:
-            node.close()
-        peer.close()
+        try:
+            if node is not None:
+                node.close()
+                result["nodeForcedCleanup"] = {"processId": node.owner.process.pid,
+                    "closed": node.closed, "reaped": node.owner.finished,
+                    "exitCode": node.owner.process.returncode, "gracefulShutdownObserved": False}
+        finally:
+            peer.close()
+            result["peerOwnership"] = {"processId": peer.owner.process.pid, "closed": peer.closed,
+                "reaped": peer.owner.finished, "exitCode": peer.owner.process.returncode}
 
 
 def run(args):
@@ -185,14 +194,17 @@ def run(args):
     result = {"schemaVersion": SCHEMA, "status": "failed", "ticketAcceptance": "pending",
               "profile": profile, "profileDigest": digest(profile), "limits": LIMITS,
               "samples": [], "calls": [], "cycles": [], "checks": {},
-              "temporaryOutputsRemoved": False,
+              "temporaryOutputsRemoved": None,
               "pendingAcceptance": ["actual-SSR-and-renderer-heap-observation", "secret-event-child-call-campaign",
                                      "OCI-token-resolver-redirect-pool-campaign", "multi-ceiling-and-storage-dedup-campaign"],
               "evidenceScope": "real-standalone-HTTP-blob-provider-checkpoint"}
+    root = None
     try:
         identify(args, result)
         original = inventory(args.fixture_root, deadline=started + profile["deadlineSeconds"])
         result["fixtureInventory"] = original
+        result["fixtureTimePreflight"] = validity(args.fixture_root, profile["deadlineSeconds"])
+        require(result["fixtureTimePreflight"]["sufficient"], "resource-fixture-validity-window-too-short")
         with owned_cancellation() as cancellation, tempfile.TemporaryDirectory(prefix="lsf-resource-239-") as temporary:
             root = Path(temporary)
             root.chmod(0o700)
@@ -206,6 +218,9 @@ def run(args):
         result["status"] = "failed"
         reason = str(error) if isinstance(error, WorkflowError) else type(error).__name__
         result["failure"] = reason[:256]
+    finally:
+        if root is not None:
+            result["temporaryOutputsRemoved"] = not root.exists()
     result["elapsedMillis"] = int((time.monotonic() - started) * 1000)
     write_receipt(args.output, result)
     print(json.dumps({"status": result["status"], "ticketAcceptance": "pending",

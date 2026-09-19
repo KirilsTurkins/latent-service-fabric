@@ -20,6 +20,7 @@ class ResourceClient(Client):
                 "transport-failure": 5, "not-found": 6, "interrupted": 130}[result["category"]]
         if code not in expected:
             self.last_failure = {"call": self.calls, "category": result["category"],
+                                 "operation": [str(value) for value in arguments[:2]],
                                  "error": result.get("error"), "outcomeKnown": result["outcomeKnown"]}
         require(code in expected, f"resource-control-failure-{self.calls}-{code}")
         return result
