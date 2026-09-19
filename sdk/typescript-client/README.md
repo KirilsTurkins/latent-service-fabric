@@ -41,6 +41,41 @@ decimal helpers at an external JSON boundary; do not cast these values to
 [transport and recovery contract](../../docs/reference/typescript-client.md)
 before handling invocation, cancellation or mutation failures.
 
+### Maintained guest example
+
+After the operator admits/deploys the maintained Rust HTTP/blob guests with
+their matching provider bindings and grants, run the language-native example:
+
+```sh
+node sdk/typescript-client/examples/provider-client.mjs \
+  http://127.0.0.1:9080 tests /home/operator/.config/latent/client-token \
+  node-http-001 http generic guest-http http://localhost:8080/allowed
+node sdk/typescript-client/examples/provider-client.mjs \
+  http://127.0.0.1:9080 tests /home/operator/.config/latent/client-token \
+  node-blob-001 blob generic guest-blob
+node sdk/typescript-client/examples/provider-client.mjs \
+  http://127.0.0.1:9080 tests /home/operator/.config/latent/client-token \
+  node-http-001 status
+```
+
+Use the actual service/route, approved URL and client token file. The example
+requires Linux x86-64, an effective-user-owned 0700 parent directory and a
+0600 regular single-link file with no newline. It walks directory descriptors,
+rejects symlinks/special files, bounds reads and checks opened-file identity
+before/after reading. This deliberately narrow example profile is not the
+node's complete protected-configuration API. It never reads an ambient token.
+
+The example sends supported WIT-value bytes through `Invoke`; only the guest
+may call HTTP/blob with node-held provider credentials. It prints bounded
+outcome JSON and decimal guest results (`2201` for the controlled HTTP fixture,
+`4` for the maintained blob guest), not arbitrary application output. `cancel`
+in place of `status` sends an explicit application cancellation with the same
+known ID. No invocation is automatically replayed on an uncertain response.
+
+The separate-node participant is `tests/provider-workflow.mjs`; it exercises
+the same request builder plus all eight profile operations. Its real-node
+execution evidence remains pending until the shared SDK workflow is run.
+
 ## Browser boundary
 
 Browser application traffic belongs on the approved shared HTTP ingress and
