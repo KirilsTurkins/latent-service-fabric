@@ -122,11 +122,21 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
 ) -> Result<bool, u16> {
     let (used, end, deadline) = read_head(socket, shared, buffer, index == 0, age).await?;
     let mut head = head::parse(&buffer[..end], shared, deadline)?;
-    let selected = dispatch::select(&head, shared)?;
     let close = head.close || index + 1 == shared.settings.limits.maximum_requests_per_connection;
     if used - end > head.content_length {
         return Err(400);
     }
+    let path = head.collector.target().path();
+    if path == "/_lsf/assets" || path.starts_with(latent_artifacts::web::IMMUTABLE_ASSET_PREFIX) {
+        if used != end {
+            return Err(400);
+        }
+        return super::assets::exchange(socket, shared, head, &mut buffer[..end], deadline, close)
+            .await;
+    }
+    // The immutable namespace never reaches trigger lookup or cell reservation,
+    // including misses, malformed locators, HEAD, 304 and rejected methods.
+    let selected = dispatch::select(&head, shared)?;
     head.collector
         .append(&buffer[end..used])
         .map_err(|e| e.status().unwrap_or(0))?;
