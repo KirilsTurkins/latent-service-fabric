@@ -23,9 +23,15 @@ concurrency:
 
 jobs:
   candidate:
-    name: Unsigned native Linux candidate
+    name: Exact-source native Linux candidate
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    outputs:
+      version: ${{ steps.identity.outputs.version }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -63,14 +69,30 @@ jobs:
             target/native-build/x86_64-unknown-linux-gnu/release/build
             target/native-build/x86_64-unknown-linux-gnu/release/deps
           save-if: ${{ github.ref == 'refs/heads/development' }}
-      - name: Build exact-source unsigned candidate
+      - name: Select exact source version
+        id: identity
         run: |
           version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Build exact-source unsigned candidate
+        env:
+          NATIVE_VERSION: ${{ steps.identity.outputs.version }}
+        run: |
+          version="$NATIVE_VERSION"
           python3 tools/build_native_runtime.py --commit "$GITHUB_SHA" --version "$version" --output "$PWD/target/native-release"
-      - name: Retain unsigned candidate, not a published release
+      - name: Attest candidate checksum inventory, not release authority
+        id: attest
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: target/native-release/SHA256SUMS
+      - name: Retain offline attestation material
+        env:
+          ATTESTATION_BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: install -m 0644 "$ATTESTATION_BUNDLE" target/native-release/SHA256SUMS.sigstore.json
+      - name: Retain authenticated candidate, not a published release
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: native-runtime-unsigned-${{ github.sha }}
+          name: native-runtime-candidate-${{ github.sha }}
           path: target/native-release/
           if-no-files-found: error
           retention-days: 14
@@ -82,3 +104,44 @@ jobs:
           path: target/native-build-failure.txt
           if-no-files-found: ignore
           retention-days: 7
+  native-vm:
+    name: Native packaged-artifact systemd and rootless VM
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: native-runtime-candidate-${{ github.sha }}
+          path: target/native-candidate
+      - name: Provision host QEMU and independent verification trust
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client
+          if test -c /dev/kvm; then sudo setfacl -m "u:$(id -un):rw" /dev/kvm; fi
+          mkdir -m 0700 -p "$RUNNER_TEMP/native-trust"
+          gh --version
+          gh attestation trusted-root > "$RUNNER_TEMP/native-trust/trusted_root.jsonl"
+      - name: Boot clean native guest, invoke, reboot, retain and purge
+        env:
+          NATIVE_VERSION: ${{ needs.candidate.outputs.version }}
+        run: |
+          python3 tools/run_native_vm.py --release-directory "$PWD/target/native-candidate" \
+            --trusted-root "$RUNNER_TEMP/native-trust/trusted_root.jsonl" --verifier "$(readlink -f "$(command -v gh)")" \
+            --version "$NATIVE_VERSION" --commit "$GITHUB_SHA" --source-ref "$GITHUB_REF" \
+            --purpose candidate --profile local-experimental-v1 --output "$PWD/target/native-vm/ordinary.json"
+      - name: Retain compact redacted real VM evidence and failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-runtime-vm-${{ github.sha }}
+          path: target/native-vm/*.json
+          if-no-files-found: error
+          retention-days: 14

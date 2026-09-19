@@ -6,6 +6,7 @@
   "nodeId": "REPLACE_WITH_UNIQUE_NODE_ID",
   "shutdownGraceMillis": 5000,
   "execution": {"maximumWallTimeMillis": 5000},
+  "audit": {"mode": "durable"},
   "supplyChain": {"mode": "trusted-local"},
   "credentials": [{"token": "REPLACE_WITH_UNIQUE_PRIVATE_RANDOM_TOKEN", "subject": "installation-operator", "tenant": "examples", "role": "operator"}]
 }

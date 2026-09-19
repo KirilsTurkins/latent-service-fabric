@@ -61,17 +61,23 @@ python3 -m unittest tools.tests.test_native_runtime
 
 Version must match the committed workspace version. A new binary release needs a
 new parent-reviewed release identity; do not reuse the historical alpha.3 tag.
-The builder emits an **unsigned candidate**. No command in this change publishes
-a release/tag, creates a publisher key, or decides which key operators should
-trust. The parent must approve the exact release tag/commit, independent bootstrap
-fingerprint, exact-head CI, native provenance/SBOM and acceptance receipts before
-release signing/publication. Capsule signing/admission trust is a separate policy.
+The builder emits an **unsigned candidate**. The release gate uses GitHub artifact
+attestations with the exact repository, `native-runtime-release.yml` workflow,
+release tag, source/signing commit and GitHub-hosted runner certificate identity.
+Operators separately provision GitHub CLI, Sigstore roots and the approved
+identity policy before executing any downloaded bootstrap. No project bootstrap
+key, invented fingerprint or bundle-provided trust root is needed. The parent
+chooses the final version/commit only after exact-head CI and acceptance review;
+publication must not precede that gate. Capsule signing/admission is a separate policy.
 
 The signed `SHA256SUMS` binds exactly the archive, `release.json`, and
 `lsf-install.pyz`. The manifest also binds every archive file's name, mode, size
 and SHA-256, the source/lockfile/toolchain, runtime/host ABI and approved compiler.
-The installer re-verifies with OS OpenSSL and pins the opened archive through
-extraction. No installation command downloads a branch or invokes a compiler.
+The installer re-verifies using independently installed `gh`, an offline
+attestation bundle and separately supplied trusted roots, then pins the opened
+archive through extraction. No installation command downloads a branch or invokes
+a development compiler. The approved isolated AOT compiler runs only for the
+selected profile's maintained readiness probe and actual capsule preparation.
 
 ## Evidence and downstream handoff
 
@@ -79,10 +85,11 @@ The fast Python suite is selected by the existing contracts job's
 `unittest discover -s tools/tests` under the maintained
 [full CI profile](development/ci-profiles.md). It distinguishes synthetic artifact
 and mocked lifecycle tests from actual native execution. Windows skips Linux
-descriptor/signature/lifecycle cases; a Windows result cannot establish them.
+descriptor/lifecycle cases; a Windows result cannot establish them. Mocked `gh`
+unit tests check argument/identity and failure handling, not Sigstore cryptography.
 Real release acceptance must additionally retain:
 
-1. Exact reviewed source, build/toolchain, bootstrap/key and archive identities.
+1. Exact reviewed source, build/toolchain, workflow/certificate and archive identities.
 2. A fresh Ubuntu VM without source, Rust, a guest compiler or a container runtime.
 3. Packaged-binary local and enforced-profile checks, authenticated readiness and
    a retained publish/deploy/invoke using the bundled component.

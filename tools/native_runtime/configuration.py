@@ -51,7 +51,7 @@ def validate_layout(layout: Layout, node: dict, profile: str) -> None:
 
 
 def provision(layout: Layout, identity: tuple[int, int], profile: str, release: dict,
-              policy: Path | None, port: int, initialize: bool) -> dict:
+              policy: Path | None, port: int, initialize: bool, approved_compiler: str | None = None) -> dict:
     require(profile in {LOCAL, EXTERNAL}, "unsupported-security-profile")
     require(layout.system or profile == LOCAL, "rootless-evaluation-requires-local-experimental-v1")
     require(1024 <= port <= 65535, "unprivileged-loopback-port-required")
@@ -87,6 +87,7 @@ def provision(layout: Layout, identity: tuple[int, int], profile: str, release: 
             "formatVersion": 1, "securityProfile": profile, "dataDirectory": str(layout.data),
             "bind": f"127.0.0.1:{port}", "nodeId": "lsf-" + secrets.token_hex(8),
             "shutdownGraceMillis": 5000, "execution": {"maximumWallTimeMillis": 5000},
+            "audit": {"mode": "durable"},
             "supplyChain": {"mode": "trusted-local"},
             "credentials": [{"token": secrets.token_urlsafe(32), "subject": "installation-operator",
                              "tenant": "examples", "role": "operator"}],
@@ -108,6 +109,16 @@ def provision(layout: Layout, identity: tuple[int, int], profile: str, release: 
     existing_client = document(files.read(layout.client, 65536, owners={0, controller[0]}, private=True), 65536)
     require(existing_client == client_document(node), "client-config-mismatch-no-automatic-credential-rotation")
     if "isolatedAot" in node:
-        require(node["isolatedAot"]["compilerDigest"] == "sha256:" + release["engine"]["compilerSha256"],
-                "compiler-approval-mismatch-operator-config-required")
+        require(node["isolatedAot"]["compilerDigest"] == "sha256:" + release["engine"]["compilerSha256"]
+                or approved_compiler == release["engine"]["compilerSha256"],
+                "compiler-change-requires-explicit-approve-compiler-sha256")
     return node
+
+
+def approve_compiler(layout: Layout, identity: tuple[int, int], node: dict, release: dict, approved: str | None) -> None:
+    if "isolatedAot" not in node or node["isolatedAot"]["compilerDigest"] == "sha256:" + release["engine"]["compilerSha256"]:
+        return
+    require(approved == release["engine"]["compilerSha256"], "compiler-approval-mismatch")
+    require(load(layout, identity) == node, "operator-configuration-changed-during-upgrade")
+    node["isolatedAot"]["compilerDigest"] = "sha256:" + approved
+    files.replace(layout.node, encode(node), 0o640, (os.geteuid(), identity[1]))

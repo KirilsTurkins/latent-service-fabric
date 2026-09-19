@@ -157,10 +157,10 @@ def create(path: Path, data: bytes, mode: int = 0o600,
         os.fsync(parent)
 
 
-def replace(path: Path, data: bytes, mode: int = 0o600) -> None:
+def replace(path: Path, data: bytes, mode: int = 0o600, identity: tuple[int, int] | None = None) -> None:
     import secrets
     temporary = path.with_name(".replace-" + secrets.token_hex(16))
-    create(temporary, data, mode)
+    create(temporary, data, mode, identity)
     with directory(path.parent, {0, os.geteuid()}) as parent:
         os.replace(temporary.name, path.name, src_dir_fd=parent, dst_dir_fd=parent)
         os.fsync(parent)

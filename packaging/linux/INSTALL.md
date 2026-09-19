@@ -2,7 +2,7 @@
 
 Experimental standalone software, not production or hostile-multitenancy
 certification. A bundle is usable only after its publisher identity, exact
-source, signatures and release-specific acceptance evidence are approved.
+source, attestations and release-specific acceptance evidence are approved.
 The historical `0.1.0-alpha.3` release is source-only; this tooling does not
 retroactively turn it into a verified binary release.
 
@@ -12,7 +12,7 @@ The initial candidate targets **Ubuntu Server 24.04, Linux x86_64, kernel 6.8
 or newer, glibc 2.39 or newer, SSE2, Python 3.12 or newer**, local POSIX
 filesystems with descriptor/xattr inspection, exclusive file locks and directory
 fsync, and readable `/proc/pressure/cpu` and `/proc/pressure/memory`.
-Install OS packages `python3`, `openssl`, `libc6`, `libgcc-s1`, `coreutils` and,
+Install OS packages `python3`, `libc6`, `libgcc-s1`, `coreutils`, `grep` and,
 for a persistent server, `systemd` and `passwd` using your trusted OS provisioning
 process. `ldd` comes from `libc-bin`. Isolated compilation additionally requires
 working Landlock ABI 3 and seccomp; the real compiler probe, not a kernel version
@@ -21,12 +21,32 @@ Kubernetes, registry, application provider, or external orchestrator is needed
 to install and run the native binaries. Other distributions, ARM64 and musl are
 not declared supported by this first candidate.
 
-Before executing **any downloaded Python or shell code**, independently provision
-OpenSSL and a publisher-approved Ed25519 public key. Obtain the exact expected
-SHA-256 fingerprint of its DER SubjectPublicKeyInfo through a separately trusted
-operator channel. A key or checksum downloaded beside the bundle is not trust.
-The project must approve a real publisher fingerprint before release; no key,
-fixture identity, default trust policy or private signing key is supplied here.
+Before executing **any downloaded installer or verifier code**, independently
+provision GitHub CLI **2.96.0 or newer**, Sigstore trusted roots, and the exact
+approved release version/commit through your OS/release-verification provisioning
+process. Ubuntu's default `gh` package may be too old; check its version. Do not
+bootstrap `gh` from an unverified binary shipped beside the LSF archive.
+
+Publisher authentication uses GitHub artifact attestations, not a newly invented
+project bootstrap key. The release identity is this exact repository and workflow:
+
+```text
+repository: KirilsTurkins/latent-service-fabric
+workflow: .github/workflows/native-runtime-release.yml
+OIDC issuer: https://token.actions.githubusercontent.com
+certificate SAN: https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/<approved-version>
+source and signer digests: <exact-approved-40-hex-commit>
+```
+
+On a separately trusted, connected provisioning machine, the independently
+installed `gh attestation trusted-root > trusted_root.jsonl` retrieves the
+Sigstore Public Good and GitHub roots using GitHub CLI's maintained trust
+bootstrap. Provision that file and the identity policy separately from the LSF
+release directory, with protected ownership and non-writable ancestors. Root
+updates/revocations are an operator trust decision, not something the installer
+downloads. Never accept an archive's own roots or policy as independent trust.
+See the upstream [verification manual](https://cli.github.com/manual/gh_attestation_verify)
+and [offline trusted-root command](https://cli.github.com/manual/gh_attestation_trusted-root).
 
 Provision these five release files into a private staging directory owned by
 the identity that will execute the installer:
@@ -35,7 +55,8 @@ the identity that will execute the installer:
 - `lsf-install.pyz`
 - `release.json`
 - `SHA256SUMS`
-- `SHA256SUMS.sig`, a raw Ed25519 signature of the exact `SHA256SUMS` bytes
+- `SHA256SUMS.sigstore.json`, the GitHub/Sigstore attestation bundle including
+  certificate and transparency verification material for the exact checksum file
 
 For privileged installation, verify in a **root-owned 0700 directory**, not in
 another user's writable downloads directory. Use an initial local SSH session
@@ -44,29 +65,50 @@ tools, then change into it. Public trust material must have root-owned,
 non-writable ancestors. For rootless evaluation, use a private user-owned staging
 directory and a root-owned or same-user protected trust path.
 
-Set `VERSION`, `PUBLISHER_KEY` and `EXPECTED_PUBLISHER_SPKI_SHA256` to the exact
-independently approved release inputs. These are deliberately not moving URLs,
-auto-discovered keys or invented fingerprints. Then run the following using
-only independently installed OS tools:
+Set `VERSION` and `COMMIT` to the independently approved version and full commit;
+`TRUSTED_ROOT` to the separately provisioned absolute root-file path; and
+`PUBLISHER_POLICY` to a protected absolute path outside the release directory.
+Create the operator policy with OS tools, not by importing release code:
+
+```bash
+umask 077
+cat > "$PUBLISHER_POLICY" <<EOF
+{"schemaVersion":"latent.native-publisher-policy.v1","repository":"KirilsTurkins/latent-service-fabric","workflow":".github/workflows/native-runtime-release.yml","sourceRef":"refs/tags/$VERSION","sourceCommit":"$COMMIT","version":"$VERSION","purpose":"release"}
+EOF
+```
+
+Then authenticate the checksum file and bootstrap using only the independently
+installed verifier and OS tools. No downloaded Python code runs before these
+commands succeed:
 
 ```bash
 set -eu
 umask 077
-actual=$(openssl pkey -pubin -in "$PUBLISHER_KEY" -outform DER | sha256sum)
-test "${actual%% *}" = "$EXPECTED_PUBLISHER_SPKI_SHA256"
-openssl pkeyutl -verify -pubin -inkey "$PUBLISHER_KEY" -rawin \
-  -in SHA256SUMS -sigfile SHA256SUMS.sig
+/usr/bin/gh attestation verify SHA256SUMS \
+  --bundle SHA256SUMS.sigstore.json --custom-trusted-root "$TRUSTED_ROOT" \
+  --repo KirilsTurkins/latent-service-fabric --hostname github.com \
+  --cert-identity "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/$VERSION" \
+  --cert-oidc-issuer https://token.actions.githubusercontent.com \
+  --source-ref "refs/tags/$VERSION" --source-digest "$COMMIT" --signer-digest "$COMMIT" \
+  --deny-self-hosted-runners --predicate-type https://slsa.dev/provenance/v1
 sha256sum --check --strict SHA256SUMS
+grep -Fx -- "$(sha256sum lsf-install.pyz)" SHA256SUMS >/dev/null
 python3 -I ./lsf-install.pyz verify --version "$VERSION" \
-  --release-directory "$PWD" --publisher-key "$PUBLISHER_KEY"
+  --release-directory "$PWD" --publisher-policy "$PUBLISHER_POLICY" --trusted-root "$TRUSTED_ROOT"
 ```
 
-Only now may the authenticated bootstrap run. It repeats signature verification,
+Only the final command executes the now authenticated bootstrap. It repeats
+attestation verification, requires the certificate's exact repository/workflow,
+tag, source/signing commit, issuer and GitHub-hosted runner, and then
 binds version/source/target/toolchain/engine to the manifest, hashes the opened
 archive descriptor, and accepts only bounded manifest-listed regular USTAR
 files. There is no network access, toolchain download or `curl | sudo sh` path.
-The entire process works disconnected after OS and verification prerequisites
-and release files have been provisioned.
+Both `--bundle` and `--custom-trusted-root` are mandatory: verification requires
+no GitHub login, network fetch, transparency-log lookup or TUF refresh. The
+disconnected VM gate also checks this with networking denied. The installed
+manifest records non-secret verifier/root/attestation hashes and policy identity.
+The attested predicate is not treated as independent authority: exact source
+and signer restrictions are enforced against GitHub's OIDC certificate fields.
 
 ## Rootless evaluation
 
@@ -75,7 +117,8 @@ does not establish external publisher admission or compiler isolation:
 
 ```bash
 python3 -I ./lsf-install.pyz install --directory "$HOME/lsf-evaluation" \
-  --version "$VERSION" --release-directory "$PWD" --publisher-key "$PUBLISHER_KEY" \
+  --version "$VERSION" --release-directory "$PWD" \
+  --publisher-policy "$PUBLISHER_POLICY" --trusted-root "$TRUSTED_ROOT" \
   --profile local-experimental-v1 --acknowledge-experimental --port 50051
 python3 -I ./lsf-install.pyz run-local --directory "$HOME/lsf-evaluation"
 ```
@@ -100,7 +143,7 @@ For controlled local workloads, run the following as root after verification:
 
 ```bash
 python3 -I ./lsf-install.pyz install --system --version "$VERSION" \
-  --release-directory "$PWD" --publisher-key "$PUBLISHER_KEY" \
+  --release-directory "$PWD" --publisher-policy "$PUBLISHER_POLICY" --trusted-root "$TRUSTED_ROOT" \
   --profile local-experimental-v1 --acknowledge-experimental --start --enable
 ```
 
@@ -109,7 +152,7 @@ policy, then explicitly select the enforced profile:
 
 ```bash
 python3 -I ./lsf-install.pyz install --system --version "$VERSION" \
-  --release-directory "$PWD" --publisher-key "$PUBLISHER_KEY" \
+  --release-directory "$PWD" --publisher-policy "$PUBLISHER_POLICY" --trusted-root "$TRUSTED_ROOT" \
   --profile external-capsule-v1 --trust-policy /root/lsf-admission-policy.json \
   --start --enable
 ```
@@ -229,7 +272,8 @@ RSS. Dormant deployments allocate no additional processes, services or listeners
 ## Reinstall, upgrade and recovery
 
 Repeat the exact signed install command for idempotent same-version repair/check;
-configuration, credentials, keys and catalogs remain unchanged. Conflicting
+configuration, credentials, keys and catalogs remain unchanged. Durable audit
+is explicitly enabled for managed publication/deployment receipts. Conflicting
 operations serialize under a descriptor lock. A failure or interruption before
 commit retains `transaction.json`; retry **the same verified release and profile**
 with `--resume`. There is no automatic binary rollback or profile fallback.
@@ -238,13 +282,19 @@ fail closed and require a stopped-node restoration of a verified complete backup
 
 Different versions require `--upgrade` and a publisher-authenticated exact
 predecessor entry matching version, source commit and archive digest, unchanged
-engine/compiler identity, no migration and successful candidate `check-config`.
+Wasmtime/host ABI/dynamic dependencies, no migration and successful candidate
+`check-config` under the service identity before stopping the old node.
 The initial compatibility policy has **no cross-version predecessors**; it
 therefore rejects every cross-version upgrade/downgrade until a reviewed pair
 with actual migration/retention evidence is added. A running server upgrade also
 requires `--start`. Four release inventories are the hard retention ceiling.
-New examples never overwrite operator configuration. Compiler approval or
-publisher-key rotation is not silently performed by an upgrade.
+New examples never overwrite operator configuration. An external-profile compiler
+change additionally requires `--approve-compiler-sha256` with the exact new
+authenticated digest. Only that explicitly approved configuration field changes,
+after bounded shutdown; credentials, host key, all other settings and admission
+policy remain intact. A temporary protected prospective config probes the new
+compiler before activation. Changing the publisher workflow requires a separate
+reviewed policy; candidate identities cannot silently upgrade into releases.
 
 Before a supported upgrade, stop the service, verify `MainPID=0` and an empty
 owned compiler cgroup, and make a private, consistent backup of `/etc/lsf`,

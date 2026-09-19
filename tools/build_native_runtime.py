@@ -10,7 +10,9 @@ import os
 from pathlib import Path
 import platform
 import re
+import shutil
 import sys
+import tempfile
 import tomllib
 
 if __package__ in (None, ""):
@@ -66,13 +68,18 @@ def build(arguments) -> dict:
     run(build_command, timeout=7200, maximum=8_388_608)
     run([sys.executable, "tools/build_echo_capsule.py"], timeout=1800, maximum=2_097_152)
     binary_root = Path(environment["CARGO_TARGET_DIR"]) / verify.TARGET / "release"
-    assets = {"bin/" + name: binary_root / name for name in ("latent", "latentd", "latent-aot-compiler")}
+    materialized = Path(tempfile.mkdtemp(prefix="native-bundle-inputs-", dir=ROOT / "target"))
+    assets = {}
+    for name in ("latent", "latentd", "latent-aot-compiler"):
+        require((binary_root / name).is_file() and not (binary_root / name).is_symlink(), "build-output-not-regular")
+        shutil.copyfile(binary_root / name, materialized / name)
+        assets["bin/" + name] = materialized / name
     dependencies = sorted({dependency for path in assets.values() for dependency in elf_identity(path, run)})
     abi = document(files.read(ROOT / "wit/host-abi-phase3-v4.json"))
     identity = {"version": arguments.version, "sourceCommit": commit, "target": verify.TARGET,
                 "toolchain": {"rust": toolchain, "lockSha256": files.digest(ROOT / "Cargo.lock")},
                 "engine": {"wasmtimeVersion": abi["wasmtimeVersion"], "hostAbiProfile": abi["id"],
-                           "compilerSha256": files.digest(binary_root / "latent-aot-compiler"),
+                           "compilerSha256": files.digest(assets["bin/latent-aot-compiler"]),
                            "dynamicDependencies": dependencies}}
     for name in ("echo-capsule.wasm", "capsule.json", "contracts.json", "deployment.json", "input.json"):
         assets["examples/echo/" + name] = Path(environment["CARGO_TARGET_DIR"]) / "capsules/echo" / name
@@ -112,6 +119,7 @@ def build(arguments) -> dict:
         extract(descriptor, staging, manifest["files"])
     check_tree(staging, manifest["files"])
     files.remove_tree(staging, maximum=8192)
+    files.remove_tree(materialized, maximum=16)
     return {"schemaVersion": "latent.native-build-result.v1", "version": arguments.version, "sourceCommit": commit,
             "archiveSha256": manifest["archive"]["sha256"], "signed": False, "published": False,
             "cleanVmValidated": False}

@@ -6,6 +6,7 @@
   "nodeId": "REPLACE_WITH_UNIQUE_NODE_ID",
   "shutdownGraceMillis": 5000,
   "execution": {"maximumWallTimeMillis": 5000},
+  "audit": {"mode": "durable"},
   "supplyChain": {"mode": "enforced", "policyFile": "/etc/lsf/admission-policy.json"},
   "isolatedAot": {
     "compilerExecutable": "/opt/lsf/current/bin/latent-aot-compiler",

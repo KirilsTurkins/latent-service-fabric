@@ -38,14 +38,21 @@ def preflight(layout: Layout, candidate: str | None = None) -> dict:
         pass
     for name in ("latent", "latentd", "latent-aot-compiler"):
         host.dynamic_probe(root / "bin" / name)
-    status, output = execute([str(root / "bin" / "latentd"), "check-config", "--config", str(layout.node)],
-                             timeout=40, maximum=65536, cwd=str(layout.data))
+    source = document(files.read(root / "release-source.json", 65536), 65536)
+    with tempfile.TemporaryDirectory(prefix=".lsf-preflight-", dir=layout.cache) as temporary:
+        config = layout.node
+        if candidate is not None and node["securityProfile"] == EXTERNAL:
+            node["isolatedAot"] = {**node["isolatedAot"], "compilerExecutable": str(root / "bin" / "latent-aot-compiler"),
+                                   "compilerDigest": "sha256:" + source["engine"]["compilerSha256"]}
+            config = Path(temporary) / "node.json"
+            files.create(config, encode(node))
+        status, output = execute([str(root / "bin" / "latentd"), "check-config", "--config", str(config)],
+                                 timeout=40, maximum=65536, cwd=str(layout.data))
     require(status == 0, "node-check-config-failed-no-profile-fallback")
     report = document(output, 65536)
     require(report.get("schemaVersion") == "latent.standalone.config-check.v1"
             and report.get("profile") == node["securityProfile"]
             and report.get("protectedCredentialFile") is True, "node-profile-check-incomplete")
-    source = document(files.read(root / "release-source.json", 65536), 65536)
     require(report.get("wasmtimeVersion") == source["engine"]["wasmtimeVersion"]
             and report.get("hostAbiProfile") == source["engine"]["hostAbiProfile"], "node-engine-identity-mismatch")
     if node["securityProfile"] == EXTERNAL:

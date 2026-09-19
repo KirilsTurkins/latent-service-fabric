@@ -11,7 +11,6 @@ import json
 import os
 from pathlib import Path
 import stat
-import subprocess
 import sys
 import tarfile
 import tempfile
@@ -55,6 +54,12 @@ def fixture(version: str = "0.1.0-test.1") -> tuple[dict, bytes]:
     return metadata, compressed
 
 
+def policy_fixture(metadata: dict) -> dict:
+    return {"schemaVersion": "latent.native-publisher-policy.v1", "repository": verify.REPOSITORY,
+            "workflow": verify.RELEASE_WORKFLOW, "sourceRef": "refs/tags/" + metadata["version"],
+            "sourceCommit": metadata["sourceCommit"], "version": metadata["version"], "purpose": "release"}
+
+
 @contextmanager
 def selected(root: Path, version: str = "0.1.0-test.1", previous: dict | None = None):
     metadata, payload = fixture(version)
@@ -64,10 +69,57 @@ def selected(root: Path, version: str = "0.1.0-test.1", previous: dict | None = 
     path = root / metadata["archive"]["name"]
     path.write_bytes(payload)
     with path.open("rb") as stream:
-        yield verify.VerifiedRelease(metadata, stream.fileno(), "c" * 64, b"synthetic", b"synthetic")
+        policy = policy_fixture(metadata)
+        yield verify.VerifiedRelease(metadata, stream.fileno(), verify.publisher_id(policy), b"synthetic", b"synthetic",
+                                     {"method": "synthetic-for-safety-test-only", "policy": policy})
 
 
 class ManifestTests(unittest.TestCase):
+    def test_vm_driver_uses_pinned_image_and_actual_reboot(self):
+        profile = json.loads((ROOT / "tools/native-vm-profile.json").read_text())
+        self.assertRegex(profile["imageSha256"], "^[0-9a-f]{64}$")
+        self.assertIn("/20260911/", profile["imageUrl"])
+        for name in ("run_native_vm.py", "native_vm_guest.py"):
+            source = (ROOT / "tools" / name).read_text()
+            compile(source, name, "exec")
+            self.assertNotIn("StrictHostKeyChecking=no", source)
+            self.assertNotIn("docker run", source)
+        controller = (ROOT / "tools/run_native_vm.py").read_text()
+        self.assertIn('"reboot", "--no-block"', controller)
+        self.assertIn("old_boot=boot", controller)
+        self.assertIn("restrict=on", controller)
+
+    def test_exact_publisher_policy_and_no_implicit_candidate_trust(self):
+        metadata, _payload = fixture()
+        policy = policy_fixture(metadata)
+        self.assertEqual(verify.publisher_policy(policy, metadata["version"]), policy)
+        for name, replacement in (("repository", "attacker/latent-service-fabric"), ("sourceCommit", "development"),
+                                   ("workflow", ".github/workflows/ci.yml"), ("sourceRef", "refs/heads/development"),
+                                   ("purpose", "candidate"), ("version", "0.1.0-test.2")):
+            with self.subTest(name=name), self.assertRaises(InstallError):
+                verify.publisher_policy({**policy, name: replacement}, metadata["version"])
+        candidate = {**policy, "purpose": "candidate", "workflow": verify.CANDIDATE_WORKFLOW,
+                     "sourceRef": "refs/heads/feature/native"}
+        with self.assertRaisesRegex(InstallError, "candidate-is-not-a-release"):
+            verify.publisher_policy(candidate, metadata["version"])
+        self.assertEqual(verify.publisher_policy(candidate, metadata["version"], True), candidate)
+        self.assertNotEqual(verify.publisher_id(policy), verify.publisher_id(candidate))
+
+    def test_offline_verification_pins_certificate_not_user_predicate_claims(self):
+        metadata, _payload = fixture()
+        policy = policy_fixture(metadata)
+        command = verify.verification_command("/usr/bin/gh", Path("SHA256SUMS"), Path("bundle.json"),
+                                               Path("separate-roots.jsonl"), policy)
+        for name, expected in (("--bundle", "bundle.json"), ("--custom-trusted-root", "separate-roots.jsonl"),
+                               ("--source-ref", policy["sourceRef"]), ("--source-digest", metadata["sourceCommit"]),
+                               ("--signer-digest", metadata["sourceCommit"]), ("--repo", verify.REPOSITORY),
+                               ("--cert-oidc-issuer", verify.ISSUER), ("--predicate-type", verify.PREDICATE)):
+            self.assertEqual(command[command.index(name) + 1], expected)
+        self.assertEqual(command[command.index("--cert-identity") + 1],
+                         f"https://github.com/{verify.REPOSITORY}/{verify.RELEASE_WORKFLOW}@{policy['sourceRef']}")
+        self.assertIn("--deny-self-hosted-runners", command)
+        self.assertNotIn("--signer-workflow", command)
+
     def test_complete_fixture_inventory_and_exact_version(self):
         metadata, _payload = fixture()
         self.assertEqual(verify.manifest(metadata, metadata["version"]), metadata)
@@ -225,55 +277,80 @@ class FileTests(unittest.TestCase):
         self.assertEqual(outside.read_bytes(), b"retain")
 
 
-@unittest.skipUnless(LINUX and Path("/usr/bin/openssl").exists(), "OS-provided OpenSSL signature verification")
+@unittest.skipUnless(LINUX, "Linux protected trust files; gh is mocked, real crypto runs in the VM gate")
 class AuthenticationTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name)
-        self.secret = self.root / "test-only-signing-key.pem"
-        self.key = self.root / "independently-provisioned-test-public-key.pem"
-        subprocess.run(["/usr/bin/openssl", "genpkey", "-algorithm", "ED25519", "-out", str(self.secret)], check=True,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["/usr/bin/openssl", "pkey", "-in", str(self.secret), "-pubout", "-out", str(self.key)], check=True,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        parent = Path(self.temporary.name)
+        self.root = parent / "release"
+        self.root.mkdir(mode=0o700)
+        self.trust = verify.PublisherTrust(parent / "policy.json", parent / "trusted_root.jsonl", parent / "mock-gh")
+        files.create(self.trust.roots, b"unit-test-root-not-real-sigstore-material")
+        files.create(self.trust.verifier, b"not-an-executable-verification-is-mocked", 0o755)
         self.metadata, payload = fixture()
+        files.create(self.trust.policy, encode(policy_fixture(self.metadata)))
         (self.root / self.metadata["archive"]["name"]).write_bytes(payload)
         (self.root / "lsf-install.pyz").write_bytes(b"synthetic-not-an-executable\n")
         (self.root / "release.json").write_bytes(encode(self.metadata))
         sums = "".join(files.digest(self.root / name) + "  " + name + "\n"
                        for name in sorted((self.metadata["archive"]["name"], "lsf-install.pyz", "release.json")))
         (self.root / "SHA256SUMS").write_text(sums)
-        subprocess.run(["/usr/bin/openssl", "pkeyutl", "-sign", "-inkey", str(self.secret), "-rawin", "-in",
-                        str(self.root / "SHA256SUMS"), "-out", str(self.root / "SHA256SUMS.sig")], check=True,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        (self.root / "SHA256SUMS.sigstore.json").write_bytes(b"mock-attestation")
+        self.verifier = patch("tools.native_runtime.verify.execute", side_effect=self.mock_verifier).start()
+        self.addCleanup(patch.stopall)
 
-    def test_signature_and_each_signed_artifact_are_checked(self):
-        with verify.release(self.root, self.metadata["version"], self.key) as release:
+    @staticmethod
+    def mock_verifier(command, **options):
+        if "--version" in command:
+            return 0, b"gh version 2.96.0 (2026-07-02)\n"
+        return 0, b"unit-test-verification-result"
+
+    def test_each_attested_artifact_is_checked_after_verifier_success(self):
+        with verify.release(self.root, self.metadata["version"], self.trust) as release:
             self.assertEqual(release.metadata, self.metadata)
             self.assertRegex(release.publisher, "^[0-9a-f]{64}$")
-        for name in ("SHA256SUMS.sig", "release.json", "lsf-install.pyz", self.metadata["archive"]["name"]):
+            self.assertEqual(release.authentication["policy"], policy_fixture(self.metadata))
+        for name in ("release.json", "lsf-install.pyz", self.metadata["archive"]["name"]):
             path = self.root / name
             original = path.read_bytes()
             path.write_bytes(bytes([original[0] ^ 1]) + original[1:])
             with self.subTest(name=name), self.assertRaises(InstallError):
-                with verify.release(self.root, self.metadata["version"], self.key):
+                with verify.release(self.root, self.metadata["version"], self.trust):
                     pass
             path.write_bytes(original)
 
-    def test_unsigned_wrong_version_and_writable_trust_are_rejected(self):
+    def test_missing_attestation_wrong_version_and_writable_trust_are_rejected(self):
         with self.assertRaises(InstallError):
-            with verify.release(self.root, "0.1.0-test.2", self.key):
+            with verify.release(self.root, "0.1.0-test.2", self.trust):
                 pass
-        self.key.chmod(0o666)
+        self.trust.roots.chmod(0o666)
         with self.assertRaises(InstallError):
-            with verify.release(self.root, self.metadata["version"], self.key):
+            with verify.release(self.root, self.metadata["version"], self.trust):
                 pass
-        self.key.chmod(0o644)
-        (self.root / "SHA256SUMS.sig").unlink()
+        self.trust.roots.chmod(0o644)
+        (self.root / "SHA256SUMS.sigstore.json").unlink()
         with self.assertRaises(OSError):
-            with verify.release(self.root, self.metadata["version"], self.key):
+            with verify.release(self.root, self.metadata["version"], self.trust):
                 pass
+
+    def test_verifier_failure_cannot_fall_back_to_checksum_only(self):
+        self.verifier.side_effect = [(0, b"gh version 2.96.0\n"), (1, b"untrusted")]
+        with self.assertRaisesRegex(InstallError, "publisher-attestation-rejected"):
+            with verify.release(self.root, self.metadata["version"], self.trust):
+                pass
+        environment = self.verifier.call_args.kwargs["environment"]
+        self.assertNotIn("GH_TOKEN", environment)
+        self.assertNotIn("GITHUB_TOKEN", environment)
+        self.assertIn("--custom-trusted-root", self.verifier.call_args.args[0])
+        self.assertIn("--bundle", self.verifier.call_args.args[0])
+
+    def test_bundle_cannot_supply_its_own_publisher_trust(self):
+        trust = verify.PublisherTrust(self.root / "policy.json", self.trust.roots, self.trust.verifier)
+        with self.assertRaisesRegex(InstallError, "separately-from-bundle"):
+            with verify.release(self.root, self.metadata["version"], trust):
+                pass
+        self.verifier.assert_not_called()
 
 
 @unittest.skipUnless(UNPRIVILEGED, "actual unprivileged Linux filesystem; systemd is mocked explicitly")

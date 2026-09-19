@@ -24,7 +24,10 @@ def location(parser: argparse.ArgumentParser) -> None:
 def release_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--release-directory", type=Path, required=True)
     parser.add_argument("--version", required=True)
-    parser.add_argument("--publisher-key", type=Path, required=True)
+    parser.add_argument("--publisher-policy", type=Path, required=True)
+    parser.add_argument("--trusted-root", type=Path, required=True)
+    parser.add_argument("--verifier", type=Path, default=Path("/usr/bin/gh"))
+    parser.add_argument("--allow-candidate", action="store_true", help="explicit CI/evaluation identity, never a release")
 
 
 def parser() -> argparse.ArgumentParser:
@@ -41,6 +44,7 @@ def parser() -> argparse.ArgumentParser:
     install.add_argument("--start", action="store_true")
     install.add_argument("--enable", action="store_true")
     install.add_argument("--upgrade", action="store_true")
+    install.add_argument("--approve-compiler-sha256")
     install.add_argument("--resume", action="store_true")
     for name in ("preflight", "readiness", "status", "remove"):
         command = commands.add_parser(name)
@@ -57,18 +61,22 @@ def parser() -> argparse.ArgumentParser:
 
 def dispatch(arguments: argparse.Namespace) -> dict:
     require(sys.platform == "linux", "native-installer-requires-linux")
+    if arguments.command in {"verify", "install"}:
+        trust = verify.PublisherTrust(arguments.publisher_policy, arguments.trusted_root,
+                                      arguments.verifier, arguments.allow_candidate)
     if arguments.command == "verify":
-        with verify.release(arguments.release_directory, arguments.version, arguments.publisher_key) as release:
-            return {"schemaVersion": "latent.native-verification.v1", "publisherKeySha256": release.publisher,
+        with verify.release(arguments.release_directory, arguments.version, trust) as release:
+            return {"schemaVersion": "latent.native-verification.v1", "publisherIdentitySha256": release.publisher,
                     "version": release.metadata["version"], "sourceCommit": release.metadata["sourceCommit"],
-                    "archiveSha256": release.metadata["archive"]["sha256"]}
+                    "archiveSha256": release.metadata["archive"]["sha256"], "authentication": release.authentication}
     layout = Layout.server() if getattr(arguments, "system", False) else Layout.local(arguments.directory)
     if arguments.command == "install":
-        with verify.release(arguments.release_directory, arguments.version, arguments.publisher_key) as release:
+        with verify.release(arguments.release_directory, arguments.version, trust) as release:
             return lifecycle.install(layout, release, profile=arguments.profile, policy=arguments.trust_policy,
                                      port=arguments.port, start=arguments.start, enable=arguments.enable,
                                      upgrade=arguments.upgrade, resume=arguments.resume,
-                                     acknowledge=arguments.acknowledge_experimental)
+                                     acknowledge=arguments.acknowledge_experimental,
+                                     approved_compiler=arguments.approve_compiler_sha256)
     if arguments.command == "preflight":
         return checks.preflight(layout, arguments.candidate_version)
     if arguments.command == "readiness":

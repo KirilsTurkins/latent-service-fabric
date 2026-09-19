@@ -1,4 +1,4 @@
-"""Publisher authentication using an independently provisioned OpenSSL and key."""
+"""Offline GitHub/Sigstore verification using independently provisioned trust."""
 
 from __future__ import annotations
 
@@ -10,13 +10,18 @@ from pathlib import Path
 import re
 import tempfile
 
-from .common import document, execute, require
+from .common import document, encode, execute, require
 from . import files
 
 TARGET = "x86_64-unknown-linux-gnu"
 VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\Z")
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 SOURCE = re.compile(r"[0-9a-f]{40}\Z")
+REPOSITORY = "KirilsTurkins/latent-service-fabric"
+ISSUER = "https://token.actions.githubusercontent.com"
+RELEASE_WORKFLOW = ".github/workflows/native-runtime-release.yml"
+CANDIDATE_WORKFLOW = ".github/workflows/native-runtime.yml"
+PREDICATE = "https://slsa.dev/provenance/v1"
 PLATFORM = {"osId": "ubuntu", "osVersion": "24.04", "minimumKernel": "6.8",
             "minimumGlibc": "2.39", "cpuFeatures": ["sse2"], "pythonMinimum": "3.12"}
 REQUIRED = {"bin/latent", "bin/latentd", "bin/latent-aot-compiler", "lsf-install.pyz",
@@ -101,27 +106,76 @@ def manifest(value: dict, selected: str) -> dict:
     return value
 
 
-def authenticate(checksums: bytes, signature: bytes, key: Path) -> str:
-    require(len(checksums) <= 8192 and len(signature) == 64, "signature-input-limit")
-    with files.regular(key, 16384, owners={0, os.geteuid()}) as key_fd:
-        with tempfile.TemporaryFile() as sum_file, tempfile.TemporaryFile() as signature_file:
-            sum_file.write(checksums)
-            sum_file.flush()
-            signature_file.write(signature)
-            signature_file.flush()
-            key_name = f"/proc/self/fd/{key_fd}"
-            status, der = execute(["/usr/bin/openssl", "pkey", "-pubin", "-in", key_name,
-                                   "-pubout", "-outform", "DER"], pass_fds=(key_fd,), maximum=16384)
-            require(status == 0 and len(der) == 44 and der[:12] == bytes.fromhex("302a300506032b6570032100"),
-                    "ed25519-publisher-key-required")
-            os.lseek(key_fd, 0, os.SEEK_SET)
-            status, _output = execute([
-                "/usr/bin/openssl", "pkeyutl", "-verify", "-pubin", "-inkey", key_name, "-rawin",
-                "-in", f"/proc/self/fd/{sum_file.fileno()}",
-                "-sigfile", f"/proc/self/fd/{signature_file.fileno()}",
-            ], pass_fds=(key_fd, sum_file.fileno(), signature_file.fileno()), maximum=16384)
-            require(status == 0, "publisher-signature-rejected")
-    return hashlib.sha256(der).hexdigest()
+def publisher_policy(value: dict, selected: str, allow_candidate: bool = False) -> dict:
+    require(set(value) == {"schemaVersion", "repository", "workflow", "sourceRef", "sourceCommit", "version", "purpose"},
+            "publisher-policy-members")
+    require(value["schemaVersion"] == "latent.native-publisher-policy.v1" and value["repository"] == REPOSITORY
+            and value["version"] == version(selected) and isinstance(value["sourceCommit"], str)
+            and SOURCE.fullmatch(value["sourceCommit"]), "publisher-policy-exact-source-required")
+    if value["purpose"] == "release":
+        require(value["workflow"] == RELEASE_WORKFLOW and value["sourceRef"] == "refs/tags/" + selected,
+                "publisher-policy-release-workflow-and-tag-required")
+    else:
+        require(allow_candidate and value["purpose"] == "candidate" and value["workflow"] == CANDIDATE_WORKFLOW
+                and isinstance(value["sourceRef"], str) and len(value["sourceRef"]) <= 240
+                and re.fullmatch(r"refs/heads/[A-Za-z0-9][A-Za-z0-9._/-]*", value["sourceRef"])
+                and ".." not in value["sourceRef"] and "//" not in value["sourceRef"],
+                "candidate-is-not-a-release-explicit-test-policy-required")
+    return value
+
+
+def publisher_id(policy: dict) -> str:
+    identity = {name: policy[name] for name in ("repository", "workflow", "purpose")}
+    return hashlib.sha256(encode({**identity, "issuer": ISSUER})).hexdigest()
+
+
+def verification_command(verifier: str, checksums: Path, attestation: Path, roots: Path, policy: dict) -> list[str]:
+    return [verifier, "attestation", "verify", str(checksums), "--bundle", str(attestation),
+            "--custom-trusted-root", str(roots), "--repo", REPOSITORY, "--hostname", "github.com",
+            "--cert-identity", f"https://github.com/{REPOSITORY}/{policy['workflow']}@{policy['sourceRef']}",
+            "--cert-oidc-issuer", ISSUER, "--source-ref", policy["sourceRef"],
+            "--source-digest", policy["sourceCommit"], "--signer-digest", policy["sourceCommit"],
+            "--deny-self-hosted-runners", "--predicate-type", PREDICATE, "--digest-alg", "sha256", "--format", "json"]
+
+
+@dataclass(frozen=True)
+class PublisherTrust:
+    policy: Path
+    roots: Path
+    verifier: Path = Path("/usr/bin/gh")
+    allow_candidate: bool = False
+
+
+def authenticate(checksums: bytes, attestation: bytes, trust: PublisherTrust, policy: dict) -> dict:
+    require(0 < len(checksums) <= 8192 and 0 < len(attestation) <= 1_048_576, "attestation-input-limit")
+    roots = files.read(trust.roots, 262144, owners={0, os.geteuid()})
+    with files.regular(trust.verifier, 134_217_728, owners={0, os.geteuid()}) as verifier_fd:
+        verifier_sha256, _size = files.digest_fd(verifier_fd)
+        require(os.fstat(verifier_fd).st_mode & 0o111, "independently-provisioned-gh-executable-required")
+        with tempfile.TemporaryDirectory(prefix="lsf-verify-") as temporary:
+            root = Path(temporary)
+            environment = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": temporary,
+                           "GH_CONFIG_DIR": str(root / "gh"), "GH_HOST": "github.com", "NO_COLOR": "1",
+                           "GH_PROMPT_DISABLED": "1", "GH_NO_UPDATE_NOTIFIER": "1"}
+            verifier_name = f"/proc/self/fd/{verifier_fd}"
+            status, observed = execute([verifier_name, "--version"], pass_fds=(verifier_fd,),
+                                       environment=environment, maximum=4096)
+            match = re.match(rb"gh version ([0-9]+)\.([0-9]+)\.([0-9]+)\b", observed)
+            require(status == 0 and match and tuple(int(part) for part in match.groups()) >= (2, 96, 0),
+                    "independently-provisioned-gh-2.96.0-or-newer-required")
+            for name, data in (("SHA256SUMS", checksums), ("attestation.json", attestation), ("trusted_root.jsonl", roots)):
+                files.create(root / name, data)
+            command = verification_command(verifier_name, root / "SHA256SUMS", root / "attestation.json",
+                                           root / "trusted_root.jsonl", policy)
+            status, _output = execute(command, pass_fds=(verifier_fd,), environment=environment,
+                                      timeout=60, maximum=2_097_152)
+            require(status == 0, "publisher-attestation-rejected-check-independent-root-and-exact-identity-policy")
+    return {"method": "github-artifact-attestation", "policy": policy,
+            "issuer": ISSUER, "predicateType": PREDICATE, "githubHostedRunnerRequired": True,
+            "verifierVersion": ".".join(part.decode() for part in match.groups()),
+            "verifierSha256": verifier_sha256, "trustedRootSha256": hashlib.sha256(roots).hexdigest(),
+            "attestationSha256": hashlib.sha256(attestation).hexdigest(),
+            "checksumsSha256": hashlib.sha256(checksums).hexdigest()}
 
 
 @dataclass(frozen=True)
@@ -130,16 +184,21 @@ class VerifiedRelease:
     archive_fd: int
     publisher: str
     checksums: bytes
-    signature: bytes
+    attestation: bytes
+    authentication: dict
 
 
 @contextmanager
-def release(root: Path, selected: str, key: Path):
+def release(root: Path, selected: str, trust: PublisherTrust):
     version(selected)
     files.absolute(root)
+    for path in (trust.policy, trust.roots, trust.verifier):
+        require(not files.absolute(path).is_relative_to(root), "publisher-trust-must-be-provisioned-separately-from-bundle")
+    policy = publisher_policy(document(files.read(trust.policy, 8192, owners={0, os.geteuid()})),
+                              selected, trust.allow_candidate)
     sums = files.read(root / "SHA256SUMS", 8192)
-    signature = files.read(root / "SHA256SUMS.sig", 64)
-    publisher = authenticate(sums, signature, key)
+    attestation = files.read(root / "SHA256SUMS.sigstore.json", 1_048_576)
+    authentication = authenticate(sums, attestation, trust, policy)
     try:
         lines = sums.decode("ascii").splitlines(keepends=True)
     except UnicodeDecodeError:
@@ -161,8 +220,10 @@ def release(root: Path, selected: str, key: Path):
             descriptors[name] = descriptor
         data = os.read(descriptors["release.json"], 1_048_577)
         metadata = manifest(document(data), selected)
+        require(metadata["sourceCommit"] == policy["sourceCommit"], "attested-release-source-mismatch")
         for entry in (metadata["archive"], metadata["bootstrap"]):
             require(entry["sha256"] == expected[entry["name"]]
                     and os.fstat(descriptors[entry["name"]]).st_size == entry["size"],
                     "manifest-artifact-mismatch")
-        yield VerifiedRelease(metadata, descriptors[metadata["archive"]["name"]], publisher, sums, signature)
+        yield VerifiedRelease(metadata, descriptors[metadata["archive"]["name"]], publisher_id(policy),
+                              sums, attestation, authentication)
