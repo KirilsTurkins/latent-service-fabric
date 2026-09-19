@@ -322,6 +322,12 @@ import {render} from './application.js';
 const script=data=>'<script type="application/json">'+JSON.stringify(data)+'</script>';
 const good=await render({html:'__LSF_CLIENT_ASSET__'+script('Alice <private>')},{});
 assert.ok(good.html.startsWith('/client.immutable.js'));
+const publication='publication:sha256:'+'a'.repeat(64);
+const pinned=await render({html:'__LSF_CLIENT_ASSET__'}, {publication});
+assert.equal(pinned.html, '/_lsf/assets/'+publication+'/client.immutable.js');
+for (const publication of ['', '../other', 'publication:sha256:'+'A'.repeat(64), 7]) {
+ await assert.rejects(render({html:'__LSF_CLIENT_ASSET__'}, {publication}), /angular-publication-identity/);
+}
 await render({html:script('x'.repeat(32766))},{});
 for(const html of [script('x'.repeat(32767)), script('x'.repeat(16383)).repeat(2),
  '<script TYPE=application/json>'+JSON.stringify('x'.repeat(32767))+'</script>',

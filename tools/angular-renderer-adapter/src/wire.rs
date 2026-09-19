@@ -35,6 +35,7 @@ struct BorrowedHeader<'a> {
 #[serde(rename_all = "camelCase")]
 struct Context {
     activation_id: String,
+    publication: Option<String>,
     root_activation_id: String,
     parent_activation_id: Option<String>,
     principal: Principal,
@@ -99,6 +100,9 @@ fn frame(value: &Request) -> Input<'_> {
         },
         context: Context {
             activation_id: context::activation_id(),
+            publication: context::metadata()
+                .into_iter()
+                .find_map(|(key, value)| (key == "guest.lsf.web-publication").then_some(value)),
             root_activation_id: context::root_activation_id(),
             parent_activation_id: context::parent_activation_id(),
             principal: Principal {
