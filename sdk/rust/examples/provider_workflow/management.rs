@@ -3,9 +3,9 @@ use super::{
     require, Assertions, ClientProfile, Result, RpcClient,
 };
 use latent_sdk::management::{
-    ApplyPolicyRequest, AuditAckStatus, CapabilityPolicyRecordKind, FailureCategory,
-    GetPolicyOperationRequest, GetPolicyRequest, ListCapabilitiesRequest, ListPoliciesRequest,
-    ObjectMetadata, OutcomeKnowledge, PageRequest, Policy,
+    ApplyPolicyRequest, CapabilityPolicyRecordKind, FailureCategory, GetPolicyOperationRequest,
+    GetPolicyRequest, ListCapabilitiesRequest, ListPoliciesRequest, ObjectMetadata,
+    OutcomeKnowledge, PageRequest, Policy,
 };
 
 fn create_request(
@@ -35,7 +35,7 @@ pub async fn run(
     config: &Configuration,
     client: &RpcClient,
     assertions: &mut Assertions,
-) -> Result<(String, u64)> {
+) -> Result<(String, Option<u64>)> {
     inspect(config, client).await?;
     assertions.insert("boundedPages", true);
     assertions.insert("providerInspection", true);
@@ -46,15 +46,12 @@ pub async fn run(
         .apply_policy(request.clone(), options())
         .await
         .map_err(|_| "policy-mutation-rpc")?;
-    let audit = created
-        .metadata
-        .audit_ack
-        .ok_or("audit-acknowledgement-absent")?;
-    require(audit.status == AuditAckStatus::DURABLE, "audit-not-durable")?;
-    let attempt = audit
-        .attempt_sequence
-        .filter(|value| *value > 0)
-        .ok_or("audit-attempt-absent")?;
+    require(
+        created.metadata.audit_ack.is_none()
+            && created.metadata.audit_status.is_none()
+            && created.metadata.audit_attempt_sequence.is_none(),
+        "policy-audit-absence",
+    )?;
     let receipt = created.value.receipt.ok_or("mutation-receipt-absent")?;
     require(receipt.operation_id == operation_id, "mutation-identity")?;
     let inspected = client
@@ -124,7 +121,7 @@ pub async fn run(
         "policy-precondition-facts",
     )?;
     assertions.insert("preconditionConflict", true);
-    Ok((operation_id, attempt))
+    Ok((operation_id, None))
 }
 
 async fn inspect(config: &Configuration, client: &RpcClient) -> Result<()> {

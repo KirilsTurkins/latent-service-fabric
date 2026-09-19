@@ -57,7 +57,7 @@ async fn execute(config: &Configuration, clients: &[RpcClient]) -> Result<Value>
     Ok(
         json!({"schemaVersion":"latent.sdk.provider.workflow.result.v1",
         "language":"rust", "assertions":assertions, "activationIds":activations,
-        "operationId":operation, "auditAttempt":attempt.to_string(),
+        "operationId":operation, "auditAttempt":attempt.map(|value| value.to_string()),
         "transport":"numeric-loopback-http2-protobuf-v1"}),
     )
 }
