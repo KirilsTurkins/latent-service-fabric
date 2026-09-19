@@ -107,23 +107,18 @@ are finite. They are not tiny-node, provider or authorization acceptance tests;
 those remain with the parent Rust transport delivery and its real-node suite.
 
 The audit-sequence correction is shared model commit `e4096670` and adapter
-commit `d8b0636a`. Validation on Windows/Rust 1.97.1 with parent transport
-`2cae79d5` passes 49 protobuf cases, the raw-audit conversion unit test, all ten
-parent TCP tests, ten of eleven profile TCP tests, targeted formatting,
-regeneration and strict SDK-only Clippy. Unknown `future-state` plus a maximum
-attempt survives an RPC failure without fabricating an acknowledgement.
+commit `d8b0636a`. The integrated parent parser accepts nonempty opaque ASCII
+graphic status tokens of at most 64 bytes, including `future-durable-v2`.
+It retains a separately valid full-width attempt without inventing a known
+acknowledgement for that future status.
 
-The remaining profile TCP test deliberately fails: the parent audit parser
-rejects `future-durable-v2` because it permits only lowercase ASCII and dashes,
-then loses the independently valid attempt sequence. The adapter retains the
-raw status, observed receipt outcome and recovery identity, but cannot recover
-an attempt omitted by the parent. Accepting bounded opaque status tokens,
-including digits, remains a parent-owned `network/error.rs` integration
-dependency. The regression is neither ignored nor weakened; the full adapter
-suite is not yet green on that parent head.
+On 2026-09-19, Windows/Rust 1.97.1 validation passes all 49 shared protobuf
+cases, eight SDK unit tests, ten parent TCP tests, eleven profile TCP tests,
+the shared model/lifetime and identity tests, regeneration, formatting and
+strict SDK-only Clippy for all targets. The no-default-features model suite
+also passes. No profile transport regression is ignored or weakened.
 
-No workflow, package manifest, shared SDK runner or other transport
-implementation file is changed beyond the additive `mod profile;`. Parent
-integrates adapter code/docs into #228; no separate adapter PR or issue closure
-is requested. Provider-backed real-node qualification remains with the shared
-runner and parent participants, not these controlled TCP tests.
+The adapter is integrated into #228 with its code and documentation commits.
+Provider-backed real-node qualification belongs to the shared runner and the
+native `provider_workflow` participant, not these controlled TCP tests. A
+passing controlled peer does not imply provider or authorization acceptance.

@@ -69,6 +69,26 @@ does not certify guest cleanup; observe the node's retained terminal state
 and its provider ownership where required. An absent retained activation is
 not evidence that it never ran. There is no retry or background polling loop.
 
+## Shared real-node participant
+
+`examples/provider_workflow.rs` implements the six-language qualification
+contract using this SDK's eight-operation `management::ClientProfile` facade.
+Build it with `cargo build -p latent-sdk --example provider_workflow --locked`.
+The shared operator runner supplies an owner-only `--config` file on Linux
+x86-64, a protected client credential, three signed maintained guest targets
+and a private HTTP-provider rendezvous directory. The participant does not
+bootstrap authority, call CLI internals or receive provider credentials.
+
+Its finite scenario checks provider results, distinct declared/platform/RPC
+failures, tenant/authentication rejection, bounded pages, provider inspection,
+mutation receipts, explicit replay, generation conflicts and response limits.
+Four actual held provider requests separate local waiter drop, application
+Cancel, original deadline and shutdown. Recovery uses retained identities;
+shutdown waits for actual local call/task/socket owners. The operator runner
+independently checks terminal activations and provider/node reclamation.
+This executable is not by itself an execution receipt: actual-node results
+are retained separately by the shared qualification run.
+
 ## Checks
 
 ```sh
