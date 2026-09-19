@@ -66,8 +66,9 @@ fn audit_metadata_preserves_full_width_and_rejects_ambiguous_presence() {
     metadata.remove("latent-audit-status");
     assert!(error::audit(&metadata).is_err());
     metadata.insert("latent-audit-status", "future-state".parse().unwrap());
-    let failure = error::audit(&metadata).unwrap_err();
-    assert_eq!(failure.unsupported.unwrap().value, "future-state");
+    let acknowledgement = error::audit(&metadata).unwrap().unwrap();
+    assert_eq!(acknowledgement.status, "future-state");
+    assert_eq!(acknowledgement.attempt_sequence, Some(1));
 }
 
 #[test]

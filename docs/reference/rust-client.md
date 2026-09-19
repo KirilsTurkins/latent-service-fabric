@@ -100,11 +100,13 @@ Malformed post-dispatch replies remain uncertain, including mismatched IDs or
 page metadata. Known audit data survives later semantic validation failures.
 
 Successful invocation results distinguish application success, declared guest
-errors and platform outcomes. Unknown wire classifications fail explicitly
+errors and platform outcomes. Unknown activation/platform classifications fail explicitly
 and retain their bounded raw value in `unsupported`; they are not coerced to
 an existing terminal state, retry recommendation or authority. Management
 Protobuf enum numbers remain raw generated integers. Optional presence and
 full-width `u64` fields are not routed through floating point or endpoint JSON.
+An unknown bounded audit status stays opaque; it never becomes a known audit
+acknowledgement or discards an independently observed mutation receipt.
 
 The legacy `LatentClient` trait returns only its pre-existing minimal
 `ClientTransportError`; that compatibility path intentionally cannot expose
