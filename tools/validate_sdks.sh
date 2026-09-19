@@ -16,8 +16,16 @@ npm ci --prefix sdk/typescript-client --ignore-scripts
 python3 tools/check_tool_versions.py
 
 (
+    export GOTOOLCHAIN=local GOWORK=off GOENV=off GOFLAGS=-mod=readonly
+    export GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
+    export GOPRIVATE= GONOPROXY= GONOSUMDB=
+    python3 -m unittest discover -s sdk/go -p 'test_*.py'
+    python3 sdk/go/dependencies.py --check
+    python3 sdk/go/generate.py
+    python3 sdk/go/generate.py --check
     cd sdk/go
     go test -timeout 30s ./...
+    go test -race -timeout 60s ./transport -run 'TestCancellationQueueAndReservedRecovery|TestConcurrentCloseReapsPendingAndQueuedCalls|TestFailedStartupAndAdoptedConnectionOwnership'
 )
 
 npm --prefix sdk/typescript-client run build -- --noEmit
