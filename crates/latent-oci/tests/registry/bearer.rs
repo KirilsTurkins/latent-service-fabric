@@ -2,7 +2,8 @@ use super::{fixtures, reference, shutdown, REPOSITORY};
 use latent_artifacts::package::{decode_referrer, package_digest, PackageLimits};
 use latent_core::{PlatformErrorCode, TenantId};
 use latent_oci::{
-    BearerIdentity, HttpOciRegistry, OciRegistry, RegistryActions, RegistryCredentials,
+    BearerIdentity, HttpOciRegistry, OciRegistry, RegistryActions, RegistryAddressPolicy,
+    RegistryCredentials, RegistryDestination, RegistryNetworkPolicy, RegistryResolution,
 };
 use serde::Deserialize;
 
@@ -14,12 +15,16 @@ struct Credential {
 }
 
 fn client(origin: &str, actions: RegistryActions) -> HttpOciRegistry {
+    with_access(origin, actions, true)
+}
+
+fn with_access(origin: &str, actions: RegistryActions, allowed: bool) -> HttpOciRegistry {
     let path = std::env::var("LSF_HARBOR_CREDENTIAL_FILE")
         .expect("run tools/run_harbor_registry_tests.py");
     let bytes = std::fs::read(path).unwrap();
     assert!(bytes.len() <= 4096);
     let credential: Credential = serde_json::from_slice(&bytes).unwrap();
-    HttpOciRegistry::new(super::config(
+    let config = super::config(
         origin,
         RegistryCredentials::BearerChallenge {
             realm: format!("{origin}/service/token"),
@@ -34,8 +39,34 @@ fn client(origin: &str, actions: RegistryActions) -> HttpOciRegistry {
             password: credential.password,
             addresses: vec![],
         },
-    ))
-    .unwrap()
+    );
+    if let Ok(server) = std::env::var("LSF_OCI_DNS_SERVER") {
+        HttpOciRegistry::new_with_network(
+            config,
+            RegistryNetworkPolicy {
+                maximum_redirects: 3,
+                destinations: vec![RegistryDestination {
+                    origin: origin.to_owned(),
+                    addresses: RegistryAddressPolicy {
+                        networks: vec!["127.0.0.1/32".parse().unwrap()],
+                        special_addresses: if allowed {
+                            vec!["127.0.0.1".parse().unwrap()]
+                        } else {
+                            vec![]
+                        },
+                    },
+                    resolution: RegistryResolution::Dns {
+                        server: server.parse().unwrap(),
+                        maximum_ttl_seconds: 1,
+                    },
+                    content_prefixes: vec![],
+                }],
+            },
+        )
+        .unwrap()
+    } else {
+        HttpOciRegistry::new(config).unwrap()
+    }
 }
 
 #[tokio::test]
@@ -46,6 +77,20 @@ async fn real_harbor_bearer_roundtrip() {
     let writer = client(&origin, RegistryActions::PullPush);
     let reader = client(&origin, RegistryActions::Pull);
     let (packages, evidence) = fixtures::load();
+    let dns = std::env::var_os("LSF_OCI_DNS_SERVER").is_some();
+    if dns {
+        let denied = with_access(&origin, RegistryActions::Pull, false);
+        assert_eq!(
+            denied
+                .pull_manifest(&reference(&origin, "not-authorized"), 65536)
+                .await
+                .unwrap_err()
+                .code,
+            PlatformErrorCode::PermissionDenied
+        );
+        assert_eq!(denied.usage().network.unwrap().connections, 0);
+        shutdown(&denied).await;
+    }
     let mut package_digests = Vec::new();
     for fixture in &packages {
         let expected = package_digest(&fixture.manifest);
@@ -108,7 +153,9 @@ async fn real_harbor_bearer_roundtrip() {
             "profile": "lsf-oci-bearer-v1", "authentication": "scoped-challenge",
             "packageDigests": package_digests, "evidenceDigests": evidence_digests,
             "digestPinnedPull": true, "leastPrivilegeWriteDenial": true, "cleanShutdown": true,
-            "dnsAndRedirects": "not-tested-here",
+            "dnsAndConnectedPeer": dns,
+            "deniedDnsDestination": dns,
+            "redirects": "controlled-TLS-peer-suite; native Harbor fixture does not redirect storage",
         })
     );
 }

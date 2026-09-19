@@ -5,9 +5,11 @@ use crate::{
     network::{DnsConnection, DnsSocket, Network},
     HttpDestination, HttpError, HttpResolution,
 };
+#[cfg(test)]
+use hickory_proto::rr::RData;
 use hickory_proto::{
-    op::{Message, MessageType, OpCode, Query, ResponseCode},
-    rr::{DNSClass, Name, RData, RecordType},
+    op::{Message, MessageType, OpCode, Query},
+    rr::{Name, RecordType},
 };
 use latent_capabilities::broker::pools::{PoolCall, ProviderClient, ProviderPools};
 use std::{

@@ -1,5 +1,5 @@
 mod cancellation;
-mod peer;
+pub(in crate::http) mod peer;
 mod rotation;
 mod token_rules;
 

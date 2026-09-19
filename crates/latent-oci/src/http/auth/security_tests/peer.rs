@@ -20,7 +20,7 @@ use tokio::{
 };
 use tokio_rustls::{server::TlsStream, TlsAcceptor};
 
-pub(super) struct State {
+pub(in crate::http) struct State {
     pub tokens: AtomicUsize,
     pub reads: AtomicUsize,
     pub writes: AtomicUsize,
@@ -30,9 +30,20 @@ pub(super) struct State {
     pub token_body: Mutex<Option<Vec<u8>>>,
     pub challenge: Mutex<Option<String>>,
     pub write_status: AtomicUsize,
+    pub token_status: AtomicUsize,
+    pub redirect: Mutex<Option<String>>,
+    pub token_redirect: Mutex<Option<String>>,
+    pub storage: AtomicBool,
+    pub hold_body: AtomicBool,
+    pub body_release: Semaphore,
+    pub response_headers: Mutex<String>,
+    pub response_body: Mutex<Vec<u8>>,
+    pub upload_mode: AtomicBool,
+    pub write_release: Semaphore,
+    pub delete_release: Semaphore,
 }
 
-pub(super) struct Peer {
+pub(in crate::http) struct Peer {
     pub address: SocketAddr,
     pub state: Arc<State>,
     certificate: Vec<u8>,
@@ -41,7 +52,11 @@ pub(super) struct Peer {
 
 impl Peer {
     pub async fn new() -> Self {
-        let certificate = rcgen::generate_simple_self_signed(vec!["127.0.0.1".into()]).unwrap();
+        Self::with_names(vec!["127.0.0.1".into()]).await
+    }
+
+    pub async fn with_names(names: Vec<String>) -> Self {
+        let certificate = rcgen::generate_simple_self_signed(names).unwrap();
         let der = certificate.cert.der().clone();
         let tls = rustls::ServerConfig::builder_with_provider(Arc::new(
             rustls::crypto::ring::default_provider(),
@@ -67,6 +82,17 @@ impl Peer {
             token_body: Mutex::new(None),
             challenge: Mutex::new(None),
             write_status: 201.into(),
+            token_status: 200.into(),
+            redirect: Mutex::new(None),
+            token_redirect: Mutex::new(None),
+            storage: false.into(),
+            hold_body: false.into(),
+            body_release: Semaphore::new(0),
+            response_headers: Mutex::new(String::new()),
+            response_body: Mutex::new(b"abc".to_vec()),
+            upload_mode: false.into(),
+            write_release: Semaphore::new(0),
+            delete_release: Semaphore::new(0),
         });
         let shared = Arc::clone(&state);
         let worker = tokio::spawn(async move {
@@ -138,7 +164,7 @@ impl Drop for Peer {
     }
 }
 
-pub(super) fn identity(epoch: u64) -> BearerIdentity {
+pub(in crate::http) fn identity(epoch: u64) -> BearerIdentity {
     BearerIdentity {
         tenant: TenantId("tenant".into()),
         principal: "operator".into(),
@@ -146,7 +172,7 @@ pub(super) fn identity(epoch: u64) -> BearerIdentity {
     }
 }
 
-pub(super) async fn wait_until(mut predicate: impl FnMut() -> bool) {
+pub(in crate::http) async fn wait_until(mut predicate: impl FnMut() -> bool) {
     timeout(Duration::from_secs(3), async {
         while !predicate() {
             tokio::task::yield_now().await;
@@ -196,7 +222,18 @@ async fn serve(socket: &mut TlsStream<tokio::net::TcpStream>, state: &State, add
         let body = state.token_body.lock().unwrap().clone().unwrap_or_else(|| {
             format!("{{\"token\":\"fixture-token-{number}\",\"expires_in\":60}}").into_bytes()
         });
-        reply(socket, 200, "Content-Type: application/json\r\n", &body).await;
+        let redirect = state.token_redirect.lock().unwrap().clone();
+        let headers = redirect.map_or_else(
+            || "Content-Type: application/json\r\n".to_owned(),
+            |url| format!("Location: {url}\r\n"),
+        );
+        reply(
+            socket,
+            state.token_status.load(Ordering::Acquire),
+            &headers,
+            &body,
+        )
+        .await;
         return;
     }
     assert!(!lower.contains("authorization: basic "));
@@ -204,6 +241,32 @@ async fn serve(socket: &mut TlsStream<tokio::net::TcpStream>, state: &State, add
     if !read {
         state.writes.fetch_add(1, Ordering::AcqRel);
         assert!(lower.contains("authorization: bearer fixture-token-"));
+        if state.upload_mode.load(Ordering::Acquire) {
+            let deleting = head.starts_with("DELETE ");
+            let release = if deleting {
+                &state.delete_release
+            } else {
+                &state.write_release
+            };
+            let mut byte = [0];
+            tokio::select! {
+                permit = release.acquire() => { permit.unwrap().forget(); }
+                _ = socket.read(&mut byte) => {
+                    state.disconnected.fetch_add(1, Ordering::AcqRel);
+                    return;
+                }
+            }
+            let location = "/v2/tenant/package/blobs/uploads/session?_state=a%2fb%2B%3D&empty=";
+            if deleting {
+                assert!(head.starts_with(&format!("DELETE {location} HTTP/1.1")));
+                reply(socket, 204, "", b"").await;
+            } else if head.starts_with("POST ") {
+                reply(socket, 202, &format!("Location: {location}\r\n"), b"").await;
+            } else {
+                reply(socket, 201, "", b"").await;
+            }
+            return;
+        }
         let status = state.write_status.load(Ordering::Acquire);
         if status == 0 {
             return;
@@ -211,8 +274,21 @@ async fn serve(socket: &mut TlsStream<tokio::net::TcpStream>, state: &State, add
         reply(socket, status, "", b"").await;
         return;
     }
+    serve_read(socket, state, &head, &lower, address).await;
+}
+
+async fn serve_read(
+    socket: &mut TlsStream<tokio::net::TcpStream>,
+    state: &State,
+    head: &str,
+    lower: &str,
+    address: SocketAddr,
+) {
     state.reads.fetch_add(1, Ordering::AcqRel);
-    if !lower.contains("authorization: bearer fixture-token-") {
+    if state.storage.load(Ordering::Acquire) {
+        assert!(!lower.contains("authorization:"));
+        assert!(!lower.contains("cookie:"));
+    } else if !lower.contains("authorization: bearer fixture-token-") {
         let challenge = state.challenge.lock().unwrap().clone().unwrap_or_else(|| {
             format!("Bearer realm=\"https://{address}/token\",service=\"registry.test\",scope=\"repository:tenant/package:pull\"")
         });
@@ -225,14 +301,39 @@ async fn serve(socket: &mut TlsStream<tokio::net::TcpStream>, state: &State, add
         .await;
         return;
     }
+    let redirect = state.redirect.lock().unwrap().clone();
+    if let Some(redirect) = redirect {
+        reply(socket, 307, &format!("Location: {redirect}\r\n"), b"").await;
+        return;
+    }
+    if state.hold_body.load(Ordering::Acquire) {
+        let headers = b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: 3\r\nConnection: close\r\n\r\n";
+        if socket.write_all(headers).await.is_err() {
+            return;
+        }
+        socket.flush().await.unwrap();
+        let mut byte = [0];
+        tokio::select! {
+            permit = state.body_release.acquire() => { permit.unwrap().forget(); }
+            _ = socket.read(&mut byte) => {
+                state.disconnected.fetch_add(1, Ordering::AcqRel);
+                return;
+            }
+        }
+        let _ = socket.write_all(b"abc").await;
+        let _ = socket.shutdown().await;
+        return;
+    }
+    let extra = state.response_headers.lock().unwrap().clone();
+    let body = state.response_body.lock().unwrap().clone();
     reply(
         socket,
         200,
-        "Content-Type: application/octet-stream\r\n",
+        &format!("Content-Type: application/octet-stream\r\n{extra}"),
         if head.starts_with("HEAD ") {
             b""
         } else {
-            b"abc"
+            &body
         },
     )
     .await;
