@@ -205,4 +205,6 @@ def validate_result(raw: bytes, name: str, *, emitted_record: bytes | None = Non
 
 def validate_custom(raw: bytes, marker: str) -> None:
     lines = raw.decode("utf-8", errors="strict").splitlines()
-    require(lines == [marker], "custom-harness-result")
+    expected = marker.split("\n")
+    require(0 < len(expected) <= 2 and all(expected), "custom-harness-marker")
+    require(lines == expected, "custom-harness-result")

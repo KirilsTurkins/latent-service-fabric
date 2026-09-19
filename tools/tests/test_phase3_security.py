@@ -166,6 +166,21 @@ class SelectionTests(unittest.TestCase):
             with self.assertRaises(artifacts.SecurityError):
                 artifacts.validate_custom(output, marker)
 
+    def test_supervisor_requires_both_exact_completion_records_in_order(self):
+        readiness = "isolated AOT readiness: six bounded success/rejection/reap scenarios passed"
+        ownership = "isolated AOT supervisor: 16 bounded protocol/ownership scenarios passed"
+        marker = readiness + "\n" + ownership
+        group = next(group for group in cases.GROUPS if group.key == "compiler-supervisor")
+        self.assertEqual(group.marker, marker)
+        artifacts.validate_custom((marker + "\n").encode(), marker)
+        for output in (readiness, ownership, ownership + "\n" + readiness,
+                       readiness + "\n" + marker, marker + "\nextra", marker + "\n" + ownership):
+            with self.subTest(output=output), self.assertRaises(artifacts.SecurityError):
+                artifacts.validate_custom((output + "\n").encode(), marker)
+        for invalid in ("", readiness + "\n", marker + "\nextra"):
+            with self.subTest(marker=invalid), self.assertRaisesRegex(artifacts.SecurityError, "marker"):
+                artifacts.validate_custom(b"", invalid)
+
     def test_inherited_child_output_must_match_one_exact_bounded_receipt(self):
         record = b'{"controlled":true}'
         output = (b"running 1 test\ntest first ... " + record + b"\nok\n\n"
@@ -246,20 +261,28 @@ class SelectionTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
-    def report(self):
+    def report(self, node_shutdowns=2):
         return {"schemaVersion": "fixture", "passed": True, "temporaryOutputsRemoved": True,
                 "shutdown": [{"reaped": True, "record": {"event": "stopped", "clean": True,
-                                                          "report": {"clean": True}}}] * 2}
+                                                          "report": {"clean": True}}}] * node_shutdowns}
 
-    def test_workflow_receipts_need_two_reaped_clean_real_nodes(self):
-        value = self.report()
-        self.assertEqual(manual.validate_workflow(value, "publication", "fixture")["nodeShutdowns"], 2)
-        for field, replacement in (("passed", False), ("shutdown", []), ("temporaryOutputsRemoved", False)):
-            with self.subTest(field=field), self.assertRaises(artifacts.SecurityError):
-                manual.validate_workflow({**value, field: replacement}, "publication", "fixture")
-        value["shutdown"][0]["reaped"] = False
-        with self.assertRaisesRegex(artifacts.SecurityError, "owner-retained"):
-            manual.validate_workflow(value, "publication", "fixture")
+    def test_workflow_receipts_need_the_exact_reaped_clean_node_lifetimes(self):
+        for name, node_shutdowns in (("publication", 3), ("security-profile", 2)):
+            value = self.report(node_shutdowns)
+            self.assertEqual(manual.validate_workflow(value, name, "fixture")["nodeShutdowns"], node_shutdowns)
+            for count in (0, node_shutdowns - 1, node_shutdowns + 1):
+                with self.subTest(name=name, count=count), self.assertRaisesRegex(artifacts.SecurityError, "shutdown-count"):
+                    manual.validate_workflow(self.report(count), name, "fixture")
+            for field, replacement in (("passed", False), ("temporaryOutputsRemoved", False)):
+                with self.subTest(name=name, field=field), self.assertRaises(artifacts.SecurityError):
+                    manual.validate_workflow({**value, field: replacement}, name, "fixture")
+            value["shutdown"][0]["reaped"] = False
+            with self.assertRaisesRegex(artifacts.SecurityError, "owner-retained"):
+                manual.validate_workflow(value, name, "fixture")
+
+    def test_unknown_workflow_cannot_claim_a_shutdown_profile(self):
+        with self.assertRaisesRegex(artifacts.SecurityError, "workflow-name"):
+            manual.validate_workflow(self.report(), "unexpected", "fixture")
 
     def test_provider_workflow_is_validated_without_inventing_its_absent_pass_flag(self):
         value = self.report()
@@ -269,6 +292,10 @@ class WorkflowTests(unittest.TestCase):
                       "angularT1Qualified": False, "activations": ["fixture"] * 9,
                       "upstream": {"requests": 4, "authorized": 4, "unexpected": 0}})
         manual.validate_workflow(value, "provider-management", "fixture")
+        for count in (1, 3):
+            with self.subTest(count=count), self.assertRaisesRegex(artifacts.SecurityError, "shutdown-count"):
+                manual.validate_workflow({**value, "shutdown": self.report(count)["shutdown"]},
+                                         "provider-management", "fixture")
         value["upstream"]["unexpected"] = 1
         with self.assertRaisesRegex(artifacts.SecurityError, "provider-workflow-proof"):
             manual.validate_workflow(value, "provider-management", "fixture")

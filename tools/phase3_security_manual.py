@@ -13,6 +13,8 @@ from tools.phase3_security_artifacts import file_identity, require, tree_identit
 
 def validate_workflow(report: dict, name: str, schema: str) -> dict:
     require(isinstance(report, dict) and report.get("schemaVersion") == schema, "workflow-receipt")
+    shutdown_count = {"publication": 3, "security-profile": 2, "provider-management": 2}.get(name)
+    require(shutdown_count is not None, "workflow-name")
     if name == "provider-management":
         require(report.get("grantsRevoked") is True
                 and report.get("selectedRevisionPreservedAcrossRestart") is True
@@ -23,7 +25,7 @@ def validate_workflow(report: dict, name: str, schema: str) -> dict:
         require(report.get("passed") is True and report.get("temporaryOutputsRemoved") is True,
                 "workflow-receipt")
     shutdown = report.get("shutdown")
-    require(isinstance(shutdown, list) and len(shutdown) == 2, "workflow-shutdown-count")
+    require(isinstance(shutdown, list) and len(shutdown) == shutdown_count, "workflow-shutdown-count")
     for stopped in shutdown:
         require(stopped.get("reaped") is True and stopped.get("record", {}).get("clean") is True
                 and stopped["record"].get("event") == "stopped"
