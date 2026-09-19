@@ -1,4 +1,5 @@
 //! One optional bounded HTTP application listener, shared by every deployment.
+mod assets;
 mod connection;
 mod dispatch;
 mod head;
@@ -13,6 +14,7 @@ use crate::config::http::HttpSettings;
 use latent_core::{ActivationClock, PlatformError, PlatformErrorCode, ResourceBudget};
 use std::{sync::Arc, time::Duration};
 
+pub use assets::AssetSnapshot;
 pub(crate) use owner::HttpOwner;
 pub(crate) use state::HttpHandle;
 pub use state::HttpSnapshot;

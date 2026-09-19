@@ -554,6 +554,10 @@ impl StandaloneNode {
         .await?;
         self.transport = Some(transport);
         self.start_http(settings, &catalogs.deployments)?;
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if let Some(http) = &self.http {
+            http.install_assets(catalogs.artifacts.clone())?;
+        }
         let transport = self.transport.as_ref().expect("owned started transport");
         let topology = Arc::new(
             observations::TopologySource::new(

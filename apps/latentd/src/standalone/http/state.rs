@@ -4,7 +4,7 @@ use latent_ingress::http::{cache::ResponseCache, HttpPool, EXCHANGE_RESERVATION_
 use serde::Serialize;
 use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
-    Arc,
+    Arc, OnceLock,
 };
 use tokio::sync::watch;
 
@@ -18,6 +18,7 @@ pub(super) enum Signal {
 pub(super) struct State {
     pub signal: watch::Sender<Signal>,
     pub pool: HttpPool,
+    pub assets: OnceLock<Arc<super::assets::Store>>,
     pub response_cache: Option<ResponseCache>,
     pub connections: AtomicUsize,
     pub maximum_connections: usize,
@@ -49,6 +50,8 @@ pub struct HttpSnapshot {
     pub exchanges: usize,
     pub maximum_buffer_bytes: usize,
     pub reserved_buffer_bytes: usize,
+    /// Independent asset byte/work ceiling, in addition to transport buffers.
+    pub assets: Option<super::AssetSnapshot>,
     pub response_cache_entries: usize,
     pub response_cache_owners: usize,
     pub response_cache_reserved_bytes: usize,
@@ -64,6 +67,7 @@ impl HttpSnapshot {
             && self.connections == 0
             && self.exchanges == 0
             && self.reserved_buffer_bytes == 0
+            && self.assets.is_none_or(super::AssetSnapshot::clean)
             && self.response_cache_entries == 0
             && self.response_cache_owners == 0
             && self.response_cache_reserved_bytes == 0
@@ -87,6 +91,7 @@ impl HttpHandle {
                 limits.maximum_exchanges * EXCHANGE_RESERVATION_BYTES,
             )
             .map_err(|_| super::failure())?,
+            assets: OnceLock::new(),
             response_cache,
             connections: AtomicUsize::new(0),
             maximum_connections: limits.maximum_connections,
@@ -118,6 +123,7 @@ impl HttpHandle {
             exchanges: pool.active_exchanges,
             maximum_buffer_bytes: self.0.maximum_bytes,
             reserved_buffer_bytes: connections * CONNECTION_BYTES + pool.reserved_bytes,
+            assets: self.0.assets.get().map(|store| store.snapshot()),
             response_cache_entries: cache.entries,
             response_cache_owners: cache.owners,
             response_cache_reserved_bytes: cache.reserved_bytes,
@@ -140,6 +146,9 @@ impl HttpHandle {
     }
     pub(super) fn signal(&self, signal: Signal) {
         if signal >= Signal::Draining {
+            if let Some(assets) = self.0.assets.get() {
+                assets.stop();
+            }
             if let Some(cache) = &self.0.response_cache {
                 cache.close();
             }

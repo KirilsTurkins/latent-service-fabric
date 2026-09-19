@@ -109,6 +109,8 @@ internal static class Program
     public static async Task Main()
     {
         PublicationIdentityTests.Run();
+        ProfileVectors.Run();
+        await ProfileLifetime.Run();
         await PendingCancellation();
         await LostResponse();
         await OptionalIdentity();

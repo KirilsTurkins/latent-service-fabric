@@ -39,6 +39,10 @@ class ClassificationTests(unittest.TestCase):
                      "crates/latent-wire/src/management/release/web.rs"]:
             with self.subTest(path=path):
                 self.assertTrue(profile.classify_paths([path]).renderer)
+        for path in ["examples/browser-boundary/shared/hydration.ts", "tools/browser-boundary/build.mjs",
+                     "tools/browser-boundary/browser.mjs", "tools/tests/browser_hydration.test.mjs"]:
+            with self.subTest(path=path):
+                self.assertTrue(profile.classify_paths([path]).renderer)
         self.assertFalse(profile.classify_paths(["README.md"]).renderer)
         self.assertFalse(profile.classify_paths(["sdk/go/client.go"]).renderer)
         self.assertTrue(profile.classify_paths([]).renderer)

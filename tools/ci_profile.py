@@ -82,6 +82,7 @@ def classify_paths(paths: list[str]) -> Decision:
                  "tools/tests/test_build_inventory.py", "tools/tests/test_web_admission_schemas.py",
                  "schemas/node-renderer-profile.schema.json"}
         or path.startswith(("examples/renderer-profile/", "tools/renderer-profile/", "tools/angular-renderer-adapter/",
+                            "examples/browser-boundary/", "tools/browser-boundary/", "tools/tests/browser_hydration.test.mjs",
                             "examples/angular-application/", "tools/angular_build/", "tools/build_angular_package.py",
                             "tools/run_angular_build_tests.py", "tools/check_angular_hydration.mjs",
                             "tools/phase3_web_", "apps/latent/src/management/web",
