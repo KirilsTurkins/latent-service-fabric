@@ -22,7 +22,7 @@ from tools.phase3_resource_os import Probe, network_counts, proc_stat
 from tools.phase3_resource_profile import ACTIVE_COUNTERS, PROFILES, digest, integer, quiescent, summary, validate_schedule
 from tools.phase3_resource_schedule import run_open_loop
 from tools.phase3_resource_rust import SUITE, artifact_from_cargo, validate_observations
-from tools.phase3_resource_workload import measured_work
+from tools.phase3_resource_workload import measured_work, overload_counts
 
 
 class Clock:
@@ -141,6 +141,16 @@ class ScheduleTests(unittest.TestCase):
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_grpc_overload_is_not_relabelled_as_known_platform_nonacceptance(self):
+        outcome = {"code": "rpc-failed", "grpcCode": "resource-exhausted", "outcomeKnown": False}
+        observed = overload_counts([outcome])
+        self.assertEqual(observed["platformResourceExhausted"], 0)
+        self.assertEqual(observed["grpcResourceExhausted"], 1)
+        self.assertEqual(observed["unknownOutcomes"], 1)
+        for outcomes in ([], [{**outcome, "grpcCode": "deadline-exceeded"}]):
+            with self.assertRaises(WorkflowError):
+                overload_counts(outcomes)
+
     def test_failed_call_is_retained_before_its_expected_outcome_is_checked(self):
         receipt = {"calls": [], "catalog": {"dormantPopulations": [{"dormantAdded": 4}]}}
         failure = {"activation": "synthetic-failed-call", "elapsedNanos": "1",

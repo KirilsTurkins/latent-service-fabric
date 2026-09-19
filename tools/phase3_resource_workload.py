@@ -42,6 +42,17 @@ def retain(timings, kind, heat, expected, observed):
     return row
 
 
+def overload_counts(outcomes):
+    require(bool(outcomes), "resource-overload-empty")
+    counts = {"platformResourceExhausted": sum(entry["code"] == "resource-exhausted" for entry in outcomes),
+              "grpcResourceExhausted": sum(entry["grpcCode"] == "resource-exhausted" for entry in outcomes),
+              "unknownOutcomes": sum(entry["outcomeKnown"] is False for entry in outcomes),
+              "scope": "gRPC-exhaustion-is-not-proof-of-node-queue-admission-or-known-nonacceptance"}
+    require(counts["platformResourceExhausted"] + counts["grpcResourceExhausted"] > 0,
+            "resource-overload-empty")
+    return counts
+
+
 def measured_work(client, targets, port, control, probe, profile, result):
     url = f"http://localhost:{port}/allowed"
     dormant = result["catalog"]["dormantPopulations"][-1]["dormantAdded"]
@@ -133,8 +144,7 @@ def overload(client, target, url, control, probe, profile, result):
         observed = sample(client, probe, "active", result["catalog"]["dormantPopulations"][-1]["dormantAdded"])
         result["samples"].append(observed)
         result["overload"] = [finish(client, process) for process in processes]
-        require(any(entry["code"] == "resource-exhausted" for entry in result["overload"]),
-                "resource-overload-empty")
+        result["overloadClassification"] = overload_counts(result["overload"])
     finally:
         for process in processes:
             process.close()
