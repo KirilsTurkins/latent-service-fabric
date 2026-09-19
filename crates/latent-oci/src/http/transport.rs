@@ -1,4 +1,5 @@
-mod client;
+pub(super) mod client;
+use super::auth::{self, ConfiguredBearer};
 use super::reference::Endpoint;
 use super::{exhausted, invalid, RegistryConfig, RegistryLimits, Result};
 use bytes::Bytes;
@@ -21,6 +22,7 @@ pub(crate) struct Transport {
     pub(crate) limits: RegistryLimits,
     client: reqwest::Client,
     auth: Option<HeaderValue>,
+    challenge: Option<ConfiguredBearer>,
     operations: Arc<Semaphore>,
     packages: Arc<Semaphore>,
     bytes: Arc<Semaphore>,
@@ -42,11 +44,13 @@ impl Transport {
     pub(crate) fn new(config: RegistryConfig) -> Result<Self> {
         config.limits.validate()?;
         let endpoint = Endpoint::new(&config)?;
+        let challenge = ConfiguredBearer::new(&config)?;
         let client = client::build(&config, &endpoint)?;
-        let auth = client::authorization(config.credentials)?;
+        let auth = client::authorization(&config.credentials)?;
         Ok(Self {
             client,
             auth,
+            challenge,
             endpoint,
             limits: config.limits,
             operations: Arc::new(Semaphore::new(config.limits.max_in_flight)),
@@ -117,6 +121,53 @@ impl Transport {
         content_type: Option<&str>,
         deadline: Instant,
     ) -> Result<Response> {
+        let response = self
+            .send_once(
+                method.clone(),
+                url.clone(),
+                body.clone(),
+                content_type,
+                deadline,
+                self.auth.as_ref(),
+            )
+            .await?;
+        let Some(challenge) = self.challenge.as_ref() else {
+            return Ok(response);
+        };
+        if response.status() != StatusCode::UNAUTHORIZED
+            || !auth::read_continuation_allowed(&method, body.is_some())
+        {
+            // A write or body-bearing request is never repeated after an
+            // authentication response because its remote state may be uncertain.
+            return Ok(response);
+        }
+        challenge.validate_challenge(response.headers())?;
+        drop(response);
+
+        let token_response = challenge
+            .exchange(deadline, self.limits.request_timeout)
+            .await?;
+        let token_body = self
+            .read_body(token_response, auth::MAX_TOKEN_RESPONSE_BYTES, None)
+            .await?;
+        let bearer = challenge.token_header(&token_body)?;
+        drop(token_body);
+
+        // There is exactly one authentication continuation. A second 401 is
+        // returned to the caller and is never converted into a challenge loop.
+        self.send_once(method, url, body, content_type, deadline, Some(&bearer))
+            .await
+    }
+
+    async fn send_once(
+        &self,
+        method: Method,
+        url: Url,
+        body: Option<Bytes>,
+        content_type: Option<&str>,
+        deadline: Instant,
+        authorization: Option<&HeaderValue>,
+    ) -> Result<Response> {
         self.endpoint.check_url(&url)?;
         let remaining = deadline
             .checked_duration_since(Instant::now())
@@ -131,7 +182,7 @@ impl Transport {
             .client
             .request(method, url)
             .timeout(remaining.min(self.limits.request_timeout));
-        if let Some(auth) = &self.auth {
+        if let Some(auth) = authorization {
             request = request.header(reqwest::header::AUTHORIZATION, auth.clone());
         }
         if let Some(content_type) = content_type {
