@@ -170,7 +170,7 @@ jobs:
           LSF_BROWSER_BUILD="$RUNNER_TEMP/browser-boundary" LSF_BROWSER_NODE="$(command -v node)" LSF_BROWSER_CHROME="$(command -v google-chrome)" LSF_BROWSER_TOOLCHAIN="$PWD/examples/renderer-profile" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite browser-boundary
       - name: Retain bounded browser boundary observations
         if: always() && needs.profile.outputs.renderer == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: browser-boundary-observations
           path: |
