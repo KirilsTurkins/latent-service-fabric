@@ -4,15 +4,17 @@ import path from 'node:path';
 import {prepare} from './lib/prepare.mjs';
 import {repositoryUrl, sha256, websiteRoot} from './lib/repository.mjs';
 import {remarkRepositoryLinks, rehypeRepositoryLinks} from './plugins/repository-links.mjs';
+import {remarkExamples} from './plugins/examples/remark.mjs';
 
 const prepared = prepare();
 const pluginOptions = {index: prepared.index, assets: prepared.assets, baseUrl: prepared.baseUrl};
 const repositoryRemark = () => remarkRepositoryLinks(pluginOptions);
 const repositoryRehype = () => rehypeRepositoryLinks(pluginOptions);
-const inputIdentity = {fingerprint: sha256(JSON.stringify({revision: prepared.index.revision, pages: prepared.index.pages, assets: prepared.assets, baseUrl: prepared.baseUrl}))};
+const examplesRemark = () => remarkExamples({bundle: prepared.examples.bundle, documentVersion: prepared.index.channel});
+const inputIdentity = {fingerprint: sha256(JSON.stringify({revision: prepared.index.revision, pages: prepared.index.pages, assets: prepared.assets, baseUrl: prepared.baseUrl, examples: prepared.examples.identity}))};
 const commonDocs = {
   numberPrefixParser: false as const,
-  beforeDefaultRemarkPlugins: [[repositoryRemark, inputIdentity]],
+  beforeDefaultRemarkPlugins: [[repositoryRemark, inputIdentity], [examplesRemark, inputIdentity]],
   beforeDefaultRehypePlugins: [[repositoryRehype, inputIdentity]],
   showLastUpdateAuthor: false,
   showLastUpdateTime: false,
@@ -52,6 +54,7 @@ const config: Config = {
       editUrl: ({docPath}: {docPath: string}) => `${repositoryUrl}/edit/${prepared.index.revision}/adr/${docPath}`,
     }],
     './plugins/repository-content.mjs',
+    './plugins/examples/index.mjs',
   ],
   themes: ['@docusaurus/theme-mermaid'],
   themeConfig: {
