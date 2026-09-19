@@ -33,7 +33,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `wasm-tools` | 1.254.0 | WIT parsing, validation, componentization, and interface extraction |
 | Buf | 1.72.0 | Protobuf linting and independent descriptor-set generation |
 | Python / `jsonschema` | 3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
-| Go / Node / TypeScript / .NET | 1.23.2 / 22.16.0 / 5.8.3 / 8.0.423 | Cross-language interface compilation |
+| Go / Node / TypeScript / .NET | 1.23.2 / 24.19.0 / 5.8.3 / 8.0.423 | Cross-language interfaces and bounded Node client |
 | Eclipse Temurin JDK | 21.0.11+10 | Java SDK compilation |
 | Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
 
