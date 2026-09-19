@@ -73,6 +73,8 @@ async fn all_eight_facade_operations_share_one_channel_and_owned_responses() {
     );
     assert_eq!(invoked.value.route_generation, u64::MAX);
     assert!(invoked.metadata.audit_ack.is_none());
+    assert!(invoked.metadata.audit_status.is_none());
+    assert!(invoked.metadata.audit_attempt_sequence.is_none());
     let status = profile
         .get_activation(
             GetActivationRequest {
@@ -598,11 +600,34 @@ async fn future_audit_status_and_attempt_remain_raw_without_invented_durability(
         response.metadata.audit_status.as_deref(),
         Some("future-durable-v2")
     );
-    let acknowledgement = response.metadata.audit_ack.unwrap();
-    assert_eq!(acknowledgement.status, AuditAckStatus::UNSPECIFIED);
-    assert_eq!(acknowledgement.attempt_sequence, Some(u64::MAX));
+    assert!(response.metadata.audit_ack.is_none());
+    assert_eq!(response.metadata.audit_attempt_sequence, Some(u64::MAX));
     assert_eq!(response.metadata.outcome, OutcomeKnowledge::OBSERVED);
     assert_eq!(response.value.receipt.unwrap().generation, u64::MAX);
+    shutdown(&client).await;
+    peer.stop().await;
+}
+
+#[tokio::test]
+async fn future_audit_status_on_rpc_failure_retains_independent_attempt() {
+    let peer = ScriptedPeer::start().await;
+    let client = peer.client();
+    let failure = client
+        .get_policy(
+            GetPolicyRequest {
+                id: "future-audit-error".into(),
+                record_kind: CapabilityPolicyRecordKind::POLICY,
+            },
+            options(),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(failure.category, FailureCategory::RPC);
+    assert_eq!(failure.grpc_status, Some(7));
+    assert!(failure.audit_ack.is_none());
+    assert_eq!(failure.audit_status.as_deref(), Some("future-state"));
+    assert_eq!(failure.audit_attempt_sequence, Some(u64::MAX));
+    assert!(failure.platform_error.is_some());
     shutdown(&client).await;
     peer.stop().await;
 }

@@ -11,23 +11,24 @@ impl From<RecoveryIdentity> for model::RequestIdentity {
 
 pub(super) fn audit(
     value: Option<AuditAcknowledgement>,
-) -> (Option<model::AuditAck>, Option<String>) {
+) -> (Option<model::AuditAck>, Option<String>, Option<u64>) {
     let Some(value) = value else {
-        return (None, None);
+        return (None, None, None);
     };
     let status = match value.status.as_str() {
-        "durable" => model::AuditAckStatus::DURABLE,
-        "outcome-unknown" => model::AuditAckStatus::OUTCOME_UNKNOWN,
-        "audit-unavailable" => model::AuditAckStatus::AUDIT_UNAVAILABLE,
-        "disabled" => model::AuditAckStatus::DISABLED,
-        _ => model::AuditAckStatus::UNSPECIFIED,
+        "durable" => Some(model::AuditAckStatus::DURABLE),
+        "outcome-unknown" => Some(model::AuditAckStatus::OUTCOME_UNKNOWN),
+        "audit-unavailable" => Some(model::AuditAckStatus::AUDIT_UNAVAILABLE),
+        "disabled" => Some(model::AuditAckStatus::DISABLED),
+        _ => None,
     };
     (
-        Some(model::AuditAck {
+        status.map(|status| model::AuditAck {
             status,
             attempt_sequence: value.attempt_sequence,
         }),
         Some(value.status),
+        value.attempt_sequence,
     )
 }
 
@@ -46,7 +47,7 @@ impl From<RpcFailure> for model::ClientFailure {
             FailureKind::Connection => model::FailureCategory::TRANSPORT,
         };
         let message = value.to_string();
-        let (audit_ack, mut audit_status) = audit(value.audit);
+        let (audit_ack, mut audit_status, audit_attempt_sequence) = audit(value.audit);
         let unsupported_wire_value = value.unsupported.map(|raw| model::UnsupportedWireValue {
             field: raw.field.into(),
             value: raw.value,
@@ -76,6 +77,53 @@ impl From<RpcFailure> for model::ClientFailure {
             audit_ack,
             audit_status,
             unsupported_wire_value,
+            audit_attempt_sequence,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn raw_audit_sequence_survives_without_any_invented_acknowledgement() {
+        assert_eq!(audit(None), (None, None, None));
+        for sequence in [None, Some(0), Some(u64::MAX)] {
+            let (acknowledgement, status, attempt) = audit(Some(AuditAcknowledgement {
+                status: "future-state".into(),
+                attempt_sequence: sequence,
+            }));
+            assert!(acknowledgement.is_none());
+            assert_eq!(status.as_deref(), Some("future-state"));
+            assert_eq!(attempt, sequence);
+            let failure: model::ClientFailure = RpcFailure {
+                kind: FailureKind::Connection,
+                grpc_code: Some(14),
+                platform: None,
+                dispatched: true,
+                outcome_known: false,
+                recovery: RecoveryIdentity::default(),
+                audit: Some(AuditAcknowledgement {
+                    status: "future-state".into(),
+                    attempt_sequence: sequence,
+                }),
+                unsupported: None,
+            }
+            .into();
+            assert!(failure.audit_ack.is_none());
+            assert_eq!(failure.audit_status.as_deref(), Some("future-state"));
+            assert_eq!(failure.audit_attempt_sequence, sequence);
+        }
+        let (acknowledgement, status, attempt) = audit(Some(AuditAcknowledgement {
+            status: "durable".into(),
+            attempt_sequence: Some(u64::MAX),
+        }));
+        assert_eq!(
+            acknowledgement.unwrap().status,
+            model::AuditAckStatus::DURABLE
+        );
+        assert_eq!(status.as_deref(), Some("durable"));
+        assert_eq!(attempt, Some(u64::MAX));
     }
 }

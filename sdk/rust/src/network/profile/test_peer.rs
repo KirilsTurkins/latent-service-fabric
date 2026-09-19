@@ -149,11 +149,21 @@ impl control::policy_service_server::PolicyService for Service {
                 fields: [("outcome".into(), "unknown".into())].into(),
             }],
         };
-        Err(Status::with_details(
+        let mut status = Status::with_details(
             tonic::Code::PermissionDenied,
             "must not become the client diagnostic",
             failure.encode_to_vec().into(),
-        ))
+        );
+        if request.get_ref().id == "future-audit-error" {
+            status
+                .metadata_mut()
+                .insert("latent-audit-status", "future-state".parse().unwrap());
+            status.metadata_mut().insert(
+                "latent-audit-attempt",
+                u64::MAX.to_string().parse().unwrap(),
+            );
+        }
+        Err(status)
     }
 
     async fn list_policies(

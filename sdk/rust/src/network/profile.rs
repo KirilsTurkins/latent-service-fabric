@@ -175,7 +175,7 @@ impl RpcClient {
                     failure.received(&received_identity, reply.audit.as_ref()),
                 )
             })?;
-        let (audit_ack, audit_status) = metadata::audit(reply.audit);
+        let (audit_ack, audit_status, audit_attempt_sequence) = metadata::audit(reply.audit);
         let response = model::ClientResponse {
             value: reply.value.into(),
             metadata: model::ResponseMetadata {
@@ -187,6 +187,7 @@ impl RpcClient {
                 },
                 audit_ack,
                 audit_status,
+                audit_attempt_sequence,
             },
         };
         if Instant::now() >= context.deadline {
@@ -198,6 +199,7 @@ impl RpcClient {
                 identity: response.metadata.identity,
                 audit_ack: response.metadata.audit_ack,
                 audit_status: response.metadata.audit_status,
+                audit_attempt_sequence: response.metadata.audit_attempt_sequence,
                 ..Default::default()
             });
         }
