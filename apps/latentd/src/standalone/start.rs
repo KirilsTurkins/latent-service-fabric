@@ -25,6 +25,7 @@ use super::{
 use crate::config::NodeSettings;
 
 mod control;
+mod recovery;
 #[cfg(test)]
 mod tests;
 
@@ -315,10 +316,9 @@ impl Catalogs {
                     std::time::Instant::now() + std::time::Duration::from_secs(30),
                 )
                 .await?;
-                latent_artifacts::reconcile_release_audit(&audit.handle(), artifacts.as_ref())
-                    .await?;
-                latent_capabilities::broker::reconcile_capability_audit(
+                recovery::reconcile(
                     &audit.handle(),
+                    artifacts.as_ref(),
                     std::time::Instant::now() + std::time::Duration::from_secs(30),
                 )
                 .await?;

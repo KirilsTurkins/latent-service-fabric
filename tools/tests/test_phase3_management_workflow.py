@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock
 
-from tools.phase2_operator_process import WorkflowError, write_json
+from tools.phase2_operator_process import WorkflowError, startup_diagnostic, write_json
 from tools.phase3_http_fixture import request
 from tools.phase3_management_scenario import (
     MEDIA_TYPE, PROVIDER_CREDENTIAL, configure_provider_node, installed_descriptors,
@@ -42,6 +42,14 @@ class MemoryConnection:
 
 
 class ProviderWorkflowTests(unittest.TestCase):
+    def test_startup_failure_keeps_only_closed_node_stage_and_code(self):
+        self.assertEqual(startup_diagnostic(b"latentd: startup: unavailable\n"), "startup-unavailable")
+        self.assertEqual(startup_diagnostic(b"latentd: configuration: invalid-argument\r\n"),
+                         "configuration-invalid-argument")
+        for value in (b"", b"x" * 161, b"latentd: private-value: unavailable\n",
+                      b"latentd: startup: private-value\n", b"latentd: startup: unavailable\nprivate\n"):
+            self.assertEqual(startup_diagnostic(value), "unavailable")
+
     def test_node_configuration_keeps_credentials_out_of_public_configuration(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
