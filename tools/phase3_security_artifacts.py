@@ -186,7 +186,14 @@ def validate_selection(group, available: frozenset[str], ignored: frozenset[str]
             "unexpected-test-ignore-state")
 
 
-def validate_result(raw: bytes, name: str) -> None:
+def validate_result(raw: bytes, name: str, *, emitted_record: bytes | None = None) -> None:
+    if emitted_record is not None:
+        require(0 < len(emitted_record) <= 4096 and b"\n" not in emitted_record
+                and b"\r" not in emitted_record, "child-receipt-output")
+        prefix = f"test {name} ... ".encode()
+        interleaved = prefix + emitted_record + b"\nok\n"
+        require(raw.count(interleaved) == 1 and raw.count(emitted_record) == 1, "child-receipt-output")
+        raw = raw.replace(interleaved, prefix + b"ok\n", 1)
     lines = raw.decode("utf-8", errors="strict").splitlines()
     outcomes = [line for line in lines if line.startswith("test ") and not line.startswith("test result:")]
     require(outcomes == [f"test {name} ... ok"], "missing-exact-test-result")

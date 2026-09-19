@@ -166,6 +166,22 @@ class SelectionTests(unittest.TestCase):
             with self.assertRaises(artifacts.SecurityError):
                 artifacts.validate_custom(output, marker)
 
+    def test_inherited_child_output_must_match_one_exact_bounded_receipt(self):
+        record = b'{"controlled":true}'
+        output = (b"running 1 test\ntest first ... " + record + b"\nok\n\n"
+                  b"test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 3.04s\n")
+        with self.assertRaisesRegex(artifacts.SecurityError, "missing-exact"):
+            artifacts.validate_result(output, "first")
+        artifacts.validate_result(output, "first", emitted_record=record)
+        for invalid in (output.replace(record, b'{"controlled":false}'), output + record,
+                        output.replace(b"\nok\n", b"\nignored\n"), output.replace(b"1 passed", b"0 passed"),
+                        b"test unexpected ... ok\n" + output):
+            with self.subTest(invalid=invalid), self.assertRaises(artifacts.SecurityError):
+                artifacts.validate_result(invalid, "first", emitted_record=record)
+        for invalid in (b"", record + b"\n", b"x" * 4097):
+            with self.assertRaises(artifacts.SecurityError):
+                artifacts.validate_result(output, "first", emitted_record=invalid)
+
     def test_matrix_has_fixed_pr_inventory_and_manual_superset(self):
         security.check_matrix()
         self.assertEqual(sum(case.pr for group in cases.GROUPS for case in group.cases), 27)
@@ -241,6 +257,31 @@ class WorkflowTests(unittest.TestCase):
         with patch.object(manual, "file_identity", return_value={"sha256": "new"}):
             with self.assertRaisesRegex(artifacts.SecurityError, "manual-input-changed"):
                 manual.verify_inputs(arguments, runner, {"cli": {"sha256": "old"}})
+
+    def test_browser_receipt_requires_real_observations_without_a_component_claim(self):
+        report = {"browser": "153.0.8010.47", "liveSharedIngress": True, "controlledNodeSsr": True,
+                  "componentRenderClaimed": False, "originalDomReused": True, "navigationHydrated": True,
+                  "escapedDataRoundTrip": True, "inlineAndRemoteScriptsBlocked": True,
+                  "baseOverrideBlocked": True, "wrongScriptMimeBlocked": True,
+                  "sameOriginPostReachedMethodPolicy": True, "errors": 0}
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            path = directory / "browser/browser-receipt.json"
+            path.parent.mkdir()
+            raw = json.dumps(report, separators=(",", ":")).encode()
+            path.write_bytes(raw)
+            self.assertEqual(manual.browser_output(directory, time.monotonic() + 5), raw)
+            for changed in ({"componentRenderClaimed": True}, {"errors": False}, {"originalDomReused": 1},
+                            {"navigationHydrated": False}, {"browser": "opaque-text"}, {"extra": True}):
+                path.write_text(json.dumps({**report, **changed}))
+                with self.subTest(changed=changed), self.assertRaises(artifacts.SecurityError):
+                    manual.browser_output(directory, time.monotonic() + 5)
+            path.write_bytes(raw[:-1] + b',"errors":0}')
+            with self.assertRaises(artifacts.ArtifactError):
+                manual.browser_output(directory, time.monotonic() + 5)
+            path.write_bytes(b"x" * 4097)
+            with self.assertRaisesRegex(artifacts.SecurityError, "file-limit"):
+                manual.browser_output(directory, time.monotonic() + 5)
 
 
 class ContainerTests(unittest.TestCase):

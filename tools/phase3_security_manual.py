@@ -5,9 +5,10 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import time
 
-from tools.phase3_security_artifacts import file_identity, require, tree_identity
+from tools.phase3_security_artifacts import file_identity, require, tree_identity, unique_object
 
 
 def validate_workflow(report: dict, name: str, schema: str) -> dict:
@@ -93,6 +94,27 @@ def verify_inputs(args, runner, identities: dict) -> None:
             == identities["cargoCompiler"], "cargo-compiler-changed")
 
 
+def browser_output(directory: Path, deadline: float) -> bytes:
+    path = directory / "browser/browser-receipt.json"
+    identity = file_identity(path, deadline, 4096)
+    with path.open("rb") as source:
+        raw = source.read(4097)
+    require(len(raw) == identity["bytes"] and hashlib.sha256(raw).hexdigest() == identity["sha256"],
+            "browser-receipt-changed")
+    report = json.loads(raw, object_pairs_hook=unique_object)
+    observed = ("liveSharedIngress", "controlledNodeSsr", "originalDomReused", "navigationHydrated",
+                "escapedDataRoundTrip", "inlineAndRemoteScriptsBlocked", "baseOverrideBlocked",
+                "wrongScriptMimeBlocked", "sameOriginPostReachedMethodPolicy")
+    require(isinstance(report, dict) and set(report) == {*observed, "browser", "componentRenderClaimed", "errors"},
+            "browser-receipt-fields")
+    require(all(report[name] is True for name in observed) and report["componentRenderClaimed"] is False
+            and type(report["errors"]) is int and report["errors"] == 0, "browser-receipt-proof")
+    require(isinstance(report["browser"], str)
+            and re.fullmatch(r"[0-9]{1,5}(?:\.[0-9]{1,6}){3}", report["browser"]) is not None,
+            "browser-receipt-version")
+    return raw
+
+
 def workflows(args, runner, directory: Path) -> list[dict]:
     from tools import run_publication_workflow, run_security_profile_workflow
     from tools import run_phase3_management_workflow
@@ -120,5 +142,7 @@ def workflows(args, runner, directory: Path) -> list[dict]:
 
 
 def fixture_identities(directory: Path, deadline: float) -> dict:
-    return {name: tree_identity(directory / name, deadline)
-            for name in ("operator", "publication", "provider", "browser")}
+    identities = {name: tree_identity(directory / name, deadline)
+                  for name in ("operator", "publication", "provider", "browser")}
+    identities["browserObservations"] = json.loads(browser_output(directory, deadline))
+    return identities

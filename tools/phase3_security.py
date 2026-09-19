@@ -148,7 +148,11 @@ def run_cases(runner: Runner, groups: tuple, artifacts: dict, runtime: Path,
                     explicit_ignored.append(case.name)
                 result = runner.command(command, cwd=artifact.package, environment=environment,
                                         timeout=group.timeout)
-                validate_result(result.stdout, case.name)
+                emitted_record = None
+                if group.key == "actual-browser":
+                    from tools.phase3_security_manual import browser_output
+                    emitted_record = browser_output(directory, runner.deadline)
+                validate_result(result.stdout, case.name, emitted_record=emitted_record)
                 completed.append(case.name)
         require(completed, "empty-security-group")
         results.append({"id": group.key, "layer": group.layer, "issues": list(group.issues),
