@@ -136,3 +136,25 @@ are not load campaigns, universal latency claims or production certification.
 Failure reporting accepts only a bounded structured participant stage/reason
 token and finite category/gRPC code. Arbitrary stderr, server messages and
 additional fields are not copied into operator diagnostics.
+
+## Current native-client checkpoint
+
+The [2026-09-19 native-client checkpoint](../evidence/phase3-sdk-native-checkpoint.json)
+records fresh Java and C executions at integration `3584f589`. Both passed all
+18 participant assertions, retained nine actual activation identities and the
+original mutation operation, and independently closed all four started upstream
+holds. Each peer observed six authenticated requests and no unexpected requests;
+both nodes and clients were reaped with clean provider shutdown. The current
+Java SDK tree matches reviewed `c8229d5a`; C matches `bf466a53`. Original
+raw-receipt hashes and exact executable/fixture identities distinguish these
+executions from earlier receipts.
+
+The subsequent Go attempt failed during shared-node startup, before the native
+participant launched. It is not a successful Go run, a client transport failure,
+or evidence of a completed matrix. Diagnosis of the intermittent
+`startup-resource-exhausted` result remains under the provider integration.
+The new audit-recovery regression fixes an independently demonstrated startup
+defect but does not by itself explain or close this remaining failure. Current
+combined Rust/Node revalidation, .NET participant execution and the maintained
+six-language CI matrix also remain required. No failed attempt is overwritten
+or silently retried into a passing claim.
