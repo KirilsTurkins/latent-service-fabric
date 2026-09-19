@@ -178,6 +178,10 @@ claim to own them. The test container adds no production T2 guest-host feature.
   state, zero matches and duplicate/ambiguous artifacts fail. The 16 selected
   ignored fixtures/cases are intentionally executed in the manual profile,
   never counted as skipped successes.
+- The browser child's inherited stdout is matched byte-for-byte to its bounded,
+  schema-checked on-disk probe receipt. Only that record may interrupt its named
+  libtest status line; arbitrary logs, duplicate records, fabricated component
+  rendering and altered result counts are not normalized into a pass.
 - The two `harness = false` compiler mains are never invoked with `--list`.
   Their exact source/artifact identity and distinct successful completion
   markers are checked. Each is one custom entry, not a fabricated number of
