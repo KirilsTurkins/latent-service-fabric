@@ -706,7 +706,7 @@ internal static class ProfileVectors
             Check(value.TimeoutMillis!.Value == 18446744073709551615UL, "local-timeout-max-not-wrapped.timeout_millis");
         }
         {
-            var value = new Profile.ClientFailure(new Profile.FailureCategory(1), "local-cancelled", null, null, false, new Profile.OutcomeKnowledge(1), new Profile.RequestIdentity("activation-a", null), null, null, null);
+            var value = new Profile.ClientFailure(new Profile.FailureCategory(1), "local-cancelled", null, null, false, new Profile.OutcomeKnowledge(1), new Profile.RequestIdentity("activation-a", null), null, null, null, null);
             Check(value.Category.Value == 1, "local-cancel-before-dispatch.category");
             Check(value.Message == "local-cancelled", "local-cancel-before-dispatch.message");
             Check(!(value.GrpcStatus is not null), "local-cancel-before-dispatch.grpc_status.presence");
@@ -719,9 +719,10 @@ internal static class ProfileVectors
             Check(!(value.AuditAck is not null), "local-cancel-before-dispatch.audit_ack.presence");
             Check(!(value.AuditStatus is not null), "local-cancel-before-dispatch.audit_status.presence");
             Check(!(value.UnsupportedWireValue is not null), "local-cancel-before-dispatch.unsupported_wire_value.presence");
+            Check(!(value.AuditAttemptSequence is not null), "local-cancel-before-dispatch.audit_attempt_sequence.presence");
         }
         {
-            var value = new Profile.ClientFailure(new Profile.FailureCategory(2), "deadline", 4, null, true, new Profile.OutcomeKnowledge(2), new Profile.RequestIdentity(null, "operation-a"), new Profile.AuditAck(new Profile.AuditAckStatus(2), 18446744073709551615UL), "outcome-unknown", null);
+            var value = new Profile.ClientFailure(new Profile.FailureCategory(2), "deadline", 4, null, true, new Profile.OutcomeKnowledge(2), new Profile.RequestIdentity(null, "operation-a"), new Profile.AuditAck(new Profile.AuditAckStatus(2), 18446744073709551615UL), "outcome-unknown", null, 18446744073709551615UL);
             Check(value.Category.Value == 2, "deadline-after-dispatch-is-uncertain.category");
             Check(value.Message == "deadline", "deadline-after-dispatch-is-uncertain.message");
             Check(value.GrpcStatus is not null, "deadline-after-dispatch-is-uncertain.grpc_status.presence");
@@ -739,9 +740,11 @@ internal static class ProfileVectors
             Check(value.AuditStatus is not null, "deadline-after-dispatch-is-uncertain.audit_status.presence");
             Check(value.AuditStatus! == "outcome-unknown", "deadline-after-dispatch-is-uncertain.audit_status");
             Check(!(value.UnsupportedWireValue is not null), "deadline-after-dispatch-is-uncertain.unsupported_wire_value.presence");
+            Check(value.AuditAttemptSequence is not null, "deadline-after-dispatch-is-uncertain.audit_attempt_sequence.presence");
+            Check(value.AuditAttemptSequence!.Value == 18446744073709551615UL, "deadline-after-dispatch-is-uncertain.audit_attempt_sequence");
         }
         {
-            var value = new Profile.ClientFailure(new Profile.FailureCategory(4), "capability-policy-conflict", 9, new Profile.PlatformError("state-conflict", "capability-policy-conflict", false, new Profile.ErrorDetail[] {new Profile.ErrorDetail("future-detail", new Dictionary<string, string> {{"value", "retained"}})}), true, new Profile.OutcomeKnowledge(3), new Profile.RequestIdentity(null, "operation-a"), null, null, null);
+            var value = new Profile.ClientFailure(new Profile.FailureCategory(4), "capability-policy-conflict", 9, new Profile.PlatformError("state-conflict", "capability-policy-conflict", false, new Profile.ErrorDetail[] {new Profile.ErrorDetail("future-detail", new Dictionary<string, string> {{"value", "retained"}})}), true, new Profile.OutcomeKnowledge(3), new Profile.RequestIdentity(null, "operation-a"), null, null, null, null);
             Check(value.Category.Value == 4, "rpc-conflict-retains-request-identity.category");
             Check(value.Message == "capability-policy-conflict", "rpc-conflict-retains-request-identity.message");
             Check(value.GrpcStatus is not null, "rpc-conflict-retains-request-identity.grpc_status.presence");
@@ -762,9 +765,10 @@ internal static class ProfileVectors
             Check(!(value.AuditAck is not null), "rpc-conflict-retains-request-identity.audit_ack.presence");
             Check(!(value.AuditStatus is not null), "rpc-conflict-retains-request-identity.audit_status.presence");
             Check(!(value.UnsupportedWireValue is not null), "rpc-conflict-retains-request-identity.unsupported_wire_value.presence");
+            Check(!(value.AuditAttemptSequence is not null), "rpc-conflict-retains-request-identity.audit_attempt_sequence.presence");
         }
         {
-            var value = new Profile.ClientFailure(new Profile.FailureCategory(5), "invalid-response", null, null, true, new Profile.OutcomeKnowledge(2), new Profile.RequestIdentity("activation-a", "operation-a"), null, null, new Profile.UnsupportedWireValue("phase", "future-phase-not-authority"));
+            var value = new Profile.ClientFailure(new Profile.FailureCategory(5), "invalid-response", null, null, true, new Profile.OutcomeKnowledge(2), new Profile.RequestIdentity("activation-a", "operation-a"), null, null, new Profile.UnsupportedWireValue("phase", "future-phase-not-authority"), null);
             Check(value.Category.Value == 5, "decode-failure-retains-known-identity.category");
             Check(value.Message == "invalid-response", "decode-failure-retains-known-identity.message");
             Check(!(value.GrpcStatus is not null), "decode-failure-retains-known-identity.grpc_status.presence");
@@ -780,9 +784,10 @@ internal static class ProfileVectors
             Check(value.UnsupportedWireValue is not null, "decode-failure-retains-known-identity.unsupported_wire_value.presence");
             Check(value.UnsupportedWireValue!.Field == "phase", "decode-failure-retains-known-identity.unsupported_wire_value.field");
             Check(value.UnsupportedWireValue!.Value == "future-phase-not-authority", "decode-failure-retains-known-identity.unsupported_wire_value.value");
+            Check(!(value.AuditAttemptSequence is not null), "decode-failure-retains-known-identity.audit_attempt_sequence.presence");
         }
         {
-            var value = new Profile.ResponseMetadata(new Profile.RequestIdentity(null, "operation-a"), new Profile.OutcomeKnowledge(3), new Profile.AuditAck(new Profile.AuditAckStatus(2), 18446744073709551615UL), "outcome-unknown");
+            var value = new Profile.ResponseMetadata(new Profile.RequestIdentity(null, "operation-a"), new Profile.OutcomeKnowledge(3), new Profile.AuditAck(new Profile.AuditAckStatus(2), 18446744073709551615UL), "outcome-unknown", 18446744073709551615UL);
             Check(!(value.Identity.ActivationId is not null), "observed-receipt-audit-outcome-independent.identity.activation_id.presence");
             Check(value.Identity.OperationId is not null, "observed-receipt-audit-outcome-independent.identity.operation_id.presence");
             Check(value.Identity.OperationId! == "operation-a", "observed-receipt-audit-outcome-independent.identity.operation_id");
@@ -793,27 +798,31 @@ internal static class ProfileVectors
             Check(value.AuditAck!.AttemptSequence!.Value == 18446744073709551615UL, "observed-receipt-audit-outcome-independent.audit_ack.attempt_sequence");
             Check(value.AuditStatus is not null, "observed-receipt-audit-outcome-independent.audit_status.presence");
             Check(value.AuditStatus! == "outcome-unknown", "observed-receipt-audit-outcome-independent.audit_status");
+            Check(value.AuditAttemptSequence is not null, "observed-receipt-audit-outcome-independent.audit_attempt_sequence.presence");
+            Check(value.AuditAttemptSequence!.Value == 18446744073709551615UL, "observed-receipt-audit-outcome-independent.audit_attempt_sequence");
         }
         {
-            var value = new Profile.ResponseMetadata(new Profile.RequestIdentity(null, "operation-a"), new Profile.OutcomeKnowledge(3), null, null);
+            var value = new Profile.ResponseMetadata(new Profile.RequestIdentity(null, "operation-a"), new Profile.OutcomeKnowledge(3), null, null, null);
             Check(!(value.Identity.ActivationId is not null), "policy-response-has-no-fabricated-audit.identity.activation_id.presence");
             Check(value.Identity.OperationId is not null, "policy-response-has-no-fabricated-audit.identity.operation_id.presence");
             Check(value.Identity.OperationId! == "operation-a", "policy-response-has-no-fabricated-audit.identity.operation_id");
             Check(value.Outcome.Value == 3, "policy-response-has-no-fabricated-audit.outcome");
             Check(!(value.AuditAck is not null), "policy-response-has-no-fabricated-audit.audit_ack.presence");
             Check(!(value.AuditStatus is not null), "policy-response-has-no-fabricated-audit.audit_status.presence");
+            Check(!(value.AuditAttemptSequence is not null), "policy-response-has-no-fabricated-audit.audit_attempt_sequence.presence");
         }
         {
-            var value = new Profile.ResponseMetadata(new Profile.RequestIdentity(null, "operation-a"), new Profile.OutcomeKnowledge(2), null, null);
+            var value = new Profile.ResponseMetadata(new Profile.RequestIdentity(null, "operation-a"), new Profile.OutcomeKnowledge(2), null, null, null);
             Check(!(value.Identity.ActivationId is not null), "missing-recovery-keeps-outcome-unknown.identity.activation_id.presence");
             Check(value.Identity.OperationId is not null, "missing-recovery-keeps-outcome-unknown.identity.operation_id.presence");
             Check(value.Identity.OperationId! == "operation-a", "missing-recovery-keeps-outcome-unknown.identity.operation_id");
             Check(value.Outcome.Value == 2, "missing-recovery-keeps-outcome-unknown.outcome");
             Check(!(value.AuditAck is not null), "missing-recovery-keeps-outcome-unknown.audit_ack.presence");
             Check(!(value.AuditStatus is not null), "missing-recovery-keeps-outcome-unknown.audit_status.presence");
+            Check(!(value.AuditAttemptSequence is not null), "missing-recovery-keeps-outcome-unknown.audit_attempt_sequence.presence");
         }
         {
-            var value = new Profile.ResponseMetadata(new Profile.RequestIdentity(null, "operation-a"), new Profile.OutcomeKnowledge(91), new Profile.AuditAck(new Profile.AuditAckStatus(91), 0UL), "future-audit-status");
+            var value = new Profile.ResponseMetadata(new Profile.RequestIdentity(null, "operation-a"), new Profile.OutcomeKnowledge(91), new Profile.AuditAck(new Profile.AuditAckStatus(91), 0UL), "future-audit-status", 0UL);
             Check(!(value.Identity.ActivationId is not null), "unknown-audit-enum-and-status.identity.activation_id.presence");
             Check(value.Identity.OperationId is not null, "unknown-audit-enum-and-status.identity.operation_id.presence");
             Check(value.Identity.OperationId! == "operation-a", "unknown-audit-enum-and-status.identity.operation_id");
@@ -824,6 +833,39 @@ internal static class ProfileVectors
             Check(value.AuditAck!.AttemptSequence!.Value == 0UL, "unknown-audit-enum-and-status.audit_ack.attempt_sequence");
             Check(value.AuditStatus is not null, "unknown-audit-enum-and-status.audit_status.presence");
             Check(value.AuditStatus! == "future-audit-status", "unknown-audit-enum-and-status.audit_status");
+            Check(value.AuditAttemptSequence is not null, "unknown-audit-enum-and-status.audit_attempt_sequence.presence");
+            Check(value.AuditAttemptSequence!.Value == 0UL, "unknown-audit-enum-and-status.audit_attempt_sequence");
+        }
+        {
+            var value = new Profile.ResponseMetadata(new Profile.RequestIdentity(null, "operation-a"), new Profile.OutcomeKnowledge(3), null, "future-state", 18446744073709551615UL);
+            Check(!(value.Identity.ActivationId is not null), "unknown-audit-header-and-max-attempt.identity.activation_id.presence");
+            Check(value.Identity.OperationId is not null, "unknown-audit-header-and-max-attempt.identity.operation_id.presence");
+            Check(value.Identity.OperationId! == "operation-a", "unknown-audit-header-and-max-attempt.identity.operation_id");
+            Check(value.Outcome.Value == 3, "unknown-audit-header-and-max-attempt.outcome");
+            Check(!(value.AuditAck is not null), "unknown-audit-header-and-max-attempt.audit_ack.presence");
+            Check(value.AuditStatus is not null, "unknown-audit-header-and-max-attempt.audit_status.presence");
+            Check(value.AuditStatus! == "future-state", "unknown-audit-header-and-max-attempt.audit_status");
+            Check(value.AuditAttemptSequence is not null, "unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence");
+            Check(value.AuditAttemptSequence!.Value == 18446744073709551615UL, "unknown-audit-header-and-max-attempt.audit_attempt_sequence");
+        }
+        {
+            var value = new Profile.ClientFailure(new Profile.FailureCategory(4), "rpc-failure", 13, null, true, new Profile.OutcomeKnowledge(2), new Profile.RequestIdentity(null, "operation-a"), null, "future-state", null, 18446744073709551615UL);
+            Check(value.Category.Value == 4, "failed-rpc-unknown-audit-header-and-max-attempt.category");
+            Check(value.Message == "rpc-failure", "failed-rpc-unknown-audit-header-and-max-attempt.message");
+            Check(value.GrpcStatus is not null, "failed-rpc-unknown-audit-header-and-max-attempt.grpc_status.presence");
+            Check(value.GrpcStatus!.Value == 13, "failed-rpc-unknown-audit-header-and-max-attempt.grpc_status");
+            Check(!(value.PlatformError is not null), "failed-rpc-unknown-audit-header-and-max-attempt.platform_error.presence");
+            Check(value.Dispatched == true, "failed-rpc-unknown-audit-header-and-max-attempt.dispatched");
+            Check(value.Outcome.Value == 2, "failed-rpc-unknown-audit-header-and-max-attempt.outcome");
+            Check(!(value.Identity.ActivationId is not null), "failed-rpc-unknown-audit-header-and-max-attempt.identity.activation_id.presence");
+            Check(value.Identity.OperationId is not null, "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id.presence");
+            Check(value.Identity.OperationId! == "operation-a", "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id");
+            Check(!(value.AuditAck is not null), "failed-rpc-unknown-audit-header-and-max-attempt.audit_ack.presence");
+            Check(value.AuditStatus is not null, "failed-rpc-unknown-audit-header-and-max-attempt.audit_status.presence");
+            Check(value.AuditStatus! == "future-state", "failed-rpc-unknown-audit-header-and-max-attempt.audit_status");
+            Check(!(value.UnsupportedWireValue is not null), "failed-rpc-unknown-audit-header-and-max-attempt.unsupported_wire_value.presence");
+            Check(value.AuditAttemptSequence is not null, "failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence");
+            Check(value.AuditAttemptSequence!.Value == 18446744073709551615UL, "failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence");
         }
         {
             var value = new Profile.AuditAck(new Profile.AuditAckStatus(1), null);
@@ -898,6 +940,6 @@ internal static class ProfileVectors
         Rejects(() => Profile.UnsignedDecimal.Parse("1\u0000"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\n"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\r\n"));
-        Console.WriteLine("shared profile vectors: 66");
+        Console.WriteLine("shared profile vectors: 68");
     }
 }

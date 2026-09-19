@@ -403,6 +403,7 @@ pub struct ResponseMetadata {
     pub outcome: OutcomeKnowledge,
     pub audit_ack: Option<AuditAck>,
     pub audit_status: Option<String>,
+    pub audit_attempt_sequence: Option<u64>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -417,6 +418,7 @@ pub struct ClientFailure {
     pub audit_ack: Option<AuditAck>,
     pub audit_status: Option<String>,
     pub unsupported_wire_value: Option<UnsupportedWireValue>,
+    pub audit_attempt_sequence: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

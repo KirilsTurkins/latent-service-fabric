@@ -157,7 +157,8 @@ No additional catalog migration or ambiguity resolution is implemented here.
 
 `ClientFailure` retains `category`, redacted `message`, optional raw `grpc_status`,
 optional typed `platform_error`, `dispatched`, `outcome`, `identity`, optional
-`audit_ack`, optional raw `audit_status`, and optional `unsupported_wire_value`.
+`audit_ack`, optional raw `audit_status`, optional independent u64
+`audit_attempt_sequence`, and optional `unsupported_wire_value`.
 `UnsupportedWireValue` holds a controlled field label and at most 256 bytes of
 untrusted future wire text. It is diagnostic data, never routing, principal or
 execution authority. Unsupported invocation phase/terminal/error codes may fail
@@ -191,12 +192,19 @@ response after dispatch stays Unknown. Observed means the specific returned
 outcome is known, not that an effect is transactional or safe to replay. A
 GetPolicyOperation response without a receipt leaves the mutation Unknown.
 
-`ResponseMetadata` carries identity/outcome plus independent audit acknowledgement
-and raw audit status. `AuditAck` preserves open numeric status and optional u64
+`ResponseMetadata` carries identity/outcome plus independent audit acknowledgement,
+raw `audit_status`, and optional u64 `audit_attempt_sequence`. `ClientFailure`
+exposes the same independent sequence. `AuditAck` preserves open numeric status and optional u64
 attempt sequence. Current policy calls do **not** emit an audit acknowledgement;
 absence must stay absent, not fabricated Durable or Disabled. Where present,
 bounded `latent-audit-status` / `latent-audit-attempt` response metadata map to
-these fields; preserve an unknown status string as well. An unknown audit outcome
+these fields. Retain a valid attempt sequence independently even when header
+status text is unknown: `future-state` with `18446744073709551615` retains both
+raw fields and leaves `audit_ack` absent. Do not fabricate an `UNSPECIFIED` or
+other numeric acknowledgement from unknown header text. Known status mappings
+retain `AuditAck` as well as both independent raw fields. An explicitly received
+protobuf `AuditAck` with an unknown numeric status remains representable, which
+is different from inventing one for a textual header. An unknown audit outcome
 cannot overwrite an observed mutation receipt, and a durable attempt alone is
 not proof of commit. Errors and partial decoding must retain already-known IDs.
 
@@ -250,7 +258,7 @@ application acquires a dedicated connection, listener, worker or provider pool.
 JSON encoding. `generate_fixtures.py` materializes every case into each language's
 public DTOs and generates field-by-field native assertions. `generate.py --check`
 checks both model and vector reproducibility against protobuf and this input.
-The 66 shared cases cover nested typed failures, every operation's DTOs, retained
+The 68 shared cases cover nested typed failures, every operation's DTOs, retained
 publication/operation identity, absent/present-empty/present-zero values, u64
 maximum, unknown signed enum values, policy/provider pagination, audit absence
 and uncertainty, and contradictory oneofs. Sixteen decimal parser inputs cover

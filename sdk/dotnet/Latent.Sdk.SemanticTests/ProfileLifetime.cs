@@ -10,12 +10,12 @@ internal static class ProfileLifetime
     }
 
     private static Profile.ResponseMetadata Metadata(string? operationId, Profile.OutcomeKnowledge outcome) =>
-        new(new Profile.RequestIdentity(null, operationId), outcome, null, null);
+        new(new Profile.RequestIdentity(null, operationId), outcome, null, null, null);
 
     private static Profile.ClientFailure Failure(string operationId, bool dispatched, Profile.FailureCategory category) =>
         new(category, "local-fixture-failure", null, null, dispatched,
             dispatched ? Profile.OutcomeKnowledge.Unknown : Profile.OutcomeKnowledge.NotDispatched,
-            new Profile.RequestIdentity(null, operationId), null, null, null);
+            new Profile.RequestIdentity(null, operationId), null, null, null, null);
 
     private static ValueTask<Profile.ClientResponse<Response>> Reply<Response>(Response value) =>
         ValueTask.FromResult(new Profile.ClientResponse<Response>(value, Metadata(null, Profile.OutcomeKnowledge.Observed)));

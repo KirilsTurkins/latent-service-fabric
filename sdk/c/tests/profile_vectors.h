@@ -856,9 +856,10 @@ static void profile_vectors(void) {
         assert((!(value.has_audit_ack)) && "local-cancel-before-dispatch.audit_ack.presence");
         assert((!(value.has_audit_status)) && "local-cancel-before-dispatch.audit_status.presence");
         assert((!(value.has_unsupported_wire_value)) && "local-cancel-before-dispatch.unsupported_wire_value.presence");
+        assert((!(value.has_audit_attempt_sequence)) && "local-cancel-before-dispatch.audit_attempt_sequence.presence");
     }
     {
-        latent_profile_client_failure value = (latent_profile_client_failure){.category = ((latent_profile_failure_category)(2)), .message = PROFILE_TEXT("deadline"), .has_grpc_status = true, .grpc_status = 4, .dispatched = true, .outcome = ((latent_profile_outcome_knowledge)(2)), .identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .has_audit_ack = true, .audit_ack = (latent_profile_audit_ack){.status = ((latent_profile_audit_ack_status)(2)), .has_attempt_sequence = true, .attempt_sequence = UINT64_C(18446744073709551615)}, .has_audit_status = true, .audit_status = PROFILE_TEXT("outcome-unknown")};
+        latent_profile_client_failure value = (latent_profile_client_failure){.category = ((latent_profile_failure_category)(2)), .message = PROFILE_TEXT("deadline"), .has_grpc_status = true, .grpc_status = 4, .dispatched = true, .outcome = ((latent_profile_outcome_knowledge)(2)), .identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .has_audit_ack = true, .audit_ack = (latent_profile_audit_ack){.status = ((latent_profile_audit_ack_status)(2)), .has_attempt_sequence = true, .attempt_sequence = UINT64_C(18446744073709551615)}, .has_audit_status = true, .audit_status = PROFILE_TEXT("outcome-unknown"), .has_audit_attempt_sequence = true, .audit_attempt_sequence = UINT64_C(18446744073709551615)};
         assert((value.category == 2) && "deadline-after-dispatch-is-uncertain.category");
         assert((value.message.length == 8) && "deadline-after-dispatch-is-uncertain.message.length");
         assert((memcmp(value.message.data, "deadline", 8) == 0) && "deadline-after-dispatch-is-uncertain.message");
@@ -879,6 +880,8 @@ static void profile_vectors(void) {
         assert((value.audit_status.length == 15) && "deadline-after-dispatch-is-uncertain.audit_status.length");
         assert((memcmp(value.audit_status.data, "outcome-unknown", 15) == 0) && "deadline-after-dispatch-is-uncertain.audit_status");
         assert((!(value.has_unsupported_wire_value)) && "deadline-after-dispatch-is-uncertain.unsupported_wire_value.presence");
+        assert((value.has_audit_attempt_sequence) && "deadline-after-dispatch-is-uncertain.audit_attempt_sequence.presence");
+        assert((value.audit_attempt_sequence == UINT64_C(18446744073709551615)) && "deadline-after-dispatch-is-uncertain.audit_attempt_sequence");
     }
     {
         latent_profile_client_failure value = (latent_profile_client_failure){.category = ((latent_profile_failure_category)(4)), .message = PROFILE_TEXT("capability-policy-conflict"), .has_grpc_status = true, .grpc_status = 9, .has_platform_error = true, .platform_error = (latent_profile_platform_error){.code = PROFILE_TEXT("state-conflict"), .message = PROFILE_TEXT("capability-policy-conflict"), .retryable = false, .detail_items = (const latent_profile_error_detail[]){(latent_profile_error_detail){.kind = PROFILE_TEXT("future-detail"), .fields = (const latent_key_value[]){{.key = PROFILE_TEXT("value"), .value = PROFILE_TEXT("retained")}}, .fields_count = 1}}, .detail_items_count = 1}, .dispatched = true, .outcome = ((latent_profile_outcome_knowledge)(3)), .identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}};
@@ -910,6 +913,7 @@ static void profile_vectors(void) {
         assert((!(value.has_audit_ack)) && "rpc-conflict-retains-request-identity.audit_ack.presence");
         assert((!(value.has_audit_status)) && "rpc-conflict-retains-request-identity.audit_status.presence");
         assert((!(value.has_unsupported_wire_value)) && "rpc-conflict-retains-request-identity.unsupported_wire_value.presence");
+        assert((!(value.has_audit_attempt_sequence)) && "rpc-conflict-retains-request-identity.audit_attempt_sequence.presence");
     }
     {
         latent_profile_client_failure value = (latent_profile_client_failure){.category = ((latent_profile_failure_category)(5)), .message = PROFILE_TEXT("invalid-response"), .dispatched = true, .outcome = ((latent_profile_outcome_knowledge)(2)), .identity = (latent_profile_request_identity){.has_activation_id = true, .activation_id = PROFILE_TEXT("activation-a"), .has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .has_unsupported_wire_value = true, .unsupported_wire_value = (latent_profile_unsupported_wire_value){.field = PROFILE_TEXT("phase"), .value = PROFILE_TEXT("future-phase-not-authority")}};
@@ -933,9 +937,10 @@ static void profile_vectors(void) {
         assert((memcmp(value.unsupported_wire_value.field.data, "phase", 5) == 0) && "decode-failure-retains-known-identity.unsupported_wire_value.field");
         assert((value.unsupported_wire_value.value.length == 26) && "decode-failure-retains-known-identity.unsupported_wire_value.value.length");
         assert((memcmp(value.unsupported_wire_value.value.data, "future-phase-not-authority", 26) == 0) && "decode-failure-retains-known-identity.unsupported_wire_value.value");
+        assert((!(value.has_audit_attempt_sequence)) && "decode-failure-retains-known-identity.audit_attempt_sequence.presence");
     }
     {
-        latent_profile_response_metadata value = (latent_profile_response_metadata){.identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .outcome = ((latent_profile_outcome_knowledge)(3)), .has_audit_ack = true, .audit_ack = (latent_profile_audit_ack){.status = ((latent_profile_audit_ack_status)(2)), .has_attempt_sequence = true, .attempt_sequence = UINT64_C(18446744073709551615)}, .has_audit_status = true, .audit_status = PROFILE_TEXT("outcome-unknown")};
+        latent_profile_response_metadata value = (latent_profile_response_metadata){.identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .outcome = ((latent_profile_outcome_knowledge)(3)), .has_audit_ack = true, .audit_ack = (latent_profile_audit_ack){.status = ((latent_profile_audit_ack_status)(2)), .has_attempt_sequence = true, .attempt_sequence = UINT64_C(18446744073709551615)}, .has_audit_status = true, .audit_status = PROFILE_TEXT("outcome-unknown"), .has_audit_attempt_sequence = true, .audit_attempt_sequence = UINT64_C(18446744073709551615)};
         assert((!(value.identity.has_activation_id)) && "observed-receipt-audit-outcome-independent.identity.activation_id.presence");
         assert((value.identity.has_operation_id) && "observed-receipt-audit-outcome-independent.identity.operation_id.presence");
         assert((value.identity.operation_id.length == 11) && "observed-receipt-audit-outcome-independent.identity.operation_id.length");
@@ -948,6 +953,8 @@ static void profile_vectors(void) {
         assert((value.has_audit_status) && "observed-receipt-audit-outcome-independent.audit_status.presence");
         assert((value.audit_status.length == 15) && "observed-receipt-audit-outcome-independent.audit_status.length");
         assert((memcmp(value.audit_status.data, "outcome-unknown", 15) == 0) && "observed-receipt-audit-outcome-independent.audit_status");
+        assert((value.has_audit_attempt_sequence) && "observed-receipt-audit-outcome-independent.audit_attempt_sequence.presence");
+        assert((value.audit_attempt_sequence == UINT64_C(18446744073709551615)) && "observed-receipt-audit-outcome-independent.audit_attempt_sequence");
     }
     {
         latent_profile_response_metadata value = (latent_profile_response_metadata){.identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .outcome = ((latent_profile_outcome_knowledge)(3))};
@@ -958,6 +965,7 @@ static void profile_vectors(void) {
         assert((value.outcome == 3) && "policy-response-has-no-fabricated-audit.outcome");
         assert((!(value.has_audit_ack)) && "policy-response-has-no-fabricated-audit.audit_ack.presence");
         assert((!(value.has_audit_status)) && "policy-response-has-no-fabricated-audit.audit_status.presence");
+        assert((!(value.has_audit_attempt_sequence)) && "policy-response-has-no-fabricated-audit.audit_attempt_sequence.presence");
     }
     {
         latent_profile_response_metadata value = (latent_profile_response_metadata){.identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .outcome = ((latent_profile_outcome_knowledge)(2))};
@@ -968,9 +976,10 @@ static void profile_vectors(void) {
         assert((value.outcome == 2) && "missing-recovery-keeps-outcome-unknown.outcome");
         assert((!(value.has_audit_ack)) && "missing-recovery-keeps-outcome-unknown.audit_ack.presence");
         assert((!(value.has_audit_status)) && "missing-recovery-keeps-outcome-unknown.audit_status.presence");
+        assert((!(value.has_audit_attempt_sequence)) && "missing-recovery-keeps-outcome-unknown.audit_attempt_sequence.presence");
     }
     {
-        latent_profile_response_metadata value = (latent_profile_response_metadata){.identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .outcome = ((latent_profile_outcome_knowledge)(91)), .has_audit_ack = true, .audit_ack = (latent_profile_audit_ack){.status = ((latent_profile_audit_ack_status)(91)), .has_attempt_sequence = true, .attempt_sequence = UINT64_C(0)}, .has_audit_status = true, .audit_status = PROFILE_TEXT("future-audit-status")};
+        latent_profile_response_metadata value = (latent_profile_response_metadata){.identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .outcome = ((latent_profile_outcome_knowledge)(91)), .has_audit_ack = true, .audit_ack = (latent_profile_audit_ack){.status = ((latent_profile_audit_ack_status)(91)), .has_attempt_sequence = true, .attempt_sequence = UINT64_C(0)}, .has_audit_status = true, .audit_status = PROFILE_TEXT("future-audit-status"), .has_audit_attempt_sequence = true, .audit_attempt_sequence = UINT64_C(0)};
         assert((!(value.identity.has_activation_id)) && "unknown-audit-enum-and-status.identity.activation_id.presence");
         assert((value.identity.has_operation_id) && "unknown-audit-enum-and-status.identity.operation_id.presence");
         assert((value.identity.operation_id.length == 11) && "unknown-audit-enum-and-status.identity.operation_id.length");
@@ -983,6 +992,44 @@ static void profile_vectors(void) {
         assert((value.has_audit_status) && "unknown-audit-enum-and-status.audit_status.presence");
         assert((value.audit_status.length == 19) && "unknown-audit-enum-and-status.audit_status.length");
         assert((memcmp(value.audit_status.data, "future-audit-status", 19) == 0) && "unknown-audit-enum-and-status.audit_status");
+        assert((value.has_audit_attempt_sequence) && "unknown-audit-enum-and-status.audit_attempt_sequence.presence");
+        assert((value.audit_attempt_sequence == UINT64_C(0)) && "unknown-audit-enum-and-status.audit_attempt_sequence");
+    }
+    {
+        latent_profile_response_metadata value = (latent_profile_response_metadata){.identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .outcome = ((latent_profile_outcome_knowledge)(3)), .has_audit_status = true, .audit_status = PROFILE_TEXT("future-state"), .has_audit_attempt_sequence = true, .audit_attempt_sequence = UINT64_C(18446744073709551615)};
+        assert((!(value.identity.has_activation_id)) && "unknown-audit-header-and-max-attempt.identity.activation_id.presence");
+        assert((value.identity.has_operation_id) && "unknown-audit-header-and-max-attempt.identity.operation_id.presence");
+        assert((value.identity.operation_id.length == 11) && "unknown-audit-header-and-max-attempt.identity.operation_id.length");
+        assert((memcmp(value.identity.operation_id.data, "operation-a", 11) == 0) && "unknown-audit-header-and-max-attempt.identity.operation_id");
+        assert((value.outcome == 3) && "unknown-audit-header-and-max-attempt.outcome");
+        assert((!(value.has_audit_ack)) && "unknown-audit-header-and-max-attempt.audit_ack.presence");
+        assert((value.has_audit_status) && "unknown-audit-header-and-max-attempt.audit_status.presence");
+        assert((value.audit_status.length == 12) && "unknown-audit-header-and-max-attempt.audit_status.length");
+        assert((memcmp(value.audit_status.data, "future-state", 12) == 0) && "unknown-audit-header-and-max-attempt.audit_status");
+        assert((value.has_audit_attempt_sequence) && "unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence");
+        assert((value.audit_attempt_sequence == UINT64_C(18446744073709551615)) && "unknown-audit-header-and-max-attempt.audit_attempt_sequence");
+    }
+    {
+        latent_profile_client_failure value = (latent_profile_client_failure){.category = ((latent_profile_failure_category)(4)), .message = PROFILE_TEXT("rpc-failure"), .has_grpc_status = true, .grpc_status = 13, .dispatched = true, .outcome = ((latent_profile_outcome_knowledge)(2)), .identity = (latent_profile_request_identity){.has_operation_id = true, .operation_id = PROFILE_TEXT("operation-a")}, .has_audit_status = true, .audit_status = PROFILE_TEXT("future-state"), .has_audit_attempt_sequence = true, .audit_attempt_sequence = UINT64_C(18446744073709551615)};
+        assert((value.category == 4) && "failed-rpc-unknown-audit-header-and-max-attempt.category");
+        assert((value.message.length == 11) && "failed-rpc-unknown-audit-header-and-max-attempt.message.length");
+        assert((memcmp(value.message.data, "rpc-failure", 11) == 0) && "failed-rpc-unknown-audit-header-and-max-attempt.message");
+        assert((value.has_grpc_status) && "failed-rpc-unknown-audit-header-and-max-attempt.grpc_status.presence");
+        assert((value.grpc_status == 13) && "failed-rpc-unknown-audit-header-and-max-attempt.grpc_status");
+        assert((!(value.has_platform_error)) && "failed-rpc-unknown-audit-header-and-max-attempt.platform_error.presence");
+        assert((value.dispatched == true) && "failed-rpc-unknown-audit-header-and-max-attempt.dispatched");
+        assert((value.outcome == 2) && "failed-rpc-unknown-audit-header-and-max-attempt.outcome");
+        assert((!(value.identity.has_activation_id)) && "failed-rpc-unknown-audit-header-and-max-attempt.identity.activation_id.presence");
+        assert((value.identity.has_operation_id) && "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id.presence");
+        assert((value.identity.operation_id.length == 11) && "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id.length");
+        assert((memcmp(value.identity.operation_id.data, "operation-a", 11) == 0) && "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id");
+        assert((!(value.has_audit_ack)) && "failed-rpc-unknown-audit-header-and-max-attempt.audit_ack.presence");
+        assert((value.has_audit_status) && "failed-rpc-unknown-audit-header-and-max-attempt.audit_status.presence");
+        assert((value.audit_status.length == 12) && "failed-rpc-unknown-audit-header-and-max-attempt.audit_status.length");
+        assert((memcmp(value.audit_status.data, "future-state", 12) == 0) && "failed-rpc-unknown-audit-header-and-max-attempt.audit_status");
+        assert((!(value.has_unsupported_wire_value)) && "failed-rpc-unknown-audit-header-and-max-attempt.unsupported_wire_value.presence");
+        assert((value.has_audit_attempt_sequence) && "failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence");
+        assert((value.audit_attempt_sequence == UINT64_C(18446744073709551615)) && "failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence");
     }
     {
         latent_profile_audit_ack value = (latent_profile_audit_ack){.status = ((latent_profile_audit_ack_status)(1))};

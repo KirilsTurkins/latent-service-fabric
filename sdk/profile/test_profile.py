@@ -11,7 +11,7 @@ class ProfileTests(unittest.TestCase):
         cls.profile, cls.messages, cls.enums = read_contract()
 
     def test_shared_contract_is_current(self):
-        self.assertEqual(validate(), (66, 16))
+        self.assertEqual(validate(), (68, 16))
 
     def test_exact_operation_profile(self):
         self.assertEqual([operation["name"] for operation in self.profile["operations"]], [
@@ -90,6 +90,22 @@ class ProfileTests(unittest.TestCase):
         self.assertNotIn("audit_ack", cases["policy-response-has-no-fabricated-audit"])
         self.assertEqual(cases["observed-receipt-audit-outcome-independent"]["outcome"], 3)
         self.assertEqual(cases["observed-receipt-audit-outcome-independent"]["audit_ack"]["status"], 2)
+
+    def test_unknown_audit_header_retains_independent_sequence_without_enum(self):
+        fixtures = json.loads((ROOT / "sdk/profile/fixtures.json").read_text(encoding="utf-8"))
+        cases = {case["name"]: case["value"] for case in fixtures["cases"]}
+        for kind in ("ResponseMetadata", "ClientFailure"):
+            field = next(field for field in self.messages[kind] if field["name"] == "audit_attempt_sequence")
+            self.assertTrue(field["optional"])
+            self.assertEqual(field["type"], "uint64")
+        for name in ("unknown-audit-header-and-max-attempt", "failed-rpc-unknown-audit-header-and-max-attempt"):
+            self.assertEqual(cases[name]["audit_status"], "future-state")
+            self.assertEqual(cases[name]["audit_attempt_sequence"], "18446744073709551615")
+            self.assertNotIn("audit_ack", cases[name])
+        self.assertNotIn("audit_attempt_sequence", cases["policy-response-has-no-fabricated-audit"])
+        self.assertEqual(cases["unknown-audit-enum-and-status"]["audit_attempt_sequence"], "0")
+        known = cases["observed-receipt-audit-outcome-independent"]
+        self.assertEqual(known["audit_attempt_sequence"], known["audit_ack"]["attempt_sequence"])
 
 
 if __name__ == "__main__":

@@ -109,7 +109,7 @@ contract. Actual wire conversion and server behavior are covered separately by
 the invocation adapter tests and the completed
 [Phase 1 conformance gate](../docs/phase-1-completion.md).
 
-The shared Phase 3 suite adds 66 protobuf-selected vectors, 16 strict unsigned
+The shared Phase 3 suite adds 68 protobuf-selected vectors, 16 strict unsigned
 decimal boundaries, and local cancellation/response ownership/recovery fixtures
 in every language. The existing runners execute these suites, including ordinary
 public Rust crate tests. See the [profile validation commands](profile/README.md#executable-semantic-fixtures)

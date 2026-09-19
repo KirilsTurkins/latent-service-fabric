@@ -698,7 +698,7 @@ final class ProfileVectors {
             check(value.timeoutMillis().get() == Long.parseUnsignedLong("18446744073709551615"), "local-timeout-max-not-wrapped.timeout_millis");
         }
         {
-            Management.ClientFailure value = new Management.ClientFailure(new Management.FailureCategory(1), "local-cancelled", Optional.empty(), Optional.empty(), false, new Management.OutcomeKnowledge(1), new Management.RequestIdentity(Optional.of("activation-a"), Optional.empty()), Optional.empty(), Optional.empty(), Optional.empty());
+            Management.ClientFailure value = new Management.ClientFailure(new Management.FailureCategory(1), "local-cancelled", Optional.empty(), Optional.empty(), false, new Management.OutcomeKnowledge(1), new Management.RequestIdentity(Optional.of("activation-a"), Optional.empty()), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
             check(value.category().value() == 1, "local-cancel-before-dispatch.category");
             check(value.message().equals("local-cancelled"), "local-cancel-before-dispatch.message");
             check(!(value.grpcStatus().isPresent()), "local-cancel-before-dispatch.grpc_status.presence");
@@ -711,9 +711,10 @@ final class ProfileVectors {
             check(!(value.auditAck().isPresent()), "local-cancel-before-dispatch.audit_ack.presence");
             check(!(value.auditStatus().isPresent()), "local-cancel-before-dispatch.audit_status.presence");
             check(!(value.unsupportedWireValue().isPresent()), "local-cancel-before-dispatch.unsupported_wire_value.presence");
+            check(!(value.auditAttemptSequence().isPresent()), "local-cancel-before-dispatch.audit_attempt_sequence.presence");
         }
         {
-            Management.ClientFailure value = new Management.ClientFailure(new Management.FailureCategory(2), "deadline", Optional.of(4), Optional.empty(), true, new Management.OutcomeKnowledge(2), new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), Optional.of(new Management.AuditAck(new Management.AuditAckStatus(2), Optional.of(Long.parseUnsignedLong("18446744073709551615")))), Optional.of("outcome-unknown"), Optional.empty());
+            Management.ClientFailure value = new Management.ClientFailure(new Management.FailureCategory(2), "deadline", Optional.of(4), Optional.empty(), true, new Management.OutcomeKnowledge(2), new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), Optional.of(new Management.AuditAck(new Management.AuditAckStatus(2), Optional.of(Long.parseUnsignedLong("18446744073709551615")))), Optional.of("outcome-unknown"), Optional.empty(), Optional.of(Long.parseUnsignedLong("18446744073709551615")));
             check(value.category().value() == 2, "deadline-after-dispatch-is-uncertain.category");
             check(value.message().equals("deadline"), "deadline-after-dispatch-is-uncertain.message");
             check(value.grpcStatus().isPresent(), "deadline-after-dispatch-is-uncertain.grpc_status.presence");
@@ -731,9 +732,11 @@ final class ProfileVectors {
             check(value.auditStatus().isPresent(), "deadline-after-dispatch-is-uncertain.audit_status.presence");
             check(value.auditStatus().get().equals("outcome-unknown"), "deadline-after-dispatch-is-uncertain.audit_status");
             check(!(value.unsupportedWireValue().isPresent()), "deadline-after-dispatch-is-uncertain.unsupported_wire_value.presence");
+            check(value.auditAttemptSequence().isPresent(), "deadline-after-dispatch-is-uncertain.audit_attempt_sequence.presence");
+            check(value.auditAttemptSequence().get() == Long.parseUnsignedLong("18446744073709551615"), "deadline-after-dispatch-is-uncertain.audit_attempt_sequence");
         }
         {
-            Management.ClientFailure value = new Management.ClientFailure(new Management.FailureCategory(4), "capability-policy-conflict", Optional.of(9), Optional.of(new Management.PlatformError("state-conflict", "capability-policy-conflict", false, List.of(new Management.ErrorDetail("future-detail", Map.ofEntries(Map.entry("value", "retained")))))), true, new Management.OutcomeKnowledge(3), new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), Optional.empty(), Optional.empty(), Optional.empty());
+            Management.ClientFailure value = new Management.ClientFailure(new Management.FailureCategory(4), "capability-policy-conflict", Optional.of(9), Optional.of(new Management.PlatformError("state-conflict", "capability-policy-conflict", false, List.of(new Management.ErrorDetail("future-detail", Map.ofEntries(Map.entry("value", "retained")))))), true, new Management.OutcomeKnowledge(3), new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
             check(value.category().value() == 4, "rpc-conflict-retains-request-identity.category");
             check(value.message().equals("capability-policy-conflict"), "rpc-conflict-retains-request-identity.message");
             check(value.grpcStatus().isPresent(), "rpc-conflict-retains-request-identity.grpc_status.presence");
@@ -754,9 +757,10 @@ final class ProfileVectors {
             check(!(value.auditAck().isPresent()), "rpc-conflict-retains-request-identity.audit_ack.presence");
             check(!(value.auditStatus().isPresent()), "rpc-conflict-retains-request-identity.audit_status.presence");
             check(!(value.unsupportedWireValue().isPresent()), "rpc-conflict-retains-request-identity.unsupported_wire_value.presence");
+            check(!(value.auditAttemptSequence().isPresent()), "rpc-conflict-retains-request-identity.audit_attempt_sequence.presence");
         }
         {
-            Management.ClientFailure value = new Management.ClientFailure(new Management.FailureCategory(5), "invalid-response", Optional.empty(), Optional.empty(), true, new Management.OutcomeKnowledge(2), new Management.RequestIdentity(Optional.of("activation-a"), Optional.of("operation-a")), Optional.empty(), Optional.empty(), Optional.of(new Management.UnsupportedWireValue("phase", "future-phase-not-authority")));
+            Management.ClientFailure value = new Management.ClientFailure(new Management.FailureCategory(5), "invalid-response", Optional.empty(), Optional.empty(), true, new Management.OutcomeKnowledge(2), new Management.RequestIdentity(Optional.of("activation-a"), Optional.of("operation-a")), Optional.empty(), Optional.empty(), Optional.of(new Management.UnsupportedWireValue("phase", "future-phase-not-authority")), Optional.empty());
             check(value.category().value() == 5, "decode-failure-retains-known-identity.category");
             check(value.message().equals("invalid-response"), "decode-failure-retains-known-identity.message");
             check(!(value.grpcStatus().isPresent()), "decode-failure-retains-known-identity.grpc_status.presence");
@@ -772,9 +776,10 @@ final class ProfileVectors {
             check(value.unsupportedWireValue().isPresent(), "decode-failure-retains-known-identity.unsupported_wire_value.presence");
             check(value.unsupportedWireValue().get().field().equals("phase"), "decode-failure-retains-known-identity.unsupported_wire_value.field");
             check(value.unsupportedWireValue().get().value().equals("future-phase-not-authority"), "decode-failure-retains-known-identity.unsupported_wire_value.value");
+            check(!(value.auditAttemptSequence().isPresent()), "decode-failure-retains-known-identity.audit_attempt_sequence.presence");
         }
         {
-            Management.ResponseMetadata value = new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), new Management.OutcomeKnowledge(3), Optional.of(new Management.AuditAck(new Management.AuditAckStatus(2), Optional.of(Long.parseUnsignedLong("18446744073709551615")))), Optional.of("outcome-unknown"));
+            Management.ResponseMetadata value = new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), new Management.OutcomeKnowledge(3), Optional.of(new Management.AuditAck(new Management.AuditAckStatus(2), Optional.of(Long.parseUnsignedLong("18446744073709551615")))), Optional.of("outcome-unknown"), Optional.of(Long.parseUnsignedLong("18446744073709551615")));
             check(!(value.identity().activationId().isPresent()), "observed-receipt-audit-outcome-independent.identity.activation_id.presence");
             check(value.identity().operationId().isPresent(), "observed-receipt-audit-outcome-independent.identity.operation_id.presence");
             check(value.identity().operationId().get().equals("operation-a"), "observed-receipt-audit-outcome-independent.identity.operation_id");
@@ -785,27 +790,31 @@ final class ProfileVectors {
             check(value.auditAck().get().attemptSequence().get() == Long.parseUnsignedLong("18446744073709551615"), "observed-receipt-audit-outcome-independent.audit_ack.attempt_sequence");
             check(value.auditStatus().isPresent(), "observed-receipt-audit-outcome-independent.audit_status.presence");
             check(value.auditStatus().get().equals("outcome-unknown"), "observed-receipt-audit-outcome-independent.audit_status");
+            check(value.auditAttemptSequence().isPresent(), "observed-receipt-audit-outcome-independent.audit_attempt_sequence.presence");
+            check(value.auditAttemptSequence().get() == Long.parseUnsignedLong("18446744073709551615"), "observed-receipt-audit-outcome-independent.audit_attempt_sequence");
         }
         {
-            Management.ResponseMetadata value = new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), new Management.OutcomeKnowledge(3), Optional.empty(), Optional.empty());
+            Management.ResponseMetadata value = new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), new Management.OutcomeKnowledge(3), Optional.empty(), Optional.empty(), Optional.empty());
             check(!(value.identity().activationId().isPresent()), "policy-response-has-no-fabricated-audit.identity.activation_id.presence");
             check(value.identity().operationId().isPresent(), "policy-response-has-no-fabricated-audit.identity.operation_id.presence");
             check(value.identity().operationId().get().equals("operation-a"), "policy-response-has-no-fabricated-audit.identity.operation_id");
             check(value.outcome().value() == 3, "policy-response-has-no-fabricated-audit.outcome");
             check(!(value.auditAck().isPresent()), "policy-response-has-no-fabricated-audit.audit_ack.presence");
             check(!(value.auditStatus().isPresent()), "policy-response-has-no-fabricated-audit.audit_status.presence");
+            check(!(value.auditAttemptSequence().isPresent()), "policy-response-has-no-fabricated-audit.audit_attempt_sequence.presence");
         }
         {
-            Management.ResponseMetadata value = new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), new Management.OutcomeKnowledge(2), Optional.empty(), Optional.empty());
+            Management.ResponseMetadata value = new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), new Management.OutcomeKnowledge(2), Optional.empty(), Optional.empty(), Optional.empty());
             check(!(value.identity().activationId().isPresent()), "missing-recovery-keeps-outcome-unknown.identity.activation_id.presence");
             check(value.identity().operationId().isPresent(), "missing-recovery-keeps-outcome-unknown.identity.operation_id.presence");
             check(value.identity().operationId().get().equals("operation-a"), "missing-recovery-keeps-outcome-unknown.identity.operation_id");
             check(value.outcome().value() == 2, "missing-recovery-keeps-outcome-unknown.outcome");
             check(!(value.auditAck().isPresent()), "missing-recovery-keeps-outcome-unknown.audit_ack.presence");
             check(!(value.auditStatus().isPresent()), "missing-recovery-keeps-outcome-unknown.audit_status.presence");
+            check(!(value.auditAttemptSequence().isPresent()), "missing-recovery-keeps-outcome-unknown.audit_attempt_sequence.presence");
         }
         {
-            Management.ResponseMetadata value = new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), new Management.OutcomeKnowledge(91), Optional.of(new Management.AuditAck(new Management.AuditAckStatus(91), Optional.of(Long.parseUnsignedLong("0")))), Optional.of("future-audit-status"));
+            Management.ResponseMetadata value = new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), new Management.OutcomeKnowledge(91), Optional.of(new Management.AuditAck(new Management.AuditAckStatus(91), Optional.of(Long.parseUnsignedLong("0")))), Optional.of("future-audit-status"), Optional.of(Long.parseUnsignedLong("0")));
             check(!(value.identity().activationId().isPresent()), "unknown-audit-enum-and-status.identity.activation_id.presence");
             check(value.identity().operationId().isPresent(), "unknown-audit-enum-and-status.identity.operation_id.presence");
             check(value.identity().operationId().get().equals("operation-a"), "unknown-audit-enum-and-status.identity.operation_id");
@@ -816,6 +825,39 @@ final class ProfileVectors {
             check(value.auditAck().get().attemptSequence().get() == Long.parseUnsignedLong("0"), "unknown-audit-enum-and-status.audit_ack.attempt_sequence");
             check(value.auditStatus().isPresent(), "unknown-audit-enum-and-status.audit_status.presence");
             check(value.auditStatus().get().equals("future-audit-status"), "unknown-audit-enum-and-status.audit_status");
+            check(value.auditAttemptSequence().isPresent(), "unknown-audit-enum-and-status.audit_attempt_sequence.presence");
+            check(value.auditAttemptSequence().get() == Long.parseUnsignedLong("0"), "unknown-audit-enum-and-status.audit_attempt_sequence");
+        }
+        {
+            Management.ResponseMetadata value = new Management.ResponseMetadata(new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), new Management.OutcomeKnowledge(3), Optional.empty(), Optional.of("future-state"), Optional.of(Long.parseUnsignedLong("18446744073709551615")));
+            check(!(value.identity().activationId().isPresent()), "unknown-audit-header-and-max-attempt.identity.activation_id.presence");
+            check(value.identity().operationId().isPresent(), "unknown-audit-header-and-max-attempt.identity.operation_id.presence");
+            check(value.identity().operationId().get().equals("operation-a"), "unknown-audit-header-and-max-attempt.identity.operation_id");
+            check(value.outcome().value() == 3, "unknown-audit-header-and-max-attempt.outcome");
+            check(!(value.auditAck().isPresent()), "unknown-audit-header-and-max-attempt.audit_ack.presence");
+            check(value.auditStatus().isPresent(), "unknown-audit-header-and-max-attempt.audit_status.presence");
+            check(value.auditStatus().get().equals("future-state"), "unknown-audit-header-and-max-attempt.audit_status");
+            check(value.auditAttemptSequence().isPresent(), "unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence");
+            check(value.auditAttemptSequence().get() == Long.parseUnsignedLong("18446744073709551615"), "unknown-audit-header-and-max-attempt.audit_attempt_sequence");
+        }
+        {
+            Management.ClientFailure value = new Management.ClientFailure(new Management.FailureCategory(4), "rpc-failure", Optional.of(13), Optional.empty(), true, new Management.OutcomeKnowledge(2), new Management.RequestIdentity(Optional.empty(), Optional.of("operation-a")), Optional.empty(), Optional.of("future-state"), Optional.empty(), Optional.of(Long.parseUnsignedLong("18446744073709551615")));
+            check(value.category().value() == 4, "failed-rpc-unknown-audit-header-and-max-attempt.category");
+            check(value.message().equals("rpc-failure"), "failed-rpc-unknown-audit-header-and-max-attempt.message");
+            check(value.grpcStatus().isPresent(), "failed-rpc-unknown-audit-header-and-max-attempt.grpc_status.presence");
+            check(value.grpcStatus().get() == 13, "failed-rpc-unknown-audit-header-and-max-attempt.grpc_status");
+            check(!(value.platformError().isPresent()), "failed-rpc-unknown-audit-header-and-max-attempt.platform_error.presence");
+            check(value.dispatched() == true, "failed-rpc-unknown-audit-header-and-max-attempt.dispatched");
+            check(value.outcome().value() == 2, "failed-rpc-unknown-audit-header-and-max-attempt.outcome");
+            check(!(value.identity().activationId().isPresent()), "failed-rpc-unknown-audit-header-and-max-attempt.identity.activation_id.presence");
+            check(value.identity().operationId().isPresent(), "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id.presence");
+            check(value.identity().operationId().get().equals("operation-a"), "failed-rpc-unknown-audit-header-and-max-attempt.identity.operation_id");
+            check(!(value.auditAck().isPresent()), "failed-rpc-unknown-audit-header-and-max-attempt.audit_ack.presence");
+            check(value.auditStatus().isPresent(), "failed-rpc-unknown-audit-header-and-max-attempt.audit_status.presence");
+            check(value.auditStatus().get().equals("future-state"), "failed-rpc-unknown-audit-header-and-max-attempt.audit_status");
+            check(!(value.unsupportedWireValue().isPresent()), "failed-rpc-unknown-audit-header-and-max-attempt.unsupported_wire_value.presence");
+            check(value.auditAttemptSequence().isPresent(), "failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence.presence");
+            check(value.auditAttemptSequence().get() == Long.parseUnsignedLong("18446744073709551615"), "failed-rpc-unknown-audit-header-and-max-attempt.audit_attempt_sequence");
         }
         {
             Management.AuditAck value = new Management.AuditAck(new Management.AuditAckStatus(1), Optional.empty());
@@ -890,6 +932,6 @@ final class ProfileVectors {
         try { Management.parseU64Decimal("1\000"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
         try { Management.parseU64Decimal("1\n"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
         try { Management.parseU64Decimal("1\r\n"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
-        System.out.println("shared profile vectors: 66");
+        System.out.println("shared profile vectors: 68");
     }
 }
