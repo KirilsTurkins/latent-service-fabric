@@ -155,6 +155,9 @@ remain separate from this workflow.
 
 ## Current recorded boundary
 
+The [compact candidate receipt summary](../evidence/native-runtime-dd08449f.json)
+retains scoped results and original receipt hashes, not VM disks or credentials.
+
 - [Run 35449471092](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35449471092),
   source `dd08449fb2dfb3174bb5468cfd6e13253fe48a17`: the native build and real
   GitHub attestation succeeded. The 444-file archive is 26,469,496 bytes with
