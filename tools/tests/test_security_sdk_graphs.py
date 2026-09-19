@@ -70,6 +70,10 @@ class SdkGraphTests(unittest.TestCase):
             url = "https://codeload.github.com/" + repository + "/tar.gz/" + commit if name == "nanopb" else "https://github.com/" + repository + "/releases/download/" + reference + "/" + filename
             lock[name] = {"version": version, "commit": commit, "sha256": "a" * 64, "role": "runtime",
                           "purl": "pkg:github/" + repository + "@" + reference, "url": url}
+        lock["nghttp2"]["bundled"] = [{"name": "sfparse", "version": "c" * 40, "commit": "c" * 40,
+            "role": "bundled-runtime", "purl": "pkg:github/ngtcp2/sfparse@" + "c" * 40,
+            "url": "https://github.com/ngtcp2/sfparse/tree/" + "c" * 40,
+            "files": {"lib/sfparse.c": "d" * 64, "lib/sfparse.h": "e" * 64}}]
         for name in ("protobuf", "h2", "hpack", "hyperframe"):
             lock[name] = {"version": "1.2.3", "sha256": "a" * 64, "role": "test-only", "purl": "pkg:pypi/" + name + "@1.2.3",
                           "url": "https://files.pythonhosted.org/packages/fixture/" + name + "-1.2.3-py3-none-any.whl"}
@@ -85,7 +89,7 @@ class SdkGraphTests(unittest.TestCase):
             entry, _ = self.nuget_fixture()
             self.assertEqual(set(nuget_packages(self.root, entry)), {("NuGet", "Fixture.Protocol", "1.2.3"), ("NuGet", "Fixture.Codec", "2.3.4")})
             self.c_fixture()
-            self.assertEqual(len(c_packages(self.root, "dependencies.lock.json")), 7)
+            self.assertEqual(len(c_packages(self.root, "dependencies.lock.json")), 8)
 
     def test_go_missing_checksum_changed_manifest_and_duplicate_module_fail(self) -> None:
         for failure in ("manifest", "checksum", "duplicate", "empty", "version", "value"):
@@ -203,6 +207,26 @@ class SdkGraphTests(unittest.TestCase):
         with self.assertRaisesRegex(SecurityError, "unreviewed-legacy-c-tree"):
             legacy_c_tree(self.root, entry, {"sdk/c/interface.h"})
         self.assertFalse(legacy_c_tree(self.root, entry, {entry["path"]}))
+
+    def test_c_bundled_runtime_cannot_disappear_or_hide_unreviewed_sources(self) -> None:
+        for failure in ("missing", "empty", "duplicate", "name", "role", "commit", "url", "file", "digest"):
+            lock = self.c_fixture()
+            bundled = lock["nghttp2"]["bundled"]
+            if failure == "missing":
+                del lock["nghttp2"]["bundled"]
+            elif failure == "empty":
+                bundled.clear()
+            elif failure == "duplicate":
+                bundled.append(dict(bundled[0]))
+            elif failure in ("name", "role", "commit", "url"):
+                bundled[0][failure] = "unreviewed"
+            elif failure == "file":
+                bundled[0]["files"]["lib/unreviewed.c"] = "a" * 64
+            else:
+                bundled[0]["files"]["lib/sfparse.c"] = "unknown"
+            self.write("dependencies.lock.json", lock)
+            with self.subTest(failure=failure), self.assertRaises(SecurityError):
+                c_packages(self.root, "dependencies.lock.json")
 
     def test_source_commits_use_osv_commit_queries_and_keep_attribution(self) -> None:
         package = Package("GIT", "https://github.com/fixture/source", "a" * 40, "sdk/c/dependencies.lock.json")

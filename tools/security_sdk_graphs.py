@@ -200,8 +200,11 @@ def c_packages(repo: Path, path: str) -> list[tuple[str, str, str]]:
     require(isinstance(lock, dict) and set(lock) == set(repositories) | python_names, "unreviewed-c-dependency-graph")
     packages = []
     for name, item in lock.items():
+        allowed = {"version", "role", "purl", "url", "sha256", "commit"}
+        if name == "nghttp2":
+            allowed.add("bundled")
         require(isinstance(item, dict) and {"version", "role", "purl", "url", "sha256"} <= set(item)
-                and set(item) <= {"version", "role", "purl", "url", "sha256", "commit"}, "invalid-c-dependency")
+                and set(item) <= allowed, "invalid-c-dependency")
         require(isinstance(item["version"], str) and VERSION.fullmatch(item["version"]), "unresolved-c-version")
         require(isinstance(item["sha256"], str) and SHA256.fullmatch(item["sha256"]), "invalid-c-archive-digest")
         require(item["role"] in {"runtime", "runtime-and-generator", "generator-only", "generator-and-test-only", "test-only"},
@@ -229,7 +232,27 @@ def c_packages(repo: Path, path: str) -> list[tuple[str, str, str]]:
                     and PurePosixPath(location.path).name == name + "-" + item["version"] + "-py3-none-any.whl",
                     "unreviewed-c-python-source")
             packages.append(("PyPI", name, item["version"]))
+        if name == "nghttp2":
+            packages.append(c_bundled_source(item.get("bundled")))
     return packages
+
+
+def c_bundled_source(bundled: object) -> tuple[str, str, str]:
+    require(isinstance(bundled, list) and len(bundled) == 1, "unreviewed-c-bundled-graph")
+    item = bundled[0]
+    require(isinstance(item, dict) and set(item) == {
+        "name", "version", "commit", "role", "purl", "url", "files"}, "invalid-c-bundled-source")
+    require(item["name"] == "sfparse" and item["role"] == "bundled-runtime", "unreviewed-c-bundled-source")
+    commit = item["commit"]
+    require(isinstance(commit, str) and COMMIT.fullmatch(commit) and item["version"] == commit,
+            "unresolved-c-bundled-commit")
+    require(item["purl"] == "pkg:github/ngtcp2/sfparse@" + commit
+            and item["url"] == "https://github.com/ngtcp2/sfparse/tree/" + commit, "c-bundled-source-identity-drift")
+    files = item["files"]
+    require(isinstance(files, dict) and set(files) == {"lib/sfparse.c", "lib/sfparse.h"}
+            and all(isinstance(checksum, str) and SHA256.fullmatch(checksum) for checksum in files.values()),
+            "unreviewed-c-bundled-files")
+    return "GIT", "https://github.com/ngtcp2/sfparse", commit
 
 
 def legacy_c_tree(repo: Path, entry: dict, paths: set[str]) -> bool:
