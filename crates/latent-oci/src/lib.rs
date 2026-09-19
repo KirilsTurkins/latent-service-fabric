@@ -12,7 +12,8 @@ mod upload;
 
 pub use http::{
     BearerIdentity, BearerUsage, HttpOciRegistry, OciPulledPackage, RegistryActions,
-    RegistryConfig, RegistryCredentials, RegistryLimits, RegistryUsage,
+    RegistryAddressPolicy, RegistryConfig, RegistryCredentials, RegistryDestination,
+    RegistryLimits, RegistryNetworkPolicy, RegistryNetworkUsage, RegistryResolution, RegistryUsage,
 };
 pub use manifest::OciManifestBytes;
 pub use upload::OciPushRequest;

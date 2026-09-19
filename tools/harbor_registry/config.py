@@ -43,10 +43,11 @@ def installer_template(cache: Path) -> dict:
         return yaml.safe_load(bundle.extractfile(member).read(128 * 1024))
 
 
-def write_input(root: Path, port: int, password: str, template: dict) -> None:
+def write_input(root: Path, port: int, password: str, template: dict, *, network: bool = False) -> None:
     for name in ['input', 'common/config', 'data', 'log']:
         (root / name).mkdir(parents=True, exist_ok=True)
-    template.update(hostname='harbor.test', external_url=f'https://127.0.0.1:{port}',
+    hostname = 'harbor.test' if network else '127.0.0.1'
+    template.update(hostname='harbor.test', external_url=f'https://{hostname}:{port}',
                     harbor_admin_password=password, data_volume='/fixture-root/data',
                     https={'port': 443, 'certificate': '/fixture-root/fixtures/server.pem',
                            'private_key': '/fixture-root/fixtures/server.key'})

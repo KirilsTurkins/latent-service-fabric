@@ -1,17 +1,9 @@
 use crate::HttpError;
-use ipnet::IpNet;
+pub use latent_network::AddressPolicy as HttpAddressPolicy;
 use latent_policy::capability::HttpOrigin;
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr};
 
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct HttpAddressPolicy {
-    pub networks: Vec<IpNet>,
-    /// An exact additional opt-in is required for every special-use address,
-    /// even when a broad network is approved. IPv4-mapped addresses canonicalize.
-    pub special_addresses: Vec<IpAddr>,
-}
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(
     tag = "kind",
