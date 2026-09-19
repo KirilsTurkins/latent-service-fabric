@@ -50,6 +50,22 @@ impl Fixture {
         value: Value,
         component: Option<CapsuleArtifact>,
     ) -> Self {
+        Self::start_with_route(root, value, component, None).await
+    }
+    pub async fn start_public_application(
+        root: TempDir,
+        value: Value,
+        component: Vec<u8>,
+        authority: &str,
+    ) -> Self {
+        Self::start_with_route(root, value, Some(artifact(component)), Some(authority)).await
+    }
+    async fn start_with_route(
+        root: TempDir,
+        value: Value,
+        component: Option<CapsuleArtifact>,
+        application_authority: Option<&str>,
+    ) -> Self {
         let settings = serde_json::from_value::<NodeConfig>(value)
             .unwrap()
             .derive()
@@ -58,7 +74,13 @@ impl Fixture {
         let artifacts = catalogs.artifacts.clone();
         let deployments = catalogs.deployments.clone();
         if let Some(artifact) = component {
-            publish(&catalogs, artifact, settings.http.as_ref().unwrap().scheme).await;
+            publish(
+                &catalogs,
+                artifact,
+                settings.http.as_ref().unwrap().scheme,
+                application_authority,
+            )
+            .await;
         }
         let node = Box::pin(StandaloneNode::start_with_catalogs(
             settings,
@@ -183,7 +205,12 @@ pub fn actor() -> artifacts::ReleaseActor {
     }
 }
 
-async fn publish(catalogs: &Catalogs, artifact: CapsuleArtifact, scheme: http::Scheme) {
+async fn publish(
+    catalogs: &Catalogs,
+    artifact: CapsuleArtifact,
+    scheme: http::Scheme,
+    application_authority: Option<&str>,
+) {
     let codec = JsonManifestCodec::default();
     let release = artifact.descriptor.release_digest.clone();
     let budget = artifact.manifest.execution.resource_budget_ceiling.clone();
@@ -233,7 +260,12 @@ async fn publish(catalogs: &Catalogs, artifact: CapsuleArtifact, scheme: http::S
         .unwrap()
         .unwrap()
         .generation;
-    for method in ["GET", "POST", "HEAD"] {
+    let methods: &[&str] = if application_authority.is_some() {
+        &["POST"]
+    } else {
+        &["GET", "POST", "HEAD"]
+    };
+    for method in methods {
         let id = format!("web-{}", method.to_lowercase());
         let state = catalogs
             .deployments
@@ -243,7 +275,10 @@ async fn publish(catalogs: &Catalogs, artifact: CapsuleArtifact, scheme: http::S
             .state_version;
         let definition = json!({"apiVersion":"latent.dev/v1alpha1", "kind":"HttpTrigger", "metadata":{"name":id, "tenant":"tests"},
             "spec":{"target":{"service":"web", "contract":http::CONTRACT, "function":"handle", "route":"web", "publication":publication.id.as_str(), "revision":selected.revision.0, "deploymentGeneration":version},
-                "configuration":{"profile":"buffered-v1", "scheme":if scheme == http::Scheme::Http { "http" } else { "https" }, "host":AUTHORITY, "path":"/", "pathMatch":"prefix", "method":method}}});
+                "configuration":{"profile":"buffered-v1", "scheme":if scheme == http::Scheme::Http { "http" } else { "https" },
+                    "host":application_authority.unwrap_or(AUTHORITY),
+                    "path":if application_authority.is_some() { "/api/greeting" } else { "/" },
+                    "pathMatch":if application_authority.is_some() { "exact" } else { "prefix" }, "method":method}}});
         let prepared = catalogs
             .deployments
             .prepare_trigger_operation(TriggerOperationRequest::Apply {
