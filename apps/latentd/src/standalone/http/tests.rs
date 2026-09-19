@@ -6,7 +6,7 @@ mod cache;
 mod cache_config;
 mod config;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-mod fixture;
+pub(super) mod fixture;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod lifecycle;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
