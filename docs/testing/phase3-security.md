@@ -9,9 +9,9 @@ qualification are separate gates.
 
 The executable inventory is
 [`tools/phase3_security_cases.py`](../../tools/phase3_security_cases.py).
-It defines 27 PR cases and a manual superset of 184 libtest entries, including
-three fixture exporters, plus two custom compiler harnesses. The manual run
-also executes three maintained separate-node workflows. These numbers count
+It defines 27 PR cases and a manual superset of 186 libtest entries, including
+four fixture exporters, plus two custom compiler harnesses. The manual run
+also executes four maintained separate-node workflows. These numbers count
 test entries, not every internal schedule, assertion or provider request.
 
 ## Evidence boundaries
@@ -27,12 +27,13 @@ test entries, not every internal schedule, assertion or provider request.
 | Secret rotation and redaction | `guest-local_secrets`, `guest-vault_secrets`, `http-network` | Actual guest reads, protected local files and controlled Vault/TLS peers exercise generation replacement, a held old read, expiry/clock rollback, opaque credential purpose and audit redaction. Old owners remain charged until retirement. |
 | Event acceptance versus uncertainty (#271) | `guest-nats_events`, `guest-guest_sdk` | Production NATS transport and the maintained compiled Rust event guest use controlled TLS protocol peers. A received publication can have an invalid/lost acknowledgement; a later denied call cannot undo an earlier acknowledged publication. Counts and explicit unknown outcomes rule out implicit retry. Neither acceptance nor audit proves consumer processing, an atomic batch, an outbox or exactly-once effects. |
 | Two occupied gRPC slots (#277) | `grpc-residency` | Silent, partial and unauthenticated HTTP/2 peers reach measured connection occupancy. EOF/retirement precedes refund; fresh authenticated status work still succeeds. PING, bad authentication, age drain, disconnect and shutdown cannot silently renew residency. |
-| HTTP/browser isolation (#235) | `browser-ingress`, `web-component`, `actual-browser` | Six real Wasm web-component cases cover authentication, response delivery, deadlines, cutover and revocation. A separate actual Chromium test hydrates/navigates **Node-rendered SSR** over the live shared ingress and checks injection/CSP/MIME/origin boundaries. It is not Angular-Wasm execution or the separately owned T1 renderer follow-up. |
+| HTTP/browser isolation (#235) | `browser-ingress`, `web-component`, `actual-browser`, `actual-browser-application` | Six real Wasm web-component cases cover authentication, response delivery, deadlines, cutover and revocation. Two Chromium cases hydrate/navigate **Node-rendered SSR** over live shared ingress and check injection/CSP/MIME/origin boundaries. The public-application case executes the real public HTTP component and denies management RPC paths, credential forwarding and cookie-derived authentication. This is not browser hydration of Angular-Wasm output. |
 | Protected files and readiness (#278) | `protected-files`, `profile-startup`, `security-profile` workflow | Real descriptors, ACLs, ownership, FIFO/link/ancestor replacement and snapshot mutation fail closed. A privileged disposable fixture explicitly runs the otherwise ignored wrong-owner case. Real `check-config`/`serve` failures occur before readiness/storage creation. |
 | Publication identity, corrected SBOM and current authority (#267) | `parent-catalog-evidence`, `evidence-authority`, `current-trust`, `publication` workflow | Same component bytes with different packages/evidence remain independent across two tenants, revocation, renewal, restart and rollback. Historical receipts do not reissue current grants; legacy ambiguity is not resolved by first/latest selection. |
 | Parent parsing and native currentness (#279) | `parent-package-parsers`, `parent-catalog-evidence`, `evidence-authority`, `guest-native_aot_cache` | Bounded malformed metadata/evidence is rejected before preparation authority. Engine mismatch, replaced native bytes, wrong host key, revoked publication and stale trust cannot authorize deserialization/reuse. The runner first requires the reviewed Wasmtime **47.0.4** lock/toolchain boundary. |
 | Real compiler failure and actual isolation (#273/#280) | `guest-isolated_aot`, `compiler-supervisor`, `compiler-sandbox`, `current-trust`, `security-profile` workflow | Real child PID/input rendezvous, kernel denial and reaping cover deadline, resource failure, crash, malformed output, cancellation and unrelated guest availability. The adversarial supervisor fixture is not the production sandbox; both mains run separately. Compiler containment is not guest-process containment. |
 | Native signed provider workflow (#226) | `provider-management` workflow | Existing real CLI/node/protected HTTP/blob workflow publishes maintained signed guests, invokes success/domain/denial paths, restarts, inspects exact selected revisions and revokes authority. Upstream request counts and clean provider/node shutdown are checked. No SDK participant or provider server is duplicated. |
+| Actual selected Angular under protected T1 (#226) | `fixture-angular`, `angular-t1` workflow | The maintained actual Angular build is freshly signed by the existing exporter, then the existing separate-node T1 runner checks enforced publisher/builder/SBOM admission, isolated compilation, selected renders, cancellation/disconnect reclamation, stale grants, independent same-component publication revocation and restart. A native-cache hit must be newer than the pre-restart high-water mark. No T0 receipt, backend grant, reference-app browser result or staged canary is substituted. |
 
 Existing fixtures use their own bounded rendezvous: accepted request/frame,
 provider gate, actual child input marker, observed store/connection ownership,
@@ -56,9 +57,10 @@ python3 tools/phase3_security.py --profile pr \
   --output target/phase3-security/pr-receipt.json
 ```
 
-CI can reuse its existing `$RUNNER_TEMP/lsf-workspace-tests.jsonl` instead of
-building again, passing `$GITHUB_SHA`. The parent integration owner adds this
-post-inventory hook; this ticket does not overwrite that owner's workflow work.
+CI reuses its existing `$RUNNER_TEMP/lsf-workspace-tests.jsonl` instead of
+building again, passing `$GITHUB_SHA`. The narrow hook runs after the current
+Cargo inventory and Python 3.13 setup, under a 12-minute outer watchdog, and
+retains `target/phase3-security/pr-receipt.json` as a commit-labelled artifact.
 The PR selection has no external provider, browser or guest-toolchain build
 prerequisite beyond the ordinary workspace test build. It uses 27 exact
 already non-ignored tests. It does not claim the broader manual profile passed.
@@ -116,12 +118,20 @@ SDK toolchain pin intact. Builds are prerequisites, not test evidence:
 ```sh
 mkdir -p target/phase3-security
 cargo build --locked -p latent -p latentd -p latent-wasmtime --bins
+cargo build --locked -p latent-wasmtime --bin latent-aot-compiler --release
 python3 tools/build_guest_capsules.py --output target/phase3-security/guest-capsules
 cargo build --locked -p latent-toolchain-smoke --example web-contract \
   --target wasm32-unknown-unknown --release
 wasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm \
   -o target/phase3-security/web.component.wasm
 npm --prefix examples/renderer-profile ci --ignore-scripts --no-audit --no-fund
+python3 tools/build_angular_package.py \
+  --input-root examples/angular-application \
+  --toolchain-root examples/renderer-profile --cli target/debug/latent \
+  --target-root target/phase3-security/angular-build \
+  --output target/phase3-security/angular-build/actual \
+  --cargo-target-dir "$PWD/target" \
+  --repository https://github.com/KirilsTurkins/latent-service-fabric
 cargo test --workspace --all-targets --all-features --locked --no-run \
   --message-format=json,json-render-diagnostics > target/phase3-security/inventory.jsonl
 ```
@@ -147,7 +157,9 @@ python3 tools/phase3_security_container.py \
   --web-component /workspace/target/phase3-security/web.component.wasm \
   --browser-node /opt/phase3-node/bin/node \
   --browser-chrome /usr/lib/chromium/chromium \
-  --browser-toolchain /workspace/examples/renderer-profile
+  --browser-toolchain /workspace/examples/renderer-profile \
+  --angular-build /workspace/target/phase3-security/angular-build/actual \
+  --angular-compiler /workspace/target/release/latent-aot-compiler
 ```
 
 Replace explicit tool paths with the prepared image's paths. Host output must
@@ -157,6 +169,14 @@ failure or cancellation, bounded stop plus inspection. It never removes a
 container/volume. A Docker/OS failure to verify stop is a cleanup failure, not a
 successful manual receipt. Start only that owned stopped container if a rerun
 is needed; preserve other owners' work and volumes.
+
+The Angular builder must resolve the pinned Node and `wit-bindgen` through its
+explicitly provisioned `PATH`; the browser's separate executable argument does
+not configure build tools. The manual profile requires actual `observation.json`
+and package bytes, not a copied success receipt. It hashes that complete build
+before and after execution. Fresh signing occurs inside the selected Cargo
+exporter. The optimized Angular compiler is separately hashed; ordinary compiler
+failure/current-trust fixtures retain their own supplied compiler identity.
 
 The inner manual command has its own bounds, but its receipt deliberately says
 `enclosingContainerStopRequired: true`. Only the host wrapper can replace that
@@ -214,11 +234,15 @@ attribute earlier unclassified manual failures to startup recovery.
   The source mains assert their own real child schedules.
 - PR/manual budgets are 600/2400 seconds, with serial execution, 30-second
   listing bounds, 90-second ordinary cases and a 180-second supervisor bound.
-  Maintained node workflows keep their existing 180/300-second budgets and run
+  Maintained node workflows keep their existing 180/300-second budgets; the
+  Angular T1 workflow keeps its existing 1200-second budget. All run
   **in process** under their existing process owners, not in a killable outer
   interpreter that could abandon separately grouped nodes. Publication requires
   three reaped, clean node lifetimes; security-profile and provider-management
-  each require two. An absent or extra shutdown record fails the exact profile.
+  each require two, as does Angular T1. An absent or extra shutdown record fails
+  the exact profile. Angular additionally requires the actual protected T1
+  controls, explicit and disconnect cancellation, unchanged native cache files
+  and a strictly post-restart cache-hit sequence.
 - Capture is bounded per command, Cargo input to 32 MiB, ordinary files to
   1 GiB, fixture trees to 4096 entries/128 MiB and final receipts to 128 KiB.
   Helpers retain the leader until group cleanup/reaping. Deliberate OS/session
@@ -231,7 +255,8 @@ attribute earlier unclassified manual failures to startup recovery.
   credentials, private paths and large logs are not retained. Runner failures
   expose only a selected public case ID and a bounded classification.
 
-Unselected vendor fixtures, renderer/T1 follow-up, SDK clients, load campaigns,
+Unselected vendor fixtures, parent-owned #236 reference-app browser/backend/canary
+qualification, shared SDK clients, load campaigns,
 non-Linux platforms and stronger guest-host profiles are explicit exclusions,
 not silently ignored matrix successes. See the existing
 [browser boundary qualification](browser-boundary.md),
@@ -248,3 +273,20 @@ Their observed descendant timeout/retirement case is Linux-only. A Windows
 skip of that test is not Windows qualification of the runtime matrix.
 Interrupted Docker runs contribute neither pass nor application failure
 evidence; rerun in the recovered, explicitly owned container.
+
+## Recovered evidence and current integration
+
+The prior worker's preserved `manual-3ef67953.json` is a genuine complete pass on
+`3ef67953b5a26e6080d821544f397e74d2ae9fb4`: 184 libtest entries, two custom compiler
+mains and all three then-selected node workflows, in 366546 milliseconds. The
+outer owner verified container stop. Earlier negative receipts, including the
+isolated blob failure at `380f4d52`, remain retained and are not rewritten by this
+later success.
+
+The reconciled branch includes provider/development merge `bcd902cd` and the
+qualified #226 T1 code through `3b5dbcf7`. Its expanded 188-entry/four-workflow
+profile requires fresh source-clean execution; the recovered older pass does not
+qualify the new browser schema, Angular workflow or current CI head. The added
+runner checks reject T0/partial Angular receipts, stale restart hits and browser
+observations from the wrong fixture. Exact-head PR/manual evidence remains a
+separate final qualification step.
