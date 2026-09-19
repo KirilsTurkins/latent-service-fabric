@@ -64,7 +64,7 @@ const grpcCodes: Record<string, number> = {
   internal: 13, "guest-trap": 13,
 };
 
-export function rpcFailure(code: number, headers: ReadonlyMap<string, string>, request: profile.RequestIdentity): RpcError {
+export function rpcFailure(code: number, headers: ReadonlyMap<string, string>, request: profile.RequestIdentity, recoveryRead = false): RpcError {
   const acknowledgement = audit(headers);
   const extra: Partial<Failure> = { grpcStatus: code, ...acknowledgement };
   const details = headers.get("grpc-status-details-bin");
@@ -83,6 +83,7 @@ export function rpcFailure(code: number, headers: ReadonlyMap<string, string>, r
     Object.assign(extra, { platformError: platform });
   }
   const observed = [3, 5, 6, 7, 9, 10, 12, 16].includes(code)
+    && !(code === 5 && recoveryRead)
     && acknowledgement.auditStatus !== "outcome-unknown" && acknowledgement.auditStatus !== "audit-unavailable";
   return failure(code === 4 ? profile.FailureCategory.Deadline : profile.FailureCategory.Rpc, request, true,
     { ...extra, outcome: observed ? profile.OutcomeKnowledge.Observed : profile.OutcomeKnowledge.Unknown });

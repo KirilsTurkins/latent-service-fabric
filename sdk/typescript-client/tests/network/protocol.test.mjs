@@ -7,7 +7,9 @@ import { encode, decode } from "../../dist/node/protocol/codec.js";
 import { method, registry } from "../../dist/node/protocol/schema.js";
 import { sourceDigest } from "../../dist/node/protocol/generated.js";
 import { RpcClient } from "../../dist/node/index.js";
-import { audit } from "../../dist/node/errors.js";
+import { audit, rpcFailure } from "../../dist/node/errors.js";
+import { validateRequest, validateResponse } from "../../dist/node/validation.js";
+import { OutcomeKnowledge } from "../../dist/management.js";
 import { peer, request, token } from "./peer.mjs";
 
 test("compiled descriptors match normalized authoritative source identities", () => {
@@ -55,6 +57,27 @@ test("provider usage maps retain full-width unsigned counters and reject lossy i
   for (const invalid of [-1n, 18446744073709551616n, Number.MAX_SAFE_INTEGER, "1"]) {
     assert.throws(() => encode(schema, { tenantUsage: { ...usage, counters: { invalid } } }, 65536));
   }
+});
+
+test("policy and capability pages preserve their different authoritative defaults", () => {
+  for (const page of [undefined, {}, { pageSize: 0 }, { pageSize: 128 }]) {
+    validateRequest("listCapabilities", { deploymentId: "owned", page }, "tests");
+    validateResponse("listCapabilities", { page }, { capabilities: [], page: {} }, "tests");
+  }
+  for (const page of [undefined, {}, { pageSize: 0 }, { pageSize: 33 }]) {
+    assert.throws(() => validateRequest("listPolicies", { recordKind: 1, page }, "tests"));
+  }
+  assert.throws(() => validateRequest("listCapabilities", { page: { pageSize: 129 } }, "tests"));
+  assert.throws(() => validateRequest("listCapabilities", { page: { pageSize: 1, pageToken: "x".repeat(161) } }, "tests"));
+  assert.throws(() => validateResponse("listPolicies", { page: { pageSize: 1 } }, { policies: [{}, {}], page: {} }, "tests"));
+});
+
+test("a recovery read RPC not-found never proves nonexecution", () => {
+  const request = { operationId: "original" };
+  const failure = rpcFailure(5, new Map(), request, true).failure;
+  assert.equal(failure.outcome, OutcomeKnowledge.Unknown);
+  assert.equal(failure.identity.operationId, "original");
+  assert.equal(rpcFailure(5, new Map(), request).failure.outcome, OutcomeKnowledge.Observed);
 });
 
 test("returned payloads own only their exact bytes, not the reserved receive buffer", () => {

@@ -56,7 +56,8 @@ Only one uncompressed unary gRPC message is accepted. Unsupported compression,
 duplicate header/status values, inconsistent lengths, extra frames, oversized
 messages and malformed Protobuf fail closed. Before allocating decoded objects,
 the codec enforces depth 12, 256 messages, 2048 fields, 128 entries per repeated
-field and 32 string-map entries with 128-byte keys/1024-byte values. Duplicate
+field and 32 map entries with 128-byte string keys. String values are at most
+1024 bytes; provider usage values retain exact unsigned 64-bit integers. Duplicate
 known singular/oneof fields, duplicate map keys and proto2 groups are rejected
 in this closed proto3 profile. Bounded unknown ordinary fields are skipped;
 unknown enum integers and opaque string values remain distinguishable. Input
@@ -64,8 +65,10 @@ objects must be plain data without accessors, unknown fields or sparse lists.
 
 These aggregate bounds can reject an otherwise schema-valid oversized object.
 They are supported-profile restrictions, not server authorization. Selected
-management pages require an explicit size 1–64 and an opaque next token of at
-most 2048 bytes. The client never follows the token automatically.
+policy pages require an explicit size 1–32 and a cursor of at most 117 bytes.
+Capability pages preserve the authoritative absent/zero default of 128, permit
+sizes through 128 and bound cursors to 160 bytes. These are different rules,
+not a generic normalization. The client never follows a token automatically.
 
 ## Deadlines, cancellation and physical shutdown
 
@@ -133,9 +136,17 @@ aborted wait versus explicit cancellation/status, ambiguous mutations and exact
 manual replay, malformed/oversized replies, bounded pages, shared physical
 shutdown, failed-connection non-replacement and rejected local authority.
 
-This is wire/lifecycle evidence, **not** a real `latentd` provider qualification,
-an installed bundle test or proof of the Angular/browser workflow. Those separate
-Phase 3 #230 acceptance items remain explicitly pending. The
+The separate native participant also passes all 18 checks against a real
+authenticated `latentd` with signed maintained HTTP/blob/callee guests. It
+retains nine admitted activation IDs, observes all four held upstream sockets
+physically close, and independently verifies clean node/provider reclamation.
+The shared qualification PR #366 retains the exact source and bounded receipts.
+Current policy RPCs emit no audit acknowledgement; the participant verifies
+absence rather than inventing durability. Provider examples select the node's
+5,000-millisecond timeout profile rather than the longer general SDK default.
+
+This is not installed-bundle or Angular/browser evidence. The public-ingress
+browser example remains a separate #230 acceptance requirement. The
 [package README](../../sdk/typescript-client/README.md) records commands and the
 Node-versus-browser boundary. The SDK does not duplicate an Angular renderer or
 install a generic privileged browser proxy.

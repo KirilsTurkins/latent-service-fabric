@@ -13,6 +13,17 @@ function bounded(value: unknown, maximum = 256): void {
   if (value !== undefined && (typeof value !== "string" || value.length > maximum)) throw new ShapeError();
 }
 
+function pageLimit(operation: Operation, value: unknown): number {
+  const capability = operation === "listCapabilities";
+  if (value === undefined && capability) return 128;
+  const page = object(value);
+  const size = page.pageSize ?? 0;
+  if (typeof size !== "number" || !Number.isInteger(size)
+    || size < (capability ? 0 : 1) || size > (capability ? 128 : 32)) throw new ShapeError();
+  bounded(page.pageToken, capability ? 160 : 117);
+  return size === 0 ? 128 : size;
+}
+
 export function validateRequest(operation: Operation, value: unknown, tenant: string): void {
   const request = object(value);
   for (const key of ["activationId", "rootActivationId", "parentActivationId", "operationId", "id", "deploymentId"]) bounded(request[key]);
@@ -24,9 +35,7 @@ export function validateRequest(operation: Operation, value: unknown, tenant: st
     bounded(request.mediaType, 128);
   }
   if (operation === "listPolicies" || operation === "listCapabilities") {
-    const page = object(request.page);
-    if (typeof page.pageSize !== "number" || !Number.isInteger(page.pageSize) || page.pageSize < 1 || page.pageSize > 64) throw new ShapeError();
-    bounded(page.pageToken, 2048);
+    pageLimit(operation, request.page);
   }
   if (operation === "applyPolicy") {
     const policy = object(request.policy);
@@ -66,9 +75,9 @@ export function validateResponse(operation: Operation, request: unknown, raw: Re
   }
   if (operation === "listPolicies" || operation === "listCapabilities") {
     const page = object(raw.page);
-    bounded(page.nextPageToken, 2048);
+    bounded(page.nextPageToken, operation === "listCapabilities" ? 160 : 117);
     const items = operation === "listPolicies" ? raw.policies : raw.capabilities;
-    if (!Array.isArray(items) || items.length > (object(input.page).pageSize as number) || page.nextPageToken === "") throw new ShapeError();
+    if (!Array.isArray(items) || items.length > pageLimit(operation, input.page) || page.nextPageToken === "") throw new ShapeError();
   }
   if (operation === "applyPolicy") {
     const policy = object(raw.policy);

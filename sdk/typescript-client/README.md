@@ -74,7 +74,9 @@ known ID. No invocation is automatically replayed on an uncertain response.
 
 The separate-node participant is `tests/provider-workflow.mjs`; it exercises
 the same request builder plus all eight profile operations. Its real-node
-execution evidence remains pending until the shared SDK workflow is run.
+execution uses the shared real-node workflow, with receipts retained by PR #366.
+The example's RPC timeout is explicitly 5,000 milliseconds, matching the
+qualified node's execution/transport ceiling rather than the generic SDK default.
 
 ## Browser boundary
 
@@ -84,9 +86,11 @@ listener. The Node package is not a privileged RPC proxy, Angular renderer,
 credential broker or new browser authentication mechanism. The maintained
 Angular build/rendering path remains owned by the web profile.
 
-The current controlled-peer suite is **not** real-node/provider or browser
-qualification. Phase 3 #230 remains open until the separate real-node SDK
-workflow and public-ingress browser example are integrated and evidenced.
+The controlled-peer suite and the separate real-node provider workflow are
+different evidence. The latter executes all 18 shared assertions, nine retained
+activations and four physically closed upstream holds. Neither qualifies a
+browser. Phase 3 #230 remains open until the public-ingress browser example is
+integrated and evidenced; no privileged transport is added to a client bundle.
 
 ## Reproducible checks
 
