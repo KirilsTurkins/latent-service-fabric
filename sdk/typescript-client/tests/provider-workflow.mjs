@@ -139,12 +139,12 @@ async function held(client, config, kind, assertions, activationIds) {
 
 async function run() {
   const { config, credential } = load();
-  const options = { endpoint: config.endpoint, tenant: config.tenant, credential };
+  const options = { endpoint: config.endpoint, tenant: config.tenant, credential, limits: { rpcTimeoutMillis: 5000 } };
   const client = new RpcClient(options);
   const recovery = new RpcClient(options);
   const foreign = new RpcClient({ ...options, tenant: "foreign" });
   const denied = new RpcClient({ ...options, credential: Buffer.from("LSF-PUBLIC-WRONG-NODE-TOKEN-TEST-ONLY") });
-  const small = new RpcClient({ ...options, limits: { maximumResponseBytes: 64 } });
+  const small = new RpcClient({ ...options, limits: { ...options.limits, maximumResponseBytes: 64 } });
   credential.fill(0);
   const owners = [client, recovery, foreign, denied, small];
   const assertions = {};
