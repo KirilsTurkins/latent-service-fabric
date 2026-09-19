@@ -1,9 +1,13 @@
 # Native standalone installation
 
-**Delivery status:** native packaging and fail-closed installer work for
+**Delivery status:** native packaging and fail-closed installer delivery for
 [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
-This page is not a claim that a publisher-authenticated binary release or its
-clean-VM acceptance evidence has been published. The historical
+Both native candidate profiles have passed real clean-VM reboot, retained
+invocation, backup/recovery and removal/purge; rootless evaluation also passed.
+The [recorded evidence and acceptance gaps](development/native-release-gate.md#acceptance-handoff)
+distinguish those results from untested cross-version and release gates.
+This page does not claim a published publisher-authenticated binary release.
+The historical
 [`0.1.0-alpha.3` release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3)
 remains source-only. Do not install an unsigned candidate as an authenticated
 release or infer production/hostile-multitenant certification.
@@ -22,8 +26,8 @@ The narrow first candidate matrix is Ubuntu Server 24.04/x86_64, kernel 6.8+,
 glibc 2.39+, SSE2 and Python 3.12+. Actual pressure observations, local filesystem
 locking/directory synchronization, protected-file semantics, dynamic libraries
 and, for external capsules, the approved Landlock ABI 3/seccomp compiler are
-checked under the intended node identity. Until the packaged-artifact VM gate
-passes, this is the **candidate** support matrix, not a tested-platform claim.
+checked under the intended node identity. This matrix is tested for the exact
+recorded **candidate** archive, not for every newer source or an unselected release.
 There is no container-runtime prerequisite or alternative container installation
 mode. Capsule OCI transport remains independent of native runtime distribution.
 
@@ -63,8 +67,8 @@ Version must match the committed workspace version. A new binary release needs a
 new parent-reviewed release identity; do not reuse the historical alpha.3 tag.
 The [maintainer release gate](development/native-release-gate.md) describes the
 exact workflow, required review environment, two-profile real-VM matrix and
-compatible-version selection. It distinguishes scoped candidates from complete
-release acceptance and records observed failures without claiming a reboot test.
+compatible-version selection. It distinguishes scoped candidate successes and
+earlier failures from complete release acceptance, including actual boot IDs.
 The builder emits an **unsigned candidate**. The release gate uses GitHub artifact
 attestations with the exact repository, `native-runtime-release.yml` workflow,
 release tag, source/signing commit and GitHub-hosted runner certificate identity.
@@ -106,6 +110,9 @@ Real release acceptance must additionally retain:
 No compatible cross-version pair is currently approved in
 [`packaging/linux/compatibility.json`](../packaging/linux/compatibility.json).
 Publisher approval, real prebuilt artifact production and the complete VM/reboot
-matrix are explicit release gates, not boxes checked by writing a test driver.
+matrix at the final exact release source are explicit gates. Recorded candidate
+reboot/removal/rootless results do not establish a compatible upgrade or a
+release-tag publisher identity. Documentation can be published with this
+qualified status without waiting circularly for #240 phase acceptance.
 Supply exact receipts and these operational boundaries to #237/#238/#240; preserve
 the historical release and benchmark identities when producing operator/Wiki coverage.

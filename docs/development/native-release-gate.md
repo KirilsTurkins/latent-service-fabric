@@ -155,38 +155,73 @@ remain separate from this workflow.
 
 ## Current recorded boundary
 
-The [compact candidate receipt summary](../evidence/native-runtime-dd08449f.json)
-retains scoped results and original receipt hashes, not VM disks or credentials.
+The [successful diagnostic receipt summary](../evidence/native-runtime-3925d416.json)
+retains exact source/archive identities, original receipt hashes and real boot
+IDs, not VM disks, keys or credentials. [Run 35451109956](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35451109956)
+passed both fresh KVM Ubuntu guests, including the local profile's actual
+unprivileged rootless foreground/removal/purge phase. Both server profiles passed
+real reboot, retained invocation, stopped backup/recovery, removal/reinstall and
+separately confirmed purge. The guest kernel was `6.8.0-139-generic`, Python
+`3.12.3`, and the separately provisioned verifier was `gh 2.100.0`.
+
+This diagnostic deliberately reuses the authenticated native archive from
+[run 35450192265](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35450192265),
+source `260c3e4ef14a8afe0818ce9a9ed56f05c3833b17`, SHA-256
+`1f14b0cdd4669d062437959a404befe9e4383d24d70d25b9d5ae2f8bb9f2ed9e`.
+Its harness is `3925d4163f0a7af12ce2541d23fa5c09d4fc2856`; the later change
+keeps rootless operator inputs outside the managed prefix rather than weakening
+the installer's untracked-file rejection. The complete maintained
+[CI run 35450998693](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35450998693)
+also passed at that harness commit. Neither cross-revision diagnostics nor an
+earlier green CI result qualify a later release commit.
+
+### Acceptance handoff
+
+| Boundary | Observed result and remaining qualification |
+| --- | --- |
+| Real native bundle, SBOM, provenance and licenses | Built and GitHub-attested candidate, not a release-tagged published runtime. |
+| Authentication before downloaded bootstrap | Real offline candidate identity verification and tamper/unsigned/wrong-repository/wrong-commit rejection in both guests; release-workflow/tag identity still requires its own run. |
+| Explicit profiles and non-root systemd readiness | Both local Wasmtime and enforced isolated AOT pass without sandbox fallback, public bind or reusable fixture credentials. |
+| Protected identities and repeat installation | Actual credential/key rejection, preserved configuration/credentials/AOT key/publication and same-version PID preservation pass. Missing external trust leaves installation unactivated and resumes with the same key. |
+| Real reboot and retained deployment | Both guests change boot ID and invoke the same retained publication without republishing. |
+| Backup, recovery, removal and purge | Both profiles pass stopped consistent backup/full-set restore, default retention/reinstall, exact-installation purge and unsafe-path refusal. |
+| Rootless evaluation | UID 1000 foreground invocation, live-removal `installation-busy` refusal, clean shutdown, removal and purge pass without a user systemd service. |
+| Cross-version compatibility | **Not exercised in a real VM:** no genuine declared predecessor is selected. Compatible upgrade and unsupported binary downgrade are implemented but remain release gates, not covered by same-version reinstall or mocked tests. |
+| Final source, release identity and publication | **Parent-controlled, not performed:** select new versions/commits, register the release workflow, configure required reviewers, obtain exact-head CI and complete same-source release receipts, then publish. |
+
+Both successful diagnostic receipts explicitly contain `acceptanceComplete:false`
+and `declared-compatible-native-version-pair-not-yet-selected`. The publication
+gate also refuses their artifact/harness mismatch. As inspected on 2026-09-19,
+the release-workflow and `native-runtime-publish` environment API lookups returned
+404; OAuth workflow scope is available and is **not** a remaining push blocker.
+Do not create a trust policy, move a historical tag, or mark #308 complete to
+work around those parent decisions.
+
+### Earlier failures and fixes
 
 - [Run 35449471092](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35449471092),
-  source `dd08449fb2dfb3174bb5468cfd6e13253fe48a17`: the native build and real
-  GitHub attestation succeeded. The 444-file archive is 26,469,496 bytes with
-  SHA-256 `11000d2dabaa4091e66cee9fc51e02a5754bf8a7a58fecf32e1cc5d4cf88e429`.
-  Observed ELF dependencies are `ld-linux-x86-64.so.2`, `libc.so.6`,
-  `libgcc_s.so.1` and `libm.so.6`. Independent Windows GitHub CLI verification
-  accepted the exact identity, rejected a wrong source commit and checked all
-  three signed asset digests; it is not offline Linux proof.
-- Both real KVM guests in that run booted Ubuntu kernel `6.8.0-139-generic`,
-  Python `3.12.3`, with separately provisioned `gh 2.100.0`. Both passed actual
-  offline signature negatives, non-root systemd activation, ordinary/enforced
-  bundled echo invocation and same-version protected-identity preservation.
-  The local-profile guest additionally changed boot ID from
-  `00de0f32-ce27-4ca9-83bf-070b7c9eceb9` to
-  `98e6c3ad-6c74-4c9f-9f0e-72e0cabef221` and invoked its retained publication.
-  Its recovery test then rejected legitimate catalog hard links. The enforced
-  guest hit an SSH timeout at reboot. Both overall receipts are **failures**,
-  not complete acceptance; hard-link-safe recovery/purge and bounded read-only
-  reboot observation are being corrected.
-- [Run 35448259636](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35448259636),
-  source `72c37aa737e13f8b94b22340308d63dc84170d2c`: all 27 focused Linux tests
-  passed. Native executables and echo built; archive production failed because
-  some crates omit a packaged license. Error-receipt writing also rejected the
-  runner's ACL-bearing workspace. This is a failure, not VM evidence.
-- The shared-license inventory and isolated host workspace address those observed
-  failures without relaxing installed-path checks. Local Windows validation
-  passes 13 focused cases and explicitly skips 18 Linux cases. A read-only local
-  inventory audit finds 270 dependency packages, 422 license texts and 12 exact
-  shared-license mappings; this is not a Linux packaged-artifact test.
-- No release version/pair, successful complete VM matrix or published native
-  release is claimed by this document. Attach exact new run/receipt identities
-  when they exist, and pass the operational boundaries to #237/#238/#240.
+  source `dd08449fb2dfb3174bb5468cfd6e13253fe48a17`, produced a real attested
+  444-file, 26,469,496-byte archive. Its
+  [historical receipt summary](../evidence/native-runtime-dd08449f.json) retains
+  the archive identity, independent Windows verification and both failed VM
+  receipts. Local reboot passed before legitimate CAS hard links broke backup;
+  the external guest timed out at reboot. These failures are not rewritten.
+- `260c3e4ef14a8afe0818ce9a9ed56f05c3833b17` preserves verified contained CAS
+  hard-link sets through backup/purge and rejects outside references before any
+  deletion. Protected config/trust/executable reads still require single links.
+  It submits reboot once and uses bounded read-only observation after an
+  uncertain SSH response. Both real server lifecycles then passed; the remaining
+  rootless removal failure correctly rejected a harness-created untracked input
+  inside the installation prefix. `3925d416` fixes that test input location.
+- Earlier native build failures from missing upstream license texts and runner
+  ACLs were corrected with the exact shared-license inventory and private host
+  workspace, without relaxing installed-path protection. All 37 focused Linux
+  tests passed in run `35450192265`. The fast suite at `3925d416` also runs
+  37 cases; Windows passes 16 and explicitly skips 21 Linux-only cases. Windows
+  tests never substitute for packaged-artifact Linux evidence.
+
+Pass these scoped successes and remaining release gates to #237/#238/#240.
+Operator documentation and its default-branch/Wiki promotion can proceed with
+this honest candidate boundary; #240's phase acceptance is not a circular
+prerequisite for publishing documentation. Actual native release/tag publication
+remains separate and parent controlled.
