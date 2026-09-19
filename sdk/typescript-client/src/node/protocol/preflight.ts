@@ -55,7 +55,8 @@ function walk(schema: DescMessage, bytes: Uint8Array, depth: number, work: Work)
 }
 
 function mapEntry(field: DescField, bytes: Uint8Array, work: Work): string {
-  if (field.fieldKind !== "map" || field.mapKey !== ScalarType.STRING || field.scalar !== ScalarType.STRING) throw new ShapeError();
+  if (field.fieldKind !== "map" || field.mapKey !== ScalarType.STRING
+    || (field.scalar !== ScalarType.STRING && field.scalar !== ScalarType.UINT64)) throw new ShapeError();
   const reader = new BinaryReader(bytes);
   const seen = new Set<number>();
   let key = "";
@@ -63,11 +64,14 @@ function mapEntry(field: DescField, bytes: Uint8Array, work: Work): string {
     const [number, wire] = reader.tag();
     if (--work.fields < 0 || wire === WireType.StartGroup || wire === WireType.EndGroup) throw new ShapeError();
     if (number === 1 || number === 2) {
-      if (seen.has(number) || wire !== WireType.LengthDelimited) throw new ShapeError();
+      if (seen.has(number)) throw new ShapeError();
       seen.add(number);
-      const text = reader.string(true);
-      if (Buffer.byteLength(text, "utf8") > (number === 1 ? 128 : 1024)) throw new ShapeError();
-      if (number === 1) key = text;
+      if (number === 1 || field.scalar === ScalarType.STRING) {
+        if (wire !== WireType.LengthDelimited) throw new ShapeError();
+        const text = reader.string(true);
+        if (Buffer.byteLength(text, "utf8") > (number === 1 ? 128 : 1024)) throw new ShapeError();
+        if (number === 1) key = text;
+      } else scalar(field.scalar, false, reader, wire);
     } else {
       reader.skip(wire, number, 12);
     }
