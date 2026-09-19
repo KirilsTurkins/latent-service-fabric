@@ -1709,6 +1709,7 @@ dependencies = [
  "latent-core",
  "latent-executor",
  "latent-manifest",
+ "latent-network",
  "latent-policy",
  "latent-routing",
  "latent-secrets",
@@ -1778,6 +1779,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-network"
+version = "0.1.0-alpha.3"
+dependencies = [
+ "getrandom 0.4.3",
+ "hickory-proto",
+ "ipnet",
+ "serde",
+ "tokio",
+]
+
+[[package]]
 name = "latent-node"
 version = "0.1.0-alpha.3"
 dependencies = [
@@ -1800,8 +1812,15 @@ version = "0.1.0-alpha.3"
 dependencies = [
  "base64 0.22.1",
  "bytes",
+ "hickory-proto",
+ "http",
+ "http-body",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
  "latent-artifacts",
  "latent-core",
+ "latent-network",
  "latent-packaging",
  "latent-signing",
  "rcgen",

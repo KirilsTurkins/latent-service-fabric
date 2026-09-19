@@ -1,0 +1,83 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: cargo
+    directory: /
+    target-branch: development
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    labels: ["area:security", "area:tooling"]
+  - package-ecosystem: npm
+    directories: [/sdk/typescript-client, /examples/renderer-profile]
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: npm
+    directories: [/sdk/typescript-client, /examples/renderer-profile]
+    target-branch: development
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    labels: ["area:security", "area:tooling"]
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: development
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    labels: ["area:security", "area:tooling"]
+  - package-ecosystem: pip
+    directory: /.github/security
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: pip
+    directory: /.github/security
+    target-branch: development
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    labels: ["area:security", "area:tooling"]
+  - package-ecosystem: gomod
+    directory: /sdk/go
+    target-branch: development
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+  - package-ecosystem: gradle
+    directory: /sdk/java-client
+    target-branch: development
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+  - package-ecosystem: nuget
+    directory: /sdk/dotnet/Latent.Sdk
+    target-branch: development
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3

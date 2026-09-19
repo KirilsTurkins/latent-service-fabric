@@ -1,4 +1,5 @@
 export type { PublicationRef, ReleaseSelector, PublicationIdentity } from "./publication.js";
+export * as profile from "./management.js";
 
 export interface ResourceBudget {
   readonly cpuFuel: bigint;

@@ -52,6 +52,22 @@
         }
       ]
     },
+    "browserOrigins": {
+      "description": "Bearer browser opt-in: exact canonical authority to one authenticated tenant. Omitted/empty keeps bearer ingress native-client-only. Public-origins authentication derives these bindings itself and requires this array empty. Origins share the configured transport scheme; forwarded origin fields are never used.",
+      "type": "array", "maxItems": 32, "uniqueItems": true, "default": [],
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["authority", "tenant"],
+        "properties": {
+          "authority": {"type": "string", "minLength": 1, "maxLength": 255},
+          "tenant": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
+      }
+    },
+    "responseCache": {
+      "description": "Optional immutable-public-v1 operator approvals. Empty or omitted disables the response cache. Native validation requires public-origins authentication, matching tenant/authority, canonical exact paths and unique route approvals. Changes require restart, which discards cached content.",
+      "type": "array", "maxItems": 32, "default": [],
+      "items": {"$ref": "node-http-response-cache.schema.json"}
+    },
     "limits": {
       "type": "object", "additionalProperties": false,
       "properties": {
