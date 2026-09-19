@@ -172,6 +172,22 @@ is distinct from an accepted test result. Only a verified outer stop can mark
 container cleanup complete. Transport/OS failures before a receipt remain
 unclassified failures, not invented zero-test successes.
 
+## Startup fixture CI regression
+
+[CI run 35456162060](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35456162060)
+at `dc7f636b5e31bf6be8ea3ed22eaa2ab679045cf8` failed the Rust 1.97.1
+strict Clippy step with 11 `large_futures` diagnostics: 16392–16408-byte
+futures in the shared asset/browser and measurement startup fixtures. The
+correction reuses parent changes `0af1589e` and `0b20cf9c`: box the awaited
+node startup in the asset harness and catalog opening in the measurement
+fixture. Both remain awaited by the same owner; no detached task, lint
+suppression, timeout increase or production recovery change is introduced.
+
+Subsequent Rust build/test and browser steps in that run were **not executed**.
+The missing browser artifact upload is a consequence of those skipped steps,
+not independent evidence of a browser regression. This diagnosis does not
+attribute earlier unclassified manual failures to startup recovery.
+
 ## Inventory, bounds and retention
 
 - Selection uses Cargo's successful terminal JSON inventory, exact package,
