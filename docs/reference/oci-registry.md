@@ -36,11 +36,13 @@ choices.
   the existing origin/repository rules;
 - native OCI 1.1 referrers only; no mutable legacy referrers-tag fallback.
 
-`lsf-oci-bearer-v1` is a **selected Phase 3 profile, not an implemented or
-supported profile**. #269 owns bounded Registry v2 Bearer challenge/token
-acquisition and #270 owns bounded DNS, authorized redirects and real-registry
-conformance. Existing `RegistryConfig` callers remain on the static profile; an
-upgrade does not silently authorize DNS, token services or redirect targets.
+`lsf-oci-bearer-v1` has an implemented
+[bounded authentication layer](oci-bearer-read-auth.md): challenge parsing,
+coalesced token acquisition/refresh, explicit identity/credential epochs and
+preauthenticated writes without replay. Complete transport qualification still
+requires #270's bounded DNS, authorized redirects and topology conformance.
+Static credential callers remain on the static profile; an upgrade does not
+silently authorize DNS, token services or redirect targets.
 
 The support matrix distinguishes delivered evidence from selected future tests:
 
@@ -68,7 +70,9 @@ trust or catalog admission.
 
 ## Configure the endpoint
 
-The currently implemented configuration selects `lsf-oci-static-v1` behavior.
+Static credential variants select `lsf-oci-static-v1` behavior. The explicit
+`BearerChallenge` variant selects the bounded authentication extension described
+in [its reference](oci-bearer-read-auth.md).
 Construct the client inside a Tokio runtime with `RegistryConfig`. `origin` is
 an HTTPS origin, including an optional port, without credentials, a path, query
 or fragment. `repository` is one permitted OCI repository. Every `OciReference`
@@ -90,11 +94,11 @@ exchange, credential refresh, credential helper or implicit environment-proxy
 support. Obtain or refresh tokens outside this adapter and construct a new
 configured client when needed. Authentication failures remain errors.
 
-The planned Bearer profile does not make a registry-supplied realm authoritative.
-Its future configuration must separately approve token authorities, credential
-provenance, service/audience, repository/actions, DNS destination policy and
-redirect destinations. Unknown, partially configured or unavailable profiles
-must fail before newly authorized network work begins.
+The Bearer extension never makes a registry-supplied realm authoritative. Its
+configuration separately approves the token authority, service/audience,
+repository/actions, tenant, principal and credential epoch. Hostname destinations
+still require explicit addresses and redirects remain disabled until #270;
+unknown or unavailable transport behavior does not gain network authority.
 
 HTTPS is the normal transport. `allow_insecure_loopback` permits HTTP only for a
 numeric loopback address when explicitly enabled for local tests. It cannot
