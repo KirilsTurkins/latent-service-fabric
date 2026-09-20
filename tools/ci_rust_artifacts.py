@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
-"""Run selected ignored libtests from the current job's successful Cargo inventory.
+"""Execute exact libtest suites from this checkout's successful Cargo inventory.
 
-The workflow must create the inventory with the ordinary workspace/all-targets/
-all-features `cargo test --no-run --message-format=json` invocation on this checkout.
-This consumes Cargo's artifact identities; it never discovers executables by glob.
-The inventory is build metadata, not cached test or gate evidence.
+Suite identities and recipes live in ci_suites.json. This runner never builds or
+finds executables by glob, and an empty or changed selection is never success.
+The inventory is build metadata, not cached test or qualification evidence.
 """
 
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+import hashlib
 import json
 import os
 from pathlib import Path
+import platform
 import re
 import signal
 import subprocess
 import sys
 import threading
+import time
 
 MAX_INVENTORY_BYTES = 32 * 1024 * 1024
 MAX_LINE_BYTES = 1024 * 1024
@@ -28,6 +30,7 @@ MAX_LIST_BYTES = 64 * 1024
 MAX_LINK_PATHS = 256
 POLICY_PREFIX = "supply_chain::tests::support::operator_fixture::"
 CURRENTNESS_PREFIX = "standalone::start::tests::trust_currentness::"
+REGISTRY = Path(__file__).with_name("ci_suites.json")
 
 
 class ArtifactError(Exception):
@@ -42,35 +45,17 @@ class Suite:
     filter: str
     names: frozenset[str]
     exact: bool
-
-
-SUITES = {
-    "browser-boundary": Suite(
-        "apps/latentd/Cargo.toml", "latentd", "src/lib_root.rs",
-        "standalone::http::assets::browser::actual_browser_",
-        frozenset({"standalone::http::assets::browser::actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress",
-                   "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract"}), False),
-    "operator-fixture": Suite(
-        "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
-        POLICY_PREFIX + "export_operator_workflow_fixture",
-        frozenset({POLICY_PREFIX + "export_operator_workflow_fixture"}), True),
-    "publication-fixture": Suite(
-        "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
-        POLICY_PREFIX + "export_publication_workflow_fixture",
-        frozenset({POLICY_PREFIX + "export_publication_workflow_fixture"}), True),
-    "resource-fixture": Suite(
-        "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
-        POLICY_PREFIX + "resources::export_phase2_resource_fixture",
-        frozenset({POLICY_PREFIX + "resources::export_phase2_resource_fixture"}), True),
-    "trust-currentness": Suite(
-        "apps/latentd/Cargo.toml", "latentd", "src/lib_root.rs", CURRENTNESS_PREFIX,
-        frozenset(CURRENTNESS_PREFIX + name for name in (
-            "profile::external_profile_preserves_cold_warm_and_restart_requirements",
-            "real_proof_age_expiry_denies_retained_native_work_with_a_current_clock_lease",
-            "real_policy_expiry_denies_native_work_and_recovers_readable_negative_history",
-            "real_publisher_revocation_denies_native_work_without_any_registry_event",
-        )), False),
-}
+    ignored: bool = True
+    timeout_seconds: int = 300
+    nocapture: bool = False
+    platforms: tuple[str, ...] = ()
+    prerequisites: tuple[str, ...] = ()
+    classification: str = "integration"
+    resource_class: str = "serial-host"
+    required_job: str = "rust"
+    recipe: tuple[str, ...] = ()
+    expected_features: tuple[str, ...] | None = None
+    assertions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -87,6 +72,62 @@ def unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
             raise ArtifactError("duplicate-inventory-key")
         result[key] = value
     return result
+
+
+def read_suites(path: Path) -> dict[str, Suite]:
+    with path.open("rb") as source:
+        raw = source.read(128 * 1024 + 1)
+    if len(raw) > 128 * 1024:
+        raise ArtifactError("suite-inventory-limit")
+    document = json.loads(raw, object_pairs_hook=unique_object)
+    if (not isinstance(document, dict)
+            or document.get("schemaVersion") != "latent.ci.libtest-suites.v1"
+            or not isinstance(document.get("suites"), dict)
+            or not 1 <= len(document["suites"]) <= 64):
+        raise ArtifactError("invalid-suite-inventory")
+    suites: dict[str, Suite] = {}
+    for name, value in document["suites"].items():
+        if (re.fullmatch(r"[a-z][a-z0-9-]{0,63}", name) is None
+                or not isinstance(value, dict)
+                or set(value) != set(Suite.__dataclass_fields__)):
+            raise ArtifactError("invalid-suite-definition")
+        for field in ("manifest", "target", "source", "filter", "classification",
+                      "resource_class", "required_job"):
+            if (not isinstance(value[field], str) or not value[field]
+                    or len(value[field]) > 1024 or any(ord(c) < 32 for c in value[field])):
+                raise ArtifactError("invalid-suite-field")
+        for field in ("manifest", "source"):
+            path_value = Path(value[field])
+            if path_value.is_absolute() or ".." in path_value.parts or "\\" in value[field]:
+                raise ArtifactError("invalid-suite-owner")
+        for field in ("exact", "ignored", "nocapture"):
+            if type(value[field]) is not bool:
+                raise ArtifactError("invalid-suite-boolean")
+        if (type(value["timeout_seconds"]) is not int
+                or not 1 <= value["timeout_seconds"] <= 1800):
+            raise ArtifactError("invalid-suite-timeout")
+        for field in ("names", "platforms", "prerequisites", "recipe", "assertions",
+                      "expected_features"):
+            items = value[field]
+            if field == "expected_features" and items is None:
+                continue
+            if (not isinstance(items, list) or len(items) > 128
+                    or any(not isinstance(item, str) or not item or len(item) > 1024
+                           or any(ord(c) < 32 for c in item) for item in items)):
+                raise ArtifactError("invalid-suite-list")
+            if field != "recipe" and len(items) != len(set(items)):
+                raise ArtifactError("duplicate-suite-entry")
+            value[field] = frozenset(items) if field == "names" else tuple(items)
+        if (not value["names"] or not value["recipe"]
+                or any(not test.startswith(value["filter"]) for test in value["names"])
+                or (value["exact"] and value["names"] != {value["filter"]})
+                or set(value["prerequisites"]) - {"linux-proc-vmhwm"}):
+            raise ArtifactError("invalid-suite-selection")
+        suites[name] = Suite(**value)
+    return suites
+
+
+SUITES = read_suites(REGISTRY)
 
 
 def absolute_path(value: object) -> Path:
@@ -135,7 +176,6 @@ def read_inventory(path: Path, repo: Path, suite: Suite) -> Artifact:
                 for value in paths:
                     if not isinstance(value, str) or len(value) > 4096:
                         raise ArtifactError("invalid-link-path")
-                    # Cargo only adds build-script search paths inside target.
                     value = value.split("=", 1)[-1]
                     candidate = Path(value)
                     if candidate.is_absolute():
@@ -159,6 +199,12 @@ def read_inventory(path: Path, repo: Path, suite: Suite) -> Artifact:
                 if (target.get("name") != suite.target
                         or absolute_path(target.get("src_path")) != expected_source.resolve(strict=True)):
                     raise ArtifactError("wrong-libtest-owner")
+                if suite.expected_features is not None:
+                    features = message.get("features")
+                    if (not isinstance(features, list)
+                            or any(not isinstance(feature, str) for feature in features)
+                            or sorted(features) != sorted(suite.expected_features)):
+                        raise ArtifactError("suite-feature-recipe-mismatch")
                 executable = absolute_path(message.get("executable"))
                 if not executable.is_relative_to(executable_root) or not executable.is_file():
                     raise ArtifactError("executable-outside-deps")
@@ -258,10 +304,58 @@ def validate_listing(output: bytes, suite: Suite) -> None:
         raise ArtifactError("expected-ignored-tests-missing-or-changed")
 
 
-def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str]) -> None:
+def prerequisites(suite: Suite, env: dict[str, str]) -> None:
+    if suite.platforms and sys.platform not in suite.platforms:
+        raise ArtifactError("unsupported-suite-platform")
+    if suite.required_job == "catalog" and any(name in env for name in (
+            "LSF_DEPLOYMENT_MEMORY_MODE", "LSF_DEPLOYMENT_MEMORY_ROOT")):
+        raise ArtifactError("parent-suite-rejects-child-environment")
+    if "linux-proc-vmhwm" in suite.prerequisites:
+        try:
+            with Path("/proc/self/status").open("rb") as source:
+                status = source.read(MAX_LIST_BYTES + 1)
+        except OSError as error:
+            raise ArtifactError("unavailable-linux-proc-vmhwm") from error
+        values = re.findall(rb"^VmHWM:\s*([1-9][0-9]*)\s+kB\s*$", status, re.MULTILINE)
+        if len(status) > MAX_LIST_BYTES or len(values) != 1:
+            raise ArtifactError("unavailable-linux-proc-vmhwm")
+
+
+def observation(output: bytes, suite: Suite) -> dict | None:
+    """Require the completed parent fixture's record, never a child-only success."""
+    schemas = {
+        "correctness": (b"LSF_METADATA_CORRECTNESS ", "latent.catalog.metadata-correctness.v1", 4, 8192),
+        "physical-resource": (b"LSF_METADATA_PHYSICAL ", "latent.catalog.metadata-working-set.v1", 32, 3145728),
+    }
+    if suite.required_job != "catalog":
+        return None
+    prefix, schema, releases, size = schemas[suite.classification]
+    records = [line[len(prefix):] for line in output.splitlines() if line.startswith(prefix)]
+    if len(records) != 1:
+        raise ArtifactError("missing-or-duplicate-suite-observation")
+    value = json.loads(records[0], object_pairs_hook=unique_object)
+    if (not isinstance(value, dict) or value.get("schemaVersion") != schema
+            or value.get("releases") != releases
+            or value.get("documentation_bytes_per_release") != size):
+        raise ArtifactError("wrong-suite-observation")
+    if suite.classification == "physical-resource":
+        phases = value.get("phases")
+        if (value.get("max_growth_kib") != 65536 or not isinstance(phases, list)
+                or len(phases) != 3
+                or [phase.get("mode") for phase in phases if isinstance(phase, dict)]
+                != ["publish", "apply", "reopen"]):
+            raise ArtifactError("incomplete-physical-observation")
+    return value
+
+
+def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str],
+              record: dict | None = None) -> None:
+    prerequisites(suite, env)
     artifact = read_inventory(inventory, repo, suite)
     runtime_env = cargo_environment(repo, artifact, env)
-    command = [str(artifact.executable), suite.filter, "--ignored"]
+    command = [str(artifact.executable), suite.filter]
+    if suite.ignored:
+        command.append("--ignored")
     if suite.exact:
         command.append("--exact")
     status, output = run_owned([*command, "--list"], cwd=artifact.package, env=runtime_env,
@@ -269,16 +363,39 @@ def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str]) ->
     if status:
         raise ArtifactError("libtest-list-failed")
     validate_listing(output, suite)
-    status, output = run_owned([*command, "--test-threads=1"], cwd=artifact.package, env=runtime_env,
-                               timeout=300, maximum=MAX_OUTPUT_BYTES)
+    if not suite.ignored:
+        status, output = run_owned([*command, "--ignored", "--list"], cwd=artifact.package,
+                                   env=runtime_env, timeout=30, maximum=MAX_LIST_BYTES)
+        if status:
+            raise ArtifactError("libtest-list-failed")
+        validate_listing(output, replace(suite, names=frozenset()))
+    execution = [*command, "--test-threads=1"]
+    if suite.nocapture:
+        execution.append("--nocapture")
+    started = time.monotonic()
+    if record is not None:
+        record["execution_started"] = True
+    try:
+        status, output = run_owned(execution, cwd=artifact.package, env=runtime_env,
+                                   timeout=suite.timeout_seconds, maximum=MAX_OUTPUT_BYTES)
+    finally:
+        if record is not None:
+            record["execution_seconds"] = time.monotonic() - started
     print(output.decode("utf-8", errors="replace"), end="", flush=True)
+    if record is not None:
+        record["exit_code"] = status
     if status:
         raise ArtifactError("ignored-libtest-failed")
     expected = len(suite.names)
-    result = re.search(rb"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;",
-                       output, re.MULTILINE)
-    if result is None or tuple(int(value) for value in result.groups()) != (expected, 0, 0):
+    results = re.findall(rb"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;",
+                         output, re.MULTILINE)
+    # --nocapture includes child summaries. The final summary belongs to the parent.
+    if not results or tuple(int(value) for value in results[-1]) != (expected, 0, 0):
         raise ArtifactError("ignored-libtest-result-mismatch")
+    measured = observation(output, suite)
+    if record is not None:
+        record["passed_cases"] = expected
+        record["observation"] = measured
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -286,25 +403,49 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--suite", choices=SUITES, required=True)
     parser.add_argument("--source-commit", default=os.environ.get("GITHUB_SHA"))
+    parser.add_argument("--record", type=Path, help="write bounded stage/case observations, not a phase receipt")
     args = parser.parse_args(argv)
     repo = Path(__file__).resolve().parents[1]
+    suite = SUITES[args.suite]
+    record = {
+        "schemaVersion": "latent.ci.libtest-execution.v1", "suite": args.suite,
+        "source_commit": args.source_commit, "recipe": suite.recipe,
+        "classification": suite.classification, "cases": sorted(suite.names),
+        "assertions": suite.assertions, "execution_started": False, "outcome": "not-run",
+        "platform": sys.platform, "architecture": platform.machine(),
+        "run_id": os.environ.get("GITHUB_RUN_ID"), "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+        "registry_sha256": hashlib.sha256(REGISTRY.read_bytes()).hexdigest(),
+    }
 
     def interrupted(_signum: int, _frame: object) -> None:
         raise ArtifactError("test-interrupted")
 
     previous = signal.signal(signal.SIGTERM, interrupted)
+    started = time.monotonic()
+    result = 1
     try:
         env = dict(os.environ)
         require_source(repo, args.source_commit, env)
-        run_suite(repo, args.inventory, SUITES[args.suite], env)
-        return 0
+        run_suite(repo, args.inventory, suite, env, record)
+        record["outcome"] = "passed"
+        result = 0
     except (ArtifactError, OSError, ValueError, TypeError, RecursionError,
             subprocess.SubprocessError, KeyboardInterrupt) as error:
         reason = str(error) if isinstance(error, ArtifactError) else "artifact-execution-failed"
+        record["outcome"] = "failed" if record["execution_started"] else "not-run"
+        record["reason"] = reason
         print(f"CI Rust artifacts: {reason}", file=sys.stderr)
-        return 1
     finally:
         signal.signal(signal.SIGTERM, previous)
+        record["total_seconds"] = time.monotonic() - started
+        if args.record is not None:
+            try:
+                args.record.parent.mkdir(parents=True, exist_ok=True)
+                args.record.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+            except OSError:
+                print("CI Rust artifacts: execution-record-write-failed", file=sys.stderr)
+                result = 1
+    return result
 
 
 if __name__ == "__main__":
