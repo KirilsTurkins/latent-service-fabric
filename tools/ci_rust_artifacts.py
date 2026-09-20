@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run selected ignored libtests from the current job's successful Cargo inventory.
+"""Run selected ignored Rust tests from the current job's successful Cargo inventory.
 
 The workflow must create the inventory with the ordinary workspace/all-targets/
 all-features `cargo test --no-run --message-format=json` invocation on this checkout.
@@ -33,6 +33,9 @@ MAX_LIST_BYTES = 64 * 1024
 MAX_LINK_PATHS = 256
 POLICY_PREFIX = "supply_chain::tests::support::operator_fixture::"
 CURRENTNESS_PREFIX = "standalone::start::tests::trust_currentness::"
+METADATA_TEST = ("deployments::tests::resources::compilation_memory::"
+                 "large_release_metadata_has_a_bounded_compilation_working_set")
+METADATA_SCHEMA = "latent.metadata-working-set.v1"
 
 
 class ArtifactError(Exception):
@@ -47,7 +50,12 @@ class Suite:
     filter: str
     names: frozenset[str]
     exact: bool
+    kind: str = "lib"
     timeout: int = 300
+    platforms: tuple[str, ...] = ()
+    prerequisites: tuple[str, ...] = ()
+    resource_class: str = "integration"
+    observation_schema: str | None = None
 
 
 def registered_suites() -> dict[str, Suite]:
@@ -60,14 +68,17 @@ def registered_suites() -> dict[str, Suite]:
         if selected.get("runner") != "ci_rust_artifacts":
             continue
         owner = owners[selected["suite"]]
-        registry.require(owner["kind"] == "lib" and selected["ignored"], "artifact-runner-contract")
+        registry.require(owner["kind"] in {"lib", "test"} and selected["ignored"], "artifact-runner-contract")
         result[key] = Suite(owner["manifest"], owner["target"], owner["source"], selected["filter"],
-                            frozenset(selected["names"]), selected["exact"], selected["timeoutSeconds"])
+                            frozenset(selected["names"]), selected["exact"], kind=owner["kind"], timeout=selected["timeoutSeconds"],
+                            platforms=tuple(platform.split("-")[0] for platform in owner["platforms"]), prerequisites=tuple(owner["prerequisites"]),
+                            resource_class=selected["resourceClass"], observation_schema=selected.get("observationSchema"))
     registry.require(result, "missing-artifact-suites")
     return result
 
 
 SUITES = registered_suites()
+
 
 
 @dataclass(frozen=True)
@@ -151,10 +162,11 @@ def read_inventory(path: Path, repo: Path, suite: Suite) -> Artifact:
                 profile = message.get("profile")
                 if not isinstance(target, dict) or not isinstance(profile, dict):
                     raise ArtifactError("invalid-artifact-target")
-                if target.get("kind") != ["lib"] or profile.get("test") is not True:
+                if target.get("kind") != [suite.kind] or profile.get("test") is not True:
                     continue
-                if (target.get("name") != suite.target
-                        or absolute_path(target.get("src_path")) != expected_source.resolve(strict=True)):
+                if target.get("name") != suite.target:
+                    continue
+                if absolute_path(target.get("src_path")) != expected_source.resolve(strict=True):
                     raise ArtifactError("wrong-libtest-owner")
                 executable = absolute_path(message.get("executable"))
                 if not executable.is_relative_to(executable_root) or not executable.is_file():
@@ -255,7 +267,75 @@ def validate_listing(output: bytes, suite: Suite) -> None:
         raise ArtifactError("expected-ignored-tests-missing-or-changed")
 
 
+def validate_metadata_observations(output: bytes) -> list[dict]:
+    """Three completed processes, both measured scenarios, unchanged input budget.
+
+    A passing outer libtest without these observations is not resource evidence.
+    These values describe this one regression probe, not a Phase 2/3 receipt.
+    """
+    observations: list[dict] = []
+    for line in output.decode("utf-8").splitlines():
+        if line.startswith("LSF_METADATA_MEASUREMENT "):
+            value = json.loads(line.removeprefix("LSF_METADATA_MEASUREMENT "),
+                               object_pairs_hook=unique_object)
+            if not isinstance(value, dict):
+                raise ArtifactError("invalid-metadata-observation")
+            observations.append(value)
+    if len(observations) != 3:
+        raise ArtifactError("missing-or-duplicate-metadata-observations")
+
+    def integer(value: object) -> bool:
+        return type(value) is int
+
+    for value, mode in zip(observations, ("publish", "apply", "reopen")):
+        fixed = {"schema": METADATA_SCHEMA, "mode": mode, "releases": 32,
+                 "documentation_bytes_per_release": 3 * 1024 * 1024,
+                 "max_growth_kib": 64 * 1024, "max_state_bytes": 512 * 1024,
+                 "os": "linux"}
+        if any(value.get(key) != expected or type(value.get(key)) is not type(expected)
+               for key, expected in fixed.items()):
+            raise ArtifactError("metadata-input-mismatch")
+        if (not integer(value.get("wall_ns")) or value["wall_ns"] <= 0
+                or not isinstance(value.get("arch"), str) or not value["arch"]):
+            raise ArtifactError("missing-metadata-timing-or-host")
+        observation = value.get("observation")
+        if (not isinstance(observation, dict) or observation.get("mode") != mode
+                or observation.get("complete") is not True):
+            raise ArtifactError("incomplete-metadata-observation")
+        if mode == "publish":
+            if (type(observation.get("verified_releases")) is not int
+                    or observation["verified_releases"] != 32
+                    or type(observation.get("documentation_bytes")) is not int
+                    or observation["documentation_bytes"] != 32 * 3 * 1024 * 1024):
+                raise ArtifactError("incomplete-metadata-publication")
+            continue
+        scenarios = observation.get("scenarios")
+        if not isinstance(scenarios, list) or len(scenarios) != 2:
+            raise ArtifactError("incomplete-metadata-scenarios")
+        for scenario, name in zip(scenarios, ("distinct-releases", "shared-release-distinct-scopes")):
+            if (not isinstance(scenario, dict) or scenario.get("name") != name
+                    or scenario.get("state_unchanged") is not (mode == "reopen")):
+                raise ArtifactError("metadata-scenario-mismatch")
+            fields = ("routes", "generation", "baseline_kib", "peak_kib", "growth_kib", "state_bytes")
+            if any(not integer(scenario.get(key)) for key in fields):
+                raise ArtifactError("missing-metadata-measurement")
+            baseline, peak, growth = (scenario[key] for key in ("baseline_kib", "peak_kib", "growth_kib"))
+            if (scenario["routes"] != 32 or scenario["generation"] != 1
+                    or baseline <= 0 or peak < baseline or growth != peak - baseline
+                    or not 0 <= growth <= 64 * 1024
+                    or not 0 < scenario["state_bytes"] < 512 * 1024):
+                raise ArtifactError("metadata-measurement-outside-contract")
+    return observations
+
+
 def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str]) -> None:
+    if suite.platforms and sys.platform not in suite.platforms:
+        raise ArtifactError("unsupported-suite-platform")
+    if suite.observation_schema == METADATA_SCHEMA:
+        # Do not let inherited child mode or a diagnostic mutation bypass the parent.
+        if any(key in env for key in ("LSF_DEPLOYMENT_MEMORY_MODE", "LSF_DEPLOYMENT_MEMORY_ROOT",
+                                      "LSF_METADATA_RETAIN")):
+            raise ArtifactError("unexpected-metadata-probe-input")
     artifact = read_inventory(inventory, repo, suite)
     runtime_env = cargo_environment(repo, artifact, env)
     command = [str(artifact.executable), suite.filter, "--ignored"]
@@ -266,7 +346,10 @@ def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str]) ->
     if status:
         raise ArtifactError("libtest-list-failed")
     validate_listing(output, suite)
-    status, output = run_owned([*command, "--test-threads=1"], cwd=artifact.package, env=runtime_env,
+    execution = [*command, "--test-threads=1"]
+    if suite.observation_schema is not None:
+        execution.append("--show-output")
+    status, output = run_owned(execution, cwd=artifact.package, env=runtime_env,
                                timeout=suite.timeout, maximum=MAX_OUTPUT_BYTES)
     print(output.decode("utf-8", errors="replace"), end="", flush=True)
     if status:
@@ -276,6 +359,8 @@ def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str]) ->
                        output, re.MULTILINE)
     if result is None or tuple(int(value) for value in result.groups()) != (expected, 0, 0):
         raise ArtifactError("ignored-libtest-result-mismatch")
+    if suite.observation_schema == METADATA_SCHEMA:
+        validate_metadata_observations(output)
 
 
 def main(argv: list[str] | None = None) -> int:

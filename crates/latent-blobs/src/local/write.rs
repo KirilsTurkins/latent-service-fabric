@@ -59,6 +59,13 @@ impl LocalBlobStore {
         if maximum > self.inner.limits.maximum_object_bytes {
             return Err(LocalBlobError::Capacity);
         }
+        // Failed/cancelled writers keep durable stages until physical retirement.
+        // When this finite inventory fills, reclaim at most one inactive stage
+        // on the already admitted blocking worker before reserving the new one.
+        // No guest Drop performs I/O and no object retention policy is changed.
+        if self.inner.state()?.stages.len() == self.inner.limits.maximum_stages {
+            self.reclaim_retired_stage(checkpoint)?;
+        }
         let lease = {
             let mut state = self.inner.state()?;
             if state.stages.len() == self.inner.limits.maximum_stages {

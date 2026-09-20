@@ -10,6 +10,10 @@ pub(super) fn contract_fingerprint(
     work: &mut Work,
 ) -> Result<String, PlatformError> {
     let canonical = contract_value(contract);
+    #[cfg(test)]
+    let canonical = super::ownership::canonical(canonical);
+    #[cfg(test)]
+    let canonical = &*canonical;
     count!(work, contract_schema_encodes, 1);
     let bytes = json::to_vec(&canonical)
         .map_err(|_| error(PlatformErrorCode::Internal, "contract-encoding-failed"))?;

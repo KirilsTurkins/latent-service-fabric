@@ -120,6 +120,20 @@ class AngularBuildInputTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(SnapshotError):
                 validate(value)
 
+    def test_backend_authority_is_an_explicit_closed_optional_profile(self):
+        from jsonschema import Draft202012Validator
+        validator = Draft202012Validator(json.loads((ROOT / 'schemas/angular-build.schema.json').read_bytes()))
+        validate(config())
+        for profile in ('none', 'scoped-http-get-v1'):
+            value = {**config(), 'backendProfile': profile}
+            validate(value)
+            validator.validate(value)
+        for profile in (None, True, 1, '', 'fetch', 'scoped-http-get-v2', {}, []):
+            value = {**config(), 'backendProfile': profile}
+            with self.subTest(profile=profile), self.assertRaises(SnapshotError):
+                validate(value)
+            self.assertFalse(validator.is_valid(value), profile)
+
     def test_capture_excludes_unlisted_files_and_uses_fixed_destination_bytes(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -308,6 +322,12 @@ import {render} from './application.js';
 const script=data=>'<script type="application/json">'+JSON.stringify(data)+'</script>';
 const good=await render({html:'__LSF_CLIENT_ASSET__'+script('Alice <private>')},{});
 assert.ok(good.html.startsWith('/client.immutable.js'));
+const publication='publication:sha256:'+'a'.repeat(64);
+const pinned=await render({html:'__LSF_CLIENT_ASSET__'}, {publication});
+assert.equal(pinned.html, '/_lsf/assets/'+publication+'/client.immutable.js');
+for (const publication of ['', '../other', 'publication:sha256:'+'A'.repeat(64), 7]) {
+ await assert.rejects(render({html:'__LSF_CLIENT_ASSET__'}, {publication}), /angular-publication-identity/);
+}
 await render({html:script('x'.repeat(32766))},{});
 for(const html of [script('x'.repeat(32767)), script('x'.repeat(16383)).repeat(2),
  '<script TYPE=application/json>'+JSON.stringify('x'.repeat(32767))+'</script>',

@@ -114,6 +114,7 @@ func (owner *workflow) request(name, identity string) profile.InvokeRequest {
 }
 
 func (owner *workflow) guests(ctx context.Context) error {
+	// lsf-example-begin: invoke
 	for _, sample := range []struct {
 		name      string
 		id        string
@@ -121,8 +122,14 @@ func (owner *workflow) guests(ctx context.Context) error {
 		assertion string
 	}{{"http", "go-http", 2201, "httpGuest"}, {"blob", "go-blob", 4, "blobGuest"}} {
 		response, failure := owner.client.Invoke(ctx, owner.request(sample.name, sample.id), profile.CallOptions{})
-		if failure != nil || !u64Result(response.Value, sample.value) || !owner.pin(response.Value, sample.name) {
-			return errors.New("participant-" + sample.assertion + "-failed")
+		if failure != nil {
+			return &stepFailure{reason: "participant-" + sample.assertion + "-rpc-failed", cause: failure}
+		}
+		if !u64Result(response.Value, sample.value) {
+			return errors.New("participant-" + sample.assertion + "-result-failed")
+		}
+		if !owner.pin(response.Value, sample.name) {
+			return errors.New("participant-" + sample.assertion + "-pin-failed")
 		}
 		owner.observe(response.Metadata)
 		if failure := owner.retain(ctx, sample.id); failure != nil {
@@ -130,6 +137,7 @@ func (owner *workflow) guests(ctx context.Context) error {
 		}
 		owner.result.Assertions[sample.assertion] = true
 	}
+	// lsf-example-end: invoke
 	declared := owner.request("callee", "go-declared")
 	declared.Target.Function = "fail"
 	response, failure := owner.client.Invoke(ctx, declared, profile.CallOptions{})

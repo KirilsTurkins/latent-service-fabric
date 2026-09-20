@@ -6,6 +6,7 @@ mod identity;
 pub(crate) mod image_budget;
 mod limits;
 pub(crate) mod loader;
+mod measurement;
 pub(crate) mod ownership;
 pub(crate) mod profile;
 pub(crate) mod protocol;

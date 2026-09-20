@@ -13,8 +13,10 @@ publishes configured plans with the deployment catalog. Concrete production
 configuration remains part of each provider adapter.
 The [buffered HTTP](outbound-http.md), [streaming HTTP](streaming-http.md),
 [local blob](local-blobs.md), [S3 blob](s3-blobs.md), [local secret](local-secrets.md), [Vault KV-v2](vault-secrets.md) and [NATS JetStream](nats-events.md) adapters use these
-owners. [Inbound event triggers](nats-triggers.md) share the same limits through finite `IngressRequest` ownership. Ordinary standalone startup still exposes its existing built-in imports;
-declaring a capability does not construct a client or enable an external provider.
+owners. [Inbound event triggers](nats-triggers.md) share the same limits through
+finite `IngressRequest` ownership. Standalone startup can opt into the supported
+[HTTP/local-blob provider configuration](../reference/standalone-providers.md);
+declaring a capability alone does not construct a client or enable a provider.
 
 ## Installation and immutable epochs
 

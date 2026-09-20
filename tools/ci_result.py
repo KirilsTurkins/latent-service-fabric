@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Fail closed on the complete, independently recomputed selected CI job set."""
+
 from __future__ import annotations
 
 import json
@@ -30,7 +31,7 @@ def validate(results: dict, data: dict | None = None) -> set[str]:
     registry.require(isinstance(packages, list) and all(isinstance(p, str) for p in packages), "invalid-host-selection")
     registry.require(packages == sorted(set(packages)) and set(packages) <= set(data["fastPackages"]), "unregistered-host-selection")
     registry.require(profile != "full" or packages, "missing-full-host-selection")
-    registry.require(profile != "docs" or outputs["renderer"] == "false", "invalid-docs-selection")
+    registry.require(profile not in {"docs", "website"} or outputs["renderer"] == "false", "invalid-docs-selection")
     required = registry.expected_jobs(profile, packages)
     registry.require(json.loads(outputs["expected_jobs"]) == sorted(required), "selected-job-set-mismatch")
     for name, value in results.items():
@@ -50,6 +51,7 @@ def main() -> int:
     except (ValueError, TypeError, KeyError, OSError) as error:
         print(f"CI did not satisfy its selected job contract: {error}", file=sys.stderr)
         return 1
+
 
 
 if __name__ == "__main__":

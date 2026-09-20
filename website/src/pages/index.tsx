@@ -3,21 +3,22 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 
 const sections = [
-  ['Start', '/docs/development/standalone-quickstart/', 'Evaluate the supported standalone boundary and prerequisites.'],
-  ['Learn', '/docs/component-development/creating-a-capsule/', 'Read the existing capsule workflow and owning contracts.'],
+  ['Start', '/docs/start/', 'Choose source evaluation, an approved rootless bundle or native installation.'],
+  ['Learn', '/docs/learn/author-your-first-capsule/', 'Build a maintained guest, then follow trusted delivery and recovery.'],
   ['How-to', '/docs/phase-2-operator-workflows/', 'Find delivery, rollout and recovery procedures.'],
   ['Reference', '/docs/reference/operator-cli/', 'Consult CLI, API, configuration and protocol references.'],
   ['Understand', '/docs/architecture/overview/', 'Trace authority, resource ownership and later-phase boundaries.'],
-  ['Contribute', '/docs/development/ci-profiles/', 'Choose focused checks without bypassing product validation.'],
+  ['Contribute', '/docs/how-to/operate-and-contribute/', 'Diagnose a local node and choose focused contributor validation.'],
 ];
 
 export default function Home(): React.ReactNode {
-  return <Layout title="Development documentation" description="Current repository documentation; guide acceptance and released snapshots remain explicitly separate.">
+  return <Layout title="LSF documentation" description="Find LSF setup, capsule, client, provider and Angular documentation with explicit version and verification scope.">
     <main className="container foundation-home">
       <p className="lsf-eyebrow">Bounded execution. Explicit authority.</p>
       <h1>Latent Service Fabric documentation</h1>
-      <p>This is the current <strong>development</strong> corpus, not a released documentation snapshot or a runtime service.</p>
-      <p>Existing references remain authoritative. The finite migration still requires reviewed practical guides, released snapshots, accessibility/search and protected publication.</p>
+      <p>Build capsules, connect clients and operate a bounded standalone node. Start with the supported alpha boundary and check each page’s version and verification scope.</p>
+      <p><Link className="button button--primary margin-right--sm" to="/guides/">Find a guide by task</Link> <Link to="/search/">Search documentation</Link></p>
+      <p>The development channel includes work in progress. The version menu also provides the preserved <strong>0.1.0-alpha.3</strong> documentation.</p>
       <div className="foundation-grid">{sections.map(([label, route, description]) =>
         <section key={label}><h2><Link to={route}>{label}</Link></h2><p>{description}</p></section>,
       )}</div>

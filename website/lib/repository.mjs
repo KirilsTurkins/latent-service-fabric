@@ -168,7 +168,7 @@ export function sourceUrl(index, source, directory = false) {
   return `${repositoryUrl}/${directory ? 'tree' : 'blob'}/${index.revision}/${source.split('/').map(encodeURIComponent).join('/')}`;
 }
 
-export function assetRoute(asset, channel = 'development') {
+export function assetRoute(asset, channel = asset.channel ?? 'development') {
   if (asset.kind === 'brand') return `/brand/${asset.sha256}/${encodeURIComponent(path.posix.basename(asset.path))}`;
   return `/content-assets/${channel}/${asset.sha256}/${encodeURIComponent(path.posix.basename(asset.path))}`;
 }
@@ -211,17 +211,20 @@ export function resolveLink(index, source, url, {baseUrl = '/latent-service-fabr
   const page = index.pages.find(entry => entry.source === relative);
   const isDirectory = index.directories.includes(relative);
   requireValue(index.paths.includes(relative) || isDirectory, `Missing or incorrectly cased link from ${source}: ${relative}`);
-  if (!isDirectory) safeFile(index.root, relative, Number.POSITIVE_INFINITY);
+  if (!isDirectory && !index.snapshot) safeFile(index.root, relative, Number.POSITIVE_INFINITY);
   if (fragment && page) requireValue(page.anchors.includes(decodeURIComponent(fragment.slice(1))), `Missing anchor from ${source}: ${relative}${fragment}`);
   const asset = assets.find(entry => entry.path === relative);
   if (fragment && !page && !asset && !isDirectory) {
     const anchor = decodeURIComponent(fragment.slice(1));
     if (/\.mdx?$/.test(relative)) {
-      requireValue(documentMetadata(readSource(index.root, relative).toString('utf8'), relative).anchors.includes(anchor), `Missing repository Markdown anchor: ${relative}${fragment}`);
+      const metadata = index.snapshot ? index.linkMetadata[relative] ?? index.inspectSource?.(relative)
+        : documentMetadata(readSource(index.root, relative).toString('utf8'), relative);
+      requireValue(metadata?.anchors?.includes(anchor), `Missing repository Markdown anchor: ${relative}${fragment}`);
     } else {
       const lines = /^L([1-9][0-9]*)(?:-L([1-9][0-9]*))?$/.exec(anchor);
       requireValue(lines, `Unsupported source-file anchor: ${relative}${fragment}`);
-      const count = readSource(index.root, relative).toString('utf8').trimEnd().split('\n').length;
+      const count = index.snapshot ? (index.linkMetadata[relative] ?? index.inspectSource?.(relative))?.lines
+        : readSource(index.root, relative).toString('utf8').trimEnd().split('\n').length;
       requireValue(Number(lines[1]) <= Number(lines[2] ?? lines[1]) && Number(lines[2] ?? lines[1]) <= count, `Missing source line: ${relative}${fragment}`);
     }
   }

@@ -7,7 +7,7 @@
     {"name": "provider-only", "paths": ["crates/latent-nats/src/lib.rs"], "profile": "full", "renderer": true},
     {"name": "renderer", "paths": ["tools/angular-renderer-adapter/src/lib.rs"], "profile": "full", "renderer": true},
     {"name": "docs", "paths": ["README.md", "docs/reference/operator-cli.md"], "profile": "docs", "renderer": false},
-    {"name": "mdx-product-input", "paths": ["docs/content/new.mdx"], "profile": "full", "renderer": true},
+    {"name": "mdx-site-input", "paths": ["docs/content/new.mdx"], "profile": "website", "renderer": false},
     {"name": "mixed", "paths": ["README.md", "crates/latent-state/src/lib.rs"], "profile": "full", "renderer": true},
     {"name": "deleted", "paths": ["crates/latent-state/src/removed.rs"], "profile": "full", "renderer": true},
     {"name": "renamed-both-sides", "paths": ["crates/latent-state/src/previous.rs", "crates/latent-state/src/lib.rs"], "profile": "full", "renderer": true},

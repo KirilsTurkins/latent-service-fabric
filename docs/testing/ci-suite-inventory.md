@@ -1,5 +1,23 @@
 # Exact CI suites and host correctness
 
+The current integration was refreshed against development
+`9a99d1f364eb0c5d09b879fa857811820c8bb005`: a successful whole-workspace
+all-target/all-feature build and exact executable listings found **165 targets,
+2,831 cases and 149 explicit ignores**. The raw current discovery and binary
+identities are in `tools/ci/evidence/current-discovery.json`; the older baseline
+receipt remains historical. This is build/discovery evidence, not an ordinary
+execution PASS. The shared deterministic tests moved to `latent-core`; their
+compatibility tests, current AOT input validation, Angular fixture and physical
+metadata owner are registered without dropping their execution contracts.
+
+Website and MDX selection now retains the required site job in every profile,
+including the host correctness profile. The aggregate independently checks the
+complete job set. The reviewed command map preserves all 97 original required
+run blocks and covers 123 current blocks plus 69 delegated script owners. The
+temporary upstream-discovery workflow has been retired; the maintained CI owns
+future build, discovery and execution receipts.
+
+
 The versioned contracts live in `tools/ci/suites.json` and
 `tools/ci/commands.json`. The former identifies Cargo artifacts and exact test
 names; the latter records the before/after required commands, their conditions,

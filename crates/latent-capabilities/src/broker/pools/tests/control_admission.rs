@@ -252,3 +252,129 @@ async fn an_accepted_job_outlives_its_waiter_until_physical_completion() {
     release.send(()).unwrap();
     clean(&setup.pools).await;
 }
+
+#[tokio::test]
+async fn queued_request_waits_for_registry_contention_without_losing_ownership() {
+    let setup = Setup::new(single());
+    let (session, _control) = setup.session("queue-registry-contention");
+    let observer = session.observer();
+    let admission = setup.pools.admit(&setup.client, &session).unwrap();
+    let input = admission.input(32, 16).unwrap();
+    let mut waiting = Box::pin(admission.wait());
+    {
+        let _inspection = setup.pools.inner.state.lock().unwrap();
+        pending(waiting.as_mut());
+        assert_eq!(setup.pools.inner.quotas.use_of(Kind::Pending), 1);
+        assert_eq!(setup.pools.inner.quotas.use_of(Kind::Running), 0);
+        assert_eq!(observer.live_calls(), 1);
+        assert!(!observer.is_quiescent());
+    }
+    // Snapshot readers need not notify on unlocking. The same queued request
+    // must nevertheless resume without re-admission or an extended deadline.
+    let ready = tokio::time::timeout(Duration::from_secs(1), waiting)
+        .await
+        .unwrap()
+        .unwrap();
+    let call = ready.start(dispatch(&session)).unwrap();
+    assert_eq!(setup.pools.inner.quotas.use_of(Kind::Pending), 0);
+    assert_eq!(setup.pools.inner.quotas.use_of(Kind::Running), 1);
+    drop((input, call, session));
+    assert!(observer.is_quiescent());
+    clean(&setup.pools).await;
+}
+
+#[tokio::test]
+async fn registry_contention_does_not_extend_the_original_queue_deadline() {
+    let setup = Setup::new(single());
+    let (session, _control) = setup.session("queue-registry-deadline");
+    let observer = session.observer();
+    let admission = setup
+        .pools
+        .admit_until(
+            &setup.client,
+            &session,
+            Instant::now() + Duration::from_millis(100),
+        )
+        .unwrap();
+    let mut waiting = Box::pin(admission.wait());
+    {
+        let _inspection = setup.pools.inner.state.lock().unwrap();
+        pending(waiting.as_mut());
+        std::thread::sleep(Duration::from_millis(125));
+    }
+    assert_eq!(
+        waiting.await.err().unwrap().code,
+        PlatformErrorCode::DeadlineExceeded
+    );
+    assert_eq!(setup.pools.inner.quotas.use_of(Kind::Running), 0);
+    drop(session);
+    assert!(observer.is_quiescent());
+    clean(&setup.pools).await;
+}
+
+#[tokio::test]
+async fn cancelled_contended_request_never_acquires_a_running_slot() {
+    let setup = Setup::new(single());
+    let (session, control) = setup.session("queue-registry-cancelled");
+    let observer = session.observer();
+    let mut waiting = Box::pin(setup.pools.admit(&setup.client, &session).unwrap().wait());
+    {
+        let _inspection = setup.pools.inner.state.lock().unwrap();
+        pending(waiting.as_mut());
+        control.probe.0.store(true, Ordering::Release);
+    }
+    assert_eq!(
+        waiting.await.err().unwrap().code,
+        PlatformErrorCode::Cancelled
+    );
+    assert_eq!(setup.pools.inner.quotas.use_of(Kind::Running), 0);
+    drop(session);
+    assert!(observer.is_quiescent());
+    clean(&setup.pools).await;
+}
+
+#[tokio::test]
+async fn abandoning_a_contended_request_reclaims_only_its_released_owners() {
+    let setup = Setup::new(single());
+    let (session, _control) = setup.session("queue-registry-abandoned");
+    let observer = session.observer();
+    let admission = setup.pools.admit(&setup.client, &session).unwrap();
+    let input = admission.input(32, 16).unwrap();
+    let mut waiting = Box::pin(admission.wait());
+    {
+        let _inspection = setup.pools.inner.state.lock().unwrap();
+        pending(waiting.as_mut());
+        drop(waiting);
+        drop(session);
+        assert!(!observer.is_quiescent());
+        assert_eq!(setup.pools.inner.quotas.use_of(Kind::Pending), 1);
+        assert_eq!(setup.pools.inner.quotas.use_of(Kind::Running), 0);
+        drop(input);
+        assert!(observer.is_quiescent());
+        assert_eq!(setup.pools.inner.quotas.use_of(Kind::Pending), 0);
+    }
+    clean(&setup.pools).await;
+}
+
+#[tokio::test]
+async fn poisoned_queue_registry_is_not_treated_as_transient_contention() {
+    let setup = Setup::new(single());
+    let (session, _control) = setup.session("queue-registry-poisoned");
+    let observer = session.observer();
+    let admission = setup.pools.admit(&setup.client, &session).unwrap();
+    let poisoned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _inspection = setup.pools.inner.state.lock().unwrap();
+        panic!("controlled queue registry poison");
+    }));
+    assert!(poisoned.is_err());
+    let failure = admission.wait().await.err().unwrap();
+    assert_eq!(failure.code, PlatformErrorCode::Unavailable);
+    assert_eq!(failure.message, "provider-pool-owner-poisoned");
+    assert_eq!(setup.pools.inner.quotas.use_of(Kind::Running), 0);
+    // The test poisoned an otherwise unchanged table; restore it only so the
+    // fixture's normal shutdown can verify complete ownership reclamation.
+    setup.pools.inner.state.clear_poison();
+    drop(session);
+    assert!(observer.is_quiescent());
+    clean(&setup.pools).await;
+}

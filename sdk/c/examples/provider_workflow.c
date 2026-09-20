@@ -64,6 +64,7 @@ static bool terminal(workflow *state, const char *identity, bool expected_termin
 
 static bool invoke_cases(workflow *state) {
     latent_transport *client = state->clients[0];
+    // lsf-example-begin: invoke
     const char *const suffixes[] = {"http", "blob", "declared", "platform"};
     for (unsigned index = 0; index < 4; ++index) {
         ex_result result = {0};
@@ -77,6 +78,7 @@ static bool invoke_cases(workflow *state) {
         state->admitted[index] = true;
         state->assertions[index] = true;
     }
+    // lsf-example-end: invoke
     for (unsigned index = 0; index < 2; ++index) {
         client = state->clients[index + 2];
         ex_result result = {0};
@@ -158,11 +160,13 @@ static bool mutation(workflow *state) {
     call = state->api->get_policy(client, &get, &options, ex_policy, &result);
     if (!finish(state, owner, call, &result) || !require(state, !result.failed && result.has_policy && result.audit_absent
         && result.generation == created.generation, "mutated-policy-generation")) return false;
+    // lsf-example-begin: management
     latent_profile_get_policy_operation_request lookup = {EX_TEXT("c-policy-create")};
     result = (ex_result){0};
     call = state->api->get_policy_operation(client, &lookup, &options, ex_operation, &result);
     if (!finish(state, owner, call, &result) || !require(state, !result.failed && result.has_receipt && result.audit_absent
         && ex_receipt_equal(&created.receipt, &result.receipt), "original-operation-recovery")) return false;
+    // lsf-example-end: management
     lookup.operation_id = EX_TEXT("c-unknown-operation");
     result = (ex_result){0};
     call = state->api->get_policy_operation(client, &lookup, &options, ex_operation, &result);
@@ -214,6 +218,7 @@ static bool held(workflow *state, unsigned kind) {
     state->admitted[kind + 5] = true;
     if (!require(state, terminal(state, activations[kind + 5], false), "pending-status")) goto cleanup;
     if (kind == 0 || kind == 1) {
+        // lsf-example-begin: cancel
         if (kind == 0) {
             state->api->cancel_local(call);
             if (!require(state, pending.callbacks == 1 && pending.failed && pending.category == LATENT_PROFILE_FAILURE_CATEGORY_LOCAL_CANCELLED,
@@ -226,6 +231,7 @@ static bool held(workflow *state, unsigned kind) {
         if (!finish(state, owner, cancellation, &cancelled) || !require(state, !cancelled.failed
             && (cancelled.disposition == LATENT_PROFILE_CANCEL_DISPOSITION_ACCEPTED
                  || (kind == 0 && cancelled.disposition == LATENT_PROFILE_CANCEL_DISPOSITION_ALREADY_TERMINAL)), "explicit-cancel-disposition")) goto cleanup;
+        // lsf-example-end: cancel
         if (kind == 1 && (!ex_wait(owner, &pending, ex_now() + 4000)
             || !require(state, (!pending.failed && pending.platform && strcmp(pending.platform_code, "cancelled") == 0)
                         || (pending.failed && pending.has_grpc && (pending.grpc == 1 || pending.grpc == 4)), "cancelled-invocation-outcome"))) goto cleanup;

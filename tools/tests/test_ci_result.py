@@ -7,7 +7,7 @@ from tools import ci_result, ci_profile, ci_suite_inventory as registry
 
 
 def successful(profile):
-    decision = ci_profile.classify_paths({'docs': ['README.md'], 'fast': ['crates/latent-state/src/lib.rs'],
+    decision = ci_profile.classify_paths({'docs': ['README.md'], 'website': ['website/src/css/custom.css'], 'fast': ['crates/latent-state/src/lib.rs'],
                                          'full': ['Cargo.lock']}[profile])
     outputs = decision.outputs()
     required = set(json.loads(outputs['expected_jobs']))
@@ -19,12 +19,12 @@ def successful(profile):
 
 class ResultTests(unittest.TestCase):
     def test_all_profiles_require_their_exact_jobs(self):
-        for profile in ('docs', 'fast', 'full'):
+        for profile in ('docs', 'website', 'fast', 'full'):
             self.assertEqual(ci_result.validate(successful(profile)),
                              set(json.loads(successful(profile)['profile']['outputs']['expected_jobs'])))
 
     def test_every_failure_cancellation_and_unexpected_skip_is_fatal(self):
-        for profile in ('docs', 'fast', 'full'):
+        for profile in ('docs', 'website', 'fast', 'full'):
             valid = successful(profile)
             for job in registry.ALL_JOBS:
                 for status in ('success', 'failure', 'cancelled', 'skipped', None):
@@ -35,7 +35,7 @@ class ResultTests(unittest.TestCase):
                         ci_result.validate(changed)
 
     def test_missing_jobs_and_outputs_cannot_be_success(self):
-        for profile in ('docs', 'fast', 'full'):
+        for profile in ('docs', 'website', 'fast', 'full'):
             valid = successful(profile)
             for job in registry.ALL_JOBS:
                 changed = copy.deepcopy(valid); del changed[job]

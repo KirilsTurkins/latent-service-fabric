@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Select registered suites from complete offline Git diffs; uncertainty selects full."""
 
+
 from __future__ import annotations
 
 import argparse
@@ -90,6 +91,8 @@ def classify_paths(paths: list[str], repo: Path | None = None) -> Decision:
         return Decision("full", "diff-limit", len(paths))
     if all(documentation_path(path) for path in paths):
         return Decision("docs", "documentation-only", len(paths), renderer=False)
+    if all(documentation_path(path) or website_path(path) for path in paths):
+        return Decision("website", "website-only", len(paths), renderer=False)
     try:
         selected, packages, renderer = registry.affected(repo or registry.ROOT, paths)
         reason = "reverse-dependent-host-only" if selected == "fast" else "affected-full-validation"
@@ -97,6 +100,26 @@ def classify_paths(paths: list[str], repo: Path | None = None) -> Decision:
     except (ValueError, OSError, KeyError, TypeError):
         return Decision("full", "dependency-graph-unavailable", len(paths))
 
+
+
+
+def website_path(name: str) -> bool:
+    """Allow only reviewed site source kinds; shared/product inputs stay full."""
+    if (not name or len(name.encode("utf-8")) > MAX_PATH_BYTES or "\\" in name
+            or any(ord(char) < 32 for char in name)
+            or any(part in ("", ".", "..") for part in name.split("/"))):
+        return False
+    if name in {"docs/assets/illustrations.json", "docs/assets/lsf-palette.json"}:
+        return True
+    if name.startswith(("docs/", "adr/")) and name.endswith(".mdx"):
+        return True
+    if not name.startswith("website/") or name.startswith((
+            "website/build/", "website/.docusaurus/", "website/.generated/",
+            "website/node_modules/")):
+        return False
+    return PurePosixPath(name).suffix in {
+        ".mjs", ".cjs", ".js", ".ts", ".tsx", ".css", ".json", ".md", ".mdx", ".svg", ".png",
+    }
 
 
 def git_command(repo: Path, *arguments: str, allow_failure: bool = False) -> bytes | None:
@@ -230,8 +253,9 @@ def classify_event(event_name: str, event: dict, repo: Path) -> Decision:
                          "-z", "--no-renames", start, head, "--")
     assert output is not None
     decision = classify_paths(diff_paths(output), repo)
-    if decision.profile in {"docs", "fast"}:
+    if decision.profile in {"docs", "website", "fast"}:
         # A Markdown/YAML symlink or executable-mode change is not documentation-only.
+
         modes = git_command(repo, "diff", "--no-ext-diff", "--no-textconv", "--raw",
                             "-z", "--no-renames", start, head, "--")
         assert modes is not None

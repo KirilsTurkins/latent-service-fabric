@@ -114,7 +114,7 @@
       "job": "docs",
       "jobIf": "success()",
       "name": "Validate documentation and profile selection",
-      "run": "python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage\npython3 tools/ci_coverage.py\npython3 tools/validate_docs.py",
+      "run": "python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts\npython3 tools/ci_coverage.py\n\npython3 tools/validate_docs.py",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
@@ -135,6 +135,16 @@
       "jobIf": "needs.profile.outputs.fast_packages != '' && needs.profile.outputs.fast_packages != '[]'",
       "name": "Run the selected dependency-bounded correctness suites",
       "run": "python3 tools/ci_fast.py --packages-json \"$CI_FAST_PACKAGES\" --output \"$RUNNER_TEMP/ci-fast/affected\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:fast:Validate deterministic dependency regressions": {
+      "job": "fast",
+      "jobIf": "needs.profile.outputs.fast_packages != '' && needs.profile.outputs.fast_packages != '[]'",
+      "name": "Validate deterministic dependency regressions",
+      "run": "python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
@@ -230,6 +240,16 @@
       "workflow": ".github/workflows/ci.yml",
       "workingDirectory": "."
     },
+    ".github/workflows/ci.yml:rust:Build the optimized isolated Angular compiler": {
+      "job": "rust",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Build the optimized isolated Angular compiler",
+      "run": "cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked",
+      "shell": "default",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
     ".github/workflows/ci.yml:rust:Build the public Angular renderer fixture": {
       "job": "rust",
       "jobIf": "needs.profile.outputs.profile == 'full'",
@@ -245,6 +265,16 @@
       "jobIf": "needs.profile.outputs.profile == 'full'",
       "name": "Build workspace binaries and test harnesses",
       "run": "cargo build --workspace --all-targets --all-features --locked\ncargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics > \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:rust:Check deterministic helper dependency boundaries": {
+      "job": "rust",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Check deterministic helper dependency boundaries",
+      "run": "python3 tools/check_testkit_dependencies.py\ncargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=1\ncargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=4\ncargo test -p latent-admission -p latent-scheduler --lib --locked\ncargo test -p latent-testkit --no-default-features --lib --test test_support_compatibility --locked\ncargo run -p latent-testkit --no-default-features --example deadline --locked\ncargo run -p latent-testkit --no-default-features --example cancellation --locked",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
@@ -280,6 +310,16 @@
       "workflow": ".github/workflows/ci.yml",
       "workingDirectory": "."
     },
+    ".github/workflows/ci.yml:rust:Check metadata working-set suite selection and observation validation": {
+      "job": "rust",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Check metadata working-set suite selection and observation validation",
+      "run": "python3 -m unittest tools.tests.test_metadata_working_set",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
     ".github/workflows/ci.yml:rust:Check observed Angular build and source separation boundaries": {
       "job": "rust",
       "jobIf": "needs.profile.outputs.profile == 'full'",
@@ -307,6 +347,16 @@
       "run": "tail -n 120 \"$RUNNER_TEMP/lsf-clippy.log\"",
       "shell": "default",
       "stepIf": "failure() && steps.clippy.outcome == 'failure'",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:rust:Export actual signed Angular T1 fixtures": {
+      "job": "rust",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Export actual signed Angular T1 fixtures",
+      "run": "python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite angular-t1-fixture",
+      "shell": "default",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
       "workflow": ".github/workflows/ci.yml",
       "workingDirectory": "."
     },
@@ -350,11 +400,31 @@
       "workflow": ".github/workflows/ci.yml",
       "workingDirectory": "."
     },
+    ".github/workflows/ci.yml:rust:Prepare authenticated AOT test inputs": {
+      "job": "rust",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Prepare authenticated AOT test inputs",
+      "run": "python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests\npython3 tools/aot_test_inputs.py prepare --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --output \"$RUNNER_TEMP/lsf-aot-test-inputs\"\n# Cargo supplies each harness's runtime environment itself. Export only\n# this recipe's input selectors, not CARGO_MANIFEST_DIR/library paths.\npython3 tools/aot_test_inputs.py environment --manifest \"$RUNNER_TEMP/lsf-aot-test-inputs/manifest.json\" | grep '^LSF_AOT_' >> \"$GITHUB_ENV\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
     ".github/workflows/ci.yml:rust:Produce the observed Angular application package": {
       "job": "rust",
       "jobIf": "needs.profile.outputs.profile == 'full'",
       "name": "Produce the observed Angular application package",
       "run": "# Full debug sections can exceed the observed tool's finite byte cap.\n# Observe and execute this exact stripped copy, as for the AOT fixture.\nobjcopy --strip-debug \"$PWD/target/debug/latent\" \"$RUNNER_TEMP/lsf-angular-package-assembler\"\nstat --format='Angular package assembler: %s bytes' \"$RUNNER_TEMP/lsf-angular-package-assembler\"\npython3 tools/build_angular_package.py --input-root examples/angular-application --toolchain-root examples/renderer-profile --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --target-root \"$RUNNER_TEMP/angular-build\" --output \"$RUNNER_TEMP/angular-build/actual\" --cargo-target-dir \"$PWD/target\" --repository https://example.com/source",
+      "shell": "default",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:rust:Qualify actual Angular on the protected T1 node": {
+      "job": "rust",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Qualify actual Angular on the protected T1 node",
+      "run": "python3 -m unittest tools.tests.test_angular_t1_workflow\nmkdir \"$RUNNER_TEMP/angular-t1-bin\"\nfor binary in latent latentd; do\n  objcopy --strip-debug \"$PWD/target/debug/$binary\" \"$RUNNER_TEMP/angular-t1-bin/$binary\"\ndone\nobjcopy --strip-debug \"$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler\" \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\"\npython3 tools/run_angular_t1_workflow.py --cli \"$RUNNER_TEMP/angular-t1-bin/latent\" --node \"$RUNNER_TEMP/angular-t1-bin/latentd\" --compiler \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\" --fixture-root \"$RUNNER_TEMP/angular-t1-fixture\" > \"$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json\"",
       "shell": "default",
       "stepIf": "needs.profile.outputs.renderer == 'true'",
       "workflow": ".github/workflows/ci.yml",
@@ -440,16 +510,6 @@
       "workflow": ".github/workflows/ci.yml",
       "workingDirectory": "."
     },
-    ".github/workflows/ci.yml:rust:Validate browser boundary with live ingress": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate browser boundary with live ingress",
-      "run": "node --test tools/tests/browser_hydration.test.mjs tools/tests/browser_application.test.mjs\nnode tools/browser-boundary/build.mjs examples/renderer-profile \"$RUNNER_TEMP/browser-boundary\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-boundary/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-boundary/application.wasm\"\nLSF_WEB_COMPONENT=\"$RUNNER_TEMP/browser-boundary/application.wasm\" LSF_BROWSER_BUILD=\"$RUNNER_TEMP/browser-boundary\" LSF_BROWSER_NODE=\"$(command -v node)\" LSF_BROWSER_CHROME=\"$(command -v google-chrome)\" LSF_BROWSER_TOOLCHAIN=\"$PWD/examples/renderer-profile\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite browser-boundary",
-      "shell": "default",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
     ".github/workflows/ci.yml:rust:Validate capability policy CLI lifecycle": {
       "job": "rust",
       "jobIf": "needs.profile.outputs.profile == 'full'",
@@ -480,6 +540,16 @@
       "workflow": ".github/workflows/ci.yml",
       "workingDirectory": "."
     },
+    ".github/workflows/ci.yml:rust:browser_boundary": {
+      "job": "rust",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "browser_boundary",
+      "run": "node --test tools/tests/browser_hydration.test.mjs tools/tests/browser_application.test.mjs\nnode tools/browser-boundary/build.mjs examples/renderer-profile \"$RUNNER_TEMP/browser-boundary\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-boundary/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-boundary/application.wasm\"\nLSF_WEB_COMPONENT=\"$RUNNER_TEMP/browser-boundary/application.wasm\" LSF_BROWSER_BUILD=\"$RUNNER_TEMP/browser-boundary\" LSF_BROWSER_NODE=\"$(command -v node)\" LSF_BROWSER_CHROME=\"$(command -v google-chrome)\" LSF_BROWSER_TOOLCHAIN=\"$PWD/examples/renderer-profile\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite browser-boundary",
+      "shell": "default",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
     ".github/workflows/ci.yml:rust:clippy": {
       "job": "rust",
       "jobIf": "needs.profile.outputs.profile == 'full'",
@@ -490,14 +560,154 @@
       "workflow": ".github/workflows/ci.yml",
       "workingDirectory": "."
     },
+    ".github/workflows/ci.yml:rust:metadata-working-set": {
+      "job": "rust",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "metadata-working-set",
+      "run": "set -o pipefail\npython3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite metadata-working-set 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\"",
+      "shell": "bash",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:sdks:Install the checksum-pinned Java-compatible Gradle": {
+      "job": "sdks",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Install the checksum-pinned Java-compatible Gradle",
+      "run": "set -euo pipefail\nversion=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle\"])')\"\nchecksum=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle_sha256\"])')\"\ndestination=\"${RUNNER_TEMP}/lsf-gradle\"\nmkdir -p \"$destination\"\ncurl --fail --location --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 180 \\\n  \"https://services.gradle.org/distributions/gradle-${version}-bin.zip\" -o \"$destination/gradle.zip\"\nprintf '%s  %s\\n' \"$checksum\" \"$destination/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$destination/gradle.zip\" -d \"$destination\"\necho \"$destination/gradle-${version}/bin\" >> \"$GITHUB_PATH\"",
+      "shell": "bash",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:sdks:Qualify the Java 25 Gradle build": {
+      "job": "sdks",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Qualify the Java 25 Gradle build",
+      "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/java-sdk\"\ngit rev-parse HEAD | tee \"$RUNNER_TEMP/java-sdk/gradle.log\"\nuname -srm | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 sdk/java-client/tools/java_toolchain.py check | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ngradle --version | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ntimeout 540 gradle --no-daemon --console=plain -p sdk/java-client clean check 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\necho 'Gradle qualification passed' | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"",
+      "shell": "bash",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
     ".github/workflows/ci.yml:sdks:Validate SDK surfaces": {
       "job": "sdks",
       "jobIf": "needs.profile.outputs.profile == 'full'",
       "name": "Validate SDK surfaces",
-      "run": "tools/validate_sdks.sh\ntest \"$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)\" = \\\n  \"Version ${EXPECTED_TYPESCRIPT_VERSION}\"",
-      "shell": "default",
+      "run": "set -euo pipefail\ntools/validate_sdks.sh 2>&1 | tee \"$RUNNER_TEMP/java-sdk/sdk.log\"\nsha256sum sdk/java-client/build/latent-java-client.jar | tee \"$RUNNER_TEMP/java-sdk/jar.sha256\"\npython3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar > \"$RUNNER_TEMP/java-sdk/jar-classfile.json\"\ntest \"$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)\" = \\\n  \"Version ${EXPECTED_TYPESCRIPT_VERSION}\"",
+      "shell": "bash",
       "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/docs-pages.yml:browser:Install the reviewed browser tools in an unprivileged job": {
+      "job": "browser",
+      "jobIf": "success()",
+      "name": "Install the reviewed browser tools in an unprivileged job",
+      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund\nnode website/node_modules/playwright/cli.js install-deps chromium\nnode website/scripts/site.mjs browser-install",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-pages.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/docs-pages.yml:browser:Verify live navigation, assets, search and selected-version examples": {
+      "job": "browser",
+      "jobIf": "success()",
+      "name": "Verify live navigation, assets, search and selected-version examples",
+      "run": "node website/scripts/test-live.mjs",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-pages.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/docs-pages.yml:deploy:Recheck exact site bytes and source after protected environment approval": {
+      "job": "deploy",
+      "jobIf": "success()",
+      "name": "Recheck exact site bytes and source after protected environment approval",
+      "run": "python3 tools/docs_pages.py guard --receipt candidate/publication.json",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-pages.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/docs-pages.yml:deploy:Verify live publication identity and direct static routes": {
+      "job": "deploy",
+      "jobIf": "success()",
+      "name": "Verify live publication identity and direct static routes",
+      "run": "python3 tools/docs_pages.py verify --receipt candidate/publication.json",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-pages.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/docs-pages.yml:select:Verify successful push origin, exact attempt, immutable artifact and fresh source": {
+      "job": "select",
+      "jobIf": "github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/release'",
+      "name": "Verify successful push origin, exact attempt, immutable artifact and fresh source",
+      "run": "python3 tools/docs_pages.py select --source \"$SOURCE_SHA\" --run \"$CI_RUN\" \\\n  --attempt \"$CI_ATTEMPT\" --mode \"$PUBLICATION_MODE\" \\\n  --previous-publication-run \"$PREVIOUS_PUBLICATION_RUN\" \\\n  --expected-live-source \"$EXPECTED_LIVE_SOURCE\" --output target/docs-pages-staged",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-pages.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/docs-site.yml:website:Build both supported static base paths": {
+      "job": "website",
+      "jobIf": "success()",
+      "name": "Build both supported static base paths",
+      "run": "npm run build\nnpm run build:root",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-site.yml",
+      "workingDirectory": "website"
+    },
+    ".github/workflows/docs-site.yml:website:Check metadata, source extraction, types and unit regressions": {
+      "job": "website",
+      "jobIf": "success()",
+      "name": "Check metadata, source extraction, types and unit regressions",
+      "run": "npm run check\nnpm test",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-site.yml",
+      "workingDirectory": "website"
+    },
+    ".github/workflows/docs-site.yml:website:Install the pinned test browser and its OS prerequisites": {
+      "job": "website",
+      "jobIf": "success()",
+      "name": "Install the pinned test browser and its OS prerequisites",
+      "run": "node node_modules/playwright/cli.js install-deps chromium\nnpm run browser:install",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-site.yml",
+      "workingDirectory": "website"
+    },
+    ".github/workflows/docs-site.yml:website:Install the reviewed website dependency graph without lifecycle scripts": {
+      "job": "website",
+      "jobIf": "success()",
+      "name": "Install the reviewed website dependency graph without lifecycle scripts",
+      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\necho \"$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin\" >> \"$GITHUB_PATH\"\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-site.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": {
+      "job": "website",
+      "jobIf": "success()",
+      "name": "Verify production pages, theme and source-backed controls",
+      "run": "npm run test:build\nnpm run test:theme\nnpm run test:examples\nnpm run test:versions\nnpm run test:discovery",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-site.yml",
+      "workingDirectory": "website"
+    },
+    ".github/workflows/docs-site.yml:website:Verify the selected package manager identity": {
+      "job": "website",
+      "jobIf": "success()",
+      "name": "Verify the selected package manager identity",
+      "run": "test \"$(npm --version)\" = '11.19.1'\nnode website/scripts/check-package-manager.mjs",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/docs-site.yml",
       "workingDirectory": "."
     },
     ".github/workflows/native-runtime-release.yml:build:Build the three native executables, bootstrap, SBOM and provenance": {
@@ -2196,9 +2406,9 @@
       "reason": "The exact command and its triggering conditions are retained."
     },
     ".github/workflows/ci.yml:rust:Validate browser boundary with live ingress": {
-      "after": ".github/workflows/ci.yml:rust:Validate browser boundary with live ingress",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:browser_boundary",
+      "disposition": "extended",
+      "reason": "Preserve the live ingress browser cases with exact current Cargo artifact selection and authenticated test inputs."
     },
     ".github/workflows/ci.yml:rust:Validate capability policy CLI lifecycle": {
       "after": ".github/workflows/ci.yml:rust:Validate capability policy CLI lifecycle",
@@ -2217,8 +2427,8 @@
     },
     ".github/workflows/ci.yml:sdks:Validate SDK surfaces": {
       "after": ".github/workflows/ci.yml:sdks:Validate SDK surfaces",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "Preserve SDK surface validation and retain pinned Java 25 Gradle and TypeScript identities."
     },
     ".github/workflows/native-runtime-release.yml:build:Build the three native executables, bootstrap, SBOM and provenance": {
       "after": ".github/workflows/native-runtime-release.yml:build:Build the three native executables, bootstrap, SBOM and provenance",
@@ -2486,7 +2696,9 @@
     "sdk/dotnet/validate.py": "f16d1917e58fb7f0e9239e3d8ca43ba3bc0a415b650f30dcb6f54d4c52d77c64",
     "sdk/go/dependencies.py": "60dbbe3d3f04bc699efd92a2c200ee4356654ec2611243d11498ab39ec624883",
     "sdk/go/generate.py": "3262f4be99e860716c4cda7e4e9182ea68991ecd5643c14e0b25f8c3da8ab5fe",
-    "sdk/java-client/tools/build.py": "f909c8544fd45fdd17b63edca2a7c79221c9e50bc1f5ac6ccae802a8cc4e51e9",
+    "sdk/java-client/tools/build.py": "5f0ab1e76c5da6b7426bb26c318039a408cc4f5228801984b5c4cbdd83ec2cc6",
+    "sdk/java-client/tools/java_toolchain.py": "3cc265b8f13f24ce08da3cf079d3e66ca072515b0741f8594b43d412a3b9cd9d",
+    "tools/aot_test_inputs.py": "191d079d0d7199ea5023bfd32933e164acf5ca0d98b4d24bcdb7e386c7f0ba4d",
     "tools/build_angular_package.py": "6355b56981461912e5aeea8c9cc69424b512d5d55a6d805516af6eae523a02a0",
     "tools/build_angular_renderer.py": "7a52c2a73e1178a12066b940849fc1ddfc5504705621cb11c920552258e1a809",
     "tools/build_echo_capsule.py": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a",
@@ -2495,13 +2707,15 @@
     "tools/build_phase1_historical_control.sh": "db11d256e0ffad91e60d7ca6cc48693e73463f31ffdad5c82464656f24f99cf9",
     "tools/build_phase1_measurement_fixtures.sh": "7931eda35e8c31a35bddf111dda1be447455129895d61324530fd85469475de3",
     "tools/build_provenance.py": "03c1c677cb530fc6b762440dd3a7f762f945892909ad9034af7a115a17fbdb97",
-    "tools/check_tool_versions.py": "944ebf206c8e290ae74f86caf97cdfd935d1dcfea7efd8cffc16db35de7c54ea",
+    "tools/check_testkit_dependencies.py": "eb61e1a2502a110a9331caad2922f219a82a7106c8a6892d851edfb333e49008",
+    "tools/check_tool_versions.py": "5e4f554e98632c88406d142deb121bd65c5acb54b376479624672f8e79545df6",
     "tools/ci_coverage.py": "2a313a5846a97bdb41915627b7ce99b57c706e1eddffd4a0c2c27247c17fcd2d",
     "tools/ci_fast.py": "e776e952a8d121d02c2652e24b900dee8d4d87a1bc26decc169f19de94715cb4",
-    "tools/ci_profile.py": "98152ca13d5e666794f59476448a9cb07f29ff0249cb36f7c14ab24e45d99f56",
-    "tools/ci_result.py": "45c0e491e5c3344a004de0b0a2162c416a5a789221a836bde1407d01581ba822",
-    "tools/ci_rust_artifacts.py": "42283043608400303253a3bd1c3d9df5832e44eefaa4a41fd08f6870865d92f4",
+    "tools/ci_profile.py": "63949a0f50b4b7e3554383ade3a5f0ab51fed79a182fa301478df31501359fc8",
+    "tools/ci_result.py": "3a4a88afcbab08033ba6afa7bcccdcbc96e811784dfa4a3a5e3c60160d275063",
+    "tools/ci_rust_artifacts.py": "1d6ee06dafcd887971ad82a6cf4f2f37ef89c5b93b3949500d44dfaaa3a3a092",
     "tools/ci_suite_discovery.py": "7722751d524f606d67ac73961850a3a4619f4524fcc243d5a2231e0bb203b739",
+    "tools/docs_pages.py": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045",
     "tools/install_guest_bindgen.py": "39d851e5fea222e68164c7bfb36dc8d924d2c839b01d6b3af94acc65d5fa21ab",
     "tools/native_release_gate.py": "422d2f5ed37378b20b001dcbde435ee16e68679becf64582bf062e8722ad4a46",
     "tools/phase0_build_environment.sh": "16266aee2b730aac007d2ef6b7e5a74f8ce7391c69a0ffc1849011f30884414d",
@@ -2510,6 +2724,7 @@
     "tools/reset_validation_echo.py": "7bfdd62d41f709ccee0de64e0c2b14868d4033444ca4e2b0a959424019108d2e",
     "tools/run_angular_build_tests.py": "20c2f4c5cf389bf105c2c37c15cf976655f6352a1640a65bb9aef99e6ca1b2dc",
     "tools/run_angular_renderer_tests.py": "e8b4c5b33a9c774bb8b6678229903126050f2ce29cde0d0318095416049bb529",
+    "tools/run_angular_t1_workflow.py": "9acd623b3e78e6e02309b2acb11d1da3d976bc528afb3d80415c60367ebf11b6",
     "tools/run_capability_policy_workflow.py": "0db72276676bd30bfc1a1ed9bb01c3e0e634c25d02dd6af1f62067a070c27518",
     "tools/run_native_vm.py": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12",
     "tools/run_nats_event_tests.py": "65af7a9eb855be44b4724fe1a183bf4d4d379c37566076a1b12ae26ecd8e38c8",
@@ -2527,7 +2742,7 @@
     "tools/run_phase3_management_workflow.py": "9c21b9690acdd54e419c82e27c2caf9ff25057b978e123e8524114775e60367d",
     "tools/run_publication_workflow.py": "dfd90f3469a21b130d6f1640fc72409c61d571770f04731dd978a676c09a0ac9",
     "tools/run_s3_blob_tests.py": "44e5356b966b50f6788461b1bbb8b270b002609f232a8e240c55c23725bc2fc6",
-    "tools/run_sdk_provider_matrix.sh": "3b4f9b865f9bb1e22cf6c5857444beb34baa4f1c124e3c5baca5baf49666f39f",
+    "tools/run_sdk_provider_matrix.sh": "aba338b2f1b12e27ba14fa8b3ee0f9ee30c1f5f47b25cd7ab68de92239b3d6ae",
     "tools/run_sdk_provider_workflow.py": "99bd586c5df8f3ad03bd811fa86c10fde9034cd3c1a0de76731585b0d51ae7bf",
     "tools/run_security_profile_workflow.py": "44c0adea6394863101cb46febf251fd8f81a7f0a8d03fa780922f5be2e28c598",
     "tools/run_vault_secret_tests.py": "81ab09bf676f22fca2e1cb923353586cef8d36361980cac4091677bcbe9abcf4",
@@ -2537,14 +2752,14 @@
     "tools/select_native_vm_artifact.py": "e8047f0c7e350e1a92419d147affac14a3b50840a8268ff5330ec7abbc85af97",
     "tools/stage_runtime_wit.py": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520",
     "tools/validate_contracts.sh": "19a9c1c469cdf4ec6fd26b7d882ad979107f91e66ae50bcb72fb74d6890ea7ba",
-    "tools/validate_docs.py": "1e6cf7c4173f821c3c7b1a8d08c10654d4040d61e5fbaa388ecce60055c028b9",
+    "tools/validate_docs.py": "4531a92caad3894828444a35d565efce16a1b42d617aaab02e14598e8be1984d",
     "tools/validate_foundation.py": "5ab89e6498d48eed30bb1d66c7ba16870f2d2deac9dd7a52343d4a392bb3be8d",
     "tools/validate_package_smoke.py": "185d8800860c35016b7f3d878a215f4e5a12628320c4dabff8a7c970539c919b",
     "tools/validate_phase0_gate.py": "d5b0cf261f7aa56ac9680a35c0abb1b031285cbe749139f247c72af384f00c32",
     "tools/validate_phase1_descriptor.py": "86090f52c2264d8fa6a9f0800c8917bc4319f3540ebd8bdd2502811ac7154393",
-    "tools/validate_repository.py": "6bf5313447cc88f6795493a29e748ac107baa9f7f4bb7f17ad4575274b971de8",
-    "tools/validate_sdks.sh": "41e32ce377715f332fe0cf91f073cfc430221d64453b96a3fb97597080ca26ee",
-    "tools/validate_workflow_actions.py": "fc89ba61b4fb593ae418f1818d6eebd31ce4054a117ae3707d1371140d3a4a72",
+    "tools/validate_repository.py": "193a70e7ee64254adb4469193759f6246c0e0793c026d4f120f339768c8830a5",
+    "tools/validate_sdks.sh": "5c3d2bfcca6364aeea85de29a102cac3d712459f9db96421a664a9c28b9ee0b4",
+    "tools/validate_workflow_actions.py": "be4ece95d8ff964c3af99eded12af6784301e7297e447ed5013b5c921d8eef30",
     "tools/verify_sdk_provider_matrix.py": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
   },
   "pythonCases": {
@@ -2633,8 +2848,40 @@
       "Phase0ResourceSoakAggregateTests.test_runner_requires_fresh_external_nonoverlapping_output_and_build_paths",
       "Phase0ResourceSoakAggregateTests.test_runner_validates_fixtures_in_the_isolated_soak_target_root"
     ],
+    "tools/tests/test_angular_backend_bridge.py": [
+      "AngularBackendBridgeTests.test_production_bridge_permits_one_prepare_and_render_or_one_pure_render"
+    ],
     "tools/tests/test_angular_build_runner.py": [
       "AngularHarnessTests.test_source_ownership_separates_same_named_integration_targets_and_requires_successful_build"
+    ],
+    "tools/tests/test_angular_t1_workflow.py": [
+      "AngularT1WorkflowTests.test_asset_checks_pin_publication_bytes_and_never_use_rendered_html",
+      "AngularT1WorkflowTests.test_configuration_keeps_external_profile_protected_key_and_independent_compile_budget",
+      "AngularT1WorkflowTests.test_failure_diagnostic_adds_only_a_fixed_operation_name",
+      "AngularT1WorkflowTests.test_fixture_requires_actual_observation_and_independent_package_identity",
+      "AngularT1WorkflowTests.test_inventory_hashes_large_artifacts_incrementally_with_finite_total",
+      "AngularT1WorkflowTests.test_prepare_is_one_explicit_call_and_never_claims_execution_authority",
+      "AngularT1WorkflowTests.test_public_web_invocation_has_no_guest_supplied_actor_or_tenant",
+      "AngularT1WorkflowTests.test_publication_busy_retries_only_identical_uncommitted_operation",
+      "AngularT1WorkflowTests.test_publication_refusal_does_not_replay_denial_or_committed_uncertainty",
+      "AngularT1WorkflowTests.test_render_checks_the_actual_cli_publication_pin",
+      "AngularT1WorkflowTests.test_rendered_script_must_use_the_exact_selected_publication",
+      "AngularT1WorkflowTests.test_selected_deployment_never_fabricates_a_capsule_or_capability_grant",
+      "AngularT1WorkflowTests.test_trigger_deletion_checks_one_explicit_mutation_and_its_retained_generation"
+    ],
+    "tools/tests/test_aot_test_inputs.py": [
+      "PreparedInputsTests.test_changed_inventory_and_runtime_injection_fail_validation",
+      "PreparedInputsTests.test_duplicate_json_key_and_oversized_manifest_are_rejected",
+      "PreparedInputsTests.test_exact_copy_keeps_originals_and_records_separate_costs",
+      "PreparedInputsTests.test_execution_only_forbids_preparation_before_any_command",
+      "PreparedInputsTests.test_existing_output_is_never_overwritten",
+      "PreparedInputsTests.test_incomplete_failed_duplicate_foreign_and_wrong_profile_inventories",
+      "PreparedInputsTests.test_missing_measurement_feature_is_not_the_all_features_profile",
+      "PreparedInputsTests.test_missing_modified_or_nonexecutable_copy_is_rejected",
+      "PreparedInputsTests.test_stale_original_and_checkout_are_rejected",
+      "PreparedInputsTests.test_symlink_copy_is_rejected",
+      "PreparedInputsTests.test_validation_and_environment_do_not_build_strip_or_query_rustc",
+      "PreparedInputsTests.test_wrong_profile_and_missing_role_are_rejected"
     ],
     "tools/tests/test_artifact_identity_compression.py": [
       "ProfileCompressionTests.test_compressed_byte_bomb_and_truncated_trailer_are_rejected",
@@ -2731,6 +2978,7 @@
       "ScratchTests.test_temporary_path_must_be_a_direct_regular_child"
     ],
     "tools/tests/test_build_angular_package.py": [
+      "AngularBuildInputTests.test_backend_authority_is_an_explicit_closed_optional_profile",
       "AngularBuildInputTests.test_capture_excludes_unlisted_files_and_uses_fixed_destination_bytes",
       "AngularBuildInputTests.test_capture_rejects_a_selected_link_before_compilers_run",
       "AngularBuildInputTests.test_closed_build_schema_accepts_the_real_application_and_rejects_hooks",
@@ -2823,12 +3071,26 @@
       "CapabilityPolicySchemaTests.test_published_examples_and_closed_required_fields"
     ],
     "tools/tests/test_check_tool_versions.py": [
+      "JavaQualificationTests.test_default_validation_keeps_all_sdk_checks",
+      "JavaQualificationTests.test_explicit_home_is_used_for_both_tools",
+      "JavaQualificationTests.test_qualifies_exact_temurin_with_and_without_lts_suffix",
+      "JavaQualificationTests.test_rejects_mismatched_java_even_when_compiler_is_exact",
+      "JavaQualificationTests.test_rejects_wrong_compiler_version_build_vendor_and_malformed_output",
       "VersionParsingTests.test_exact_version_mismatch_fails",
       "VersionParsingTests.test_extracts_versions",
       "VersionParsingTests.test_parses_temurin_runtime_version",
+      "VersionProbeTests.test_java_probe_keeps_finite_timeout",
       "VersionProbeTests.test_main_returns_one_for_probe_timeout",
       "VersionProbeTests.test_run_passes_finite_timeout",
       "VersionProbeTests.test_run_reports_timeout_without_captured_output"
+    ],
+    "tools/tests/test_ci_browser_artifacts.py": [
+      "BrowserArtifactTests.test_attempted_producer_retains_success_and_failure_diagnostics",
+      "BrowserArtifactTests.test_guard_references_the_unique_preceding_producer",
+      "BrowserArtifactTests.test_missing_evidence_is_still_fatal_after_execution",
+      "BrowserArtifactTests.test_regressions_run_in_the_existing_lightweight_job",
+      "BrowserArtifactTests.test_skipped_or_unreached_producer_never_uploads",
+      "BrowserArtifactTests.test_unselected_renderer_never_uploads"
     ],
     "tools/tests/test_ci_coverage.py": [
       "CoverageTests.test_changed_nested_owner_requires_explicit_inventory_review",
@@ -2849,6 +3111,7 @@
       "ClassificationTests.test_only_known_documentation_is_allowlisted",
       "ClassificationTests.test_output_uses_only_fixed_profile_reason_and_count",
       "ClassificationTests.test_renderer_proof_follows_its_inputs_and_defaults_to_running",
+      "ClassificationTests.test_website_sources_use_only_the_site_and_documentation_jobs",
       "GitHistoryTests.test_deleted_documentation_and_frozen_input_are_distinct",
       "GitHistoryTests.test_depth_one_checkout_preserves_full_without_fetching",
       "GitHistoryTests.test_executable_markdown_mode_requires_full",
@@ -2857,7 +3120,8 @@
       "GitHistoryTests.test_pr_uses_merge_base_and_excludes_unrelated_base_changes",
       "GitHistoryTests.test_push_covers_every_commit_not_only_head_parent",
       "GitHistoryTests.test_real_diff_collects_more_than_three_hundred_files",
-      "GitHistoryTests.test_rename_from_code_to_documentation_includes_deleted_source"
+      "GitHistoryTests.test_rename_from_code_to_documentation_includes_deleted_source",
+      "GitHistoryTests.test_site_renames_deletions_and_modes_keep_the_complete_inventory"
     ],
     "tools/tests/test_ci_result.py": [
       "ResultTests.test_all_profiles_require_their_exact_jobs",
@@ -2867,6 +3131,7 @@
       "ResultTests.test_unexpected_job_is_not_silently_dropped"
     ],
     "tools/tests/test_ci_rust_artifacts.py": [
+      "InventoryTests.test_angular_integration_fixture_requires_its_exact_cargo_owner",
       "InventoryTests.test_duplicate_or_foreign_owner_is_never_an_accepted_harness",
       "InventoryTests.test_dynamic_search_paths_only_retain_bounded_target_owned_paths",
       "InventoryTests.test_exact_current_artifact_selected_without_globbing_old_binaries",
@@ -2902,11 +3167,59 @@
       "InventoryTests.test_unavailable_or_ambiguous_graph_preserves_full",
       "InventoryTests.test_workspace_alias_inherited_optional_dev_build_and_platform_edges"
     ],
+    "tools/tests/test_core_guides.py": [
+      "CoreGuides.test_learning_sequence_links_are_present_and_bounded",
+      "CoreGuides.test_published_receipt_reader_accepts_only_complete_success",
+      "CoreGuides.test_published_shell_blocks_parse_without_executing_commands",
+      "CoreGuides.test_real_guest_region_is_referenced_without_copying_implementation",
+      "CoreGuides.test_six_existing_outcomes_reference_guides_and_validation_owner"
+    ],
+    "tools/tests/test_deterministic_tests.py": [
+      "DeterministicMeasurementTests.test_compiler_artifact_selection_rejects_empty_and_duplicate_binaries",
+      "DeterministicMeasurementTests.test_discovery_mismatch_fails_before_any_execution_measurement",
+      "DeterministicMeasurementTests.test_exact_nonempty_count_is_required",
+      "DeterministicMeasurementTests.test_failed_process_is_not_retried_or_accepted",
+      "DeterministicMeasurementTests.test_process_deadline_is_not_retried"
+    ],
+    "tools/tests/test_docs_pages.py": [
+      "DocsPagesPolicyTests.test_archive_digest_is_verified_before_parsing",
+      "DocsPagesPolicyTests.test_artifact_origin_and_immutable_selection",
+      "DocsPagesPolicyTests.test_exact_successful_push_run",
+      "DocsPagesPolicyTests.test_guard_rechecks_freshness_after_environment_approval",
+      "DocsPagesPolicyTests.test_incomplete_dirty_wrong_source_and_synthetic_site_are_refused",
+      "DocsPagesPolicyTests.test_only_exact_clean_complete_site_is_staged_as_data",
+      "DocsPagesPolicyTests.test_prior_publication_requires_successful_default_branch_dispatch",
+      "DocsPagesPolicyTests.test_rechecks_every_staged_byte_before_deploy",
+      "DocsPagesPolicyTests.test_rejects_case_collisions_and_finite_size_overflow",
+      "DocsPagesPolicyTests.test_rejects_fork_pr_wrong_branch_workflow_attempt_or_result",
+      "DocsPagesPolicyTests.test_rejects_symlink_and_special_file_modes",
+      "DocsPagesPolicyTests.test_rejects_traversal_absolute_ambiguous_and_control_paths",
+      "DocsPagesPolicyTests.test_rollback_binds_prior_published_receipt_to_exact_artifact",
+      "DocsPagesPolicyTests.test_unexpected_output_and_candidate_publisher_record_are_refused"
+    ],
     "tools/tests/test_echo_cli_package.py": [
       "EchoCliPackageTests.test_generated_cli_inputs_use_actual_digest_and_positional_json",
       "EchoCliPackageTests.test_maintained_descriptor_hashes_and_shape_match_parsed_wit",
       "EchoCliPackageTests.test_new_error_case_and_stale_metadata_digest_are_rejected",
       "EchoCliPackageTests.test_signature_drift_is_rejected_before_cli_package_is_written"
+    ],
+    "tools/tests/test_first_node_guide.py": [
+      "ArtifactPaths.test_linked_artifacts_are_rejected_before_run",
+      "ArtifactPaths.test_only_absolute_regular_files_are_accepted",
+      "Inputs.test_changed_component_is_not_a_placeholder_publication",
+      "Inputs.test_changed_deployment_digest_or_tenant_is_rejected",
+      "Inputs.test_config_explicit_profile_and_independent_random_credentials",
+      "Inputs.test_exact_five_public_inputs_not_extra_credential_files",
+      "Inputs.test_existing_outputs_never_overwritten",
+      "Inputs.test_missing_empty_oversized_and_nonregular_inputs_rejected",
+      "Inputs.test_symlinked_root_and_file_rejected",
+      "Payloads.test_exact_source_required",
+      "Payloads.test_exact_success",
+      "Payloads.test_failed_run_redacts_exception_and_never_emits_pass",
+      "Payloads.test_invalid_payload_formats_sizes_and_values",
+      "Payloads.test_uncertain_and_wrong_activation_never_pass",
+      "Sequencing.test_complete_synthetic_sequence_reuses_owners_and_does_not_republish",
+      "Sequencing.test_failure_is_not_retried_or_reported_as_success"
     ],
     "tools/tests/test_guest_build_profiles.py": [
       "GeneratorArchive.test_links_missing_duplicate_and_oversized_binary_fail",
@@ -2945,6 +3258,22 @@
       "IllustrationPaletteTests.test_paths_duplicates_and_limits_fail_closed",
       "IllustrationPaletteTests.test_unknown_colors_missing_inventory_and_historical_drift_fail"
     ],
+    "tools/tests/test_java_provider_launch.py": [
+      "JavaProviderLaunchTests.test_default_sdk_tests_keep_jvm_warnings_visible",
+      "JavaProviderLaunchTests.test_flags_precede_jar_and_paths_remain_single_arguments",
+      "JavaProviderLaunchTests.test_only_java_participant_has_the_compatibility_flags"
+    ],
+    "tools/tests/test_java_toolchain.py": [
+      "BuildWiringTests.test_baseline_is_exact_and_ci_selectors_match_the_release",
+      "BuildWiringTests.test_compiler_receives_release25_and_result_is_verified",
+      "BuildWiringTests.test_gradle_and_shell_targets_cannot_drift_to_java21",
+      "BuildWiringTests.test_gradle_test_requires_both_main_suites_without_ignoring_failures",
+      "BuildWiringTests.test_selected_java_home_never_falls_back_to_path",
+      "BuildWiringTests.test_wrong_jdk_fails_before_dependency_download_or_generation",
+      "BytecodeTests.test_accepts_java25_and_rejects_old_new_preview_truncated_and_bad_magic",
+      "BytecodeTests.test_directory_requires_classes_and_checks_every_file",
+      "BytecodeTests.test_jar_requires_classes_and_rejects_mixed_target_or_preview"
+    ],
     "tools/tests/test_manifest_codec_contract.py": [
       "ManifestCodecContractTests.test_buffered_http_profile_is_closed_and_requires_exact_target_pins",
       "ManifestCodecContractTests.test_every_manifest_example_remains_schema_valid",
@@ -2956,11 +3285,26 @@
       "ManifestIntegerDialectTests.test_shared_cases_match_full_draft_2020_12_validation",
       "ManifestIntegerDialectTests.test_trigger_schema_accepts_exact_arbitrary_precision_numbers"
     ],
+    "tools/tests/test_metadata_working_set.py": [
+      "ObservationTests.test_duplicate_json_keys_are_rejected",
+      "ObservationTests.test_exact_complete_observations",
+      "ObservationTests.test_missing_duplicate_reordered_and_small_substitute_fail",
+      "ObservationTests.test_missing_scenario_or_incomplete_publication_fails",
+      "ObservationTests.test_zero_missing_negative_or_malformed_memory_is_never_a_measurement",
+      "SuiteTests.test_inherited_child_modes_faults_and_unsupported_host_never_run",
+      "SuiteTests.test_inventory_declares_exact_linux_physical_owner",
+      "SuiteTests.test_one_ignored_execution_preserves_observations_and_full_deadline",
+      "SuiteTests.test_real_process_output_cap_and_deadline_still_fail_closed",
+      "SuiteTests.test_success_without_observations_or_missing_ignored_test_is_rejected"
+    ],
     "tools/tests/test_native_loader_boundary.py": [
+      "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators",
       "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function",
       "NativeLoaderBoundaryTests.test_engine_update_requires_review",
       "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof",
       "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe",
+      "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled",
+      "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact",
       "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints",
       "NativeLoaderBoundaryTests.test_reviewed_boundary_passes",
       "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail"
@@ -4432,7 +4776,8 @@
       "OperatorWorkflowTests.test_node_fixture_enables_shared_owners_and_separate_root",
       "OperatorWorkflowTests.test_profile_rejects_unowned_endpoint_forms_before_writes",
       "OperatorWorkflowTests.test_profile_uses_separate_explicit_fixture_credentials",
-      "OperatorWorkflowTests.test_route_identity_preserves_versions_and_ignores_diagnostic_clock"
+      "OperatorWorkflowTests.test_route_identity_preserves_versions_and_ignores_diagnostic_clock",
+      "StartupWatchdogTests.test_invalid_startup_budget_never_launches_and_valid_wait_is_globally_capped"
     ],
     "tools/tests/test_phase2_resource_binaries.py": [
       "ResourceBinaryTests.test_existing_output_is_not_overwritten",
@@ -4503,6 +4848,13 @@
       "CanaryPolicySchema.test_all_declarations_required_and_closed",
       "CanaryPolicySchema.test_boundaries_and_fixed_latency_resolution",
       "CanaryPolicySchema.test_operator_declaration"
+    ],
+    "tools/tests/test_run_aot_tests.py": [
+      "ExecutionTests.test_all_three_exact_selections_and_case_observations",
+      "ExecutionTests.test_list_rejects_omissions_duplicates_zero_or_unknown_cases",
+      "ExecutionTests.test_partial_ignored_duplicate_and_not_run_cannot_satisfy_selection",
+      "ExecutionTests.test_real_path_sentinels_fail_and_record_every_forbidden_tool",
+      "ExecutionTests.test_unsupported_platform_never_creates_success_report"
     ],
     "tools/tests/test_run_phase0_hot_path_profiles.py": [
       "HotPathProfileRunnerTests.test_canonicalizes_a_branch_ref_before_validating_it",
@@ -4575,6 +4927,7 @@
     "tools/tests/test_security_baseline.py": [
       "SecurityFixtureTests.test_archive_extraction_never_uses_supplied_filesystem_paths",
       "SecurityFixtureTests.test_binary_marker_cannot_hide_a_documentation_secret",
+      "SecurityFixtureTests.test_bundled_dependencies_require_reviewed_integrity_pinned_owner",
       "SecurityFixtureTests.test_child_environment_and_output_bound_redact_failures",
       "SecurityFixtureTests.test_current_manifest_inventory_covers_guest_client_and_build_locks",
       "SecurityFixtureTests.test_deep_tracked_inputs_are_read_without_relaxing_path_validation",
@@ -4649,13 +5002,56 @@
       "SupplyChainSchemaTests.test_required_inputs_and_closed_authority_boundary",
       "SupplyChainSchemaTests.test_upload_evidence_and_binary_projection_are_closed_and_bounded"
     ],
+    "tools/tests/test_svg_references.py": [
+      "CssTokenTests.test_all_css_escape_spellings_are_explicitly_rejected",
+      "CssTokenTests.test_comments_and_non_url_strings_are_inert",
+      "CssTokenTests.test_comments_inside_unquoted_urls_are_not_stripped",
+      "CssTokenTests.test_comments_never_join_identifier_tokens",
+      "CssTokenTests.test_deep_input_uses_no_recursive_parser",
+      "CssTokenTests.test_import_is_rejected_with_any_literal_target_or_case",
+      "CssTokenTests.test_indirect_string_resource_functions_are_not_accepted",
+      "CssTokenTests.test_malformed_tokens_fail_without_browser_style_recovery",
+      "CssTokenTests.test_multiple_and_nested_functions_preserve_source_offsets",
+      "CssTokenTests.test_quoted_unquoted_case_and_ascii_whitespace",
+      "SvgReferenceTests.test_all_resource_locations_reject_external_references",
+      "SvgReferenceTests.test_animation_values_retain_the_external_url_tripwire",
+      "SvgReferenceTests.test_comments_cdata_and_namespaced_style_have_the_same_policy",
+      "SvgReferenceTests.test_current_documentation_assets_pass_without_byte_changes",
+      "SvgReferenceTests.test_docs_cli_rejects_then_accepts_a_repaired_resource",
+      "SvgReferenceTests.test_each_css_source_fails_closed_and_other_sources_continue",
+      "SvgReferenceTests.test_each_supported_css_attribute_uses_the_shared_policy",
+      "SvgReferenceTests.test_empty_missing_encoded_and_whitespace_fragments_are_rejected",
+      "SvgReferenceTests.test_every_missing_reference_is_reported_in_order",
+      "SvgReferenceTests.test_existing_safety_and_accessibility_failures_are_retained",
+      "SvgReferenceTests.test_five_original_reproductions",
+      "SvgReferenceTests.test_ids_are_case_sensitive_and_scoped_per_file",
+      "SvgReferenceTests.test_multiple_forward_resources_and_namespaced_links_pass",
+      "SvgReferenceTests.test_non_css_metadata_is_not_interpreted_as_css",
+      "SvgReferenceTests.test_real_asset_missing_definitions_fail_on_both_paths",
+      "SvgReferenceTests.test_resource_validation_never_fetches_or_executes_a_reference",
+      "SvgReferenceTests.test_xml_base_cannot_redirect_fragment_resolution",
+      "SvgReferenceTests.test_xml_character_references_are_checked_after_xml_decoding"
+    ],
+    "tools/tests/test_testkit_dependencies.py": [
+      "TestkitDependencyTests.test_alias_cannot_hide_a_path_dependency_cycle",
+      "TestkitDependencyTests.test_empty_workspace_is_not_success",
+      "TestkitDependencyTests.test_missing_test_support_feature_fails",
+      "TestkitDependencyTests.test_neutral_core_direction_is_acyclic",
+      "TestkitDependencyTests.test_original_feature_hidden_admission_and_scheduler_cycles_fail",
+      "TestkitDependencyTests.test_repository_itself_obeys_unconditional_graph_contract",
+      "TestkitDependencyTests.test_selected_checks_include_test_dependencies",
+      "TestkitDependencyTests.test_selected_graph_rejects_empty_or_heavy_results",
+      "TestkitDependencyTests.test_target_specific_optional_and_build_cycles_remain_errors"
+    ],
     "tools/tests/test_validate_docs.py": [
       "DocumentationValidationTests.test_code_examples_are_not_links_or_headings",
       "DocumentationValidationTests.test_dangling_symlink_cannot_satisfy_tracked_link",
       "DocumentationValidationTests.test_duplicate_slug_collision_matches_github",
       "DocumentationValidationTests.test_empty_markdown_is_rejected",
+      "DocumentationValidationTests.test_historical_links_defer_only_for_exact_registered_snapshot_bytes",
       "DocumentationValidationTests.test_link_with_balanced_parentheses_and_title",
       "DocumentationValidationTests.test_linked_image_checks_outer_destination_and_reference_once",
+      "DocumentationValidationTests.test_mdx_links_and_fences_are_in_the_exact_tracked_inventory",
       "DocumentationValidationTests.test_missing_case_wrong_and_untracked_destinations_fail",
       "DocumentationValidationTests.test_missing_markdown_and_svg_anchors_fail",
       "DocumentationValidationTests.test_only_tracked_documents_are_read_and_evidence_is_not_parsed",
@@ -4759,6 +5155,7 @@
       "WorkflowActionPolicyTests.test_rejects_oversized_workflow",
       "WorkflowActionPolicyTests.test_rejects_symlinked_workflow",
       "WorkflowActionPolicyTests.test_repository_workflows_satisfy_policy",
+      "WorkflowActionPolicyTests.test_same_commit_repository_syntax_keeps_dependency_and_path_checks",
       "WorkflowActionPolicyTests.test_script_text_is_not_an_executable_action_reference",
       "WorkflowActionPolicyTests.test_yaml_duplicates_nesting_and_nonscalar_uses_fail_closed",
       "WorkflowActionPolicyTests.test_yaml_forms_cannot_hide_mutable_executable_references"
@@ -4782,6 +5179,12 @@
       "WebAdmissionSchemaTests.test_private_asset_locations_unknown_profiles_and_unbounded_arrays_are_rejected",
       "WebAdmissionSchemaTests.test_web_build_type_does_not_claim_compiler_or_hermetic_observation"
     ],
+    "tools/tests/test_wiki_migration.py": [
+      "WikiMigrationTests.test_actual_complete_inventory_and_links",
+      "WikiMigrationTests.test_encoded_alias_and_original_fragment",
+      "WikiMigrationTests.test_missing_extra_changed_and_case_colliding_entries_fail",
+      "WikiMigrationTests.test_traversal_encoded_separators_queries_and_unknown_names"
+    ],
     "tools/tests/test_wit_contracts.py": [
       "WitContractTests.test_duplicate_detector_catches_type_function_collision",
       "WitContractTests.test_example_package_is_staged_with_platform_dependencies",
@@ -4797,7 +5200,10 @@
     "tools/tests/test_aggregate_phase0_calibration.py",
     "tools/tests/test_aggregate_phase0_hot_path_profiles.py",
     "tools/tests/test_aggregate_phase0_resource_soak.py",
+    "tools/tests/test_angular_backend_bridge.py",
     "tools/tests/test_angular_build_runner.py",
+    "tools/tests/test_angular_t1_workflow.py",
+    "tools/tests/test_aot_test_inputs.py",
     "tools/tests/test_artifact_identity_compression.py",
     "tools/tests/test_artifact_identity_compression_guard.py",
     "tools/tests/test_artifact_identity_evidence.py",
@@ -4815,20 +5221,28 @@
     "tools/tests/test_build_snapshot.py",
     "tools/tests/test_capability_policy_schema.py",
     "tools/tests/test_check_tool_versions.py",
+    "tools/tests/test_ci_browser_artifacts.py",
     "tools/tests/test_ci_coverage.py",
     "tools/tests/test_ci_profile.py",
     "tools/tests/test_ci_result.py",
     "tools/tests/test_ci_rust_artifacts.py",
     "tools/tests/test_ci_suite_discovery.py",
     "tools/tests/test_ci_suite_inventory.py",
+    "tools/tests/test_core_guides.py",
+    "tools/tests/test_deterministic_tests.py",
+    "tools/tests/test_docs_pages.py",
     "tools/tests/test_echo_cli_package.py",
+    "tools/tests/test_first_node_guide.py",
     "tools/tests/test_guest_build_profiles.py",
     "tools/tests/test_harbor_registry_runner.py",
     "tools/tests/test_helper_directory_watch.py",
     "tools/tests/test_host_abi_profile.py",
     "tools/tests/test_illustration_palette.py",
+    "tools/tests/test_java_provider_launch.py",
+    "tools/tests/test_java_toolchain.py",
     "tools/tests/test_manifest_codec_contract.py",
     "tools/tests/test_manifest_integer_dialect.py",
+    "tools/tests/test_metadata_working_set.py",
     "tools/tests/test_native_loader_boundary.py",
     "tools/tests/test_native_release_gate.py",
     "tools/tests/test_native_runtime.py",
@@ -4973,6 +5387,7 @@
     "tools/tests/test_release_lifecycle_schemas.py",
     "tools/tests/test_reset_validation_echo.py",
     "tools/tests/test_rollout_canary_policy_schema.py",
+    "tools/tests/test_run_aot_tests.py",
     "tools/tests/test_run_phase0_hot_path_profiles.py",
     "tools/tests/test_s3_blob_runner.py",
     "tools/tests/test_sbom_policy_schema.py",
@@ -4989,6 +5404,8 @@
     "tools/tests/test_security_sdk_graphs.py",
     "tools/tests/test_security_settings.py",
     "tools/tests/test_supply_chain_schemas.py",
+    "tools/tests/test_svg_references.py",
+    "tools/tests/test_testkit_dependencies.py",
     "tools/tests/test_validate_docs.py",
     "tools/tests/test_validate_issue_forms.py",
     "tools/tests/test_validate_phase0_gate.py",
@@ -4998,15 +5415,18 @@
     "tools/tests/test_validator_invocation.py",
     "tools/tests/test_vault_secret_runner.py",
     "tools/tests/test_web_admission_schemas.py",
+    "tools/tests/test_wiki_migration.py",
     "tools/tests/test_wit_contracts.py",
     "tools/tests/test_zig_cache_boundary.py"
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "e12c19762c9024f034e4197a3782d46ec62da75ef2f63a5e41a982f96162152c",
+    ".github/workflows/ci.yml": "92d1b7f97885f8f7feb6776b04662f20d13f96c790450e62a56b0d4943e11d77",
+    ".github/workflows/docs-pages.yml": "87ca4f1d44d6de1e14960abb0f1d7a883d40ae52ffcaba8d4cfdcf0a888c7a3e",
+    ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0e84b07e365798040f2ff4c360d8fa4b959dfc46fdab8867662381508f1ef15d",
     ".github/workflows/native-runtime.yml": "9f3bb2c7247c619d43b783122cef85e3d8e1700cd6633c021186aff9f049c02a",
-    ".github/workflows/phase0-full-validation.yml": "7234637d3b8caee6d6c2730f506d3653f34e6da3380c96aba204a63d1c329742",
+    ".github/workflows/phase0-full-validation.yml": "f81f34042bd746b93dd2443a15a4cbbb22b8054a0b8212c5b9064e149aa75825",
     ".github/workflows/phase0-regression.yml": "615f39a20d24e9b5ba6479edb8bbb8cd803da2d5115bc1cf2a231c2a2dc7be84",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
