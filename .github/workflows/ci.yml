@@ -55,7 +55,7 @@ jobs:
         run: python -m pip install --requirement tools/requirements.lock
       - name: Validate documentation and profile selection
         run: |
-          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_ci_result tools.tests.test_validate_docs
           python3 tools/validate_docs.py
 
   rust:
@@ -622,30 +622,19 @@ jobs:
   result:
     name: CI result
     if: always()
-    needs: [profile, docs, rust, oci-registry, catalog, msrv, contracts, sdks]
+    needs: [profile, docs, website, rust, oci-registry, catalog, msrv, contracts, sdks]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Require every selected validation job
         env:
           CI_JOB_RESULTS: ${{ toJSON(needs) }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import sys
-          results = json.loads(os.environ['CI_JOB_RESULTS'])
-          profile = results['profile']['outputs'].get('profile')
-          full = {'rust', 'oci-registry', 'catalog', 'msrv', 'contracts', 'sdks'}
-          required = {'profile', 'docs'} | (full if profile == 'full' else set())
-          failures = [name for name in required if results[name]['result'] != 'success']
-          if profile not in {'docs', 'full'}:
-              failures.append('unknown CI profile')
-          if profile == 'docs':
-              failures.extend(name for name in full if results[name]['result'] != 'skipped')
-          print('Selected profile:', profile)
-          print('Job results:', {name: value['result'] for name, value in results.items()})
-          if failures:
-              print('CI did not satisfy its selected profile:', ', '.join(failures), file=sys.stderr)
-              sys.exit(1)
-          PY
+        run: python3 tools/ci_result.py
+
+  website:
+    name: Documentation website
+    needs: profile
+    uses: $/.github/workflows/docs-site.yml

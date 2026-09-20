@@ -123,12 +123,26 @@ class OwnedProcess:
         try:
             current = snapshot(self.child.pid)
         except (PermissionError, FileNotFoundError, ProcessLookupError):
-            # Unprivileged Linux can deny /proc/<zombie>/io. A periodic probe
-            # may retain its previous observation only after confirming exit.
-            if allow_exited and self.exited():
-                return self.after
+            # Linux may tear down /proc access before waitid reports exit.
+            # Only periodic probes may retain previous evidence, and only
+            # after a bounded confirmation using the still-unreaped leader.
+            # Required live observations and persistent access failures remain
+            # fatal; neither path invents a zero or successful resource sample.
+            if allow_exited:
+                deadline = min(self.deadline_ns, time.monotonic_ns() + 100_000_000)
+                while True:
+                    if self.exited():
+                        return self.after
+                    remaining = deadline - time.monotonic_ns()
+                    if remaining <= 0:
+                        break
+                    time.sleep(min(remaining / 1_000_000_000, 0.001))
             raise
-        if not allow_exited and self.exited():
+        if self.exited():
+            # Even a successful proc read may span exit. Do not publish a
+            # torn post-exit sample or use it to advance the observed peak.
+            if allow_exited:
+                return self.after
             raise RuntimeError("child exited during required live resource observation")
         if current["start_time_ticks"] != self.receipt["start_time_ticks"]:
             raise ValueError("owned process identity changed")

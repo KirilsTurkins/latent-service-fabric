@@ -25,7 +25,7 @@ owns their full inventory, migration notices and retirement of the second writer
 
 ## Toolchain and installation
 
-Use Node **24.19.0** and npm **12.0.1**. These website pins do not change the SDK or
+Use Node **24.19.0** and npm **11.19.1**. These website pins do not change the SDK or
 Angular qualification profiles. [The private package](../../website/package.json),
 [lock](../../website/package-lock.json) and
 [reviewed identities](../../website/content/toolchain.json) are isolated from
