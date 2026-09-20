@@ -15,7 +15,12 @@ const results = [];
 async function selectVersion(page, label) {
   const dropdown = page.locator('.navbar__item.dropdown').filter({has: page.locator('[aria-haspopup="true"]')});
   await dropdown.getByRole('button').click();
-  await dropdown.getByRole('link', {name: label, exact: true}).click();
+  const link = dropdown.getByRole('link', {name: label, exact: true});
+  const target = new URL(await link.getAttribute('href'), page.url());
+  await link.click();
+  await page.waitForURL(url => url.pathname === target.pathname);
+  const version = label === 'Development' ? 'development' : label.replace(/ \(alpha\)$/, '');
+  await page.locator(`[data-doc-version="${version}"]`).waitFor();
   await page.waitForLoadState('networkidle');
 }
 try {
