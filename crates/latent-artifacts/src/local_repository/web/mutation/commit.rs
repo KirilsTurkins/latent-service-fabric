@@ -56,6 +56,10 @@ impl DirectoryArtifactRepository {
         // current-grant check and HEAD commit below.
         let staged = (|| {
             if positive {
+                // Preparation is synchronous control work and can outlast the
+                // timer's lease on a single control worker. Renew outside the
+                // fence, then independently recheck this exact grant.
+                self.web_authority()?.authority.renew_control_lease()?;
                 grant.as_ref().ok_or_else(denied)?.check_current()?;
             }
             // A failed write never restores in-memory authority. All future
@@ -98,6 +102,9 @@ impl DirectoryArtifactRepository {
         };
         let committed = staged.and_then(|()| {
             if positive {
+                // Staging can likewise span a lease. Renewal cannot revive a
+                // revoked/retired grant or a durably uncertain authority.
+                self.web_authority()?.authority.renew_control_lease()?;
                 grant
                     .as_ref()
                     .ok_or_else(denied)?
