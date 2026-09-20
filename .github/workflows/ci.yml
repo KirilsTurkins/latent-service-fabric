@@ -60,7 +60,7 @@ jobs:
         run: python -m pip install --requirement tools/requirements.lock
       - name: Validate documentation and profile selection
         run: |
-          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_browser_artifacts
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff tools.tests.test_ci_browser_artifacts
           python3 tools/validate_docs.py
 
   rust:
@@ -134,6 +134,13 @@ jobs:
         run: tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
       - name: Build workspace binaries and test harnesses
         run: python3 tools/ci_cargo.py run prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
+      - name: Prepare authenticated AOT test inputs
+        run: |
+          python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests
+          python3 tools/aot_test_inputs.py prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --output "$RUNNER_TEMP/lsf-aot-test-inputs"
+          # Cargo supplies each harness's runtime environment itself. Export only
+          # this recipe's input selectors, not CARGO_MANIFEST_DIR/library paths.
+          python3 tools/aot_test_inputs.py environment --manifest "$RUNNER_TEMP/lsf-aot-test-inputs/manifest.json" | grep '^LSF_AOT_' >> "$GITHUB_ENV"
       - name: Run tests
         run: python3 tools/ci_cargo.py run test
 
