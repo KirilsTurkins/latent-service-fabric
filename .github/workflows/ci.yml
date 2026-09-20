@@ -139,6 +139,25 @@ jobs:
           cargo test -p latent-admission -p latent-scheduler --doc --locked
           cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests
 
+      - name: Check metadata working-set suite selection and observation validation
+        run: python3 -m unittest tools.tests.test_metadata_working_set
+      - name: Qualify catalog metadata compilation working set
+        id: metadata-working-set
+        timeout-minutes: 16
+        # Required on every full profile. No narrowed selection until #427 is qualified.
+        # The ordinary test invocation skips the ignored physical parent.
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite metadata-working-set 2>&1 | tee "$RUNNER_TEMP/metadata-working-set.log"
+      - name: Retain metadata working-set inputs and publication/apply/reopen costs
+        if: always() && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: metadata-working-set-observations
+          path: ${{ runner.temp }}/metadata-working-set.log
+          if-no-files-found: error
+
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5
