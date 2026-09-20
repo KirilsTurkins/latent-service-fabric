@@ -91,7 +91,7 @@ def check_stamp(record: dict, *, executable: bool = True) -> Path:
 
 def command_output(repo: Path, command: list[str]) -> str:
     status, output = artifacts.run_owned(command, cwd=repo, env=dict(os.environ),
-                                        timeout=30, maximum=artifacts.MAX_INVENTORY_BYTES)
+                                        timeout=30, maximum=65536)
     if status:
         raise InputError("preparation-command-failed")
     return output.decode("utf-8").strip()
