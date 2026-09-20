@@ -14,7 +14,7 @@ from dataclasses import dataclass, replace
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import platform
 import re
 import signal
@@ -99,8 +99,8 @@ def read_suites(path: Path) -> dict[str, Suite]:
                     or len(value[field]) > 1024 or any(ord(c) < 32 for c in value[field])):
                 raise ArtifactError("invalid-suite-field")
         for field in ("manifest", "source"):
-            path_value = Path(value[field])
-            if path_value.is_absolute() or ".." in path_value.parts or "\\" in value[field]:
+            path_value = PurePosixPath(value[field])
+            if path_value.is_absolute() or PureWindowsPath(value[field]).drive or ".." in path_value.parts or "\\" in value[field]:
                 raise ArtifactError("invalid-suite-owner")
         for field in ("exact", "ignored", "nocapture"):
             if type(value[field]) is not bool:

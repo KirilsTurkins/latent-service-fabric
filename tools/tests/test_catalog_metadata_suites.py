@@ -10,6 +10,8 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -331,10 +333,13 @@ class RepositoryCoverageTests(unittest.TestCase):
                 del needs["catalog"]
             else:
                 needs["catalog"]["result"] = outcome
-            with self.subTest(outcome=outcome), patch.dict(os.environ, {"CI_JOB_RESULTS": json.dumps(needs)}), \
-                    redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()), \
-                    self.assertRaises((SystemExit, KeyError)):
-                exec(compile(script, "CI result", "exec"), {})
+            with self.subTest(outcome=outcome):
+                completed = subprocess.run(
+                    [sys.executable, "-c", script],
+                    env={**os.environ, "CI_JOB_RESULTS": json.dumps(needs)},
+                    capture_output=True, text=True, timeout=10, check=False,
+                )
+                self.assertNotEqual(completed.returncode, 0)
 
 
 if __name__ == "__main__":
