@@ -6,6 +6,7 @@ mod deployment;
 mod release;
 mod rollout;
 mod trigger;
+mod web;
 use super::{invalid_response, proto};
 use crate::error::Failure;
 use prost::Message;

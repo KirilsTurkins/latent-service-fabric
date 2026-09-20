@@ -33,20 +33,27 @@ impl Project for proto::TriggerOperationReceipt {
         publication.validate(tree)?;
         if self.format_version != 1
             || publication.tenant != self.tenant
-            || self.expected_generation.checked_add(1) != Some(self.object_generation)
             || self.expected_state_version.checked_add(1) != Some(self.state_version)
             || self.route_generation == 0
+            || self.route_generation > self.state_version
             || self.deployment_generation == 0
+            || self.deployment_generation > self.route_generation
             || !self
                 .revision
                 .strip_prefix("revision-v1:")
                 .is_some_and(canonical_digest)
-            || !matches!(
-                proto::TriggerOperationAction::try_from(self.action),
-                Ok(proto::TriggerOperationAction::Apply | proto::TriggerOperationAction::Delete)
-            )
         {
             return Err(invalid_response());
+        }
+        match proto::TriggerOperationAction::try_from(self.action) {
+            Ok(proto::TriggerOperationAction::Apply)
+                if self.object_generation == self.state_version
+                    && self.expected_generation < self.object_generation => {}
+            Ok(proto::TriggerOperationAction::Delete)
+                if self.object_generation == self.expected_generation
+                    && self.object_generation > 0
+                    && self.object_generation < self.state_version => {}
+            _ => return Err(invalid_response()),
         }
         Ok(())
     }

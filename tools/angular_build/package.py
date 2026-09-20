@@ -100,6 +100,8 @@ def stage(config: dict, captured: Path, bundle: Path, composed: Path, inputs: Pa
     component = read(composed.parent, composed.name, 32 * 1024 * 1024)
     renderer = {'layer': 'server/renderer.wasm', 'digest': digest(component), 'size': len(component),
                 'profile': profile['profile'], 'profileDigest': profile['profileDigest'], 'assetsDigest': tree}
+    if config.get('backendProfile', 'none') != 'none':
+        renderer['backendProfile'] = config['backendProfile']
     layer(renderer['layer'], component, role='renderer', media='application/wasm')
     web = {'formatVersion': 1, 'profile': 'lsf.web-release.v1', 'assetsDigest': tree, 'assets': assets,
            'routes': sorted(config['routes'], key=lambda row: row['path']), 'renderer': renderer}

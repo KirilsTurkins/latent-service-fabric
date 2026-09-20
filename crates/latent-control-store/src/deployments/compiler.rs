@@ -612,9 +612,14 @@ async fn compile_catalog_inner(
                     return Err(denied.error());
                 }
             }
-            Phase1ManifestValidator
-                .validate_deployment_against_capsule(deployment, artifact.manifest())
-                .map_err(manifest_error)?;
+            if artifact.is_web_execution_projection() {
+                Phase1ManifestValidator
+                    .validate_web_execution_projection(deployment, artifact.manifest())
+            } else {
+                Phase1ManifestValidator
+                    .validate_deployment_against_capsule(deployment, artifact.manifest())
+            }
+            .map_err(manifest_error)?;
             let mut descriptors = BTreeMap::new();
             if release_surface.is_none() {
                 for descriptor in artifact.contracts() {

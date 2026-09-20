@@ -15,9 +15,16 @@ CRATE = "crates/latent-wasmtime"
 GUEST = "tools/angular-renderer-adapter"
 GUEST_ALLOW = '#[allow(unsafe_code)] // Only wit-bindgen\'s generated canonical ABI and export.\nmod abi;'
 GUEST_ABI = '''#![allow(clippy::same_length_and_capacity, reason = "wit-bindgen consumes allocations transferred by the canonical ABI")]
+#[cfg(not(feature = "backend-http"))]
 wit_bindgen::generate!({
-    path: ["../../wit/platform/context", "../../wit/platform/web", "wit"],
+    path: ["../../wit/platform/context", "../../wit/platform/http-v2", "../../wit/platform/web", "wit"],
     world: "latent:angular-renderer-internal/adapter@0.1.0",
+    generate_all,
+});
+#[cfg(feature = "backend-http")]
+wit_bindgen::generate!({
+    path: ["../../wit/platform/context", "../../wit/platform/http-v2", "../../wit/platform/web", "wit"],
+    world: "latent:angular-renderer-internal/adapter-http@0.1.0",
     generate_all,
 });
 use super::Adapter;
@@ -94,7 +101,7 @@ def validate(root: Path) -> list[str]:
 
 
 def validate_guest(root: Path) -> list[str]:
-    """One generated canonical export in a wasm-only guest, no native loader."""
+    """One selected canonical export from two closed wasm profiles, no native loader."""
     errors = []
     crate = root / GUEST
     library = (crate / "src/lib.rs").read_text(encoding="utf-8")

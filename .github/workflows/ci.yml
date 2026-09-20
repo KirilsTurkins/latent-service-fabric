@@ -55,7 +55,7 @@ jobs:
         run: python -m pip install --requirement tools/requirements.lock
       - name: Validate documentation and profile selection
         run: |
-          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_browser_artifacts
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_ci_result tools.tests.test_validate_docs tools.tests.test_ci_browser_artifacts
           python3 tools/validate_docs.py
 
   rust:
@@ -133,6 +133,13 @@ jobs:
         run: |
           cargo build --workspace --all-targets --all-features --locked
           cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics > "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
+      - name: Prepare authenticated AOT test inputs
+        run: |
+          python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests
+          python3 tools/aot_test_inputs.py prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --output "$RUNNER_TEMP/lsf-aot-test-inputs"
+          # Cargo supplies each harness's runtime environment itself. Export only
+          # this recipe's input selectors, not CARGO_MANIFEST_DIR/library paths.
+          python3 tools/aot_test_inputs.py environment --manifest "$RUNNER_TEMP/lsf-aot-test-inputs/manifest.json" | grep '^LSF_AOT_' >> "$GITHUB_ENV"
       - name: Run tests
         run: |
           cargo test --workspace --all-targets --all-features --locked
@@ -317,6 +324,31 @@ jobs:
           PY
           python3 tools/phase2_gate_resource.py --cli "${resource_bin}/latent" --node "${resource_bin}/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
           python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+      - name: Build the optimized isolated Angular compiler
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 25
+        env:
+          CARGO_BUILD_JOBS: 2
+          CARGO_TARGET_DIR: ${{ runner.temp }}/angular-t1-compiler
+        run: cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked
+      - name: Export actual signed Angular T1 fixtures
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 5
+        env:
+          LSF_ANGULAR_BUILD_DIR: ${{ runner.temp }}/angular-build/actual
+          LSF_ANGULAR_T1_FIXTURE_ROOT: ${{ runner.temp }}/angular-t1-fixture
+        run: python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite angular-t1-fixture
+      - name: Qualify actual Angular on the protected T1 node
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 22
+        run: |
+          python3 -m unittest tools.tests.test_angular_t1_workflow
+          mkdir "$RUNNER_TEMP/angular-t1-bin"
+          for binary in latent latentd; do
+            objcopy --strip-debug "$PWD/target/debug/$binary" "$RUNNER_TEMP/angular-t1-bin/$binary"
+          done
+          objcopy --strip-debug "$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler" "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler"
+          python3 tools/run_angular_t1_workflow.py --cli "$RUNNER_TEMP/angular-t1-bin/latent" --node "$RUNNER_TEMP/angular-t1-bin/latentd" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --fixture-root "$RUNNER_TEMP/angular-t1-fixture" > "$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json"
       - name: Retain compact Phase 2 gate receipts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -687,30 +719,19 @@ jobs:
   result:
     name: CI result
     if: always()
-    needs: [profile, docs, rust, oci-registry, catalog, msrv, contracts, sdks]
+    needs: [profile, docs, website, rust, oci-registry, catalog, msrv, contracts, sdks]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Require every selected validation job
         env:
           CI_JOB_RESULTS: ${{ toJSON(needs) }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import sys
-          results = json.loads(os.environ['CI_JOB_RESULTS'])
-          profile = results['profile']['outputs'].get('profile')
-          full = {'rust', 'oci-registry', 'catalog', 'msrv', 'contracts', 'sdks'}
-          required = {'profile', 'docs'} | (full if profile == 'full' else set())
-          failures = [name for name in required if results[name]['result'] != 'success']
-          if profile not in {'docs', 'full'}:
-              failures.append('unknown CI profile')
-          if profile == 'docs':
-              failures.extend(name for name in full if results[name]['result'] != 'skipped')
-          print('Selected profile:', profile)
-          print('Job results:', {name: value['result'] for name, value in results.items()})
-          if failures:
-              print('CI did not satisfy its selected profile:', ', '.join(failures), file=sys.stderr)
-              sys.exit(1)
-          PY
+        run: python3 tools/ci_result.py
+
+  website:
+    name: Documentation website
+    needs: profile
+    uses: $/.github/workflows/docs-site.yml

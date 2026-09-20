@@ -21,6 +21,7 @@ pub(crate) mod random;
 pub(crate) mod secrets;
 pub(crate) mod service;
 pub(crate) mod streaming_http;
+mod web_identity;
 pub(crate) use logging::InvocationLogBuffer;
 pub use logging::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
 
