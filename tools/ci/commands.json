@@ -3060,6 +3060,7 @@
       "BuildSnapshotTests.test_archive_entry_file_and_aggregate_ceilings",
       "BuildSnapshotTests.test_capture_rejects_git_symlink_and_cleans_its_owned_directory",
       "BuildSnapshotTests.test_cleanup_refuses_root_and_outside_targets",
+      "BuildSnapshotTests.test_directory_headers_have_a_separate_finite_allowance",
       "BuildSnapshotTests.test_executable_mode_changes_inventory",
       "BuildSnapshotTests.test_real_capture_uses_committed_bytes_excludes_evidence_and_is_repeatable",
       "BuildSnapshotTests.test_unsafe_members_cannot_escape_or_introduce_special_files"
