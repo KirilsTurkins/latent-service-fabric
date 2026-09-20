@@ -138,7 +138,11 @@ class OwnedProcess:
                         break
                     time.sleep(min(remaining / 1_000_000_000, 0.001))
             raise
-        if not allow_exited and self.exited():
+        if self.exited():
+            # Even a successful proc read may span exit. Do not publish a
+            # torn post-exit sample or use it to advance the observed peak.
+            if allow_exited:
+                return self.after
             raise RuntimeError("child exited during required live resource observation")
         if current["start_time_ticks"] != self.receipt["start_time_ticks"]:
             raise ValueError("owned process identity changed")
