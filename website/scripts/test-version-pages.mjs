@@ -28,7 +28,12 @@ try {
     const directory = path.join(websiteRoot, 'build', variant);
     const built = validateBuiltSite(directory);
     const server = await serveBuiltSite(directory, built.manifest.baseUrl);
-    const context = await browser.newContext({viewport: {width: 1280, height: 900}});
+    const context = await browser.newContext({permissions: ['clipboard-read', 'clipboard-write'], viewport: {width: 1280, height: 900}});
+    await context.addInitScript(() => {
+      if (!navigator.clipboard) return;
+      const writeText = navigator.clipboard.writeText.bind(navigator.clipboard);
+      navigator.clipboard.writeText = text => { window.__lsfCopiedText = text; return writeText(text); };
+    });
     const errors = [];
     try {
       const page = await context.newPage();
@@ -46,7 +51,13 @@ try {
           assert.match(await support.innerText(), /synthetic-fixture/);
           assert.equal(await support.getByRole('link', {name: 'Exact documentation source'}).getAttribute('href'),
             `https://github.com/KirilsTurkins/latent-service-fabric/tree/${expected.source}`);
-          assert.equal(await panel.locator('pre code').textContent(), expected.snippet);
+          // The theme renders each line as a block span, so textContent omits
+          // its visual line breaks. Verify exact source bytes at the real copy
+          // boundary, including the trailing newline and Unicode characters.
+          assert.equal(await panel.locator('pre code').textContent(), expected.snippet.replace(/\n/g, ''));
+          await panel.getByRole('button', {name: 'Copy Rust snippet', exact: true}).click();
+          await panel.getByText('Rust snippet copied.', {exact: true}).waitFor();
+          assert.equal(await page.evaluate(() => window.__lsfCopiedText), expected.snippet);
           assert.match(await panel.getByRole('link', {name: /^Complete Rust source/}).getAttribute('href'), new RegExp(`/${expected.source}/`));
           const image = page.getByRole('img', {name: 'Synthetic version asset'});
           const src = await image.getAttribute('src');
