@@ -76,7 +76,11 @@ impl ProviderPools {
         provider: &InstalledProvider,
         origin: u16,
     ) -> Result<Arc<ProviderClient<T>>, PlatformError> {
-        let mut state = self.inner.state.try_lock().map_err(|_| busy())?;
+        // This is trusted client-slot configuration, including the second half
+        // of provider installation. Maintenance contention must not leave an
+        // installed epoch without its configured client. The table contains
+        // bounded bookkeeping; physical clients are retired outside its lock.
+        let mut state = self.inner.state.lock().map_err(|_| busy())?;
         self.inner.check()?;
         if provider.epoch.retired.load(Ordering::Acquire)
             || !state.epochs.iter().any(|e| Arc::ptr_eq(e, &provider.epoch))

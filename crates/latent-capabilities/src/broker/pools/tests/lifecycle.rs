@@ -1,6 +1,56 @@
 use super::*;
 
 #[tokio::test]
+async fn trusted_configuration_waits_for_registry_bookkeeping_without_reinstalling() {
+    use std::sync::mpsc::{channel, RecvTimeoutError};
+
+    let setup = Setup::new(ProviderPoolLimits::default());
+    for install_epoch in [true, false] {
+        let registry = setup.pools.inner.state.lock().unwrap();
+        let (started, entered) = channel();
+        let (completed, result) = channel();
+        std::thread::scope(|scope| {
+            let worker = scope.spawn(|| {
+                started.send(()).unwrap();
+                if install_epoch {
+                    let installed = install(&setup.pools, "configuration-contention", 1, 0, b"");
+                    assert_eq!(installed.reference().configuration_epoch(), 1);
+                } else {
+                    let client = setup.pools.client::<TcpStream>(&setup.provider, 1).unwrap();
+                    assert!(Arc::ptr_eq(
+                        &client,
+                        &setup.pools.client::<TcpStream>(&setup.provider, 1).unwrap()
+                    ));
+                }
+                completed.send(()).unwrap();
+            });
+            entered.recv_timeout(Duration::from_secs(1)).unwrap();
+            let waiting = matches!(
+                result.recv_timeout(Duration::from_millis(50)),
+                Err(RecvTimeoutError::Timeout)
+            );
+            drop(registry);
+            result.recv_timeout(Duration::from_secs(1)).unwrap();
+            worker.join().unwrap();
+            assert!(
+                waiting,
+                "configuration must wait for finite registry bookkeeping"
+            );
+        });
+    }
+    assert_eq!(
+        setup
+            .pools
+            .provider("configuration-contention")
+            .unwrap()
+            .reference()
+            .configuration_epoch(),
+        1
+    );
+    clean(&setup.pools).await;
+}
+
+#[tokio::test]
 async fn replacement_epoch_cannot_bypass_logical_provider_running_limits() {
     let setup = Setup::new(ProviderPoolLimits {
         maximum_running_requests: 2,
