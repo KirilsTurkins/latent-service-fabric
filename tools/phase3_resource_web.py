@@ -203,7 +203,7 @@ def renderer_memory(value):
             measured = consumption(row)
             peak = None if measured is None else integer(measured["peakMemoryBytes"])
             require(peak is None or peak <= ceiling, "resource-render-memory-ceiling")
-            if name not in ("churn", "overload") or row.get("category") == "success":
+            if name not in ("churn", "overload", "cancelled") or row.get("category") == "success":
                 require(peak is not None and peak > 0, "resource-render-memory-not-observed")
             peaks.append(peak)
         require(bool(rows), "resource-render-memory-population")
@@ -212,6 +212,7 @@ def renderer_memory(value):
             "source": "runtime-BudgetConsumption-peakMemoryBytes",
             "configuredPerInvocationCeilingBytes": ceiling, "peakBytes": observed,
             "includesJavaScriptEngineHeap": True, "javaScriptAllocatorLiveBytes": None,
+            "cancellationConsumption": "terminal-status-does-not-retain-consumption",
             "processRssIsSeparate": True, "sumOfPeaksIsNotConcurrentUsage": True}
 
 
