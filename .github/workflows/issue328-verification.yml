@@ -1,0 +1,84 @@
+name: Temporary validator invocation verification
+
+on:
+  push:
+    branches:
+      - fix/328-validator-import-resolution
+
+permissions:
+  contents: read
+
+jobs:
+  validators:
+    name: Validator imports (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - name: Install pinned validator dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+      - name: Reproduce the unchanged base failure without PYTHONPATH
+        shell: python
+        run: |
+          import os, pathlib, subprocess, sys
+          path = pathlib.Path('tools/validate_foundation.py')
+          patched = path.read_bytes()
+          original = subprocess.check_output(['git', 'show', '5b7905aa5bb48a86db0d9a22b4cf6f1b931b0e86:tools/validate_foundation.py'])
+          environment = {k: v for k, v in os.environ.items() if k.upper() != 'PYTHONPATH'}
+          try:
+              path.write_bytes(original)
+              result = subprocess.run([sys.executable, '-m', 'unittest', 'tools.tests.test_validate_repository.SourceTraversalTests.test_authoritative_source_remains_validated'], env=environment, capture_output=True, text=True, timeout=60)
+              print(result.stdout + result.stderr)
+              assert result.returncode != 0
+              assert "ModuleNotFoundError: No module named 'native_loader_boundary'" in result.stderr
+          finally:
+              path.write_bytes(patched)
+      - name: Verify fixed invocation forms and existing negative regressions
+        shell: python
+        run: |
+          import os, subprocess, sys
+          environment = {k: v for k, v in os.environ.items() if k.upper() != 'PYTHONPATH'}
+          modules = ['tools.tests.test_validator_invocation', 'tools.tests.test_native_loader_boundary']
+          if sys.platform != 'win32':
+              modules.append('tools.tests.test_validate_repository')
+          subprocess.run([sys.executable, '-m', 'unittest', '-v', *modules], env=environment, check=True, timeout=120)
+      - name: Verify real CLI still rejects unsafe policy and source changes
+        shell: python
+        run: |
+          import os, pathlib, subprocess, sys
+          environment = {k: v for k, v in os.environ.items() if k.upper() != 'PYTHONPATH'}
+          def rejected(expected):
+              for arguments in (['tools/validate_foundation.py'], ['-m', 'tools.validate_foundation']):
+                  result = subprocess.run([sys.executable, *arguments], env=environment, capture_output=True, text=True, timeout=60)
+                  print(result.stdout + result.stderr)
+                  assert result.returncode == 1
+                  assert expected in result.stderr
+                  assert 'Traceback' not in result.stderr
+          manifest = pathlib.Path('Cargo.toml')
+          original = manifest.read_bytes()
+          changed = original.replace(b'unsafe_code = "forbid"', b'unsafe_code = "allow"', 1)
+          assert changed != original
+          try:
+              manifest.write_bytes(changed)
+              rejected('workspace unsafe_code must remain forbid')
+          finally:
+              manifest.write_bytes(original)
+          extra = pathlib.Path('crates/latent-wasmtime/src/issue328_unreviewed.rs')
+          assert not extra.exists()
+          try:
+              extra.write_text('unsafe fn issue328_unreviewed() {}\n', encoding='utf-8')
+              rejected('unreviewed unsafe code or allowance in crates/latent-wasmtime/src/issue328_unreviewed.rs')
+          finally:
+              extra.unlink(missing_ok=True)
+      - name: Confirm verification left tracked sources unchanged
+        run: git diff --exit-code
