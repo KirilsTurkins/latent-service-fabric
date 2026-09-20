@@ -63,8 +63,8 @@ The physical test also accepts an explicit local diagnostic mutation:
 same large real values and is expected to fail the original 64 MiB bound during
 apply. **A failing build or missing observation is not successful negative-control
 evidence**: inspect the failure and require the `compiler retained aggregate full
-release/contract metadata` assertion. These controls have not been measured in the
-preparation environment; do not record them as demonstrated until actually run.
+release/contract metadata` assertion. Both controls were executed on the supported Linux host recorded below and failed
+the unchanged retention assertion, not compilation or test discovery.
 The qualification runner rejects this variable and inherited child-mode/root
 variables, including empty values, so a diagnostic or standalone child cannot
 masquerade as the full suite.
@@ -164,16 +164,25 @@ LSF_METADATA_RETAIN=canonical cargo test -p latent-control-store --lib --all-fea
   --locked "$physical" -- --ignored --exact --show-output --test-threads=1
 ```
 
-## Validation status of this patch
+## Supported-host validation
 
-The prepared patch's Python observation/runner tests were executed: **10 passed**.
-They exercise exact selection, malformed/missing/duplicate measurements, input and
-threshold substitutions, zero-test or marker-only success, unsupported platforms,
-inherited child modes and actual subprocess timeout/output bounds.
+The exact source, host, commands, exit statuses, observations and stage costs are
+retained in [the validation record](evidence/metadata-working-set-430.json). Full
+logs and the successful Cargo inventory are attached to the Actions run identified
+in that record. This is focused validation, not a claim of full repository CI.
 
-**Not executed in the preparation environment:** Cargo compilation, rustfmt,
-Clippy, the small Rust production-path fixture, either physical fixture/control,
-and GitHub CI. Cargo/rustc were absent and container networking could not resolve
-GitHub. Consequently there are no genuine Rust fixture timing or RSS results to
-retain, no demonstrated physical negative-control run, and no end-to-end completion
-claim. Record actual supported-host inputs and costs before closing #430.
+| Stage | Wall seconds | Result |
+| --- | ---: | --- |
+| python-regressions | 0.375 | Passed |
+| dependency-tree | 1.391 | Passed |
+| build | 47.621 | Passed |
+| correctness | 0.593 | Passed |
+| physical | 78.095 | Passed |
+| negative-release | 56.947 | Expected retention assertion failure |
+| negative-canonical | 56.997 | Expected retention assertion failure |
+| control-store-library | 6.179 | Passed |
+| clippy | 23.456 | Passed |
+
+Build timing includes dependency acquisition with no restored dependency cache.
+Execution timings are separate and include process teardown. No speedup against
+an unmeasured historical baseline is claimed.
