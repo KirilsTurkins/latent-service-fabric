@@ -24,7 +24,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `tonic-prost-build` | 0.14.6 | Build-time Rust generation from every authoritative `.proto` |
 | `protoc-bin-vendored` | 3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
 | Tracing / tracing-subscriber | 0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
-| Wasmtime | 47.0.3 | Generic Component Model runtime and retained Phase 0 compatibility facade |
+| Wasmtime | 47.0.4 | Generic Component Model runtime and retained Phase 0 compatibility facade |
 | `wit-bindgen` | 0.60.0 | Guest bindings and canonical ABI exports generated from WIT |
 | Serde / `serde_json` | 1.0.229 / 1.0.150 | Rust contract serialization |
 | TOML | 1.1.4 | Configuration parsing and serialization |
@@ -100,6 +100,9 @@ git status --porcelain --untracked-files=all
 The retained August 30 Phase 0 receipt records an authorized pass for its canonical execution identity. It remains historical evidence; the build foundation does not modify the measured thresholds or results.
 
 ## Generated-output policy
+
+The [Wasmtime security baseline](wasmtime-security-update.md) records the 47.0.4
+advisory scan, native-loader review and runtime/compiler upgrade requirements.
 
 Handwritten Rust, WIT, Protobuf, JSON Schema, examples, and SDK sources remain authoritative. Generated build products normally live in Cargo `OUT_DIR`, `target/contracts/`, `target/capsules/`, and SDK compiler directories. The type-only codec fixture described below is an explicit checked-in exception:
 

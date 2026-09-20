@@ -1,5 +1,7 @@
 //! Actual engine identity and a closed compiler-only bootstrap.
 mod hash;
+#[cfg(test)]
+mod tests;
 
 use super::{blob, exhausted, frame, invalid, mismatch, AotCompilerLimits};
 use crate::config::{CompilerEngineSettings, DispatchMode};

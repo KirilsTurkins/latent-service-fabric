@@ -1,6 +1,57 @@
 use super::support::{artifact, publish, Fixture, KEY};
 
 #[tokio::test(flavor = "current_thread")]
+async fn identical_component_after_restart_requires_its_exact_engine_before_native_reuse() {
+    let fixture = Fixture::new();
+    let repository = fixture.catalog();
+    let release = publish(&repository, false).await;
+    let original = fixture.session(repository.clone(), KEY);
+    let ready = original
+        .prepare(repository.clone(), &release)
+        .await
+        .unwrap();
+    original.answer(ready).await;
+    original.idle();
+    assert_eq!(original.snapshot().isolated_compilations, 1);
+    drop(original);
+    drop(repository);
+
+    // Reopen the same catalog and persistent native roots with the same key,
+    // source, tenant and package, but a different real compiler configuration.
+    let repository = fixture.catalog();
+    let config = latent_wasmtime::WasmtimeConfig {
+        compiler_optimization: latent_wasmtime::CompilerOptimization::SpeedAndSize,
+        ..super::runtime::config()
+    };
+    let changed = fixture.session_with_config(repository.clone(), KEY, None, config);
+    assert_eq!(changed.snapshot().images.loader_attempts, 0);
+    let ready = changed.prepare(repository.clone(), &release).await.unwrap();
+    let snapshot = changed.snapshot();
+    assert_eq!(snapshot.cache_hits, 0);
+    assert_eq!(snapshot.cache_misses, 1);
+    assert_eq!(snapshot.isolated_compilations, 1);
+    // Only the newly authenticated compiler result reached deserialization.
+    assert_eq!(snapshot.images.loader_attempts, 1);
+    changed.answer(ready).await;
+    changed.idle();
+    drop(changed);
+    drop(repository);
+
+    // The separate entry did not overwrite the original engine's authority.
+    let repository = fixture.catalog();
+    let original = fixture.session(repository.clone(), KEY);
+    let ready = original
+        .prepare(repository.clone(), &release)
+        .await
+        .unwrap();
+    assert_eq!(original.snapshot().cache_hits, 1);
+    assert_eq!(original.snapshot().isolated_compilations, 0);
+    assert_eq!(original.snapshot().images.loader_attempts, 1);
+    original.answer(ready).await;
+    original.idle();
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn real_miss_invokes_then_reopened_native_hit_verifies_source_without_compiling() {
     let fixture = Fixture::new();
     let (audit, mut worker) = fixture.audit();
