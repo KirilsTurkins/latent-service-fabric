@@ -81,6 +81,41 @@ impl ProviderPools {
         call.io.checkpoint()?;
         self.control_blocking(move || work(call))
     }
+    /// Retain one admitted call while the fixed worker table is briefly held by
+    /// maintenance. The original I/O deadline and cancellation bound this wait;
+    /// capacity, retirement and poisoned ownership remain immediate failures.
+    pub async fn spawn_blocking_wait<T: Send + 'static>(
+        &self,
+        call: PoolCall,
+        work: impl FnOnce(PoolCall) -> T + Send + 'static,
+    ) -> Result<ProviderJob<T>, PlatformError> {
+        if !call.belongs_to(&self.inner) {
+            return Err(denied());
+        }
+        call.io.checkpoint()?;
+        let deadline = call.io.deadline();
+        let waiter = call.io.job_waiter();
+        let lease = call.io.lease();
+        let mut work = Some(move || work(call));
+        waiter
+            .wait(async {
+                loop {
+                    // The stop observer can already be waiting on its bounded
+                    // timer. Recheck immediately before each admission attempt.
+                    lease.checkpoint()?;
+                    if let Some(job) = self.try_control_blocking(&mut work)? {
+                        return Ok(job);
+                    }
+                    tokio::time::sleep_until(
+                        deadline
+                            .min(Instant::now() + Duration::from_millis(1))
+                            .into(),
+                    )
+                    .await;
+                }
+            })
+            .await?
+    }
     /// Trusted operator work (for example, protected secret reloads) uses the
     /// same finite node worker slots. This is not guest capability authority.
     /// The closure must own prepaid buffers and its actual filesystem work;

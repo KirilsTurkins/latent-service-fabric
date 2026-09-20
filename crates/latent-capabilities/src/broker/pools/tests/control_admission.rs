@@ -2,6 +2,105 @@ use super::*;
 use latent_core::PlatformErrorCode;
 
 #[tokio::test]
+async fn guest_worker_admission_waits_for_maintenance_without_replaying_work() {
+    let setup = Setup::new(single());
+    let (session, _control) = setup.session("worker-maintenance");
+    let call = setup.call(&session).await;
+    let executions = Arc::new(AtomicUsize::new(0));
+    let observed = executions.clone();
+    let mut admission = Box::pin(setup.pools.spawn_blocking_wait(call, move |call| {
+        call.io().checkpoint().unwrap();
+        observed.fetch_add(1, Ordering::AcqRel)
+    }));
+    {
+        let _maintenance = setup.pools.inner.control.tasks.lock().unwrap();
+        pending(admission.as_mut());
+        assert_eq!(executions.load(Ordering::Acquire), 0);
+        assert_eq!(setup.pools.inner.quotas.use_of(Kind::Worker), 0);
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 1);
+    }
+    assert_eq!(admission.await.unwrap().wait().await.unwrap(), 0);
+    assert_eq!(executions.load(Ordering::Acquire), 1);
+    drop(session);
+    clean(&setup.pools).await;
+}
+
+#[tokio::test]
+async fn cancelled_guest_admission_never_starts_physical_work() {
+    let setup = Setup::new(single());
+    let (session, control) = setup.session("worker-cancel");
+    let observer = session.observer();
+    let call = setup.call(&session).await;
+    let owner = Arc::new(());
+    let retained = Arc::downgrade(&owner);
+    let mut admission = Box::pin(setup.pools.spawn_blocking_wait(call, move |_| {
+        drop(owner);
+        panic!("cancelled or abandoned admission must not start work")
+    }));
+    {
+        let _maintenance = setup.pools.inner.control.tasks.lock().unwrap();
+        pending(admission.as_mut());
+        assert!(retained.upgrade().is_some());
+        control.probe.0.store(true, Ordering::Release);
+    }
+    assert_eq!(
+        admission.await.err().unwrap().code,
+        PlatformErrorCode::Cancelled
+    );
+    drop(session);
+    assert!(retained.upgrade().is_none());
+    assert!(observer.is_quiescent());
+    clean(&setup.pools).await;
+}
+
+#[tokio::test]
+async fn abandoned_guest_admission_releases_its_call_without_spawning_work() {
+    let setup = Setup::new(single());
+    let (session, _control) = setup.session("worker-abandon");
+    let observer = session.observer();
+    let call = setup.call(&session).await;
+    let owner = Arc::new(());
+    let retained = Arc::downgrade(&owner);
+    let mut admission = Box::pin(setup.pools.spawn_blocking_wait(call, move |_| {
+        drop(owner);
+        panic!("abandoned admission must not start work")
+    }));
+    {
+        let _maintenance = setup.pools.inner.control.tasks.lock().unwrap();
+        pending(admission.as_mut());
+        assert!(retained.upgrade().is_some());
+        drop(admission);
+        drop(session);
+        assert!(retained.upgrade().is_none());
+        assert!(observer.is_quiescent());
+    }
+    clean(&setup.pools).await;
+}
+
+#[tokio::test]
+async fn guest_worker_capacity_is_not_retried_or_refunded() {
+    let setup = Setup::new(ProviderPoolLimits {
+        maximum_workers: 1,
+        ..ProviderPoolLimits::default()
+    });
+    let (session, _control) = setup.session("worker-capacity");
+    let call = setup.call(&session).await;
+    let charge = setup.pools.inner.quotas.acquire(Kind::Worker, 1).unwrap();
+    let failure = setup
+        .pools
+        .spawn_blocking_wait(call, |_| {
+            panic!("capacity rejection must not start physical work")
+        })
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
+    assert_eq!(setup.pools.inner.quotas.use_of(Kind::Worker), 1);
+    drop((charge, session));
+    clean(&setup.pools).await;
+}
+
+#[tokio::test]
 async fn contended_control_slot_retains_one_closure_until_one_admission() {
     let setup = Setup::new(ProviderPoolLimits::default());
     let executions = Arc::new(AtomicUsize::new(0));
