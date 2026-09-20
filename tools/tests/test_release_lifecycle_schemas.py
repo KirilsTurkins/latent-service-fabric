@@ -147,7 +147,9 @@ class ReleaseLifecycleSchemaTests(unittest.TestCase):
         service = next(item for item in source["service"] if item["name"] == "ReleaseService")
         self.assertEqual({item["name"] for item in service["method"]},
                          {"PublishRelease", "GetRelease", "ListReleases", "GetReleaseLifecycle",
-                          "GetReleaseOperation", "ChangeReleaseLifecycle", "RenewReleaseEvidence"})
+                          "GetReleaseOperation", "ChangeReleaseLifecycle", "RenewReleaseEvidence",
+                          "PublishWebPackage", "GetWebPublication", "GetWebOperation",
+                          "ChangeWebLifecycle", "RenewWebEvidence", "PrepareWebPublication"})
 
     def test_explicit_selector_presence_does_not_fall_back_to_component_digest(self):
         selected = {"id": "publication:sha256:" + "b" * 64, "tenant": "acme"}

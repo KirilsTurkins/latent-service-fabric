@@ -55,7 +55,9 @@ impl DirectoryArtifactRepository {
         reference: &PublicationRef,
     ) -> Result<WebPublicationStatus, PlatformError> {
         let state = self.web.state.try_read().map_err(|_| busy())?;
-        let record = state.entry(reference)?.record.clone();
+        let entry = state.entry(reference)?;
+        let record = entry.record.clone();
+        let renderer = entry.layout.manifest().renderer.clone();
         drop(state);
         let (eligibility, eligibility_reason) = match record.state {
             ReleaseLifecycleState::Revoked => (Live::Denied, Reason::Revoked),
@@ -75,6 +77,7 @@ impl DirectoryArtifactRepository {
             record,
             eligibility,
             eligibility_reason,
+            renderer,
         })
     }
     pub fn web_read_snapshot(&self) -> Result<WebReadSnapshot, PlatformError> {
