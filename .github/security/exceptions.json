@@ -6,12 +6,12 @@
       "finding": "self-repository",
       "path": ".github/workflows/security-baseline.yml",
       "package": "",
-      "fingerprint": "b568b669a92b6c8dfcfcd1876188674e9e489cf1a9b3799be624642d395c12bf",
+      "fingerprint": "78b51ed5bad46b97aba7b283f7d3ee0f34a3fe2db0c1d84b749eab69eea189ad",
       "owner": "@KirilsTurkins",
       "created": "2026-09-19",
       "expires": "2026-10-03",
-      "review": "https://github.com/KirilsTurkins/latent-service-fabric/issues/282",
-      "rationale": "Compatibility transition for this exact job-level reusable RustSec workflow call. GitHub resolves this local workflow at the caller commit before jobs run; it is not a workspace-relative action step that earlier untrusted steps can replace. The callee has only contents:read, no inherited secrets and no cache writes. Keep #281's currently supported local-reference syntax until its policy explicitly validates the new self-repository syntax. Parent review is required; update the pin policy or re-review this exact call before expiry."
+      "review": "https://github.com/KirilsTurkins/latent-service-fabric/pull/436",
+      "rationale": "Compatibility transition for this exact job-level reusable RustSec workflow call. GitHub resolves this local workflow at the caller commit before jobs run; it is not a workspace-relative action step that earlier untrusted steps can replace. The callee has only contents:read, no inherited secrets and no cache writes. Keep #281's currently supported local-reference syntax until its policy explicitly validates the new self-repository syntax. Parent review is required; update the pin policy or re-review this exact call before expiry. Re-reviewed in #436 after adding bounded checkout history: the reusable call, callee permissions, inputs and absence of secrets are unchanged. The original expiry remains unchanged."
     },
     {
       "scanner": "gitleaks",
