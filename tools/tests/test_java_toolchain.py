@@ -112,11 +112,15 @@ class BuildWiringTests(unittest.TestCase):
         major, minor, security, patch, build_number = map(int, match.groups())
         expected = f"{major}.{minor}.{security}+{100 * patch + build_number}.0.LTS"
         self.assertEqual(sdk["java_setup"], expected)
-        workflow = (ROOT / ".github/workflows/ci.yml").read_text()
-        selectors = re.findall(r"java-version:\s*[\"']([^\"']+)[\"']", workflow)
-        self.assertTrue(selectors, "CI must provision Java")
-        self.assertEqual(set(selectors), {expected})
-        self.assertIn(sdk["java"], workflow)  # Existing repository drift validator.
+        java_workflows = []
+        for path in sorted((ROOT / ".github/workflows").glob("*.y*ml")):
+            selectors = re.findall(r"java-version:\s*[\"']([^\"']+)[\"']", path.read_text())
+            if selectors:
+                java_workflows.append(path.name)
+                self.assertEqual(set(selectors), {expected}, str(path))
+        self.assertIn("ci.yml", java_workflows)
+        self.assertIn("phase0-full-validation.yml", java_workflows)
+        self.assertIn(sdk["java"], (ROOT / ".github/workflows/ci.yml").read_text())
 
     def test_gradle_test_requires_both_main_suites_without_ignoring_failures(self):
         gradle = (ROOT / "sdk/java-client/build.gradle.kts").read_text()
