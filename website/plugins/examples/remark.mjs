@@ -60,6 +60,11 @@ export function remarkExamples({bundle, documentVersion}) {
       parent.children = parent.children.flatMap(node => {
         const request = reference(node);
         if (request) return exampleNodes(bundle, {...request, documentVersion});
+        const component = componentRequest(node);
+        if (component) {
+          resolveExample(bundle, {...component, documentVersion});
+          node.attributes.push({type: 'mdxJsxAttribute', name: 'documentVersion', value: documentVersion});
+        }
         transform(node);
         return [node];
       });

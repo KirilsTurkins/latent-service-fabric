@@ -18,7 +18,8 @@ function sourcePath(relative, language) {
 }
 function referencePath(relative) {
   canonicalPath(relative);
-  requireValue(/^(docs|sdk|examples|tools)\/.+\.(md|mdx|py|sh|rs|ts|go|c|java|cs|toml|json|kts)$/.test(relative), 'Unapproved validation reference');
+  requireValue(relative === 'website/scripts/test-examples.mjs'
+    || /^(docs|sdk|examples|tools)\/.+\.(md|mdx|py|sh|rs|ts|go|c|java|cs|toml|json|kts)$/.test(relative), 'Unapproved validation reference');
   return relative;
 }
 function evidencePath(relative) {

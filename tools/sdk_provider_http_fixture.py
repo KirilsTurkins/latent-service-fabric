@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import select
@@ -38,8 +39,17 @@ def mode(directory):
 
 
 def marker(directory, name):
-    with (directory / name).open("xb") as output:
-        output.write(b"observed\n")
+    # Readers treat existence as the rendezvous. Publish the fully closed
+    # payload atomically so none can observe an empty buffered file.
+    temporary = directory / (name + ".pending")
+    try:
+        with temporary.open("xb") as output:
+            output.write(b"observed\n")
+        # A hard link also preserves exclusive creation: a repeated event
+        # must fail instead of replacing an existing acknowledgement.
+        os.link(temporary, directory / name)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def request(connection):

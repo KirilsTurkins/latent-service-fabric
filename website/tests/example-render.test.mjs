@@ -53,7 +53,7 @@ test('two independent snapshots select their own source, code and verification n
   assert.throws(() => resolveExample(older, {...request, documentVersion: 'alpha.2'}), /identity/);
 });
 
-test('the future CodeExample component has literal, explicitly registered data requests', () => {
+test('CodeExample accepts only literal registered data requests', () => {
   const node = {type: 'mdxJsxFlowElement', name: 'CodeExample', attributes: [
     {type: 'mdxJsxAttribute', name: 'example', value: 'client/specimen'},
     {type: 'mdxJsxAttribute', name: 'region', value: 'invoke'},
@@ -63,4 +63,20 @@ test('the future CodeExample component has literal, explicitly registered data r
     [node.attributes[0], node.attributes[0]], [node.attributes[0], {type: 'mdxJsxAttribute', name: 'region', value: {type: 'mdxJsxAttributeValueExpression', value: 'getRegion()'}}]]) {
     assert.throws(() => requestsFromTree({...node, attributes}), /literal/);
   }
+});
+
+test('CodeExample receives the exact document version and rejects a mismatched snapshot', t => {
+  const f = fixture(t, ['rust']);
+  const {bundle} = extractExamples(f.root, f.requests, {...f.identity(), documentVersion: 'alpha.1'});
+  const document = () => ({type: 'root', children: [{type: 'mdxJsxFlowElement', name: 'CodeExample', attributes: [
+    {type: 'mdxJsxAttribute', name: 'example', value: 'client/specimen'},
+    {type: 'mdxJsxAttribute', name: 'region', value: 'invoke'},
+  ]}]});
+  const tree = document();
+  remarkExamples({bundle, documentVersion: 'alpha.1'})(tree);
+  assert.deepEqual(tree.children[0].attributes.at(-1), {type: 'mdxJsxAttribute', name: 'documentVersion', value: 'alpha.1'});
+  assert.throws(() => remarkExamples({bundle, documentVersion: 'alpha.2'})(document()), /identity/);
+  const forged = document();
+  forged.children[0].attributes.push({type: 'mdxJsxAttribute', name: 'documentVersion', value: 'development'});
+  assert.throws(() => remarkExamples({bundle, documentVersion: 'alpha.1'})(forged), /literal/);
 });

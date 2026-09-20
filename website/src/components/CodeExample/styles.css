@@ -1,0 +1,9 @@
+.lsf-code-example { margin: 1.5rem 0; min-width: 0; border: 1px solid var(--lsf-border); border-radius: .35rem; padding: 1rem; }
+.lsf-code-example .tabs { overflow-x: auto; }
+.lsf-code-example .tabs__item[aria-selected="true"] { text-decoration: underline; text-underline-offset: .3em; }
+.lsf-code-example details code { overflow-wrap: anywhere; white-space: normal; }
+.lsf-code-example details { margin-bottom: .75rem; }
+.lsf-example-code { margin-top: .75rem; }
+.lsf-example-code [class*="copyButton"] { display: none; }
+.lsf-example-copy-status { display: block; margin-top: .25rem; }
+.lsf-example-selection { border-left: 3px solid var(--lsf-border); padding-left: .75rem; }
