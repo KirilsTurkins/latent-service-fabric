@@ -19,6 +19,9 @@ class IllustrationPaletteTests(unittest.TestCase):
     def test_current_inventory_covers_every_svg_and_preserves_exact_originals(self) -> None:
         inventory, palette, outputs = palette_tool.prepare()
         self.assertEqual(len(inventory["sources"]), 5)
+        self.assertEqual(len(inventory["snapshots"]), 5)
+        for entry in inventory["snapshots"]:
+            self.assertEqual(hashlib.sha256(palette_tool.read_bytes(palette_tool.ROOT, entry["path"])).hexdigest(), entry["sha256"])
         self.assertEqual(len(outputs), 2)
         for relative, expected in outputs:
             self.assertEqual(palette_tool.read_bytes(palette_tool.ROOT, relative), expected)
