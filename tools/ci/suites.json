@@ -7835,5 +7835,118 @@
       "target": "standalone_shutdown",
       "timeoutSeconds": 900
     }
-  ]
+  ],
+  "processContracts": {
+    "angular-renderer": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest",
+          "component",
+          "private-renderer"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [],
+        "tools": [
+          "git",
+          "rustc"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-wasmtime.test.angular-renderer",
+        "latentd.lib.latentd"
+      ],
+      "timeoutSeconds": 840
+    },
+    "oci-registry": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [
+          {
+            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+            "type": "docker-image"
+          }
+        ],
+        "tools": [
+          "git",
+          "rustc",
+          "docker",
+          "openssl"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-oci.test.registry"
+      ],
+      "timeoutSeconds": 240
+    },
+    "oci-web": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest",
+          "component"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [
+          {
+            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+            "type": "docker-image"
+          }
+        ],
+        "tools": [
+          "git",
+          "rustc",
+          "docker",
+          "openssl"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-policy.lib.latent-policy"
+      ],
+      "timeoutSeconds": 240
+    }
+  }
 }

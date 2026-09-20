@@ -1,1234 +1,1284 @@
 {
   "after": {
-    ".github/workflows/ci.yml:catalog:Check catalog probe supervision": {
-      "job": "catalog",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Check catalog probe supervision",
-      "run": "cargo test -p latentd --test catalog_scale --locked",
-      "shell": "default",
+    ".github/workflows/ci.yml:profile:select": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "profile",
+      "name": "select",
+      "jobIf": "success()",
       "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:catalog:Publish and reopen 100,000 dormant releases in isolated processes": {
-      "job": "catalog",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Publish and reopen 100,000 dormant releases in isolated processes",
-      "run": "set -o pipefail\ncargo test -p latentd --test catalog_scale --locked production_catalog_100k -- --exact --ignored --nocapture --test-threads=1 2>&1 | tee catalog-scale.log",
-      "shell": "bash",
-      "stepIf": "github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:catalog:Run catalog recovery, routing, and dormancy regressions": {
-      "job": "catalog",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Run catalog recovery, routing, and dormancy regressions",
-      "run": "cargo test -p latent-artifacts -p latent-control-store --lib --locked -- --nocapture",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:contracts:Install Python validator dependencies": {
-      "job": "contracts",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Install Python validator dependencies",
-      "run": "python -m pip install --requirement tools/requirements.lock",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:contracts:Install verified guest binding generator": {
-      "job": "contracts",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Install verified guest binding generator",
-      "run": "python3 tools/install_guest_bindgen.py \"${RUNNER_TEMP}/lsf-guest-tools\" >> \"${GITHUB_PATH}\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:contracts:Record echo capsule build evidence": {
-      "job": "contracts",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Record echo capsule build evidence",
-      "run": "cat target/capsules/echo/build.json\ncat target/capsules/echo/sha256.txt",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:contracts:Run executable outcome and recovery matrix": {
-      "job": "contracts",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Run executable outcome and recovery matrix",
-      "run": "bash tools/run_phase0_outcome_matrix.sh",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:contracts:Validate contracts, echo component, and generated bindings": {
-      "job": "contracts",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate contracts, echo component, and generated bindings",
-      "run": "unset CARGO_INCREMENTAL\ntools/validate_contracts.sh",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": {
-      "job": "contracts",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate standalone optimization benchmark smoke",
-      "run": "unset CARGO_INCREMENTAL\npython3 tools/run_optimization_benchmarks.py --profile smoke",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "run": "python3 tools/ci_profile.py"
     },
     ".github/workflows/ci.yml:docs:Install documentation validator dependencies": {
+      "workflow": ".github/workflows/ci.yml",
       "job": "docs",
-      "jobIf": "success()",
       "name": "Install documentation validator dependencies",
-      "run": "python -m pip install --requirement tools/requirements.lock",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:docs:Preserve repository source contracts in the host-only profile": {
-      "job": "docs",
       "jobIf": "success()",
-      "name": "Preserve repository source contracts in the host-only profile",
-      "run": "python3 tools/validate_repository.py\npython3 tools/validate_foundation.py",
+      "stepIf": "success()",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "needs.profile.outputs.profile == 'fast'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "run": "python -m pip install --requirement tools/requirements.lock"
     },
     ".github/workflows/ci.yml:docs:Validate documentation and profile selection": {
+      "workflow": ".github/workflows/ci.yml",
       "job": "docs",
-      "jobIf": "success()",
       "name": "Validate documentation and profile selection",
-      "run": "python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts\npython3 tools/ci_coverage.py\n\npython3 tools/validate_docs.py",
-      "shell": "default",
+      "jobIf": "success()",
       "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture": {
-      "job": "fast",
-      "jobIf": "needs.profile.outputs.fast_packages != '' && needs.profile.outputs.fast_packages != '[]'",
-      "name": "Qualify the genuinely narrow reverse-dependent fixture",
-      "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-state/src/lib.rs'])\nassert selection.profile == 'fast'\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "needs.profile.outputs.profile == 'full'",
+      "run": "python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts\npython3 tools/ci_coverage.py\nLSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner\npython3 tools/validate_docs.py"
+    },
+    ".github/workflows/ci.yml:docs:Preserve repository source contracts in the host-only profile": {
       "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "job": "docs",
+      "name": "Preserve repository source contracts in the host-only profile",
+      "jobIf": "success()",
+      "stepIf": "needs.profile.outputs.profile == 'fast'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/validate_repository.py\npython3 tools/validate_foundation.py"
+    },
+    ".github/workflows/ci.yml:docs:Validate deterministic dependency regressions": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "docs",
+      "name": "Validate deterministic dependency regressions",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies"
     },
     ".github/workflows/ci.yml:fast:Run the selected dependency-bounded correctness suites": {
+      "workflow": ".github/workflows/ci.yml",
       "job": "fast",
-      "jobIf": "needs.profile.outputs.fast_packages != '' && needs.profile.outputs.fast_packages != '[]'",
       "name": "Run the selected dependency-bounded correctness suites",
-      "run": "python3 tools/ci_fast.py --packages-json \"$CI_FAST_PACKAGES\" --output \"$RUNNER_TEMP/ci-fast/affected\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:fast:Validate deterministic dependency regressions": {
-      "job": "fast",
       "jobIf": "needs.profile.outputs.fast_packages != '' && needs.profile.outputs.fast_packages != '[]'",
-      "name": "Validate deterministic dependency regressions",
-      "run": "python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:msrv:Check all selected reverse dependents at MSRV": {
-      "job": "msrv",
-      "jobIf": "needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'",
-      "name": "Check all selected reverse dependents at MSRV",
-      "run": "python3 tools/ci_fast.py --msrv --packages-json \"$CI_FAST_PACKAGES\" --output \"$RUNNER_TEMP/ci-fast-msrv\"",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "needs.profile.outputs.profile == 'fast'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "run": "python3 tools/ci_fast.py --packages-json \"$CI_FAST_PACKAGES\" --output \"$RUNNER_TEMP/ci-fast/affected\""
     },
-    ".github/workflows/ci.yml:msrv:Check workspace at MSRV": {
-      "job": "msrv",
-      "jobIf": "needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'",
-      "name": "Check workspace at MSRV",
-      "run": "cargo +1.94.1 check --workspace --all-targets --all-features --locked",
-      "shell": "default",
+    ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "fast",
+      "name": "Qualify the genuinely narrow reverse-dependent fixture",
+      "jobIf": "needs.profile.outputs.fast_packages != '' && needs.profile.outputs.fast_packages != '[]'",
       "stepIf": "needs.profile.outputs.profile == 'full'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:oci-registry:Check runner ownership and cleanup guards": {
-      "job": "oci-registry",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Check runner ownership and cleanup guards",
-      "run": "python3 -m unittest discover -s tools/tests -p test_oci_registry_runner.py",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-state/src/lib.rs'])\nassert selection.profile == 'fast'\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\""
     },
-    ".github/workflows/ci.yml:oci-registry:Fetch pinned disposable registry": {
-      "job": "oci-registry",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Fetch pinned disposable registry",
-      "run": "docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
-      "shell": "default",
-      "stepIf": "success()",
+    ".github/workflows/ci.yml:rust:renderer_preflight": {
       "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:oci-registry:Recover only this job's disposable registry": {
-      "job": "oci-registry",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Recover only this job's disposable registry",
-      "run": "python3 tools/run_oci_registry_tests.py --cleanup-state \"$RUNNER_TEMP/lsf-oci-registry.json\"",
-      "shell": "default",
-      "stepIf": "always()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:oci-registry:Validate bounded authenticated OCI distribution": {
-      "job": "oci-registry",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate bounded authenticated OCI distribution",
-      "run": "python3 tools/run_oci_registry_tests.py --state-file \"$RUNNER_TEMP/lsf-oci-registry.json\" --provenance-input target/capsules/echo-provenance",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:oci-registry:Validate signed web package registry and catalog round trips": {
-      "job": "oci-registry",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate signed web package registry and catalog round trips",
-      "run": "python3 tools/run_oci_registry_tests.py --state-file \"$RUNNER_TEMP/lsf-oci-registry.json\" --web-admission-component target/capsules/web-contract/component.wasm",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:profile:select": {
-      "job": "profile",
-      "jobIf": "success()",
-      "name": "select",
-      "run": "python3 tools/ci_profile.py",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:result:Require every selected validation job": {
-      "job": "result",
-      "jobIf": "always()",
-      "name": "Require every selected validation job",
-      "run": "python3 tools/ci_result.py",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Build the optimized isolated Angular compiler": {
       "job": "rust",
+      "name": "renderer_preflight",
       "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Build the optimized isolated Angular compiler",
-      "run": "cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked",
-      "shell": "default",
       "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Build the public Angular renderer fixture": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Build the public Angular renderer fixture",
-      "run": "python3 tools/build_angular_renderer.py",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Build workspace binaries and test harnesses": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Build workspace binaries and test harnesses",
-      "run": "cargo build --workspace --all-targets --all-features --locked\ncargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics > \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Check deterministic helper dependency boundaries": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Check deterministic helper dependency boundaries",
-      "run": "python3 tools/check_testkit_dependencies.py\ncargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=1\ncargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=4\ncargo test -p latent-admission -p latent-scheduler --lib --locked\ncargo test -p latent-testkit --no-default-features --lib --test test_support_compatibility --locked\ncargo run -p latent-testkit --no-default-features --example deadline --locked\ncargo run -p latent-testkit --no-default-features --example cancellation --locked",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "run": "python3 tools/run_angular_renderer_tests.py --preflight --diagnostic-root \"$RUNNER_TEMP/owned-renderer\""
     },
     ".github/workflows/ci.yml:rust:Check formatting": {
+      "workflow": ".github/workflows/ci.yml",
       "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
       "name": "Check formatting",
-      "run": "cargo fmt --all --check",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Check generated RPC and Component Model bindings": {
-      "job": "rust",
       "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Check generated RPC and Component Model bindings",
-      "run": "cargo check -p latent-rpc --all-targets --all-features --locked\ncargo check -p latent-component-bindings --locked\ncargo check -p latent-component-bindings --target wasm32-wasip2 --locked\ncargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked\ncargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Check independently selected production packages": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Check independently selected production packages",
-      "run": "cargo check -p latent -p latentd --all-features --locked\ncargo check -p latent-wasmtime --bin latent-aot-compiler --all-features --locked",
+      "workingDirectory": ".",
       "shell": "default",
+      "run": "cargo fmt --all --check"
+    },
+    ".github/workflows/ci.yml:rust:Check deterministic helper dependency boundaries": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Check deterministic helper dependency boundaries",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
       "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Check metadata working-set suite selection and observation validation": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Check metadata working-set suite selection and observation validation",
-      "run": "python3 -m unittest tools.tests.test_metadata_working_set",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Check observed Angular build and source separation boundaries": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Check observed Angular build and source separation boundaries",
-      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_build_angular_package tools.tests.test_build_inventory tools.tests.test_web_admission_schemas tools.tests.test_angular_build_runner",
-      "shell": "default",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "run": "python3 tools/check_testkit_dependencies.py\ncargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=1\ncargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=4\ncargo test -p latent-admission -p latent-scheduler --lib --locked\ncargo test -p latent-testkit --no-default-features --lib --test test_support_compatibility --locked\ncargo run -p latent-testkit --no-default-features --example deadline --locked\ncargo run -p latent-testkit --no-default-features --example cancellation --locked"
     },
     ".github/workflows/ci.yml:rust:Check workspace": {
+      "workflow": ".github/workflows/ci.yml",
       "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
       "name": "Check workspace",
-      "run": "cargo check --workspace --all-targets --all-features --locked",
-      "shell": "default",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
       "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}",
-      "run": "tail -n 120 \"$RUNNER_TEMP/lsf-clippy.log\"",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "failure() && steps.clippy.outcome == 'failure'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "run": "cargo check --workspace --all-targets --all-features --locked"
     },
-    ".github/workflows/ci.yml:rust:Export actual signed Angular T1 fixtures": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Export actual signed Angular T1 fixtures",
-      "run": "python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite angular-t1-fixture",
-      "shell": "default",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
+    ".github/workflows/ci.yml:rust:Check generated RPC and Component Model bindings": {
       "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Fetch the pinned NATS conformance server": {
       "job": "rust",
+      "name": "Check generated RPC and Component Model bindings",
       "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Fetch the pinned NATS conformance server",
-      "run": "docker pull nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Fetch the pinned S3 conformance server": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Fetch the pinned S3 conformance server",
-      "run": "docker pull quay.io/minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2",
+      "workingDirectory": ".",
       "shell": "default",
+      "run": "cargo check -p latent-rpc --all-targets --all-features --locked\ncargo check -p latent-component-bindings --locked\ncargo check -p latent-component-bindings --target wasm32-wasip2 --locked\ncargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked\ncargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked"
+    },
+    ".github/workflows/ci.yml:rust:Check independently selected production packages": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Check independently selected production packages",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
       "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Fetch the pinned Vault conformance server": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Fetch the pinned Vault conformance server",
-      "run": "docker pull hashicorp/vault@sha256:783103ba38c5e3edcaa9bbbcb0ff80fc93c690361f03fd487e89227da6c3efa9",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Fetch the pinned operator workflow registry": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Fetch the pinned operator workflow registry",
-      "run": "docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Prepare authenticated AOT test inputs": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Prepare authenticated AOT test inputs",
-      "run": "python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests\npython3 tools/aot_test_inputs.py prepare --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --output \"$RUNNER_TEMP/lsf-aot-test-inputs\"\n# Cargo supplies each harness's runtime environment itself. Export only\n# this recipe's input selectors, not CARGO_MANIFEST_DIR/library paths.\npython3 tools/aot_test_inputs.py environment --manifest \"$RUNNER_TEMP/lsf-aot-test-inputs/manifest.json\" | grep '^LSF_AOT_' >> \"$GITHUB_ENV\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Produce the observed Angular application package": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Produce the observed Angular application package",
-      "run": "# Full debug sections can exceed the observed tool's finite byte cap.\n# Observe and execute this exact stripped copy, as for the AOT fixture.\nobjcopy --strip-debug \"$PWD/target/debug/latent\" \"$RUNNER_TEMP/lsf-angular-package-assembler\"\nstat --format='Angular package assembler: %s bytes' \"$RUNNER_TEMP/lsf-angular-package-assembler\"\npython3 tools/build_angular_package.py --input-root examples/angular-application --toolchain-root examples/renderer-profile --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --target-root \"$RUNNER_TEMP/angular-build\" --output \"$RUNNER_TEMP/angular-build/actual\" --cargo-target-dir \"$PWD/target\" --repository https://example.com/source",
-      "shell": "default",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Qualify actual Angular on the protected T1 node": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Qualify actual Angular on the protected T1 node",
-      "run": "python3 -m unittest tools.tests.test_angular_t1_workflow\nmkdir \"$RUNNER_TEMP/angular-t1-bin\"\nfor binary in latent latentd; do\n  objcopy --strip-debug \"$PWD/target/debug/$binary\" \"$RUNNER_TEMP/angular-t1-bin/$binary\"\ndone\nobjcopy --strip-debug \"$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler\" \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\"\npython3 tools/run_angular_t1_workflow.py --cli \"$RUNNER_TEMP/angular-t1-bin/latent\" --node \"$RUNNER_TEMP/angular-t1-bin/latentd\" --compiler \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\" --fixture-root \"$RUNNER_TEMP/angular-t1-fixture\" > \"$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json\"",
-      "shell": "default",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Qualify bounded Angular SSR and browser hydration": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Qualify bounded Angular SSR and browser hydration",
-      "run": "npm ci --ignore-scripts --no-audit --no-fund\nnpm run build\nnode node-candidate.mjs\ntimeout 480 ../../target/debug/latent-renderer-profile dist/renderer.wasm dist/wasmtime-rendered.html\nnode hydrate.mjs \"$(command -v google-chrome)\"",
-      "shell": "default",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "examples/renderer-profile"
-    },
-    ".github/workflows/ci.yml:rust:Run tests": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Run tests",
-      "run": "set -o pipefail\ncargo test --workspace --all-targets --all-features --locked 2>&1 | tee \"$RUNNER_TEMP/ci-workspace-tests.log\"\npython3 tools/ci_suite_discovery.py --execution-log \"$RUNNER_TEMP/ci-workspace-tests.log\"\ncargo test -p latent-admission -p latent-scheduler --doc --locked 2>&1 | tee \"$RUNNER_TEMP/ci-doctests.log\"\npython3 tools/ci_suite_discovery.py --recipe explicit-doctests --execution-log \"$RUNNER_TEMP/ci-doctests.log\"\ncargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests 2>&1 | tee \"$RUNNER_TEMP/ci-signing-compatibility.log\"\npython3 tools/ci_suite_discovery.py --recipe signing-compatibility --execution-log \"$RUNNER_TEMP/ci-signing-compatibility.log\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Validate Angular in generic cells and the shared HTTP node": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate Angular in generic cells and the shared HTTP node",
-      "run": "python3 tools/run_angular_renderer_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --component examples/renderer-profile/dist/runtime/application.wasm",
-      "shell": "default",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Validate NATS events with the existing test harness": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate NATS events with the existing test harness",
-      "run": "python3 tools/run_nats_event_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Validate NATS triggers with the existing test harness": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate NATS triggers with the existing test harness",
-      "run": "python3 tools/run_nats_event_tests.py --suite nats_triggers --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Validate S3 blobs with the existing test harness": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate S3 blobs with the existing test harness",
-      "run": "python3 tools/run_s3_blob_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Validate Vault secrets with the existing test harness": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate Vault secrets with the existing test harness",
-      "run": "python3 tools/run_vault_secret_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Validate bounded Phase 2 delivery and resource workflows": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate bounded Phase 2 delivery and resource workflows",
-      "run": "python3 -m unittest tools.tests.test_ci_rust_artifacts tools.tests.test_phase2_resource_binaries\nfixture_root=\"$(mktemp -d \"${RUNNER_TEMP}/lsf-operator-fixture.XXXXXXXX\")\"\nmkdir -p \"${RUNNER_TEMP}/phase2-gate\"\ntrap 'rm -rf -- \"$fixture_root\"' EXIT\nLSF_OPERATOR_FIXTURE_ROOT=\"${fixture_root}/inputs\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite operator-fixture\npython3 -m unittest tools.tests.test_phase2_operator_workflow tools.tests.test_phase2_operator_canary tools.tests.test_phase2_offline_workflow\npython3 tools/run_phase2_operator_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --fixture-root \"${fixture_root}/inputs\" --source-commit \"${GITHUB_SHA}\" > \"${RUNNER_TEMP}/phase2-gate/operator-receipt.json\"\n# The executable is authenticated and hashed again in the child. Keep\n# debug sections out of this bounded runtime fixture without rebuilding\n# the workspace or modifying Cargo's cached executable.\nobjcopy --strip-debug \"${PWD}/target/debug/latent-aot-compiler\" \"${fixture_root}/latent-aot-compiler\"\nstat --format='AOT compiler fixture: %s bytes' \"${fixture_root}/latent-aot-compiler\"\nLSF_OPERATOR_FIXTURE_ROOT=\"${fixture_root}/inputs\" LSF_AOT_COMPILER=\"${fixture_root}/latent-aot-compiler\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite trust-currentness\npython3 tools/run_security_profile_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --compiler \"${fixture_root}/latent-aot-compiler\" --fixture-root \"${fixture_root}/inputs\" > \"${RUNNER_TEMP}/phase2-gate/security-profile-receipt.json\"\npython3 tools/run_phase2_offline_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --fixture-root \"${fixture_root}/inputs\" --source-commit \"${GITHUB_SHA}\" > \"${RUNNER_TEMP}/phase2-gate/offline-receipt.json\"\nLSF_OPERATOR_FIXTURE_ROOT=\"${fixture_root}/publication-inputs\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite publication-fixture\npython3 tools/run_publication_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --fixture-root \"${fixture_root}/publication-inputs\" --source-commit \"${GITHUB_SHA}\" > \"${RUNNER_TEMP}/phase2-gate/publication-receipt.json\"\n# Keep the frozen 512 MiB executable-hash limit without modifying\n# Cargo's debug artifacts or their hard-linked copies. Hash and run\n# these same runtime-only copies, never the unstripped originals.\nresource_bin=\"${fixture_root}/resource-bin\"\nmkdir \"${resource_bin}\"\nfor binary in latent latentd; do\n  objcopy --strip-debug \"${PWD}/target/debug/${binary}\" \"${resource_bin}/${binary}\"\n  stat --format=\"Resource ${binary} fixture: %s bytes\" \"${resource_bin}/${binary}\"\ndone\nLSF_PHASE2_RESOURCE_FIXTURE_ROOT=\"${fixture_root}/resource-inputs\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite resource-fixture\npython3 -m unittest tools.tests.test_phase2_gate_resource tools.tests.test_phase2_resource_clock\nLSF_GATE_FIXTURE_ROOT=\"${fixture_root}\" python3 - <<'PY'\nimport hashlib, json, os, pathlib, subprocess\nroot = pathlib.Path.cwd()\nbinaries = pathlib.Path(os.environ[\"LSF_GATE_FIXTURE_ROOT\"]) / \"resource-bin\"\ndef digest(path):\n    with path.open(\"rb\") as source:\n        return \"sha256:\" + hashlib.file_digest(source, \"sha256\").hexdigest()\nidentity = {\n    \"schemaVersion\": \"latent.phase2.resource-build.v1\",\n    \"sourceRevision\": os.environ[\"GITHUB_SHA\"],\n    \"cargoLockSha256\": digest(root / \"Cargo.lock\"),\n    \"cliSha256\": digest(binaries / \"latent\"),\n    \"nodeSha256\": digest(binaries / \"latentd\"),\n    \"rustcVersion\": subprocess.check_output([\"rustc\", \"--version\"], text=True).strip(),\n    \"buildProfile\": \"debug\",\n}\n(pathlib.Path(os.environ[\"LSF_GATE_FIXTURE_ROOT\"]) / \"build.json\").write_text(json.dumps(identity))\nPY\npython3 tools/phase2_gate_resource.py --cli \"${resource_bin}/latent\" --node \"${resource_bin}/latentd\" --fixture-root \"${fixture_root}/resource-inputs\" --build-identity \"${fixture_root}/build.json\" --output \"${RUNNER_TEMP}/phase2-gate/resource-receipt.json\"\npython3 tools/phase2_gate_resource.py --validate \"${RUNNER_TEMP}/phase2-gate/resource-receipt.json\"",
-      "shell": "bash",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Validate capability policy CLI lifecycle": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate capability policy CLI lifecycle",
-      "run": "python3 tools/run_capability_policy_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Verify actual Angular package admission, fresh rendering and browser hydration": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Verify actual Angular package admission, fresh rendering and browser hydration",
-      "run": "python3 tools/run_angular_build_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --build \"$RUNNER_TEMP/angular-build/actual\" --html \"$RUNNER_TEMP/angular-build/rendered.html\"\nnode tools/check_angular_hydration.mjs examples/renderer-profile \"$RUNNER_TEMP/angular-build/actual\" \"$RUNNER_TEMP/angular-build/rendered.html\" \"$(command -v google-chrome)\"",
-      "shell": "default",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:Verify complete registered workspace test discovery": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Verify complete registered workspace test discovery",
-      "run": "python3 tools/ci_suite_discovery.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --receipt \"$RUNNER_TEMP/ci-discovery.json\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:rust:browser_boundary": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "browser_boundary",
-      "run": "node --test tools/tests/browser_hydration.test.mjs tools/tests/browser_application.test.mjs\nnode tools/browser-boundary/build.mjs examples/renderer-profile \"$RUNNER_TEMP/browser-boundary\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-boundary/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-boundary/application.wasm\"\nLSF_WEB_COMPONENT=\"$RUNNER_TEMP/browser-boundary/application.wasm\" LSF_BROWSER_BUILD=\"$RUNNER_TEMP/browser-boundary\" LSF_BROWSER_NODE=\"$(command -v node)\" LSF_BROWSER_CHROME=\"$(command -v google-chrome)\" LSF_BROWSER_TOOLCHAIN=\"$PWD/examples/renderer-profile\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite browser-boundary",
-      "shell": "default",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "run": "cargo check -p latent -p latentd --all-features --locked\ncargo check -p latent-wasmtime --bin latent-aot-compiler --all-features --locked"
     },
     ".github/workflows/ci.yml:rust:clippy": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "clippy",
-      "run": "status=0\ncargo clippy --workspace --all-targets --all-features --locked > \"$RUNNER_TEMP/lsf-clippy.log\" 2>&1 || status=$?\nif [ \"$status\" -eq 0 ]; then\n  cargo clippy -p latent -p latentd -p latent-testkit -p latent-admission --all-targets --all-features --locked --no-deps -- -D warnings >> \"$RUNNER_TEMP/lsf-clippy.log\" 2>&1 || status=$?\nfi\ntail -n 120 \"$RUNNER_TEMP/lsf-clippy.log\"\npython3 - <<'PY'\nimport os\nimport pathlib\nimport re\nlines = (pathlib.Path(os.environ[\"RUNNER_TEMP\"]) / \"lsf-clippy.log\").read_text().splitlines()\nerrors = [\" \".join(lines[i:i + 4]) for i, line in enumerate(lines) if re.match(r\"^error(?:\\[.*?\\])?:\", line)]\ndiagnostic = \" | \".join(errors)[:1000] or \"no compiler errors\"\nwith open(os.environ[\"GITHUB_OUTPUT\"], \"a\", encoding=\"utf-8\") as output:\n    output.write(f\"diagnostic={diagnostic}\\n\")\nPY\nexit \"$status\"",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "job": "rust",
+      "name": "clippy",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "status=0\ncargo clippy --workspace --all-targets --all-features --locked > \"$RUNNER_TEMP/lsf-clippy.log\" 2>&1 || status=$?\nif [ \"$status\" -eq 0 ]; then\n  cargo clippy -p latent -p latentd -p latent-testkit -p latent-admission --all-targets --all-features --locked --no-deps -- -D warnings >> \"$RUNNER_TEMP/lsf-clippy.log\" 2>&1 || status=$?\nfi\ntail -n 120 \"$RUNNER_TEMP/lsf-clippy.log\"\npython3 - <<'PY'\nimport os\nimport pathlib\nimport re\nlines = (pathlib.Path(os.environ[\"RUNNER_TEMP\"]) / \"lsf-clippy.log\").read_text().splitlines()\nerrors = [\" \".join(lines[i:i + 4]) for i, line in enumerate(lines) if re.match(r\"^error(?:\\[.*?\\])?:\", line)]\ndiagnostic = \" | \".join(errors)[:1000] or \"no compiler errors\"\nwith open(os.environ[\"GITHUB_OUTPUT\"], \"a\", encoding=\"utf-8\") as output:\n    output.write(f\"diagnostic={diagnostic}\\n\")\nPY\nexit \"$status\""
+    },
+    ".github/workflows/ci.yml:rust:Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "failure() && steps.clippy.outcome == 'failure'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "tail -n 120 \"$RUNNER_TEMP/lsf-clippy.log\""
+    },
+    ".github/workflows/ci.yml:rust:Build workspace binaries and test harnesses": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Build workspace binaries and test harnesses",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo build --workspace --all-targets --all-features --locked\ncargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics > \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\""
+    },
+    ".github/workflows/ci.yml:rust:Verify complete registered workspace test discovery": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Verify complete registered workspace test discovery",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/ci_suite_discovery.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --receipt \"$RUNNER_TEMP/ci-discovery.json\""
+    },
+    ".github/workflows/ci.yml:rust:Prepare authenticated AOT test inputs": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Prepare authenticated AOT test inputs",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests\npython3 tools/aot_test_inputs.py prepare --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --output \"$RUNNER_TEMP/lsf-aot-test-inputs\"\n# Cargo supplies each harness's runtime environment itself. Export only\n# this recipe's input selectors, not CARGO_MANIFEST_DIR/library paths.\npython3 tools/aot_test_inputs.py environment --manifest \"$RUNNER_TEMP/lsf-aot-test-inputs/manifest.json\" | grep '^LSF_AOT_' >> \"$GITHUB_ENV\""
+    },
+    ".github/workflows/ci.yml:rust:Run tests": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Run tests",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo test --workspace --all-targets --all-features --locked 2>&1 | tee \"$RUNNER_TEMP/ci-workspace-tests.log\"\npython3 tools/ci_suite_discovery.py --execution-log \"$RUNNER_TEMP/ci-workspace-tests.log\"\ncargo test -p latent-admission -p latent-scheduler --doc --locked 2>&1 | tee \"$RUNNER_TEMP/ci-doctests.log\"\npython3 tools/ci_suite_discovery.py --recipe explicit-doctests --execution-log \"$RUNNER_TEMP/ci-doctests.log\"\ncargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests 2>&1 | tee \"$RUNNER_TEMP/ci-signing-compatibility.log\"\npython3 tools/ci_suite_discovery.py --recipe signing-compatibility --execution-log \"$RUNNER_TEMP/ci-signing-compatibility.log\""
+    },
+    ".github/workflows/ci.yml:rust:Check metadata working-set suite selection and observation validation": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Check metadata working-set suite selection and observation validation",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_metadata_working_set"
     },
     ".github/workflows/ci.yml:rust:metadata-working-set": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "metadata-working-set",
-      "run": "set -o pipefail\npython3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite metadata-working-set 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\"",
-      "shell": "bash",
-      "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "job": "rust",
+      "name": "metadata-working-set",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -o pipefail\npython3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite metadata-working-set 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\""
+    },
+    ".github/workflows/ci.yml:rust:Qualify bounded Angular SSR and browser hydration": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Qualify bounded Angular SSR and browser hydration",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": "examples/renderer-profile",
+      "shell": "default",
+      "run": "npm ci --ignore-scripts --no-audit --no-fund\nnpm run build\nnode node-candidate.mjs\ntimeout 480 ../../target/debug/latent-renderer-profile dist/renderer.wasm dist/wasmtime-rendered.html\nnode hydrate.mjs \"$(command -v google-chrome)\""
+    },
+    ".github/workflows/ci.yml:rust:browser_boundary": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "browser_boundary",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "node --test tools/tests/browser_hydration.test.mjs tools/tests/browser_application.test.mjs\nnode tools/browser-boundary/build.mjs examples/renderer-profile \"$RUNNER_TEMP/browser-boundary\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-boundary/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-boundary/application.wasm\"\nLSF_WEB_COMPONENT=\"$RUNNER_TEMP/browser-boundary/application.wasm\" LSF_BROWSER_BUILD=\"$RUNNER_TEMP/browser-boundary\" LSF_BROWSER_NODE=\"$(command -v node)\" LSF_BROWSER_CHROME=\"$(command -v google-chrome)\" LSF_BROWSER_TOOLCHAIN=\"$PWD/examples/renderer-profile\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite browser-boundary"
+    },
+    ".github/workflows/ci.yml:rust:Build the public Angular renderer fixture": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Build the public Angular renderer fixture",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/build_angular_renderer.py"
+    },
+    ".github/workflows/ci.yml:rust:Validate Angular in generic cells and the shared HTTP node": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Validate Angular in generic cells and the shared HTTP node",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_angular_renderer_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --component examples/renderer-profile/dist/runtime/application.wasm --diagnostic-root \"$RUNNER_TEMP/owned-renderer\""
+    },
+    ".github/workflows/ci.yml:rust:Exercise renderer ownership failure after exact discovery": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Exercise renderer ownership failure after exact discovery",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "status=0\npython3 tools/run_angular_renderer_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --component examples/renderer-profile/dist/runtime/application.wasm --inject-failure after-discovery --diagnostic-root \"$RUNNER_TEMP/owned-renderer-fault\" || status=$?\ntest \"$status\" -eq 1\npython3 tools/check_owned_diagnostics.py \"$RUNNER_TEMP/owned-renderer-fault\" --suite angular-renderer --reason injected-after-discovery"
+    },
+    ".github/workflows/ci.yml:rust:Check observed Angular build and source separation boundaries": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Check observed Angular build and source separation boundaries",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_build_angular_package tools.tests.test_build_inventory tools.tests.test_web_admission_schemas tools.tests.test_angular_build_runner"
+    },
+    ".github/workflows/ci.yml:rust:Produce the observed Angular application package": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Produce the observed Angular application package",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "# Full debug sections can exceed the observed tool's finite byte cap.\n# Observe and execute this exact stripped copy, as for the AOT fixture.\nobjcopy --strip-debug \"$PWD/target/debug/latent\" \"$RUNNER_TEMP/lsf-angular-package-assembler\"\nstat --format='Angular package assembler: %s bytes' \"$RUNNER_TEMP/lsf-angular-package-assembler\"\npython3 tools/build_angular_package.py --input-root examples/angular-application --toolchain-root examples/renderer-profile --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --target-root \"$RUNNER_TEMP/angular-build\" --output \"$RUNNER_TEMP/angular-build/actual\" --cargo-target-dir \"$PWD/target\" --repository https://example.com/source"
+    },
+    ".github/workflows/ci.yml:rust:Verify actual Angular package admission, fresh rendering and browser hydration": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Verify actual Angular package admission, fresh rendering and browser hydration",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_angular_build_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --build \"$RUNNER_TEMP/angular-build/actual\" --html \"$RUNNER_TEMP/angular-build/rendered.html\"\nnode tools/check_angular_hydration.mjs examples/renderer-profile \"$RUNNER_TEMP/angular-build/actual\" \"$RUNNER_TEMP/angular-build/rendered.html\" \"$(command -v google-chrome)\""
+    },
+    ".github/workflows/ci.yml:rust:Fetch the pinned operator workflow registry": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Fetch the pinned operator workflow registry",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395"
+    },
+    ".github/workflows/ci.yml:rust:Fetch the pinned S3 conformance server": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Fetch the pinned S3 conformance server",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker pull quay.io/minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2"
+    },
+    ".github/workflows/ci.yml:rust:Validate S3 blobs with the existing test harness": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Validate S3 blobs with the existing test harness",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_s3_blob_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\""
+    },
+    ".github/workflows/ci.yml:rust:Fetch the pinned Vault conformance server": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Fetch the pinned Vault conformance server",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker pull hashicorp/vault@sha256:783103ba38c5e3edcaa9bbbcb0ff80fc93c690361f03fd487e89227da6c3efa9"
+    },
+    ".github/workflows/ci.yml:rust:Validate Vault secrets with the existing test harness": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Validate Vault secrets with the existing test harness",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_vault_secret_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\""
+    },
+    ".github/workflows/ci.yml:rust:Fetch the pinned NATS conformance server": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Fetch the pinned NATS conformance server",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker pull nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc"
+    },
+    ".github/workflows/ci.yml:rust:Validate NATS events with the existing test harness": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Validate NATS events with the existing test harness",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_nats_event_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\""
+    },
+    ".github/workflows/ci.yml:rust:Validate NATS triggers with the existing test harness": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Validate NATS triggers with the existing test harness",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_nats_event_tests.py --suite nats_triggers --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\""
+    },
+    ".github/workflows/ci.yml:rust:Validate capability policy CLI lifecycle": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Validate capability policy CLI lifecycle",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_capability_policy_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\""
+    },
+    ".github/workflows/ci.yml:rust:Validate bounded Phase 2 delivery and resource workflows": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Validate bounded Phase 2 delivery and resource workflows",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "python3 -m unittest tools.tests.test_ci_rust_artifacts tools.tests.test_phase2_resource_binaries\nfixture_root=\"$(mktemp -d \"${RUNNER_TEMP}/lsf-operator-fixture.XXXXXXXX\")\"\nmkdir -p \"${RUNNER_TEMP}/phase2-gate\"\ntrap 'rm -rf -- \"$fixture_root\"' EXIT\nLSF_OPERATOR_FIXTURE_ROOT=\"${fixture_root}/inputs\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite operator-fixture\npython3 -m unittest tools.tests.test_phase2_operator_workflow tools.tests.test_phase2_operator_canary tools.tests.test_phase2_offline_workflow\npython3 tools/run_phase2_operator_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --fixture-root \"${fixture_root}/inputs\" --source-commit \"${GITHUB_SHA}\" > \"${RUNNER_TEMP}/phase2-gate/operator-receipt.json\"\n# The executable is authenticated and hashed again in the child. Keep\n# debug sections out of this bounded runtime fixture without rebuilding\n# the workspace or modifying Cargo's cached executable.\nobjcopy --strip-debug \"${PWD}/target/debug/latent-aot-compiler\" \"${fixture_root}/latent-aot-compiler\"\nstat --format='AOT compiler fixture: %s bytes' \"${fixture_root}/latent-aot-compiler\"\nLSF_OPERATOR_FIXTURE_ROOT=\"${fixture_root}/inputs\" LSF_AOT_COMPILER=\"${fixture_root}/latent-aot-compiler\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite trust-currentness\npython3 tools/run_security_profile_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --compiler \"${fixture_root}/latent-aot-compiler\" --fixture-root \"${fixture_root}/inputs\" > \"${RUNNER_TEMP}/phase2-gate/security-profile-receipt.json\"\npython3 tools/run_phase2_offline_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --fixture-root \"${fixture_root}/inputs\" --source-commit \"${GITHUB_SHA}\" > \"${RUNNER_TEMP}/phase2-gate/offline-receipt.json\"\nLSF_OPERATOR_FIXTURE_ROOT=\"${fixture_root}/publication-inputs\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite publication-fixture\npython3 tools/run_publication_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --fixture-root \"${fixture_root}/publication-inputs\" --source-commit \"${GITHUB_SHA}\" > \"${RUNNER_TEMP}/phase2-gate/publication-receipt.json\"\n# Keep the frozen 512 MiB executable-hash limit without modifying\n# Cargo's debug artifacts or their hard-linked copies. Hash and run\n# these same runtime-only copies, never the unstripped originals.\nresource_bin=\"${fixture_root}/resource-bin\"\nmkdir \"${resource_bin}\"\nfor binary in latent latentd; do\n  objcopy --strip-debug \"${PWD}/target/debug/${binary}\" \"${resource_bin}/${binary}\"\n  stat --format=\"Resource ${binary} fixture: %s bytes\" \"${resource_bin}/${binary}\"\ndone\nLSF_PHASE2_RESOURCE_FIXTURE_ROOT=\"${fixture_root}/resource-inputs\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite resource-fixture\npython3 -m unittest tools.tests.test_phase2_gate_resource tools.tests.test_phase2_resource_clock\nLSF_GATE_FIXTURE_ROOT=\"${fixture_root}\" python3 - <<'PY'\nimport hashlib, json, os, pathlib, subprocess\nroot = pathlib.Path.cwd()\nbinaries = pathlib.Path(os.environ[\"LSF_GATE_FIXTURE_ROOT\"]) / \"resource-bin\"\ndef digest(path):\n    with path.open(\"rb\") as source:\n        return \"sha256:\" + hashlib.file_digest(source, \"sha256\").hexdigest()\nidentity = {\n    \"schemaVersion\": \"latent.phase2.resource-build.v1\",\n    \"sourceRevision\": os.environ[\"GITHUB_SHA\"],\n    \"cargoLockSha256\": digest(root / \"Cargo.lock\"),\n    \"cliSha256\": digest(binaries / \"latent\"),\n    \"nodeSha256\": digest(binaries / \"latentd\"),\n    \"rustcVersion\": subprocess.check_output([\"rustc\", \"--version\"], text=True).strip(),\n    \"buildProfile\": \"debug\",\n}\n(pathlib.Path(os.environ[\"LSF_GATE_FIXTURE_ROOT\"]) / \"build.json\").write_text(json.dumps(identity))\nPY\npython3 tools/phase2_gate_resource.py --cli \"${resource_bin}/latent\" --node \"${resource_bin}/latentd\" --fixture-root \"${fixture_root}/resource-inputs\" --build-identity \"${fixture_root}/build.json\" --output \"${RUNNER_TEMP}/phase2-gate/resource-receipt.json\"\npython3 tools/phase2_gate_resource.py --validate \"${RUNNER_TEMP}/phase2-gate/resource-receipt.json\""
+    },
+    ".github/workflows/ci.yml:rust:Build the optimized isolated Angular compiler": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Build the optimized isolated Angular compiler",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked"
+    },
+    ".github/workflows/ci.yml:rust:Export actual signed Angular T1 fixtures": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Export actual signed Angular T1 fixtures",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite angular-t1-fixture"
+    },
+    ".github/workflows/ci.yml:rust:Qualify actual Angular on the protected T1 node": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Qualify actual Angular on the protected T1 node",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_angular_t1_workflow\nmkdir \"$RUNNER_TEMP/angular-t1-bin\"\nfor binary in latent latentd; do\n  objcopy --strip-debug \"$PWD/target/debug/$binary\" \"$RUNNER_TEMP/angular-t1-bin/$binary\"\ndone\nobjcopy --strip-debug \"$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler\" \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\"\npython3 tools/run_angular_t1_workflow.py --cli \"$RUNNER_TEMP/angular-t1-bin/latent\" --node \"$RUNNER_TEMP/angular-t1-bin/latentd\" --compiler \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\" --fixture-root \"$RUNNER_TEMP/angular-t1-fixture\" > \"$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json\""
+    },
+    ".github/workflows/ci.yml:oci-registry:Fetch pinned disposable registry": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "oci-registry",
+      "name": "Fetch pinned disposable registry",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395"
+    },
+    ".github/workflows/ci.yml:oci-registry:oci_preflight": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "oci-registry",
+      "name": "oci_preflight",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_oci_registry_tests.py --preflight --diagnostic-root \"$RUNNER_TEMP/owned-oci\""
+    },
+    ".github/workflows/ci.yml:oci-registry:Demonstrate live provider startup and injected failure cleanup": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "oci-registry",
+      "name": "Demonstrate live provider startup and injected failure cleanup",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_owned_runners.NativeRunnerDemonstrations.test_live_provider_normal_and_injected_failure_leave_no_owned_container"
+    },
+    ".github/workflows/ci.yml:oci-registry:Prepare exact OCI and web admission harnesses": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "oci-registry",
+      "name": "Prepare exact OCI and web admission harnesses",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo test -p latent-oci --test registry --locked --no-run --message-format=json,json-render-diagnostics > \"$RUNNER_TEMP/lsf-oci-tests.jsonl\"\ncargo test -p latent-policy --lib --locked --no-run --message-format=json,json-render-diagnostics > \"$RUNNER_TEMP/lsf-web-registry-tests.jsonl\""
+    },
+    ".github/workflows/ci.yml:oci-registry:Check runner ownership and cleanup guards": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "oci-registry",
+      "name": "Check runner ownership and cleanup guards",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest discover -s tools/tests -p test_oci_registry_runner.py"
+    },
+    ".github/workflows/ci.yml:oci-registry:Validate bounded authenticated OCI distribution": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "oci-registry",
+      "name": "Validate bounded authenticated OCI distribution",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_oci_registry_tests.py --test-manifest \"$RUNNER_TEMP/lsf-oci-tests.jsonl\" --state-file \"$RUNNER_TEMP/lsf-oci-registry.json\" --provenance-input target/capsules/echo-provenance --diagnostic-root \"$RUNNER_TEMP/owned-oci\""
+    },
+    ".github/workflows/ci.yml:oci-registry:Validate signed web package registry and catalog round trips": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "oci-registry",
+      "name": "Validate signed web package registry and catalog round trips",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_oci_registry_tests.py --test-manifest \"$RUNNER_TEMP/lsf-web-registry-tests.jsonl\" --state-file \"$RUNNER_TEMP/lsf-oci-registry.json\" --web-admission-component target/capsules/web-contract/component.wasm --diagnostic-root \"$RUNNER_TEMP/owned-oci\""
+    },
+    ".github/workflows/ci.yml:oci-registry:Recover only this job's disposable registry": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "oci-registry",
+      "name": "Recover only this job's disposable registry",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "always()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_oci_registry_tests.py --cleanup-state \"$RUNNER_TEMP/lsf-oci-registry.json\" --diagnostic-root \"$RUNNER_TEMP/owned-oci\""
+    },
+    ".github/workflows/ci.yml:catalog:Run catalog recovery, routing, and dormancy regressions": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "catalog",
+      "name": "Run catalog recovery, routing, and dormancy regressions",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo test -p latent-artifacts -p latent-control-store --lib --locked -- --nocapture"
+    },
+    ".github/workflows/ci.yml:catalog:Check catalog probe supervision": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "catalog",
+      "name": "Check catalog probe supervision",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo test -p latentd --test catalog_scale --locked"
+    },
+    ".github/workflows/ci.yml:catalog:Publish and reopen 100,000 dormant releases in isolated processes": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "catalog",
+      "name": "Publish and reopen 100,000 dormant releases in isolated processes",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -o pipefail\ncargo test -p latentd --test catalog_scale --locked production_catalog_100k -- --exact --ignored --nocapture --test-threads=1 2>&1 | tee catalog-scale.log"
+    },
+    ".github/workflows/ci.yml:msrv:Check workspace at MSRV": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "msrv",
+      "name": "Check workspace at MSRV",
+      "jobIf": "needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'",
+      "stepIf": "needs.profile.outputs.profile == 'full'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo +1.94.1 check --workspace --all-targets --all-features --locked"
+    },
+    ".github/workflows/ci.yml:msrv:Check all selected reverse dependents at MSRV": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "msrv",
+      "name": "Check all selected reverse dependents at MSRV",
+      "jobIf": "needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'",
+      "stepIf": "needs.profile.outputs.profile == 'fast'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/ci_fast.py --msrv --packages-json \"$CI_FAST_PACKAGES\" --output \"$RUNNER_TEMP/ci-fast-msrv\""
+    },
+    ".github/workflows/ci.yml:contracts:Install Python validator dependencies": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "contracts",
+      "name": "Install Python validator dependencies",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m pip install --requirement tools/requirements.lock"
+    },
+    ".github/workflows/ci.yml:contracts:Install verified guest binding generator": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "contracts",
+      "name": "Install verified guest binding generator",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/install_guest_bindgen.py \"${RUNNER_TEMP}/lsf-guest-tools\" >> \"${GITHUB_PATH}\""
+    },
+    ".github/workflows/ci.yml:contracts:Validate contracts, echo component, and generated bindings": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "contracts",
+      "name": "Validate contracts, echo component, and generated bindings",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "unset CARGO_INCREMENTAL\ntools/validate_contracts.sh"
+    },
+    ".github/workflows/ci.yml:contracts:Run executable outcome and recovery matrix": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "contracts",
+      "name": "Run executable outcome and recovery matrix",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "bash tools/run_phase0_outcome_matrix.sh"
+    },
+    ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "contracts",
+      "name": "Validate standalone optimization benchmark smoke",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "unset CARGO_INCREMENTAL\npython3 tools/run_optimization_benchmarks.py --profile smoke"
+    },
+    ".github/workflows/ci.yml:contracts:Record echo capsule build evidence": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "contracts",
+      "name": "Record echo capsule build evidence",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cat target/capsules/echo/build.json\ncat target/capsules/echo/sha256.txt"
     },
     ".github/workflows/ci.yml:sdks:Install the checksum-pinned Java-compatible Gradle": {
-      "job": "sdks",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Install the checksum-pinned Java-compatible Gradle",
-      "run": "set -euo pipefail\nversion=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle\"])')\"\nchecksum=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle_sha256\"])')\"\ndestination=\"${RUNNER_TEMP}/lsf-gradle\"\nmkdir -p \"$destination\"\ncurl --fail --location --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 180 \\\n  \"https://services.gradle.org/distributions/gradle-${version}-bin.zip\" -o \"$destination/gradle.zip\"\nprintf '%s  %s\\n' \"$checksum\" \"$destination/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$destination/gradle.zip\" -d \"$destination\"\necho \"$destination/gradle-${version}/bin\" >> \"$GITHUB_PATH\"",
-      "shell": "bash",
-      "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "job": "sdks",
+      "name": "Install the checksum-pinned Java-compatible Gradle",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -euo pipefail\nversion=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle\"])')\"\nchecksum=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle_sha256\"])')\"\ndestination=\"${RUNNER_TEMP}/lsf-gradle\"\nmkdir -p \"$destination\"\ncurl --fail --location --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 180 \\\n  \"https://services.gradle.org/distributions/gradle-${version}-bin.zip\" -o \"$destination/gradle.zip\"\nprintf '%s  %s\\n' \"$checksum\" \"$destination/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$destination/gradle.zip\" -d \"$destination\"\necho \"$destination/gradle-${version}/bin\" >> \"$GITHUB_PATH\""
     },
     ".github/workflows/ci.yml:sdks:Qualify the Java 25 Gradle build": {
-      "job": "sdks",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Qualify the Java 25 Gradle build",
-      "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/java-sdk\"\ngit rev-parse HEAD | tee \"$RUNNER_TEMP/java-sdk/gradle.log\"\nuname -srm | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 sdk/java-client/tools/java_toolchain.py check | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ngradle --version | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ntimeout 540 gradle --no-daemon --console=plain -p sdk/java-client clean check 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\necho 'Gradle qualification passed' | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"",
-      "shell": "bash",
-      "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "job": "sdks",
+      "name": "Qualify the Java 25 Gradle build",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/java-sdk\"\ngit rev-parse HEAD | tee \"$RUNNER_TEMP/java-sdk/gradle.log\"\nuname -srm | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 sdk/java-client/tools/java_toolchain.py check | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ngradle --version | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ntimeout 540 gradle --no-daemon --console=plain -p sdk/java-client clean check 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\necho 'Gradle qualification passed' | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\""
     },
     ".github/workflows/ci.yml:sdks:Validate SDK surfaces": {
-      "job": "sdks",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Validate SDK surfaces",
-      "run": "set -euo pipefail\ntools/validate_sdks.sh 2>&1 | tee \"$RUNNER_TEMP/java-sdk/sdk.log\"\nsha256sum sdk/java-client/build/latent-java-client.jar | tee \"$RUNNER_TEMP/java-sdk/jar.sha256\"\npython3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar > \"$RUNNER_TEMP/java-sdk/jar-classfile.json\"\ntest \"$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)\" = \\\n  \"Version ${EXPECTED_TYPESCRIPT_VERSION}\"",
-      "shell": "bash",
-      "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/docs-pages.yml:browser:Install the reviewed browser tools in an unprivileged job": {
-      "job": "browser",
-      "jobIf": "success()",
-      "name": "Install the reviewed browser tools in an unprivileged job",
-      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund\nnode website/node_modules/playwright/cli.js install-deps chromium\nnode website/scripts/site.mjs browser-install",
-      "shell": "default",
+      "job": "sdks",
+      "name": "Validate SDK surfaces",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
       "stepIf": "success()",
-      "workflow": ".github/workflows/docs-pages.yml",
-      "workingDirectory": "."
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -euo pipefail\ntools/validate_sdks.sh 2>&1 | tee \"$RUNNER_TEMP/java-sdk/sdk.log\"\nsha256sum sdk/java-client/build/latent-java-client.jar | tee \"$RUNNER_TEMP/java-sdk/jar.sha256\"\npython3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar > \"$RUNNER_TEMP/java-sdk/jar-classfile.json\"\ntest \"$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)\" = \\\n  \"Version ${EXPECTED_TYPESCRIPT_VERSION}\""
     },
-    ".github/workflows/docs-pages.yml:browser:Verify live navigation, assets, search and selected-version examples": {
-      "job": "browser",
-      "jobIf": "success()",
-      "name": "Verify live navigation, assets, search and selected-version examples",
-      "run": "node website/scripts/test-live.mjs",
-      "shell": "default",
+    ".github/workflows/ci.yml:result:Require every selected validation job": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "result",
+      "name": "Require every selected validation job",
+      "jobIf": "always()",
       "stepIf": "success()",
-      "workflow": ".github/workflows/docs-pages.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/docs-pages.yml:deploy:Recheck exact site bytes and source after protected environment approval": {
-      "job": "deploy",
-      "jobIf": "success()",
-      "name": "Recheck exact site bytes and source after protected environment approval",
-      "run": "python3 tools/docs_pages.py guard --receipt candidate/publication.json",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/docs-pages.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/docs-pages.yml:deploy:Verify live publication identity and direct static routes": {
-      "job": "deploy",
-      "jobIf": "success()",
-      "name": "Verify live publication identity and direct static routes",
-      "run": "python3 tools/docs_pages.py verify --receipt candidate/publication.json",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/docs-pages.yml",
-      "workingDirectory": "."
+      "run": "python3 tools/ci_result.py"
     },
     ".github/workflows/docs-pages.yml:select:Verify successful push origin, exact attempt, immutable artifact and fresh source": {
-      "job": "select",
-      "jobIf": "github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/release'",
-      "name": "Verify successful push origin, exact attempt, immutable artifact and fresh source",
-      "run": "python3 tools/docs_pages.py select --source \"$SOURCE_SHA\" --run \"$CI_RUN\" \\\n  --attempt \"$CI_ATTEMPT\" --mode \"$PUBLICATION_MODE\" \\\n  --previous-publication-run \"$PREVIOUS_PUBLICATION_RUN\" \\\n  --expected-live-source \"$EXPECTED_LIVE_SOURCE\" --output target/docs-pages-staged",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/docs-pages.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/docs-site.yml:website:Build both supported static base paths": {
-      "job": "website",
-      "jobIf": "success()",
-      "name": "Build both supported static base paths",
-      "run": "npm run build\nnpm run build:root",
-      "shell": "default",
+      "job": "select",
+      "name": "Verify successful push origin, exact attempt, immutable artifact and fresh source",
+      "jobIf": "github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/release'",
       "stepIf": "success()",
-      "workflow": ".github/workflows/docs-site.yml",
-      "workingDirectory": "website"
-    },
-    ".github/workflows/docs-site.yml:website:Check metadata, source extraction, types and unit regressions": {
-      "job": "website",
-      "jobIf": "success()",
-      "name": "Check metadata, source extraction, types and unit regressions",
-      "run": "npm run check\nnpm test",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/docs-site.yml",
-      "workingDirectory": "website"
+      "run": "python3 tools/docs_pages.py select --source \"$SOURCE_SHA\" --run \"$CI_RUN\" \\\n  --attempt \"$CI_ATTEMPT\" --mode \"$PUBLICATION_MODE\" \\\n  --previous-publication-run \"$PREVIOUS_PUBLICATION_RUN\" \\\n  --expected-live-source \"$EXPECTED_LIVE_SOURCE\" --output target/docs-pages-staged"
     },
-    ".github/workflows/docs-site.yml:website:Install the pinned test browser and its OS prerequisites": {
-      "job": "website",
+    ".github/workflows/docs-pages.yml:deploy:Recheck exact site bytes and source after protected environment approval": {
+      "workflow": ".github/workflows/docs-pages.yml",
+      "job": "deploy",
+      "name": "Recheck exact site bytes and source after protected environment approval",
       "jobIf": "success()",
-      "name": "Install the pinned test browser and its OS prerequisites",
-      "run": "node node_modules/playwright/cli.js install-deps chromium\nnpm run browser:install",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/docs-site.yml",
-      "workingDirectory": "website"
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/docs_pages.py guard --receipt candidate/publication.json"
+    },
+    ".github/workflows/docs-pages.yml:deploy:Verify live publication identity and direct static routes": {
+      "workflow": ".github/workflows/docs-pages.yml",
+      "job": "deploy",
+      "name": "Verify live publication identity and direct static routes",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/docs_pages.py verify --receipt candidate/publication.json"
+    },
+    ".github/workflows/docs-pages.yml:browser:Install the reviewed browser tools in an unprivileged job": {
+      "workflow": ".github/workflows/docs-pages.yml",
+      "job": "browser",
+      "name": "Install the reviewed browser tools in an unprivileged job",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund\nnode website/node_modules/playwright/cli.js install-deps chromium\nnode website/scripts/site.mjs browser-install"
+    },
+    ".github/workflows/docs-pages.yml:browser:Verify live navigation, assets, search and selected-version examples": {
+      "workflow": ".github/workflows/docs-pages.yml",
+      "job": "browser",
+      "name": "Verify live navigation, assets, search and selected-version examples",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "node website/scripts/test-live.mjs"
     },
     ".github/workflows/docs-site.yml:website:Install the reviewed website dependency graph without lifecycle scripts": {
+      "workflow": ".github/workflows/docs-site.yml",
       "job": "website",
-      "jobIf": "success()",
       "name": "Install the reviewed website dependency graph without lifecycle scripts",
-      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\necho \"$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin\" >> \"$GITHUB_PATH\"\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/docs-site.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": {
-      "job": "website",
       "jobIf": "success()",
-      "name": "Verify production pages, theme and source-backed controls",
-      "run": "npm run test:build\nnpm run test:theme\nnpm run test:examples\nnpm run test:versions\nnpm run test:discovery",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/docs-site.yml",
-      "workingDirectory": "website"
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\necho \"$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin\" >> \"$GITHUB_PATH\"\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund"
     },
     ".github/workflows/docs-site.yml:website:Verify the selected package manager identity": {
-      "job": "website",
-      "jobIf": "success()",
-      "name": "Verify the selected package manager identity",
-      "run": "test \"$(npm --version)\" = '11.19.1'\nnode website/scripts/check-package-manager.mjs",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/docs-site.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/native-runtime-release.yml:build:Build the three native executables, bootstrap, SBOM and provenance": {
-      "job": "build",
+      "job": "website",
+      "name": "Verify the selected package manager identity",
       "jobIf": "success()",
-      "name": "Build the three native executables, bootstrap, SBOM and provenance",
-      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/build_native_runtime.py --commit \"$GITHUB_SHA\" --version \"$NATIVE_VERSION\" --output \"$PWD/target/native-release\"\ncargo +1.97.1 fmt --manifest-path tools/native-fixture/Cargo.toml -- --check\ncargo +1.97.1 build --locked --release --manifest-path tools/native-fixture/Cargo.toml \\\n  --target x86_64-unknown-linux-gnu --target-dir target/native-fixture-build --jobs 2\ninstall -D -m 0755 target/native-fixture-build/x86_64-unknown-linux-gnu/release/latent-native-vm-fixture target/native-test-tools/fixture-helper",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "test \"$(npm --version)\" = '11.19.1'\nnode website/scripts/check-package-manager.mjs"
     },
-    ".github/workflows/native-runtime-release.yml:build:Prepare private exact-source host workspace": {
-      "job": "build",
+    ".github/workflows/docs-site.yml:website:Check metadata, source extraction, types and unit regressions": {
+      "workflow": ".github/workflows/docs-site.yml",
+      "job": "website",
+      "name": "Check metadata, source extraction, types and unit regressions",
       "jobIf": "success()",
-      "name": "Prepare private exact-source host workspace",
-      "run": "python3 tools/prepare_native_workspace.py",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
+      "workingDirectory": "website",
+      "shell": "default",
+      "run": "npm run check\nnpm test"
     },
-    ".github/workflows/native-runtime-release.yml:build:Retain disconnected verification material": {
-      "job": "build",
+    ".github/workflows/docs-site.yml:website:Build both supported static base paths": {
+      "workflow": ".github/workflows/docs-site.yml",
+      "job": "website",
+      "name": "Build both supported static base paths",
       "jobIf": "success()",
-      "name": "Retain disconnected verification material",
-      "run": "install -m 0644 \"$ATTESTATION_BUNDLE\" \"$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json\"",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
+      "workingDirectory": "website",
+      "shell": "default",
+      "run": "npm run build\nnpm run build:root"
     },
-    ".github/workflows/native-runtime-release.yml:build:Use maintained validation profile and pinned dependencies": {
-      "job": "build",
+    ".github/workflows/docs-site.yml:website:Install the pinned test browser and its OS prerequisites": {
+      "workflow": ".github/workflows/docs-site.yml",
+      "job": "website",
+      "name": "Install the pinned test browser and its OS prerequisites",
       "jobIf": "success()",
-      "name": "Use maintained validation profile and pinned dependencies",
-      "run": "python3 tools/ci_profile.py\npython3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_native_runtime tools.tests.test_native_release_gate\npython3 tools/validate_workflow_actions.py\npython3 tools/validate_docs.py",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
+      "workingDirectory": "website",
+      "shell": "default",
+      "run": "node node_modules/playwright/cli.js install-deps chromium\nnpm run browser:install"
+    },
+    ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": {
+      "workflow": ".github/workflows/docs-site.yml",
+      "job": "website",
+      "name": "Verify production pages, theme and source-backed controls",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": "website",
+      "shell": "default",
+      "run": "npm run test:build\nnpm run test:theme\nnpm run test:examples\nnpm run test:versions\nnpm run test:discovery"
     },
     ".github/workflows/native-runtime-release.yml:gate:Prepare private exact-source host workspace": {
-      "job": "gate",
-      "jobIf": "success()",
-      "name": "Prepare private exact-source host workspace",
-      "run": "python3 tools/prepare_native_workspace.py",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
+      "job": "gate",
+      "name": "Prepare private exact-source host workspace",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/prepare_native_workspace.py"
     },
     ".github/workflows/native-runtime-release.yml:gate:gate": {
+      "workflow": ".github/workflows/native-runtime-release.yml",
       "job": "gate",
-      "jobIf": "success()",
       "name": "gate",
-      "run": "cd \"$NATIVE_WORKSPACE\"\narguments=()\nif test \"$PUBLISH\" = true; then arguments+=(--publish); fi\npython3 tools/native_release_gate.py --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" \"${arguments[@]}\" \\\n  --output \"$PWD/target/native-release-decision.json\" --github-output",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/native-runtime-release.yml:native-vm:Native packaged execution, real reboot, preservation and selected upgrade": {
-      "job": "native-vm",
       "jobIf": "success()",
-      "name": "Native packaged execution, real reboot, preservation and selected upgrade",
-      "run": "cd \"$NATIVE_WORKSPACE\"\narguments=()\nif test -n \"$PREDECESSOR_RUN\"; then\n  arguments+=(--predecessor-directory \"$PWD/target/native-predecessor\" --predecessor-policy \"$NATIVE_TRUST/predecessor-policy.json\")\nfi\nif test \"$PUBLISH\" = true; then arguments+=(--require-upgrade); fi\npython3 tools/run_native_vm.py --release-directory \"$PWD/target/native-release\" \\\n  --trusted-root \"$NATIVE_TRUST/trusted_root.jsonl\" --verifier \"$(readlink -f \"$(command -v gh)\")\" \\\n  --version \"$NATIVE_VERSION\" --commit \"$GITHUB_SHA\" --source-ref \"$GITHUB_REF\" \\\n  --purpose release --profile \"$NATIVE_PROFILE\" --fixture-helper \"$PWD/target/native-test-tools/fixture-helper\" \\\n  --output \"$PWD/target/native-vm/$NATIVE_PROFILE.json\" \"${arguments[@]}\"",
-      "shell": "default",
       "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cd \"$NATIVE_WORKSPACE\"\narguments=()\nif test \"$PUBLISH\" = true; then arguments+=(--publish); fi\npython3 tools/native_release_gate.py --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" \"${arguments[@]}\" \\\n  --output \"$PWD/target/native-release-decision.json\" --github-output"
+    },
+    ".github/workflows/native-runtime-release.yml:build:Prepare private exact-source host workspace": {
       "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
+      "job": "build",
+      "name": "Prepare private exact-source host workspace",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/prepare_native_workspace.py"
+    },
+    ".github/workflows/native-runtime-release.yml:build:Use maintained validation profile and pinned dependencies": {
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "job": "build",
+      "name": "Use maintained validation profile and pinned dependencies",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/ci_profile.py\npython3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_native_runtime tools.tests.test_native_release_gate\npython3 tools/validate_workflow_actions.py\npython3 tools/validate_docs.py"
+    },
+    ".github/workflows/native-runtime-release.yml:build:Build the three native executables, bootstrap, SBOM and provenance": {
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "job": "build",
+      "name": "Build the three native executables, bootstrap, SBOM and provenance",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/build_native_runtime.py --commit \"$GITHUB_SHA\" --version \"$NATIVE_VERSION\" --output \"$PWD/target/native-release\"\ncargo +1.97.1 fmt --manifest-path tools/native-fixture/Cargo.toml -- --check\ncargo +1.97.1 build --locked --release --manifest-path tools/native-fixture/Cargo.toml \\\n  --target x86_64-unknown-linux-gnu --target-dir target/native-fixture-build --jobs 2\ninstall -D -m 0755 target/native-fixture-build/x86_64-unknown-linux-gnu/release/latent-native-vm-fixture target/native-test-tools/fixture-helper"
+    },
+    ".github/workflows/native-runtime-release.yml:build:Retain disconnected verification material": {
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "job": "build",
+      "name": "Retain disconnected verification material",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "install -m 0644 \"$ATTESTATION_BUNDLE\" \"$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json\""
     },
     ".github/workflows/native-runtime-release.yml:native-vm:Prepare private exact-source host workspace": {
-      "job": "native-vm",
-      "jobIf": "success()",
-      "name": "Prepare private exact-source host workspace",
-      "run": "python3 tools/prepare_native_workspace.py",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
+      "job": "native-vm",
+      "name": "Prepare private exact-source host workspace",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/prepare_native_workspace.py"
     },
     ".github/workflows/native-runtime-release.yml:native-vm:Provision host QEMU and independently installed verification roots": {
-      "job": "native-vm",
-      "jobIf": "success()",
-      "name": "Provision host QEMU and independently installed verification roots",
-      "run": "cd \"$NATIVE_WORKSPACE\"\nsudo apt-get update\nsudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client\nif test -c /dev/kvm; then sudo setfacl -m \"u:$(id -un):rw\" /dev/kvm; fi\ngh --version\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"\nif test -n \"$PREDECESSOR_RUN\"; then\n  gh run download \"$PREDECESSOR_RUN\" --repo \"$GITHUB_REPOSITORY\" \\\n    --name \"native-runtime-release-$PREDECESSOR_COMMIT\" --dir target/native-predecessor\n  python3 - <<'PY'\nimport json\nimport os\nfrom pathlib import Path\nfrom tools.native_runtime.verify import publisher_policy, RELEASE_WORKFLOW, REPOSITORY\npolicy = publisher_policy({\"schemaVersion\": \"latent.native-publisher-policy.v1\", \"repository\": REPOSITORY,\n                          \"workflow\": RELEASE_WORKFLOW, \"sourceRef\": \"refs/tags/\" + os.environ[\"PREDECESSOR_VERSION\"],\n                          \"sourceCommit\": os.environ[\"PREDECESSOR_COMMIT\"], \"version\": os.environ[\"PREDECESSOR_VERSION\"],\n                          \"purpose\": \"release\"}, os.environ[\"PREDECESSOR_VERSION\"])\n(Path(os.environ[\"NATIVE_TRUST\"]) / \"predecessor-policy.json\").write_text(json.dumps(policy))\nPY\nfi",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
+      "job": "native-vm",
+      "name": "Provision host QEMU and independently installed verification roots",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cd \"$NATIVE_WORKSPACE\"\nsudo apt-get update\nsudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client\nif test -c /dev/kvm; then sudo setfacl -m \"u:$(id -un):rw\" /dev/kvm; fi\ngh --version\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"\nif test -n \"$PREDECESSOR_RUN\"; then\n  gh run download \"$PREDECESSOR_RUN\" --repo \"$GITHUB_REPOSITORY\" \\\n    --name \"native-runtime-release-$PREDECESSOR_COMMIT\" --dir target/native-predecessor\n  python3 - <<'PY'\nimport json\nimport os\nfrom pathlib import Path\nfrom tools.native_runtime.verify import publisher_policy, RELEASE_WORKFLOW, REPOSITORY\npolicy = publisher_policy({\"schemaVersion\": \"latent.native-publisher-policy.v1\", \"repository\": REPOSITORY,\n                          \"workflow\": RELEASE_WORKFLOW, \"sourceRef\": \"refs/tags/\" + os.environ[\"PREDECESSOR_VERSION\"],\n                          \"sourceCommit\": os.environ[\"PREDECESSOR_COMMIT\"], \"version\": os.environ[\"PREDECESSOR_VERSION\"],\n                          \"purpose\": \"release\"}, os.environ[\"PREDECESSOR_VERSION\"])\n(Path(os.environ[\"NATIVE_TRUST\"]) / \"predecessor-policy.json\").write_text(json.dumps(policy))\nPY\nfi"
+    },
+    ".github/workflows/native-runtime-release.yml:native-vm:Native packaged execution, real reboot, preservation and selected upgrade": {
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "job": "native-vm",
+      "name": "Native packaged execution, real reboot, preservation and selected upgrade",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cd \"$NATIVE_WORKSPACE\"\narguments=()\nif test -n \"$PREDECESSOR_RUN\"; then\n  arguments+=(--predecessor-directory \"$PWD/target/native-predecessor\" --predecessor-policy \"$NATIVE_TRUST/predecessor-policy.json\")\nfi\nif test \"$PUBLISH\" = true; then arguments+=(--require-upgrade); fi\npython3 tools/run_native_vm.py --release-directory \"$PWD/target/native-release\" \\\n  --trusted-root \"$NATIVE_TRUST/trusted_root.jsonl\" --verifier \"$(readlink -f \"$(command -v gh)\")\" \\\n  --version \"$NATIVE_VERSION\" --commit \"$GITHUB_SHA\" --source-ref \"$GITHUB_REF\" \\\n  --purpose release --profile \"$NATIVE_PROFILE\" --fixture-helper \"$PWD/target/native-test-tools/fixture-helper\" \\\n  --output \"$PWD/target/native-vm/$NATIVE_PROFILE.json\" \"${arguments[@]}\""
     },
     ".github/workflows/native-runtime-release.yml:publish:Prepare private exact-source host workspace": {
+      "workflow": ".github/workflows/native-runtime-release.yml",
       "job": "publish",
-      "jobIf": "inputs.publish",
       "name": "Prepare private exact-source host workspace",
-      "run": "python3 tools/prepare_native_workspace.py",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/native-runtime-release.yml:publish:Publish selected existing tag only, without moving tags or overwriting releases": {
-      "job": "publish",
       "jobIf": "inputs.publish",
-      "name": "Publish selected existing tag only, without moving tags or overwriting releases",
-      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/native_release_gate.py --publish-assets --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" \\\n  --release-directory \"$PWD/target/native-release\" --receipts \"$PWD/target/native-vm\" \\\n  --acceptance-bundle \"$ACCEPTANCE_BUNDLE\" --output \"$PWD/target/native-publication-result.json\"",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/prepare_native_workspace.py"
     },
     ".github/workflows/native-runtime-release.yml:publish:Revalidate live exact-head CI, both native VM receipts and offline publisher identity": {
-      "job": "publish",
-      "jobIf": "inputs.publish",
-      "name": "Revalidate live exact-head CI, both native VM receipts and offline publisher identity",
-      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/native_release_gate.py --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" --publish \\\n  --receipts \"$PWD/target/native-vm\" --release-directory \"$PWD/target/native-release\" \\\n  --output \"$PWD/target/native-release-acceptance.json\"\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"\npython3 - <<'PY'\nimport json\nimport os\nimport shutil\nfrom pathlib import Path\nfrom tools.native_runtime import verify\ndecision = json.loads(Path(\"target/native-release-acceptance.json\").read_text())\ntrust = Path(os.environ[\"NATIVE_TRUST\"])\npolicy = trust / \"publisher-policy.json\"\npolicy.write_text(json.dumps(decision[\"publisherPolicy\"]))\nwith verify.release(Path(\"target/native-release\").resolve(), decision[\"version\"],\n                    verify.PublisherTrust(policy, trust / \"trusted_root.jsonl\", Path(shutil.which(\"gh\")).resolve())):\n    pass\nPY",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/native-runtime-release.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/native-runtime.yml:candidate:Build exact-source unsigned candidate": {
-      "job": "candidate",
-      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
-      "name": "Build exact-source unsigned candidate",
-      "run": "cd \"$NATIVE_WORKSPACE\"\nversion=\"$NATIVE_VERSION\"\npython3 tools/build_native_runtime.py --commit \"$GITHUB_SHA\" --version \"$version\" --output \"$PWD/target/native-release\"",
-      "shell": "default",
+      "job": "publish",
+      "name": "Revalidate live exact-head CI, both native VM receipts and offline publisher identity",
+      "jobIf": "inputs.publish",
       "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/native-runtime.yml:candidate:Build separately authenticated public-only VM fixture helper": {
-      "job": "candidate",
-      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
-      "name": "Build separately authenticated public-only VM fixture helper",
-      "run": "cd \"$NATIVE_WORKSPACE\"\ncargo +1.97.1 fmt --manifest-path tools/native-fixture/Cargo.toml -- --check\ncargo +1.97.1 build --locked --release --manifest-path tools/native-fixture/Cargo.toml \\\n  --target x86_64-unknown-linux-gnu --target-dir target/native-fixture-build --jobs 2\ninstall -D -m 0755 target/native-fixture-build/x86_64-unknown-linux-gnu/release/latent-native-vm-fixture target/native-test-tools/fixture-helper",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
+      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/native_release_gate.py --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" --publish \\\n  --receipts \"$PWD/target/native-vm\" --release-directory \"$PWD/target/native-release\" \\\n  --output \"$PWD/target/native-release-acceptance.json\"\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"\npython3 - <<'PY'\nimport json\nimport os\nimport shutil\nfrom pathlib import Path\nfrom tools.native_runtime import verify\ndecision = json.loads(Path(\"target/native-release-acceptance.json\").read_text())\ntrust = Path(os.environ[\"NATIVE_TRUST\"])\npolicy = trust / \"publisher-policy.json\"\npolicy.write_text(json.dumps(decision[\"publisherPolicy\"]))\nwith verify.release(Path(\"target/native-release\").resolve(), decision[\"version\"],\n                    verify.PublisherTrust(policy, trust / \"trusted_root.jsonl\", Path(shutil.which(\"gh\")).resolve())):\n    pass\nPY"
     },
-    ".github/workflows/native-runtime.yml:candidate:Fast native artifact and installer safety checks": {
-      "job": "candidate",
-      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
-      "name": "Fast native artifact and installer safety checks",
-      "run": "python3 -m unittest tools.tests.test_native_runtime tools.tests.test_native_release_gate\npython3 tools/validate_workflow_actions.py\npython3 tools/validate_docs.py",
-      "shell": "default",
+    ".github/workflows/native-runtime-release.yml:publish:Publish selected existing tag only, without moving tags or overwriting releases": {
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "job": "publish",
+      "name": "Publish selected existing tag only, without moving tags or overwriting releases",
+      "jobIf": "inputs.publish",
       "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/native-runtime.yml:candidate:Install pinned validation requirements": {
-      "job": "candidate",
-      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
-      "name": "Install pinned validation requirements",
-      "run": "python3 -m pip install --requirement tools/requirements.lock",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
+      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/native_release_gate.py --publish-assets --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" \\\n  --release-directory \"$PWD/target/native-release\" --receipts \"$PWD/target/native-vm\" \\\n  --acceptance-bundle \"$ACCEPTANCE_BUNDLE\" --output \"$PWD/target/native-publication-result.json\""
     },
     ".github/workflows/native-runtime.yml:candidate:Prepare private exact-source host workspace without changing runner ACLs": {
+      "workflow": ".github/workflows/native-runtime.yml",
       "job": "candidate",
-      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
       "name": "Prepare private exact-source host workspace without changing runner ACLs",
-      "run": "python3 tools/prepare_native_workspace.py",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/native-runtime.yml:candidate:Retain offline attestation material": {
-      "job": "candidate",
       "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
-      "name": "Retain offline attestation material",
-      "run": "install -m 0644 \"$ATTESTATION_BUNDLE\" \"$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json\"",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/prepare_native_workspace.py"
     },
     ".github/workflows/native-runtime.yml:candidate:Select maintained CI profile": {
-      "job": "candidate",
-      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
-      "name": "Select maintained CI profile",
-      "run": "python3 tools/ci_profile.py",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
+      "job": "candidate",
+      "name": "Select maintained CI profile",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/ci_profile.py"
+    },
+    ".github/workflows/native-runtime.yml:candidate:Install pinned validation requirements": {
+      "workflow": ".github/workflows/native-runtime.yml",
+      "job": "candidate",
+      "name": "Install pinned validation requirements",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --requirement tools/requirements.lock"
+    },
+    ".github/workflows/native-runtime.yml:candidate:Fast native artifact and installer safety checks": {
+      "workflow": ".github/workflows/native-runtime.yml",
+      "job": "candidate",
+      "name": "Fast native artifact and installer safety checks",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_native_runtime tools.tests.test_native_release_gate\npython3 tools/validate_workflow_actions.py\npython3 tools/validate_docs.py"
     },
     ".github/workflows/native-runtime.yml:candidate:identity": {
+      "workflow": ".github/workflows/native-runtime.yml",
       "job": "candidate",
-      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
       "name": "identity",
-      "run": "version=$(python3 -c 'import tomllib; print(tomllib.load(open(\"Cargo.toml\", \"rb\"))[\"workspace\"][\"package\"][\"version\"])')\necho \"version=$version\" >> \"$GITHUB_OUTPUT\"",
-      "shell": "default",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
       "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "version=$(python3 -c 'import tomllib; print(tomllib.load(open(\"Cargo.toml\", \"rb\"))[\"workspace\"][\"package\"][\"version\"])')\necho \"version=$version\" >> \"$GITHUB_OUTPUT\""
     },
-    ".github/workflows/native-runtime.yml:native-vm:Boot clean native guest, invoke, reboot, retain and purge": {
-      "job": "native-vm",
-      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
-      "name": "Boot clean native guest, invoke, reboot, retain and purge",
-      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/run_native_vm.py --release-directory \"$PWD/target/native-candidate\" \\\n  --trusted-root \"$NATIVE_TRUST/trusted_root.jsonl\" --verifier \"$(readlink -f \"$(command -v gh)\")\" \\\n  --version \"$NATIVE_VERSION\" --commit \"$NATIVE_ARTIFACT_COMMIT\" --source-ref \"$NATIVE_ARTIFACT_REF\" \\\n  --purpose candidate --profile \"$NATIVE_PROFILE\" --fixture-helper \"$PWD/target/native-test-tools/fixture-helper\" \\\n  --output \"$PWD/target/native-vm/$NATIVE_PROFILE.json\"",
-      "shell": "default",
-      "stepIf": "success()",
+    ".github/workflows/native-runtime.yml:candidate:Build exact-source unsigned candidate": {
       "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
+      "job": "candidate",
+      "name": "Build exact-source unsigned candidate",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cd \"$NATIVE_WORKSPACE\"\nversion=\"$NATIVE_VERSION\"\npython3 tools/build_native_runtime.py --commit \"$GITHUB_SHA\" --version \"$version\" --output \"$PWD/target/native-release\""
+    },
+    ".github/workflows/native-runtime.yml:candidate:Build separately authenticated public-only VM fixture helper": {
+      "workflow": ".github/workflows/native-runtime.yml",
+      "job": "candidate",
+      "name": "Build separately authenticated public-only VM fixture helper",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cd \"$NATIVE_WORKSPACE\"\ncargo +1.97.1 fmt --manifest-path tools/native-fixture/Cargo.toml -- --check\ncargo +1.97.1 build --locked --release --manifest-path tools/native-fixture/Cargo.toml \\\n  --target x86_64-unknown-linux-gnu --target-dir target/native-fixture-build --jobs 2\ninstall -D -m 0755 target/native-fixture-build/x86_64-unknown-linux-gnu/release/latent-native-vm-fixture target/native-test-tools/fixture-helper"
+    },
+    ".github/workflows/native-runtime.yml:candidate:Retain offline attestation material": {
+      "workflow": ".github/workflows/native-runtime.yml",
+      "job": "candidate",
+      "name": "Retain offline attestation material",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "install -m 0644 \"$ATTESTATION_BUNDLE\" \"$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json\""
     },
     ".github/workflows/native-runtime.yml:native-vm:Prepare private exact-source host workspace without changing runner ACLs": {
+      "workflow": ".github/workflows/native-runtime.yml",
       "job": "native-vm",
-      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
       "name": "Prepare private exact-source host workspace without changing runner ACLs",
-      "run": "python3 tools/prepare_native_workspace.py",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/native-runtime.yml:native-vm:Provision host QEMU and independent verification trust": {
-      "job": "native-vm",
       "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
-      "name": "Provision host QEMU and independent verification trust",
-      "run": "sudo apt-get update\nsudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client\nif test -c /dev/kvm; then sudo setfacl -m \"u:$(id -un):rw\" /dev/kvm; fi\ngh --version\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/prepare_native_workspace.py"
     },
     ".github/workflows/native-runtime.yml:native-vm:Select exact real candidate artifact, independent of test-harness revision": {
-      "job": "native-vm",
-      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
-      "name": "Select exact real candidate artifact, independent of test-harness revision",
-      "run": "python3 tools/select_native_vm_artifact.py",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/native-runtime.yml",
-      "workingDirectory": "."
+      "job": "native-vm",
+      "name": "Select exact real candidate artifact, independent of test-harness revision",
+      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/select_native_vm_artifact.py"
+    },
+    ".github/workflows/native-runtime.yml:native-vm:Provision host QEMU and independent verification trust": {
+      "workflow": ".github/workflows/native-runtime.yml",
+      "job": "native-vm",
+      "name": "Provision host QEMU and independent verification trust",
+      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "sudo apt-get update\nsudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client\nif test -c /dev/kvm; then sudo setfacl -m \"u:$(id -un):rw\" /dev/kvm; fi\ngh --version\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\""
+    },
+    ".github/workflows/native-runtime.yml:native-vm:Boot clean native guest, invoke, reboot, retain and purge": {
+      "workflow": ".github/workflows/native-runtime.yml",
+      "job": "native-vm",
+      "name": "Boot clean native guest, invoke, reboot, retain and purge",
+      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/run_native_vm.py --release-directory \"$PWD/target/native-candidate\" \\\n  --trusted-root \"$NATIVE_TRUST/trusted_root.jsonl\" --verifier \"$(readlink -f \"$(command -v gh)\")\" \\\n  --version \"$NATIVE_VERSION\" --commit \"$NATIVE_ARTIFACT_COMMIT\" --source-ref \"$NATIVE_ARTIFACT_REF\" \\\n  --purpose candidate --profile \"$NATIVE_PROFILE\" --fixture-helper \"$PWD/target/native-test-tools/fixture-helper\" \\\n  --output \"$PWD/target/native-vm/$NATIVE_PROFILE.json\""
     },
     ".github/workflows/phase0-full-validation.yml:phase0-validation:Install repository validator dependencies": {
-      "job": "phase0-validation",
-      "jobIf": "success()",
-      "name": "Install repository validator dependencies",
-      "run": "python -m pip install --requirement tools/requirements.lock",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/phase0-full-validation.yml",
-      "workingDirectory": "."
+      "job": "phase0-validation",
+      "name": "Install repository validator dependencies",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m pip install --requirement tools/requirements.lock"
     },
     ".github/workflows/phase0-full-validation.yml:phase0-validation:Install retained-evidence archive verifier": {
-      "job": "phase0-validation",
-      "jobIf": "success()",
-      "name": "Install retained-evidence archive verifier",
-      "run": "sudo apt-get update && sudo apt-get install --yes zstd",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/phase0-full-validation.yml",
-      "workingDirectory": "."
+      "job": "phase0-validation",
+      "name": "Install retained-evidence archive verifier",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "sudo apt-get update && sudo apt-get install --yes zstd"
     },
     ".github/workflows/phase0-full-validation.yml:phase0-validation:Run the clean-checkout Phase 0 gate": {
-      "job": "phase0-validation",
-      "jobIf": "success()",
-      "name": "Run the clean-checkout Phase 0 gate",
-      "run": "unset CARGO_INCREMENTAL\ntools/run_phase0_gate.sh \"${PHASE0_MODE}\"",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/phase0-full-validation.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Check Phase 0 runner syntax": {
-      "job": "runtime-smoke",
+      "job": "phase0-validation",
+      "name": "Run the clean-checkout Phase 0 gate",
       "jobIf": "success()",
-      "name": "Check Phase 0 runner syntax",
-      "run": "bash -n tools/run_phase0_baselines.sh tools/run_phase0_gate.sh tools/run_phase0_outcome_matrix.sh tools/run_phase0_spike.sh",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "workingDirectory": "."
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "unset CARGO_INCREMENTAL\ntools/run_phase0_gate.sh \"${PHASE0_MODE}\""
     },
     ".github/workflows/phase0-regression.yml:runtime-smoke:Install Python validator dependencies": {
-      "job": "runtime-smoke",
-      "jobIf": "success()",
-      "name": "Install Python validator dependencies",
-      "run": "python -m pip install --requirement tools/requirements.lock",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/phase0-regression.yml",
-      "workingDirectory": "."
+      "job": "runtime-smoke",
+      "name": "Install Python validator dependencies",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m pip install --requirement tools/requirements.lock"
     },
     ".github/workflows/phase0-regression.yml:runtime-smoke:Install retained-evidence archive verifier": {
-      "job": "runtime-smoke",
-      "jobIf": "success()",
-      "name": "Install retained-evidence archive verifier",
-      "run": "sudo apt-get update && sudo apt-get install --yes zstd",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/phase0-regression.yml",
-      "workingDirectory": "."
+      "job": "runtime-smoke",
+      "name": "Install retained-evidence archive verifier",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "sudo apt-get update && sudo apt-get install --yes zstd"
+    },
+    ".github/workflows/phase0-regression.yml:runtime-smoke:Check Phase 0 runner syntax": {
+      "workflow": ".github/workflows/phase0-regression.yml",
+      "job": "runtime-smoke",
+      "name": "Check Phase 0 runner syntax",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "bash -n tools/run_phase0_baselines.sh tools/run_phase0_gate.sh tools/run_phase0_outcome_matrix.sh tools/run_phase0_spike.sh"
     },
     ".github/workflows/phase0-regression.yml:runtime-smoke:Run deterministic runtime baseline": {
-      "job": "runtime-smoke",
-      "jobIf": "success()",
-      "name": "Run deterministic runtime baseline",
-      "run": "unset CARGO_INCREMENTAL\ntools/run_phase0_baselines.sh smoke \"${RUNNER_TEMP}/phase0-regression/baseline\"",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/phase0-regression.yml",
-      "workingDirectory": "."
+      "job": "runtime-smoke",
+      "name": "Run deterministic runtime baseline",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "unset CARGO_INCREMENTAL\ntools/run_phase0_baselines.sh smoke \"${RUNNER_TEMP}/phase0-regression/baseline\""
     },
     ".github/workflows/phase0-regression.yml:runtime-smoke:Run executable outcome and recovery matrix": {
-      "job": "runtime-smoke",
-      "jobIf": "success()",
-      "name": "Run executable outcome and recovery matrix",
-      "run": "bash tools/run_phase0_outcome_matrix.sh",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/phase0-regression.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase1-controlled-comparison.yml:comparison:Build the unchanged historical control": {
-      "job": "comparison",
+      "job": "runtime-smoke",
+      "name": "Run executable outcome and recovery matrix",
       "jobIf": "success()",
-      "name": "Build the unchanged historical control",
-      "run": "unset CARGO_INCREMENTAL\ngit worktree add --detach \"$RUNNER_TEMP/phase1-control-source\" 52ac47542a05c0a1263f78a14c04a5c2e6b761f3\nmkdir -p target\npython3 - <<'PY'\nimport os, sys\nfrom pathlib import Path\nsys.path.insert(0, 'tools')\nfrom run_phase1_conformance import bounded_run\ntemporary = Path(os.environ['RUNNER_TEMP'])\nbounded_run(['bash', 'tools/build_phase1_historical_control.sh',\n             str(temporary / 'phase1-control-source'), str(temporary / 'phase1-control-build')],\n            Path('target/phase1-control-bootstrap.log'), 3600, os.environ.copy())\nPY",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/phase1-controlled-comparison.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase1-controlled-comparison.yml:comparison:Collect and validate alternating independent processes": {
-      "job": "comparison",
-      "jobIf": "success()",
-      "name": "Collect and validate alternating independent processes",
-      "run": "unset CARGO_INCREMENTAL\npython3 tools/run_phase1_paired.py --profile \"$COMPARISON_PROFILE\" \\\n  --control-source \"$RUNNER_TEMP/phase1-control-source\" \\\n  --control-build-dir \"$RUNNER_TEMP/phase1-control-build\"",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/phase1-controlled-comparison.yml",
-      "workingDirectory": "."
+      "run": "bash tools/run_phase0_outcome_matrix.sh"
     },
     ".github/workflows/phase1-controlled-comparison.yml:comparison:Install validator dependencies": {
-      "job": "comparison",
-      "jobIf": "success()",
-      "name": "Install validator dependencies",
-      "run": "python -m pip install --requirement tools/requirements.lock",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/phase1-controlled-comparison.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase1-measurements.yml:measurements:Build required guest fixtures": {
-      "job": "measurements",
+      "job": "comparison",
+      "name": "Install validator dependencies",
       "jobIf": "success()",
-      "name": "Build required guest fixtures",
-      "run": "unset CARGO_INCREMENTAL\nbash tools/build_phase1_measurement_fixtures.sh",
-      "shell": "default",
       "stepIf": "success()",
-      "workflow": ".github/workflows/phase1-measurements.yml",
-      "workingDirectory": "."
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m pip install --requirement tools/requirements.lock"
+    },
+    ".github/workflows/phase1-controlled-comparison.yml:comparison:Build the unchanged historical control": {
+      "workflow": ".github/workflows/phase1-controlled-comparison.yml",
+      "job": "comparison",
+      "name": "Build the unchanged historical control",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "unset CARGO_INCREMENTAL\ngit worktree add --detach \"$RUNNER_TEMP/phase1-control-source\" 52ac47542a05c0a1263f78a14c04a5c2e6b761f3\nmkdir -p target\npython3 - <<'PY'\nimport os, sys\nfrom pathlib import Path\nsys.path.insert(0, 'tools')\nfrom run_phase1_conformance import bounded_run\ntemporary = Path(os.environ['RUNNER_TEMP'])\nbounded_run(['bash', 'tools/build_phase1_historical_control.sh',\n             str(temporary / 'phase1-control-source'), str(temporary / 'phase1-control-build')],\n            Path('target/phase1-control-bootstrap.log'), 3600, os.environ.copy())\nPY"
+    },
+    ".github/workflows/phase1-controlled-comparison.yml:comparison:Collect and validate alternating independent processes": {
+      "workflow": ".github/workflows/phase1-controlled-comparison.yml",
+      "job": "comparison",
+      "name": "Collect and validate alternating independent processes",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "unset CARGO_INCREMENTAL\npython3 tools/run_phase1_paired.py --profile \"$COMPARISON_PROFILE\" \\\n  --control-source \"$RUNNER_TEMP/phase1-control-source\" \\\n  --control-build-dir \"$RUNNER_TEMP/phase1-control-build\""
     },
     ".github/workflows/phase1-measurements.yml:measurements:Install validator dependencies": {
-      "job": "measurements",
-      "jobIf": "success()",
-      "name": "Install validator dependencies",
-      "run": "python -m pip install --requirement tools/requirements.lock",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/phase1-measurements.yml",
-      "workingDirectory": "."
+      "job": "measurements",
+      "name": "Install validator dependencies",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m pip install --requirement tools/requirements.lock"
+    },
+    ".github/workflows/phase1-measurements.yml:measurements:Build required guest fixtures": {
+      "workflow": ".github/workflows/phase1-measurements.yml",
+      "job": "measurements",
+      "name": "Build required guest fixtures",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "unset CARGO_INCREMENTAL\nbash tools/build_phase1_measurement_fixtures.sh"
     },
     ".github/workflows/phase1-measurements.yml:measurements:Run measurements with bounded owned collectors": {
-      "job": "measurements",
-      "jobIf": "success()",
-      "name": "Run measurements with bounded owned collectors",
-      "run": "unset CARGO_INCREMENTAL\npython3 tools/run_phase1_measurements.py --profile \"$MEASUREMENT_PROFILE\" --kind \"$MEASUREMENT_KIND\"",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/phase1-measurements.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/security-baseline.yml:dependencies:Inventory all manifests and query current OSV data without builds or installs": {
-      "job": "dependencies",
-      "jobIf": "needs.scope.outputs.dependencies == 'true'",
-      "name": "Inventory all manifests and query current OSV data without builds or installs",
-      "run": "python3 controls/tools/security_scan.py dependencies --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\"",
-      "shell": "default",
+      "job": "measurements",
+      "name": "Run measurements with bounded owned collectors",
+      "jobIf": "success()",
       "stepIf": "success()",
-      "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/security-baseline.yml:result:Require exactly the selected security checks": {
-      "job": "result",
-      "jobIf": "always()",
-      "name": "Require exactly the selected security checks",
-      "run": "python3 - <<'PY'\nimport json\nimport os\nimport sys\nresults = json.loads(os.environ['SECURITY_RESULTS'])\nvalid = results['scope']['result'] == 'success' and results['secrets']['result'] == 'success'\noutputs = results['scope'].get('outputs', {})\nfor job, output in [('rustsec', 'rustsec'), ('dependencies', 'dependencies'), ('static', 'static'), ('self-test', 'selftest')]:\n    selected = outputs.get(output)\n    valid = valid and selected in {'true', 'false'}\n    valid = valid and results[job]['result'] == ('success' if selected == 'true' else 'skipped')\nprint(json.dumps({job: value['result'] for job, value in results.items()}, sort_keys=True))\nsys.exit(0 if valid else 1)\nPY",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
+      "run": "unset CARGO_INCREMENTAL\npython3 tools/run_phase1_measurements.py --profile \"$MEASUREMENT_PROFILE\" --kind \"$MEASUREMENT_KIND\""
     },
     ".github/workflows/security-baseline.yml:scope:select": {
-      "job": "scope",
-      "jobIf": "success()",
-      "name": "select",
-      "run": "python3 tools/security_scope.py",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
+      "job": "scope",
+      "name": "select",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/security_scope.py"
+    },
+    ".github/workflows/security-baseline.yml:dependencies:Inventory all manifests and query current OSV data without builds or installs": {
+      "workflow": ".github/workflows/security-baseline.yml",
+      "job": "dependencies",
+      "name": "Inventory all manifests and query current OSV data without builds or installs",
+      "jobIf": "needs.scope.outputs.dependencies == 'true'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 controls/tools/security_scan.py dependencies --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
     },
     ".github/workflows/security-baseline.yml:secrets:Install digest-pinned Gitleaks without shared caches": {
-      "job": "secrets",
-      "jobIf": "success()",
-      "name": "Install digest-pinned Gitleaks without shared caches",
-      "run": "python3 controls/tools/security_install.py --tool gitleaks --destination \"$RUNNER_TEMP/security-tools\"",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
+      "job": "secrets",
+      "name": "Install digest-pinned Gitleaks without shared caches",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 controls/tools/security_install.py --tool gitleaks --destination \"$RUNNER_TEMP/security-tools\""
     },
     ".github/workflows/security-baseline.yml:secrets:Scan tracked text with no source findings in logs or artifacts": {
+      "workflow": ".github/workflows/security-baseline.yml",
       "job": "secrets",
-      "jobIf": "success()",
       "name": "Scan tracked text with no source findings in logs or artifacts",
-      "run": "python3 controls/tools/security_scan.py secrets --repo source --base \"$SECURITY_BASE\" --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\"",
-      "shell": "default",
+      "jobIf": "success()",
       "stepIf": "success()",
-      "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/security-baseline.yml:self-test:Install only the reviewed parser wheel": {
-      "job": "self-test",
-      "jobIf": "needs.scope.outputs.selftest == 'true'",
-      "name": "Install only the reviewed parser wheel",
-      "run": "python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt",
+      "workingDirectory": ".",
       "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/security-baseline.yml:self-test:Install reviewed canary scanners": {
-      "job": "self-test",
-      "jobIf": "needs.scope.outputs.selftest == 'true'",
-      "name": "Install reviewed canary scanners",
-      "run": "python3 tools/security_install.py --tool cargo-audit --destination \"$RUNNER_TEMP/security-tools\"\npython3 tools/security_install.py --tool gitleaks --destination \"$RUNNER_TEMP/security-tools\"\npython3 tools/security_install.py --tool zizmor --destination \"$RUNNER_TEMP/security-tools\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/security-baseline.yml:self-test:Prove harmless real-scanner pass and fail behavior": {
-      "job": "self-test",
-      "jobIf": "needs.scope.outputs.selftest == 'true'",
-      "name": "Prove harmless real-scanner pass and fail behavior",
-      "run": "python3 tools/security_selftest.py --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-canaries\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/security-baseline.yml:self-test:Test expiry, unknown data, fork permissions, docs profiles and the aggregate": {
-      "job": "self-test",
-      "jobIf": "needs.scope.outputs.selftest == 'true'",
-      "name": "Test expiry, unknown data, fork permissions, docs profiles and the aggregate",
-      "run": "python3 -m unittest discover -s tools/tests -p 'test_security*.py'",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/security-baseline.yml:static:Apply reviewed source, workflow and action-pin rules": {
-      "job": "static",
-      "jobIf": "needs.scope.outputs.static == 'true'",
-      "name": "Apply reviewed source, workflow and action-pin rules",
-      "run": "python3 controls/tools/security_scan.py static --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/security-baseline.yml:static:Install digest-pinned offline workflow scanner": {
-      "job": "static",
-      "jobIf": "needs.scope.outputs.static == 'true'",
-      "name": "Install digest-pinned offline workflow scanner",
-      "run": "python3 controls/tools/security_install.py --tool zizmor --destination \"$RUNNER_TEMP/security-tools\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
+      "run": "python3 controls/tools/security_scan.py secrets --repo source --base \"$SECURITY_BASE\" --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
     },
     ".github/workflows/security-baseline.yml:static:Install only the reviewed parser wheel": {
-      "job": "static",
-      "jobIf": "needs.scope.outputs.static == 'true'",
-      "name": "Install only the reviewed parser wheel",
-      "run": "python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement controls/.github/security/requirements.txt",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/security-baseline.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/security-rustsec.yml:audit:Audit the unchanged or changed resolved lockfile against fresh RustSec data": {
-      "job": "audit",
-      "jobIf": "success()",
-      "name": "Audit the unchanged or changed resolved lockfile against fresh RustSec data",
-      "run": "python3 controls/tools/security_scan.py rustsec --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\"",
-      "shell": "default",
+      "job": "static",
+      "name": "Install only the reviewed parser wheel",
+      "jobIf": "needs.scope.outputs.static == 'true'",
       "stepIf": "success()",
-      "workflow": ".github/workflows/security-rustsec.yml",
-      "workingDirectory": "."
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement controls/.github/security/requirements.txt"
+    },
+    ".github/workflows/security-baseline.yml:static:Install digest-pinned offline workflow scanner": {
+      "workflow": ".github/workflows/security-baseline.yml",
+      "job": "static",
+      "name": "Install digest-pinned offline workflow scanner",
+      "jobIf": "needs.scope.outputs.static == 'true'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 controls/tools/security_install.py --tool zizmor --destination \"$RUNNER_TEMP/security-tools\""
+    },
+    ".github/workflows/security-baseline.yml:static:Apply reviewed source, workflow and action-pin rules": {
+      "workflow": ".github/workflows/security-baseline.yml",
+      "job": "static",
+      "name": "Apply reviewed source, workflow and action-pin rules",
+      "jobIf": "needs.scope.outputs.static == 'true'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 controls/tools/security_scan.py static --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
+    },
+    ".github/workflows/security-baseline.yml:self-test:Install only the reviewed parser wheel": {
+      "workflow": ".github/workflows/security-baseline.yml",
+      "job": "self-test",
+      "name": "Install only the reviewed parser wheel",
+      "jobIf": "needs.scope.outputs.selftest == 'true'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt"
+    },
+    ".github/workflows/security-baseline.yml:self-test:Test expiry, unknown data, fork permissions, docs profiles and the aggregate": {
+      "workflow": ".github/workflows/security-baseline.yml",
+      "job": "self-test",
+      "name": "Test expiry, unknown data, fork permissions, docs profiles and the aggregate",
+      "jobIf": "needs.scope.outputs.selftest == 'true'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest discover -s tools/tests -p 'test_security*.py'"
+    },
+    ".github/workflows/security-baseline.yml:self-test:Install reviewed canary scanners": {
+      "workflow": ".github/workflows/security-baseline.yml",
+      "job": "self-test",
+      "name": "Install reviewed canary scanners",
+      "jobIf": "needs.scope.outputs.selftest == 'true'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/security_install.py --tool cargo-audit --destination \"$RUNNER_TEMP/security-tools\"\npython3 tools/security_install.py --tool gitleaks --destination \"$RUNNER_TEMP/security-tools\"\npython3 tools/security_install.py --tool zizmor --destination \"$RUNNER_TEMP/security-tools\""
+    },
+    ".github/workflows/security-baseline.yml:self-test:Prove harmless real-scanner pass and fail behavior": {
+      "workflow": ".github/workflows/security-baseline.yml",
+      "job": "self-test",
+      "name": "Prove harmless real-scanner pass and fail behavior",
+      "jobIf": "needs.scope.outputs.selftest == 'true'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/security_selftest.py --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-canaries\""
+    },
+    ".github/workflows/security-baseline.yml:result:Require exactly the selected security checks": {
+      "workflow": ".github/workflows/security-baseline.yml",
+      "job": "result",
+      "name": "Require exactly the selected security checks",
+      "jobIf": "always()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 - <<'PY'\nimport json\nimport os\nimport sys\nresults = json.loads(os.environ['SECURITY_RESULTS'])\nvalid = results['scope']['result'] == 'success' and results['secrets']['result'] == 'success'\noutputs = results['scope'].get('outputs', {})\nfor job, output in [('rustsec', 'rustsec'), ('dependencies', 'dependencies'), ('static', 'static'), ('self-test', 'selftest')]:\n    selected = outputs.get(output)\n    valid = valid and selected in {'true', 'false'}\n    valid = valid and results[job]['result'] == ('success' if selected == 'true' else 'skipped')\nprint(json.dumps({job: value['result'] for job, value in results.items()}, sort_keys=True))\nsys.exit(0 if valid else 1)\nPY"
     },
     ".github/workflows/security-rustsec.yml:audit:Install digest-pinned cargo-audit outside the input checkout": {
-      "job": "audit",
-      "jobIf": "success()",
-      "name": "Install digest-pinned cargo-audit outside the input checkout",
-      "run": "python3 controls/tools/security_install.py --tool cargo-audit --destination \"$RUNNER_TEMP/security-tools\"",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/security-rustsec.yml",
-      "workingDirectory": "."
+      "job": "audit",
+      "name": "Install digest-pinned cargo-audit outside the input checkout",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 controls/tools/security_install.py --tool cargo-audit --destination \"$RUNNER_TEMP/security-tools\""
+    },
+    ".github/workflows/security-rustsec.yml:audit:Audit the unchanged or changed resolved lockfile against fresh RustSec data": {
+      "workflow": ".github/workflows/security-rustsec.yml",
+      "job": "audit",
+      "name": "Audit the unchanged or changed resolved lockfile against fresh RustSec data",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 controls/tools/security_scan.py rustsec --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2277,18 +2327,18 @@
     },
     ".github/workflows/ci.yml:oci-registry:Recover only this job's disposable registry": {
       "after": ".github/workflows/ci.yml:oci-registry:Recover only this job's disposable registry",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "Retain the original validation and add the merged owned-process prerequisites and diagnostic handoff."
     },
     ".github/workflows/ci.yml:oci-registry:Validate bounded authenticated OCI distribution": {
       "after": ".github/workflows/ci.yml:oci-registry:Validate bounded authenticated OCI distribution",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "Retain the original validation and add the merged owned-process prerequisites and diagnostic handoff."
     },
     ".github/workflows/ci.yml:oci-registry:Validate signed web package registry and catalog round trips": {
       "after": ".github/workflows/ci.yml:oci-registry:Validate signed web package registry and catalog round trips",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "Retain the original validation and add the merged owned-process prerequisites and diagnostic handoff."
     },
     ".github/workflows/ci.yml:profile:select": {
       "after": ".github/workflows/ci.yml:profile:select",
@@ -2377,8 +2427,8 @@
     },
     ".github/workflows/ci.yml:rust:Validate Angular in generic cells and the shared HTTP node": {
       "after": ".github/workflows/ci.yml:rust:Validate Angular in generic cells and the shared HTTP node",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "Retain the original validation and add the merged owned-process prerequisites and diagnostic handoff."
     },
     ".github/workflows/ci.yml:rust:Validate NATS events with the existing test harness": {
       "after": ".github/workflows/ci.yml:rust:Validate NATS events with the existing test harness",
@@ -2711,7 +2761,7 @@
       "sha256": "3cc265b8f13f24ce08da3cf079d3e66ca072515b0741f8594b43d412a3b9cd9d"
     },
     "tools/aot_test_inputs.py": {
-      "sha256": "191d079d0d7199ea5023bfd32933e164acf5ca0d98b4d24bcdb7e386c7f0ba4d"
+      "sha256": "01b7951763092dbf4c8a677122b90e841241feacdbfa5bb7d5913a4302a0ddbf"
     },
     "tools/build_angular_package.py": {
       "sha256": "6355b56981461912e5aeea8c9cc69424b512d5d55a6d805516af6eae523a02a0"
@@ -2737,6 +2787,9 @@
     "tools/build_provenance.py": {
       "sha256": "03c1c677cb530fc6b762440dd3a7f762f945892909ad9034af7a115a17fbdb97"
     },
+    "tools/check_owned_diagnostics.py": {
+      "sha256": "38d0f7507d674c4b0ba0c0e6a72199b6250fbc48139dc909079116c1244f5d92"
+    },
     "tools/check_testkit_dependencies.py": {
       "sha256": "eb61e1a2502a110a9331caad2922f219a82a7106c8a6892d851edfb333e49008"
     },
@@ -2756,7 +2809,7 @@
       "sha256": "3a4a88afcbab08033ba6afa7bcccdcbc96e811784dfa4a3a5e3c60160d275063"
     },
     "tools/ci_rust_artifacts.py": {
-      "sha256": "1d6ee06dafcd887971ad82a6cf4f2f37ef89c5b93b3949500d44dfaaa3a3a092"
+      "sha256": "5c5743c001f65a141ad42150fe763d52cdb6ca4f6fa6ab7c918df7f29da10cc4"
     },
     "tools/ci_suite_discovery.py": {
       "sha256": "2e4c6ad2ae2e959a960efc157041c617ab052b989532d96cfa71c63c7ef5c9df"
@@ -2786,7 +2839,7 @@
       "sha256": "20c2f4c5cf389bf105c2c37c15cf976655f6352a1640a65bb9aef99e6ca1b2dc"
     },
     "tools/run_angular_renderer_tests.py": {
-      "sha256": "e8b4c5b33a9c774bb8b6678229903126050f2ce29cde0d0318095416049bb529"
+      "sha256": "2cbf01c9f6bdd0f81d2824e07ce382cd298717758c86b67fd7b03360b08662df"
     },
     "tools/run_angular_t1_workflow.py": {
       "sha256": "9acd623b3e78e6e02309b2acb11d1da3d976bc528afb3d80415c60367ebf11b6"
@@ -2801,7 +2854,7 @@
       "sha256": "65af7a9eb855be44b4724fe1a183bf4d4d379c37566076a1b12ae26ecd8e38c8"
     },
     "tools/run_oci_registry_tests.py": {
-      "sha256": "4b1750b866d874aedab1fa36366f1d4a4e4956ea6ffea84f28b929d6f3795f1e"
+      "sha256": "51e7fb9db3da64092a271a36fbf3c0ebec1202b956ed57e5e627df2ae6f23ef4"
     },
     "tools/run_optimization_benchmarks.py": {
       "sha256": "617aa5c92161bd86fbdc24d791421d7b9db53059e622608ff3ce03b27cb7a716"
@@ -3276,15 +3329,16 @@
       "InventoryTests.test_exact_current_artifact_selected_without_globbing_old_binaries",
       "InventoryTests.test_execution_uses_exact_ignored_suite_package_cwd_and_inherited_inputs",
       "InventoryTests.test_integration_and_non_test_executables_cannot_substitute_for_libtest",
+      "InventoryTests.test_integration_inventory_selects_exact_target_among_workspace_siblings",
+      "InventoryTests.test_integration_sibling_cannot_replace_or_hide_an_invalid_selected_target",
       "InventoryTests.test_inventory_decode_and_allocation_bounds_fail_closed",
       "InventoryTests.test_successful_terminal_build_record_is_mandatory",
       "InventoryTests.test_zero_tests_or_nonzero_exit_never_pass",
       "SelectionTests.test_cargo_dynamic_environment_preserves_fixture_inputs_and_prior_search_path",
+      "SelectionTests.test_common_owner_receives_the_same_limits_and_command",
       "SelectionTests.test_expected_exact_lists_cover_both_exporters_and_three_currentness_cases",
-      "SelectionTests.test_owned_process_rejects_excess_output_and_reaps",
-      "SelectionTests.test_owned_process_times_out_and_reaps",
-      "SelectionTests.test_source_identity_is_checked_without_running_tests_on_mismatch",
-      "SelectionTests.test_success_retires_timer_before_reap_and_never_signals_a_reaped_pid"
+      "SelectionTests.test_shared_overflow_timeout_and_cancellation_remain_failures",
+      "SelectionTests.test_source_identity_is_checked_without_running_tests_on_mismatch"
     ],
     "tools/tests/test_ci_suite_discovery.py": [
       "ArtifactTests.test_custom_harness_never_receives_libtest_list_arguments",
@@ -4473,6 +4527,58 @@
       "TransportWarmTests.test_missing_warm_offer_or_pair_never_qualifies",
       "TransportWarmTests.test_rehashed_candidate_cleanup_removal_cannot_become_historical_absence"
     ],
+    "tools/tests/test_owned_runners.py": [
+      "NativeRunnerDemonstrations.test_live_provider_normal_and_injected_failure_leave_no_owned_container",
+      "NativeRunnerDemonstrations.test_renderer_runner_normal_and_fault_with_retired_pipe_descendants",
+      "PreparedHarnessTests.test_explicit_integration_target_runs_each_exact_case_once",
+      "PreparedHarnessTests.test_fault_after_discovery_has_no_execution_or_retry",
+      "PreparedHarnessTests.test_missing_ignored_case_and_zero_execution_never_pass",
+      "PreparedHarnessTests.test_unknown_selection_rejected",
+      "RunnerContractTests.test_active_commands_use_shared_owner_not_legacy_subprocess",
+      "RunnerContractTests.test_broken_inventory_has_structured_failure_before_execution",
+      "RunnerContractTests.test_expected_fault_validator_rejects_stale_or_missing_cleanup",
+      "RunnerContractTests.test_inventory_contracts_reference_real_suites_and_pinned_services",
+      "RunnerContractTests.test_oci_interrupted_launch_still_closes_owned_fixture",
+      "RunnerContractTests.test_oci_normal_and_fault_paths_always_retire_registry",
+      "RunnerContractTests.test_preflight_reports_no_test_execution",
+      "RunnerContractTests.test_registry_cleanup_does_not_unlink_replaced_foreign_state",
+      "RunnerContractTests.test_registry_readiness_rejects_foreign_id_label_and_endpoint",
+      "RunnerContractTests.test_renderer_requires_explicit_artifacts_without_building",
+      "RunnerContractTests.test_wasm_and_provenance_paths_fail_before_execution"
+    ],
+    "tools/tests/test_owned_test_process.py": [
+      "ContractTests.test_accounting_timeout_retains_infrastructure_classification",
+      "ContractTests.test_arbitrary_commands_cannot_be_reproduction_selections",
+      "ContractTests.test_artifact_symlink_missing_and_oversized_rejected",
+      "ContractTests.test_build_preflight_does_not_require_or_prepare_artifacts",
+      "ContractTests.test_cleanup_failure_cannot_pass",
+      "ContractTests.test_dead_owner_never_polls_endpoint",
+      "ContractTests.test_denied_owned_accounting_is_never_zero",
+      "ContractTests.test_digest_hashes_actual_fixture",
+      "ContractTests.test_failure_record_retains_child_signal_despite_successful_teardown",
+      "ContractTests.test_false_stale_or_wrong_endpoint_readiness_fails_without_retry",
+      "ContractTests.test_invalid_fixture_is_not_unavailable_environment",
+      "ContractTests.test_invalid_limits_and_unsupported_owner",
+      "ContractTests.test_missing_child_list_prevents_any_scenario_spawn",
+      "ContractTests.test_missing_tool_fails_before_expensive_execution",
+      "ContractTests.test_parallel_roots_and_diagnostics_do_not_delete_each_other",
+      "ContractTests.test_private_root_and_atomic_filesystem_probe_are_removed",
+      "ContractTests.test_readiness_rechecks_current_liveness",
+      "ContractTests.test_redaction_before_tail_protects_credentials_and_paths",
+      "ContractTests.test_stalled_readiness_has_finite_watchdog",
+      "ContractTests.test_successful_identity_bound_readiness",
+      "ContractTests.test_total_watchdog_interrupts_stalled_python_stage",
+      "ContractTests.test_unsupported_platform_is_not_successful_coverage",
+      "NativeOwnershipTests.test_async_waiter_cancellation_joins_cleanup",
+      "NativeOwnershipTests.test_child_crash_is_not_timeout",
+      "NativeOwnershipTests.test_closed_stdout_does_not_cancel_lifetime_watchdog",
+      "NativeOwnershipTests.test_double_forked_session_escape_is_adopted_and_reaped",
+      "NativeOwnershipTests.test_event_cancelled_waiter_retires_owned_children_only",
+      "NativeOwnershipTests.test_inherited_pipe_writers_and_session_escape_are_reaped",
+      "NativeOwnershipTests.test_missing_executable_cannot_pass",
+      "NativeOwnershipTests.test_output_overflow_is_bounded_and_reaped",
+      "NativeOwnershipTests.test_success_reaps_process"
+    ],
     "tools/tests/test_package_format.py": [
       "PackageFormatTests.test_all_package_schemas_graphs_and_canonical_known_answers",
       "PackageFormatTests.test_config_changes_require_new_raw_identity",
@@ -5480,6 +5586,8 @@
     "tools/tests/test_optimization_sampling_races.py",
     "tools/tests/test_optimization_scheduler.py",
     "tools/tests/test_optimization_transport_warm.py",
+    "tools/tests/test_owned_runners.py",
+    "tools/tests/test_owned_test_process.py",
     "tools/tests/test_package_format.py",
     "tools/tests/test_package_phase0_evidence.py",
     "tools/tests/test_package_receipt_schema.py",
@@ -5561,7 +5669,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "e34f5541944f9416d4e56ba530e5411af1b4a0bd86840bddd0f069ebd98ccc56",
+    ".github/workflows/ci.yml": "4d99347211435cb4e8f041081639b58ad608f8aa2f20a47081ccf24661b2100e",
     ".github/workflows/docs-pages.yml": "87ca4f1d44d6de1e14960abb0f1d7a883d40ae52ffcaba8d4cfdcf0a888c7a3e",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0e84b07e365798040f2ff4c360d8fa4b959dfc46fdab8867662381508f1ef15d",

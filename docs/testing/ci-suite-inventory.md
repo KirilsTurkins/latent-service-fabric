@@ -16,7 +16,7 @@ metadata owner are registered without dropping their execution contracts.
 Website and MDX selection now retains the required site job in every profile,
 including the host correctness profile. The aggregate independently checks the
 complete job set. The reviewed command map preserves all 97 original required
-run blocks and covers 123 current blocks plus 69 delegated script owners. The
+run blocks and covers 128 current blocks plus 70 delegated script owners. The
 temporary upstream-discovery workflow has been retired; the maintained CI owns
 future build, discovery and execution receipts.
 
@@ -175,3 +175,9 @@ when `fast` omits `contracts`; the full profile still runs them once through
 `validate_contracts.sh`, preserving issue #183's duplicate-validation removal.
 The inventories and this map are review inputs: the validator does not
 silently regenerate or bless modified commands, ignored cases or test lists.
+
+The integration with merged #449 preserves its three inventory-owned process
+contracts and every OCI/renderer prerequisite, normal/fault check and diagnostic
+upload. Deterministic dependency checks remain in the documentation job. The
+supervisor completion validator was checked against the actual failing CI log:
+all 23 cases and the separate production sandbox marker are present.
