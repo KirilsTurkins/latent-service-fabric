@@ -8,7 +8,8 @@ permissions:
   actions: read
 jobs:
   inventory:
-    if: github.event.head_commit.message == 'chore(ci): assemble verified implementation objects'
+    if: >-
+      github.event.head_commit.message == 'chore(ci): assemble verified implementation objects'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -29,6 +30,7 @@ jobs:
           ROOT = pathlib.Path.cwd()
           REPO = 'KirilsTurkins/latent-service-fabric'
           BASELINE = '50f003dd006e0786494936c49e55dc683cf26fd6'
+          TEMP_WORKFLOWS = {'suite-inventory-audit.yml', 'suite-transfer-receipt.yml'}
           def derive(data, raw):
               from tools import ci_coverage as c
               discovery = json.loads(raw)
@@ -43,7 +45,7 @@ jobs:
               (ROOT/'tools/ci/suites.json').write_text(json.dumps(seed,indent=2,sort_keys=True)+'\n')
               before = {}
               for name in subprocess.check_output(['git','ls-tree','--name-only','HEAD:.github/workflows'],text=True).splitlines():
-                  if name == 'suite-inventory-audit.yml': continue
+                  if name in TEMP_WORKFLOWS: continue
                   path = '.github/workflows/'+name
                   before.update(c.workflow_commands(path,subprocess.check_output(['git','show','HEAD:'+path],text=True)))
               after = c.commands(ROOT)
@@ -71,12 +73,21 @@ jobs:
                   return json.load(response)
           assert os.environ['GITHUB_REPOSITORY'] == REPO
           assert os.environ['GITHUB_REF'] == 'refs/heads/feat/427-exact-suite-inventory'
-          encoded = ''.join((ROOT/f'.github/ci-transfer/part-{i}.b64').read_text().strip() for i in range(4))
-          compressed = base64.b64decode(encoded,validate=True)
+          chunks = [(ROOT/f'.github/ci-transfer/part-{i}.b64').read_text().strip() for i in range(4)]
+          repairs = ROOT/'.github/ci-transfer/repairs.b64'
+          if repairs.is_file():
+              for index, repair in json.loads(repairs.read_text()).items():
+                  number = int(index)
+                  assert hashlib.sha256(chunks[number].encode()).hexdigest() == repair['sha256']
+                  for start, end, replacement in reversed(repair['edits']):
+                      chunks[number] = chunks[number][:start] + replacement + chunks[number][end:]
+          compressed = base64.b64decode(''.join(chunks),validate=True)
           assert hashlib.sha256(compressed).hexdigest() == os.environ['PAYLOAD_SHA256']
           raw = gzip.GzipFile(fileobj=io.BytesIO(compressed)).read(2*1024*1024+1)
           assert len(raw) <= 2*1024*1024
           data = json.loads(raw)
+          data['delete'].append('.github/workflows/suite-transfer-receipt.yml')
+          if repairs.is_file(): data['delete'].append('.github/ci-transfer/repairs.b64')
           patch = pathlib.Path(os.environ['RUNNER_TEMP'])/'implementation.patch'
           patch.write_text(data['patch'])
           subprocess.run(['git','apply','--check',str(patch)],check=True)
