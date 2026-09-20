@@ -247,6 +247,10 @@ impl Drop for SupplyChainAuthority {
 }
 
 impl AdmissionAuthority for SupplyChainAuthority {
+    fn renew_control_lease(&self) -> Result<(), PlatformError> {
+        self.renew_clock_lease()
+    }
+
     fn verify_web(
         &self,
         tenant: &TenantId,

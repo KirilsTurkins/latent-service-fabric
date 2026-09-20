@@ -100,6 +100,7 @@ pub async fn held(
     require_running(client, &identity).await?;
     match kind {
         "local-cancel" => {
+            // lsf-example-begin: cancel
             drop(pending);
             let response = client
                 .cancel(
@@ -118,6 +119,7 @@ pub async fn held(
                 ),
                 "recovery-cancel-disposition",
             )?;
+            // lsf-example-end: cancel
             assertions.insert("localCancellation", true);
             assertions.insert("lostResponseStatus", true);
         }

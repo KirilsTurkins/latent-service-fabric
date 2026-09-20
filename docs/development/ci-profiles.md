@@ -89,3 +89,8 @@ to build a real application, verify its publisher/builder/SBOM evidence, render
 fresh activation state and hydrate the exact generated browser bundle. Build and
 runtime probes have separate finite deadlines. SDK-only changes and
 documentation-only changes do not select these Angular build probes.
+
+## Selected process ownership
+
+See [owned selected test processes](owned-test-processes.md) for prerequisite,
+prepared-artifact, deadline, cleanup and diagnostic contracts.
