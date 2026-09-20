@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "id": "browser/angular-navigation",
+  "title": "Navigate within the hydrated Angular application",
+  "audience": "browser-developer",
+  "target": "browser",
+  "variants": [
+    {
+      "language": "typescript",
+      "kind": "maintained",
+      "source": "examples/angular-reference-application/shared/app.ts",
+      "regions": [
+        "navigate"
+      ],
+      "validation": {
+        "target": "tools/run_angular_reference_workflow.py",
+        "instructions": "docs/learn/build-and-deliver-angular.mdx",
+        "evidence": null
+      }
+    }
+  ]
+}

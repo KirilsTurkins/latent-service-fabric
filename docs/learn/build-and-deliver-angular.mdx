@@ -1,0 +1,186 @@
+import CodeExample from '@site/src/components/CodeExample';
+
+# Build an Angular application and deliver it through LSF
+
+Build the maintained application, publish its exact renderer and browser assets,
+then observe server rendering, hydration, navigation and a controlled update
+through a real node. This is the **development** Linux x86_64 profile. Keep the
+source checkout and its generated receipts together; older released-alpha
+documentation does not imply support for these commands.
+
+## Use the supported profile
+
+The [authoring recipe](../component-development/angular-build.md) accepts
+explicit client, server and shared inputs from `angular-build.json`. It compiles
+an immutable WebAssembly component for generic execution cells. It does not
+accept arbitrary Angular CLI projects, npm dependencies, Node built-ins,
+Express servers, native addons or application lifecycle scripts.
+
+| Input | Exact maintained selection |
+| --- | --- |
+| Angular / TypeScript | 22.1.6 / 6.0.3 |
+| Node / Python | 24.19.0 / 3.13.5 |
+| Rust / Wasm tools | 1.97.1 / wasm-tools 1.254.0 |
+| Authoring / dependency profile | `angular-ssr-component-v1` / `scoped-http-get-v1` |
+| npm tool graph | [Renderer package and lock](../../examples/renderer-profile/package.json) |
+| Runtime and native preparation | [Bounded generic-cell renderer](../runtime/angular-renderer-runtime.md), enforced T1 admission |
+
+Provision the remaining exact tools from [the repository toolchain](../development/toolchain.md).
+Use an isolated Linux evaluation environment with Chromium and the locked npm
+tool tree available. Reserve loopback port 19090 for the runner's owned backend;
+the workflow refuses an occupied port. Its credentials are public test fixtures
+for temporary node storage. Do not copy them into an installed node.
+
+Ordinary builds record `reproducibility: not-checked`, `hermetic: false` and
+`dependencyCompleteness: declared-inputs-incomplete`. Two different application
+versions are not a reproducibility test. A policy requiring a stronger claim
+must reject these observations; changing the policy silently is not a remedy.
+
+## Follow the source from request to browser
+
+The complete application is [angular-reference-application](../../examples/angular-reference-application/README.md).
+
+| Source | Responsibility |
+| --- | --- |
+| [Build configuration](../../examples/angular-reference-application/angular-build.json) | Select explicit files, eight routes and the `/offline` prerender |
+| [Server entry](../../examples/angular-reference-application/server/main.ts) | Select a permitted dependency request, project public data and render an HTTP result |
+| [Shared application](../../examples/angular-reference-application/shared/app.ts) | Describe the hydrated page, transferred public state, counter and navigation |
+| [Client entry](../../examples/angular-reference-application/client/main.ts) | Bootstrap Angular with hydration enabled |
+| [Version source](../../examples/angular-reference-application/shared/version.ts) | Display the immutable application revision |
+
+The server requests a dependency through this closed adapter hook. The broker
+still checks the installed provider, tenant, publication, binding, grant,
+deadline and remaining budget before dispatch.
+
+<CodeExample example="guest/angular-dependency" region="dependency" />
+
+Only the bounded backend `message` field becomes public transferred data.
+Authentication headers and other backend fields are excluded by the server's
+projection. Shared/client sources cannot import server code or its resources.
+Keep signing material, provider credentials and management tokens outside every
+selected source and asset.
+
+The client hydrates the server's existing application:
+
+<CodeExample example="browser/angular-hydration" region="hydrate" />
+
+Home/About navigation updates Angular signals and browser history. It uses the
+maintained application's navigation implementation, without an Angular Router
+dependency. Modified clicks retain ordinary browser behavior.
+
+<CodeExample example="browser/angular-navigation" region="navigate" />
+
+## Build two actual application versions
+
+From the repository root, use a fresh output path and the repository's locked
+tools. Cargo's adapter dependencies must already be available: the adapter
+build uses `--locked --offline`.
+
+```sh
+export CARGO_TARGET_DIR="$PWD/target"
+npm --prefix examples/renderer-profile ci --ignore-scripts --no-audit --no-fund
+cargo build --locked -p latent -p latentd
+cargo build --locked --release -p latent-wasmtime --bin latent-aot-compiler
+python3 tools/build_angular_reference.py \
+  --toolchain-root "$PWD/examples/renderer-profile" \
+  --cli "$PWD/target/debug/latent" \
+  --cargo-target-dir "$PWD/target" \
+  --output "$PWD/target/angular-reference-guide-builds"
+```
+
+The builder stages the selected green source and the maintained blue
+`variants/blue.ts` version source, then builds each independently. This is the
+valid change for the walkthrough: the visible revision and the actual browser,
+renderer, source-snapshot and package identities must differ. No generated
+package or observation is edited afterward. For your own text change, edit the
+selected shared template and run the [single-application builder](../component-development/angular-build.md)
+into another fresh directory.
+
+Inspect `reference-builds.json` and each version's `build-summary.json`,
+`observation.json`, `inputs/metadata/web-application.json` and `package/`.
+Record their full hashes. Local build inspection reports `trustEvaluated: false`
+and `executionAuthorized: false`; publisher/builder signatures and runtime
+permission are separate steps.
+
+## Sign, admit, publish and exercise the real node
+
+The maintained fixture exporter signs those exact build outputs with disposable
+test authorities. Its protected configuration enforces publisher, builder,
+SBOM, tenant and native-execution policy. The workflow deliberately tries
+missing publisher/builder evidence before accepting the proper publication.
+
+```sh
+LSF_ANGULAR_REFERENCE_BUILDS="$PWD/target/angular-reference-guide-builds" \
+LSF_ANGULAR_REFERENCE_FIXTURE_ROOT="$PWD/target/angular-reference-guide-fixture" \
+  cargo test --locked -p latentd --test phase3_reference_fixture -- \
+  export_actual_angular_reference_fixtures --exact --ignored --nocapture
+
+python3 tools/run_angular_reference_workflow.py \
+  --cli "$PWD/target/debug/latent" \
+  --node "$PWD/target/debug/latentd" \
+  --compiler "$PWD/target/release/latent-aot-compiler" \
+  --fixture-root "$PWD/target/angular-reference-guide-fixture" \
+  --nodejs "$(command -v node)" \
+  --chrome "$(command -v chromium)" \
+  --toolchain-root "$PWD/examples/renderer-profile" \
+  --output "$PWD/target/angular-reference-guide.json"
+```
+
+The [workflow](../../tools/run_angular_reference_workflow.py) owns the temporary
+node, authenticated CLI profiles, backend and real Chromium processes. Its
+[configuration](../../tools/phase3_reference_config.py) and
+[scenario](../../tools/phase3_reference_scenario.py) contain the complete
+publication, preparation, deployment and HTTP-trigger commands. For an installed
+node, use your own protected authorities and the [operator CLI contract](../reference/operator-cli.md).
+The fixture's local signing keys are not a production trust configuration.
+
+Check these observations in the receipt:
+
+| Request or action | Required observation |
+| --- | --- |
+| `/` and `/about` | Initial HTTP HTML already contains the Angular page; Chromium reuses the captured DOM and navigates without replacing it |
+| Immutable client assets | Publication-qualified paths, exact bytes/media types, conditional 304 and no renderer-store increase |
+| `/offline` | Supplied prerender through shared assets, without a render activation |
+| `/failure` | Declared HTTP 422 application failure, separate from a platform trap |
+| `/data` | One allowed broker-mediated backend response; only its public message enters HTML |
+| `/denied` | Wrong destination rejected; no hidden request to port 19091 |
+| `/slow` | Cancellation closes actual owned backend work, then a subsequent request succeeds |
+| `/account` | Public access denied; authenticated Alice/Bob remain isolated across renders and browser contexts |
+
+The browser uses actual shared ingress. DOM reuse from supplied HTML or a
+browser route-fulfilment mock is insufficient. Public-origin identity is not a
+user login. The later authenticated phase uses invoke-only test identities;
+the browser never receives the operator's management token. Refer to the
+[browser boundary](../security/browser-boundary.md) for allowed origin, CSP,
+cookie and credential behavior. Personalized HTML is private and non-shared;
+immutable public asset caching does not authorize caching authenticated HTML.
+
+## Update, revoke and recover
+
+The runner keeps a render in flight while changing routing. That request keeps
+its selected publication/revision; subsequent requests follow the new route.
+It records real canary observations, promotes blue, revokes it, restarts and
+rolls back to the retained green generation. Operation IDs and expected
+revisions make replay/reconciliation explicit. A lost reply is not permission
+to submit a new mutation with a different identity.
+
+Native preparation uses the enforced T1 compiler path. An in-memory prepared
+image hit is distinct from an authenticated native-store hit after restart;
+the receipt must demonstrate the latter without inventing an audit event for
+the former. The final authenticated browser and restart checks must also pass.
+Use [troubleshooting](../how-to/diagnose-angular-delivery.md) when any stage fails.
+
+## Keep evidence with its source
+
+Retain the workflow JSON even when it fails. A complete successful receipt must
+bind the exact source, builds, CLI/node/compiler, toolchain and browser; include
+all browser, canary, revocation, rollback and restart results; and report clean
+physical process/resource retirement. Partial browser success cannot certify
+the whole workflow. The runner removes only its own temporary node/client/peer
+storage; your explicit build, fixture and receipt paths remain for inspection.
+
+Registered snippets show source extraction until a matching reviewed execution
+receipt is available. The [guide coverage record](../../website/content/coverage.json)
+keeps newcomer review separate from automated execution. Resource and latency
+claims require the matching Phase 3 campaign; configured limits and one build's
+elapsed time are not general performance claims.

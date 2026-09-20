@@ -12,12 +12,14 @@ let calls = 0;
 // Fixture account data is display text, separate from authenticated identifiers.
 const displayNames: Readonly<Record<string, string>> = Object.freeze({alice: 'Alice<unsafe>', bob: 'Bob'});
 
+// lsf-example-begin: dependency
 export async function prepare(request: Request) {
   if (request.path === '/data') return {url: 'http://127.0.0.1:19090/message'};
   if (request.path === '/slow') return {url: 'http://127.0.0.1:19090/slow'};
   if (request.path === '/denied') return {url: 'http://127.0.0.1:19091/message'};
   return null;
 }
+// lsf-example-end: dependency
 
 function publicMessage(backend: Backend): {message: string; outcome: string} {
   if (!backend) return {message: '', outcome: 'not-requested'};
