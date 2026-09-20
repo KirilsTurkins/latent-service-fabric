@@ -87,6 +87,37 @@ class InventoryTests(unittest.TestCase):
         with self.assertRaises(artifacts.ArtifactError):
             self.read()
 
+    def test_integration_inventory_selects_exact_target_among_workspace_siblings(self) -> None:
+        self.suite = artifacts.Suite(
+            self.suite.manifest, "angular_renderer", self.suite.source, "",
+            frozenset({"renderer_case"}), False, "test")
+        self.message["target"].update(kind=["test"], name=self.suite.target)
+        sibling = copy.deepcopy(self.message)
+        sibling["target"].update(name="admission", src_path=str(self.repo / "other.rs"))
+        sibling["executable"] = str(self.repo / "target/debug/deps/admission-other")
+        # The workspace JSON contains every integration target in this package;
+        # unrelated sibling paths need not even be opened to select our target.
+        for records in ([sibling, self.message], [self.message, sibling]):
+            with self.subTest(order=records[0]["target"]["name"]):
+                self.save(records)
+                self.assertEqual(self.read().executable, self.executable)
+
+    def test_integration_sibling_cannot_replace_or_hide_an_invalid_selected_target(self) -> None:
+        self.suite = artifacts.Suite(
+            self.suite.manifest, "angular_renderer", self.suite.source, "",
+            frozenset({"renderer_case"}), False, "test")
+        self.message["target"].update(kind=["test"], name=self.suite.target)
+        sibling = copy.deepcopy(self.message)
+        sibling["target"]["name"] = "admission"
+        wrong_source = copy.deepcopy(self.message)
+        wrong_source["target"]["src_path"] = str(self.manifest)
+        for records in ([sibling], [sibling, wrong_source],
+                        [sibling, self.message, self.message]):
+            with self.subTest(records=records):
+                self.save(records)
+                with self.assertRaises(artifacts.ArtifactError):
+                    self.read()
+
     def test_successful_terminal_build_record_is_mandatory(self) -> None:
         for suffix in ("", '\n{"reason":"build-finished","success":false}',
                        '\n{"reason":"build-finished","success":true}\n{}'):

@@ -161,6 +161,11 @@ def read_inventory(path: Path, repo: Path, suite: Suite, *, target: Path | None 
                     raise ArtifactError("invalid-artifact-target")
                 if target.get("kind") != [suite.kind] or profile.get("test") is not True:
                     continue
+                # A workspace inventory includes multiple integration targets
+                # owned by one package. Ignore siblings, never substitute them
+                # for the requested target or weaken its source/duplicate checks.
+                if suite.kind == "test" and target.get("name") != suite.target:
+                    continue
                 if (target.get("name") != suite.target
                         or absolute_path(target.get("src_path")) != expected_source.resolve(strict=True)):
                     raise ArtifactError("wrong-libtest-owner")
