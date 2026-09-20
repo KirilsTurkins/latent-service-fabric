@@ -10,6 +10,8 @@ import sys
 import urllib.request
 from pathlib import Path
 
+from java_toolchain import baseline, check_jdk, executable, release, verify_classes, verify_jar
+
 
 ROOT = Path(__file__).resolve().parents[3]
 SDK = ROOT / "sdk/java-client"
@@ -68,7 +70,7 @@ def prepare():
     run([sys.executable, SDK / "tools/generate_bridge.py", "--check"])
 
 
-def compile_java(tests):
+def compile_java(tests, java_home):
     classes = BUILD / ("test-classes" if tests else "classes")
     if classes.exists():
         resolved = classes.resolve(strict=True)
@@ -82,10 +84,12 @@ def compile_java(tests):
     sources = sorted(source for directory in directories for source in directory.rglob("*.java"))
     sources.extend(Path(path) for path in json.loads((BUILD / "generated-sources.json").read_text(encoding="utf-8")))
     classpath = os.pathsep.join(map(str, jars()))
-    arguments = ["--release", "21", "-encoding", "UTF-8", "-d", str(classes), "-cp", classpath, *map(str, sources)]
+    arguments = ["--release", str(release()), "-encoding", "UTF-8", "-d", str(classes), "-cp", classpath, *map(str, sources)]
     argument_file = BUILD / "javac.args"
     argument_file.write_text("\n".join(json.dumps(value.replace("\\", "/")) for value in arguments), encoding="utf-8")
-    run(["javac", f"@{argument_file}"])
+    run([executable(java_home, "javac"), f"@{argument_file}"])
+    count = verify_classes(classes)
+    print(f"Verified {count} non-preview Java {release()} classes", flush=True)
     return os.pathsep.join([str(classes), classpath])
 
 
@@ -96,13 +100,16 @@ def main():
     if args.action == "classpath":
         print(os.pathsep.join(map(str, [BUILD / "classes", *jars()])))
         return
-    prepare()
     if args.action == "prepare":
+        prepare()
         return
-    classpath = compile_java(args.action == "test")
+    java_home = check_jdk()
+    print(f"Java SDK: Temurin {baseline()['java']}, release {release()}, {platform.system()} {platform.machine()}", flush=True)
+    prepare()
+    classpath = compile_java(args.action == "test", java_home)
     if args.action == "test":
-        run(["java", "-ea", "-cp", classpath, "dev.latent.sdk.InvocationIdentityTest"], 45)
-        run(["java", "-ea", "-cp", classpath, "dev.latent.sdk.transport.TransportTest"], 60)
+        run([executable(java_home, "java"), "-ea", "-cp", classpath, "dev.latent.sdk.InvocationIdentityTest"], 45)
+        run([executable(java_home, "java"), "-ea", "-cp", classpath, "dev.latent.sdk.transport.TransportTest"], 60)
     else:
         manifest = BUILD / "manifest.mf"
         class_path = "Class-Path: " + " ".join("deps/" + path.name for path in jars())
@@ -112,8 +119,11 @@ def main():
             lines.append(" " + class_path[:69])
             class_path = class_path[69:]
         manifest.write_text("\n".join(lines) + "\n\n", encoding="utf-8")
-        run(["jar", "--create", "--date=2026-01-01T00:00:00Z", "--file", BUILD / "latent-java-client.jar",
+        jar = BUILD / "latent-java-client.jar"
+        run([executable(java_home, "jar"), "--create", "--date=2026-01-01T00:00:00Z", "--file", jar,
              "--manifest", manifest, "--main-class", "dev.latent.sdk.examples.ProviderWorkflow", "-C", BUILD / "classes", "."])
+        count = verify_jar(jar)
+        print(f"Verified JAR contains {count} non-preview Java {release()} classes", flush=True)
 
 
 if __name__ == "__main__":
@@ -123,3 +133,5 @@ if __name__ == "__main__":
         raise SystemExit(f"Java build/test command failed with exit {failure.returncode}") from None
     except subprocess.TimeoutExpired:
         raise SystemExit("Java build/test command exceeded its finite deadline") from None
+    except (OSError, ValueError) as failure:
+        raise SystemExit(f"Java build/test failed: {failure}") from None
