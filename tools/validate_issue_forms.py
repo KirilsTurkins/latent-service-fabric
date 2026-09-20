@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import errno
+import os
 from pathlib import Path
 import re
 import stat
@@ -37,7 +39,24 @@ class ValidationError(Exception):
 
 
 class UniqueSafeLoader(yaml.SafeLoader):
-    """SafeLoader variant that rejects duplicate mapping keys."""
+    """Reject excessive composition before recursive construction begins."""
+
+    def __init__(self, stream):
+        self._compose_depth = 0
+        self._compose_nodes = 0
+        super().__init__(stream)
+
+    def compose_node(self, parent, index):
+        self._compose_nodes += 1
+        if self._compose_nodes > MAX_NODES:
+            raise ValidationError("yaml-node-limit")
+        if self._compose_depth > MAX_DEPTH:
+            raise ValidationError("yaml-depth-limit")
+        self._compose_depth += 1
+        try:
+            return super().compose_node(parent, index)
+        finally:
+            self._compose_depth -= 1
 
 
 def _construct_unique_mapping(
@@ -101,9 +120,19 @@ def read_yaml(path: Path) -> object:
     if metadata.st_size > MAX_FILE_BYTES:
         raise ValidationError("file-size-limit")
     try:
-        encoded = path.read_bytes()
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        with os.fdopen(os.open(path, flags), "rb") as source:
+            opened = os.fstat(source.fileno())
+            if not stat.S_ISREG(opened.st_mode):
+                raise ValidationError("unsafe-file-type")
+            if opened.st_size > MAX_FILE_BYTES:
+                raise ValidationError("file-size-limit")
+            # Bound the read itself, including growth since either stat call.
+            encoded = source.read(MAX_FILE_BYTES + 1)
     except OSError as error:
-        raise ValidationError("file-unavailable") from error
+        reason = "unsafe-file-type" if error.errno == errno.ELOOP else "file-unavailable"
+        raise ValidationError(reason) from error
     if len(encoded) > MAX_FILE_BYTES:
         raise ValidationError("file-size-limit")
     try:
@@ -115,16 +144,23 @@ def read_yaml(path: Path) -> object:
         for token in tokens:
             if isinstance(token, (AliasToken, AnchorToken, DirectiveToken, TagToken)):
                 raise ValidationError("unsupported-yaml-feature")
-        documents = list(yaml.load_all(text, Loader=UniqueSafeLoader))
+        loader = UniqueSafeLoader(text)
+        try:
+            if not loader.check_data():
+                raise ValidationError("yaml-document-count")
+            value = loader.get_data()
+            if loader.check_data():
+                raise ValidationError("yaml-document-count")
+        finally:
+            loader.dispose()
+        _bounded_shape(value)
+        return value
     except ValidationError:
         raise
-    except yaml.YAMLError as error:
+    except UnicodeError as error:
+        raise ValidationError("invalid-unicode-scalar") from error
+    except (yaml.YAMLError, ValueError) as error:
         raise ValidationError("malformed-yaml") from error
-    if len(documents) != 1:
-        raise ValidationError("yaml-document-count")
-    value = documents[0]
-    _bounded_shape(value)
-    return value
 
 
 def _mapping(value: object, reason: str) -> dict[str, object]:
@@ -149,7 +185,9 @@ def _nonempty(value: object, reason: str, maximum: int = MAX_STRING_BYTES) -> st
 
 def _optional_string(mapping: dict[str, object], key: str, reason: str) -> None:
     if key in mapping:
-        _nonempty(mapping[key], reason)
+        value = mapping[key]
+        if not isinstance(value, str) or len(value.encode("utf-8")) > MAX_STRING_BYTES:
+            raise ValidationError(reason)
 
 
 def _validations(value: object) -> None:
@@ -192,6 +230,8 @@ def validate_issue_form(value: object) -> None:
         raise ValidationError("invalid-form-title")
     if "labels" in form:
         labels = form["labels"]
+        if isinstance(labels, str):
+            labels = _nonempty(labels, "invalid-form-labels").split(",")
         if not isinstance(labels, list) or len(labels) > MAX_LABELS:
             raise ValidationError("invalid-form-labels")
         for label in labels:
@@ -261,22 +301,42 @@ def validate_config(value: object) -> None:
         _nonempty(item["name"], "invalid-contact-name")
         _nonempty(item["about"], "invalid-contact-about")
         url = _nonempty(item["url"], "invalid-contact-url", MAX_URL_BYTES)
-        parsed = urlparse(url)
-        if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+        if any(char.isspace() or ord(char) < 32 or ord(char) == 127 for char in url) or "\\" in url:
+            raise ValidationError("invalid-contact-url")
+        try:
+            parsed = urlparse(url)
+            # Accessing port also rejects malformed and out-of-range ports.
+            port = parsed.port
+            hostname = parsed.hostname
+        except ValueError as error:
+            raise ValidationError("invalid-contact-url") from error
+        if (parsed.scheme != "https" or not hostname or parsed.netloc.endswith(":")
+                or parsed.username is not None or parsed.password is not None
+                or port == 0):
             raise ValidationError("invalid-contact-url")
 
 
 def validate_repository(root: Path) -> int:
     checked = 0
-    for relative in KNOWN_FORMS:
-        path = root / relative
-        if path.exists() or path.is_symlink():
-            validate_issue_form(read_yaml(path))
+    for relative in (*KNOWN_FORMS, CONFIG_PATH):
+        path = root
+        # Missing known files are allowed (including deletion and an absent
+        # chooser), but existing paths must not cross a symlink or special file.
+        for index, part in enumerate(relative.parts):
+            path /= part
+            try:
+                metadata = path.lstat()
+            except FileNotFoundError:
+                break
+            except OSError as error:
+                raise ValidationError("file-unavailable") from error
+            directory = index < len(relative.parts) - 1
+            if not (stat.S_ISDIR(metadata.st_mode) if directory else stat.S_ISREG(metadata.st_mode)):
+                raise ValidationError("unsafe-file-type")
+        else:
+            validate = validate_config if relative == CONFIG_PATH else validate_issue_form
+            validate(read_yaml(path))
             checked += 1
-    config = root / CONFIG_PATH
-    if config.exists() or config.is_symlink():
-        validate_config(read_yaml(config))
-        checked += 1
     return checked
 
 
