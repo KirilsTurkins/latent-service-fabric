@@ -8,7 +8,13 @@ import tomllib
 from collections.abc import Iterator
 from pathlib import Path
 
-from native_loader_boundary import validate as validate_native_loader
+try:
+    # Direct scripts have tools/ on sys.path; focused unittests have the root.
+    from native_loader_boundary import validate as validate_native_loader
+except ModuleNotFoundError as error:
+    if error.name != "native_loader_boundary":
+        raise
+    from tools.native_loader_boundary import validate as validate_native_loader
 
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
