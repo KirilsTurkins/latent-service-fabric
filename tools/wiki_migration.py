@@ -83,10 +83,12 @@ def validate(data, root=ROOT):
     managed = set(manifest["managed_files"])
     require(len(managed) == len(manifest["managed_files"]), "duplicate published manifest entry")
     require(managed == set(files) - {".latent-service-fabric-wiki.json"}, "incomplete published migration map")
-    require(set(manifest["managed_sha256"]) == managed, "incomplete published digest set")
+    digest_rows = manifest["managed_digests"]
+    digests = {row["path"]: row["sha256"] for row in digest_rows}
+    require(len(digests) == len(digest_rows) and set(digests) == managed, "incomplete published digest set")
     require(manifest["source_revision"] == data["publishedSourceRevision"], "publication source mismatch")
     for name in managed:
-        require(manifest["managed_sha256"][name] == files[name]["sha256"], "published bytes mismatch")
+        require(digests[name] == files[name]["sha256"], "published bytes mismatch")
     links = 0
     for row in rows:
         for value in row.get("links", []):

@@ -787,37 +787,128 @@
       "assets/system-decomposition.gif",
       "assets/system-decomposition.svg"
     ],
-    "managed_sha256": {
-      "Activation-Lifecycle.md": "4df6516e2c64860ed30f8b582455d4cc0d7e8cf268b0fcaf1215dd90832de887",
-      "Architecture.md": "29aac1d0fb8553402c3fd8978eef5d477e9f897039eb86adb3fb22a2d55b6089",
-      "Capsule-Development.md": "4960d1e60f86b702f79fc8599ecdea1d6008f41a572e10e1132398326aaafc34",
-      "Contracts-and-APIs.md": "a8d65af0d920dbbc07a1770ed375538c37beb6086cd8874ff91ff19f0bd2b50a",
-      "Core-Concepts.md": "fa444f0aaf380cb27af8e947fb216a668ca92c710a813f91ff46c7a9aaf21903",
-      "Deployment-and-Routing.md": "f8f8d02d8e0cbc3403b36c8d6af869122d624f156548684d4dfb63a6a3f90c76",
-      "Design-Governance.md": "26e72f1546f9f9e3f69cf041be9f2f48d4324bcd402456c6fa5eb2d207f84490",
-      "Development-Workflow.md": "cf3f7b21a27e8d4ce213578692901d3a6e6b572ce9d94d318e58621eb5cd60ea",
-      "Execution-Cells.md": "9e5fdd555fe13bdce6b496d6599a65fa4da0522ee3a3d41c6f7537b7ce71d00f",
-      "FAQ.md": "d1d7f2dec9319652048ccb1f9d3474b84faba3685ebd00cb017c8e0791732d66",
-      "Getting-Started.md": "43425c853c6ca0973eb8b5a0fd9edfaab415cbfa083683b2a1e0d697c031b100",
-      "Glossary.md": "1749c9012e66a7fd2cec97d8f32cc1b23fce4f5e6d308b39956d76f12e6ebd40",
-      "Home.md": "f14528a628816b0ad5b0078e89bb7672ae02173f05ddf8460c422e06f1eb5008",
-      "Operator-CLI.md": "02ef4e6e9e06943c246244af4b5a61bc63db05d5b52ea0dbf46ba4f3d30f7e60",
-      "Performance-and-Infrastructure.md": "68e0a6233ba5d24ad93e32fb5adc85e72295888f38591c915c05c7dc50bc6faa",
-      "Phase-0-Runbook.md": "e16e0ed9f17ee1fb6d50ce73e1ed41934d6c52b91ad7d248837cf42d936ff592",
-      "Phase-0-Status.md": "4002bcfe9e16776f5344c708a812cc127bab69131dfbda6790244e25bb11580b",
-      "Phase-1-Status.md": "94e7cfe850ee7f9bdabcd8dc70a1f1cdd2a25ac4f4618692bc7847fea9d3ce90",
-      "Repository-Map.md": "5ed1abb9279261e1376a19f9ad0cd28ec57f093cfaf48bb7b6394fe32f373efe",
-      "Roadmap.md": "8906adfdfb7be44db2f1fb4c72fa888f9aaa8d513fb9f9e0eac65c037c2be8b1",
-      "SDKs.md": "ec06d44596243f9ac21511bd0317af0c756dedc92547961cf2a0c86c036a092d",
-      "Security-and-Isolation.md": "75830bfc60e12e4a2ac19883ba56d18a6ed6fd1f3cdab6fef6b9fb131aa5c0b8",
-      "State-and-Effects.md": "97dac97a822e8faf2855456f92330a666aae4897a8e99ea0f686480cb431932d",
-      "Testing-and-Benchmarks.md": "0983e8e64dc63498c3b313ba02f802a4c704f6e312f6dde7fbf1b3721fb8249b",
-      "_Footer.md": "de7ce3d6e54de26e27620e2fd98f1f62748b68a569304460cd1a88e2e3395f6a",
-      "_Sidebar.md": "68518b7268bb5bf104408243d5c6f6208e8e8163967f47a00d6a1cbce4c5699d",
-      "assets/architecture-at-a-glance.gif": "81bdb9b04b8f6236b43457777c378f39f4480358d18dba2d3b3726e46d506691",
-      "assets/architecture-at-a-glance.svg": "a26c56948ab4a61c2ec0ab901952dd8efe736dd365d733473bcb16bcf8cdbcf8",
-      "assets/system-decomposition.gif": "49c08d161580427816fcebca5363df2a733ab4fee63424e27078a857f573a030",
-      "assets/system-decomposition.svg": "e1c524625fbe9411f5ca480757cea5c41d0b5ff5ac5d6349ce273634312f1255"
-    }
+    "managed_digests": [
+      {
+        "path": "Activation-Lifecycle.md",
+        "sha256": "4df6516e2c64860ed30f8b582455d4cc0d7e8cf268b0fcaf1215dd90832de887"
+      },
+      {
+        "path": "Architecture.md",
+        "sha256": "29aac1d0fb8553402c3fd8978eef5d477e9f897039eb86adb3fb22a2d55b6089"
+      },
+      {
+        "path": "Capsule-Development.md",
+        "sha256": "4960d1e60f86b702f79fc8599ecdea1d6008f41a572e10e1132398326aaafc34"
+      },
+      {
+        "path": "Contracts-and-APIs.md",
+        "sha256": "a8d65af0d920dbbc07a1770ed375538c37beb6086cd8874ff91ff19f0bd2b50a"
+      },
+      {
+        "path": "Core-Concepts.md",
+        "sha256": "fa444f0aaf380cb27af8e947fb216a668ca92c710a813f91ff46c7a9aaf21903"
+      },
+      {
+        "path": "Deployment-and-Routing.md",
+        "sha256": "f8f8d02d8e0cbc3403b36c8d6af869122d624f156548684d4dfb63a6a3f90c76"
+      },
+      {
+        "path": "Design-Governance.md",
+        "sha256": "26e72f1546f9f9e3f69cf041be9f2f48d4324bcd402456c6fa5eb2d207f84490"
+      },
+      {
+        "path": "Development-Workflow.md",
+        "sha256": "cf3f7b21a27e8d4ce213578692901d3a6e6b572ce9d94d318e58621eb5cd60ea"
+      },
+      {
+        "path": "Execution-Cells.md",
+        "sha256": "9e5fdd555fe13bdce6b496d6599a65fa4da0522ee3a3d41c6f7537b7ce71d00f"
+      },
+      {
+        "path": "FAQ.md",
+        "sha256": "d1d7f2dec9319652048ccb1f9d3474b84faba3685ebd00cb017c8e0791732d66"
+      },
+      {
+        "path": "Getting-Started.md",
+        "sha256": "43425c853c6ca0973eb8b5a0fd9edfaab415cbfa083683b2a1e0d697c031b100"
+      },
+      {
+        "path": "Glossary.md",
+        "sha256": "1749c9012e66a7fd2cec97d8f32cc1b23fce4f5e6d308b39956d76f12e6ebd40"
+      },
+      {
+        "path": "Home.md",
+        "sha256": "f14528a628816b0ad5b0078e89bb7672ae02173f05ddf8460c422e06f1eb5008"
+      },
+      {
+        "path": "Operator-CLI.md",
+        "sha256": "02ef4e6e9e06943c246244af4b5a61bc63db05d5b52ea0dbf46ba4f3d30f7e60"
+      },
+      {
+        "path": "Performance-and-Infrastructure.md",
+        "sha256": "68e0a6233ba5d24ad93e32fb5adc85e72295888f38591c915c05c7dc50bc6faa"
+      },
+      {
+        "path": "Phase-0-Runbook.md",
+        "sha256": "e16e0ed9f17ee1fb6d50ce73e1ed41934d6c52b91ad7d248837cf42d936ff592"
+      },
+      {
+        "path": "Phase-0-Status.md",
+        "sha256": "4002bcfe9e16776f5344c708a812cc127bab69131dfbda6790244e25bb11580b"
+      },
+      {
+        "path": "Phase-1-Status.md",
+        "sha256": "94e7cfe850ee7f9bdabcd8dc70a1f1cdd2a25ac4f4618692bc7847fea9d3ce90"
+      },
+      {
+        "path": "Repository-Map.md",
+        "sha256": "5ed1abb9279261e1376a19f9ad0cd28ec57f093cfaf48bb7b6394fe32f373efe"
+      },
+      {
+        "path": "Roadmap.md",
+        "sha256": "8906adfdfb7be44db2f1fb4c72fa888f9aaa8d513fb9f9e0eac65c037c2be8b1"
+      },
+      {
+        "path": "SDKs.md",
+        "sha256": "ec06d44596243f9ac21511bd0317af0c756dedc92547961cf2a0c86c036a092d"
+      },
+      {
+        "path": "Security-and-Isolation.md",
+        "sha256": "75830bfc60e12e4a2ac19883ba56d18a6ed6fd1f3cdab6fef6b9fb131aa5c0b8"
+      },
+      {
+        "path": "State-and-Effects.md",
+        "sha256": "97dac97a822e8faf2855456f92330a666aae4897a8e99ea0f686480cb431932d"
+      },
+      {
+        "path": "Testing-and-Benchmarks.md",
+        "sha256": "0983e8e64dc63498c3b313ba02f802a4c704f6e312f6dde7fbf1b3721fb8249b"
+      },
+      {
+        "path": "_Footer.md",
+        "sha256": "de7ce3d6e54de26e27620e2fd98f1f62748b68a569304460cd1a88e2e3395f6a"
+      },
+      {
+        "path": "_Sidebar.md",
+        "sha256": "68518b7268bb5bf104408243d5c6f6208e8e8163967f47a00d6a1cbce4c5699d"
+      },
+      {
+        "path": "assets/architecture-at-a-glance.gif",
+        "sha256": "81bdb9b04b8f6236b43457777c378f39f4480358d18dba2d3b3726e46d506691"
+      },
+      {
+        "path": "assets/architecture-at-a-glance.svg",
+        "sha256": "a26c56948ab4a61c2ec0ab901952dd8efe736dd365d733473bcb16bcf8cdbcf8"
+      },
+      {
+        "path": "assets/system-decomposition.gif",
+        "sha256": "49c08d161580427816fcebca5363df2a733ab4fee63424e27078a857f573a030"
+      },
+      {
+        "path": "assets/system-decomposition.svg",
+        "sha256": "e1c524625fbe9411f5ca480757cea5c41d0b5ff5ac5d6349ce273634312f1255"
+      }
+    ],
+    "projection": "Original managed_sha256 map represented as explicit path and sha256 records; original bytes retain their recorded identity."
   }
 }
