@@ -8,6 +8,25 @@ import {extractExamples} from '../plugins/examples/extract.mjs';
 import {remarkExamples, requestsFromTree} from '../plugins/examples/remark.mjs';
 import {verifyExampleHtml} from '../plugins/examples/built.mjs';
 import {fixture} from './example-fixtures.mjs';
+import {createProcessors, getProcessor} from '@docusaurus/mdx-loader/lib/processor.js';
+import {websiteRoot} from '../lib/repository.mjs';
+import config from '../docusaurus.config.ts';
+
+test('the configured Docusaurus pipeline retains example selectors until extraction', async t => {
+  const f = fixture(t, ['rust']);
+  const content = '# Source example\n\n<!-- lsf-example: client/specimen invoke -->\n';
+  const {bundle} = extractExamples(f.root, requestsFromTree(parseDocument(content, 'docs/specimen.md')), f.identity());
+  const options = {siteDir: websiteRoot, staticDirs: [], removeContentTitle: false,
+    markdownConfig: {...config.markdown, anchors: {maintainCase: false}, emoji: false},
+    beforeDefaultRemarkPlugins: [() => remarkExamples({bundle, documentVersion: 'development'})]};
+  options.processors = await createProcessors({options});
+  const filePath = `${websiteRoot}/tests/specimen.md`;
+  const processor = await getProcessor({filePath, mdxFrontMatter: {}, options});
+  const result = await processor.process({content, filePath, frontMatter: {}, compilerName: 'server'});
+  assert.ok(result.content.includes('alert(1)'), 'The registered snippet must survive the actual configured compiler');
+  assert.ok(result.content.includes('source extraction only'));
+  assert.ok(!result.content.includes('lsf-example-begin'));
+});
 
 // Runs under the existing pinned website dependency graph, not a replacement
 // Markdown renderer. The fixture target deliberately throws if ever executed.

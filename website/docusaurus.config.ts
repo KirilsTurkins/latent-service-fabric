@@ -33,7 +33,7 @@ const config: Config = {
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
   staticDirectories: [path.relative(websiteRoot, prepared.staticDirectory).split(path.sep).join('/')],
-  markdown: {format: 'detect', mermaid: true, hooks: {onBrokenMarkdownLinks: 'throw', onBrokenMarkdownImages: 'throw'}},
+  markdown: {format: 'detect', mermaid: true, mdx1Compat: {comments: false}, hooks: {onBrokenMarkdownLinks: 'throw', onBrokenMarkdownImages: 'throw'}},
   customFields: {contentIdentity: {channel: 'development', revision: prepared.index.revision, dirty: prepared.manifest.dirty}},
   presets: [['classic', {
     docs: {
