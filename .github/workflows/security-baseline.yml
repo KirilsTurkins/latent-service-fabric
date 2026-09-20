@@ -1,0 +1,189 @@
+name: Security baseline
+
+on:
+  pull_request:
+    branches: [development, release]
+  push:
+    branches: [development, release]
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  scope:
+    name: Select security scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+      rustsec: ${{ steps.select.outputs.rustsec }}
+      dependencies: ${{ steps.select.outputs.dependencies }}
+      static: ${{ steps.select.outputs.static }}
+      selftest: ${{ steps.select.outputs.selftest }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: 9a99d1f364eb0c5d09b879fa857811820c8bb005 # reviewed scanner controls
+      - name: Select complete change or both maintained refs; reject expired exceptions
+        id: select
+        run: python3 tools/security_scope.py
+
+  rustsec:
+    name: RustSec ${{ matrix.ref }}
+    needs: scope
+    if: needs.scope.outputs.rustsec == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.scope.outputs.matrix) }}
+    uses: ./.github/workflows/security-rustsec.yml
+    with:
+      source-ref: ${{ matrix.ref }}
+
+  dependencies:
+    name: SDK advisories ${{ matrix.ref }}
+    needs: scope
+    if: needs.scope.outputs.dependencies == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.scope.outputs.matrix) }}
+    steps:
+      - name: Check out scanner controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: controls
+          persist-credentials: false
+          ref: 9a99d1f364eb0c5d09b879fa857811820c8bb005 # reviewed scanner controls
+      - name: Check out scan input
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ matrix.ref }}
+          path: source
+          persist-credentials: false
+      - name: Inventory all manifests and query current OSV data without builds or installs
+        run: python3 controls/tools/security_scan.py dependencies --repo source --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan"
+
+  secrets:
+    name: Redacted secrets ${{ matrix.ref }}
+    needs: scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.scope.outputs.matrix) }}
+    steps:
+      - name: Check out scanner controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: controls
+          persist-credentials: false
+          ref: 9a99d1f364eb0c5d09b879fa857811820c8bb005 # reviewed scanner controls
+      - name: Check out scan input including documentation and SVGs
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ matrix.ref }}
+          path: source
+          # Include merge parents so the exact PR base is available offline.
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Install digest-pinned Gitleaks without shared caches
+        run: python3 controls/tools/security_install.py --tool gitleaks --destination "$RUNNER_TEMP/security-tools"
+      - name: Scan tracked text with no source findings in logs or artifacts
+        env:
+          SECURITY_BASE: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+        run: python3 controls/tools/security_scan.py secrets --repo source --base "$SECURITY_BASE" --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan"
+
+  static:
+    name: Source and workflow rules ${{ matrix.ref }}
+    needs: scope
+    if: needs.scope.outputs.static == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.scope.outputs.matrix) }}
+    steps:
+      - name: Check out scanner controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: controls
+          persist-credentials: false
+          ref: 9a99d1f364eb0c5d09b879fa857811820c8bb005 # reviewed scanner controls
+      - name: Check out scan input
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ matrix.ref }}
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - name: Install only the reviewed parser wheel
+        run: |
+          python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement controls/.github/security/requirements.txt
+      - name: Install digest-pinned offline workflow scanner
+        run: python3 controls/tools/security_install.py --tool zizmor --destination "$RUNNER_TEMP/security-tools"
+      - name: Apply reviewed source, workflow and action-pin rules
+        run: python3 controls/tools/security_scan.py static --repo source --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan"
+
+  self-test:
+    name: Security fail-closed canaries
+    needs: scope
+    if: needs.scope.outputs.selftest == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: 9a99d1f364eb0c5d09b879fa857811820c8bb005 # reviewed scanner controls
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - name: Install only the reviewed parser wheel
+        run: |
+          python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt
+      - name: Test expiry, unknown data, fork permissions, docs profiles and the aggregate
+        run: python3 -m unittest discover -s tools/tests -p 'test_security*.py'
+      - name: Install reviewed canary scanners
+        run: |
+          python3 tools/security_install.py --tool cargo-audit --destination "$RUNNER_TEMP/security-tools"
+          python3 tools/security_install.py --tool gitleaks --destination "$RUNNER_TEMP/security-tools"
+          python3 tools/security_install.py --tool zizmor --destination "$RUNNER_TEMP/security-tools"
+      - name: Prove harmless real-scanner pass and fail behavior
+        run: python3 tools/security_selftest.py --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-canaries"
+
+  result:
+    name: Security baseline result
+    if: always()
+    needs: [scope, rustsec, dependencies, secrets, static, self-test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require exactly the selected security checks
+        env:
+          SECURITY_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          results = json.loads(os.environ['SECURITY_RESULTS'])
+          valid = results['scope']['result'] == 'success' and results['secrets']['result'] == 'success'
+          outputs = results['scope'].get('outputs', {})
+          for job, output in [('rustsec', 'rustsec'), ('dependencies', 'dependencies'), ('static', 'static'), ('self-test', 'selftest')]:
+              selected = outputs.get(output)
+              valid = valid and selected in {'true', 'false'}
+              valid = valid and results[job]['result'] == ('success' if selected == 'true' else 'skipped')
+          print(json.dumps({job: value['result'] for job, value in results.items()}, sort_keys=True))
+          sys.exit(0 if valid else 1)
+          PY
