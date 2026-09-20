@@ -4,44 +4,67 @@ use latent_wasmtime::{NativeAotCacheConfig, NativeAotSettings, NativeImageLimits
 use std::{path::PathBuf, time::Duration};
 
 pub(super) fn run() {
-    let directory = super::support::Directory::new();
-    assert_no_children();
-    for (maximum, expected) in [
-        (19, None),
-        (17, Some(PlatformErrorCode::PermissionDenied)),
-        (21, Some(PlatformErrorCode::PermissionDenied)),
-        (23, Some(PlatformErrorCode::DeadlineExceeded)),
+    use super::support::diagnostics::case;
+    for (maximum, name, expected) in [
+        (19, "readiness-success", None),
+        (
+            17,
+            "readiness-malformed",
+            Some(PlatformErrorCode::PermissionDenied),
+        ),
+        (
+            21,
+            "probe-launch-mismatch",
+            Some(PlatformErrorCode::PermissionDenied),
+        ),
+        (
+            23,
+            "probe-stalled-launch",
+            Some(PlatformErrorCode::DeadlineExceeded),
+        ),
     ] {
-        let mut settings = settings(directory.path());
-        settings.process.compiler.maximum_output_bytes = maximum;
-        if maximum == 23 {
-            settings.process.job_timeout = Duration::from_secs(1);
-        }
-        let result = settings.verify_compiler_readiness(&WasmtimeConfig::default());
-        assert_eq!(result.err().map(|error| error.code), expected, "{maximum}");
-        assert_no_children();
-        assert!(!settings.cache.blob_root.exists());
-        assert!(!settings.cache.receipt_root.exists());
+        case(name, || {
+            let directory = super::support::Directory::new();
+            assert_no_children();
+            let mut settings = settings(directory.path());
+            settings.process.compiler.maximum_output_bytes = maximum;
+            if maximum == 23 {
+                settings.process.job_timeout = Duration::from_secs(1);
+            }
+            let _stage = super::support::diagnostics::Span::new("readiness-probe");
+            let result = settings.verify_compiler_readiness(&WasmtimeConfig::default());
+            assert_eq!(result.err().map(|error| error.code), expected, "{maximum}");
+            assert_no_children();
+            assert!(!settings.cache.blob_root.exists());
+            assert!(!settings.cache.receipt_root.exists());
+        });
     }
-    let mut settings = settings(directory.path());
-    settings.approved_digest[0] ^= 1;
-    assert_eq!(
-        settings
-            .verify_compiler_readiness(&WasmtimeConfig::default())
-            .unwrap_err()
-            .code,
-        PlatformErrorCode::PermissionDenied
-    );
-    settings.executable = PathBuf::from("relative-compiler");
-    assert_eq!(
-        settings
-            .verify_compiler_readiness(&WasmtimeConfig::default())
-            .unwrap_err()
-            .code,
-        PlatformErrorCode::InvalidArgument
-    );
-    assert_no_children();
-    eprintln!("isolated AOT readiness: six bounded success/rejection/reap scenarios passed");
+    case("readiness-wrong-digest", || {
+        let directory = super::support::Directory::new();
+        let mut settings = settings(directory.path());
+        settings.approved_digest[0] ^= 1;
+        assert_eq!(
+            settings
+                .verify_compiler_readiness(&WasmtimeConfig::default())
+                .unwrap_err()
+                .code,
+            PlatformErrorCode::PermissionDenied
+        );
+        assert_no_children();
+    });
+    case("readiness-relative-path", || {
+        let directory = super::support::Directory::new();
+        let mut settings = settings(directory.path());
+        settings.executable = PathBuf::from("relative-compiler");
+        assert_eq!(
+            settings
+                .verify_compiler_readiness(&WasmtimeConfig::default())
+                .unwrap_err()
+                .code,
+            PlatformErrorCode::InvalidArgument
+        );
+        assert_no_children();
+    });
 }
 
 fn settings(root: &std::path::Path) -> NativeAotSettings {
