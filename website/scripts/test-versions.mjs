@@ -24,7 +24,7 @@ const owner = fs.mkdtempSync(path.join(generatedDirectory('.generated/version-br
 const checkout = path.join(owner, 'repository');
 const cleanups = [];
 try {
-  run('git', ['clone', '--quiet', '--shared', '--no-checkout', repositoryRoot, checkout], repositoryRoot);
+  run('git', ['clone', '--quiet', '--shared', '--no-checkout', '-c', 'core.longpaths=true', repositoryRoot, checkout], repositoryRoot);
   run('git', ['checkout', '--quiet', '--detach', revision], checkout);
   const f = fixture({after: callback => cleanups.push(callback)}, ['rust', 'go']);
   f.write('.gitignore', 'website/.generated/\n');
