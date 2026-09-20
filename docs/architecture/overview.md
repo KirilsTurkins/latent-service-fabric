@@ -13,7 +13,10 @@ Linux stateless node, with explicit trusted-local or enforced release policy.
 has a concrete capability/provider and web-hosting backlog; those providers and
 application ingress are not implemented by their WIT or package declarations.
 
-![Phase 2 trusted delivery: exact packages and evidence, current node authority, and explicit atomic rollout operations.](../assets/phase2-delivery-boundary.svg)
+[![Phase 2 trusted delivery: exact packages and evidence, current node authority, and explicit atomic rollout operations.](../assets/phase2-delivery-boundary-presentation.svg)](../assets/phase2-delivery-boundary-presentation.svg)
+
+Restyled presentation of the Phase 2 boundary, not a Phase 3 completion claim.
+Open the image at full size to inspect labels. The [original Phase 2 SVG](../assets/phase2-delivery-boundary.svg) remains unchanged.
 
 The [historical Phase 1 diagram](../assets/phase1-delivery-boundary.svg) and its
 retained measurements still describe that milestone. Phase 2 extends that
@@ -66,7 +69,10 @@ authorization does not imply production readiness or Phase 1 API
 compatibility. Their boundaries and the handoff are recorded in
 [`../phase-0-completion.md`](../phase-0-completion.md).
 
-![Activation resource lifecycle: prepared components and fixed cells are bounded node-owned resources; every invocation creates fresh activation state and ends by releasing or quarantining its cell.](../assets/phase0-resource-lifecycle.svg)
+[![Activation resource lifecycle: prepared components and fixed cells are bounded node-owned resources; every invocation creates fresh activation state and ends by releasing or quarantining its cell.](../assets/phase0-resource-lifecycle-presentation.svg)](../assets/phase0-resource-lifecycle-presentation.svg)
+
+Restyled presentation of the retained Phase 0 composition, not new execution evidence.
+Open the image at full size to inspect labels. The [original Phase 0 SVG](../assets/phase0-resource-lifecycle.svg) remains unchanged.
 
 Phase 0 did not prove dormant registration at 100,000 services, route or
 admission behavior, persistent management/deployment, production
