@@ -22,9 +22,8 @@ impl Span {
             started: Instant::now(),
             enabled,
         };
-        if enabled {
-            span.emit("started");
-        }
+        // Start markers also identify the active stage in ordinary failing tests.
+        span.emit("started");
         span
     }
     fn emit(&self, outcome: &str) {

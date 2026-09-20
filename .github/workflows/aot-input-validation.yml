@@ -31,6 +31,8 @@ jobs:
             target/debug/.fingerprint
             target/debug/build
             target/debug/deps
+      - name: Validate preparation and execution guards
+        run: python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests
       - name: Build exact AOT products once
         run: |
           mkdir -p "$RUNNER_TEMP/aot-observations"
@@ -48,6 +50,7 @@ jobs:
           python3 tools/aot_test_inputs.py prepare --inventory "$RUNNER_TEMP/aot-observations/inventory.jsonl" --output "$RUNNER_TEMP/aot-inputs"
           python3 tools/run_aot_tests.py --manifest "$RUNNER_TEMP/aot-inputs/manifest.json" --report-dir "$RUNNER_TEMP/aot-observations/comparison" --compare
       - name: Execute unchanged production sandbox tests
+        if: success() || failure()
         run: cargo test -p latent-wasmtime --all-features --locked --test aot_sandbox
       - name: Formatting and focused Clippy
         if: always()

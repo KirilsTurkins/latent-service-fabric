@@ -133,6 +133,13 @@ jobs:
         run: |
           cargo build --workspace --all-targets --all-features --locked
           cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics > "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
+      - name: Prepare authenticated AOT test inputs
+        run: |
+          python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests
+          python3 tools/aot_test_inputs.py prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --output "$RUNNER_TEMP/lsf-aot-test-inputs"
+          # Cargo supplies each harness's runtime environment itself. Export only
+          # this recipe's input selectors, not CARGO_MANIFEST_DIR/library paths.
+          python3 tools/aot_test_inputs.py environment --manifest "$RUNNER_TEMP/lsf-aot-test-inputs/manifest.json" | grep '^LSF_AOT_' >> "$GITHUB_ENV"
       - name: Run tests
         run: |
           cargo test --workspace --all-targets --all-features --locked

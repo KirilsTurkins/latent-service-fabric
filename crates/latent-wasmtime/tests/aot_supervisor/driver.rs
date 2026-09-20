@@ -67,6 +67,7 @@ fn fragmented_success() {
     let directory = Directory::new();
     let marker = directory.path().join("worker.pid");
     let fixture = fixture("fragmented-success", &marker);
+    let _execution = support::diagnostics::Span::new("child-protocol-and-reap");
     let output = compiler
         .reserve(fixture.source(), fixture.release())
         .unwrap()
@@ -107,6 +108,7 @@ fn protocol_failures() {
             let directory = Directory::new();
             let marker = directory.path().join("worker.pid");
             let fixture = fixture(mode, &marker);
+            let _execution = support::diagnostics::Span::new("child-protocol-and-reap");
             let failure = compiler
                 .reserve(fixture.source(), fixture.release())
                 .unwrap()
@@ -169,6 +171,7 @@ fn malformed_readiness() {
     let directory = Directory::new();
     let marker = directory.path().join("worker.pid");
     let fixture = fixture("hang", &marker);
+    let _execution = support::diagnostics::Span::new("child-protocol-and-reap");
     let failure = compiler
         .reserve(fixture.source(), fixture.release())
         .unwrap()
@@ -207,6 +210,7 @@ fn launch_failures() {
             let directory = Directory::new();
             let marker = directory.path().join("worker.pid");
             let fixture = fixture("hang", &marker);
+            let _execution = support::diagnostics::Span::new("child-protocol-and-reap");
             let failure = compiler
                 .reserve(fixture.source(), fixture.release())
                 .unwrap()
@@ -335,6 +339,7 @@ impl Running {
         }
     }
     fn finish(mut self) -> Result<TrustedAotOutput, PlatformError> {
+        let _stage = support::diagnostics::Span::new("join-and-reap");
         self.owner
             .take()
             .unwrap()

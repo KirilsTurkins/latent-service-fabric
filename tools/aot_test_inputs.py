@@ -26,6 +26,7 @@ from tools import ci_rust_artifacts as artifacts
 
 SCHEMA = "latent.aot-test-inputs.v1"
 PROFILE = "debug-all-features-v1"
+FEATURES = ("aot-test-timings",)
 MAX_FILE = 512 * 1024 * 1024
 MAX_MANIFEST = 64 * 1024
 HARNESS_NAMES = ("aot_supervisor", "isolated_aot", "native_aot_cache")
@@ -163,12 +164,14 @@ def inventory_inputs(inventory: Path, repo: Path) -> tuple[dict, tuple[Path, ...
                                    "cargo_profile": profile}
     if not finished or set(found) != set(roles):
         raise InputError("missing-successful-cargo-products")
-    if len({tuple(value["features"]) for value in found.values()}) != 1:
+    if {tuple(value["features"]) for value in found.values()} != {FEATURES}:
         raise InputError("incompatible-cargo-feature-sets")
     return found, tuple(sorted(links))
 
 
 def prepare(repo: Path, inventory: Path, output: Path) -> Path:
+    if "LSF_AOT_TEST_EXECUTION_ONLY" in os.environ:
+        raise InputError("preparation-forbidden-in-execution-only-mode")
     started = time.monotonic_ns()
     identity = checkout_identity(repo)
     entries, links = inventory_inputs(inventory, repo)
