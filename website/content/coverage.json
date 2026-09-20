@@ -1313,6 +1313,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "The complete real-node/browser workflow owns guide execution; partial browser or restart results do not qualify it."
+        },
+        {
+          "path": "docs/evidence/angular-guide-2026-09-20.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         }
       ],
       "review": {
@@ -1381,6 +1388,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "The complete real-node/browser workflow owns guide execution; partial browser or restart results do not qualify it."
+        },
+        {
+          "path": "docs/evidence/angular-guide-2026-09-20.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         }
       ],
       "review": {
@@ -1444,6 +1458,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "The complete real-node/browser workflow owns guide execution; partial browser or restart results do not qualify it."
+        },
+        {
+          "path": "docs/evidence/angular-guide-2026-09-20.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         }
       ],
       "review": {
