@@ -210,22 +210,41 @@ fn check_envelope(
             .is_some_and(|limit| deadline.unix_millis().is_none_or(|actual| actual > limit))
         || budget.granted() != &request.budget
         || request.activation.budget != request.budget
-        || request.imports.len() != plan.bindings.len()
-        || !plan.bindings.iter().all(|b| {
-            request
-                .imports
-                .iter()
-                .filter(|i| {
-                    i.contract == b.provider.capability && i.capability.0 == b.provider.capability
-                })
-                .count()
-                == 1
-        })
+        || !imports_match(plan, request, publication.web_projection().is_some())
     {
         return Err(denied());
     }
     Ok(())
 }
+// Web metadata includes core invocation context, which has no provider binding.
+// Only the sealed web projection selects this form; provider imports still match
+// the exact compiled plan once each, with no unknown or duplicate imports.
+pub(super) fn imports_match(
+    plan: &CompiledCapabilityPlan,
+    request: &ExecutionRequest,
+    web_projection: bool,
+) -> bool {
+    const CONTEXT: &str = "latent:context/context@0.1.0";
+    let context_count = request
+        .imports
+        .iter()
+        .filter(|i| i.contract == CONTEXT && i.capability.0 == CONTEXT)
+        .count();
+    request.imports.len() == plan.bindings.len() + usize::from(web_projection)
+        && (!web_projection || context_count == 1)
+        && plan.bindings.iter().all(|binding| {
+            request
+                .imports
+                .iter()
+                .filter(|import| {
+                    import.contract == binding.provider.capability
+                        && import.capability.0 == binding.provider.capability
+                })
+                .count()
+                == 1
+        })
+}
+
 impl ActivationCapabilityBroker {
     pub fn open_session(
         &self,

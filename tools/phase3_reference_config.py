@@ -11,8 +11,8 @@ from tools.phase3_web_scenario import MIB, TENANT, configure_angular_node
 from tools.run_security_profile_workflow import replace_config
 
 HTTP_CAPABILITY = "latent:http/client@0.2.0"
-USERS = (("Alice<unsafe>", "LSF-PUBLIC-REFERENCE-ALICE-TEST-ONLY"),
-         ("Bob", "LSF-PUBLIC-REFERENCE-BOB-TEST-ONLY"))
+USERS = (("alice", "LSF-PUBLIC-REFERENCE-ALICE-TEST-ONLY", "Alice<unsafe>"),
+         ("bob", "LSF-PUBLIC-REFERENCE-BOB-TEST-ONLY", "Bob"))
 ROUTES = ("/", "/about", "/account", "/failure", "/data", "/denied", "/slow", "/offline")
 
 
@@ -44,7 +44,7 @@ def configure(client, directory, fixture, compiler):
     host = f"reference.test:{port}"
     foreign = f"foreign.test:{port}"
     value["credentials"] += [{"token": token, "subject": subject, "tenant": TENANT, "role": "invoke"}
-                             for subject, token in USERS]
+                             for subject, token, _display in USERS]
     value["budgetProfile"] = {"mode": "phase3", "maximumOutboundRequests": 1,
                               "maximumBlobReadBytes": 0, "maximumBlobWriteBytes": 0}
     value["capabilityPolicies"] = {"formatVersion": 1, "maximumControlJobs": 2}
@@ -104,7 +104,7 @@ def configure_grant(client, node, publications):
                   {"kind": "trigger", "subject": "reference-public"}]
     # Account rendering only reads authenticated invocation context. Give the
     # backend HTTP capability to the operator and public trigger that exercise it;
-    # display subjects (including escaping probes) are not policy identifiers.
+    # user display names (including escaping probes) are not policy identifiers.
     write_json(policy, {"formatVersion": 1, "tenant": TENANT, "rules": [{
         "id": "reference-get", "effect": "allow", "principals": principals,
         "services": ["angular-reference"], "publications": list(publications.values()),

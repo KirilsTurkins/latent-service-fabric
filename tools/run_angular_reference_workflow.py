@@ -34,7 +34,8 @@ def browser(client, args, records, publications, mode):
     config = client.directory / f"browser-{mode}.json"
     write_json(config, {"schemaVersion": "latent.angular.reference.browser-input.v1", "mode": mode,
         "origin": "http://" + client.host, "chrome": str(args.chrome), "toolchain": str(args.toolchain_root),
-        "users": [{"subject": subject, "token": token} for subject, token in USERS],
+        "users": [{"subject": subject, "token": token, "displayName": display}
+                  for subject, token, display in USERS],
         "releases": {name: {"publication": publications[name], "version": record["version"], "assets": record["assets"]}
                      for name, record in records.items()}})
     return Process([str(args.nodejs), str(Path(__file__).with_name("check_angular_reference.mjs")), str(config)],
@@ -67,7 +68,7 @@ def restart(client, args, node_root, config, ordinal):
         client.cancellation.check()
         require(time.monotonic() < client.deadline, "reference-restart-deadline")
         time.sleep(0.025)
-    node = connect(client, args.node, node_root, config, TENANT, ordinal)
+    node = connect(client, args.node, node_root, config, TENANT, ordinal, startup_timeout=90)
     client_profile(client, ordinal)
     return node
 
@@ -98,7 +99,7 @@ def run(args, report):
             report["profile"] = command(client, args.node, config, "check-config", True)
             require(tree_inventory(node_root, client) == before, "reference-check-config-mutated-storage")
             peer = start_peer(client, peer_root)
-            node = connect(client, args.node, node_root, config, TENANT, 1)
+            node = connect(client, args.node, node_root, config, TENANT, 1, startup_timeout=90)
             profile = client_profile(client, 1)
             foreign = foreign_profile(client, profile)
             stage(report, "signed-two-build-admission")

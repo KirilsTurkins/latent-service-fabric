@@ -6,6 +6,7 @@ pub(super) mod fixture;
 use fixture::*;
 mod audit;
 mod diagnostics;
+mod web_imports;
 mod route_fence;
 
 fn output() -> CapabilityCallCost {

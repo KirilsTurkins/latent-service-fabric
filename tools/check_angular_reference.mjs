@@ -165,9 +165,9 @@ try {
     await anonymous.close();
     for (const user of configuration.users) {
       const selected = await context(user.token);
-      const page = await hydrate(selected, 'green', '/account', 200, user.subject, 'authenticated');
+      const page = await hydrate(selected, 'green', '/account', 200, user.displayName, 'authenticated');
       for (const other of configuration.users.filter(other => other.subject !== user.subject)) {
-        assert.ok(!(await page.locator('body').textContent()).includes(other.subject));
+        assert.ok(!(await page.locator('body').textContent()).includes(other.displayName));
       }
       await selected.close();
     }
