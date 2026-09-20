@@ -6,7 +6,7 @@ not use workflow-wide path exclusions that could leave a check pending.
 
 | Profile | Selection | Validation |
 | --- | --- | --- |
-| Documentation | Every changed path is approved Markdown or a product documentation SVG. | Document links, anchors, fences, SVG accessibility and validator regressions, plus the actual static website checks. |
+| Documentation | Every changed path is approved Markdown, a product documentation SVG, or a known GitHub issue form / optional chooser configuration. | Document links, anchors, fences, SVG accessibility, bounded offline issue-form YAML validation and validator regressions, plus the actual static website checks. |
 | Website | Documentation mixed with known website TS/JS/CSS/config/lock/metadata, or published MDX. | The same docs checks plus website types, unit tests, both production base paths and browser journeys. Product builds remain skipped. |
 | Full | Product or SDK/example source, shared tools, workflows, schemas, frozen profiles, benchmark evidence or unknown/mixed paths; manual runs; unavailable history. | Docs and website checks plus all six existing Rust, MSRV, catalog, contracts, registry and SDK jobs. |
 
@@ -16,6 +16,10 @@ particular, benchmark evidence and the frozen Phase 2 resource profile stay on
 the full path. A mixed website/product change also runs full validation. MDX is
 executable website source and always receives the website build/type/unit/browser
 suite. Symlinks and executable-mode changes cannot select either narrow profile.
+The only GitHub issue-template YAML eligible for the documentation profile is
+`.github/ISSUE_TEMPLATE/bug_report.yml`, `architecture.yml`, and the optional
+exact `config.yml`; unknown issue-template files and other `.github` changes stay
+on the full profile.
 
 PR selection compares the exact base/head merge base with the head. Pushes
 compare the event's before/after commits. Git provides the complete inventory
@@ -27,11 +31,19 @@ selection job. Manual dispatch always runs the full profile, with the separate
 100,000-release probe still disabled unless explicitly requested.
 
 The documentation validator checks the required and nonempty document inventory,
-including references to other tracked files and directories. It does not run
-the full Python suite, compile Rust, start a registry or replay benchmark
-receipts. It checks local links; external URL availability and visual layout
-still need review when they change. SVG render inspection remains appropriate
-for layout edits.
+including references to other tracked files and directories. It also runs the
+bounded issue-form validator against the known form paths and optional chooser
+configuration. That validator reads at most 64 KiB per ordinary UTF-8 file,
+rejects duplicate keys, aliases/anchors/tags, multiple YAML documents and
+unsupported shapes, and validates only the repository's currently supported
+`markdown`, `input` and `textarea` subset plus bounded HTTPS contact links. It
+does not contact GitHub or attempt to support future form element types
+implicitly.
+
+The documentation job does not run the full Python suite, compile Rust, start a
+registry or replay benchmark receipts. It checks local links; external URL
+availability and visual layout still need review when they change. SVG render
+inspection remains appropriate for layout edits.
 
 `CI result` runs even if selection or another job fails. Its
 [tested aggregator](../../tools/ci_result.py) accepts only a complete inventory
