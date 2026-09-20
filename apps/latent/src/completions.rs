@@ -55,7 +55,11 @@ pub fn execute(
     }
 }
 
-fn write_script(shell: Shell, mut command: clap::Command, writer: &mut dyn Write) -> io::Result<()> {
+fn write_script(
+    shell: Shell,
+    mut command: clap::Command,
+    writer: &mut dyn Write,
+) -> io::Result<()> {
     let mut bytes = Vec::new();
     let name = command.get_name().to_owned();
     // Upstream's convenience API panics on writer failure. A Vec is an infallible

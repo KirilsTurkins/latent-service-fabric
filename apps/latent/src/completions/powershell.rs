@@ -1,4 +1,4 @@
-//! Fill the pinned PowerShell generator's value/path and option-scanning gaps.
+//! Fill the pinned `PowerShell` generator's value/path and option-scanning gaps.
 //! The upstream generator still emits every command/flag completion. This
 //! adapter derives only parsing/value metadata from the same built Clap tree.
 
@@ -84,7 +84,10 @@ fn collect(command: &Command, path: &str, nodes: &mut BTreeMap<String, Node>) {
     let mut positionals: Vec<_> = command.get_positionals().collect();
     positionals.sort_by_key(|arg| arg.get_index());
     let mut children = BTreeMap::new();
-    for child in command.get_subcommands().filter(|child| !child.is_hide_set()) {
+    for child in command
+        .get_subcommands()
+        .filter(|child| !child.is_hide_set())
+    {
         let child_path = format!("{path};{}", child.get_name());
         for alias in child.get_name_and_visible_aliases() {
             children.insert(alias.to_owned(), child_path.clone());

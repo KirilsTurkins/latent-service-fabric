@@ -66,7 +66,9 @@ pub enum OutputFormat {
 #[derive(Subcommand)]
 pub enum Command {
     /// Print an offline completion script; never installs files or contacts a node.
-    #[command(after_help = "Writes only shell source. --quiet preserves the script; --output json is rejected. Installation and removal: docs/cli-completions.md")]
+    #[command(
+        after_help = "Writes only shell source. --quiet preserves the script; --output json is rejected. Installation and removal: docs/cli-completions.md"
+    )]
     Completions {
         #[arg(value_enum)]
         shell: crate::completions::Shell,
