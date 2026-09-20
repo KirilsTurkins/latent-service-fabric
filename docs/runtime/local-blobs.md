@@ -117,7 +117,7 @@ interrupted initial owner-record creation can require operator reconciliation.
 
 Equal live references converge under serialized publication. A concurrent seal
 can reject with `unavailable`; its consumed writer becomes abandoned. A duplicate
-stage remains charged until explicit reclamation. This does not authorize hidden
+stage remains charged until physical reclamation. This does not authorize hidden
 retries of uncertain operations.
 
 Trusted retention control calls `release_reference(tenant, reference)` only when
@@ -127,6 +127,13 @@ finish. `reclaim(1..64)` removes only released unpinned objects and inactive
 stages, syncing deletion before refunding charges. It preserves unknown entries.
 Interrupted unlink/sync retains charges and requires reopen reconciliation.
 Guest Drop performs no unlink or fsync, and there is no automatic GC task.
+
+When the stage-count limit is full, a new `create` can reclaim at most one
+inactive stage on its already admitted blocking worker before reserving a new
+stage. An active writer is never reclaimed. This bounded admission cleanup
+uses the same durable deletion and checkpoint rules, preserves all published
+objects (including released ones), and does not raise any stage, disk or work
+limit. If every stage remains active, admission still reports capacity.
 
 ## Validation
 
