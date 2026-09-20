@@ -1,0 +1,823 @@
+{
+  "schemaVersion": "latent.docs.wiki-migration.v1",
+  "capturedAt": "2026-09-20",
+  "sourceRevision": "d1035a50d2fd99b076c74dd958ca4437d909f2ec",
+  "publishedRevision": "e0cc50fe654b783f189b30a8a6f7946d66177180",
+  "publishedSourceRevision": "3898dbd0970559a566990920ca9172db580f990e",
+  "publicationRun": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34768891141",
+  "sourceMatchesPublished": true,
+  "sourceOnly": [],
+  "publishedOnly": [
+    ".latent-service-fabric-wiki.json"
+  ],
+  "changed": [],
+  "archive": {
+    "file": "wiki-before-2026-09-20.bundle",
+    "bytes": 2516379,
+    "sha256": "5bca338999a7b0d0e543938854876c80b48e07956ba37b9f1a8ad8fbed987bf8",
+    "format": "git-bundle-v2",
+    "historyIncluded": true,
+    "location": "local-run-evidence; original page bytes also retained at sourceReference"
+  },
+  "cutover": "pending-successful-publication-and-reviewed-essential-guides",
+  "files": [
+    {
+      "path": ".latent-service-fabric-wiki.json",
+      "gitBlob": "f6835e6331e6b2d3704c70bb675b1f5e897e1fa4",
+      "sha256": "d30f332459df705568a8b8af174b3ddfb59f2564007ea26a7fab8d8c64dc1fac",
+      "bytes": 3913,
+      "mode": "100644",
+      "kind": "publication-record",
+      "disposition": "publication-record",
+      "destination": "https://github.com/KirilsTurkins/latent-service-fabric/wiki/_history"
+    },
+    {
+      "path": "Activation-Lifecycle.md",
+      "gitBlob": "ba55bc94c36395c9172d03c488b189206adb786f",
+      "sha256": "4df6516e2c64860ed30f8b582455d4cc0d7e8cf268b0fcaf1215dd90832de887",
+      "bytes": 2639,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/activation-lifecycle.md",
+      "sourcePath": "wiki/pages/Activation-Lifecycle.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Activation-Lifecycle.md",
+      "headings": [
+        "Activation lifecycle"
+      ],
+      "links": [
+        "Execution-Cells",
+        "Deployment-and-Routing",
+        "State-and-Effects",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/protocol/invocation-service.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/resource-budgets.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-canary-observation.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/release-lifecycle.md"
+      ]
+    },
+    {
+      "path": "Architecture.md",
+      "gitBlob": "2135e31d6eccfe21975d226e81b7ce6adf6c7d87",
+      "sha256": "29aac1d0fb8553402c3fd8978eef5d477e9f897039eb86adb3fb22a2d55b6089",
+      "bytes": 4258,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/architecture/overview.md",
+      "sourcePath": "wiki/pages/Architecture.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Architecture.md",
+      "headings": [
+        "Architecture"
+      ],
+      "links": [
+        "assets/system-decomposition.gif",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/201",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/ARCHITECTURE.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/standalone-node.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-audit.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/trusted-aot.md"
+      ]
+    },
+    {
+      "path": "Capsule-Development.md",
+      "gitBlob": "f61d6aadd5f0865ba2db6fc781e690162dcd972a",
+      "sha256": "4960d1e60f86b702f79fc8599ecdea1d6008f41a572e10e1132398326aaafc34",
+      "bytes": 3780,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/component-development/creating-a-capsule.md",
+      "sourcePath": "wiki/pages/Capsule-Development.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Capsule-Development.md",
+      "headings": [
+        "Capsule and package development"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/44",
+        "Contracts-and-APIs",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/component-development/creating-a-capsule.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/component-development/packaging.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/component-development/sbom.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/build-provenance.md"
+      ]
+    },
+    {
+      "path": "Contracts-and-APIs.md",
+      "gitBlob": "c384160b01fef92ca9e156ee896f683cd94f9f75",
+      "sha256": "a8d65af0d920dbbc07a1770ed375538c37beb6086cd8874ff91ff19f0bd2b50a",
+      "bytes": 2776,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/api-surface.md",
+      "sourcePath": "wiki/pages/Contracts-and-APIs.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Contracts-and-APIs.md",
+      "headings": [
+        "Contracts and APIs"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/protocol/wit-values.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/release-compatibility.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/management-services.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/sdk/README.md"
+      ]
+    },
+    {
+      "path": "Core-Concepts.md",
+      "gitBlob": "5a255875bc40a85895ec8d863795267f933a2abf",
+      "sha256": "fa444f0aaf380cb27af8e947fb216a668ca92c710a813f91ff46c7a9aaf21903",
+      "bytes": 3058,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/architecture/overview.md",
+      "sourcePath": "wiki/pages/Core-Concepts.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Core-Concepts.md",
+      "headings": [
+        "Core concepts"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/protocol/package-format.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/package-admission.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/release-lifecycle.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-operator-workflows.md"
+      ]
+    },
+    {
+      "path": "Deployment-and-Routing.md",
+      "gitBlob": "30949e02c62f112ac12b178690fcde059842e4f1",
+      "sha256": "f8f8d02d8e0cbc3403b36c8d6af869122d624f156548684d4dfb63a6a3f90c76",
+      "bytes": 4912,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/deployment-routing.md",
+      "sourcePath": "wiki/pages/Deployment-and-Routing.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Deployment-and-Routing.md",
+      "headings": [
+        "Deployment, routing and recovery",
+        "Managed Apply and Delete",
+        "Rollouts and canaries",
+        "Explicit rollback and lifecycle changes"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/deployment-routing.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-operator-workflows.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-rollouts.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-canary-promotion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-rollback.md"
+      ]
+    },
+    {
+      "path": "Design-Governance.md",
+      "gitBlob": "fa85a4e990e5427eafa65851e8c87d303939a067",
+      "sha256": "26e72f1546f9f9e3f69cf041be9f2f48d4324bcd402456c6fa5eb2d207f84490",
+      "bytes": 2420,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "adr/README.md",
+      "sourcePath": "wiki/pages/Design-Governance.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Design-Governance.md",
+      "headings": [
+        "Design governance"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/201",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/44",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/adr/README.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/rfcs/README.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/ARCHITECTURE.md",
+        "Roadmap"
+      ]
+    },
+    {
+      "path": "Development-Workflow.md",
+      "gitBlob": "4c745c735185d927630ee1d83c1184fe981c635f",
+      "sha256": "cf3f7b21a27e8d4ce213578692901d3a6e6b572ce9d94d318e58621eb5cd60ea",
+      "bytes": 4834,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "CONTRIBUTING.md",
+      "sourcePath": "wiki/pages/Development-Workflow.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Development-Workflow.md",
+      "headings": [
+        "Development workflow"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/development/CONTRIBUTING.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/development/VALIDATION.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/ci-profiles.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/.github/workflows/ci.yml",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/.github/workflows/phase0-regression.yml",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/ci-caching.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/201",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/development/build-foundation.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/development/toolchain.md",
+        "Design-Governance"
+      ]
+    },
+    {
+      "path": "Execution-Cells.md",
+      "gitBlob": "401d7fdd1ee96cabfedbd1fce51f99a42459de38",
+      "sha256": "9e5fdd555fe13bdce6b496d6599a65fa4da0522ee3a3d41c6f7537b7ce71d00f",
+      "bytes": 3088,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/architecture/execution-cells.md",
+      "sourcePath": "wiki/pages/Execution-Cells.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Execution-Cells.md",
+      "headings": [
+        "Execution cells and code ownership"
+      ],
+      "links": [
+        "Performance-and-Infrastructure",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/wasmtime.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/trusted-aot.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/raw-artifact-cache.md"
+      ]
+    },
+    {
+      "path": "FAQ.md",
+      "gitBlob": "86353589f842bfa9585f9a7390b4cd62162f6e4c",
+      "sha256": "d1d7f2dec9319652048ccb1f9d3474b84faba3685ebd00cb017c8e0791732d66",
+      "bytes": 3770,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "selectively-migrated",
+      "destination": "docs/learn/runtime-identities.md",
+      "sourcePath": "wiki/pages/FAQ.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/FAQ.md",
+      "headings": [
+        "Frequently asked questions"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3",
+        "Performance-and-Infrastructure",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/201"
+      ]
+    },
+    {
+      "path": "Getting-Started.md",
+      "gitBlob": "7d6167d49667bafbb5dff67489d61e74e80165a0",
+      "sha256": "43425c853c6ca0973eb8b5a0fd9edfaab415cbfa083683b2a1e0d697c031b100",
+      "bytes": 3012,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/development/standalone-quickstart.md",
+      "sourcePath": "wiki/pages/Getting-Started.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Getting-Started.md",
+      "headings": [
+        "Getting started"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/toolchain.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/build-foundation.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/standalone-quickstart.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-operator-workflows.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/tools/run_phase2_operator_workflow.py",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3"
+      ]
+    },
+    {
+      "path": "Glossary.md",
+      "gitBlob": "65ec2190d3bc19ae83540a1974bb2eaa46f5d8cd",
+      "sha256": "1749c9012e66a7fd2cec97d8f32cc1b23fce4f5e6d308b39956d76f12e6ebd40",
+      "bytes": 2948,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "selectively-migrated",
+      "destination": "docs/learn/runtime-identities.md",
+      "sourcePath": "wiki/pages/Glossary.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Glossary.md",
+      "headings": [
+        "Glossary"
+      ],
+      "links": [
+        "Core-Concepts",
+        "Deployment-and-Routing",
+        "Security-and-Isolation"
+      ]
+    },
+    {
+      "path": "Home.md",
+      "gitBlob": "4962f9a8868be32a8d1dd14b36de6b56543be3b2",
+      "sha256": "f14528a628816b0ad5b0078e89bb7672ae02173f05ddf8460c422e06f1eb5008",
+      "bytes": 2988,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/development/standalone-quickstart.md",
+      "sourcePath": "wiki/pages/Home.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Home.md",
+      "headings": [
+        "Latent Service Fabric"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/201",
+        "assets/architecture-at-a-glance.gif",
+        "Getting-Started",
+        "Operator-CLI",
+        "Security-and-Isolation",
+        "Deployment-and-Routing",
+        "Architecture",
+        "Phase-1-Status",
+        "Roadmap",
+        "Testing-and-Benchmarks",
+        "https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3",
+        "https://github.com/KirilsTurkins/latent-service-fabric/tree/release",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-operator-workflows.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/ARCHITECTURE.md"
+      ]
+    },
+    {
+      "path": "Operator-CLI.md",
+      "gitBlob": "300753cd36e486cfb8f02fde1d6c6424b37519e6",
+      "sha256": "02ef4e6e9e06943c246244af4b5a61bc63db05d5b52ea0dbf46ba4f3d30f7e60",
+      "bytes": 4506,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/reference/operator-cli.md",
+      "sourcePath": "wiki/pages/Operator-CLI.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Operator-CLI.md",
+      "headings": [
+        "Operator CLI"
+      ],
+      "links": [
+        "SDKs",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-operator-workflows.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/operator-cli.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/management-services.md"
+      ]
+    },
+    {
+      "path": "Performance-and-Infrastructure.md",
+      "gitBlob": "57dd4adb3455e24d6cda12094fd6ab7a67448fb8",
+      "sha256": "68e0a6233ba5d24ad93e32fb5adc85e72295888f38591c915c05c7dc50bc6faa",
+      "bytes": 4065,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "archived-historical-page",
+      "destination": "docs/phase-1-extension-completion.md",
+      "sourcePath": "wiki/pages/Performance-and-Infrastructure.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Performance-and-Infrastructure.md",
+      "headings": [
+        "Performance and infrastructure comparisons",
+        "Actual Docker and Kubernetes"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md",
+        "Testing-and-Benchmarks",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-extension-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/benchmarks/optimization/docker-comparison/2026-09-11-container-linux-a56a6dc/README.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/benchmarks/optimization/kubernetes-comparison/2026-09-11-container-linux-8b0441f/README.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/testing/benchmark-retention.md"
+      ]
+    },
+    {
+      "path": "Phase-0-Runbook.md",
+      "gitBlob": "b37f15beef2138ba08d0a762ea8a9bea10c59a2c",
+      "sha256": "e16e0ed9f17ee1fb6d50ce73e1ed41934d6c52b91ad7d248837cf42d936ff592",
+      "bytes": 2857,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "archived-historical-page",
+      "destination": "docs/phase-0-spike.md",
+      "sourcePath": "wiki/pages/Phase-0-Runbook.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Phase-0-Runbook.md",
+      "headings": [
+        "Phase 0 historical runbook"
+      ],
+      "links": [
+        "Getting-Started",
+        "Testing-and-Benchmarks",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/.github/workflows/phase0-regression.yml",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/.github/workflows/ci.yml",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/tools/run_phase0_outcome_matrix.sh",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-0-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/VALIDATION.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/testing/benchmark-retention.md",
+        "Testing-and-Benchmarks"
+      ]
+    },
+    {
+      "path": "Phase-0-Status.md",
+      "gitBlob": "c17d4aa0866dfa9742eefe34274bca911dd433e9",
+      "sha256": "4002bcfe9e16776f5344c708a812cc127bab69131dfbda6790244e25bb11580b",
+      "bytes": 1506,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "archived-historical-page",
+      "destination": "docs/phase-0-completion.md",
+      "sourcePath": "wiki/pages/Phase-0-Status.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Phase-0-Status.md",
+      "headings": [
+        "Phase 0 historical status"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-0-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json",
+        "Phase-0-Runbook",
+        "Home"
+      ]
+    },
+    {
+      "path": "Phase-1-Status.md",
+      "gitBlob": "9cdb4e5a1d70340c31937d7da5d4f96509f9fa34",
+      "sha256": "94e7cfe850ee7f9bdabcd8dc70a1f1cdd2a25ac4f4618692bc7847fea9d3ce90",
+      "bytes": 4873,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "archived-historical-page",
+      "destination": "docs/phase-1-completion.md",
+      "sourcePath": "wiki/pages/Phase-1-Status.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Phase-1-Status.md",
+      "headings": [
+        "Phase 1 baseline and current delivery map",
+        "Phase 2 completion"
+      ],
+      "links": [
+        "Performance-and-Infrastructure",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/97",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/113",
+        "https://github.com/KirilsTurkins/latent-service-fabric/milestone/5",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/132",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-extension-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/roadmap.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/201",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-operator-workflows.md",
+        "Security-and-Isolation",
+        "Deployment-and-Routing"
+      ]
+    },
+    {
+      "path": "Repository-Map.md",
+      "gitBlob": "2d5faabbafc9159057336122d3150cb8332ab082",
+      "sha256": "5ed1abb9279261e1376a19f9ad0cd28ec57f093cfaf48bb7b6394fe32f373efe",
+      "bytes": 2491,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "CONTRIBUTING.md",
+      "sourcePath": "wiki/pages/Repository-Map.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Repository-Map.md",
+      "headings": [
+        "Repository map"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/tree/release",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/ARCHITECTURE.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/tools/run_phase2_operator_workflow.py",
+        "Development-Workflow"
+      ]
+    },
+    {
+      "path": "Roadmap.md",
+      "gitBlob": "0621c19a90bb0f450e86988cf12f3ea71e96497c",
+      "sha256": "8906adfdfb7be44db2f1fb4c72fa888f9aaa8d513fb9f9e0eac65c037c2be8b1",
+      "bytes": 4078,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/roadmap.md",
+      "sourcePath": "wiki/pages/Roadmap.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Roadmap.md",
+      "headings": [
+        "Roadmap and delivery boundaries"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/201",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/44",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/97",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/113",
+        "Phase-1-Status",
+        "Performance-and-Infrastructure",
+        "https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/roadmap.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/201"
+      ]
+    },
+    {
+      "path": "SDKs.md",
+      "gitBlob": "fdff221e25a0270b56bc9794981b1028c4432ffc",
+      "sha256": "ec06d44596243f9ac21511bd0317af0c756dedc92547961cf2a0c86c036a092d",
+      "bytes": 2290,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/api-surface.md",
+      "sourcePath": "wiki/pages/SDKs.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/SDKs.md",
+      "headings": [
+        "SDKs and generated clients"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/227",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/228",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/230",
+        "Operator-CLI",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/sdk/README.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/protocol/wit-values.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-operator-workflows.md"
+      ]
+    },
+    {
+      "path": "Security-and-Isolation.md",
+      "gitBlob": "f561539e181779289ced86411da29d803d0d802f",
+      "sha256": "75830bfc60e12e4a2ac19883ba56d18a6ed6fd1f3cdab6fef6b9fb131aa5c0b8",
+      "bytes": 4347,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/architecture/security.md",
+      "sourcePath": "wiki/pages/Security-and-Isolation.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Security-and-Isolation.md",
+      "headings": [
+        "Security and isolation"
+      ],
+      "links": [
+        "State-and-Effects",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/SECURITY.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/publisher-trust.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/package-admission.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/build-provenance.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/trusted-aot.md"
+      ]
+    },
+    {
+      "path": "State-and-Effects.md",
+      "gitBlob": "51ab1cd73697db370124ffc589a3c697f41fd99d",
+      "sha256": "97dac97a822e8faf2855456f92330a666aae4897a8e99ea0f686480cb431932d",
+      "bytes": 1874,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/architecture/state-and-effects.md",
+      "sourcePath": "wiki/pages/State-and-Effects.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/State-and-Effects.md",
+      "headings": [
+        "State and effects"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/capabilities.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/resource-budgets.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/roadmap.md"
+      ]
+    },
+    {
+      "path": "Testing-and-Benchmarks.md",
+      "gitBlob": "e7a7fd0f985b010af6016830fb5b4fe25f3d1cbc",
+      "sha256": "0983e8e64dc63498c3b313ba02f802a4c704f6e312f6dde7fbf1b3721fb8249b",
+      "bytes": 7674,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "reuse-authority",
+      "destination": "docs/testing/benchmark-retention.md",
+      "sourcePath": "wiki/pages/Testing-and-Benchmarks.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Testing-and-Benchmarks.md",
+      "headings": [
+        "Testing and benchmarks",
+        "Phase 2 validation scope"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/VALIDATION.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/testing/phase-1-conformance.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/ci-profiles.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/.github/workflows/ci.yml",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/.github/workflows/phase0-regression.yml",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/ci-caching.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/testing/benchmark-retention.md",
+        "Performance-and-Infrastructure",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/testing/phase-1-measurements.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-extension-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/tools/run_phase2_operator_workflow.py",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-delivery.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/benchmarks/phase2/2026-09-13/attempts.json",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/244"
+      ]
+    },
+    {
+      "path": "_Footer.md",
+      "gitBlob": "56e800ed02e98646e61b1022c072ee961eb5ba40",
+      "sha256": "de7ce3d6e54de26e27620e2fd98f1f62748b68a569304460cd1a88e2e3395f6a",
+      "bytes": 573,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "navigation-notice-pending",
+      "destination": "docs/development/wiki-migration.md",
+      "sourcePath": "wiki/pages/_Footer.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/_Footer.md",
+      "headings": [],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md",
+        "https://github.com/KirilsTurkins/latent-service-fabric/issues/201",
+        "https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3",
+        "https://github.com/KirilsTurkins/latent-service-fabric/tree/release"
+      ]
+    },
+    {
+      "path": "_Sidebar.md",
+      "gitBlob": "642754a97fc1d21eb582680f6ba5f39000e79087",
+      "sha256": "68518b7268bb5bf104408243d5c6f6208e8e8163967f47a00d6a1cbce4c5699d",
+      "bytes": 870,
+      "mode": "100644",
+      "kind": "page",
+      "disposition": "navigation-notice-pending",
+      "destination": "docs/development/wiki-migration.md",
+      "sourcePath": "wiki/pages/_Sidebar.md",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/_Sidebar.md",
+      "headings": [
+        "Start and current delivery",
+        "Runtime, trust and control",
+        "Build, verify and operate",
+        "Historical evidence and planned phases"
+      ],
+      "links": [
+        "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md"
+      ]
+    },
+    {
+      "path": "assets/architecture-at-a-glance.gif",
+      "gitBlob": "3e8af667c03468c421d3c7b652fb9c51c2a1c496",
+      "sha256": "81bdb9b04b8f6236b43457777c378f39f4480358d18dba2d3b3726e46d506691",
+      "bytes": 119171,
+      "mode": "100644",
+      "kind": "asset",
+      "disposition": "archived-historical-asset",
+      "destination": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/assets/architecture-at-a-glance.gif",
+      "sourcePath": "wiki/pages/assets/architecture-at-a-glance.gif",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/assets/architecture-at-a-glance.gif"
+    },
+    {
+      "path": "assets/architecture-at-a-glance.svg",
+      "gitBlob": "cddfa29aad87cfb74eb5cd8be29db75ee1bddfb9",
+      "sha256": "a26c56948ab4a61c2ec0ab901952dd8efe736dd365d733473bcb16bcf8cdbcf8",
+      "bytes": 6015,
+      "mode": "100644",
+      "kind": "asset",
+      "disposition": "archived-historical-asset",
+      "destination": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/assets/architecture-at-a-glance.svg",
+      "sourcePath": "wiki/pages/assets/architecture-at-a-glance.svg",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/assets/architecture-at-a-glance.svg"
+    },
+    {
+      "path": "assets/system-decomposition.gif",
+      "gitBlob": "374807598cc6db3e61236493ba156200f8606a11",
+      "sha256": "49c08d161580427816fcebca5363df2a733ab4fee63424e27078a857f573a030",
+      "bytes": 118467,
+      "mode": "100644",
+      "kind": "asset",
+      "disposition": "archived-historical-asset",
+      "destination": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/assets/system-decomposition.gif",
+      "sourcePath": "wiki/pages/assets/system-decomposition.gif",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/assets/system-decomposition.gif"
+    },
+    {
+      "path": "assets/system-decomposition.svg",
+      "gitBlob": "d692ce4239982770ca403eee064371453e87c31a",
+      "sha256": "e1c524625fbe9411f5ca480757cea5c41d0b5ff5ac5d6349ce273634312f1255",
+      "bytes": 4822,
+      "mode": "100644",
+      "kind": "asset",
+      "disposition": "archived-historical-asset",
+      "destination": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/assets/system-decomposition.svg",
+      "sourcePath": "wiki/pages/assets/system-decomposition.svg",
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/assets/system-decomposition.svg"
+    }
+  ],
+  "sourceAuxiliary": [
+    {
+      "path": "wiki/PUBLISHED_OK.md",
+      "sha256": "34a7ae993cf363de2d653bb966325e7cb3e3c5392bc2e33e12af59a8b0bbb818",
+      "bytes": 445,
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/PUBLISHED_OK.md",
+      "disposition": "preserved-source-or-publication-owner"
+    },
+    {
+      "path": "wiki/WORKFLOW_SECURITY.md",
+      "sha256": "ea8e21ab7001535337e1754850fc9c21c840bde4a4408a4fd8f48edae0cce6ad",
+      "bytes": 1890,
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/WORKFLOW_SECURITY.md",
+      "disposition": "preserved-source-or-publication-owner"
+    },
+    {
+      "path": "wiki/visuals/generate_diagrams.py",
+      "sha256": "43bc4c20011cf13ea070cac86ef8e0055f3827ad0ea4141852b100784153eff2",
+      "bytes": 5781,
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/visuals/generate_diagrams.py",
+      "disposition": "preserved-source-or-publication-owner"
+    },
+    {
+      "path": "wiki/visuals/requirements.txt",
+      "sha256": "5e4cc260cd901073817aa429d6ca6560f24989fd92ce9813c6781c36412f9af7",
+      "bytes": 31,
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/visuals/requirements.txt",
+      "disposition": "preserved-source-or-publication-owner"
+    },
+    {
+      "path": "wiki/visuals/validate_wiki.py",
+      "sha256": "86348073eac50fe92ec4fa922b8475eb4b27413ab25dcddb2d7ed2409fe4ca8b",
+      "bytes": 10176,
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/visuals/validate_wiki.py",
+      "disposition": "preserved-source-or-publication-owner"
+    },
+    {
+      "path": "wiki/visuals/workflow-requirements.txt",
+      "sha256": "0969da99a0bc2a1b71ed50584560f4588a37567ac63af3ddbaf3c4617ca5621a",
+      "bytes": 14,
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/visuals/workflow-requirements.txt",
+      "disposition": "preserved-source-or-publication-owner"
+    },
+    {
+      "path": ".github/workflows/publish-wiki.yml",
+      "sha256": "a45b01eb4d8b44f299b9c4dd2d703251bc2b5b94ee67ee0dce0011b7bd41c1db",
+      "bytes": 4602,
+      "sourceReference": "https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/.github/workflows/publish-wiki.yml",
+      "disposition": "preserved-source-or-publication-owner"
+    }
+  ],
+  "publicationManifest": {
+    "schema_version": "latent-service-fabric.wiki-manifest.v1",
+    "publisher": "wiki/visuals/validate_wiki.py",
+    "source_revision": "3898dbd0970559a566990920ca9172db580f990e",
+    "managed_files": [
+      "Activation-Lifecycle.md",
+      "Architecture.md",
+      "Capsule-Development.md",
+      "Contracts-and-APIs.md",
+      "Core-Concepts.md",
+      "Deployment-and-Routing.md",
+      "Design-Governance.md",
+      "Development-Workflow.md",
+      "Execution-Cells.md",
+      "FAQ.md",
+      "Getting-Started.md",
+      "Glossary.md",
+      "Home.md",
+      "Operator-CLI.md",
+      "Performance-and-Infrastructure.md",
+      "Phase-0-Runbook.md",
+      "Phase-0-Status.md",
+      "Phase-1-Status.md",
+      "Repository-Map.md",
+      "Roadmap.md",
+      "SDKs.md",
+      "Security-and-Isolation.md",
+      "State-and-Effects.md",
+      "Testing-and-Benchmarks.md",
+      "_Footer.md",
+      "_Sidebar.md",
+      "assets/architecture-at-a-glance.gif",
+      "assets/architecture-at-a-glance.svg",
+      "assets/system-decomposition.gif",
+      "assets/system-decomposition.svg"
+    ],
+    "managed_sha256": {
+      "Activation-Lifecycle.md": "4df6516e2c64860ed30f8b582455d4cc0d7e8cf268b0fcaf1215dd90832de887",
+      "Architecture.md": "29aac1d0fb8553402c3fd8978eef5d477e9f897039eb86adb3fb22a2d55b6089",
+      "Capsule-Development.md": "4960d1e60f86b702f79fc8599ecdea1d6008f41a572e10e1132398326aaafc34",
+      "Contracts-and-APIs.md": "a8d65af0d920dbbc07a1770ed375538c37beb6086cd8874ff91ff19f0bd2b50a",
+      "Core-Concepts.md": "fa444f0aaf380cb27af8e947fb216a668ca92c710a813f91ff46c7a9aaf21903",
+      "Deployment-and-Routing.md": "f8f8d02d8e0cbc3403b36c8d6af869122d624f156548684d4dfb63a6a3f90c76",
+      "Design-Governance.md": "26e72f1546f9f9e3f69cf041be9f2f48d4324bcd402456c6fa5eb2d207f84490",
+      "Development-Workflow.md": "cf3f7b21a27e8d4ce213578692901d3a6e6b572ce9d94d318e58621eb5cd60ea",
+      "Execution-Cells.md": "9e5fdd555fe13bdce6b496d6599a65fa4da0522ee3a3d41c6f7537b7ce71d00f",
+      "FAQ.md": "d1d7f2dec9319652048ccb1f9d3474b84faba3685ebd00cb017c8e0791732d66",
+      "Getting-Started.md": "43425c853c6ca0973eb8b5a0fd9edfaab415cbfa083683b2a1e0d697c031b100",
+      "Glossary.md": "1749c9012e66a7fd2cec97d8f32cc1b23fce4f5e6d308b39956d76f12e6ebd40",
+      "Home.md": "f14528a628816b0ad5b0078e89bb7672ae02173f05ddf8460c422e06f1eb5008",
+      "Operator-CLI.md": "02ef4e6e9e06943c246244af4b5a61bc63db05d5b52ea0dbf46ba4f3d30f7e60",
+      "Performance-and-Infrastructure.md": "68e0a6233ba5d24ad93e32fb5adc85e72295888f38591c915c05c7dc50bc6faa",
+      "Phase-0-Runbook.md": "e16e0ed9f17ee1fb6d50ce73e1ed41934d6c52b91ad7d248837cf42d936ff592",
+      "Phase-0-Status.md": "4002bcfe9e16776f5344c708a812cc127bab69131dfbda6790244e25bb11580b",
+      "Phase-1-Status.md": "94e7cfe850ee7f9bdabcd8dc70a1f1cdd2a25ac4f4618692bc7847fea9d3ce90",
+      "Repository-Map.md": "5ed1abb9279261e1376a19f9ad0cd28ec57f093cfaf48bb7b6394fe32f373efe",
+      "Roadmap.md": "8906adfdfb7be44db2f1fb4c72fa888f9aaa8d513fb9f9e0eac65c037c2be8b1",
+      "SDKs.md": "ec06d44596243f9ac21511bd0317af0c756dedc92547961cf2a0c86c036a092d",
+      "Security-and-Isolation.md": "75830bfc60e12e4a2ac19883ba56d18a6ed6fd1f3cdab6fef6b9fb131aa5c0b8",
+      "State-and-Effects.md": "97dac97a822e8faf2855456f92330a666aae4897a8e99ea0f686480cb431932d",
+      "Testing-and-Benchmarks.md": "0983e8e64dc63498c3b313ba02f802a4c704f6e312f6dde7fbf1b3721fb8249b",
+      "_Footer.md": "de7ce3d6e54de26e27620e2fd98f1f62748b68a569304460cd1a88e2e3395f6a",
+      "_Sidebar.md": "68518b7268bb5bf104408243d5c6f6208e8e8163967f47a00d6a1cbce4c5699d",
+      "assets/architecture-at-a-glance.gif": "81bdb9b04b8f6236b43457777c378f39f4480358d18dba2d3b3726e46d506691",
+      "assets/architecture-at-a-glance.svg": "a26c56948ab4a61c2ec0ab901952dd8efe736dd365d733473bcb16bcf8cdbcf8",
+      "assets/system-decomposition.gif": "49c08d161580427816fcebca5363df2a733ab4fee63424e27078a857f573a030",
+      "assets/system-decomposition.svg": "e1c524625fbe9411f5ca480757cea5c41d0b5ff5ac5d6349ce273634312f1255"
+    }
+  }
+}
