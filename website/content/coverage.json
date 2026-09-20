@@ -286,6 +286,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -296,7 +300,8 @@
       ],
       "sourceRefs": [
         "sdk/rust/src",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -308,6 +313,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
         }
       ],
       "review": {
@@ -331,6 +343,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -341,7 +357,8 @@
       ],
       "sourceRefs": [
         "sdk/typescript-client/src",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -353,6 +370,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
         }
       ],
       "review": {
@@ -376,6 +400,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -386,7 +414,8 @@
       ],
       "sourceRefs": [
         "sdk/go",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -398,6 +427,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
         }
       ],
       "review": {
@@ -421,6 +457,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -431,7 +471,8 @@
       ],
       "sourceRefs": [
         "sdk/c",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -443,6 +484,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
         }
       ],
       "review": {
@@ -466,6 +514,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -476,7 +528,8 @@
       ],
       "sourceRefs": [
         "sdk/java-client/src",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -488,6 +541,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
         }
       ],
       "review": {
@@ -511,6 +571,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -521,7 +585,8 @@
       ],
       "sourceRefs": [
         "sdk/dotnet/Latent.Sdk",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -533,6 +598,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
         }
       ],
       "review": {

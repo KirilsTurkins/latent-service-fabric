@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "id": "client/provider-management",
+  "title": "Look up the original policy operation receipt",
+  "audience": "client-developer",
+  "target": "client",
+  "variants": [
+    {
+      "language": "rust",
+      "kind": "maintained",
+      "source": "sdk/rust/examples/provider_workflow/management.rs",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "typescript",
+      "kind": "maintained",
+      "source": "sdk/typescript-client/tests/provider-workflow.mjs",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "go",
+      "kind": "maintained",
+      "source": "sdk/go/internal/providerworkflow/management.go",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "c",
+      "kind": "maintained",
+      "source": "sdk/c/examples/provider_workflow.c",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "java",
+      "kind": "maintained",
+      "source": "sdk/java-client/src/example/java/dev/latent/sdk/examples/ProviderWorkflow.java",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "csharp",
+      "kind": "maintained",
+      "source": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/Management.cs",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": null
+      }
+    }
+  ]
+}

@@ -1,4 +1,9 @@
 {
   "schema": 1,
-  "scenarios": ["examples/guides/rust-echo/example.json"]
+  "scenarios": [
+    "examples/guides/rust-echo/example.json",
+    "examples/guides/sdk-invoke/example.json",
+    "examples/guides/sdk-cancel/example.json",
+    "examples/guides/sdk-management/example.json"
+  ]
 }

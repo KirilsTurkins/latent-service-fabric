@@ -1,5 +1,24 @@
 # SDK surfaces
 
+Start with [Invoke, cancel and recover with a client SDK](../docs/learn/use-a-client.mdx)
+for the shared six-language learning path, native setup and source-backed examples.
+
+The six maintained external clients now implement the common bounded
+numeric-loopback HTTP/2 + Protobuf transport on Linux x86-64. Their separately
+owned real-node qualification and full PR CI completed in
+[PR #366](https://github.com/KirilsTurkins/latent-service-fabric/pull/366).
+Use each SDK's instructions for toolchain, resource ownership and generation;
+this does not imply published packages, remote node listeners or guest runtimes.
+
+| Client | Shipped transport and native build | Language-specific ownership |
+| --- | --- | --- |
+| Rust | [Generated RPC client](rust/README.md) | Retain activation IDs across dropped futures; await bounded shutdown. |
+| TypeScript | [Node client](typescript-client/README.md) | Bigint/presence, AbortSignal and explicit shutdown; browser application ingress is separate. |
+| Go | [Native client](go/README.md) | Context deadlines, live recovery contexts and bounded Close. |
+| C | [Linkable native library](c/README.md) | Copied retained requests, callback lifetimes, call release and stop/drain. |
+| Java | [Native client](java-client/README.md) | Lossless unsigned values, local future cancellation and owned channel/executor closure. |
+| C#/.NET | [Native client](dotnet/README.md) | Live recovery tokens, single-consumption ValueTask and async disposal. |
+
 The external client SDK directories separate portable programming models from
 executable transport packages. Rust network delivery and its transport-specific
 documentation are tracked in [#228](https://github.com/KirilsTurkins/latent-service-fabric/issues/228);
@@ -102,7 +121,7 @@ and legacy asynchronous client with one bounded owned HTTP/2 connection.
 Its [qualification](dotnet/EVIDENCE.md) separates 521 controlled-peer checks
 from an actual 18-assertion separate-node provider run. It is a Linux host
 client, not a .NET guest binding. The maintained six-language real-node gate
-is tracked in PR #366 and remains required before transport-ticket closure.
+completed in PR #366; subsequent changes still require fresh matching validation.
 
 `tools/validate_sdks.sh` compiles and runs small Go, TypeScript, Java, .NET, and
 C fake-client fixtures. Rust equivalents run through `cargo test -p latent-sdk`.
