@@ -99,6 +99,15 @@ pub struct VerifiedAdmission {
 /// Host configuration authority. Implementations own bounded crypto/policy work
 /// and never accept stored receipt fields as substitutes for verification.
 pub trait AdmissionAuthority: Send + Sync {
+    /// Refresh a finite clock lease at an authenticated mutation boundary.
+    /// This does not grant authority: the retained grant must still pass its
+    /// current policy check under the commit fence. Never call from invocation
+    /// or cache lookup paths, or while that fence is held.
+    /// Authorities without durable clock leases need no additional work.
+    fn renew_control_lease(&self) -> Result<(), PlatformError> {
+        Ok(())
+    }
+
     /// Additive web profile. Older/custom authorities explicitly deny it rather
     /// than interpreting browser assets as a capsule with a fabricated digest.
     fn verify_web(
