@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import argparse
 import base64
-from contextlib import redirect_stdout
+from contextlib import chdir, redirect_stderr, redirect_stdout
 import io
 import json
 import os
@@ -132,13 +132,64 @@ class Payloads(unittest.TestCase):
             with self.assertRaises(argparse.ArgumentTypeError): runner.source_commit(value)
 
     def test_failed_run_redacts_exception_and_never_emits_pass(self):
-        output = io.StringIO()
-        with patch.object(runner, 'run', side_effect=RuntimeError('PRIVATE-TOKEN-CANARY')), redirect_stdout(output):
-            status = runner.main(['--cli', sys.executable, '--node', sys.executable,
-                                  '--echo-root', '/unused', '--source-commit', 'a' * 40])
+        output, errors = io.StringIO(), io.StringIO()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            artifact = root / 'artifact'
+            # run() is mocked: use an owned regular file, not sys.executable,
+            # which can be a symlink in a hosted Python toolchain.
+            artifact.write_bytes(b'synthetic artifact; never executed')
+            with (patch.object(runner, 'run', side_effect=RuntimeError('PRIVATE-TOKEN-CANARY')) as run,
+                  redirect_stdout(output), redirect_stderr(errors)):
+                status = runner.main(['--cli', str(artifact), '--node', str(artifact),
+                                      '--echo-root', str(root), '--source-commit', 'a' * 40])
+            run.assert_called_once_with(argparse.Namespace(
+                cli=artifact, node=artifact, echo_root=root, source_commit='a' * 40))
         self.assertEqual(status, 1)
+        self.assertEqual(errors.getvalue(), '')
         self.assertNotIn('PRIVATE-TOKEN-CANARY', output.getvalue())
-        self.assertIs(json.loads(output.getvalue())['passed'], False)
+        self.assertEqual(json.loads(output.getvalue()), {
+            'schemaVersion': 'latent.first-node-guide.v1',
+            'passed': False, 'reason': 'guide-check-failed',
+        })
+
+
+class ArtifactPaths(unittest.TestCase):
+    def test_only_absolute_regular_files_are_accepted(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            artifact = root / 'artifact'
+            artifact.write_bytes(b'synthetic artifact; never executed')
+            self.assertEqual(runner.absolute_file(str(artifact)), artifact)
+            with chdir(root):
+                relative = Path('artifact')
+                self.assertTrue(relative.is_file())
+                for value in (relative, root, root / 'missing'):
+                    with self.subTest(path=value), self.assertRaises(argparse.ArgumentTypeError):
+                        runner.absolute_file(str(value))
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX symlink fixture')
+    def test_linked_artifacts_are_rejected_before_run(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            artifact = root / 'artifact'
+            artifact.write_bytes(b'synthetic artifact; never executed')
+            for name, target in (('existing', artifact), ('dangling', root / 'missing')):
+                linked = root / (name + '-link')
+                linked.symlink_to(target)
+                for option in ('--cli', '--node'):
+                    arguments = {'--cli': str(artifact), '--node': str(artifact),
+                                 '--echo-root': str(root), '--source-commit': 'a' * 40}
+                    arguments[option] = str(linked)
+                    output, errors = io.StringIO(), io.StringIO()
+                    with (self.subTest(link=name, option=option), patch.object(runner, 'run') as run,
+                          redirect_stdout(output), redirect_stderr(errors)):
+                        with self.assertRaises(SystemExit) as rejected:
+                            runner.main([item for pair in arguments.items() for item in pair])
+                        self.assertEqual(rejected.exception.code, 2)
+                        run.assert_not_called()
+                        self.assertEqual(output.getvalue(), '')
+                        self.assertIn('an absolute regular artifact path is required', errors.getvalue())
 
 
 @unittest.skipUnless(sys.platform == 'linux', 'uses the existing Linux process owner')
