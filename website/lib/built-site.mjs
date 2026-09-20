@@ -8,6 +8,7 @@ import {transformDocument} from '../plugins/repository-links.mjs';
 import {validateExampleBuild} from '../plugins/examples/built.mjs';
 import {loadSnapshots} from './versions/storage.mjs';
 import {documentBytes} from './versions/model.mjs';
+import {validateSearch} from './search-build.mjs';
 
 function expectedSourceLinks(index, page, manifest) {
   const options = {baseUrl: manifest.baseUrl, assets: manifest.assets.filter(asset => (asset.channel ?? 'development') === index.channel)};
@@ -68,7 +69,7 @@ export function validateBuiltSite(output) {
   const publicJavaScript = validatePublicJavaScript(output);
   const documents = new Map();
   let checkedSourceLinks = 0;
-  const requiredRoutes = ['/', ...manifest.pages.map(page => page.route)];
+  const requiredRoutes = ['/', '/guides/', '/search/', ...manifest.pages.map(page => page.route)];
   for (const route of requiredRoutes) {
     const target = outputPath(output, `${manifest.baseUrl.slice(0, -1)}${route}`, manifest.baseUrl);
     requireValue(fs.statSync(target).size <= 4 * 1024 * 1024, 'Built page size limit');
@@ -114,7 +115,8 @@ export function validateBuiltSite(output) {
     requireValue(sha256(fs.readFileSync(target)) === asset.sha256, `Copied asset changed bytes: ${asset.path}`);
     requireValue(sha256(readSource(repositoryRoot, asset.file ?? asset.path, asset.maxBytes)) === asset.sha256, `Built asset input is stale: ${asset.path}`);
   }
-  return {manifest, pages: documents.size, checkedLinks, checkedSourceLinks, checkedExamples, publicJavaScript};
+  const search = validateSearch(output, manifest);
+  return {manifest, pages: documents.size, checkedLinks, checkedSourceLinks, checkedExamples, publicJavaScript, search};
 }
 
 export async function serveBuiltSite(output, baseUrl) {
