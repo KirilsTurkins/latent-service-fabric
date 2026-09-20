@@ -8,12 +8,23 @@ import {remarkExamples} from './plugins/examples/remark.mjs';
 import {mermaidOptions, preparePalette, prismTheme} from './lib/palette.mjs';
 
 const prepared = prepare();
+type Snapshot = {index: typeof prepared.index & {documentPrefix: string}; assets: typeof prepared.assets;
+  examples: typeof prepared.examples; manifest: {runtimeVersion: string}};
+const snapshots = prepared.snapshots as Snapshot[];
 const theme = preparePalette();
-const pluginOptions = {index: prepared.index, assets: prepared.assets, baseUrl: prepared.baseUrl};
-const repositoryRemark = () => remarkRepositoryLinks(pluginOptions);
-const repositoryRehype = () => rehypeRepositoryLinks(pluginOptions);
-const examplesRemark = () => remarkExamples({bundle: prepared.examples.bundle, documentVersion: prepared.index.channel});
-const inputIdentity = {fingerprint: sha256(JSON.stringify({revision: prepared.index.revision, pages: prepared.index.pages, assets: prepared.assets, baseUrl: prepared.baseUrl, examples: prepared.examples.identity}))};
+function selected(file: {path: string}) {
+  const name = file.path.replaceAll('\\', '/');
+  const snapshot = snapshots.find(item => name.includes(`/${item.index.documentPrefix}/`));
+  if (name.includes('/versioned_docs/') && !snapshot) throw new Error('Unregistered document version');
+  return snapshot ?? {index: prepared.index, assets: prepared.currentAssets, examples: prepared.examples};
+}
+const repositoryRemark = () => (tree: unknown, file: {path: string}) => remarkRepositoryLinks({...selected(file), baseUrl: prepared.baseUrl})(tree, file);
+const repositoryRehype = () => (tree: unknown, file: {path: string}) => rehypeRepositoryLinks({...selected(file), baseUrl: prepared.baseUrl})(tree, file);
+const examplesRemark = () => (tree: unknown, file: {path: string}) => {
+  const version = selected(file);
+  return remarkExamples({bundle: version.examples.bundle, documentVersion: version.index.channel})(tree);
+};
+const inputIdentity = {fingerprint: sha256(JSON.stringify({revision: prepared.index.revision, pages: prepared.manifest.pages, assets: prepared.assets, baseUrl: prepared.baseUrl, examples: prepared.examples.identity, versions: prepared.manifest.versions}))};
 const commonDocs = {
   numberPrefixParser: false as const,
   beforeDefaultRemarkPlugins: [[repositoryRemark, inputIdentity], [examplesRemark, inputIdentity]],
@@ -34,7 +45,7 @@ const config: Config = {
   onBrokenAnchors: 'throw',
   staticDirectories: [path.relative(websiteRoot, prepared.staticDirectory).split(path.sep).join('/')],
   markdown: {format: 'detect', mermaid: true, mdx1Compat: {comments: false}, hooks: {onBrokenMarkdownLinks: 'throw', onBrokenMarkdownImages: 'throw'}},
-  customFields: {contentIdentity: {channel: 'development', revision: prepared.index.revision, dirty: prepared.manifest.dirty}},
+  customFields: {contentIdentity: {channel: 'development', revision: prepared.index.revision, dirty: prepared.manifest.dirty}, publications: prepared.manifest.versions},
   presets: [['classic', {
     docs: {
       ...commonDocs,
@@ -42,7 +53,10 @@ const config: Config = {
       routeBasePath: 'docs',
       exclude: ['wiki/**'],
       sidebarPath: './sidebars.ts',
-      editUrl: ({docPath}: {docPath: string}) => `${repositoryUrl}/edit/${prepared.index.revision}/docs/${docPath}`,
+      lastVersion: 'current',
+      versions: {current: {label: 'Development', path: '', banner: 'none'}, ...Object.fromEntries(snapshots.map(snapshot => [snapshot.index.channel,
+        {label: `${snapshot.manifest.runtimeVersion} (alpha)`, path: snapshot.index.channel, banner: 'none'}]))},
+      editUrl: ({docPath, version}: {docPath: string; version: string}) => `${repositoryUrl}/edit/${version === 'current' ? prepared.index.revision : snapshots.find(snapshot => snapshot.index.channel === version)!.index.revision}/docs/${docPath}`,
     },
     blog: false,
     theme: {customCss: [theme.css, './src/css/foundation.css', './src/css/theme.css']},
@@ -66,11 +80,11 @@ const config: Config = {
       backgroundColor: 'var(--lsf-raised)',
       textColor: 'var(--lsf-text)',
       id: 'development-foundation',
-      content: 'Development documentation — not a released snapshot. Foundation only; guide, migration and runtime acceptance remain separate.',
+      content: 'LSF alpha documentation. Check each guide’s version and verification scope before following it.',
       isCloseable: false,
     },
     navbar: {
-      title: 'LSF · development',
+      title: 'LSF',
       items: [
         {type: 'docSidebar', sidebarId: 'start', label: 'Start', position: 'left'},
         {type: 'docSidebar', sidebarId: 'learn', label: 'Learn', position: 'left'},
@@ -79,6 +93,7 @@ const config: Config = {
         {type: 'docSidebar', sidebarId: 'understand', label: 'Understand', position: 'left'},
         {type: 'docSidebar', sidebarId: 'contribute', label: 'Contribute', position: 'left'},
         {to: '/decisions/', label: 'Decisions', position: 'right'},
+        {type: 'docsVersionDropdown', position: 'right', dropdownActiveClassDisabled: true},
       ],
     },
     footer: {style: 'dark', links: [{title: 'Provenance', items: [

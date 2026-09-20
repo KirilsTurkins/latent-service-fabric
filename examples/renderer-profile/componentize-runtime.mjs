@@ -9,14 +9,14 @@ const adapter = '../../tools/angular-renderer-adapter';
 const output = 'dist/runtime';
 const profile = JSON.parse(await readFile('profile.json', 'utf8'));
 assert.equal(process.version, 'v' + profile.nodeBuild);
-await mkdir(output + '/wit/deps/context', {recursive: true});
-await mkdir(output + '/wit/deps/web', {recursive: true});
+await mkdir(output + '/wit', {recursive: true});
 for (const name of ['bridge.js', 'timers.js']) {
   await copyFile(`${adapter}/runtime/${name}`, `${output}/${name}`);
 }
 await copyFile('runtime-application.js', `${output}/application.js`);
 await copyFile(`${adapter}/wit/adapter.wit`, `${output}/wit/adapter.wit`);
-for (const name of ['context', 'web']) {
+for (const name of ['context', 'web', 'http-v2']) {
+  await mkdir(`${output}/wit/deps/${name}`, {recursive: true});
   await copyFile(`../../wit/platform/${name}/package.wit`, `${output}/wit/deps/${name}/package.wit`);
 }
 const result = await componentize({

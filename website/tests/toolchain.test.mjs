@@ -12,7 +12,7 @@ test('website pins and lock agree without a root workspace or dependency lifecyc
   const lock = JSON.parse(fs.readFileSync(path.join(websiteRoot, 'package-lock.json'), 'utf8'));
   assert.equal(manifest.private, true);
   assert.equal(manifest.engines.node, '24.19.0');
-  assert.equal(manifest.engines.npm, '12.0.1');
+  assert.equal(manifest.engines.npm, '11.19.1');
   for (const [name, version] of Object.entries({...manifest.dependencies, ...manifest.devDependencies})) {
     assert.match(version, /^\d+\.\d+\.\d+$/);
     assert.equal(lock.packages[`node_modules/${name}`].version, version);

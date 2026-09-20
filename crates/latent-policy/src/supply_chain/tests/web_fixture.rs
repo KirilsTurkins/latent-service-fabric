@@ -39,6 +39,7 @@ pub fn web_input(renderer: Option<&[u8]>) -> PackageInput {
             profile_digest: renderer_profile_digest(WebRendererProfile::WasmWebBufferedV1)
                 .to_string(),
             assets_digest,
+            backend_profile: WebBackendProfile::None,
         }),
     };
     let mut layers = vec![

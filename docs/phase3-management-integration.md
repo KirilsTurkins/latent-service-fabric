@@ -36,6 +36,7 @@ actor from the authenticated transport principal.
 | `trigger apply/get/list/delete/operation` | Closed buffered HTTP trigger profile; exact publication, deployment revision and generation |
 | `capability list --deployment ID` | One bounded page of sampled bindings and tenant usage |
 | `capability explain --deployment ID --capability CONTRACT --operation OP --resource FILE` | Descriptive current-principal inspection, not admission |
+| `web publish/get/operation/revoke/retire/renew-evidence/prepare` | Exact componentless web publication and lifecycle; optional finite shared preparation, never execution permission |
 
 Trigger mutation requires all three explicit comparison fields:
 
@@ -57,6 +58,16 @@ Ambiguous durability remains unknown. An operation lookup is a separate explicit
 command; an absent operation is not evidence of rollback. All diagnostic 64-bit
 counters and generations are JSON decimal strings. Capability output always
 reports `executionPermission: false`; a sampled allow is not an executable grant.
+
+Trigger object generations are catalog-assigned versions, not per-object
+counters. Apply returns the newly committed state version as the object's
+generation; Delete retains the removed object's positive generation while
+advancing only the catalog state. CLI receipt and deletion-metadata validation
+preserves those existing server semantics, including retained replay. The actual
+T1 workflow exposed the previous counter assumption after several deployment
+changes; focused red/green tests cover creation, replacement and deletion across
+unrelated catalog writes. Invalid responses still leave the mutation outcome
+unknown and never cause an automatic retry.
 
 Invocation keeps the Phase 1 budget grammar by default. Use
 `invoke --budget-profile phase3 --budget budget.json` for the delivered child-call,
@@ -98,3 +109,34 @@ denial and independent publication/policy revocation. T2/T3 are not supported.
 The immutable-assets and response-cache work in #336/#335 is a dependency, not
 an implementation copied into this change. Full #226 acceptance is not yet
 claimed by this milestone.
+
+## Selected web execution projection
+
+The concrete catalog now projects an exact SSR web publication into the common
+preparation metadata and lifecycle interface. This is not a capsule publication:
+the capsule index and legacy component-only lookup remain unchanged, and no
+`AdmissionGrant` is created from web receipts or digests. The sealed projection
+retains the actual web grant, its originating catalog and admission authority,
+the exact package/assets association, and its current lifecycle generation.
+Browser-only packages cannot acquire this projection.
+
+Immutable cache identity includes the selected publication and its derived
+metadata. Two packages sharing renderer bytes retain independent authority;
+renewal can reuse immutable bytes but cannot reuse the old start grant. Historical
+recovery verifies actual renderer bytes even for denied publications. Active
+proofs retain their bounded read charge until the last consumer releases them.
+Focused storage tests cover independent revocation, renewal, restart, foreign
+catalogs sharing an authority, tenant denial, pre-reserved reads and tampering.
+These tests use an explicitly injected storage-test authority, not fabricated
+Angular build evidence; protected T1 execution still requires the full gate above.
+
+The additional [actual Angular workflow](testing/angular-t1-workflow.md) consumes
+the maintained #234 builder's bytes and observation. Its exporter now passes
+publisher/builder/SBOM verification with the real system clock; it does not
+relabel the Angular recipe or claim reproducibility. The retained run now passes
+protected T1 admission, isolated compilation, actual selected rendering,
+cancellation/reclamation, independent revocation and authenticated cache reuse
+after restart. The runtime permits this explicit protected T1 profile while
+retaining the closed engine shape and enforced admission/compiler owners.
+Real-browser hydration, backend-during-render and true staged web canaries
+remain separate parent-owned qualification, not claims of this #226 receipt.

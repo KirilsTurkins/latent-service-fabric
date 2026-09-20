@@ -66,6 +66,13 @@ pub(super) async fn compare(
             e.check_current()?;
         }
     }
+    if [&old_eligibility, &new_eligibility]
+        .into_iter()
+        .flatten()
+        .any(|eligibility| eligibility.web_projection().is_some())
+    {
+        return Err(incompatible());
+    }
     let old_proof = match &old_eligibility {
         Some(e) => e.admission().cloned(),
         None => repository.release_eligibility(old)?,

@@ -67,6 +67,8 @@ class SourceTraversalTests(unittest.TestCase):
                 root / "examples/renderer-profile/dist",
                 root / "examples/renderer-profile/compiled",
                 root / "examples/renderer-profile/transpiled",
+                root / "website/build",
+                root / "website/.docusaurus",
             ]
             for generated in generated_paths:
                 generated.mkdir(parents=True)

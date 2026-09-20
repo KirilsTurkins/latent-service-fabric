@@ -15,20 +15,6 @@ impl WasmtimeConfig {
     }
 
     pub(super) fn validate_renderer(&self) -> Result<(), PlatformError> {
-        // ADR-0037 qualified this engine only for operator-controlled T0. The
-        // observed Angular recipe and componentless web deployment authority
-        // must land before claiming the complete enforced T1 path (#234/#226).
-        if self.angular_renderer
-            && self.execution_isolation_profile
-                != super::ExecutionIsolationProfile::LocalExperimental
-        {
-            return Err(PlatformError {
-                code: latent_core::PlatformErrorCode::IncompatibleContract,
-                message: "angular-external-profile-not-qualified".into(),
-                retryable: false,
-                details: Vec::new(),
-            });
-        }
         if self.angular_renderer
             && (self.instance_allocator != InstanceAllocator::OnDemand
                 || self.compiler_optimization != CompilerOptimization::Speed
@@ -77,14 +63,38 @@ mod tests {
             |c| c.fuel_async_yield_interval = None,
             |c| c.maximum_memories_per_store = 3,
             |c| c.maximum_table_elements += 1,
-            |c| {
-                c.execution_isolation_profile =
-                    super::super::ExecutionIsolationProfile::ExternalCapsule;
-            },
         ] {
             let mut wrong = config.clone();
             mutate(&mut wrong);
             assert!(wrong.validate().is_err());
         }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn external_renderer_keeps_enforced_admission_and_isolated_compiler_requirements() {
+        use super::super::{DispatchMode, ExecutionIsolationProfile};
+
+        let mut config = WasmtimeConfig {
+            execution_isolation_profile: ExecutionIsolationProfile::ExternalCapsule,
+            fuel_async_yield_interval: Some(10_000),
+            ..WasmtimeConfig::default()
+        };
+        config.install_angular_renderer();
+        config.validate().unwrap();
+        for (admission, compiler) in [(false, false), (true, false), (false, true)] {
+            assert!(config
+                .execution_isolation_profile
+                .validate_owners(DispatchMode::Generic, admission, compiler)
+                .is_err());
+        }
+        config
+            .execution_isolation_profile
+            .validate_owners(DispatchMode::Generic, true, true)
+            .unwrap();
+        assert!(config
+            .execution_isolation_profile
+            .validate_owners(DispatchMode::Phase0, true, true)
+            .is_err());
     }
 }
