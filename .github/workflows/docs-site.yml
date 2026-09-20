@@ -49,6 +49,7 @@ jobs:
           npm run test:theme
           npm run test:examples
           npm run test:versions
+          npm run test:discovery
       - name: Retain only the tested site and compact browser receipts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -59,6 +60,7 @@ jobs:
             website/.generated/theme-review/evidence.json
             website/.generated/code-example-review/evidence.json
             website/.generated/version-review/evidence.json
+            website/.generated/discovery-review/evidence.json
           if-no-files-found: error
           retention-days: 14
           compression-level: 6
