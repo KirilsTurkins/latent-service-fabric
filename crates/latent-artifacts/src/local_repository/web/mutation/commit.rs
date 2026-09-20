@@ -50,9 +50,13 @@ impl DirectoryArtifactRepository {
             ReleaseLifecycleAction::Publish | ReleaseLifecycleAction::RenewEvidence
         );
         let grant = next.entry(reference)?.grant.clone();
-        let mut commit = |check: Option<&dyn AdmissionRecheck>| -> Result<(), PlatformError> {
-            if let Some(check) = check {
-                check.check()?;
+        // Immutable payload I/O must not hold the policy clock fence. The
+        // existing control owner can renew its finite lease while bytes are
+        // staged. Nothing becomes a positive publication before the final
+        // current-grant check and HEAD commit below.
+        let staged = (|| {
+            if positive {
+                grant.as_ref().ok_or_else(denied)?.check_current()?;
             }
             // A failed write never restores in-memory authority. All future
             // web uses and catalog mutations wait for durable restart recovery.
@@ -60,6 +64,13 @@ impl DirectoryArtifactRepository {
             self.activate_web(current)?;
             content.replace_web_control(exposure)?;
             self.stage_web_payload(&payload, reference, &mut writer, &mut content)?;
+            #[cfg(test)]
+            if let Some(observe) = self.web.after_payload_staged.lock().unwrap().take() {
+                observe();
+            }
+            Ok(())
+        })();
+        let mut commit = |check: Option<&dyn AdmissionRecheck>| -> Result<(), PlatformError> {
             if let Some(check) = check {
                 check.check()?;
             }
@@ -85,14 +96,16 @@ impl DirectoryArtifactRepository {
             writer.pending = None;
             Ok(())
         };
-        let committed = if positive {
-            grant
-                .as_ref()
-                .ok_or_else(denied)?
-                .with_current(&mut |check| commit(Some(check)))
-        } else {
-            commit(None)
-        };
+        let committed = staged.and_then(|()| {
+            if positive {
+                grant
+                    .as_ref()
+                    .ok_or_else(denied)?
+                    .with_current(&mut |check| commit(Some(check)))
+            } else {
+                commit(None)
+            }
+        });
         if let Err(failure) = committed {
             if writer.pending.is_some() {
                 self.web.epoch.retire();

@@ -355,3 +355,6 @@ fn web_reclamation_removes_an_orphan_without_erasing_current_content_or_its_rece
         .unwrap()
         .is_some());
 }
+
+#[path = "web_tests/staging.rs"]
+mod staging;
