@@ -5,6 +5,7 @@ import {parse, parseFragment} from 'parse5';
 import {visit} from 'unist-util-visit';
 import {assetRoute, createRepositoryIndex, git, htmlElements, parseDocument, readSource, repositoryRoot, repositoryUrl, requireValue, resolveLink, sha256} from './repository.mjs';
 import {transformDocument} from '../plugins/repository-links.mjs';
+import {validateExampleBuild} from '../plugins/examples/built.mjs';
 
 function expectedSourceLinks(index, page, manifest) {
   const options = {baseUrl: manifest.baseUrl, assets: manifest.assets};
@@ -56,6 +57,7 @@ export function validateBuiltSite(output) {
   const dirty = git(repositoryRoot, 'status', '--porcelain=v1', '--untracked-files=all').trim().length > 0;
   requireValue(manifest.revision === current.revision && manifest.dirty === dirty, 'Built source identity is stale; rebuild this checkout');
   requireValue(JSON.stringify(manifest.pages) === JSON.stringify(current.pages), 'Built document bytes/routes are stale; rebuild this checkout');
+  const checkedExamples = validateExampleBuild(output, current, manifest);
   const publicJavaScript = validatePublicJavaScript(output);
   const documents = new Map();
   let checkedSourceLinks = 0;
@@ -103,7 +105,7 @@ export function validateBuiltSite(output) {
     requireValue(sha256(fs.readFileSync(target)) === asset.sha256, `Copied asset changed bytes: ${asset.path}`);
     requireValue(sha256(readSource(repositoryRoot, asset.path, asset.maxBytes)) === asset.sha256, `Built asset input is stale: ${asset.path}`);
   }
-  return {manifest, pages: documents.size, checkedLinks, checkedSourceLinks, publicJavaScript};
+  return {manifest, pages: documents.size, checkedLinks, checkedSourceLinks, checkedExamples, publicJavaScript};
 }
 
 export async function serveBuiltSite(output, baseUrl) {
