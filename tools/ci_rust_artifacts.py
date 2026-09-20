@@ -9,6 +9,7 @@ The inventory is build metadata, not cached test or qualification evidence.
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
 from dataclasses import dataclass, replace
 import hashlib
 import json
@@ -20,6 +21,7 @@ import signal
 import subprocess
 import sys
 import threading
+import tempfile
 import time
 
 MAX_INVENTORY_BYTES = 32 * 1024 * 1024
@@ -376,8 +378,15 @@ def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str],
     if record is not None:
         record["execution_started"] = True
     try:
-        status, output = run_owned(execution, cwd=artifact.package, env=runtime_env,
-                                   timeout=suite.timeout_seconds, maximum=MAX_OUTPUT_BYTES)
+        with ExitStack() as owned_roots:
+            if suite.classification == "physical-resource":
+                private_root = owned_roots.enter_context(
+                    tempfile.TemporaryDirectory(prefix="lsf-catalog-metadata-"))
+                # Rust's private TempRoot is nested here. The outer owner can
+                # clean it even after SIGKILL, after run_owned reaps the group.
+                runtime_env = {**runtime_env, "TMPDIR": private_root}
+            status, output = run_owned(execution, cwd=artifact.package, env=runtime_env,
+                                       timeout=suite.timeout_seconds, maximum=MAX_OUTPUT_BYTES)
     finally:
         if record is not None:
             record["execution_seconds"] = time.monotonic() - started
@@ -432,7 +441,9 @@ def main(argv: list[str] | None = None) -> int:
     except (ArtifactError, OSError, ValueError, TypeError, RecursionError,
             subprocess.SubprocessError, KeyboardInterrupt) as error:
         reason = str(error) if isinstance(error, ArtifactError) else "artifact-execution-failed"
-        record["outcome"] = "failed" if record["execution_started"] else "not-run"
+        record["outcome"] = ("cancelled" if isinstance(error, KeyboardInterrupt)
+                             or reason == "test-interrupted" else
+                             "failed" if record["execution_started"] else "not-run")
         record["reason"] = reason
         print(f"CI Rust artifacts: {reason}", file=sys.stderr)
     finally:
