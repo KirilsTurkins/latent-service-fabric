@@ -283,6 +283,23 @@ evidence; rerun in the recovered, explicitly owned container.
 
 ## Recovered evidence and current integration
 
+The [complete integrated receipt](../evidence/phase3-238-manual-742b6e4f.json)
+passes at clean source `742b6e4feaebf0d71e19d4ebd7e7dbfeb9465b3e`:
+188 test entries, including both custom compiler harnesses, all four separate-node
+workflows and 18 explicitly selected ignored cases. The runner executes 245
+commands in 556141 milliseconds. The actual public browser application runs with
+zero browser errors, and the selected Angular T1 workflow passes. The outer
+owner verifies that its container stopped and that its volumes were preserved.
+The raw receipt retains the source, binary, fixture and browser identities.
+
+The preceding attempt used an older public web-component fixture and failed the
+application browser case. Rebuilding that fixture from the selected source
+passed the isolated case and then this entire manual profile. That failed
+attempt contributes no success evidence. The receipt above qualifies its exact
+source; subsequent CI repairs still require their own current-head checks.
+The #236 reference application, shared SDK matrix, hosted vendor campaigns,
+load and T2 containment retain their separate qualification boundaries.
+
 The prior worker's preserved `manual-3ef67953.json` is a genuine complete pass on
 `3ef67953b5a26e6080d821544f397e74d2ae9fb4`: 184 libtest entries, two custom compiler
 mains and all three then-selected node workflows, in 366546 milliseconds. The
@@ -330,5 +347,6 @@ at that head passes security, SDK surfaces, repository contracts, documentation,
 MSRV and bounded catalog checks, but Rust workspace testing fails the protected
 local-blob 32-start fixture at startup 6 with `configured-provider-unavailable`.
 The subsequent absent browser artifact is a skipped-step consequence. Runtime
-repair remains separately owned. Current-head CI and a complete integrated
-rerun remain required; neither full #238 nor Phase 3 completion is claimed.
+repair is carried by #424. The complete manual rerun above supersedes this
+historical execution gap; current-head CI and the remaining Phase 3 gates
+are still required before final acceptance.
