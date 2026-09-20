@@ -28,6 +28,7 @@ try {
   run('git', ['checkout', '--quiet', '--detach', revision], checkout);
   const f = fixture({after: callback => cleanups.push(callback)}, ['rust', 'go']);
   f.write('.gitignore', 'website/.generated/\n');
+  f.write('docs/fixture.md', '# Synthetic fixture owner\n\n## Fixture owner instructions\n\nUI regression only; no runtime support or execution claim.\n');
   f.write('website/src/components/CodeExample/index.tsx', '// Reviewed authoring import; the actual component is supplied by the site.\n');
   for (const name of ['development/standalone-quickstart', 'learn/fixture', 'operations/fixture', 'reference/fixture', 'architecture/overview'])
     f.write(`docs/${name}.md`, '# Synthetic version navigation fixture\n\nUI regression only; no runtime support or execution claim.\n');
