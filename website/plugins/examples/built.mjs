@@ -6,7 +6,13 @@ import {prepareExamples} from './site.mjs';
 import {requestsFromTree} from './remark.mjs';
 import {resolveExample} from './resolve.mjs';
 
-function nodeText(node) { return node.nodeName === '#text' ? node.value : (node.childNodes ?? []).map(nodeText).join(''); }
+function nodeText(node) {
+  if (node.nodeName === '#text') return node.value;
+  // Docusaurus 3.10 renders highlighted code as token divs ending in <br>.
+  // Preserve those rendered line boundaries as well as literal text newlines.
+  if (node.tagName === 'br') return '\n';
+  return (node.childNodes ?? []).map(nodeText).join('');
+}
 const displayed = code => code.replace(/\r\n/g, '\n').replace(/\n+$/, '');
 export function verifyExampleHtml(html, bundle, requests) {
   const code = [], links = new Set();

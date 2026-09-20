@@ -28,4 +28,10 @@ test('actual Markdown/MDX compilation escapes six source variants as inert stati
   assert.equal(verifyExampleHtml(html, bundle, requests), 6);
   assert.throws(() => verifyExampleHtml(html.replaceAll('alert(1)', 'changed'), bundle, requests), /changed built/);
   assert.throws(() => verifyExampleHtml(html.replaceAll('href=', 'data-removed='), bundle, requests), /link/);
+  // The pinned Docusaurus CodeBlock emits a div and <br> for each Prism line,
+  // whereas the plain MDX renderer above emits literal newline text nodes.
+  const highlighted = html.replace(/<code([^>]*)>([\s\S]*?)<\/code>/g, (_, attributes, body) =>
+    `<code${attributes}>${body.replace(/\n$/, '').split('\n').map(line => `<div class="token-line"><span>${line}</span><br></div>`).join('')}</code>`);
+  assert.equal(verifyExampleHtml(highlighted, bundle, requests), 6);
+  assert.throws(() => verifyExampleHtml(highlighted.replace('<br>', ''), bundle, requests), /changed built/);
 });
