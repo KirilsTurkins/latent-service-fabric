@@ -79,9 +79,11 @@ async function management(client, config, assertions) {
   stage = "policy-inspection";
   const policy = await client.getPolicy({ id, recordKind: 1 });
   check(policy.value.policy.generation === created.value.receipt.generation, "policy-inspection");
+  // lsf-example-begin: management
   stage = "operation-recovery";
   const receipt = await client.getPolicyOperation({ operationId });
   check(isDeepStrictEqual(receipt.value.receipt, created.value.receipt), "operation-recovery");
+  // lsf-example-end: management
   stage = "operation-absence";
   const absent = await client.getPolicyOperation({ operationId: "typescript-unknown-operation" });
   check(absent.value.receipt === undefined && absent.metadata.outcome === Knowledge.Unknown, "absent-receipt-is-unknown");
@@ -111,12 +113,14 @@ async function held(client, config, kind, assertions, activationIds) {
   const running = await client.getActivation({ activationId });
   check(running.value.activationId === activationId && running.value.terminalState === undefined, "held-activation-not-running");
   if (kind === "local-cancel") {
+    // lsf-example-begin: cancel
     controller.abort();
     const result = await pending;
     check(result.error instanceof RpcError && result.error.failure.category === Category.LocalCancelled
       && result.error.failure.identity.activationId === activationId && result.error.failure.outcome === Knowledge.Unknown, "local-cancellation-semantics");
     const cancelled = await client.cancel({ activationId, reason: "explicit recovery" });
     check([1, 2].includes(cancelled.value.disposition), "lost-response-explicit-cancel");
+    // lsf-example-end: cancel
     assertions.localCancellation = true;
     assertions.lostResponseStatus = true;
   } else if (kind === "explicit-cancel") {
@@ -161,12 +165,14 @@ async function run() {
   const request = (name, suffix = name, functionName) => providerRequest(config.targets[name], config.tenant,
     `typescript-${suffix}`, name, config.upstreamUrl, functionName);
   try {
+    // lsf-example-begin: invoke
     stage = "http-invocation";
     check(guestU64(await client.invoke(request("http"))) === "2201", "http-guest-result");
     activationIds.push("typescript-http"); assertions.httpGuest = true;
     stage = "blob-invocation";
     check(guestU64(await client.invoke(request("blob"))) === "4", "blob-guest-result");
     activationIds.push("typescript-blob"); assertions.blobGuest = true;
+    // lsf-example-end: invoke
     stage = "declared-invocation";
     const declared = await client.invoke(request("callee", "declared", "fail"));
     check(declared.value.declaredError !== undefined, "declared-error-variant");
