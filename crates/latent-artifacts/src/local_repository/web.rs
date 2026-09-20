@@ -4,6 +4,7 @@
 mod evidence;
 mod mutation;
 mod persistence;
+mod projection;
 mod reclamation;
 mod recovery;
 mod selection;
@@ -41,9 +42,11 @@ pub(super) struct WebCatalog {
     pub(super) fail_after_head: AtomicBool,
 }
 impl WebCatalog {
-    pub(super) fn new() -> Result<Self, PlatformError> {
+    pub(super) fn new(
+        authority: Option<Arc<dyn crate::AdmissionAuthority>>,
+    ) -> Result<Self, PlatformError> {
         Ok(Self {
-            epoch: Arc::new(WebEpoch::new()),
+            epoch: Arc::new(WebEpoch::new(authority)),
             state: RwLock::new(State::default()),
             reads: Arc::new(WebReadBudget::new(WebReadLimits::default())?),
             #[cfg(test)]
@@ -67,6 +70,7 @@ struct Entry {
     record: WebLifecycleRecord,
     completion: ArtifactBlobDigest,
     layout: Arc<CheckedWebLayout>,
+    projection: Option<Arc<projection::Projection>>,
     grant: Option<Arc<dyn WebAdmissionGrant>>,
     generation: Arc<WebGeneration>,
 }
@@ -81,6 +85,13 @@ impl Entry {
             .checked_mul(4)
             .and_then(|n| n.checked_add(2048))
             .and_then(|n| n.checked_add(self.layout.retained_bytes()))
+            .and_then(|n| {
+                n.checked_add(
+                    self.projection
+                        .as_ref()
+                        .map_or(0, |value| value.retained_bytes()),
+                )
+            })
             .and_then(|n| {
                 n.checked_add(
                     self.grant

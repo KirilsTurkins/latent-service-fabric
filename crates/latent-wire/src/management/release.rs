@@ -8,6 +8,7 @@ mod selector;
 #[cfg(test)]
 mod tests;
 mod validation;
+mod web;
 
 use latent_artifacts::{ArtifactCatalogPageRequest, LifecycleScope};
 use latent_core::ServiceId;
@@ -18,9 +19,64 @@ use super::{
 };
 
 pub use conversion::{release_descriptor_from_proto, release_descriptor_to_proto};
+pub use web::{
+    MAX_WEB_MUTATION_WAIT_MILLIS, MAX_WEB_PREPARATION_WAIT_MILLIS, WEB_EVIDENCE_RPC_PATH,
+    WEB_PREPARATION_RPC_PATH, WEB_PUBLICATION_RPC_PATH,
+};
 
 #[tonic::async_trait]
 impl proto::release_service_server::ReleaseService for ManagementServiceAdapter {
+    async fn prepare_web_publication(
+        &self,
+        request: Request<proto::PrepareWebPublicationRequest>,
+    ) -> Result<Response<proto::PrepareWebPublicationResponse>, Status> {
+        self.web_prepare(request).await
+    }
+    async fn publish_web_package(
+        &self,
+        request: Request<proto::PublishWebPackageRequest>,
+    ) -> Result<Response<proto::PublishWebPackageResponse>, Status> {
+        self.web_publish(request).await.map(|response| {
+            response.map(|value| proto::PublishWebPackageResponse {
+                operation: value.operation,
+                audit_ack: value.audit_ack,
+            })
+        })
+    }
+    async fn get_web_publication(
+        &self,
+        request: Request<proto::GetWebPublicationRequest>,
+    ) -> Result<Response<proto::GetWebPublicationResponse>, Status> {
+        self.web_get(request)
+    }
+    async fn get_web_operation(
+        &self,
+        request: Request<proto::GetWebOperationRequest>,
+    ) -> Result<Response<proto::GetWebOperationResponse>, Status> {
+        self.web_operation(request)
+    }
+    async fn change_web_lifecycle(
+        &self,
+        request: Request<proto::ChangeWebLifecycleRequest>,
+    ) -> Result<Response<proto::ChangeWebLifecycleResponse>, Status> {
+        self.web_change(request).await.map(|response| {
+            response.map(|value| proto::ChangeWebLifecycleResponse {
+                operation: value.operation,
+                audit_ack: value.audit_ack,
+            })
+        })
+    }
+    async fn renew_web_evidence(
+        &self,
+        request: Request<proto::RenewWebEvidenceRequest>,
+    ) -> Result<Response<proto::RenewWebEvidenceResponse>, Status> {
+        self.web_renew(request).await.map(|response| {
+            response.map(|value| proto::RenewWebEvidenceResponse {
+                operation: value.operation,
+                audit_ack: value.audit_ack,
+            })
+        })
+    }
     async fn publish_release(
         &self,
         mut request: Request<proto::PublishReleaseRequest>,

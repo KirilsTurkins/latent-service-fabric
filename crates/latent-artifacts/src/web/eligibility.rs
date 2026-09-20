@@ -1,22 +1,36 @@
 use super::{CheckedWebLayout, WebAdmissionGrant};
-use crate::{AdmissionRecheck, PublicationRef};
+use crate::{AdmissionAuthority, AdmissionRecheck, LifecycleAuthorityHandle, PublicationRef};
 use latent_core::{PlatformError, PlatformErrorCode, TenantId};
+use sha2::{Digest, Sha256};
+use std::hash::{Hash, Hasher};
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
-    Arc, RwLock, RwLockReadGuard, RwLockWriteGuard,
+    Arc, OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
 /// One fixed web lifecycle fence per repository incarnation, no guest resources.
 pub(crate) struct WebEpoch {
     healthy: AtomicBool,
     fence: RwLock<()>,
+    authority: Option<Arc<dyn AdmissionAuthority>>,
+    catalog: OnceLock<LifecycleAuthorityHandle>,
 }
 impl WebEpoch {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(authority: Option<Arc<dyn AdmissionAuthority>>) -> Self {
         Self {
             healthy: AtomicBool::new(true),
             fence: RwLock::new(()),
+            authority,
+            catalog: OnceLock::new(),
         }
+    }
+    pub(crate) fn bind_catalog(
+        &self,
+        catalog: LifecycleAuthorityHandle,
+    ) -> Result<(), PlatformError> {
+        self.catalog
+            .set(catalog)
+            .map_err(|_| super::invalid("web-catalog-already-bound"))
     }
     pub(crate) fn retire(&self) {
         self.healthy.store(false, Ordering::Release);
@@ -152,7 +166,7 @@ impl WebUseEligibility {
         })
     }
 
-    fn check_generation(&self) -> Result<(), PlatformError> {
+    pub(crate) fn check_generation(&self) -> Result<(), PlatformError> {
         self.owner.check()?;
         if self.generation.0.load(Ordering::Acquire) != self.accepted_generation {
             return Err(super::failure(
@@ -161,6 +175,59 @@ impl WebUseEligibility {
             ));
         }
         Ok(())
+    }
+
+    pub(crate) fn belongs_to_authority(&self, authority: &Arc<dyn AdmissionAuthority>) -> bool {
+        self.owner
+            .authority
+            .as_ref()
+            .is_some_and(|owner| Arc::ptr_eq(owner, authority))
+    }
+
+    pub(crate) fn belongs_to_catalog(&self, catalog: &LifecycleAuthorityHandle) -> bool {
+        self.owner
+            .catalog
+            .get()
+            .is_some_and(|owner| owner.same_owner(catalog))
+    }
+
+    pub(crate) fn check_with(
+        &self,
+        anchor: &Self,
+        checker: &dyn AdmissionRecheck,
+    ) -> Result<(), PlatformError> {
+        if !Arc::ptr_eq(&self.owner, &anchor.owner) {
+            return Err(super::invalid("web-execution-owner-mismatch"));
+        }
+        self.check_generation()?;
+        checker.check_web_grant(self.grant.as_ref())
+    }
+
+    pub(crate) fn cache_digest(&self) -> [u8; 32] {
+        let mut digest = Sha256::new();
+        digest.update(b"lsf-selected-web-execution-v1\0");
+        digest.update((Arc::as_ptr(&self.owner) as usize).to_le_bytes());
+        digest.update((Arc::as_ptr(&self.generation) as usize).to_le_bytes());
+        digest.update((Arc::as_ptr(&self.grant).cast::<()>() as usize).to_le_bytes());
+        digest.update(self.accepted_generation.to_le_bytes());
+        digest.update(self.publication.id.as_str().as_bytes());
+        digest.finalize().into()
+    }
+}
+
+impl PartialEq for WebUseEligibility {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.owner, &other.owner)
+            && Arc::ptr_eq(&self.generation, &other.generation)
+            && Arc::ptr_eq(&self.grant, &other.grant)
+            && self.accepted_generation == other.accepted_generation
+            && self.publication == other.publication
+    }
+}
+impl Eq for WebUseEligibility {}
+impl Hash for WebUseEligibility {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.cache_digest().hash(state);
     }
 }
 

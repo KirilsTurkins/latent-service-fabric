@@ -112,6 +112,11 @@ pub(crate) fn context_charge(
     if let Some(publication) = &request.prepared.key.publication {
         budget.string(publication.as_str())?;
     }
+    if let Some(publication) = super::web_identity::selected(request) {
+        budget.charge(MAP_ENTRY_BYTES)?;
+        budget.string(super::web_identity::KEY)?;
+        budget.string(publication.as_str())?;
+    }
     budget.collection(request.imports.len(), IMPORT_ENTRY_BYTES)?;
     for import in &request.imports {
         budget.string(&import.capability.0)?;

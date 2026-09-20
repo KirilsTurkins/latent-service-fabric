@@ -17,6 +17,7 @@ pub(super) fn verify(
     upload: PackageAdmissionUpload,
     previous: Option<&AdmissionBinding>,
 ) -> Result<VerifiedAdmission, PlatformError> {
+    let _verification = owner.verification()?;
     // Reservation precedes all decode/copy work. One bounded owner slot, no
     // waiting queue; reject spare-capacity abuse before holding received data.
     let mut state = owner.lock()?;

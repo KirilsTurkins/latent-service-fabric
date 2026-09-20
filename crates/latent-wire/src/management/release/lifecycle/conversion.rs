@@ -2,7 +2,7 @@ use super::proto;
 use latent_artifacts as domain;
 use tonic::Status;
 
-pub(super) fn release_actor_kind(value: domain::ReleaseActorKind) -> i32 {
+pub(in crate::management::release) fn release_actor_kind(value: domain::ReleaseActorKind) -> i32 {
     match value {
         domain::ReleaseActorKind::User => proto::ReleaseActorKind::User as i32,
         domain::ReleaseActorKind::Service => proto::ReleaseActorKind::Service as i32,
@@ -14,7 +14,9 @@ pub(super) fn release_actor_kind(value: domain::ReleaseActorKind) -> i32 {
     }
 }
 
-pub(super) fn release_lifecycle_state(value: domain::ReleaseLifecycleState) -> i32 {
+pub(in crate::management::release) fn release_lifecycle_state(
+    value: domain::ReleaseLifecycleState,
+) -> i32 {
     match value {
         domain::ReleaseLifecycleState::Admitted => proto::ReleaseLifecycleState::Admitted as i32,
         domain::ReleaseLifecycleState::Revoked => proto::ReleaseLifecycleState::Revoked as i32,
@@ -22,7 +24,9 @@ pub(super) fn release_lifecycle_state(value: domain::ReleaseLifecycleState) -> i
     }
 }
 
-pub(super) fn release_lifecycle_action(value: domain::ReleaseLifecycleAction) -> i32 {
+pub(in crate::management::release) fn release_lifecycle_action(
+    value: domain::ReleaseLifecycleAction,
+) -> i32 {
     match value {
         domain::ReleaseLifecycleAction::Publish => proto::ReleaseLifecycleAction::Publish as i32,
         domain::ReleaseLifecycleAction::Revoke => proto::ReleaseLifecycleAction::Revoke as i32,
@@ -33,7 +37,9 @@ pub(super) fn release_lifecycle_action(value: domain::ReleaseLifecycleAction) ->
     }
 }
 
-pub(super) fn release_operation_disposition(value: domain::ReleaseOperationDisposition) -> i32 {
+pub(in crate::management::release) fn release_operation_disposition(
+    value: domain::ReleaseOperationDisposition,
+) -> i32 {
     match value {
         domain::ReleaseOperationDisposition::Committed => {
             proto::ReleaseOperationDisposition::Committed as i32
@@ -44,7 +50,9 @@ pub(super) fn release_operation_disposition(value: domain::ReleaseOperationDispo
     }
 }
 
-pub(super) fn release_lifecycle_reason(value: domain::ReleaseLifecycleReason) -> i32 {
+pub(in crate::management::release) fn release_lifecycle_reason(
+    value: domain::ReleaseLifecycleReason,
+) -> i32 {
     match value {
         domain::ReleaseLifecycleReason::ContentConflict => {
             proto::ReleaseLifecycleReason::ContentConflict as i32
@@ -98,7 +106,9 @@ pub(super) fn release_lifecycle_reason(value: domain::ReleaseLifecycleReason) ->
     }
 }
 
-pub(super) fn release_live_eligibility(value: domain::ReleaseLiveEligibility) -> i32 {
+pub(in crate::management::release) fn release_live_eligibility(
+    value: domain::ReleaseLiveEligibility,
+) -> i32 {
     match value {
         domain::ReleaseLiveEligibility::Eligible => proto::ReleaseLiveEligibility::Eligible as i32,
         domain::ReleaseLiveEligibility::Denied => proto::ReleaseLiveEligibility::Denied as i32,
@@ -106,7 +116,9 @@ pub(super) fn release_live_eligibility(value: domain::ReleaseLiveEligibility) ->
     }
 }
 
-pub(super) fn release_eligibility_reason(value: domain::ReleaseEligibilityReason) -> i32 {
+pub(in crate::management::release) fn release_eligibility_reason(
+    value: domain::ReleaseEligibilityReason,
+) -> i32 {
     match value {
         domain::ReleaseEligibilityReason::LocalEligible => {
             proto::ReleaseEligibilityReason::LocalEligible as i32
@@ -141,7 +153,7 @@ pub(super) fn release_eligibility_reason(value: domain::ReleaseEligibilityReason
     }
 }
 
-pub(super) fn change(
+pub(in crate::management::release) fn change(
     value: i32,
     reason: i32,
 ) -> Result<

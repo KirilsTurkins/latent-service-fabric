@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run selected ignored libtests from the current job's successful Cargo inventory.
+"""Run selected ignored Rust tests from the current job's successful Cargo inventory.
 
 The workflow must create the inventory with the ordinary workspace/all-targets/
 all-features `cargo test --no-run --message-format=json` invocation on this checkout.
@@ -50,6 +50,10 @@ class Suite:
 
 
 SUITES = {
+    "angular-t1-fixture": Suite(
+        "apps/latentd/Cargo.toml", "phase3_angular_fixture", "tests/phase3_angular_fixture.rs",
+        "export_actual_angular_t1_fixtures",
+        frozenset({"export_actual_angular_t1_fixtures"}), True, "test"),
     "browser-boundary": Suite(
         "apps/latentd/Cargo.toml", "latentd", "src/lib_root.rs",
         "standalone::http::assets::browser::actual_browser_",
@@ -161,13 +165,9 @@ def read_inventory(path: Path, repo: Path, suite: Suite, *, target: Path | None 
                     raise ArtifactError("invalid-artifact-target")
                 if target.get("kind") != [suite.kind] or profile.get("test") is not True:
                     continue
-                # A workspace inventory includes multiple integration targets
-                # owned by one package. Ignore siblings, never substitute them
-                # for the requested target or weaken its source/duplicate checks.
-                if suite.kind == "test" and target.get("name") != suite.target:
+                if target.get("name") != suite.target:
                     continue
-                if (target.get("name") != suite.target
-                        or absolute_path(target.get("src_path")) != expected_source.resolve(strict=True)):
+                if absolute_path(target.get("src_path")) != expected_source.resolve(strict=True):
                     raise ArtifactError("wrong-libtest-owner")
                 executable = absolute_path(message.get("executable"))
                 if not executable.is_relative_to(executable_root) or not executable.is_file():

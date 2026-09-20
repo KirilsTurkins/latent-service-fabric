@@ -90,6 +90,7 @@ impl DirectoryArtifactRepository {
             evidence_revision: None,
         };
         let entry = Entry {
+            projection: super::projection::Projection::new(&record.publication, &value.layout)?,
             record,
             completion,
             layout: Arc::new(value.layout),
