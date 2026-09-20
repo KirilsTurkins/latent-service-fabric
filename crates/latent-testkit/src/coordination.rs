@@ -7,7 +7,9 @@
 mod rendezvous;
 mod watchdog;
 
-pub use rendezvous::{CoordinationError, PauseTicket, Registration, Rendezvous, Snapshot, Stage, Tracked};
+pub use rendezvous::{
+    CoordinationError, PauseTicket, Registration, Rendezvous, Snapshot, Stage, Tracked,
+};
 pub use watchdog::{with_watchdog, WATCHDOG};
 
 use std::future::Future;
@@ -40,7 +42,10 @@ impl PollProbe {
     }
 
     pub fn pending<F: Future + ?Sized>(&self, future: Pin<&mut F>) {
-        assert!(self.poll(future).is_pending(), "expected a pending, registered future");
+        assert!(
+            self.poll(future).is_pending(),
+            "expected a pending, registered future"
+        );
     }
 
     pub fn ready<F: Future + ?Sized>(&self, future: Pin<&mut F>) -> F::Output {
@@ -52,7 +57,7 @@ impl PollProbe {
 
     #[must_use]
     pub fn wakes(&self) -> usize {
-        self.0.0.load(Ordering::SeqCst)
+        self.0 .0.load(Ordering::SeqCst)
     }
 }
 

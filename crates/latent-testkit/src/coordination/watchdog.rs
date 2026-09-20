@@ -28,7 +28,9 @@ impl Drop for Watchdog {
 /// readiness signal. It cannot preempt a blocking `Future::poll`; use the test
 /// runner's process timeout as the final bound for blocking/native code.
 pub async fn with_watchdog<F: Future>(limit: Duration, future: F) -> F::Output {
-    let deadline = Instant::now().checked_add(limit).expect("watchdog deadline overflow");
+    let deadline = Instant::now()
+        .checked_add(limit)
+        .expect("watchdog deadline overflow");
     let wake: Arc<Mutex<Option<Waker>>> = Arc::new(Mutex::new(None));
     let observed = Arc::clone(&wake);
     let (cancel, cancelled) = mpsc::channel();
@@ -40,11 +42,18 @@ pub async fn with_watchdog<F: Future>(limit: Duration, future: F) -> F::Output {
             }
         }
     });
-    let _watchdog = Watchdog { cancel: Some(cancel), worker: Some(worker) };
+    let _watchdog = Watchdog {
+        cancel: Some(cancel),
+        worker: Some(worker),
+    };
     let mut future = pin!(future);
     poll_fn(|cx| {
         *wake.lock().unwrap() = Some(cx.waker().clone());
-        assert!(Instant::now() < deadline, "real-clock test watchdog expired");
+        assert!(
+            Instant::now() < deadline,
+            "real-clock test watchdog expired"
+        );
         future.as_mut().poll(cx)
-    }).await
+    })
+    .await
 }

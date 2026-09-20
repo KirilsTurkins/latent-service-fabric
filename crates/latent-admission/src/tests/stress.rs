@@ -124,7 +124,10 @@ fn admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work
             let result = controller.admit_with_clock(request, None, &clock);
             if work_millis < 50 {
                 let permit = result.unwrap();
-                assert_eq!(permit.deadline().monotonic(), Some(h.sample.monotonic() + Duration::from_millis(50)));
+                assert_eq!(
+                    permit.deadline().monotonic(),
+                    Some(h.sample.monotonic() + Duration::from_millis(50))
+                );
                 assert_eq!(h.quotas.usage().unwrap().active_activations, 1);
                 drop(permit);
             } else {

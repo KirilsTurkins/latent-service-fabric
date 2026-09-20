@@ -50,10 +50,14 @@ impl TestClock {
             let mut state = self.0.lock().unwrap();
             state.now = state.now.checked_add(amount).expect("test clock overflow");
             let now = state.now;
-            let due: Vec<_> = state.waits.iter()
+            let due: Vec<_> = state
+                .waits
+                .iter()
                 .filter_map(|(id, (deadline, _))| (*deadline <= now).then_some(*id))
                 .collect();
-            due.into_iter().map(|id| state.waits.remove(&id).unwrap().1).collect::<Vec<_>>()
+            due.into_iter()
+                .map(|id| state.waits.remove(&id).unwrap().1)
+                .collect::<Vec<_>>()
         };
         for waker in wakes {
             waker.wake();
@@ -68,7 +72,11 @@ impl TestClock {
     /// Registration happens on poll, not construction. Drop unregisters a pending timer.
     #[must_use]
     pub fn sleep_until(&self, deadline: Instant) -> ManualSleep {
-        ManualSleep { clock: self.clone(), deadline, registration: None }
+        ManualSleep {
+            clock: self.clone(),
+            deadline,
+            registration: None,
+        }
     }
 }
 
@@ -103,7 +111,12 @@ impl Future for ManualSleep {
             return Poll::Ready(());
         }
         if let Some(id) = this.registration {
-            state.waits.get_mut(&id).expect("live manual timer").1.clone_from(cx.waker());
+            state
+                .waits
+                .get_mut(&id)
+                .expect("live manual timer")
+                .1
+                .clone_from(cx.waker());
         } else {
             // Fail without poisoning the clock, so other timer owners can still retire.
             if state.waits.len() == state.capacity {
@@ -111,7 +124,10 @@ impl Future for ManualSleep {
                 panic!("manual timer capacity exhausted");
             }
             let id = state.next;
-            state.next = state.next.checked_add(1).expect("manual timer identity exhausted");
+            state.next = state
+                .next
+                .checked_add(1)
+                .expect("manual timer identity exhausted");
             state.waits.insert(id, (this.deadline, cx.waker().clone()));
             this.registration = Some(id);
         }

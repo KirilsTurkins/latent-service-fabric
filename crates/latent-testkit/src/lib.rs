@@ -6,9 +6,9 @@
 
 pub mod async_runtime;
 pub mod clocks;
-pub mod coordination;
 #[cfg(feature = "runtime")]
 pub mod conformance;
+pub mod coordination;
 pub mod deterministic;
 #[cfg(feature = "runtime")]
 pub mod harness;

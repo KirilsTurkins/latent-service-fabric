@@ -1522,6 +1522,7 @@ version = "0.1.0-alpha.4-rc.1"
 dependencies = [
  "latent-core",
  "latent-routing",
+ "latent-testkit",
 ]
 
 [[package]]
@@ -1971,6 +1972,7 @@ dependencies = [
  "latent-admission",
  "latent-core",
  "latent-routing",
+ "latent-testkit",
  "serde",
  "serde_json",
  "sha2 0.10.9",
