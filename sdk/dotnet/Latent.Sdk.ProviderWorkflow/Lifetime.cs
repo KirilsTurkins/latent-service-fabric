@@ -50,10 +50,13 @@ internal sealed partial class Workflow
         ulong? deadline = kind == "deadline" ? checked((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + timeout) : null;
         long start = Stopwatch.GetTimestamp();
         Task<Profile.ClientResponse<Profile.InvokeResponse>> pending = client.InvokeAsync(input.Request("http", identity, deadline: deadline), new(timeout), local.Token).AsTask();
+        Stage = "held-" + kind + "-upstream-start";
         await Marker("started", token, pending);
         identities.Add(identity);
+        Stage = "held-" + kind + "-active-status";
         Profile.ActivationStatus active = (await observer.GetActivationAsync(new(identity), Calls, stop)).Value;
         Require(active.ActivationId == identity && active.TerminalState is null && !pending.IsCompleted);
+        Stage = "held-" + kind + "-terminal-response";
         switch (kind)
         {
             case "local-cancel":
@@ -88,6 +91,7 @@ internal sealed partial class Workflow
                     Profile.ClientFailure details = failure is Profile.ClientException rpc ? rpc.Failure : ((Profile.ClientCancellationException)failure).Failure;
                     Require(details.Category == Profile.FailureCategory.Deadline && details.Identity.ActivationId == identity);
                 }
+                Stage = "held-deadline-completion-bound";
                 Require(Stopwatch.GetElapsedTime(start) < TimeSpan.FromSeconds(2));
                 Passed("absoluteDeadline");
                 break;
@@ -101,7 +105,9 @@ internal sealed partial class Workflow
                 break;
             default: throw new InvalidOperationException(Stage);
         }
+        Stage = "held-" + kind + "-upstream-closed";
         await Marker("closed", token);
+        Stage = "held-" + kind + "-terminal-status";
         await Terminal(observer, identity);
         if (kind == "local-cancel") Passed("lostResponseStatus");
         Mode("reply");

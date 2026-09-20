@@ -15,9 +15,13 @@ assert.equal(git(repositoryRoot, 'status', '--porcelain=v1', '--untracked-files=
 const revision = git(repositoryRoot, 'rev-parse', 'HEAD').trim();
 const output = generatedDirectory('.generated/version-review');
 function run(program, args, cwd, timeout = 180000) {
-  return execFileSync(program, args, {cwd, timeout, maxBuffer: 8 * 1024 * 1024, stdio: 'inherit',
+  console.log(`[versions] start ${path.basename(program)} ${args.at(-1)}`);
+  const started = Date.now();
+  const result = execFileSync(program, args, {cwd, timeout, maxBuffer: 8 * 1024 * 1024, stdio: 'inherit',
     env: {...process.env, GIT_TERMINAL_PROMPT: '0', GIT_NO_REPLACE_OBJECTS: '1', GIT_NO_LAZY_FETCH: '1',
       PLAYWRIGHT_BROWSERS_PATH: path.join(websiteRoot, '.generated/browsers')}});
+  console.log(`[versions] completed in ${Date.now() - started}ms`);
+  return result;
 }
 run(process.execPath, [path.join(websiteRoot, 'scripts/test-version-pages.mjs')], repositoryRoot);
 const owner = fs.mkdtempSync(path.join(generatedDirectory('.generated/version-browser'), 'run-'));
@@ -66,6 +70,10 @@ try {
   const fixtures = JSON.parse(fs.readFileSync(path.join(output, 'fixtures.json'), 'utf8'));
   fs.writeFileSync(path.join(output, 'evidence.json'), JSON.stringify({schema: 1, sourceRevision: revision,
     fixtureBuildIsPublishable: false, publication, fixtures}, null, 2) + '\n');
+} catch (error) {
+  // Retain the failing stage before potentially slow Windows dependency cleanup.
+  console.error(error);
+  throw error;
 } finally {
   for (const cleanup of cleanups.reverse()) cleanup();
   // Only the directory minted above belongs to this test; never remove the
