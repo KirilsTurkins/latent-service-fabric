@@ -11,6 +11,7 @@ import json
 import posixpath
 import re
 import subprocess
+import sys
 import unicodedata
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -35,7 +36,6 @@ def prose(text: str, source: str, errors: list[str]) -> str:
     output: list[str] = []
     opened: tuple[str, int, int] | None = None
     for number, line in enumerate(text.splitlines(), 1):
-        # A block quote may contain a fenced example too.
         candidate = re.sub(r"^(?: {0,3}> ?)+", "", line)
         match = FENCE.match(candidate)
         if opened is not None:
@@ -104,8 +104,6 @@ def links(text: str) -> Iterable[str]:
             definitions.setdefault(reference_key(match[1]), found[0])
             lines[number] = ""
     text = "\n".join(lines)
-    # A bracket stack preserves both destinations in a linked image. Consuming
-    # reference labels also avoids counting [text][reference] twice.
     stack: list[int] = []
     index = 0
     while index < len(text):
@@ -184,8 +182,6 @@ def ordinary_path(root: Path, relative: str) -> bool:
 
 
 def svg_errors(root: Path, paths: list[Path], require_documents: bool = False) -> list[str]:
-    # A private module instance reuses the authoritative SVG rules while replacing
-    # only file enumeration. It neither walks untracked outputs nor reads JSON.
     spec = importlib.util.spec_from_file_location(
         "_docs_svg_rules", Path(__file__).with_name("validate_repository.py")
     )
@@ -300,7 +296,7 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
                     if fragment not in ids:
                         errors.append(f"{source}: missing SVG anchor {raw!r}")
                 except (OSError, ET.ParseError):
-                    pass  # The shared SVG validator reports the parse failure.
+                    pass
     errors.extend(svg_errors(root, svgs, require_documents))
     return {"documents": len(documents), "versioned_documents": len(snapshots), "svgs": len(svgs), "local_links": checked_links,
             "anchors": checked_anchors, "errors": errors}
@@ -315,8 +311,18 @@ def main() -> int:
     except (OSError, UnicodeError, subprocess.CalledProcessError) as exc:
         print(f"FAIL: cannot enumerate documentation: {type(exc).__name__}")
         return 1
+    try:
+        issue_forms = subprocess.run(
+            [sys.executable, str(Path(__file__).with_name("validate_issue_forms.py")),
+             "--repo", str(args.root.resolve())],
+            check=False,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"FAIL: cannot validate issue forms: {type(exc).__name__}")
+        return 1
     print(json.dumps(report, indent=2))
-    return int(bool(report["errors"]))
+    return int(bool(report["errors"]) or issue_forms.returncode != 0)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from tools.tests.test_validate_issue_forms import IssueFormValidationTests
+
 SPEC = importlib.util.spec_from_file_location(
     "validate_docs", Path(__file__).resolve().parents[1] / "validate_docs.py"
 )
