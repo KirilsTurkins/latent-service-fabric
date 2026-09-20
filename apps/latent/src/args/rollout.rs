@@ -23,7 +23,7 @@ pub struct StartArgs {
     pub base: String,
     #[arg(long, value_parser = clap::value_parser!(u64).range(1..))]
     pub expected_base_generation: u64,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub candidate: PathBuf,
     #[arg(long, value_delimiter = ',', num_args = 1, value_parser = clap::value_parser!(u32).range(1..=10000))]
     pub weights: Vec<u32>,
@@ -31,7 +31,7 @@ pub struct StartArgs {
     pub operation_id: String,
     #[arg(long, value_parser = clap::value_parser!(u64).range(0..=0))]
     pub expected_revision: u64,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub canary_policy: Option<PathBuf>,
 }
 #[derive(Args)]
