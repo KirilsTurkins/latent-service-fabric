@@ -31,10 +31,17 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          path: controls
           ref: 9a99d1f364eb0c5d09b879fa857811820c8bb005 # reviewed scanner controls
+      - name: Check out change metadata as scan input
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          path: source
+          fetch-depth: 2
       - name: Select complete change or both maintained refs; reject expired exceptions
         id: select
-        run: python3 tools/security_scope.py
+        run: python3 controls/tools/security_scope.py --repo source
 
   rustsec:
     name: RustSec ${{ matrix.ref }}
