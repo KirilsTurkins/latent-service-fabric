@@ -156,7 +156,7 @@ def renewal(client, fixture, record, publication, deployment):
 
 def independent_publications(client, records, publications, deployment):
     alternate = publications["alternate"]
-    deployment = staged_web_rollout(client, records["alternate"], alternate, deployment)
+    reject_staged_web_rollout(client, records["alternate"], alternate, deployment)
     prepare(client, alternate, 1)
     candidate = deploy(client, records["alternate"], alternate, "select-alternate", deployment["generation"])
     invoke(client, records["alternate"], alternate, "angular-selected-alternate")
@@ -172,25 +172,19 @@ def independent_publications(client, records, publications, deployment):
     return reverted, rendered["revision"], revoked
 
 
-def staged_web_rollout(client, record, publication, deployment):
-    from tools.phase2_operator_canary import rollback_target
-    from tools.phase2_operator_scenario import change, receipt
-
-    candidate = client.directory / "compatible-web-rollout.json"
+def reject_staged_web_rollout(client, record, publication, deployment):
+    candidate = client.directory / "unsupported-web-rollout.json"
     write_json(candidate, deployment_manifest(record, publication, "web-candidate", 2500))
-    started = receipt(client.call("rollout", "start", "web-staged", "--base", "angular",
+    before = client.call("deployment", "get", "web-candidate", "--operation-snapshot", codes=(6,))["data"]
+    result = client.call("rollout", "start", "web-unsupported", "--base", "angular",
                          "--expected-base-generation", deployment["generation"], "--candidate", candidate,
-                         "--weights", "2500,10000", "--operation-id", "start-web-rollout",
-                         "--expected-revision", "0"), "start-web-rollout")
-    target = rollback_target(client, "web-staged", started)
-    advanced = receipt(change(client, "advance", "web-staged", started["revision"], "advance-web-rollout",
-                              "--next-step", "1"), "advance-web-rollout")
-    rolled = receipt(change(client, "rollback", "web-staged", advanced["revision"], "rollback-web-rollout",
-                            "--target-generation", target), "rollback-web-rollout")
-    require(rolled["state"].endswith("ROLLED_BACK"), "web-staged-rollback-state")
-    require(client.call("deployment", "get", "web-candidate", "--operation-snapshot", codes=(6,))["data"]["deployment"] is None,
-            "web-staged-rollback-retained-candidate")
-    return client.call("deployment", "get", "angular")["data"]["deployment"]
+                         "--weights", "2500,10000", "--operation-id", "reject-web-rollout",
+                         "--expected-revision", "0", codes=(4,))
+    require(result["outcomeKnown"] and result["error"]["code"] == "incompatible-contract",
+            "web-staged-rollout-not-explicitly-unsupported")
+    after = client.call("deployment", "get", "web-candidate", "--operation-snapshot", codes=(6,))["data"]
+    require(after["deployment"] is None and after["stateVersion"] == before["stateVersion"],
+            "unsupported-web-rollout-mutated-catalog")
 
 
 def http_rendering(client, node, record, publication, deployment, revision):

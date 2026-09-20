@@ -4,7 +4,7 @@ import {basePath, requireValue, websiteRoot} from '../lib/repository.mjs';
 
 requireValue(process.versions.node === '24.19.0', 'Use the reviewed website Node 24.19.0 toolchain');
 const command = process.argv[2];
-requireValue(['start', 'build', 'build-root', 'test-build', 'test-theme', 'test-examples', 'browser-install'].includes(command) && process.argv.length === 3, 'Use a documented website command without arbitrary output paths');
+requireValue(['start', 'build', 'build-root', 'test-build', 'test-theme', 'test-examples', 'test-versions', 'browser-install'].includes(command) && process.argv.length === 3, 'Use a documented website command without arbitrary output paths');
 const rootBuild = command === 'build-root';
 const baseUrl = basePath(rootBuild ? '/' : '/latent-service-fabric/');
 let args = command === 'start'
@@ -14,6 +14,7 @@ let program = path.join(websiteRoot, 'node_modules/@docusaurus/core/bin/docusaur
 if (command === 'test-build') { program = path.join(websiteRoot, 'scripts/test-build.mjs'); args = []; }
 if (command === 'test-theme') { program = path.join(websiteRoot, 'scripts/test-theme.mjs'); args = []; }
 if (command === 'test-examples') { program = path.join(websiteRoot, 'scripts/test-examples.mjs'); args = []; }
+if (command === 'test-versions') { program = path.join(websiteRoot, 'scripts/test-versions.mjs'); args = []; }
 if (command === 'browser-install') { program = path.join(websiteRoot, 'node_modules/playwright/cli.js'); args = ['install', 'chromium', '--only-shell']; }
 const child = spawn(process.execPath, [program, ...args], {
   cwd: websiteRoot,

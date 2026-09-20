@@ -34,10 +34,70 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Buf | 1.72.0 | Protobuf linting and independent descriptor-set generation |
 | Python / `jsonschema` | 3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
 | Go / Node / TypeScript / .NET | 1.23.2 / 24.19.0 / 5.8.3 / 8.0.425 | Cross-language interfaces and bounded native clients |
-| Eclipse Temurin JDK | 21.0.11+10 | Java SDK compilation |
+| Eclipse Temurin JDK | 25.0.4.1+1 | Java SDK build and runtime qualification; Java 25 minimum runtime |
+| Gradle (optional Java build) | 9.1.0 | Java 25-compatible Gradle path; distribution SHA-256 pinned in `tools/toolchain.toml` |
 | Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
 
 Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.4`; the resolved package may display `1.1.4+spec-1.1.0` in `Cargo.lock`.
+
+## Java 25 SDK baseline and migration
+
+The Java SDK now targets Java 25, including generated protocol classes, tests
+and packaged SDK classes. Java 21 cannot load the new SDK JAR. Consumers must
+upgrade their application build/runtime to Java 25 before adopting it; changing
+only the CI launcher while retaining `--release 21` is not this migration.
+The minimum class-file runtime is Java 25, while repository qualification uses
+the exact Temurin patch/build above. This does not qualify every later JDK,
+Android or a Java guest runtime, and does not change the public SDK or wire API.
+
+Set `JAVA_HOME` to that Temurin installation and put its `bin` first on `PATH`.
+The standalone helper chooses `JAVA_HOME`, or resolves `java` from `PATH` when
+it is unset, then uses that one installation's `javac`, `java` and `jar`.
+A wrong explicit installation fails rather than falling back. Both the compiler's
+own runtime and the runtime launcher must match the exact vendor and build;
+only the Temurin `-LTS` suffix is normalized. Every probe retains its 30-second
+limit. Gradle disables automatic discovery/downloads and uses `JAVA_HOME` with
+the same exact identity check and explicitly selected execution launcher.
+
+`tools/toolchain.toml` distinguishes runtime `25.0.4.1+1` from the exact
+`actions/setup-java` selector `25.0.4+101.0.LTS`. Adoptium's SemVer metadata
+encodes the fourth version component as `100 * patch + build`; here it is 101.
+Do not substitute a floating major, omit the build metadata, or pass the
+four-component runtime string as a SemVer selector. See the
+[Temurin release](https://github.com/adoptium/temurin25-binaries/releases/tag/jdk-25.0.4.1%2B1)
+and [Gradle compatibility matrix](https://docs.gradle.org/current/userguide/compatibility.html).
+Gradle 9.1.0 is the pinned CI version; Java 25 requires Gradle 9.1.0 or newer.
+CI verifies the distribution against the committed SHA-256 before extraction.
+
+From the repository root, with the selected JDK and Python available:
+
+```sh
+python3 sdk/java-client/tools/java_toolchain.py check
+python3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain
+python3 sdk/java-client/tools/generate_bridge.py --check
+python3 sdk/java-client/tools/build.py test
+python3 sdk/java-client/tools/build.py build
+python3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar
+# Optional separate build path; JAVA_HOME must identify the selected Temurin JDK.
+gradle --no-daemon -p sdk/java-client clean check
+```
+
+Standalone builds do not require Gradle or Maven. Both paths verify every SDK
+class header as major 69, minor 0, rejecting empty outputs, Java 21 classes and
+preview bytecode. Existing locked dependencies and generators are unchanged.
+The small Python tests use mocked probes and synthetic class headers; they are
+not evidence of Java compilation or a real-node transport run.
+
+The existing SDK CI job executes Gradle and standalone semantic/transport/JAR
+checks on `ubuntu-24.04` and retains `java-sdk-qualification-<source-sha>` with
+source/JDK/Gradle/OS identities, logs, class-file checks and the standalone JAR
+digest. The existing repository-contract job runs the Java participant in the
+[separate-node provider workflow](../testing/sdk-provider-workflow.md), retaining
+its receipts in the existing `phase-1-bounded-conformance-<source-sha>` artifact.
+Use successful results from the same reviewed source revision; configuration
+alone is not a qualification pass. Historical Java 21 release documentation and
+retained Windows tests compiled with `--release 21` remain historical evidence,
+not Java 25-targeted Windows qualification. No milestone or phase gate is added.
 
 ## Reproducibility boundary
 

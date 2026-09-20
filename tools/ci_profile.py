@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select docs/full from complete local Git diffs; uncertainty never selects docs."""
+"""Select docs/website/full from complete Git diffs; uncertainty selects full."""
 
 from __future__ import annotations
 
@@ -27,6 +27,11 @@ README_AREAS = frozenset({
     "apps", "crates", "sdk", "tools", "tests", "examples", "schemas", "api", "wit",
 })
 FROZEN_DOCS = frozenset({"docs/testing/phase-2-resource-profile.md"})
+ISSUE_FORM_DOCS = frozenset({
+    ".github/ISSUE_TEMPLATE/bug_report.yml",
+    ".github/ISSUE_TEMPLATE/architecture.yml",
+    ".github/ISSUE_TEMPLATE/config.yml",
+})
 
 
 class ProfileError(Exception):
@@ -51,7 +56,7 @@ def documentation_path(name: str) -> bool:
         return False
     if name in FROZEN_DOCS or parts[0] == "benchmarks":
         return False
-    if name in ROOT_DOCS:
+    if name in ROOT_DOCS or name in ISSUE_FORM_DOCS:
         return True
     path = PurePosixPath(name)
     if len(parts) > 1 and parts[0] in {"docs", "adr", "research", "rfcs"}:
@@ -69,6 +74,8 @@ def classify_paths(paths: list[str]) -> Decision:
         return Decision("full", "diff-limit", len(paths))
     if all(documentation_path(path) for path in paths):
         return Decision("docs", "documentation-only", len(paths), renderer=False)
+    if all(documentation_path(path) or website_path(path) for path in paths):
+        return Decision("website", "website-only", len(paths), renderer=False)
     renderer = any(
         path in {"Cargo.toml", "Cargo.lock", ".cargo/config.toml", "rust-toolchain.toml",
                  ".github/workflows/ci.yml", "tools/ci_profile.py", "tools/toolchain.toml",
@@ -101,6 +108,25 @@ def classify_paths(paths: list[str]) -> Decision:
         for path in paths
     )
     return Decision("full", "non-documentation-path", len(paths), renderer=renderer)
+
+
+def website_path(name: str) -> bool:
+    """Allow only reviewed site source kinds; shared/product inputs stay full."""
+    if (not name or len(name.encode("utf-8")) > MAX_PATH_BYTES or "\\" in name
+            or any(ord(char) < 32 for char in name)
+            or any(part in ("", ".", "..") for part in name.split("/"))):
+        return False
+    if name in {"docs/assets/illustrations.json", "docs/assets/lsf-palette.json"}:
+        return True
+    if name.startswith(("docs/", "adr/")) and name.endswith(".mdx"):
+        return True
+    if not name.startswith("website/") or name.startswith((
+            "website/build/", "website/.docusaurus/", "website/.generated/",
+            "website/node_modules/")):
+        return False
+    return PurePosixPath(name).suffix in {
+        ".mjs", ".cjs", ".js", ".ts", ".tsx", ".css", ".json", ".md", ".mdx", ".svg", ".png",
+    }
 
 
 def git_command(repo: Path, *arguments: str, allow_failure: bool = False) -> bytes | None:
@@ -240,8 +266,8 @@ def classify_event(event_name: str, event: dict, repo: Path) -> Decision:
                          "-z", "--no-renames", start, head, "--")
     assert output is not None
     decision = classify_paths(diff_paths(output))
-    if decision.profile == "docs":
-        # A Markdown symlink or executable-mode change is not documentation-only.
+    if decision.profile in {"docs", "website"}:
+        # Links and executable modes never acquire a narrow validation profile.
         modes = git_command(repo, "diff", "--no-ext-diff", "--no-textconv", "--raw",
                             "-z", "--no-renames", start, head, "--")
         assert modes is not None

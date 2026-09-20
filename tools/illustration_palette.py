@@ -113,9 +113,18 @@ def prepare(root: Path = ROOT) -> tuple[dict, dict, list[tuple[str, bytes]]]:
             require(Path(entry["path"]).name in read_bytes(root, consumer).decode("utf-8"), f"missing presentation consumer: {consumer}")
         outputs.append((entry["path"], render(sources[entry["source"]], inventory["replacements"], tokens)))
     tracked = {name for name in git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard").strip("\0").split("\0") if name.lower().endswith(".svg")}
-    expected = set(sources) | {name for name, _ in outputs}
+    snapshots = set()
+    for entry in inventory.get("snapshots", []):
+        require(entry["classification"] == "immutable-snapshot" and entry["reason"]
+                and entry["generator"] == "website/scripts/snapshot.mjs", "snapshot SVG needs an explicit owner")
+        require(bool(re.fullmatch(r"[a-f0-9]{40}", entry["sourceRevision"])), "snapshot SVG source must be exact")
+        require(bool(re.fullmatch(r"website/versioned_assets/version-[0-9][A-Za-z0-9.-]*/docs/assets/[a-z0-9-]+\.svg", entry["path"])), "invalid snapshot SVG path")
+        require(entry["path"] not in sources and entry["path"] not in snapshots, "duplicate snapshot SVG")
+        require(hashlib.sha256(read_bytes(root, entry["path"])).hexdigest() == entry["sha256"], "snapshot SVG bytes changed")
+        snapshots.add(entry["path"])
+    expected = set(sources) | {name for name, _ in outputs} | snapshots
     require(tracked <= expected, f"SVG missing an explicit disposition: {sorted(tracked - expected)}")
-    require(set(sources) <= tracked, "historical SVG missing from repository inventory")
+    require(set(sources) | snapshots <= tracked, "historical SVG missing from repository inventory")
     return inventory, palette, outputs
 
 
