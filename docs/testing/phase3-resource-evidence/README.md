@@ -38,3 +38,5 @@ state, mounts and configured CPU/memory bounds before restarting this worker's
 same container. The independent target volume survived. Existing other-agent
 containers and volumes were not adopted or modified. A resumed campaign must
 identify the host condition and create fresh measurement receipts.
+
+The [20 September recovery qualification](../phase3-resource-recovery.md) records four newly passing bounded profiles and retains the failed setup matrix with its exact disposition.
