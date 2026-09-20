@@ -22,6 +22,8 @@ const scripts = [];
 const scriptChecks = [];
 const results = [];
 const responseStatuses = [];
+const consoleObservations = [];
+const networkFailures = [];
 const forbidden = ['lsf-private-angular-reference-v1', 'lsf-private-reference-upstream',
   'LSF-PUBLIC-PROVIDER-WORKFLOW-TEST-ONLY', ...configuration.users.map(user => user.token)];
 const lifetime = setTimeout(() => { process.exitCode = 1; void browser.close(); }, 240000);
@@ -44,8 +46,8 @@ async function context(token) {
     serviceWorkers: 'block'});
   selected.on('page', page => {
     page.on('pageerror', error => { if (errors.length < 16) errors.push('browser-page-error:' + createHash('sha256').update(error.message).digest('hex')); });
-    page.on('console', message => { if (message.type() === 'error' && errors.length < 16) errors.push('browser-console-error:' + createHash('sha256').update(message.text()).digest('hex')); });
-    page.on('requestfailed', request => { if (errors.length < 16) errors.push('browser-request-failed:' + (request.failure()?.errorText ?? 'unknown').slice(0,96)); });
+    page.on('console', message => { if (message.type() === 'error' && consoleObservations.length < 16) consoleObservations.push('browser-console-error:' + createHash('sha256').update(message.text()).digest('hex')); });
+    page.on('requestfailed', request => { if (networkFailures.length < 16) networkFailures.push('browser-request-failed:' + (request.failure()?.errorText ?? 'unknown').slice(0,96)); });
     page.on('request', request => {
       const url = new URL(request.url());
       if (requests.length < 97) requests.push({origin: url.origin, path: url.pathname, method: request.method(), type: request.resourceType()});
@@ -182,7 +184,7 @@ try {
     transport: 'real-http', mode: configuration.mode, node: process.version, browser: browser.version(),
     results, scripts, requests, errors, directNodeCatalogAccess: false, privateClientMaterialAbsent: true});
 } catch (error) {
-  const diagnosis = {event: 'failed', schemaVersion: 'latent.angular.reference.browser.v1', passed: false, mode: configuration.mode, errors, responses: responseStatuses, results, scripts};
+  const diagnosis = {event: 'failed', schemaVersion: 'latent.angular.reference.browser.v1', passed: false, mode: configuration.mode, errors, consoleObservations, networkFailures, responses: responseStatuses, results, scripts};
   const serialized = JSON.stringify(diagnosis);
   if (Buffer.byteLength(serialized) <= 32768) process.stderr.write(serialized + '\n');
   throw error;
