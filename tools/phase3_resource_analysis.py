@@ -15,6 +15,26 @@ def complete_populations(profile, catalog):
                     for entry, requested in zip(populations, profile["dormantSteps"])))
 
 
+def churn_outcomes(cycles):
+    counts = {kind: {"arrivals": 0, "successfulProviderWork": 0,
+                     "providerDiagnostic": 0, "otherFailureOrUnfinished": 0}
+              for kind in ("http", "blob")}
+    for cycle in cycles:
+        for row in cycle["arrivals"]:
+            kind = "http" if row["ordinal"] % 2 == 0 else "blob"
+            observed = counts[kind]
+            observed["arrivals"] += 1
+            result = row.get("result", {})
+            if row.get("providerDiagnostic"):
+                observed["providerDiagnostic"] += 1
+            elif (row["disposition"] == "completed" and result.get("category") == "success"
+                  and result.get("value") == ["2201" if kind == "http" else "4"]):
+                observed["successfulProviderWork"] += 1
+            else:
+                observed["otherFailureOrUnfinished"] += 1
+    return counts
+
+
 def analyze(result):
     samples = result["samples"]
     dormant = [sample for sample in samples if sample["phase"] == "dormant"]
@@ -51,6 +71,7 @@ def analyze(result):
             timings[kind + "-" + heat] = summary(values)
     result["checks"] = checks
     result["analysis"] = {"osRanges": os_ranges, "recoveryOwnershipRanges": ownership_ranges,
+                           "churnOutcomes": churn_outcomes(result["cycles"]),
                            "latencyNanos": timings,
                            "latencyScope": "CLI-process-spawn-through-RPC-and-actual-process-reap",
                            "rssPlateauAssertion": None,

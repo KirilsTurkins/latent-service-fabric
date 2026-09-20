@@ -53,6 +53,24 @@ def overload_counts(outcomes):
     return counts
 
 
+
+def blob_diagnostic(value):
+    """Closed maintained-guest failure values never count as successful blob work."""
+    if not isinstance(value, list) or len(value) != 1 or not isinstance(value[0], str):
+        return None
+    if not value[0].isascii() or not value[0].isdigit() or len(value[0]) != 4:
+        return None
+    operation, error = divmod(int(value[0]), 1000)
+    operations = {1: "create", 2: "close", 3: "write", 4: "seal", 5: "open", 6: "read", 7: "chunk-bytes"}
+    errors = {1: "not-found", 2: "permission-denied", 3: "invalid-range", 4: "invalid-state",
+              5: "checksum-mismatch", 6: "budget-exhausted", 7: "unavailable", 8: "uncertain",
+              9: "deadline-exceeded", 10: "cancelled"}
+    if operation not in operations or error not in errors:
+        return None
+    return {"operation": operations[operation], "error": errors[error],
+            "source": "maintained-guest-return-value", "successfulProviderWork": False}
+
+
 def measured_work(client, targets, port, control, probe, profile, result):
     url = f"http://localhost:{port}/allowed"
     dormant = result["catalog"]["dormantPopulations"][-1]["dormantAdded"]
@@ -99,7 +117,11 @@ def measured_work(client, targets, port, control, probe, profile, result):
         for row in rows:
             if row["disposition"] == "completed" and row["result"]["category"] == "success":
                 expected = 2201 if row["ordinal"] % 2 == 0 else 4
-                require(row["result"]["value"] == [str(expected)], "resource-churn-value")
+                diagnostic = blob_diagnostic(row["result"]["value"]) if expected == 4 else None
+                if diagnostic:
+                    row["providerDiagnostic"] = diagnostic
+                else:
+                    require(row["result"]["value"] == [str(expected)], "resource-churn-value")
         result["samples"] += settled_samples(client, probe, "recovery", dormant,
                                              profile["samplesPerPhase"])
     for kind, expected in (("http", 2201), ("blob", 4)):
