@@ -32,7 +32,10 @@ resident state = fixed node runtime + bounded catalog metadata + active activati
 
 The number of operating-system processes, threads, sockets, and execution cells is node-defined and must not scale with the number of deployed services.
 
-![Phase 2 delivery: bounded package transfer, current node admission and explicit rollout control.](docs/assets/phase2-delivery-boundary.svg)
+[![Phase 2 delivery: bounded package transfer, current node admission and explicit rollout control.](docs/assets/phase2-delivery-boundary-presentation.svg)](docs/assets/phase2-delivery-boundary-presentation.svg)
+
+Restyled presentation of the Phase 2 boundary, not a Phase 3 completion claim.
+Open the image at full size to inspect labels. The [original Phase 2 SVG](docs/assets/phase2-delivery-boundary.svg) remains unchanged.
 
 The [historical Phase 1 boundary](docs/assets/phase1-delivery-boundary.svg) retains
 its original scope. Phase 2 features are listed below.

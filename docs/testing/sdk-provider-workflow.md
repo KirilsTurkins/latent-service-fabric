@@ -211,3 +211,47 @@ The historical failed attempts above remain failures, not results of this run.
 This is real separate-node development qualification, not browser or installed
 bundle qualification. The frozen result does not replace exact-head CI after
 subsequent integration changes.
+
+## Credential bootstrap revalidation
+
+After integration with development at `5f38a9d5`, a fresh matrix passed Rust
+and TypeScript but stopped before the Go participant launched:
+`node-startup-exit-startup-unavailable`. This is a failed attempt, not a Go
+transport result or a completed matrix. The configured-provider startup test
+reproduced the failure during admission of HTTP credential-store setup, before
+its filesystem worker was accepted. The shared control-slot reaper can briefly
+own the same nonblocking task table; converting that contention directly into
+the coarse secret error made otherwise valid startup nondeterministic.
+
+Implementation `e3146432eb564a6d321a80f0ee9021034bd1a2f3` adds explicit
+`LocalSecretStore::open_before` and `reload_before` entry points for trusted
+startup. They share the existing provider-bootstrap 30-second absolute deadline.
+One bounded `control_blocking_before` future retains one prepaid closure while
+the control table is contended. Only that pre-admission lock contention waits;
+capacity exhaustion, retired pools, poisoned ownership and actual worker errors
+remain failures. The original immediate APIs and coarse guest error vocabulary
+are unchanged. No credential value is added to diagnostics.
+
+Acceptance transfers the closure to exactly one existing fixed worker slot.
+An expired or abandoned pre-admission future releases its candidate without
+starting work or changing the secret generation. Dropping an accepted job's
+result waiter does not refund its still-running worker; physical completion and
+ordered shutdown remain required. This is not invocation, management-mutation,
+credential-reload or filesystem-operation replay.
+
+Focused Linux validation passed 85 capability tests, including six controlled
+admission/ownership regressions; 17 actual local-secret guest tests, including
+expired/abandoned candidate cleanup; and two HTTP credential rotation/isolation
+tests. Three provider-startup tests each completed 32 starts and clean shutdowns,
+including the previously failing protected HTTP/blob configuration. Strict
+application Clippy and ten matrix/scenario unit tests also passed. These tests
+do not relabel the frozen six-client receipt: fresh matrix execution and
+exact-head CI remain required after this repair.
+
+The subsequent [September 20 integrated qualification](../evidence/phase3-sdk-matrix-0b99cd92/README.md)
+passes all six participants at `0b99cd92`, after merging the delivered SDKs and
+fixing the same maintenance-contention boundary for blob worker admission.
+It retains the original call while waiting, rechecks cancellation before each
+admission attempt and never repeats accepted work. The fresh guest suite and
+89 capability regressions pass. Raw receipts preserve all 108 assertions and
+24 physically closed holds; remote CI still qualifies the reviewed PR head.

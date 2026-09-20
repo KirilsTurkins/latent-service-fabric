@@ -16,6 +16,7 @@
     "build": "node scripts/site.mjs build",
     "build:root": "node scripts/site.mjs build-root",
     "test:build": "node scripts/site.mjs test-build",
+    "test:theme": "node scripts/site.mjs test-theme",
     "browser:install": "node scripts/site.mjs browser-install",
     "coverage:acceptance": "node scripts/check.mjs --acceptance"
   },

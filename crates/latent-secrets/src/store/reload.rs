@@ -2,6 +2,7 @@ use super::{
     config, Arc, AtomicBool, BoxFuture, Entry, Generation, Inner, Ordering, SecretError, SecretSpec,
 };
 use crate::SecretSource;
+use std::time::Instant;
 
 struct Loading(Arc<Inner>);
 impl Drop for Loading {
@@ -20,6 +21,24 @@ pub(super) fn start(
     inner: &Arc<Inner>,
     expected: u64,
     specs: Vec<SecretSpec>,
+) -> Result<BoxFuture<'static, Result<u64, SecretError>>, SecretError> {
+    start_inner(inner, expected, specs, None)
+}
+
+pub(super) fn start_before(
+    inner: &Arc<Inner>,
+    expected: u64,
+    specs: Vec<SecretSpec>,
+    deadline: Instant,
+) -> Result<BoxFuture<'static, Result<u64, SecretError>>, SecretError> {
+    start_inner(inner, expected, specs, Some(deadline))
+}
+
+fn start_inner(
+    inner: &Arc<Inner>,
+    expected: u64,
+    specs: Vec<SecretSpec>,
+    deadline: Option<Instant>,
 ) -> Result<BoxFuture<'static, Result<u64, SecretError>>, SecretError> {
     inner.check()?;
     if specs.capacity() > inner.limits.maximum_references {
@@ -62,7 +81,7 @@ pub(super) fn start(
     let cancelled = Arc::new(AtomicBool::new(false));
     let waiter = Waiter(cancelled.clone());
     let owner = inner.clone();
-    let job = inner.pools.control_blocking(move || {
+    let work = move || {
         let _loading = loading;
         let _scratch = scratch;
         let _environment_memory = environment_memory;
@@ -109,7 +128,19 @@ pub(super) fn start(
         drop(state);
         drop(old);
         Ok(next)
-    })?;
+    };
+    if let Some(deadline) = deadline {
+        let pools = inner.pools.clone();
+        return Ok(Box::pin(async move {
+            let _waiter = waiter;
+            pools
+                .control_blocking_before(deadline, work)
+                .await?
+                .wait()
+                .await?
+        }));
+    }
+    let job = inner.pools.control_blocking(work)?;
     Ok(Box::pin(async move {
         let _waiter = waiter;
         job.wait().await?
