@@ -5,8 +5,10 @@ import {prepare} from './lib/prepare.mjs';
 import {repositoryUrl, sha256, websiteRoot} from './lib/repository.mjs';
 import {remarkRepositoryLinks, rehypeRepositoryLinks} from './plugins/repository-links.mjs';
 import {remarkExamples} from './plugins/examples/remark.mjs';
+import {mermaidOptions, preparePalette, prismTheme} from './lib/palette.mjs';
 
 const prepared = prepare();
+const theme = preparePalette();
 const pluginOptions = {index: prepared.index, assets: prepared.assets, baseUrl: prepared.baseUrl};
 const repositoryRemark = () => remarkRepositoryLinks(pluginOptions);
 const repositoryRehype = () => rehypeRepositoryLinks(pluginOptions);
@@ -43,7 +45,7 @@ const config: Config = {
       editUrl: ({docPath}: {docPath: string}) => `${repositoryUrl}/edit/${prepared.index.revision}/docs/${docPath}`,
     },
     blog: false,
-    theme: {customCss: './src/css/foundation.css'},
+    theme: {customCss: [theme.css, './src/css/foundation.css', './src/css/theme.css']},
   } satisfies Options]],
   plugins: [
     ['@docusaurus/plugin-content-docs', {
@@ -58,7 +60,11 @@ const config: Config = {
   ],
   themes: ['@docusaurus/theme-mermaid'],
   themeConfig: {
+    colorMode: {defaultMode: 'light', respectPrefersColorScheme: true},
+    mermaid: {theme: {light: 'base', dark: 'base'}, options: mermaidOptions(theme.palette.modes.dark)},
     announcementBar: {
+      backgroundColor: 'var(--lsf-raised)',
+      textColor: 'var(--lsf-text)',
       id: 'development-foundation',
       content: 'Development documentation — not a released snapshot. Foundation only; guide, migration and runtime acceptance remain separate.',
       isCloseable: false,
@@ -79,7 +85,7 @@ const config: Config = {
       {label: 'Exact source revision', href: `${repositoryUrl}/tree/${prepared.index.revision}`},
       {label: 'Finite documentation gate', href: `${repositoryUrl}/issues/345`},
     ]}]},
-    prism: {additionalLanguages: ['bash', 'c', 'csharp', 'go', 'java', 'json', 'powershell', 'protobuf', 'rust', 'toml', 'typescript', 'yaml']},
+    prism: {theme: prismTheme(theme.palette.modes.light), darkTheme: prismTheme(theme.palette.modes.dark), additionalLanguages: ['bash', 'c', 'csharp', 'go', 'java', 'json', 'powershell', 'protobuf', 'rust', 'toml', 'typescript', 'yaml']},
   } satisfies ThemeConfig,
 };
 
