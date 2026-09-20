@@ -154,3 +154,40 @@ excluded from the reported process execution durations; startup and teardown are
 included. This does not claim equivalent interleavings or a whole-CI speedup.
 Failed/partial runs are retained as failed evidence, not included in success
 claims. There is no timing threshold and no retry-to-green policy.
+
+### Retained run on September 20, 2026
+
+The [raw execution receipt](../../benchmarks/ci/deterministic-tests/2026-09-20.json)
+is retained byte-for-byte from artifact `10606779086` in successful
+[validation run 35516638297](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35516638297).
+Both source trees were clean. The runner was Ubuntu 24.04.5, x86-64 Linux,
+with Rust 1.97.1. All five repetitions of each selection passed; no failed
+execution was discarded or retried by the measurement script.
+
+| Suite | Libtest threads | Before tests | After tests | Before median (ms) | After median (ms) |
+| --- | --- | --- | --- | --- | --- |
+| Admission policy deadline | 1 | 1 | 1 (8 controlled subcases) | 76.846 | 1.956 |
+| Admission policy deadline | 4 | 1 | 1 (8 controlled subcases) | 76.986 | 1.928 |
+| Scheduler fixed-pool races | 1 | 3 | 7 | 27.138 | 5.648 |
+| Scheduler fixed-pool races | 4 | 3 | 7 | 17.460 | 4.247 |
+
+The before revision is `50f003dd006e0786494936c49e55dc683cf26fd6`; the tested and
+measured after revision is `b27113253dfaead86f549087fa31363c8bc43cda`. The Actions
+run was triggered at `e1fe49d941550e404e8c5fb8a110bf43f21a872b` and committed
+formatting before executing its checks. The receipt records the actual checked-out
+revision, rather than mistaking the trigger revision for the measured source.
+
+That run also passed 42 no-default-feature testkit tests under each of one and four
+libtest threads, 52 admission tests, 43 scheduler tests, 61 default-feature testkit
+tests, five Python tests, and both executable contributor examples. The admission
+and scheduler commands each retained one existing ignored qualification test;
+these were not counted as passes. The doctest command succeeded with zero cases.
+The independently selected dependency graphs had 21, 33 and 35 nodes for neutral
+testkit, admission and scheduler respectively, with no forbidden runtime/provider
+dependencies. Strict testkit/admission Clippy checks and documentation validation
+passed. Scheduler Clippy retained existing warnings outside the migrated module;
+the migrated module independently denies `clippy::all` and `clippy::pedantic`.
+
+The temporary branch-only, write-enabled formatting/validation workflow was
+removed after retaining this evidence. Ordinary repository CI remains unchanged;
+the scoped run does not replace full PR, native-runtime or containment validation.
