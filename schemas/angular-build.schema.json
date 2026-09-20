@@ -23,6 +23,9 @@
     "profile": {
       "const": "angular-ssr-component-v1"
     },
+    "backendProfile": {
+      "enum": ["none", "scoped-http-get-v1"]
+    },
     "name": {
       "type": "string",
       "minLength": 1,

@@ -71,6 +71,9 @@ pub fn renderer_profile_digest(profile: RendererProfile) -> ArtifactBlobDigest {
                 include_bytes!("../../../tools/angular-renderer-adapter/src/lib.rs").as_slice(),
                 include_bytes!("../../../tools/angular-renderer-adapter/src/wire.rs").as_slice(),
                 include_bytes!("../../../tools/angular-renderer-adapter/src/abi.rs").as_slice(),
+                include_bytes!("../../../tools/angular-renderer-adapter/src/backend.rs").as_slice(),
+                include_bytes!("../../../wit/platform/http-v2/package.wit").as_slice(),
+                include_bytes!("../../../wit/platform/web-http/package.wit").as_slice(),
                 include_bytes!("../../../tools/angular-renderer-adapter/wit/adapter.wit")
                     .as_slice(),
                 include_bytes!("../../../tools/angular-renderer-adapter/runtime/bridge.js")

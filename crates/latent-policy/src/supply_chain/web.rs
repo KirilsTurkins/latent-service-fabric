@@ -9,29 +9,38 @@ use super::{
     Inner, State,
 };
 use latent_artifacts::{
-    web::{VerifiedWebAdmission, WebAdmissionBinding, MAX_WEB_RENDERER_BYTES},
-    AdmissionStorageLimits, PackageAdmissionUpload,
+    web::{CheckedWebLayout, VerifiedWebAdmission, WebAdmissionBinding, MAX_WEB_RENDERER_BYTES},
+    AdmissionEvidence, AdmissionStorageLimits, PackageAdmissionUpload,
 };
 use latent_core::{PlatformError, TenantId};
-use latent_packaging::{inspect_bundle, inspect_web_bundle, BundleInput, PackagingLimits};
+use latent_packaging::{
+    inspect_bundle, inspect_web_bundle, BundleInput, PackageBundle, PackagingLimits,
+};
 use latent_signing::VerifiedWebBuildProvenance;
 use std::sync::Arc;
 
-/// Same single bounded policy/time/verification owner as capsule admission.
-pub(super) fn with_state(
-    owner: &Arc<Inner>,
-    tenant: &TenantId,
-    upload: PackageAdmissionUpload,
-    previous: Option<&WebAdmissionBinding>,
-    state: &mut State,
-) -> Result<VerifiedWebAdmission, PlatformError> {
-    let now = owner.sample(state)?;
+pub(super) struct Prepared {
+    bundle: PackageBundle,
+    layout: CheckedWebLayout,
+    signatures: Vec<AdmissionEvidence>,
+    provenance: Vec<AdmissionEvidence>,
+    sboms: Vec<AdmissionEvidence>,
+}
+
+pub(super) fn check_tenant(tenant: &TenantId, state: &State) -> Result<(), PlatformError> {
     if !super::config::identifier(&tenant.0) || !state.policy.tenants.contains_key(&tenant.0) {
         return Err(denied("admission-tenant-denied"));
     }
+    Ok(())
+}
+
+pub(super) fn prepare(upload: PackageAdmissionUpload) -> Result<Prepared, PlatformError> {
     let renderer_maximum = usize::try_from(MAX_WEB_RENDERER_BYTES)
         .map_err(|_| super::invalid("admission-component-limit"))?;
     AdmissionStorageLimits::default().check_upload(&upload, renderer_maximum)?;
+    if upload.signatures.len() != 1 || upload.provenance.len() != 1 {
+        return Err(denied("admission-required-evidence-cardinality"));
+    }
     let PackageAdmissionUpload {
         manifest,
         configuration,
@@ -50,6 +59,33 @@ pub(super) fn with_state(
         limits,
     )?;
     let layout = inspect_web_bundle(&bundle, limits.semantics)?;
+    Ok(Prepared {
+        bundle,
+        layout,
+        signatures,
+        provenance,
+        sboms,
+    })
+}
+
+/// The single verification reservation retains the decoded inputs while the
+/// short policy fence rechecks current time, policy, signatures and ownership.
+pub(super) fn with_state(
+    owner: &Arc<Inner>,
+    tenant: &TenantId,
+    prepared: Prepared,
+    previous: Option<&WebAdmissionBinding>,
+    state: &mut State,
+) -> Result<VerifiedWebAdmission, PlatformError> {
+    let now = owner.sample(state)?;
+    check_tenant(tenant, state)?;
+    let Prepared {
+        bundle,
+        layout,
+        signatures,
+        provenance,
+        sboms,
+    } = prepared;
     let checked: CheckedEvidence<VerifiedWebBuildProvenance> = check_evidence(
         &state.policy,
         state.verifiers()?,

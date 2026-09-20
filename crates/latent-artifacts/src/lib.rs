@@ -24,7 +24,7 @@ pub use retained_package::{RetainedPackageParts, RetainedPackageSource};
 
 pub use audit::{
     reconcile_release_audit, AuditedAdmissionAuthority, ReleaseAuditAck, ReleaseAuditGuard,
-    ReleaseAuditStatus,
+    ReleaseAuditStatus, WebAuditGuard,
 };
 pub use historical_execution::{
     HistoricalExecutionSnapshot, HistoricalExecutionState, HistoricalReleaseDenial,
@@ -226,6 +226,14 @@ pub trait ArtifactRepository: Send + Sync {
                 .await
                 .map(|operation| (None, operation))
         })
+    }
+
+    fn get_web_operation<'a>(
+        &'a self,
+        _scope: &'a LifecycleScope,
+        _operation_id: &'a str,
+    ) -> BoxFuture<'a, Result<Option<web::WebOperationReceipt>, PlatformError>> {
+        Box::pin(async { Ok(None) })
     }
 
     fn change_selected_lifecycle<'a>(

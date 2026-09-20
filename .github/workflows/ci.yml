@@ -58,6 +58,9 @@ jobs:
           python3 -m unittest tools.tests.test_ci_profile tools.tests.test_ci_result tools.tests.test_validate_docs tools.tests.test_ci_browser_artifacts
           python3 tools/validate_docs.py
 
+      - name: Validate deterministic dependency regressions
+        run: python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies
+
   rust:
     name: Rust 1.97.1
     needs: profile
@@ -91,6 +94,16 @@ jobs:
                  (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Check formatting
         run: cargo fmt --all --check
+      - name: Check deterministic helper dependency boundaries
+        timeout-minutes: 5
+        run: |
+          python3 tools/check_testkit_dependencies.py
+          cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=1
+          cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=4
+          cargo test -p latent-admission -p latent-scheduler --lib --locked
+          cargo test -p latent-testkit --no-default-features --lib --test test_support_compatibility --locked
+          cargo run -p latent-testkit --no-default-features --example deadline --locked
+          cargo run -p latent-testkit --no-default-features --example cancellation --locked
       - name: Check workspace
         run: cargo check --workspace --all-targets --all-features --locked
       - name: Check generated RPC and Component Model bindings
@@ -305,6 +318,31 @@ jobs:
           PY
           python3 tools/phase2_gate_resource.py --cli "${resource_bin}/latent" --node "${resource_bin}/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
           python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+      - name: Build the optimized isolated Angular compiler
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 25
+        env:
+          CARGO_BUILD_JOBS: 2
+          CARGO_TARGET_DIR: ${{ runner.temp }}/angular-t1-compiler
+        run: cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked
+      - name: Export actual signed Angular T1 fixtures
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 5
+        env:
+          LSF_ANGULAR_BUILD_DIR: ${{ runner.temp }}/angular-build/actual
+          LSF_ANGULAR_T1_FIXTURE_ROOT: ${{ runner.temp }}/angular-t1-fixture
+        run: python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite angular-t1-fixture
+      - name: Qualify actual Angular on the protected T1 node
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 22
+        run: |
+          python3 -m unittest tools.tests.test_angular_t1_workflow
+          mkdir "$RUNNER_TEMP/angular-t1-bin"
+          for binary in latent latentd; do
+            objcopy --strip-debug "$PWD/target/debug/$binary" "$RUNNER_TEMP/angular-t1-bin/$binary"
+          done
+          objcopy --strip-debug "$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler" "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler"
+          python3 tools/run_angular_t1_workflow.py --cli "$RUNNER_TEMP/angular-t1-bin/latent" --node "$RUNNER_TEMP/angular-t1-bin/latentd" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --fixture-root "$RUNNER_TEMP/angular-t1-fixture" > "$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json"
       - name: Retain compact Phase 2 gate receipts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

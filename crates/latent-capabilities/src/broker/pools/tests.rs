@@ -15,6 +15,7 @@ mod ingress;
 mod lifecycle;
 mod maintenance;
 mod protocol;
+mod registration;
 mod shutdown;
 use fixture::*;
 
