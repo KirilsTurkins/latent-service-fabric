@@ -1,0 +1,7 @@
+package latent:web-http@0.1.0;
+
+world application-service {
+    import latent:context/context@0.1.0;
+    import latent:http/client@0.2.0;
+    export latent:web/application@0.1.0;
+}

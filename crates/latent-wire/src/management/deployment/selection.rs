@@ -1,15 +1,22 @@
 //! Resolve explicit input authority before compiling a normalized deployment.
-use latent_artifacts::{ArtifactRepository, LifecycleScope, PublicationRef, PublicationSelector};
+use latent_artifacts::{
+    web::WebPublicationStatus, ArtifactRepository, DirectoryArtifactRepository, LifecycleScope,
+    PublicationRef, PublicationSelector,
+};
 use latent_core::{ArtifactBlobDigest, TenantId};
 use prost::Message;
 use tonic::Status;
 
 use super::super::{errors::platform_status, proto, ManagementLimits, RequestBudget};
 
+#[cfg(test)]
+mod tests;
+
 pub(in crate::management) async fn input(
     mut value: proto::ApplyDeploymentRequest,
     tenant: &TenantId,
     repository: &dyn ArtifactRepository,
+    web: Option<&DirectoryArtifactRepository>,
     configured: &ManagementLimits,
 ) -> Result<proto::ApplyDeploymentRequest, Status> {
     let mut limits = configured.clone();
@@ -70,25 +77,33 @@ pub(in crate::management) async fn input(
     let entry = repository
         .get_selected_catalog_entry(&scope, &PublicationSelector::Publication(reference.clone()))
         .await
-        .map_err(|error| platform_status(error, &limits))?
-        .ok_or_else(|| Status::not_found("publication not found"))?;
-    if entry.tenant.as_ref() != Some(tenant)
-        || entry.publication.as_ref() != Some(&reference.id)
-        || entry
-            .descriptor
-            .release_digest
-            .0
-            .parse::<ArtifactBlobDigest>()
-            .is_err()
-    {
-        return Err(Status::internal(
-            "invalid deployment publication association",
-        ));
-    }
+        .map_err(|error| platform_status(error, &limits))?;
+    let component = if let Some(entry) = entry {
+        if entry.tenant.as_ref() != Some(tenant)
+            || entry.publication.as_ref() != Some(&reference.id)
+            || entry
+                .descriptor
+                .release_digest
+                .0
+                .parse::<ArtifactBlobDigest>()
+                .is_err()
+        {
+            return Err(Status::internal(
+                "invalid deployment publication association",
+            ));
+        }
+        entry.descriptor.release_digest.0
+    } else {
+        let catalog = web.ok_or_else(|| Status::not_found("publication not found"))?;
+        let status = catalog
+            .web_publication_status(&reference)
+            .map_err(|error| platform_status(error, &limits))?;
+        web_component(status, &reference)?
+    };
     if value
         .expected_component_digest
         .as_ref()
-        .is_some_and(|expected| expected != &entry.descriptor.release_digest.0)
+        .is_some_and(|expected| expected != &component)
     {
         return Err(invalid(
             "publication does not match expected component digest",
@@ -98,8 +113,32 @@ pub(in crate::management) async fn input(
         .deployment
         .as_mut()
         .expect("validated deployment")
-        .release_digest = entry.descriptor.release_digest.0;
+        .release_digest = component;
     Ok(value)
+}
+
+fn web_component(
+    status: WebPublicationStatus,
+    reference: &PublicationRef,
+) -> Result<String, Status> {
+    if &status.record.publication != reference
+        || reference.scope.tenant().is_none()
+        || PublicationRef::package(reference.scope.clone(), &status.record.package)
+            .as_ref()
+            .ok()
+            != Some(reference)
+    {
+        return Err(Status::internal("invalid web deployment association"));
+    }
+    let renderer = status
+        .renderer
+        .ok_or_else(|| invalid("selected web publication has no renderer"))?;
+    if renderer.digest.parse::<ArtifactBlobDigest>().is_err()
+        || renderer.assets_digest != status.record.assets.to_string()
+    {
+        return Err(Status::internal("invalid web deployment renderer"));
+    }
+    Ok(renderer.digest)
 }
 
 fn invalid(message: &'static str) -> Status {

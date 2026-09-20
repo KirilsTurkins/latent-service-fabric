@@ -62,5 +62,18 @@
     "package": "@mermaid-js/layout-elk",
     "version": "0.1.9",
     "reason": "Explicit compatible peer for the Docusaurus 3.10.2 Mermaid 11 theme; latest layout-elk 1.x requires Mermaid 12 and is not substituted."
+  },
+  "search": {
+    "package": "minisearch",
+    "version": "7.2.0",
+    "repository": "lucaong/minisearch",
+    "commit": "3d239d1c3ae7aef1bf5d8945dd7b5f0709f646f5",
+    "maintenance": "LSF owns the Docusaurus integration and bounded public HTML index; no runtime dependencies or third-party queries."
+  },
+  "accessibility": {
+    "package": "@axe-core/playwright",
+    "version": "4.13.0",
+    "repository": "dequelabs/axe-core-npm",
+    "maintenance": "Website-only production browser checks; package-lock.json pins the resolved axe-core graph."
   }
 }

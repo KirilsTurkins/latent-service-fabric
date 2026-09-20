@@ -43,12 +43,13 @@ def configure_node(directory, fixture, tenant):
     return config
 
 
-def connect(client, binary, directory, config, tenant, ordinal):
+def connect(client, binary, directory, config, tenant, ordinal, startup_timeout=30):
+    require(type(startup_timeout) is int and 1 <= startup_timeout <= 120, "node-startup-watchdog")
     environment = dict(client.environment, HOME=str(directory))
     node = Process([str(binary), "serve", "--config", str(config)], directory,
                    environment, client.cancellation, maximum=262144)
     try:
-        started = node.line(min(client.deadline, time.monotonic() + 30))
+        started = node.line(min(client.deadline, time.monotonic() + startup_timeout))
         node.startup_record = started
         endpoint = started.get("endpoint", "")
         require(re.fullmatch(r"127\.0\.0\.1:[0-9]{1,5}", endpoint), "node-endpoint")

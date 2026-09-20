@@ -26,10 +26,48 @@ impl Phase1ManifestValidator {
     pub const fn new() -> Self {
         Self
     }
+
+    pub fn validate_web_execution_projection(
+        &self,
+        deployment: &DeploymentManifest,
+        projection: &CapsuleManifest,
+    ) -> ManifestResult<()> {
+        let expected_imports: &[&str] = match projection.world.0.as_str() {
+            "latent:web/application-service@0.1.0" => &["latent:context/context@0.1.0"],
+            "latent:web-http/application-service@0.1.0" => {
+                &["latent:context/context@0.1.0", "latent:http/client@0.2.0"]
+            }
+            _ => &[],
+        };
+        let imports_match = !expected_imports.is_empty()
+            && projection.imports.len() == expected_imports.len()
+            && expected_imports.iter().all(|expected| {
+                projection
+                    .imports
+                    .iter()
+                    .any(|imported| imported.contract.0 == *expected && !imported.optional)
+            });
+        if !imports_match
+            || projection.metadata.tenant.is_none()
+            || projection.runtime_requirements.renderer.is_none()
+            || projection.exports.len() != 1
+            || projection.exports[0].contract.0 != "latent:web/application@0.1.0"
+        {
+            return Err(vec![ManifestViolation::new(
+                "$.component.world",
+                "invalid-web-execution-projection",
+                "web execution projections require the exact public world, imports and renderer profile",
+            )]);
+        }
+        self.validate_deployment_pair(deployment, projection, true)
+    }
 }
 
-impl ManifestValidator for Phase1ManifestValidator {
-    fn validate_capsule(&self, manifest: &CapsuleManifest) -> ManifestResult<()> {
+impl Phase1ManifestValidator {
+    fn validate_capsule_scope_profile(
+        manifest: &CapsuleManifest,
+        web_projection: bool,
+    ) -> ManifestResult<()> {
         let mut violations = Vec::new();
         validate_api_version(&manifest.api_version, &mut violations);
         validate_metadata(&manifest.metadata, &mut violations);
@@ -125,9 +163,15 @@ impl ManifestValidator for Phase1ManifestValidator {
                 "runtime requirements exceed their closed profile or bounds",
             ));
         }
-        validate_capsule_scope(manifest, &mut violations);
+        validate_capsule_scope(manifest, web_projection, &mut violations);
 
         finish_violations(violations)
+    }
+}
+
+impl ManifestValidator for Phase1ManifestValidator {
+    fn validate_capsule(&self, manifest: &CapsuleManifest) -> ManifestResult<()> {
+        Self::validate_capsule_scope_profile(manifest, false)
     }
 
     fn validate_deployment(&self, manifest: &DeploymentManifest) -> ManifestResult<()> {
@@ -404,11 +448,22 @@ impl ManifestValidator for Phase1ManifestValidator {
         deployment: &DeploymentManifest,
         capsule: &CapsuleManifest,
     ) -> ManifestResult<()> {
+        self.validate_deployment_pair(deployment, capsule, false)
+    }
+}
+
+impl Phase1ManifestValidator {
+    fn validate_deployment_pair(
+        &self,
+        deployment: &DeploymentManifest,
+        capsule: &CapsuleManifest,
+        web_projection: bool,
+    ) -> ManifestResult<()> {
         let mut violations = Vec::new();
         if let Err(mut invalid) = self.validate_deployment(deployment) {
             violations.append(&mut invalid);
         }
-        if let Err(mut invalid) = self.validate_capsule(capsule) {
+        if let Err(mut invalid) = Self::validate_capsule_scope_profile(capsule, web_projection) {
             violations.append(&mut invalid);
         }
 
@@ -519,7 +574,11 @@ fn validate_required_tenant(metadata: &ObjectMetadata, violations: &mut Vec<Mani
     }
 }
 
-fn validate_capsule_scope(manifest: &CapsuleManifest, violations: &mut Vec<ManifestViolation>) {
+fn validate_capsule_scope(
+    manifest: &CapsuleManifest,
+    web_projection: bool,
+    violations: &mut Vec<ManifestViolation>,
+) {
     let tenant = manifest
         .metadata
         .tenant
@@ -532,7 +591,9 @@ fn validate_capsule_scope(manifest: &CapsuleManifest, violations: &mut Vec<Manif
         violations,
     );
     if let Some(tenant) = tenant {
-        validate_contract_namespace(&manifest.world.0, tenant, "$.component.world", violations);
+        if !web_projection {
+            validate_contract_namespace(&manifest.world.0, tenant, "$.component.world", violations);
+        }
         for (index, export) in manifest.exports.iter().enumerate() {
             // This versioned application interface is shared by tenant web
             // capsules. Exporting it conveys no host capability or tenant grant;

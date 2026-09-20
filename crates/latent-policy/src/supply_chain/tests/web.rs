@@ -3,6 +3,7 @@ use latent_artifacts::{web::WEB_MANIFEST_PATH, AdmissionAuthority, PackageAdmiss
 use latent_core::{PlatformErrorCode, TenantId};
 
 mod angular_build;
+mod preparation;
 
 fn fixture() -> Fixture {
     let mut fixture = Fixture::new();

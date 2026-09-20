@@ -1,6 +1,5 @@
-use std::fs::{self, File};
+use std::fs;
 use std::future::Future;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -20,8 +19,13 @@ use latent_wasmtime::{
     AotProcessLimits, IsolatedAotCompiler, TrustedAotCompilerAuthority, ValidatedAotProfile,
     WasmtimeConfig,
 };
-use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
+
+#[path = "diagnostics.rs"]
+#[allow(dead_code, reason = "shared with the custom supervisor harness")]
+pub mod diagnostics;
+#[path = "prepared.rs"]
+pub mod prepared;
 
 pub const OUTPUT_BYTES: usize = 1024 * 1024;
 pub const COMPILER_NAME: &str = "isolated-aot-fixture";
@@ -53,6 +57,7 @@ impl Directory {
 }
 impl Drop for Directory {
     fn drop(&mut self) {
+        let _stage = diagnostics::Span::new("fixture-teardown");
         fs::remove_dir_all(&self.0).expect("remove owned AOT fixture directory");
     }
 }
@@ -67,6 +72,7 @@ impl Fixture {
         Self::new(super::component::bytes())
     }
     pub fn new(bytes: Vec<u8>) -> Self {
+        let _stage = diagnostics::Span::new("fixture-creation");
         let directory = Directory::new();
         let repository = Arc::new(
             DirectoryArtifactRepository::open(
@@ -174,32 +180,33 @@ pub fn authority(limits: AotProcessLimits) -> TrustedAotCompilerAuthority {
     TrustedAotCompilerAuthority::new(COMPILER_NAME, Zeroizing::new(KEY), limits.compiler).unwrap()
 }
 
-pub fn executable() -> &'static Path {
-    Path::new(env!("CARGO_BIN_EXE_latent-aot-compiler"))
-}
-pub fn executable_digest() -> [u8; 32] {
-    static DIGEST: OnceLock<[u8; 32]> = OnceLock::new();
-    *DIGEST.get_or_init(|| {
-        let mut file = File::open(executable()).unwrap();
-        let mut hash = Sha256::new();
-        let mut chunk = [0_u8; 16 * 1024];
-        loop {
-            let count = file.read(&mut chunk).unwrap();
-            if count == 0 {
-                break;
-            }
-            hash.update(&chunk[..count]);
-        }
-        hash.finalize().into()
+fn selected() -> &'static prepared::Executable {
+    static INPUT: OnceLock<prepared::Executable> = OnceLock::new();
+    INPUT.get_or_init(|| {
+        prepared::select(
+            "compiler",
+            Path::new(env!("CARGO_BIN_EXE_latent-aot-compiler")),
+        )
     })
 }
 
+pub fn executable() -> &'static Path {
+    &selected().path
+}
+pub fn executable_digest() -> [u8; 32] {
+    selected().digest
+}
+
 pub fn compiler(limits: AotProcessLimits) -> IsolatedAotCompiler {
-    let profile =
-        ValidatedAotProfile::from_config(&WasmtimeConfig::default(), limits.compiler).unwrap();
+    let executable = selected();
+    let profile = {
+        let _stage = diagnostics::Span::new("engine-profile");
+        ValidatedAotProfile::from_config(&WasmtimeConfig::default(), limits.compiler).unwrap()
+    };
+    let _stage = diagnostics::Span::new("compiler-construction-and-verification");
     IsolatedAotCompiler::new(
-        executable(),
-        executable_digest(),
+        &executable.path,
+        executable.digest,
         profile,
         authority(limits),
         limits,

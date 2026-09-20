@@ -450,3 +450,25 @@ not executable. The concrete HTTP profile requires all target pins, six closed
 configuration fields and explicit CAS; it never reinterprets a component digest
 as a publication selector. See the [HTTP trigger contract](../reference/http-triggers.md)
 for authorization, finite ownership, replay, recovery and listener boundaries.
+
+### Phase 3 componentless web control (#226)
+
+The descriptor baseline adds six `ReleaseService` methods: `PublishWebPackage`,
+`GetWebPublication`, `GetWebOperation`, `ChangeWebLifecycle`, `RenewWebEvidence`
+and `PrepareWebPublication`. All existing descriptors, field numbers, enum values
+and RPC signatures remain unchanged. The web methods use their own typed
+request/response messages rather than reinterpret legacy component selectors.
+
+`WebOperationReceipt` records publication, authenticated actor, exact operation
+ID, action/reason, expected/resulting lifecycle generations, request digest and
+replay state. The three mutation response types preserve `operation` at field 1
+and `audit_ack` at field 2; their payload bytes and owned sizes match the common
+preflight representation. Web lifecycle state remains distinct from sampled
+eligibility and the optional renderer descriptor.
+
+Preparation requires the exact publication, positive lifecycle generation and
+an explicit bounded wait. Its response reports the selected component and ready
+state, not a capsule admission grant or activation permission. Web management
+does not by itself enable Angular T1, additional renderer imports or providers.
+The [management reference](../reference/management-services.md#web-publication-and-preparation)
+defines the trust fence, finite ownership and uncertainty boundary.

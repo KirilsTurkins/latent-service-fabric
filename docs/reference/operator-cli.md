@@ -63,6 +63,29 @@ For publication/renewal, evidence paths resolve below the index file's parent.
 The index must be a file, not standard input. Local `package verify` and OCI push
 instead take an explicit evidence root. See the [evidence and registry formats](../phase-2-operator-workflows.md#local-packages-and-evidence).
 
+Componentless web packages use a separate typed command family:
+
+| Command | Behavior |
+| --- | --- |
+| `web publish DIR --evidence INDEX --operation-id OP --expected-generation 0` | Submits the exact web package and evidence to the node's current web admission policy. |
+| `web get --publication ID` | Reads one exact tenant-scoped web lifecycle record, current eligibility and optional renderer descriptor. |
+| `web operation OP` | Looks up a retained web operation; Unknown and Uncertain remain distinct from a committed receipt. |
+| `web revoke --publication ID --operation-id OP --expected-generation N` | Revokes the selected web publication at an explicit positive lifecycle generation. |
+| `web retire --publication ID --operation-id OP --expected-generation N` | Retires the selected web publication without changing its immutable bytes. |
+| `web renew-evidence --publication ID --package-digest SHA --evidence INDEX --operation-id OP --expected-generation N` | Rechecks evidence for the exact stored web package. |
+| `web prepare --publication ID --lifecycle-generation N --maximum-wait-ms N` | Waits once for shared immutable renderer preparation; creates no activation or execution permission. |
+
+Web preparation accepts 1 through 300000 milliseconds, intersected with the
+explicit RPC timeout. The standalone node permits up to 30000 milliseconds for
+web publication/evidence renewal and 300000 for preparation only. Other RPCs
+retain their existing transport ceilings; a five-second guest budget is not
+extended by preparing first. These are maximum waits, not hidden retries.
+Web responses never turn package, component or publication digests into authority.
+Use exact selected-publication deployment CAS to switch or restore web releases;
+the capsule staged-rollout compatibility protocol does not support web packages.
+The [Angular T1 qualification workflow](../testing/angular-t1-workflow.md)
+records the separate admission and runtime qualification boundary.
+
 Rollout operations retain their own revision and operation identity:
 
 | Command | Behavior |

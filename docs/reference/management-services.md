@@ -20,6 +20,7 @@ generated package inputs through this RPC boundary.
 | Service | Supported calls | Standalone behavior |
 | --- | --- | --- |
 | Release | `PublishRelease`, `GetRelease`, `ListReleases`, `GetReleaseLifecycle`, `GetReleaseOperation`, `ChangeReleaseLifecycle`, `RenewReleaseEvidence` | Immutable publication, tenant-scoped metadata, durable lifecycle and bounded evidence renewal. |
+| Release (web) | `PublishWebPackage`, `GetWebPublication`, `GetWebOperation`, `ChangeWebLifecycle`, `RenewWebEvidence`, `PrepareWebPublication` | Exact componentless web publication, independent lifecycle, bounded operation recovery and optional shared renderer preparation. |
 | Deployment | `ApplyDeployment`, `GetDeployment`, `ListDeployments`, `DeleteDeployment`, `GetDeploymentOperation` | Atomic tenant-scoped versions, optional managed operation receipts and coherent state snapshots, and bounded pages. |
 | Trigger | `ApplyTrigger`, `GetTrigger`, `ListTriggers`, `DeleteTrigger`, `GetTriggerOperation` | [Closed HTTP routes](http-triggers.md), explicit tenant publication/deployment pins, atomic CAS and bounded historical receipts. Mutations require durable audit. |
 | Route | `GetRouteSnapshot` | Complete projection of the current catalog generation for one tenant. |
@@ -83,6 +84,36 @@ when its optional tenant field is absent.
 See [release lifecycle](release-lifecycle.md) for authenticated actors, atomic
 mutation preconditions, evidence renewal, operation retention and uncertain
 outcomes. Historical descriptors and live eligibility are separate.
+
+## Web publication and preparation
+
+The web adapter attaches the same concrete artifact catalog and, for preparation,
+the existing execution backend. Publication/lifecycle calls require an
+authenticated tenant administrator; request DTOs have no actor override. Closed
+input/capacity checks and complete success-response reservation precede durable
+audit acceptance and mutation. Web receipts retain their own exact operation and
+publication identity; capsule and web receipt lookups do not alias each other.
+Rejected admission does not fabricate a committed receipt. A dropped waiter can
+leave an unknown audit terminal even when the exact catalog receipt is durable;
+an explicit web operation lookup is the recovery surface.
+
+Preparation checks current selected web eligibility and the exact lifecycle
+generation both before and after bounded native preparation. The returned
+descriptor is descriptive only and the ready artifact is released without
+materializing a guest Store. `with_web_catalog` rejects a different repository
+owner. `with_web_preparation` requires that catalog and rejects replacement of
+an attached backend. Neither method creates a private renderer pool.
+
+Web structural validation holds one nonqueued supply-chain verification
+reservation, shared with capsule verification/recovery, but not the current
+policy mutex. After decoding, the short trust fence rechecks current policy,
+tenant, publisher, builder, SBOM and time before minting the sealed web grant.
+Explicit control-plane verification can renew the existing fixed clock lease;
+guest invocation cannot. No lease width or proof-age ceiling is increased.
+
+The staged-rollout compatibility protocol below is capsule-only. Web selection
+and rollback use explicit deployment CAS; they cannot silently fall back to a
+descriptor comparison that loses package identity.
 
 ## Manual rollout control
 
