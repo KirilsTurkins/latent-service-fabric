@@ -68,28 +68,7 @@ async fn run(control: tokio::runtime::Handle, threads: crate::standalone::Runtim
     node.publish_with_timeout(Duration::from_secs(5))
         .await
         .unwrap();
-    let artifact = node.published().await.unwrap();
-    // This regression starts at guest dispatch and checks transport handoff,
-    // not cold compilation. Prepare the real stored publication before the
-    // two measured RPCs so compiler scheduling cannot consume their watchdog.
-    let key = super::super::publication_key(
-        node.owner.backend.as_ref(),
-        node.artifacts.as_ref(),
-        &node.fixture.tenant,
-        &artifact.descriptor.release_digest,
-    )
-    .unwrap();
-    let activation = tokio::time::timeout(
-        Duration::from_secs(5),
-        node.owner
-            .backend
-            .prepare_from_repository(node.artifacts.as_ref(), &key),
-    )
-    .await
-    .expect("ownership regression setup preparation watchdog")
-    .expect("ownership regression setup preparation failed");
-    drop(activation);
-    assert_eq!(node.owner.backend.cache_snapshot().entries, 1);
+    prepare(&node).await;
     let observer = node.owner.backend.invocation_input_observer();
     observer
         .enable(&[
@@ -153,6 +132,31 @@ async fn run(control: tokio::runtime::Handle, threads: crate::standalone::Runtim
         (0, 0, 0)
     );
     data.close().unwrap();
+}
+
+async fn prepare(node: &Node) {
+    let artifact = node.published().await.unwrap();
+    // This regression starts at guest dispatch and checks transport handoff,
+    // not cold compilation. Prepare the real stored publication before the
+    // two measured RPCs so compiler scheduling cannot consume their watchdog.
+    let key = super::super::publication_key(
+        node.owner.backend.as_ref(),
+        node.artifacts.as_ref(),
+        &node.fixture.tenant,
+        &artifact.descriptor.release_digest,
+    )
+    .unwrap();
+    let activation = tokio::time::timeout(
+        Duration::from_secs(5),
+        node.owner
+            .backend
+            .prepare_from_repository(node.artifacts.as_ref(), &key),
+    )
+    .await
+    .expect("ownership regression setup preparation watchdog")
+    .expect("ownership regression setup preparation failed");
+    drop(activation);
+    assert_eq!(node.owner.backend.cache_snapshot().entries, 1);
 }
 
 async fn interrupt(node: &mut Node, observer: &InvocationInputObserver) {
