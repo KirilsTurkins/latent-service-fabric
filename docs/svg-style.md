@@ -49,6 +49,79 @@ to one file at a time. Prefix every internal ID (`example-arrow`,
 inlines SVG content. Keep text as real SVG `<text>` elements rather than
 flattening it into paths.
 
+## Local resources and supported CSS
+
+[`tools/svg_references.py`](../tools/svg_references.py) owns resource checking
+for the repository SVG validator. The documentation validator reuses that same
+path; it does not maintain a second SVG policy. All IDs are collected before
+references are checked, so a definition may follow its use. References are
+case-sensitive and scoped to one SVG: a definition in another file never
+satisfies a missing local ID. Duplicate IDs remain an error independently of
+reference checking.
+
+`href` (including namespaced `xlink:href`) and `src` must contain a nonempty
+literal fragment such as `#example-arrow`. Every CSS `url(...)` must likewise
+name an existing local ID. This covers presentation attributes such as `fill`,
+`stroke`, `filter`, `clip-path`, `mask` and marker properties, inline `style`
+attributes, and each `<style>` block. The helper's `CSS_ATTRIBUTES` set records
+the checked presentation attributes; animation `from`, `to`, `by` and `values`
+retain the resource tripwire too. Ordinary metadata such as `aria-label`, `id`
+and `data-*` is not interpreted as CSS.
+
+External URLs, `data:` URLs, protocol-relative URLs and cross-file references
+are rejected, including `this-file.svg#example-arrow`. Empty references, bare
+`#` and missing IDs are errors. A nonempty `xml:base` is unsupported because it
+could redirect otherwise local-looking fragments. The checker never fetches
+references, reads target files, executes CSS/SVG or rewrites an asset.
+
+The static-diagram CSS subset has these explicit rules:
+
+- Literal `url` is case-insensitive. Unquoted, single-quoted and double-quoted
+  arguments are accepted, including ASCII whitespace around the argument:
+  `url(#example-arrow)`, `URL( '#example-arrow' )` and
+  `url( "#example-arrow" )`. IDs themselves cannot contain whitespace. Multiple
+  URLs and URLs inside ordinary nested functions are checked in source order.
+- Terminated `/* ... */` comments between tokens are ignored. Ordinary quoted
+  strings are inert rather than mistaken for URL/import tokens. Comments never
+  join identifier tokens. The `url` name must immediately precede `(`; a
+  whitespace/comment-separated spelling is rejected rather than repaired.
+  Comments inside an unquoted URL or between a quoted argument and its closing
+  `)` are explicitly unsupported, not stripped. Comment-like characters inside
+  a quoted URL are literal characters and must match the referenced ID.
+- CSS backslash escapes outside comments are explicitly rejected, including
+  escaped function names, import keywords, strings and fragments. Fragment IDs
+  must be literal: percent encoding, additional `#`, parentheses/SVG view
+  specifications and control characters are unsupported. XML character
+  references are checked after the XML parser decodes them.
+- `@import` is always rejected, regardless of target or case. Indirect resource
+  functions `image()`, `image-set()`, `-webkit-image-set()`, `src()` and `attr()`
+  are outside this subset; use literal `url(...)` references instead.
+  Unterminated strings/comments/URLs, malformed URL arguments and unmatched or
+  unclosed delimiters fail explicitly. There is no browser-style error recovery.
+
+Diagnostics include the file, the offending reference or syntax excerpt, and
+its element/attribute context. CSS offsets are zero-based character positions
+within that XML-decoded attribute or style block. A malformed source fails
+closed without preventing checks of other attributes, style blocks or files.
+This is a resource tokenizer, not a complete CSS property/selector/cascade
+validator, animation validator, renderer or sanitizer for arbitrary hostile SVG.
+The existing accessibility, forbidden-element and event-handler checks remain
+separate requirements.
+
+With the pinned Python environment and `tools/requirements.lock` installed,
+run the focused suite from the repository root:
+
+```sh
+PYTHONPATH=tools python -m unittest tools.tests.test_svg_references tools.tests.test_validate_repository tools.tests.test_validate_docs
+python tools/validate_repository.py
+python tools/validate_docs.py
+```
+
+The tests exercise both validation paths, including real marker, filter and
+gradient definitions in `phase2-delivery-boundary.svg`, without changing source
+asset bytes. Existing contract-test discovery and documentation CI own these
+checks; no extra workflow or rendering dependency is required.
+
 ## Layout and typography
 
 Use the 1440 × 760 wide canvas for flows, decision diagrams, and architecture
