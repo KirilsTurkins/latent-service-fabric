@@ -133,7 +133,9 @@ def assets(client, node, records, publications):
             verified.append({"publication": publications[name], "path": asset["path"], "digest": asset["digest"]})
         for private in ("/server/renderer.wasm", "/metadata/web-application.json", "/package/sbom.cdx.json", "/../catalog.json"):
             http(client, node, "/_lsf/assets/" + publications[name] + private, expected=(400, 404))
-        http(client, node, "/_lsf/assets/" + publications[name] + record["assets"][0]["path"], host=client.foreign, expected=403)
+        denied, fields = http(client, node, "/_lsf/assets/" + publications[name] + record["assets"][0]["path"],
+                              host=client.foreign, expected=(403, 404))
+        require(not denied and "etag" not in fields, "reference-foreign-asset-disclosure")
     for path in ("/catalog.json", "/data/catalog.json", "/_lsf/catalog", "/v1/catalog"):
         http(client, node, path, expected=404)
     after = idle_inventory(client)
