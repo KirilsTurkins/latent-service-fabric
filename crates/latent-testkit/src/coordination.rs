@@ -48,6 +48,8 @@ impl PollProbe {
         );
     }
 
+    // For unit-output futures the readiness assertion itself is the result.
+    #[allow(clippy::must_use_candidate)]
     pub fn ready<F: Future + ?Sized>(&self, future: Pin<&mut F>) -> F::Output {
         match self.poll(future) {
             Poll::Ready(value) => value,
@@ -63,3 +65,5 @@ impl PollProbe {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod identity_tests;

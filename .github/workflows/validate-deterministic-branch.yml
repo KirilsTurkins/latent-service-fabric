@@ -36,9 +36,15 @@ jobs:
           cargo test -p latent-testkit --no-default-features --lib --locked -- --test-threads=1
           cargo test -p latent-testkit --no-default-features --lib --locked -- --test-threads=4
           cargo test -p latent-admission -p latent-scheduler --lib --locked
-          cargo clippy -p latent-testkit --no-default-features --lib --locked -- -D warnings
-          cargo clippy -p latent-admission -p latent-scheduler --tests --locked -- -D warnings
           python3 tools/check_testkit_dependencies.py
+          cargo run -p latent-testkit --no-default-features --example deadline --locked
+          cargo run -p latent-testkit --no-default-features --example cancellation --locked
+      - name: Check lint contracts
+        run: |
+          status=0
+          cargo clippy -p latent-testkit --no-default-features --all-targets --locked --no-deps -- -D warnings || status=$?
+          cargo clippy -p latent-admission -p latent-scheduler --tests --locked --no-deps -- -D warnings || status=$?
+          exit "$status"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: 50f003dd006e0786494936c49e55dc683cf26fd6
@@ -46,10 +52,16 @@ jobs:
           persist-credentials: false
       - name: Measure prebuilt before and after suites without retries
         run: python3 tools/measure_deterministic_tests.py --baseline .validation-baseline --output target/deterministic-tests.json
+      - name: Verify default runtime harness compatibility
+        run: |
+          cargo test -p latent-testkit --lib --locked
+          cargo test -p latent-testkit --doc --locked
+          cargo clippy -p latent-testkit --all-targets --all-features --locked --no-deps -- -D warnings
       - name: Retain timing and count evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: deterministic-test-evidence
           path: target/deterministic-tests.json
           if-no-files-found: warn
+          retention-days: 7

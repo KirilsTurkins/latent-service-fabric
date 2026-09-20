@@ -1,9 +1,14 @@
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::task::{Context, Poll, Waker};
 
 use super::{with_watchdog, WATCHDOG};
+
+// Opaque identities never repeat across fixture instances or recycled slots.
+// Business/request identifiers remain supplied by DeterministicIds, separately.
+static NEXT_REGISTRATION: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Stage {
@@ -74,9 +79,7 @@ impl Rendezvous {
     }
 
     fn lock(&self) -> MutexGuard<'_, Vec<Slot>> {
-        self.0
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
+        self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     pub fn track<T>(&self, owner: T) -> Result<(Registration, Tracked<T>), CoordinationError> {
@@ -84,34 +87,22 @@ impl Rendezvous {
         let (index, slot) = slots
             .iter_mut()
             .enumerate()
-            .find(|(_, slot)| slot.stage == Stage::Retired && slot.generation < u64::MAX)
+            .find(|(_, slot)| slot.stage == Stage::Retired)
             .ok_or(CoordinationError::Capacity)?;
-        slot.generation += 1;
+        slot.generation = NEXT_REGISTRATION
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| current.checked_add(1))
+            .map_err(|_| CoordinationError::Capacity)?;
         slot.stage = Stage::Requested;
         slot.epoch = 0;
         slot.blocked = false;
         slot.released = false;
         slot.waker = None;
-        let registration = Registration {
-            slot: index,
-            generation: slot.generation,
-        };
-        Ok((
-            registration,
-            Tracked {
-                rendezvous: self.clone(),
-                registration,
-                owner: Some(owner),
-            },
-        ))
+        let registration = Registration { slot: index, generation: slot.generation };
+        Ok((registration, Tracked { rendezvous: self.clone(), registration, owner: Some(owner) }))
     }
 
-    fn slot(
-        slots: &mut [Slot],
-        registration: Registration,
-    ) -> Result<&mut Slot, CoordinationError> {
-        slots
-            .get_mut(registration.slot)
+    fn slot(slots: &mut [Slot], registration: Registration) -> Result<&mut Slot, CoordinationError> {
+        slots.get_mut(registration.slot)
             .filter(|slot| slot.generation == registration.generation)
             .ok_or(CoordinationError::StaleRegistration)
     }
@@ -119,66 +110,40 @@ impl Rendezvous {
     pub fn snapshot(&self, registration: Registration) -> Result<Snapshot, CoordinationError> {
         let mut slots = self.lock();
         let slot = Self::slot(&mut slots, registration)?;
-        Ok(Snapshot {
-            stage: slot.stage,
-            blocked: slot.blocked,
-        })
+        Ok(Snapshot { stage: slot.stage, blocked: slot.blocked })
     }
 
     /// Checks current readiness and returns a ticket for this specific pause.
-    pub fn blocked(
-        &self,
-        registration: Registration,
-        stage: Stage,
-    ) -> Result<PauseTicket, CoordinationError> {
+    pub fn blocked(&self, registration: Registration, stage: Stage) -> Result<PauseTicket, CoordinationError> {
         let mut slots = self.lock();
         let slot = Self::slot(&mut slots, registration)?;
-        if slot.stage != stage {
-            return Err(CoordinationError::WrongStage);
-        }
-        if !slot.blocked {
-            return Err(CoordinationError::MissingReadiness);
-        }
-        Ok(PauseTicket {
-            registration,
-            epoch: slot.epoch,
-        })
+        if slot.stage != stage { return Err(CoordinationError::WrongStage); }
+        if !slot.blocked { return Err(CoordinationError::MissingReadiness); }
+        Ok(PauseTicket { registration, epoch: slot.epoch })
     }
 
     pub fn release(&self, ticket: PauseTicket) -> Result<(), CoordinationError> {
         let waker = {
             let mut slots = self.lock();
             let slot = Self::slot(&mut slots, ticket.registration)?;
-            if slot.epoch != ticket.epoch {
-                return Err(CoordinationError::StaleRegistration);
-            }
-            if !slot.blocked {
-                return Err(CoordinationError::MissingReadiness);
-            }
+            if slot.epoch != ticket.epoch { return Err(CoordinationError::StaleRegistration); }
+            if !slot.blocked { return Err(CoordinationError::MissingReadiness); }
             slot.blocked = false;
             slot.released = true;
             slot.waker.take()
         };
-        if let Some(waker) = waker {
-            waker.wake();
-        }
+        if let Some(waker) = waker { waker.wake(); }
         Ok(())
     }
 
     pub fn require_retired(&self, registration: Registration) -> Result<(), CoordinationError> {
-        if self.snapshot(registration)?.stage == Stage::Retired {
-            Ok(())
-        } else {
-            Err(CoordinationError::WrongStage)
-        }
+        if self.snapshot(registration)?.stage == Stage::Retired { Ok(()) }
+        else { Err(CoordinationError::WrongStage) }
     }
 
     #[must_use]
     pub fn live_owners(&self) -> usize {
-        self.lock()
-            .iter()
-            .filter(|slot| slot.stage != Stage::Retired)
-            .count()
+        self.lock().iter().filter(|slot| slot.stage != Stage::Retired).count()
     }
 }
 
@@ -193,25 +158,17 @@ pub struct Tracked<T> {
 
 impl<T> Tracked<T> {
     #[must_use]
-    pub fn owner(&self) -> &T {
-        self.owner.as_ref().expect("live tracked owner")
-    }
+    pub fn owner(&self) -> &T { self.owner.as_ref().expect("live tracked owner") }
 
     /// Call only after observing the corresponding real subsystem transition.
     pub fn commit(&mut self, stage: Stage) -> Result<(), CoordinationError> {
         let mut slots = self.rendezvous.lock();
         let slot = Rendezvous::slot(&mut slots, self.registration)?;
-        let legal = matches!(
-            (slot.stage, stage),
-            (
-                Stage::Requested,
-                Stage::Queued | Stage::Entered | Stage::CancellationObserved
-            ) | (Stage::Queued, Stage::Entered | Stage::CancellationObserved)
-                | (Stage::Entered, Stage::CancellationObserved)
-        );
-        if !legal || slot.blocked {
-            return Err(CoordinationError::InvalidTransition);
-        }
+        let legal = matches!((slot.stage, stage),
+            (Stage::Requested, Stage::Queued | Stage::Entered | Stage::CancellationObserved)
+            | (Stage::Queued, Stage::Entered | Stage::CancellationObserved)
+            | (Stage::Entered, Stage::CancellationObserved));
+        if !legal || slot.blocked { return Err(CoordinationError::InvalidTransition); }
         slot.stage = stage;
         Ok(())
     }
@@ -219,15 +176,9 @@ impl<T> Tracked<T> {
     /// Parks until the controller releases this *live* pause; cancellation drops
     /// its registration. Each wait has an independent real-clock watchdog.
     pub async fn pause(&mut self) {
-        with_watchdog(
-            WATCHDOG,
-            Gate {
-                rendezvous: self.rendezvous.clone(),
-                registration: self.registration,
-                epoch: None,
-            },
-        )
-        .await;
+        with_watchdog(WATCHDOG, Gate {
+            rendezvous: self.rendezvous.clone(), registration: self.registration, epoch: None,
+        }).await;
     }
 }
 
@@ -264,14 +215,9 @@ impl Future for Gate {
         let this = self.get_mut();
         let mut slots = this.rendezvous.lock();
         let slot = Rendezvous::slot(&mut slots, this.registration).expect("live work owner");
-        if this.epoch.is_some() && slot.released {
-            return Poll::Ready(());
-        }
+        if this.epoch.is_some() && slot.released { return Poll::Ready(()); }
         if this.epoch.is_none() {
-            slot.epoch = slot
-                .epoch
-                .checked_add(1)
-                .expect("pause generation exhausted");
+            slot.epoch = slot.epoch.checked_add(1).expect("pause generation exhausted");
             this.epoch = Some(slot.epoch);
             slot.released = false;
             slot.blocked = true;
