@@ -64,17 +64,21 @@ internal sealed class Peer : IAsyncDisposable
 
     internal static async Task Reply(HttpContext context, IMessage message, string status = "0")
     {
+        // A normal unary peer consumes the bounded request before completing
+        // its response. Otherwise Kestrel may reset the unread request stream,
+        // correctly triggering the client's no-replay connection retirement.
+        await context.Request.Body.CopyToAsync(Stream.Null, context.RequestAborted);
         context.Response.ContentType = "application/grpc+proto";
         context.Response.DeclareTrailer("grpc-status");
         await context.Response.Body.WriteAsync(Packet(message.ToByteArray()), context.RequestAborted);
         context.Response.AppendTrailer("grpc-status", status);
     }
 
-    internal static Task Error(HttpContext context, string status)
+    internal static async Task Error(HttpContext context, string status)
     {
+        await context.Request.Body.CopyToAsync(Stream.Null, context.RequestAborted);
         context.Response.ContentType = "application/grpc+proto";
         context.Response.Headers["grpc-status"] = status;
-        return Task.CompletedTask;
     }
 
     internal static byte[] Packet(byte[] payload)
