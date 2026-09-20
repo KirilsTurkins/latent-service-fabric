@@ -170,7 +170,6 @@ def canary(client, node, peer, records, publications):
                 "reference-prerender-mutable-alias")
         unchanged = client.call("node", "get", NODE_ID)["data"]["inventory"]["cellCapacity"]
         require_static_cell_bypass(occupied, unchanged)
-        started_at = time.monotonic()
         started = receipt(client.call("rollout", "start", "healthy", "--base", "green",
             "--expected-base-generation", base["generation"], "--candidate", candidate, "--weights", "5000,10000",
             "--operation-id", "reference-canary-start", "--expected-revision", "0", "--canary-policy", policy), "reference-canary-start")
@@ -197,12 +196,19 @@ def canary(client, node, peer, records, publications):
     rejected = change(client, "promote", "healthy", started["revision"], "reference-collecting-promote", "--next-step", "1", codes=(4,))
     rejection = verify_collecting_rejection(client, started, rejected)
     samples = [invoke(client, records, publications, f"reference-canary-{ordinal:02d}", route=None) for ordinal in range(16)]
-    while time.monotonic() < started_at + 10:
+    # The node opens its window after the start mutation, on its own clock.
+    # Read the actual state until closure; elapsed client time is not proof.
+    observation_deadline = min(client.deadline, time.monotonic() + 12)
+    for _ in range(64):
         client.cancellation.check()
-        require(time.monotonic() < client.deadline, "reference-canary-deadline")
+        require(time.monotonic() < observation_deadline, "reference-canary-deadline")
         node.drain()
-        time.sleep(0.025)
-    report = client.call("rollout", "evaluate", "healthy", "--expected-revision", started["revision"])["data"]["report"]
+        report = client.call("rollout", "evaluate", "healthy", "--expected-revision", started["revision"])["data"]["report"]
+        if not report["assessment"]["verdict"].endswith(("COLLECTING", "DRAINING")):
+            break
+        time.sleep(0.2)
+    else:
+        raise WorkflowError("reference-canary-observation-bound")
     candidate_counts, baseline_counts = validate_window(report, [sample["pin"] for sample in samples], started,
                                                        {"green": records["blue"], "blue": records["green"]})
     promoted = receipt(change(client, "promote", "healthy", started["revision"], "reference-promote", "--next-step", "1"), "reference-promote")
