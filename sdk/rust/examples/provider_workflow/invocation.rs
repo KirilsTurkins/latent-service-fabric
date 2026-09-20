@@ -41,7 +41,15 @@ pub async fn run(
                     "blob-invocation-rpc"
                 }
             })?;
-        require(guest(&response.value)? == expected, "provider-result")?;
+        let actual = guest(&response.value)?;
+        if actual != expected {
+            return Err(match (provider, actual) {
+                ("http", 10) => "http-guest-permission-denied",
+                ("http", 11) => "http-guest-outcome-uncertain",
+                ("http", _) => "http-guest-unexpected-result",
+                _ => "blob-guest-unexpected-result",
+            });
+        }
         activations.push(format!("rust-{provider}"));
         assertions.insert(assertion, true);
     }
