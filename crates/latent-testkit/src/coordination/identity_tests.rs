@@ -13,8 +13,14 @@ fn tickets_from_another_fixture_cannot_release_a_live_owner() {
     probe.pending(second_pause.as_mut());
     let first_ticket = first.blocked(first_id, Stage::Requested).unwrap();
     let second_ticket = second.blocked(second_id, Stage::Requested).unwrap();
-    assert_eq!(second.release(first_ticket), Err(CoordinationError::StaleRegistration));
-    assert_eq!(first.snapshot(second_id), Err(CoordinationError::StaleRegistration));
+    assert_eq!(
+        second.release(first_ticket),
+        Err(CoordinationError::StaleRegistration)
+    );
+    assert_eq!(
+        first.snapshot(second_id),
+        Err(CoordinationError::StaleRegistration)
+    );
     second.blocked(second_id, Stage::Requested).unwrap();
     first.release(first_ticket).unwrap();
     second.release(second_ticket).unwrap();

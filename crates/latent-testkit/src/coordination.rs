@@ -64,6 +64,6 @@ impl PollProbe {
 }
 
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 mod identity_tests;
+#[cfg(test)]
+mod tests;

@@ -21,7 +21,10 @@ async fn main() {
         PollProbe::default().pending(future.as_mut());
         rendezvous.blocked(id, Stage::Entered).unwrap();
         assert_eq!(weak.strong_count(), 1);
-        assert_eq!(rendezvous.require_retired(id), Err(CoordinationError::WrongStage));
+        assert_eq!(
+            rendezvous.require_retired(id),
+            Err(CoordinationError::WrongStage)
+        );
         let task = tokio::spawn(future);
         task.abort();
         // abort() requests cancellation; joining proves that this owner was dropped.
@@ -29,5 +32,6 @@ async fn main() {
         rendezvous.require_retired(id).unwrap();
         assert!(weak.upgrade().is_none());
         assert_eq!(rendezvous.live_owners(), 0);
-    }).await;
+    })
+    .await;
 }
