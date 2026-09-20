@@ -29,10 +29,13 @@ jobs:
       reason: ${{ steps.select.outputs.reason }}
       changed_files: ${{ steps.select.outputs.changed_files }}
       renderer: ${{ steps.select.outputs.renderer }}
+      fast_packages: ${{ steps.select.outputs.fast_packages }}
+      expected_jobs: ${{ steps.select.outputs.expected_jobs }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Classify the complete change
         id: select
         run: python3 tools/ci_profile.py
@@ -55,8 +58,53 @@ jobs:
         run: python -m pip install --requirement tools/requirements.lock
       - name: Validate documentation and profile selection
         run: |
-          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage
+          python3 tools/ci_coverage.py
           python3 tools/validate_docs.py
+      - name: Preserve repository source contracts in the host-only profile
+        if: needs.profile.outputs.profile == 'fast'
+        run: |
+          python3 tools/validate_repository.py
+          python3 tools/validate_foundation.py
+
+  fast:
+    name: Fast host correctness
+    env:
+      RUSTUP_TOOLCHAIN: 1.97.1
+    needs: profile
+    if: needs.profile.outputs.fast_packages != '' && needs.profile.outputs.fast_packages != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: rustfmt, clippy
+      - name: Run the selected dependency-bounded correctness suites
+        env:
+          CI_FAST_PACKAGES: ${{ needs.profile.outputs.fast_packages }}
+        run: python3 tools/ci_fast.py --packages-json "$CI_FAST_PACKAGES" --output "$RUNNER_TEMP/ci-fast/affected"
+      - name: Qualify the genuinely narrow reverse-dependent fixture
+        if: needs.profile.outputs.profile == 'full'
+        run: |
+          packages="$(python3 - <<'PYCODE'
+          from tools.ci_profile import classify_paths
+          selection = classify_paths(['crates/latent-state/src/lib.rs'])
+          assert selection.profile == 'fast'
+          print(selection.outputs()['fast_packages'])
+          PYCODE
+          )"
+          python3 tools/ci_fast.py --packages-json "$packages" --output "$RUNNER_TEMP/ci-fast/narrow"
+      - name: Retain exact host dependency, discovery and timing receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-host-correctness-${{ github.sha }}
+          path: ${{ runner.temp }}/ci-fast/
+          if-no-files-found: error
+          retention-days: 7
 
   rust:
     name: Rust 1.97.1
@@ -133,11 +181,17 @@ jobs:
         run: |
           cargo build --workspace --all-targets --all-features --locked
           cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics > "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
+      - name: Verify complete registered workspace test discovery
+        run: python3 tools/ci_suite_discovery.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --receipt "$RUNNER_TEMP/ci-discovery.json"
       - name: Run tests
         run: |
-          cargo test --workspace --all-targets --all-features --locked
-          cargo test -p latent-admission -p latent-scheduler --doc --locked
-          cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests
+          set -o pipefail
+          cargo test --workspace --all-targets --all-features --locked 2>&1 | tee "$RUNNER_TEMP/ci-workspace-tests.log"
+          python3 tools/ci_suite_discovery.py --execution-log "$RUNNER_TEMP/ci-workspace-tests.log"
+          cargo test -p latent-admission -p latent-scheduler --doc --locked 2>&1 | tee "$RUNNER_TEMP/ci-doctests.log"
+          python3 tools/ci_suite_discovery.py --recipe explicit-doctests --execution-log "$RUNNER_TEMP/ci-doctests.log"
+          cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests 2>&1 | tee "$RUNNER_TEMP/ci-signing-compatibility.log"
+          python3 tools/ci_suite_discovery.py --recipe signing-compatibility --execution-log "$RUNNER_TEMP/ci-signing-compatibility.log"
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -302,6 +356,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+      - name: Retain exact workspace test discovery and custom-harness execution
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-runtime-discovery-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/ci-discovery.json
+            ${{ runner.temp }}/ci-workspace-tests.log
+            ${{ runner.temp }}/ci-doctests.log
+            ${{ runner.temp }}/ci-signing-compatibility.log
+          if-no-files-found: warn
+          retention-days: 7
+
   oci-registry:
     name: OCI registry TLS integration
     needs: [profile, contracts]
@@ -410,7 +477,7 @@ jobs:
   msrv:
     name: Rust MSRV 1.94.1
     needs: profile
-    if: needs.profile.outputs.profile == 'full'
+    if: needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -436,7 +503,22 @@ jobs:
                 (github.event_name == 'workflow_dispatch' &&
                  (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Check workspace at MSRV
+        if: needs.profile.outputs.profile == 'full'
         run: cargo +1.94.1 check --workspace --all-targets --all-features --locked
+
+      - name: Check all selected reverse dependents at MSRV
+        if: needs.profile.outputs.profile == 'fast'
+        env:
+          CI_FAST_PACKAGES: ${{ needs.profile.outputs.fast_packages }}
+        run: python3 tools/ci_fast.py --msrv --packages-json "$CI_FAST_PACKAGES" --output "$RUNNER_TEMP/ci-fast-msrv"
+      - name: Retain narrow MSRV timing evidence
+        if: always() && needs.profile.outputs.profile == 'fast'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-host-msrv-${{ github.sha }}
+          path: ${{ runner.temp }}/ci-fast-msrv/
+          if-no-files-found: error
+          retention-days: 7
 
   contracts:
     name: Repository contracts
@@ -622,30 +704,14 @@ jobs:
   result:
     name: CI result
     if: always()
-    needs: [profile, docs, rust, oci-registry, catalog, msrv, contracts, sdks]
+    needs: [profile, docs, fast, rust, oci-registry, catalog, msrv, contracts, sdks]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Require every selected validation job
         env:
           CI_JOB_RESULTS: ${{ toJSON(needs) }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import sys
-          results = json.loads(os.environ['CI_JOB_RESULTS'])
-          profile = results['profile']['outputs'].get('profile')
-          full = {'rust', 'oci-registry', 'catalog', 'msrv', 'contracts', 'sdks'}
-          required = {'profile', 'docs'} | (full if profile == 'full' else set())
-          failures = [name for name in required if results[name]['result'] != 'success']
-          if profile not in {'docs', 'full'}:
-              failures.append('unknown CI profile')
-          if profile == 'docs':
-              failures.extend(name for name in full if results[name]['result'] != 'skipped')
-          print('Selected profile:', profile)
-          print('Job results:', {name: value['result'] for name, value in results.items()})
-          if failures:
-              print('CI did not satisfy its selected profile:', ', '.join(failures), file=sys.stderr)
-              sys.exit(1)
-          PY
+        run: python3 tools/ci_result.py

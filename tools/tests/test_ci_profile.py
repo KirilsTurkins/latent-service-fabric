@@ -39,7 +39,7 @@ class ClassificationTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertTrue(profile.classify_paths([path]).renderer)
         self.assertFalse(profile.classify_paths(["README.md"]).renderer)
-        self.assertFalse(profile.classify_paths(["sdk/go/client.go"]).renderer)
+        self.assertTrue(profile.classify_paths(["sdk/go/client.go"]).renderer)
         self.assertTrue(profile.classify_paths([]).renderer)
         self.assertTrue(profile.classify_event("workflow_dispatch", {}, Path.cwd()).renderer)
         self.assertTrue(profile.classify_event("push", {}, Path.cwd()).renderer)
@@ -133,10 +133,7 @@ class ClassificationTests(unittest.TestCase):
             result = profile.classify_event("pull_request", event, Path.cwd())
         self.assertEqual((result.profile, result.reason), ("full", "history-unavailable"))
         fetches = [call.args[1:] for call in git.call_args_list if call.args[1] == "fetch"]
-        self.assertEqual(fetches, [
-            ("fetch", "--no-tags", "--filter=blob:none", "--depth=128", "origin", "a" * 40, "b" * 40),
-            ("fetch", "--no-tags", "--filter=blob:none", "--depth=512", "origin", "a" * 40, "b" * 40),
-        ])
+        self.assertEqual(fetches, [])
 
     def test_failure_never_emits_docs_or_any_accepted_output(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -159,7 +156,8 @@ class ClassificationTests(unittest.TestCase):
                     "--github-output", str(output), "--github-step-summary", str(summary)]
             with patch.dict(os.environ, {}, clear=True), contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(profile.main(args), 0)
-            self.assertEqual(output.read_text(), "profile=full\nreason=manual-dispatch\nchanged_files=0\nrenderer=true\n")
+            self.assertEqual(dict(line.split("=", 1) for line in output.read_text().splitlines()),
+                             profile.Decision("full", "manual-dispatch", 0).outputs())
             self.assertIn("manual-dispatch", summary.read_text())
 
 
@@ -270,7 +268,7 @@ class GitHistoryTests(unittest.TestCase):
         result = self.pr(self.base, head)
         self.assertEqual((result.profile, result.changed_files), ("full", 306))
 
-    def test_depth_one_checkout_fetches_exact_missing_history(self) -> None:
+    def test_depth_one_checkout_preserves_full_without_fetching(self) -> None:
         self.git("config", "uploadpack.allowFilter", "true")
         self.write("docs/first.md", "first\n")
         self.commit()
@@ -285,9 +283,9 @@ class GitHistoryTests(unittest.TestCase):
                 result = profile.classify_event("pull_request", {
                     "pull_request": {"base": {"sha": self.base}, "head": {"sha": head}},
                 }, checkout)
-            self.assertEqual((result.profile, result.changed_files), ("docs", 2))
+            self.assertEqual((result.profile, result.reason), ("full", "history-unavailable"))
             fetches = [call for call in git.call_args_list if call.args[1] == "fetch"]
-            self.assertEqual(len(fetches), 1)
+            self.assertEqual(fetches, [])
 
 
 if __name__ == "__main__":

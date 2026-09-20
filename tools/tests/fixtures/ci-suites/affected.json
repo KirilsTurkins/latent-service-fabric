@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "latent.ci.affected-fixtures.v1",
+  "cases": [
+    {"name": "rust-only-runtime-dependent", "paths": ["crates/latent-core/src/lib.rs"], "profile": "full", "renderer": true},
+    {"name": "narrow-reverse-dependents", "paths": ["crates/latent-state/src/lib.rs"], "profile": "fast", "renderer": false,
+     "packages": ["latent-commit", "latent-core", "latent-effects", "latent-state", "latent-workflows"]},
+    {"name": "provider-only", "paths": ["crates/latent-nats/src/lib.rs"], "profile": "full", "renderer": true},
+    {"name": "renderer", "paths": ["tools/angular-renderer-adapter/src/lib.rs"], "profile": "full", "renderer": true},
+    {"name": "docs", "paths": ["README.md", "docs/reference/operator-cli.md"], "profile": "docs", "renderer": false},
+    {"name": "mdx-product-input", "paths": ["docs/content/new.mdx"], "profile": "full", "renderer": true},
+    {"name": "mixed", "paths": ["README.md", "crates/latent-state/src/lib.rs"], "profile": "full", "renderer": true},
+    {"name": "deleted", "paths": ["crates/latent-state/src/removed.rs"], "profile": "full", "renderer": true},
+    {"name": "renamed-both-sides", "paths": ["crates/latent-state/src/previous.rs", "crates/latent-state/src/lib.rs"], "profile": "full", "renderer": true},
+    {"name": "shared-wit", "paths": ["wit/platform/runtime/package.wit"], "profile": "full", "renderer": true},
+    {"name": "shared-protobuf", "paths": ["api/proto/latent/control/v1/release.proto"], "profile": "full", "renderer": true},
+    {"name": "fixture", "paths": ["examples/echo-contract/component.wasm"], "profile": "full", "renderer": true},
+    {"name": "shared-infrastructure", "paths": [".github/workflows/ci.yml"], "profile": "full", "renderer": true},
+    {"name": "manifest-old-graph-unknown", "paths": ["crates/latent-state/Cargo.toml"], "profile": "full", "renderer": false},
+    {"name": "unknown", "paths": ["unknown/new.file"], "profile": "full", "renderer": true}
+  ]
+}

@@ -20,6 +20,11 @@ import subprocess
 import sys
 import threading
 
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from tools import ci_suite_inventory as registry
+
 MAX_INVENTORY_BYTES = 32 * 1024 * 1024
 MAX_LINE_BYTES = 1024 * 1024
 MAX_RECORDS = 100_000
@@ -42,35 +47,27 @@ class Suite:
     filter: str
     names: frozenset[str]
     exact: bool
+    timeout: int = 300
 
 
-SUITES = {
-    "browser-boundary": Suite(
-        "apps/latentd/Cargo.toml", "latentd", "src/lib_root.rs",
-        "standalone::http::assets::browser::actual_browser_",
-        frozenset({"standalone::http::assets::browser::actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress",
-                   "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract"}), False),
-    "operator-fixture": Suite(
-        "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
-        POLICY_PREFIX + "export_operator_workflow_fixture",
-        frozenset({POLICY_PREFIX + "export_operator_workflow_fixture"}), True),
-    "publication-fixture": Suite(
-        "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
-        POLICY_PREFIX + "export_publication_workflow_fixture",
-        frozenset({POLICY_PREFIX + "export_publication_workflow_fixture"}), True),
-    "resource-fixture": Suite(
-        "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
-        POLICY_PREFIX + "resources::export_phase2_resource_fixture",
-        frozenset({POLICY_PREFIX + "resources::export_phase2_resource_fixture"}), True),
-    "trust-currentness": Suite(
-        "apps/latentd/Cargo.toml", "latentd", "src/lib_root.rs", CURRENTNESS_PREFIX,
-        frozenset(CURRENTNESS_PREFIX + name for name in (
-            "profile::external_profile_preserves_cold_warm_and_restart_requirements",
-            "real_proof_age_expiry_denies_retained_native_work_with_a_current_clock_lease",
-            "real_policy_expiry_denies_native_work_and_recovers_readable_negative_history",
-            "real_publisher_revocation_denies_native_work_without_any_registry_event",
-        )), False),
-}
+def registered_suites() -> dict[str, Suite]:
+    data = registry.load()
+    owners = {item["id"]: item for item in data["suites"]}
+    result = {}
+    for key, selected in data["selections"].items():
+        # Provider integration harnesses retain their existing setup/cleanup
+        # runners; their same exact identities are checked by full discovery.
+        if selected.get("runner") != "ci_rust_artifacts":
+            continue
+        owner = owners[selected["suite"]]
+        registry.require(owner["kind"] == "lib" and selected["ignored"], "artifact-runner-contract")
+        result[key] = Suite(owner["manifest"], owner["target"], owner["source"], selected["filter"],
+                            frozenset(selected["names"]), selected["exact"], selected["timeoutSeconds"])
+    registry.require(result, "missing-artifact-suites")
+    return result
+
+
+SUITES = registered_suites()
 
 
 @dataclass(frozen=True)
@@ -270,7 +267,7 @@ def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str]) ->
         raise ArtifactError("libtest-list-failed")
     validate_listing(output, suite)
     status, output = run_owned([*command, "--test-threads=1"], cwd=artifact.package, env=runtime_env,
-                               timeout=300, maximum=MAX_OUTPUT_BYTES)
+                               timeout=suite.timeout, maximum=MAX_OUTPUT_BYTES)
     print(output.decode("utf-8", errors="replace"), end="", flush=True)
     if status:
         raise ArtifactError("ignored-libtest-failed")
