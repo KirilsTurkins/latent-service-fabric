@@ -1,0 +1,29 @@
+name: Suite inventory audit
+
+on:
+  push:
+    branches: [feat/427-exact-suite-inventory]
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Capture exact source for the before-after command audit
+        run: |
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/suite-source.tar.gz"
+          git rev-parse HEAD > "$RUNNER_TEMP/suite-source-commit.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: suite-inventory-source
+          path: |
+            ${{ runner.temp }}/suite-source.tar.gz
+            ${{ runner.temp }}/suite-source-commit.txt
+          if-no-files-found: error
+          retention-days: 1
