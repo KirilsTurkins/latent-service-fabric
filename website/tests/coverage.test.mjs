@@ -42,6 +42,9 @@ test('nonexistent or nonpublished pages, wrong-case sources and incomplete requi
 
 test('page existence or a test source cannot be promoted into reviewed execution evidence', () => {
   const document = structuredClone(original);
+  // Keep the negative fixture incomplete as real guide rows gain evidence.
+  for (const page of document.rows[0].pages) page.role = 'reference-only';
+  document.rows[0].evidence = document.rows[0].evidence.filter(entry => entry.kind === 'test-source');
   document.rows[0].review.status = 'approved';
   document.rows[0].review.reviewedCommit = index.revision;
   assert.throws(() => validateCoverage(document, index), /lacks a guide/);
