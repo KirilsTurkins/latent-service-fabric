@@ -19,8 +19,8 @@ export default function Guides(): React.ReactNode {
   const browser = useIsBrowser();
   const params = new URLSearchParams(browser ? location.search : '');
   const selected = {audience: params.get('audience') ?? '', language: params.get('language') ?? '', topic: params.get('topic') ?? ''};
-  const options = {audience: [...new Set(guides.flatMap(guide => guide.audience))].sort(), language: [...new Set(guides.flatMap(guide => guide.languages))].sort(),
-    topic: [...new Set(guides.map(guide => guide.topic))].sort()};
+  const options = {audience: Array.from(new Set(guides.flatMap(guide => guide.audience))).sort(), language: Array.from(new Set(guides.flatMap(guide => guide.languages))).sort(),
+    topic: Array.from(new Set(guides.map(guide => guide.topic))).sort()};
   const invalid = Object.entries(selected).some(([key, value]) => value && !options[key as keyof typeof options].includes(value));
   const matches = guides.filter(guide => (!selected.audience || guide.audience.includes(selected.audience))
     && (!selected.language || guide.languages.includes(selected.language)) && (!selected.topic || guide.topic === selected.topic));
