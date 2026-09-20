@@ -399,7 +399,8 @@ class RealCheckoutTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         for name in ("tools/test.py", "tools/local_tests.py", "tools/local_test_support.py",
-                     "tools/local_python_suite.py", "tools/ci_rust_artifacts.py", local.TEST_SOURCE):
+                     "tools/local_python_suite.py", "tools/ci_rust_artifacts.py",
+                     "tools/owned_test_process.py", "tools/owned_process_worker.py", local.TEST_SOURCE):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, target)
