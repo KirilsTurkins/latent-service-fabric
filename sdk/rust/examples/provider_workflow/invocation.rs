@@ -30,6 +30,7 @@ pub async fn run(
     activations: &mut Vec<String>,
 ) -> Result<()> {
     let client = &clients[0];
+    // lsf-example-begin: invoke
     for (provider, expected, assertion) in [("http", 2201, "httpGuest"), ("blob", 4, "blobGuest")] {
         let response = client
             .invoke(config.request(provider, provider, None)?, options())
@@ -45,6 +46,7 @@ pub async fn run(
         activations.push(format!("rust-{provider}"));
         assertions.insert(assertion, true);
     }
+    // lsf-example-end: invoke
     let declared = client
         .invoke(
             config.request("callee", "declared", Some("fail"))?,

@@ -60,11 +60,13 @@ internal sealed partial class Workflow
         switch (kind)
         {
             case "local-cancel":
+                // lsf-example-begin: cancel
                 local.Cancel();
                 Profile.ClientFailure cancelled = await Failure(pending);
                 Require(cancelled.Category == Profile.FailureCategory.LocalCancelled && cancelled.Dispatched &&
                     cancelled.Outcome == Profile.OutcomeKnowledge.Unknown && cancelled.Identity.ActivationId == identity);
                 await Cancel(observer, identity);
+                // lsf-example-end: cancel
                 Passed("localCancellation");
                 break;
             case "explicit-cancel":

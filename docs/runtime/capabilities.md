@@ -9,8 +9,7 @@ environment, network, process, or other ambient authority is installed. The
 configured [local service adapter](local-service-invocation.md) additionally
 implements canonical async `latent:service/invoke@0.1.0`. The configured
 [outbound HTTP adapter](outbound-http.md) implements `latent:http/client@0.2.0`; [streaming HTTP](streaming-http.md) adds
-`latent:http/streaming@0.3.0` with owned upload/body/chunk resources. Other platform
-capability packages remain contracts for subsequent implementation. The Linux
+`latent:http/streaming@0.3.0` with owned upload/body/chunk resources. The Linux
 [local blob provider](local-blobs.md) and [S3 provider](s3-blobs.md) implement `latent:blob/blob@0.2.0` with
 scoped durable references and owned read chunks. The configured
 [local](local-secrets.md) and [Vault KV-v2](vault-secrets.md) secret providers implement `latent:secrets/reader@0.1.0`
@@ -27,8 +26,12 @@ imports, while preparation rejects providers without installed owners. The [seal
 handle and call ownership and can gate the four built-in imports in explicit
 managed embeddings. [Exact plan compilation](capability-bindings.md) and
 conserved [descendant budgets](descendant-budgets.md) support local child calls.
-Other providers, standalone provider management and application hosting remain
-in progress.
+The [standalone bootstrap](../reference/standalone-providers.md) installs the
+supported HTTP/local-blob configuration and exposes scoped provider management.
+Other concrete adapters use their documented trusted Rust compositions; declaring
+their contracts does not install them through standalone configuration. Start with
+[the capability walkthrough](../learn/use-capabilities.md) to exercise the actual
+configuration, allowed and denied operations, revocation and cleanup.
 
 The [bounded asynchronous I/O substrate](async-host-io.md) now adds affine queue,
 buffer and stream ownership on the existing runtime. Cancellation retains charges
@@ -51,8 +54,8 @@ permission or exposing credential-bearing selectors.
 
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
-[standalone node](../reference/standalone-node.md). Phase 3 continues with production
-standalone provider configuration, application ingress and web/SSR integration. Transactional
+[standalone node](../reference/standalone-node.md). The standalone provider
+configuration and application ingress remain distinct authority boundaries. Transactional
 state/effects, cluster transport and durable workflow suspension remain later
 phases; declared WIT alone makes none of them callable.
 
