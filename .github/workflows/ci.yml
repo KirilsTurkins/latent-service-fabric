@@ -59,7 +59,7 @@ jobs:
         run: python -m pip install --requirement tools/requirements.lock
       - name: Validate documentation and profile selection
         run: |
-          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_browser_artifacts
           python3 tools/validate_docs.py
 
   rust:
@@ -175,6 +175,7 @@ jobs:
         with:
           version: 1.254.0
       - name: Validate browser boundary with live ingress
+        id: browser_boundary
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 5
         run: |
@@ -185,7 +186,11 @@ jobs:
           wasm-tools validate "$RUNNER_TEMP/browser-boundary/application.wasm"
           LSF_WEB_COMPONENT="$RUNNER_TEMP/browser-boundary/application.wasm" LSF_BROWSER_BUILD="$RUNNER_TEMP/browser-boundary" LSF_BROWSER_NODE="$(command -v node)" LSF_BROWSER_CHROME="$(command -v google-chrome)" LSF_BROWSER_TOOLCHAIN="$PWD/examples/renderer-profile" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite browser-boundary
       - name: Retain bounded browser boundary observations
-        if: always() && needs.profile.outputs.renderer == 'true'
+        # Earlier gate failures produce no browser receipts. Retain diagnostics
+        # after an attempted validation, including failures and cancellations.
+        if: >-
+          always() && needs.profile.outputs.renderer == 'true' &&
+          steps.browser_boundary.outcome != '' && steps.browser_boundary.outcome != 'skipped'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: browser-boundary-observations
@@ -569,7 +574,8 @@ jobs:
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
-          java-version: "21.0.11+10.0.LTS"
+          # Exact Temurin runtime 25.0.4.1+1; Adoptium SemVer patch/build encoding.
+          java-version: "25.0.4+101.0.LTS"
       - name: Set up the .NET SDK provider participant
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
@@ -671,20 +677,60 @@ jobs:
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
-          java-version: "21.0.11+10.0.LTS"
+          # Exact Temurin runtime 25.0.4.1+1; Adoptium SemVer patch/build encoding.
+          java-version: "25.0.4+101.0.LTS"
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: 8.0.425
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: "0.16.0"
+      - name: Install the checksum-pinned Java-compatible Gradle
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("tools/toolchain.toml", "rb"))["sdk"]["gradle"])')"
+          checksum="$(python3 -c 'import tomllib; print(tomllib.load(open("tools/toolchain.toml", "rb"))["sdk"]["gradle_sha256"])')"
+          destination="${RUNNER_TEMP}/lsf-gradle"
+          mkdir -p "$destination"
+          curl --fail --location --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 180 \
+            "https://services.gradle.org/distributions/gradle-${version}-bin.zip" -o "$destination/gradle.zip"
+          printf '%s  %s\n' "$checksum" "$destination/gradle.zip" | sha256sum --check --strict
+          unzip -q "$destination/gradle.zip" -d "$destination"
+          echo "$destination/gradle-${version}/bin" >> "$GITHUB_PATH"
+      - name: Qualify the Java 25 Gradle build
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/java-sdk"
+          git rev-parse HEAD | tee "$RUNNER_TEMP/java-sdk/gradle.log"
+          uname -srm | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          python3 sdk/java-client/tools/java_toolchain.py check | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          gradle --version | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          python3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          timeout 540 gradle --no-daemon --console=plain -p sdk/java-client clean check 2>&1 | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          echo 'Gradle qualification passed' | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
       - name: Validate SDK surfaces
+        shell: bash
         env:
           EXPECTED_TYPESCRIPT_VERSION: 5.8.3
         run: |
-          tools/validate_sdks.sh
+          set -euo pipefail
+          tools/validate_sdks.sh 2>&1 | tee "$RUNNER_TEMP/java-sdk/sdk.log"
+          sha256sum sdk/java-client/build/latent-java-client.jar | tee "$RUNNER_TEMP/java-sdk/jar.sha256"
+          python3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar > "$RUNNER_TEMP/java-sdk/jar-classfile.json"
           test "$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)" = \
             "Version ${EXPECTED_TYPESCRIPT_VERSION}"
+      - name: Retain Java SDK qualification diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: java-sdk-qualification-${{ github.sha }}
+          path: ${{ runner.temp }}/java-sdk/
+          if-no-files-found: warn
+          retention-days: 14
 
   result:
     name: CI result

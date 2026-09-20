@@ -17,6 +17,27 @@ profiles, signed admission and runtime validation.
 
 WIT remains authoritative for typed capsule contracts. Language SDKs are convenience surfaces and must preserve deadlines, cancellation, platform errors, domain errors, resource budgets, identity, and idempotency semantics.
 
+## Java SDK runtime compatibility
+
+| Surface | Build and minimum runtime | Qualification boundary |
+| --- | --- | --- |
+| Java models, native RPC transport and examples | Java 25; repository builds use exact Eclipse Temurin 25.0.4.1+1 | Existing Linux CI owns semantic/transport and separate-node evidence; native generators also exist for Windows x86-64, which is not by itself runtime qualification. |
+
+The [Java SDK](java-client/README.md) now emits non-preview Java 25 class files
+(69.0), not Java 21-compatible bytecode. Applications adopting the new JAR must
+upgrade their Java build/runtime first; no public model or wire semantics change
+as part of this toolchain migration. The repository pins an exact Temurin build
+for validation rather than claiming every Java 25 distribution or later JDK is
+qualified. Historical Java 21 evidence and Windows tests that used
+`--release 21` do not establish Java 25-targeted Windows support.
+
+The standalone Python/JDK build still needs no Gradle or Maven. The optional
+Gradle path requires Gradle 9.1.0 or newer, uses the exact `JAVA_HOME` installation
+and is checked alongside the standalone path by existing SDK CI. See
+[toolchain setup and migration](../docs/development/toolchain.md#java-25-sdk-baseline-and-migration)
+for exact pins, commands, class-file checks and retained evidence locations.
+This changes an external client baseline, not the Rust node or guest runtimes.
+
 ## Invocation identity and cancellation
 
 Every SDK's invocation request carries optional activation, root activation, and

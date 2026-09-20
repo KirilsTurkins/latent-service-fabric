@@ -16,7 +16,7 @@ from tools.phase3_web_qualification import trigger_lifecycle
 from tools.run_angular_t1_workflow import QualificationClient
 from tools.phase3_web_scenario import (
     MEDIA, MIB, PREPARATION_MILLIS, budget, configure_angular_node, deployment_manifest,
-    fixture_metadata, invocation_arguments, invoke, prepare, selected_client_asset, tree_inventory,
+    fixture_metadata, invocation_arguments, invoke, prepare, publish, selected_client_asset, tree_inventory,
 )
 
 
@@ -26,6 +26,39 @@ def client(root):
 
 
 class AngularT1WorkflowTests(unittest.TestCase):
+    def test_publication_busy_retries_only_identical_uncommitted_operation(self):
+        caller = client(Path("unused"))
+        rejected = {"category": "platform-failure", "error": {"code": "unavailable"}, "outcomeKnown": False}
+        absent = {"outcomeKnown": False, "data": {"operation": None}}
+        receipt = {"operationId": "publish-angular", "publication": {"tenant": "tests"},
+                   "actor": {"subject": "workflow-operator"}, "replayed": False}
+        accepted = {"category": "success", "outcomeKnown": True, "data": {"operation": receipt, "auditAck": {}}}
+        caller.call.side_effect = [rejected, absent, accepted]
+        with patch("tools.phase3_web_scenario.time.sleep"):
+            self.assertEqual(publish(caller, Path("fixture"), "angular"), receipt)
+        self.assertEqual(caller.call.call_args_list[0].args, caller.call.call_args_list[2].args)
+        self.assertEqual(caller.call.call_args_list[1].args, ("web", "operation", "publish-angular"))
+        self.assertLessEqual(caller.call.call_args_list[2].kwargs["timeout"], caller.call.call_args_list[0].kwargs["timeout"])
+        self.assertEqual(caller.publication_refusals[0]["outcomeKnown"], False)
+
+    def test_publication_refusal_does_not_replay_denial_or_committed_uncertainty(self):
+        for rejected, lookup, expected_calls in (
+            ({"category": "platform-failure", "error": {"code": "permission-denied"}}, None, 1),
+            ({"category": "platform-failure", "error": {"code": "unavailable"}},
+             {"outcomeKnown": True, "data": {"operation": {"replayed": True}}}, 2),
+        ):
+            caller = client(Path("unused"))
+            caller.call.side_effect = [rejected, lookup]
+            with self.assertRaises(WorkflowError):
+                publish(caller, Path("fixture"), "angular")
+            self.assertEqual(caller.call.call_count, expected_calls)
+        caller = client(Path("unused"))
+        caller.call.side_effect = [{"category": "platform-failure", "error": {"code": "unavailable"}, "outcomeKnown": False},
+                                 {"outcomeKnown": False, "data": {"operation": None}}] * 3
+        with patch("tools.phase3_web_scenario.time.sleep"), self.assertRaisesRegex(WorkflowError, "admission-busy"):
+            publish(caller, Path("fixture"), "angular")
+        self.assertEqual(caller.call.call_count, 6)
+
     def test_trigger_deletion_checks_one_explicit_mutation_and_its_retained_generation(self):
         triggers = {"alice.angular.test": "alice", "bob.angular.test": "bob", "foreign.angular.test": "foreign"}
         responses = [
