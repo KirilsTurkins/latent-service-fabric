@@ -78,6 +78,14 @@ RECIPES: dict[str, tuple[Invocation, ...]] = {
     "format": (
         Invocation("format", ("fmt", "--all", "--check"), ("workspace",), "n/a", "sources", "n/a", "rustfmt"),
     ),
+    "deterministic": (
+        Invocation('helpers-1', ('test', '-p', 'latent-core', '--features', 'test-support', '--lib', '--locked', 'test_support::', '--', '--test-threads=1'), ('latent-core',), 'default+test-support', 'host/lib;filter=test_support::', 'test', 'deterministic helper correctness with 1 libtest threads'),
+        Invocation('helpers-4', ('test', '-p', 'latent-core', '--features', 'test-support', '--lib', '--locked', 'test_support::', '--', '--test-threads=4'), ('latent-core',), 'default+test-support', 'host/lib;filter=test_support::', 'test', 'deterministic helper correctness with 4 libtest threads'),
+        Invocation('scheduling-races', ('test', '-p', 'latent-admission', '-p', 'latent-scheduler', '--lib', '--locked'), ('latent-admission', 'latent-scheduler'), 'default', 'host/lib', 'test', 'admission and scheduler deterministic race coverage'),
+        Invocation('testkit-compatibility', ('test', '-p', 'latent-testkit', '--no-default-features', '--lib', '--test', 'test_support_compatibility', '--locked'), ('latent-testkit',), 'none', 'host/lib,test:test_support_compatibility', 'test', 'runtime-independent testkit compatibility'),
+        Invocation('testkit-deadline', ('run', '-p', 'latent-testkit', '--no-default-features', '--example', 'deadline', '--locked'), ('latent-testkit',), 'none', 'host/example:deadline', 'dev', 'executable bounded deadline example'),
+        Invocation('testkit-cancellation', ('run', '-p', 'latent-testkit', '--no-default-features', '--example', 'cancellation', '--locked'), ('latent-testkit',), 'none', 'host/example:cancellation', 'dev', 'executable bounded cancellation example'),
+    ),
     "workspace-check": (
         Invocation("workspace-check", ("check", *ALL), ("workspace",), "all", "host/all-targets", "dev", "feature-unified workspace checking"),
     ),
@@ -109,7 +117,7 @@ RECIPES: dict[str, tuple[Invocation, ...]] = {
         Invocation("msrv", ("check", *ALL), ("workspace",), "all", "host/all-targets", "dev", "independent minimum supported compiler", toolchain="msrv"),
     ),
 }
-RUST_RECIPES = ("workspace-check", "bindings", "production", "clippy", "prepare", "test")
+RUST_RECIPES = ("deterministic", "workspace-check", "bindings", "production", "clippy", "prepare", "test")
 
 
 def plan(recipe: str, configuration: str = "current", timings: bool = False) -> dict:
