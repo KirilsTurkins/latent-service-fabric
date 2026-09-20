@@ -21,6 +21,9 @@ const requests = [];
 const scripts = [];
 const scriptChecks = [];
 const results = [];
+const responseStatuses = [];
+const consoleObservations = [];
+const networkFailures = [];
 const forbidden = ['lsf-private-angular-reference-v1', 'lsf-private-reference-upstream',
   'LSF-PUBLIC-PROVIDER-WORKFLOW-TEST-ONLY', ...configuration.users.map(user => user.token)];
 const lifetime = setTimeout(() => { process.exitCode = 1; void browser.close(); }, 240000);
@@ -42,12 +45,15 @@ async function context(token) {
   const selected = await browser.newContext({extraHTTPHeaders: token ? {Authorization: 'Bearer ' + token} : {},
     serviceWorkers: 'block'});
   selected.on('page', page => {
-    page.on('pageerror', () => { if (errors.length < 16) errors.push('browser-page-error'); });
+    page.on('pageerror', error => { if (errors.length < 16) errors.push('browser-page-error:' + createHash('sha256').update(error.message).digest('hex')); });
+    page.on('console', message => { if (message.type() === 'error' && consoleObservations.length < 16) consoleObservations.push('browser-console-error:' + createHash('sha256').update(message.text()).digest('hex')); });
+    page.on('requestfailed', request => { if (networkFailures.length < 16) networkFailures.push('browser-request-failed:' + (request.failure()?.errorText ?? 'unknown').slice(0,96)); });
     page.on('request', request => {
       const url = new URL(request.url());
       if (requests.length < 97) requests.push({origin: url.origin, path: url.pathname, method: request.method(), type: request.resourceType()});
     });
     page.on('response', response => {
+      if (responseStatuses.length < 97) responseStatuses.push({path: new URL(response.url()).pathname, status: response.status()});
       if (!response.url().endsWith('/main.js')) return;
       const checked = (async () => {
         assert.equal(response.status(), 200);
@@ -161,7 +167,15 @@ try {
   } else {
     const anonymous = await context();
     const denied = await anonymous.newPage();
-    assert.equal((await denied.goto(configuration.origin + '/account', {waitUntil: 'load'})).status(), 401);
+    // Chromium can reject a main-frame navigation after receiving a real 401.
+    // Require that exact network response; a generic navigation error is not denial evidence.
+    const denial = denied.waitForResponse(response => response.url() === configuration.origin + '/account' &&
+      response.request().isNavigationRequest(), {timeout: 15000});
+    const navigation = denied.goto(configuration.origin + '/account', {waitUntil: 'commit', timeout: 15000})
+      .catch(error => { assert.match(error.message, /net::ERR_HTTP_RESPONSE_CODE_FAILURE/); return null; });
+    const [denialResponse] = await Promise.all([denial, navigation]);
+    assert.equal(denialResponse.status(), 401);
+    results.push({route: '/account', status: 401, anonymous: true, transport: 'real-browser-http'});
     await anonymous.close();
     for (const user of configuration.users) {
       const selected = await context(user.token);
@@ -177,6 +191,11 @@ try {
   emit({event: 'complete', schemaVersion: 'latent.angular.reference.browser.v1', passed: true,
     transport: 'real-http', mode: configuration.mode, node: process.version, browser: browser.version(),
     results, scripts, requests, errors, directNodeCatalogAccess: false, privateClientMaterialAbsent: true});
+} catch (error) {
+  const diagnosis = {event: 'failed', schemaVersion: 'latent.angular.reference.browser.v1', passed: false, mode: configuration.mode, errors, consoleObservations, networkFailures, responses: responseStatuses, results, scripts};
+  const serialized = JSON.stringify(diagnosis);
+  if (Buffer.byteLength(serialized) <= 32768) process.stderr.write(serialized + '\n');
+  throw error;
 } finally {
   clearTimeout(lifetime);
   await browser.close();
