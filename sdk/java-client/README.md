@@ -258,8 +258,36 @@ transport. The example does not make provider HTTP/blob requests itself.
 python3 tools/run_sdk_provider_workflow.py \
   --cli /absolute/latent --node /absolute/latentd \
   --fixture-root /absolute/signed-fixture --language java \
-  -- /absolute/java -jar /absolute/sdk/java-client/build/latent-java-client.jar
+  -- /absolute/java --sun-misc-unsafe-memory-access=allow \
+  --enable-native-access=ALL-UNNAMED -jar /absolute/sdk/java-client/build/latent-java-client.jar
 ```
+
+### Java 25 dependency launch profile
+
+The pinned Protobuf 3.25.9 uses `sun.misc.Unsafe` memory access, and the shaded
+Netty dependency probes a native library. Java 25 allows those operations by
+default but emits JVM warnings to stderr. The normal Gradle and standalone
+transport suites deliberately keep those warnings visible and pass without
+these flags. They do not establish that the dependencies are free of deprecated
+or restricted API use.
+
+The provider participant has a stricter machine-readable contract: exactly one
+bounded result and empty stderr on success. Its application-owned launch above,
+and only its Java entry in `tools/run_sdk_provider_matrix.sh`, explicitly use
+`--sun-misc-unsafe-memory-access=allow` and
+`--enable-native-access=ALL-UNNAMED`. The latter acknowledges native access for
+all code on this controlled, locked classpath; it is not a per-library grant.
+Neither flag is added to SDK consumers, global environment variables, the JAR
+manifest, the Rust node or Wasm guests. Application deployers must review their
+own classpath/native-access policy rather than copy these flags indiscriminately.
+See the [Java 25 launcher reference](https://docs.oracle.com/en/java/javase/25/docs/specs/man/java.html).
+
+No stderr is filtered or discarded, and the shared runner still rejects any
+nonempty stderr or unsuccessful exit. All eighteen real-node assertions and
+physical cleanup checks remain required. The receipt hashes the actual Java
+executable and JAR; the exact source revision identifies the reviewed command
+and its explicit flags. This is a Java 25 compatibility profile, not a promise
+that the dependencies or these transitional flags will work on future JDKs.
 
 The JAR's main class is `ProviderWorkflow`. Passing its absolute path lets the
 runner retain both the Java executable and SDK JAR hashes. The runner appends
