@@ -50,9 +50,10 @@ def tenant_denial(client, profile, publication):
         client.config = original
 
 
-def native_cache_audit(client, record, kind, *, maximum_matches=32):
-    require(type(maximum_matches) is int and 1 <= maximum_matches <= 512,
-            "native-cache-audit-match-bound")
+def native_cache_audit(client, record, kind, *, allow_empty=False):
+    # Only a pre-restart baseline may be empty. A claimed native hit/miss still
+    # requires an actual matching audit event; prepared-memory hits are distinct.
+    require(type(allow_empty) is bool, "native-cache-audit-empty-bound")
     found = []
     token = None
     tokens = set()
@@ -69,7 +70,7 @@ def native_cache_audit(client, record, kind, *, maximum_matches=32):
             identity = observation["identities"]
             if identity["packageDigest"] == record["packageDigest"]:
                 require(identity["componentDigest"] == record["componentDigest"], "native-cache-source-identity")
-                require(len(found) < maximum_matches, "native-cache-audit-match-overflow")
+                require(len(found) < 32, "native-cache-audit-match-overflow")
                 found.append({"sequence": row["sequence"], "kind": observation["kind"],
                               "packageDigest": identity["packageDigest"],
                               "componentDigest": identity["componentDigest"]})
@@ -78,7 +79,7 @@ def native_cache_audit(client, record, kind, *, maximum_matches=32):
             break
         require(token not in tokens and len(token) <= 4096, "native-cache-audit-page")
         tokens.add(token)
-    require(not token and 0 < len(found) <= maximum_matches, "native-cache-audit-missing-or-overflow")
+    require(not token and (allow_empty or bool(found)) and len(found) <= 32, "native-cache-audit-missing-or-overflow")
     return found
 
 
