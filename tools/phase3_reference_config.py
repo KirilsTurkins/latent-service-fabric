@@ -102,7 +102,9 @@ def configure_grant(client, node, publications):
     policy = client.directory / "reference-policy.json"
     principals = [{"kind": "administrator", "subject": "workflow-operator"},
                   {"kind": "trigger", "subject": "reference-public"}]
-    principals += [{"kind": "user", "subject": subject} for subject, _token in USERS]
+    # Account rendering only reads authenticated invocation context. Give the
+    # backend HTTP capability to the operator and public trigger that exercise it;
+    # display subjects (including escaping probes) are not policy identifiers.
     write_json(policy, {"formatVersion": 1, "tenant": TENANT, "rules": [{
         "id": "reference-get", "effect": "allow", "principals": principals,
         "services": ["angular-reference"], "publications": list(publications.values()),
