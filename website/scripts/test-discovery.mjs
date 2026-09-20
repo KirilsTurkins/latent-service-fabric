@@ -37,7 +37,9 @@ try {
       await page.goto(prefix, {waitUntil: 'networkidle'});
       await audit('home-light');
       await page.locator('main').getByRole('link', {name: 'Start', exact: true}).click();
-      await page.waitForURL(`${prefix}docs/development/standalone-quickstart/`);
+      await page.waitForURL(`${prefix}docs/start/`);
+      await page.locator('main').getByRole('link', {name: 'First node and retained invocation', exact: true}).click();
+      await page.waitForURL(`${prefix}docs/start/first-node/`);
       await page.locator('[data-doc-version="development"]').waitFor();
       assert.equal((await page.reload({waitUntil: 'networkidle'})).status(), 200);
       await audit('first-guide');
