@@ -41,6 +41,13 @@ class DocumentationValidationTests(unittest.TestCase):
         self.write("README.md", " \n\t\n")
         self.assertIn("empty Markdown", self.report()["errors"][0])
 
+    def test_mdx_links_and_fences_are_in_the_exact_tracked_inventory(self) -> None:
+        self.write("docs/guide.mdx", "# Guide\n[missing](absent.md)\n```tsx\n<Example />\n")
+        report = self.report()
+        self.assertEqual(report["documents"], 1)
+        self.assertTrue(any("unclosed" in error for error in report["errors"]))
+        self.assertTrue(any("missing" in error for error in report["errors"]))
+
     def test_repository_document_inventory_remains_required(self) -> None:
         report = validator.validate_docs(self.root, self.tracked)
         self.assertIn("required documentation missing: README.md", report["errors"])

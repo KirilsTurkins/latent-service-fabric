@@ -213,7 +213,7 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
     documents: dict[str, str] = {}
     svgs: list[Path] = []
     for name in sorted(tracked):
-        if Path(name).suffix.lower() not in {".md", ".svg"}:
+        if Path(name).suffix.lower() not in {".md", ".mdx", ".svg"}:
             continue
         path = root / name
         if not ordinary_path(root, name) or not path.is_file():

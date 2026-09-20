@@ -1,0 +1,58 @@
+name: Documentation website validation
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  website:
+    name: Static site, examples and browser journeys
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+      - name: Install the reviewed website dependency graph without lifecycle scripts
+        run: |
+          npm install --global npm@12.0.1 --ignore-scripts --no-audit --no-fund
+          npm ci --prefix website --ignore-scripts --no-audit --no-fund
+      - name: Check metadata, source extraction, types and unit regressions
+        working-directory: website
+        run: |
+          npm run check
+          npm test
+      - name: Build both supported static base paths
+        working-directory: website
+        run: |
+          npm run build
+          npm run build:root
+      - name: Install the pinned test browser and its OS prerequisites
+        working-directory: website
+        run: |
+          node node_modules/playwright/cli.js install-deps chromium
+          npm run browser:install
+      - name: Verify production pages, theme and source-backed controls
+        working-directory: website
+        run: |
+          npm run test:build
+          npm run test:theme
+          npm run test:examples
+      - name: Retain only the tested site and compact browser receipts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: docs-site-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            website/build/project/
+            website/.generated/build-evidence.json
+            website/.generated/theme-review/evidence.json
+            website/.generated/code-example-review/evidence.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
+          include-hidden-files: true

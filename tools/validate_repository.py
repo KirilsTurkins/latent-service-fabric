@@ -85,6 +85,8 @@ def is_generated_directory(path: Path, root: Path) -> bool:
 
     relative = path.relative_to(root)
     parts = relative.parts
+    if len(parts) == 2 and parts[0] == "website" and parts[1] in {"build", ".docusaurus", ".generated"}:
+        return True
     if parts[:2] == ("sdk", "typescript-client") and path.name == "dist":
         return True
     if parts[:2] == ("sdk", "java-client") and path.name == "build":
