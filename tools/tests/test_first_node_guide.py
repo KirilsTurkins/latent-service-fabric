@@ -134,7 +134,8 @@ class Payloads(unittest.TestCase):
     def test_failed_run_redacts_exception_and_never_emits_pass(self):
         output = io.StringIO()
         with patch.object(runner, 'run', side_effect=RuntimeError('PRIVATE-TOKEN-CANARY')), redirect_stdout(output):
-            status = runner.main(['--cli', sys.executable, '--node', sys.executable,
+            executable = str(Path(sys.executable).resolve(strict=True))
+            status = runner.main(['--cli', executable, '--node', executable,
                                   '--echo-root', '/unused', '--source-commit', 'a' * 40])
         self.assertEqual(status, 1)
         self.assertNotIn('PRIVATE-TOKEN-CANARY', output.getvalue())

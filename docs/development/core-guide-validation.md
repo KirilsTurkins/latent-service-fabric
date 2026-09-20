@@ -95,6 +95,25 @@ that can drift away from published routes.
 
 ## Recorded check and acceptance limits
 
+The real source-based walkthrough passes on Linux x86-64 on 2026-09-20.
+The [unaltered native receipt](../evidence/phase3-357-first-node.json) has SHA-256
+`685e99f8a14db878c2f3f29f7c15b21195cee78e5f168b9ba30b70277c2f53f4`.
+The runner and freshly built echo inputs come from guide source
+`04fbd3159d2effe5579662db87334cb7778de05e`; the prebuilt CLI/node are the separately
+qualified `3e4c4692e31ac6a62bc615f6435e417bb769a855` binaries, mounted read-only
+from their owner's artifact volume. The receipt binds those exact binaries and
+all six collector modules by SHA-256 instead of claiming they were rebuilt from
+the guide commit. The echo component digest is
+`sha256:5ed2ad25572df7b223de80feadfa350b13bdca2cc1d41b31e59df4f03a8f7dd2`.
+
+The execution uses 19 CLI processes, two successful invocations, one declared
+error, five explicit failure checks and three retained activation identities.
+The deployment survives restart and is invoked without republishing. Both node
+processes report clean, reaped shutdown and the private temporary outputs are
+removed. The owned `lsf-phase3-core-guides` container uses one CPU, 3 GiB and
+256 PIDs. This establishes the source evaluation walkthrough, not installation
+from a signed native bundle or a reproducible guest build.
+
 The authoring base is development
 `320f56a7ddaabd733433ffe839442939cfcbaeed`. Local focused tests run with Linux
 Python 3.13.5 against byte-verified copies of the unchanged process-owner modules.
@@ -102,12 +121,13 @@ The retained local output distinguishes synthetic subprocess execution from
 native LSF. No historical receipt, release artifact, guest implementation or
 product resource budget is changed by this guide work.
 
-The authoring environment has no built LSF artifacts and cannot resolve the
+The original authoring environment had no built LSF artifacts and could not resolve the
 GitHub/npm hosts needed to obtain the full repository/dependency graph. The new
-real-node runner, complete pinned website builds/browser suite, native installed
-bundle and human newcomer walkthrough therefore remain acceptance checks, not
-passes claimed from the local synthetic suite. Node 22 available on this host is
-not the pinned website Node 24.19.0 qualification.
+real-node runner was therefore initially unverified; the later execution above
+supplies that evidence. Complete pinned website builds/browser checks, the
+native installed bundle and the human newcomer walkthrough remain separate
+acceptance checks. The original Node 22 host is not the pinned website Node
+24.19.0 qualification.
 
 Before accepting #357, retain a successful real runner receipt with the matching
 build source/toolchain/artifact hashes, recheck changed instructions against the
