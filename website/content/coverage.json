@@ -319,7 +319,14 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
-          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -376,7 +383,14 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
-          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -433,7 +447,14 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
-          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -490,7 +511,14 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
-          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -547,7 +575,14 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
-          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -604,7 +639,14 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
-          "scope": "Historical merged six-client execution. Newly registered snippets retain source-extracted status until their changed source is executed."
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
