@@ -2,12 +2,17 @@
   "name": "@latent-service-fabric/website",
   "version": "0.0.0",
   "private": true,
-  "engines": { "node": "24.19.0", "npm": "11.19.1" },
+  "engines": {
+    "node": "24.19.0",
+    "npm": "11.19.1"
+  },
   "packageManager": "npm@11.19.1",
   "overrides": {
     "lodash-es": "4.18.1",
     "serialize-javascript": "7.0.5",
-    "sockjs": {"uuid": "11.1.1"}
+    "sockjs": {
+      "uuid": "11.1.1"
+    }
   },
   "scripts": {
     "start": "node scripts/site.mjs start",
@@ -18,8 +23,11 @@
     "test:build": "node scripts/site.mjs test-build",
     "test:theme": "node scripts/site.mjs test-theme",
     "test:examples": "node scripts/site.mjs test-examples",
+    "test:versions": "node scripts/site.mjs test-versions",
+    "test:discovery": "node scripts/site.mjs test-discovery",
     "browser:install": "node scripts/site.mjs browser-install",
-    "coverage:acceptance": "node scripts/check.mjs --acceptance"
+    "coverage:acceptance": "node scripts/check.mjs --acceptance",
+    "snapshot": "node scripts/snapshot.mjs"
   },
   "dependencies": {
     "@docusaurus/core": "3.10.2",
@@ -28,10 +36,12 @@
     "@docusaurus/theme-mermaid": "3.10.2",
     "@mdx-js/react": "3.1.1",
     "@mermaid-js/layout-elk": "0.1.9",
+    "minisearch": "7.2.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@docusaurus/module-type-aliases": "3.10.2",
     "@docusaurus/tsconfig": "3.10.2",
     "@docusaurus/types": "3.10.2",
