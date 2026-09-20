@@ -45,3 +45,21 @@ fn web_context_is_distinct_from_exact_provider_imports() {
     request.imports[1].capability.0 = "forged".into();
     assert!(!session::imports_match(&fixture.plan, &request, true));
 }
+
+#[test]
+fn ordinary_capsule_context_still_requires_its_provider_binding() {
+    let fixture = Fixture::new(CapabilityBrokerLimits::default());
+    let (request, control) = fixture.request("capsule-context");
+    let session = fixture
+        .broker
+        .open_session(
+            fixture.plan.clone(),
+            &request,
+            &control,
+            &fixture.publication,
+        )
+        .unwrap();
+    assert!(!session.uses_core_web_context(64).unwrap());
+    session.close();
+    assert!(session.uses_core_web_context(64).is_err());
+}

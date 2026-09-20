@@ -94,6 +94,7 @@ pub(super) struct SessionCore {
     pub state: Mutex<SessionState>,
     pub random_bytes: AtomicUsize,
     pub metrics: Mutex<super::metrics::SessionUsage>,
+    web_context: bool,
     _metadata: Charge,
     _slot: Charge,
 }
@@ -325,6 +326,7 @@ impl ActivationCapabilityBroker {
             stats,
             random_bytes: AtomicUsize::new(0),
             metrics: Mutex::new(super::metrics::SessionUsage::default()),
+            web_context: publication.web_projection().is_some(),
             state: Mutex::new(SessionState {
                 slots: (0..self.inner.limits.maximum_handles_per_session)
                     .map(|_| None)
@@ -438,6 +440,16 @@ impl SessionCore {
     }
 }
 impl CapabilitySession {
+    /// Verified web projections expose their own invocation context as core ABI.
+    /// This does not authorize a provider or another activation's context.
+    pub fn uses_core_web_context(&self, output_bytes: usize) -> Result<bool, PlatformError> {
+        self.core.check()?;
+        if self.core.web_context && output_bytes > self.core.owner.limits.maximum_output_bytes {
+            return Err(capacity());
+        }
+        Ok(self.core.web_context)
+    }
+
     pub fn reserve_resource_table(
         &self,
         bytes: usize,

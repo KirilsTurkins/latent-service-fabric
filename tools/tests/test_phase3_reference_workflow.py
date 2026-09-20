@@ -11,6 +11,7 @@ from tools.build_angular_reference import ROOT, stage_variant
 from tools.phase2_operator_process import WorkflowError, write_json
 from tools.phase3_reference_config import ROUTES, fixtures
 from tools.phase3_reference_scenario import invocation_arguments, manifest
+from tools.phase3_reference_lifecycle import require_static_cell_bypass
 
 
 class ReferencePeerTests(unittest.TestCase):
@@ -33,6 +34,17 @@ class ReferencePeerTests(unittest.TestCase):
         ):
             with self.subTest(size=len(request)), self.assertRaises(ValueError):
                 decode_request(request)
+
+
+class ReferenceCellBypassTests(unittest.TestCase):
+    def test_lease_age_can_advance_without_admitting_a_render(self):
+        before = [{"active": 1, "available": 0, "granted": "5", "queueDepth": 0,
+                   "oldestLeaseAgeMicros": "100"}]
+        after = [{**before[0], "oldestLeaseAgeMicros": "200"}]
+        require_static_cell_bypass(before, after)
+        for key, value in (("active", 0), ("granted", "6"), ("queueDepth", 1), ("available", 1)):
+            with self.subTest(key=key), self.assertRaisesRegex(WorkflowError, "entered-render-cells"):
+                require_static_cell_bypass(before, [{**after[0], key: value}])
 
 
 class ReferenceBuildTests(unittest.TestCase):

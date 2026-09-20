@@ -6,8 +6,8 @@ pub(super) mod fixture;
 use fixture::*;
 mod audit;
 mod diagnostics;
-mod web_imports;
 mod route_fence;
+mod web_imports;
 
 fn output() -> CapabilityCallCost {
     CapabilityCallCost::new(32)

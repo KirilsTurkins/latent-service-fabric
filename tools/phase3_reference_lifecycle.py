@@ -16,6 +16,16 @@ from tools.phase3_reference_scenario import decode_render, http, invocation_argu
 from tools.phase3_web_scenario import idle_inventory
 
 
+def require_static_cell_bypass(before, after):
+    # Lease age advances while the deliberately held render remains active.
+    # Every admission/queue/ownership counter must still remain unchanged.
+    def counters(cells):
+        return [{key: value for key, value in cell.items() if key != "oldestLeaseAgeMicros"}
+                for cell in cells]
+    require(counters(before) == counters(after) and all(cell["queueDepth"] == 0 for cell in after),
+            "reference-prerender-entered-render-cells")
+
+
 def signal_owned(process):
     require(not process.closed and not process.owner.exited(), "reference-owned-process-ended")
     os.kill(process.owner.process.pid, signal.SIGUSR1)
@@ -122,8 +132,7 @@ def canary(client, node, peer, records, publications):
         require(b"Static delivery" in static and static_headers["cache-control"] == "private, no-cache",
                 "reference-prerender-mutable-alias")
         unchanged = client.call("node", "get", NODE_ID)["data"]["inventory"]["cellCapacity"]
-        require(occupied == unchanged and all(cell["queueDepth"] == 0 for cell in unchanged),
-                "reference-prerender-entered-render-cells")
+        require_static_cell_bypass(occupied, unchanged)
         started_at = time.monotonic()
         started = receipt(client.call("rollout", "start", "healthy", "--base", "green",
             "--expected-base-generation", base["generation"], "--candidate", candidate, "--weights", "5000,10000",
@@ -143,7 +152,11 @@ def canary(client, node, peer, records, publications):
         held.close()
     historical = rollback_target(client, "healthy", started)
     initial = client.call("rollout", "evaluate", "healthy", "--expected-revision", started["revision"])["data"]["report"]
-    require(initial["assessment"]["verdict"].endswith("NO_DATA"), "reference-empty-canary-not-no-data")
+    # This first observation is inside the open window. No-data is a terminal
+    # verdict only after closure; an empty open window must remain collecting.
+    require(initial["assessment"]["verdict"].endswith("COLLECTING")
+            and all(int(initial[field]) == 0 for field in ("starts", "selected", "admitted", "terminal", "live")),
+            "reference-empty-canary-not-collecting")
     rejected = change(client, "promote", "healthy", started["revision"], "reference-no-data-promote", "--next-step", "1", codes=(4,))
     require(rejected["outcomeKnown"], "reference-no-data-promotion-uncertain")
     samples = [invoke(client, records, publications, f"reference-canary-{ordinal:02d}", route=None) for ordinal in range(16)]
