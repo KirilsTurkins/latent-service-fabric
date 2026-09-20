@@ -100,6 +100,8 @@ jobs:
           python-version: 3.13.5
           cache: pip
           cache-dependency-path: tools/requirements.lock
+      - name: Install pinned validation dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
       - name: Check selected renderer prerequisites before building
         id: renderer_preflight
         if: needs.profile.outputs.renderer == 'true'
