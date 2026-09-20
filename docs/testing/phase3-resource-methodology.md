@@ -1,6 +1,8 @@
 # Phase 3 resource campaign (#239)
 
-Status: implementation checkpoint, **not full ticket acceptance**. The executable
+Status: the retained provider, renderer/shared-storage and OCI campaigns cover
+the requested measurement populations; integration and Phase 3 gate review are
+pending. Each immutable receipt preserves its original checkpoint status. The executable
 provider checkpoint uses a separate real `latentd`, authenticated CLI, compiled
 HTTP/blob guests and the maintained signed provider fixture. A successful build,
 a synthetic unit test, or an unexecuted recipe is not resource evidence. Actual
@@ -35,10 +37,11 @@ measurements do not claim durable acceptance by a real JetStream server.
 
 Component, package, publication and deployment counts are separate. The current
 standalone checkpoint counts three actual admitted package/component/publication
-identities and independently pages deployments. It does **not** yet quantify
-multiple publications sharing one package or physical storage deduplication.
-That #266 campaign remains required, as does the #270 token/acquisition,
-resolver-answer/waiter, connection-byte and redirect-owner campaign.
+identities and independently pages deployments. The separate
+[renderer/shared-storage campaign](phase3-resource-renderer.md) measures one
+component, two packages and two independent publications, including unique-inode
+and allocated storage. The [OCI campaign](phase3-resource-oci.md) measures bounded
+token/acquisition, resolver-answer/waiter, connection-byte and redirect owners.
 
 ## Collection and load
 
@@ -98,8 +101,9 @@ is supported by this protocol.
 ## Unknowns are not zero
 
 `/proc` RSS is actual resident process memory, not an allocator-retained-byte
-counter or a JavaScript heap measure. The latter are explicitly unavailable,
-not zero. Provider/cache accounting bytes are conservative ownership charges,
+counter or a JavaScript allocator live-byte measure. The latter remain explicitly
+unavailable. Actual renderer Wasm linear-memory high-water marks, including the
+JavaScript engine heap, are measured separately from RSS. Provider/cache accounting bytes are conservative ownership charges,
 not interchangeable with RSS or unique physical disk blocks. Inventory entries
 with an unavailable live count remain unavailable even if their configured
 ceiling is known. Quiescence fails when a required provider counter is missing.
@@ -107,9 +111,9 @@ ceiling is known. Quiescence fails when a required provider counter is missing.
 The checkpoint asserts only observed process/thread/listener/provider-object
 plateaus across dormant populations and return of measured active owners after
 failure/cancellation/churn. It reports RSS distributions without inventing an
-exact memory-return invariant. Full acceptance still needs several configured
-ceilings, longer bounded churn, retained-byte/cache/storage analysis and actual
-mixed SSR success/failure/cancellation measurements.
+exact memory-return invariant. The linked current campaigns add multiple
+configured ceilings, bounded churn, retained-byte/cache/storage analysis and
+actual mixed SSR success/failure/cancellation measurements.
 
 ## Exact inputs and immutable reports
 
@@ -143,7 +147,8 @@ python3 -m unittest tools.tests.test_phase3_resource
 Outputs use exclusive creation, bounded canonical JSON and exact-byte SHA-256
 sidecars. Failed attempts retain `status: failed`; a later pass is a different
 file. The only current success status is `checkpoint-passed`, with
-`ticketAcceptance: pending` and explicit missing acceptance populations. Keep
+`ticketAcceptance: pending`; later campaigns fill earlier missing populations
+without rewriting the earlier report. Keep
 full temporary data under the owned target volume; commit concise immutable
 reports under `docs/testing/phase3-resource-evidence/`. Host outages remain
 host-condition evidence, not successful cleanup and not an assumed application
@@ -156,9 +161,8 @@ immutable arrival identities, deadline/error cleanup, false-empty rejection,
 missing-counter rejection, inode-scoped socket accounting, bounded input
 inventory and immutable output refusal. Linux also measures and reaps a real
 owned process. These synthetic regression fixtures are not benchmark evidence.
-No shared SDK runner, Angular T1 implementation, PR merge or issue closure
-belongs to this resource worker. Requested parent-branch integration is recorded
-separately from this worker's resource changes.
+The shared SDK runner, Angular T1 implementation and Phase 3 gate have their
+own evidence. A resource checkpoint does not implicitly qualify those workflows.
 
 `tools/phase3_resource_rust.py` builds the dedicated `phase3_resource` integration
 test, selects only the executable named by successful Cargo JSON metadata,
@@ -173,3 +177,5 @@ cargo test --locked -p latent-wasmtime --test phase3_resource -- --test-threads=
 ```
 
 See [renderer memory and shared storage qualification](phase3-resource-renderer.md) for the measured one-cell/two-cell Angular profiles.
+See [OCI pool qualification](phase3-resource-oci.md) for token, DNS and redirect
+costs at two concurrent-operation ceilings and after physical peer retirement.
