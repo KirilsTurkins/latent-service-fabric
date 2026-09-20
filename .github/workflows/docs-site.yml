@@ -20,8 +20,12 @@ jobs:
           node-version: 24.19.0
       - name: Install the reviewed website dependency graph without lifecycle scripts
         run: |
-          npm install --global npm@12.0.1 --ignore-scripts --no-audit --no-fund
-          npm ci --prefix website --ignore-scripts --no-audit --no-fund
+          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          echo "$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin" >> "$GITHUB_PATH"
+          node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
+      - name: Verify the selected package manager identity
+        run: |
+          test "$(npm --version)" = '12.0.1'
       - name: Check metadata, source extraction, types and unit regressions
         working-directory: website
         run: |

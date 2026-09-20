@@ -19,6 +19,7 @@ try {
     const url = server.origin + built.manifest.baseUrl + 'docs/development/website-code-examples/';
     const context = await browser.newContext({permissions: ['clipboard-read', 'clipboard-write'], viewport: {width: 1280, height: 900}});
     await context.addInitScript(() => {
+      if (!navigator.clipboard) return; // about:blank is not a secure clipboard context.
       const writeText = navigator.clipboard.writeText.bind(navigator.clipboard);
       navigator.clipboard.writeText = text => {
         window.__lsfCopiedText = text;
