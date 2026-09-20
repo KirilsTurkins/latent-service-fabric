@@ -1,8 +1,8 @@
 //! Manual bounded costs on real owned TLS/DNS futures; never a throughput claim.
 mod observe;
 mod phases;
+mod probe;
 
-use latent_testkit::resources::{CurrentProcessProbe, ResourceProbe};
 use serde_json::json;
 use std::{io::Write, os::unix::fs::OpenOptionsExt, path::PathBuf};
 
@@ -12,7 +12,7 @@ async fn bounded_oci_pool_resource_checkpoint() {
     let output =
         PathBuf::from(std::env::var_os("LSF_PHASE3_OCI_RESOURCE_REPORT").expect("report path"));
     assert!(output.is_absolute() && output.parent().unwrap().is_dir() && !output.exists());
-    let fixed = CurrentProcessProbe.capture().unwrap();
+    let fixed = probe::capture();
     let mut rows = Vec::new();
     for ceiling in [1, 2] {
         phases::tokens(ceiling, &mut rows).await;
@@ -20,9 +20,15 @@ async fn bounded_oci_pool_resource_checkpoint() {
         phases::redirects(ceiling, &mut rows).await;
     }
     assert_eq!(rows.len(), 48);
-    let retired = CurrentProcessProbe.capture().unwrap();
-    assert_eq!(retired.thread_count, fixed.thread_count);
-    assert_eq!(retired.socket_count, fixed.socket_count);
+    let retired = probe::capture();
+    for key in [
+        "processId",
+        "threadCount",
+        "socketCount",
+        "openFileDescriptors",
+    ] {
+        assert_eq!(retired[key], fixed[key]);
+    }
     let report = json!({"schemaVersion": "latent.phase3.oci-resource.v1", "status": "checkpoint-passed",
         "ceilings": [1, 2], "cyclesPerPool": 4, "fixed": fixed, "retired": retired,
         "ownership": "one-current-thread-runtime-with-owned-local-TLS-and-DNS-peers",

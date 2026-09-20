@@ -1,6 +1,5 @@
 use super::super::{pull, HttpOciRegistry};
 use latent_core::PlatformError;
-use latent_testkit::resources::{CurrentProcessProbe, ResourceProbe};
 use serde_json::{json, Value};
 use std::time::Duration;
 use tokio::{task::JoinHandle, time::Instant};
@@ -22,7 +21,7 @@ pub(super) fn sample(
             && b.retained_token_bytes <= b.maximum_token_bytes
     );
     rows.push(json!({"kind": kind, "ceiling": ceiling, "phase": phase, "elapsedNanos": elapsed.map(|x| x.to_string()),
-        "os": CurrentProcessProbe.capture().unwrap(),
+        "os": super::probe::capture(),
         "usage": {"inFlight": u.in_flight, "retainedPackages": u.retained_packages, "retainedBytes": u.retained_bytes, "closed": u.closed},
         "bearer": {"cachedTokens": b.cached_tokens, "activeAcquisitions": b.active_acquisitions,
             "waitingAcquisitions": b.waiting_acquisitions, "retainedTokenBytes": b.retained_token_bytes,
