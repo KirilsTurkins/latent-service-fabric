@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "modes": {
+    "light": {
+      "canvas": "#FAF6EC", "surface": "#FFFDF7", "raised": "#F0E7D2",
+      "text": "#242018", "muted": "#5E523C", "link": "#7A4A00", "linkHover": "#573200",
+      "accent": "#E6B84A", "accentInk": "#242018", "focus": "#7A4A00", "border": "#8C7955",
+      "selection": "#7A4A00", "selectionInk": "#FFFDF7",
+      "codeSurface": "#F0E7D2", "codeText": "#242018", "codeComment": "#665A45",
+      "codeKeyword": "#714100", "codeString": "#245231", "codeNumber": "#7A3024",
+      "codeFunction": "#6B3C72", "codeVariable": "#5B4520",
+      "controlSurface": "#7A4A00", "controlText": "#FFFDF7", "controlHover": "#573200",
+      "disabledSurface": "#E6DDC8", "disabledText": "#635844", "tabSurface": "#7A4A00", "tabText": "#FFFDF7",
+      "successSurface": "#E8F1E7", "successText": "#20482A", "successBorder": "#35613E",
+      "warningSurface": "#FFF0CC", "warningText": "#694000", "warningBorder": "#815300",
+      "dangerSurface": "#FBE8E2", "dangerText": "#862F29", "dangerBorder": "#A1453A",
+      "infoSurface": "#E8EDF4", "infoText": "#284968", "infoBorder": "#456787"
+    },
+    "dark": {
+      "canvas": "#0D0D0B", "surface": "#191812", "raised": "#242017",
+      "text": "#F3EBDD", "muted": "#C7BA9C", "link": "#F2CA68", "linkHover": "#FFE4A3",
+      "accent": "#E6B84A", "accentInk": "#0D0D0B", "focus": "#FFE4A3", "border": "#9F8C62",
+      "selection": "#E6B84A", "selectionInk": "#0D0D0B",
+      "codeSurface": "#191812", "codeText": "#F3EBDD", "codeComment": "#C7BA9C",
+      "codeKeyword": "#F2CA68", "codeString": "#ACD6A2", "codeNumber": "#F0B48A",
+      "codeFunction": "#DDBCEF", "codeVariable": "#E8D5A5",
+      "controlSurface": "#E6B84A", "controlText": "#0D0D0B", "controlHover": "#F2CA68",
+      "disabledSurface": "#242017", "disabledText": "#C7BA9C", "tabSurface": "#E6B84A", "tabText": "#0D0D0B",
+      "successSurface": "#15331F", "successText": "#B9E8BD", "successBorder": "#88BF8E",
+      "warningSurface": "#35260B", "warningText": "#F8D586", "warningBorder": "#CFA546",
+      "dangerSurface": "#3D1C18", "dangerText": "#FFBBB1", "dangerBorder": "#E29687",
+      "infoSurface": "#192C3E", "infoText": "#BFD9F1", "infoBorder": "#8AB5D9"
+    }
+  }
+}
