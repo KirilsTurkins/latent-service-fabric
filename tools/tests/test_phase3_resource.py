@@ -391,7 +391,7 @@ class RustInventoryTests(unittest.TestCase):
 
     def test_rust_measurement_cannot_pass_empty_active_or_recovery_populations(self):
         rows = []
-        for provider in ("http", "blob", "secret", "child"):
+        for provider in ("http", "blob", "secret", "event", "child"):
             for phase in ("fixed", "active", "recovery"):
                 rows.append({"provider": provider, "phase": phase,
                              "os": {"rssBytes": 1, "threads": 1},

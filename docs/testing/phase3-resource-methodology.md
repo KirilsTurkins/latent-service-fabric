@@ -6,9 +6,13 @@ HTTP/blob guests and the maintained signed provider fixture. A successful build,
 a synthetic unit test, or an unexecuted recipe is not resource evidence. Actual
 SSR/backend/browser qualification is coordinated with #236/#226; no renderer
 heap, event, secret, child-call or OCI-network result is inferred from HTTP/blob.
-Separate small Rust HTTP/blob/secret/child measurements are documented in the
+Separate small Rust HTTP/blob/secret/event/child measurements are documented in the
 [checkpoint](phase3-resource-checkpoint.md); they are not a standalone node or
-SSR campaign.
+SSR campaign. The event population uses the maintained controlled TLS peer at
+running ceilings one and two. It records four cold/warm acknowledged guest
+publications, then actual peer receipt before cancelling held publications and
+checking physical owner reclamation. The peer is a protocol fixture; these
+measurements do not claim durable acceptance by a real JetStream server.
 
 ## Ownership and populations
 

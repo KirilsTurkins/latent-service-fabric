@@ -73,7 +73,7 @@ def validate_observations(value, binary):
     require(value["binarySha256"] == binary["sha256"], "resource-rust-report-binary")
     rows = value["observations"]
     require(0 < len(rows) <= 128, "resource-rust-empty-report")
-    for provider in ("http", "blob", "secret", "child"):
+    for provider in ("http", "blob", "secret", "event", "child"):
         selected = [row for row in rows if row["provider"] == provider]
         require({"fixed", "active", "recovery"} <= {row["phase"] for row in selected},
                 "resource-rust-missing-population")

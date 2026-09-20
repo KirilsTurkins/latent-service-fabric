@@ -8,6 +8,8 @@
 mod blob;
 #[path = "phase3_resource/child.rs"]
 mod child;
+#[path = "phase3_resource/events.rs"]
+mod events;
 #[path = "phase3_resource/http.rs"]
 mod http;
 #[path = "phase3_resource/observation.rs"]
@@ -30,6 +32,7 @@ fn phase3_resource_small_provider_ownership_checkpoint() {
             http::measure(&mut observations).await;
             blob::measure(&mut observations).await;
             secrets::measure(&mut observations).await;
+            events::measure(&mut observations).await;
         })
         .await
         .expect("finite direct-provider resource checkpoint");

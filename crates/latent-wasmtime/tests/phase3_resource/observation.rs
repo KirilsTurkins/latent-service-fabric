@@ -198,7 +198,7 @@ pub fn file_digest(path: &Path) -> String {
 
 pub fn publish(observations: &[Value]) {
     assert!(!observations.is_empty() && observations.len() <= 128);
-    for provider in ["http", "blob", "secret", "child"] {
+    for provider in ["http", "blob", "secret", "event", "child"] {
         assert!(observations
             .iter()
             .any(|entry| entry["provider"] == provider && entry["phase"] == "active"));
@@ -210,10 +210,10 @@ pub fn publish(observations: &[Value]) {
         "status":"checkpoint-passed", "ticketAcceptance":"pending", "observations":observations,
         "binarySha256":file_digest(&std::env::current_exe().unwrap()),
         "fixtureScope":"maintained-component-fixtures-with-real-providers-and-local-manager",
-        "runtimePopulations":{"http-blob-secret":"current-thread-maintained-direct-provider-fixtures",
+        "runtimePopulations":{"http-blob-secret-event":"current-thread-maintained-direct-provider-fixtures",
             "child":"separate-fixed-two-worker-local-activation-runtime"},
-        "externalServices":"HTTP-controlled-TCP-peer-in-test-process; local-protected-secret-and-blob-stores",
-        "pending":["real-Angular-SSR","NATS-event-campaign","OCI-network-campaign","longer-churn"]});
+        "externalServices":"HTTP-and-NATS-controlled-TCP-TLS-peers-in-test-process; local-protected-secret-and-blob-stores",
+        "pending":["real-Angular-SSR","OCI-network-campaign","longer-churn"]});
     let encoded = serde_json::to_vec(&value).unwrap();
     assert!(encoded.len() <= 2 * 1024 * 1024);
     if let Some(path) = std::env::var_os("LSF_PHASE3_RESOURCE_REPORT") {
