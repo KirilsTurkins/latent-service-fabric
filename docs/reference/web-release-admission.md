@@ -44,6 +44,14 @@ an explicit node profile. The original private synchronous qualification ABI
 still fails the public interface check. Checked web publication is not yet a
 callable capsule or deployment grant; #226 supplies that authority integration.
 
+Immutable publication and evidence bytes are staged under the bounded catalog
+writer before taking the final policy fence. This lets the existing control
+owner renew its finite clock lease during large payload I/O. The current grant
+is checked before staging and again under the policy fence before the durable
+HEAD commit. Expiry or revocation during staging cannot publish positive
+authority; an interrupted mutation retains its storage charge and requires
+restart plus operation lookup.
+
 ## Publisher, builder and inventory policy
 
 `SupplyChainAuthority::verify_web` and `recover_web` use the same approved
