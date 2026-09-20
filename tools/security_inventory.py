@@ -81,6 +81,19 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
         require(manifest.get(kind, {}) == resolved[""].get(kind, {}), "npm-manifest-lock-drift")
         for name in manifest.get(kind, {}):
             require(f"node_modules/{name}" in resolved, "npm-direct-dependency-missing")
+    bundled = entry.get("bundled_package")
+    bundled_prefix = None
+    if bundled is not None:
+        require(isinstance(bundled, str) and re.fullmatch(r"(?:@[a-z0-9-]+/)?[a-z0-9-]+", bundled),
+                "invalid-reviewed-npm-bundle")
+        owner = resolved.get(f"node_modules/{bundled}", {})
+        location = urlsplit(owner.get("resolved", ""))
+        require(manifest.get("dependencies", {}).get(bundled) == owner.get("version")
+                and location.scheme == "https" and location.hostname == "registry.npmjs.org"
+                and re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", owner.get("integrity", ""))
+                and isinstance(owner.get("bundleDependencies"), list) and owner["bundleDependencies"],
+                "unlocked-reviewed-npm-bundle")
+        bundled_prefix = f"node_modules/{bundled}/node_modules/"
     packages = []
     for path, dependency in resolved.items():
         if not path:
@@ -89,7 +102,11 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
         name = dependency.get("name") or path.rsplit("node_modules/", 1)[1]
         version = dependency.get("version", "")
         location = urlsplit(dependency.get("resolved", ""))
-        require(location.scheme == "https" and location.hostname == "registry.npmjs.org",
+        # npm ships its dependencies inside its integrity-pinned tarball. Opt-in
+        # ownership is explicit in the policy; every bundled version is scanned.
+        bundled_source = (bundled_prefix is not None and path.startswith(bundled_prefix)
+                          and dependency.get("inBundle") is True and not dependency.get("resolved"))
+        require(bundled_source or (location.scheme == "https" and location.hostname == "registry.npmjs.org"),
                 "unreviewed-npm-registry-or-source")
         require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?", version) is not None,
                 "unresolved-npm-version")
