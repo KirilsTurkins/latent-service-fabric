@@ -19,7 +19,7 @@ pub enum PolicyCommand {
     Apply {
         #[arg(long)]
         id: String,
-        #[arg(long, value_name = "FILE")]
+        #[arg(long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
         file: PathBuf,
         #[arg(long)]
         operation_id: String,
@@ -62,7 +62,7 @@ pub enum PolicyCommand {
         capability: String,
         #[arg(long)]
         operation: String,
-        #[arg(long, value_name = "FILE")]
+        #[arg(long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
         resource: PathBuf,
         #[arg(long)]
         additional_policy: Vec<String>,
