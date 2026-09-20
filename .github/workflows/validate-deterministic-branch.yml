@@ -33,6 +33,7 @@ jobs:
           fi
       - name: Validate neutral helpers and both migrated subsystems
         run: |
+          python3 -m unittest tools.tests.test_deterministic_tests
           cargo test -p latent-testkit --no-default-features --lib --locked -- --test-threads=1
           cargo test -p latent-testkit --no-default-features --lib --locked -- --test-threads=4
           cargo test -p latent-admission -p latent-scheduler --lib --locked
@@ -41,10 +42,11 @@ jobs:
           cargo run -p latent-testkit --no-default-features --example cancellation --locked
       - name: Check lint contracts
         run: |
-          status=0
-          cargo clippy -p latent-testkit --no-default-features --all-targets --locked --no-deps -- -D warnings || status=$?
-          cargo clippy -p latent-admission -p latent-scheduler --tests --locked --no-deps -- -D warnings || status=$?
-          exit "$status"
+          cargo clippy -p latent-testkit --no-default-features --all-targets --locked --no-deps -- -D warnings
+          cargo clippy -p latent-admission --tests --locked --no-deps -- -D warnings
+          # Match existing CI's scheduler warning policy. The migrated races module
+          # separately denies clippy::all and clippy::pedantic for its own code.
+          cargo clippy -p latent-scheduler --tests --locked --no-deps
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: 50f003dd006e0786494936c49e55dc683cf26fd6
@@ -57,6 +59,11 @@ jobs:
           cargo test -p latent-testkit --lib --locked
           cargo test -p latent-testkit --doc --locked
           cargo clippy -p latent-testkit --all-targets --all-features --locked --no-deps -- -D warnings
+      - name: Validate contributor documentation
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          rm -rf .validation-baseline
+          python3 tools/validate_docs.py
       - name: Retain timing and count evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

@@ -61,6 +61,28 @@ fn missing_timer_poll_and_capacity_exhaustion_are_not_readiness() {
     assert_eq!(clock.pending_waiters(), 0);
 }
 
+#[test]
+fn overflow_does_not_poison_live_timer_cleanup() {
+    let clock = TestClock::new(0, Instant::now(), 2);
+    let before = clock.monotonic_now();
+    let deadline = before + Duration::from_secs(1);
+    let mut first = Box::pin(clock.sleep_until(deadline));
+    let probe = PollProbe::default();
+    probe.pending(first.as_mut());
+    assert!(std::panic::catch_unwind(|| clock.advance(Duration::MAX)).is_err());
+    assert_eq!(clock.monotonic_now(), before);
+    assert_eq!(clock.pending_waiters(), 1);
+    clock.0.lock().unwrap().next = u64::MAX;
+    assert!(std::panic::catch_unwind(|| {
+        let mut extra = Box::pin(clock.sleep_until(deadline));
+        PollProbe::default().pending(extra.as_mut());
+    }).is_err());
+    assert_eq!(clock.pending_waiters(), 1);
+    assert_eq!(probe.wakes(), 0);
+    drop(first);
+    assert_eq!(clock.pending_waiters(), 0);
+}
+
 async fn fixed_script() {
     with_watchdog(WATCHDOG, async {
         let clock = TestClock::new(433, Instant::now(), 1);
@@ -76,19 +98,14 @@ async fn fixed_script() {
             assert_eq!(clock.monotonic_now(), deadline);
             assert_eq!(clock.pending_waiters(), 0);
         }
-    })
-    .await;
+    }).await;
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn fixed_seed_current_thread() {
-    fixed_script().await;
-}
+async fn fixed_seed_current_thread() { fixed_script().await; }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn fixed_seed_multi_thread() {
-    fixed_script().await;
-}
+async fn fixed_seed_multi_thread() { fixed_script().await; }
 
 #[tokio::test(start_paused = true)]
 async fn tokio_virtual_time_is_not_injected_or_operating_system_time() {
@@ -97,15 +114,11 @@ async fn tokio_virtual_time_is_not_injected_or_operating_system_time() {
         let injected_before = clock.monotonic_now();
         let os_before = Instant::now();
         let tokio_before = tokio::time::Instant::now();
-        tokio::time::advance(Duration::from_secs(3600)).await;
+        tokio::time::advance(Duration::from_hours(1)).await;
         assert_eq!(clock.monotonic_now(), injected_before);
-        assert_eq!(
-            tokio::time::Instant::now() - tokio_before,
-            Duration::from_secs(3600)
-        );
+        assert_eq!(tokio::time::Instant::now() - tokio_before, Duration::from_hours(1));
         assert!(os_before.elapsed() < WATCHDOG);
-    })
-    .await;
+    }).await;
 }
 
 #[tokio::test]
@@ -116,6 +129,5 @@ async fn system_clock_and_real_timer_integration() {
         let before = clock.monotonic_now();
         tokio::time::sleep(Duration::from_millis(1)).await;
         assert!(clock.monotonic_now() > before);
-    })
-    .await;
+    }).await;
 }

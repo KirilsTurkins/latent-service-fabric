@@ -48,8 +48,11 @@ impl TestClock {
     pub fn advance(&self, amount: Duration) {
         let wakes = {
             let mut state = self.0.lock().unwrap();
-            state.now = state.now.checked_add(amount).expect("test clock overflow");
-            let now = state.now;
+            let Some(now) = state.now.checked_add(amount) else {
+                drop(state);
+                panic!("test clock overflow");
+            };
+            state.now = now;
             let due: Vec<_> = state
                 .waits
                 .iter()
@@ -124,10 +127,11 @@ impl Future for ManualSleep {
                 panic!("manual timer capacity exhausted");
             }
             let id = state.next;
-            state.next = state
-                .next
-                .checked_add(1)
-                .expect("manual timer identity exhausted");
+            let Some(next) = id.checked_add(1) else {
+                drop(state);
+                panic!("manual timer identity exhausted");
+            };
+            state.next = next;
             state.waits.insert(id, (this.deadline, cx.waker().clone()));
             this.registration = Some(id);
         }
