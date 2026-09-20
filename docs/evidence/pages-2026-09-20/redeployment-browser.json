@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "source": "80d7924a6e203b88c889f4b9bd3f6afb2f0fe48c",
+  "url": "https://kirilsturkins.github.io/latent-service-fabric/",
+  "browser": "153.0.8010.12",
+  "ciRun": 35534853488,
+  "ciAttempt": 1,
+  "artifactDigest": "sha256:4d1f14bce0b23b32e8e86ba0ed5fb232ab3e83b305ba6d71afeae904f2e1fc75",
+  "livePublication": true,
+  "home": true,
+  "nestedReload": true,
+  "asset": true,
+  "versionSwitch": true,
+  "developmentSourceExample": true,
+  "copiedCode": true,
+  "selectedVersionSearch": true,
+  "catalogue": true,
+  "missingRoute404": true,
+  "browserErrors": 0
+}

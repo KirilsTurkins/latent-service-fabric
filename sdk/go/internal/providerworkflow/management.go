@@ -56,11 +56,13 @@ func (owner *workflow) management(ctx context.Context) error {
 		return errors.New("participant-preconditioned-policy-create-failed")
 	}
 	owner.observe(created.Metadata)
+	// lsf-example-begin: management
 	lookup, failure := owner.client.GetPolicyOperation(ctx, profile.GetPolicyOperationRequest{OperationId: request.OperationId}, profile.CallOptions{})
 	if failure != nil || !sameReceipt(created.Value.Receipt, lookup.Value.Receipt) || lookup.Metadata.Outcome != profile.OutcomeKnowledgeObserved {
 		return errors.New("participant-original-policy-operation-recovery-failed")
 	}
 	owner.observe(lookup.Metadata)
+	// lsf-example-end: management
 	owner.result.Assertions["mutationReceipt"] = true
 	replay, failure := owner.client.ApplyPolicy(ctx, request, profile.CallOptions{})
 	if failure != nil || !sameReceipt(created.Value.Receipt, replay.Value.Receipt) {

@@ -116,6 +116,7 @@ func (owner *workflow) held(parent context.Context, kind string) (outcome error)
 	case "explicit-cancel":
 		owner.result.Assertions["explicitCancellation"] = true
 	}
+	// lsf-example-begin: cancel
 	status, failure = owner.client.GetActivation(parent, profile.GetActivationRequest{ActivationId: identity}, profile.CallOptions{TimeoutMillis: reference(uint64(1000))})
 	if failure != nil {
 		return errors.New("participant-original-id-status-after-lost-response-failed")
@@ -126,6 +127,7 @@ func (owner *workflow) held(parent context.Context, kind string) (outcome error)
 			return failure
 		}
 	}
+	// lsf-example-end: cancel
 	if failure := owner.marker(parent, "closed-"+mode); failure != nil {
 		return &stepFailure{reason: "participant-" + kind + "-closed-rendezvous-failed", cause: failure}
 	}

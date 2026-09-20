@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "id": "client/provider-management",
+  "title": "Look up the original policy operation receipt",
+  "audience": "client-developer",
+  "target": "client",
+  "variants": [
+    {
+      "language": "rust",
+      "kind": "maintained",
+      "source": "sdk/rust/examples/provider_workflow/management.rs",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-management-rust.json",
+          "sha256": "576fe496816abd878ba5c66d545b8eb62c08663dafa61e613c3c7decc7ae8f6d"
+        }
+      }
+    },
+    {
+      "language": "typescript",
+      "kind": "maintained",
+      "source": "sdk/typescript-client/tests/provider-workflow.mjs",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-management-typescript.json",
+          "sha256": "92be1a8bc62b7a2b5928c93e8729c3cfc720b9771ed15962d3dfe4b17cd9f72c"
+        }
+      }
+    },
+    {
+      "language": "go",
+      "kind": "maintained",
+      "source": "sdk/go/internal/providerworkflow/management.go",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-management-go.json",
+          "sha256": "9aae23a7a707c3686f3210f8ca0bf83bc5684817481ff777d011a1ae24f14dec"
+        }
+      }
+    },
+    {
+      "language": "c",
+      "kind": "maintained",
+      "source": "sdk/c/examples/provider_workflow.c",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-management-c.json",
+          "sha256": "c8f6a2b756cd9ce2865de7877a0ee02061453c7f6bd0b9e5daee07dee4502f22"
+        }
+      }
+    },
+    {
+      "language": "java",
+      "kind": "maintained",
+      "source": "sdk/java-client/src/example/java/dev/latent/sdk/examples/ProviderWorkflow.java",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-management-java.json",
+          "sha256": "5b20d485042a4aab7800beab8bc5257188b5065d4b7e36818ce14ab59c4c0058"
+        }
+      }
+    },
+    {
+      "language": "csharp",
+      "kind": "maintained",
+      "source": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/Management.cs",
+      "regions": [
+        "management"
+      ],
+      "validation": {
+        "target": "tools/run_sdk_provider_matrix.sh",
+        "instructions": "docs/learn/use-a-client.mdx",
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-management-csharp.json",
+          "sha256": "3c85ada824db55fa90841d9080d6ecbae5a834ec8604134cebecb17add5184df"
+        }
+      }
+    }
+  ]
+}

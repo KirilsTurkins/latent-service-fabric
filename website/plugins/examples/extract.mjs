@@ -3,7 +3,9 @@ import {parseMetadata, readSchema} from './schema.mjs';
 import {extractRegions} from './regions.mjs';
 
 export const LANGUAGES = Object.freeze(['rust', 'typescript', 'go', 'c', 'java', 'csharp']);
-const extensions = {rust: ['rs'], typescript: ['ts', 'tsx'], go: ['go'], c: ['c', 'h'], java: ['java'], csharp: ['cs']};
+// The maintained Node client also ships runnable ESM examples. These exercise
+// the TypeScript SDK; accepting their explicit .mjs path never executes it.
+const extensions = {rust: ['rs'], typescript: ['ts', 'tsx', 'mjs'], go: ['go'], c: ['c', 'h'], java: ['java'], csharp: ['cs']};
 const audiences = {client: 'client-developer', browser: 'browser-developer', guest: 'guest-author'};
 const registrySchema = readSchema('registry');
 const scenarioSchema = readSchema('scenario');
