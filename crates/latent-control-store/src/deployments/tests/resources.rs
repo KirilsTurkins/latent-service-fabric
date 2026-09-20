@@ -13,6 +13,7 @@ use crate::DeploymentStore;
 
 #[cfg(target_os = "linux")]
 mod compilation_memory;
+mod metadata_correctness;
 
 const CHILD_ENV: &str = "LSF_DEPLOYMENT_DORMANCY_CHILD";
 const TEST_NAME: &str =
