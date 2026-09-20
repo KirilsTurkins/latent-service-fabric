@@ -18,7 +18,11 @@ import re
 import signal
 import subprocess
 import sys
-import threading
+
+try:
+    from .owned_test_process import ProcessFailure, run_owned as supervise
+except ImportError:
+    from owned_test_process import ProcessFailure, run_owned as supervise
 
 MAX_INVENTORY_BYTES = 32 * 1024 * 1024
 MAX_LINE_BYTES = 1024 * 1024
@@ -119,11 +123,11 @@ def absolute_path(value: object) -> Path:
     return path.resolve(strict=True)
 
 
-def read_inventory(path: Path, repo: Path, suite: Suite) -> Artifact:
+def read_inventory(path: Path, repo: Path, suite: Suite, *, target: Path | None = None) -> Artifact:
     repo = repo.resolve(strict=True)
     expected_manifest = (repo / suite.manifest).resolve(strict=True)
     expected_source = expected_manifest.parent / suite.source
-    target_root = (repo / "target").resolve(strict=True)
+    target_root = (target or repo / "target").resolve(strict=True)
     executable_root = (target_root / "debug/deps").resolve(strict=True)
     found: Path | None = None
     link_paths: set[Path] = set()
@@ -194,47 +198,17 @@ def read_inventory(path: Path, repo: Path, suite: Suite) -> Artifact:
 
 def run_owned(command: list[str], *, cwd: Path, env: dict[str, str],
               timeout: int, maximum: int) -> tuple[int, bytes]:
-    """Bound output and lifetime, retaining process ownership through kill/reap."""
-    process = subprocess.Popen(command, cwd=cwd, env=env, stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT, start_new_session=os.name == "posix")
-    expired = threading.Event()
-
-    def stop() -> None:
-        try:
-            if os.name == "posix":
-                os.killpg(process.pid, signal.SIGKILL)
-            elif process.poll() is None:
-                process.kill()
-        except ProcessLookupError:
-            pass
-
-    def expire() -> None:
-        expired.set()
-        stop()
-
-    timer = threading.Timer(timeout, expire)
-    timer.daemon = True
-    timer.start()
+    """Use the common bounded descendant owner, preserving artifact errors."""
     try:
-        assert process.stdout is not None
-        output = process.stdout.read(maximum + 1)
-        if len(output) > maximum:
-            raise ArtifactError("test-output-limit")
-        # Retire the timer before reaping: after wait(), this PID could be reused.
-        timer.cancel()
-        timer.join()
-        process.wait(timeout=5)
-        if expired.is_set():
-            raise ArtifactError("test-timeout")
-        return process.returncode, output
-    finally:
-        timer.cancel()
-        timer.join()
-        if process.returncode is None:
-            stop()
-        process.wait(timeout=5)
-        if process.stdout is not None:
-            process.stdout.close()
+        result = supervise(command, cwd=cwd, env=env, timeout=timeout, maximum=maximum)
+    except ProcessFailure as error:
+        reason = {"output-overflow": "test-output-limit", "infrastructure-timeout": "test-timeout",
+                  "cancelled": "test-interrupted", "unavailable-environment": "test-prerequisite-unavailable"}.get(
+                      error.category, "test-process-failed")
+        raise ArtifactError(reason) from None
+    if result.returncode is None:
+        raise ArtifactError("test-exit-unobserved")
+    return result.returncode, result.output
 
 
 def require_source(repo: Path, expected: str | None, env: dict[str, str]) -> None:
@@ -246,14 +220,17 @@ def require_source(repo: Path, expected: str | None, env: dict[str, str]) -> Non
         raise ArtifactError("inventory-source-checkout-mismatch")
 
 
-def cargo_environment(repo: Path, artifact: Artifact, base: dict[str, str]) -> dict[str, str]:
+def cargo_environment(repo: Path, artifact: Artifact, base: dict[str, str], *, execute=None,
+                      target: Path | None = None) -> dict[str, str]:
     env = dict(base)
-    status, output = run_owned(["rustc", "--print", "target-libdir"], cwd=repo,
+    execute = execute or run_owned
+    status, output = execute(["rustc", "--print", "target-libdir"], cwd=repo,
                                env=env, timeout=30, maximum=4096)
     if status:
         raise ArtifactError("rust-library-path-unavailable")
     rust_libraries = absolute_path(output.decode("utf-8").strip())
-    paths = [*artifact.link_paths, repo / "target/debug/deps", repo / "target/debug", rust_libraries]
+    target_root = target or repo / "target"
+    paths = [*artifact.link_paths, target_root / "debug/deps", target_root / "debug", rust_libraries]
     key = "PATH" if os.name == "nt" else ("DYLD_FALLBACK_LIBRARY_PATH" if sys.platform == "darwin"
                                           else "LD_LIBRARY_PATH")
     env[key] = os.pathsep.join([*(str(path) for path in paths), *([env[key]] if env.get(key) else [])])
