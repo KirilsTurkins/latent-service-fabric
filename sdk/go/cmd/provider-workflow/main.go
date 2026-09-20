@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"strings"
 	"time"
 
 	"latent.dev/sdk/go/internal/providerworkflow"
@@ -29,6 +30,8 @@ func main() {
 }
 
 func fail(stage string) {
-	_ = json.NewEncoder(os.Stdout).Encode(map[string]string{"schemaVersion": "latent.sdk.provider.workflow.failure.v1", "language": "go", "stage": stage})
+	// These are fixed, local workflow labels. Match the shared harness's bounded
+	// stderr contract so a failed assertion is not collapsed into "unavailable".
+	_ = json.NewEncoder(os.Stderr).Encode(map[string]string{"stage": "go-participant", "reason": strings.ToLower(stage)})
 	os.Exit(1)
 }

@@ -61,6 +61,9 @@ class ParticipantContractTests(unittest.TestCase):
         self.assertEqual(participant_diagnostic(
             b'{"stage":"provider-invocation","reason":"rpc-or-runtime","category":3,"grpcStatus":7}'),
             "provider-invocation-rpc-or-runtime-category-3-grpc-7")
+        self.assertEqual(participant_diagnostic(
+            b'{"stage":"go-participant","reason":"participant-httpguest-failed"}\n'),
+            "go-participant-participant-httpguest-failed-category-unavailable-grpc-unavailable")
         for value in (b"", b"x" * 513, b"not-json", b"[]", b"\xff",
                       b'{"stage":"provider","reason":"Authorization: Bearer token"}',
                       b'{"stage":"provider","reason":"failed","message":"secret"}'):
