@@ -118,6 +118,15 @@ class BuildWiringTests(unittest.TestCase):
         self.assertEqual(set(selectors), {expected})
         self.assertIn(sdk["java"], workflow)  # Existing repository drift validator.
 
+    def test_gradle_test_requires_both_main_suites_without_ignoring_failures(self):
+        gradle = (ROOT / "sdk/java-client/build.gradle.kts").read_text()
+        task = re.search(r"tasks\.test\s*\{([^}]+)\}", gradle).group(1)
+        self.assertIn("dependsOn(semanticTest, transportTest)", task)
+        self.assertIn("failOnNoDiscoveredTests.set(false)", task)
+        self.assertNotIn("ignoreFailures", gradle)
+        self.assertNotIn("isIgnoreExitValue", gradle)
+        self.assertIn("tasks.check { dependsOn(semanticTest, transportTest, verifyJavaBytecode) }", gradle)
+
     def test_gradle_and_shell_targets_cannot_drift_to_java21(self):
         gradle = (ROOT / "sdk/java-client/build.gradle.kts").read_text()
         self.assertEqual(set(re.findall(r"JavaLanguageVersion.of\((\d+)\)", gradle)), {"25"})

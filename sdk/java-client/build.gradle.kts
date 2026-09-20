@@ -78,6 +78,14 @@ val transportTest by tasks.registering(JavaExec::class) {
     enableAssertions = true
 }
 
+// These maintained suites are executable main classes, not JUnit tests.
+// Keep `test` useful and fail on either suite's exit status; only empty JUnit
+// discovery is expected, and must not replace or skip the real SDK suites.
+tasks.test {
+    dependsOn(semanticTest, transportTest)
+    failOnNoDiscoveredTests.set(false)
+}
+
 val verifyJavaBytecode by tasks.registering(Exec::class) {
     dependsOn(tasks.testClasses, tasks.jar)
     workingDir(rootDir.parentFile.parentFile)
