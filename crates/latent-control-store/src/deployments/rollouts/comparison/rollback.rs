@@ -1,5 +1,5 @@
 //! Reverse comparison reads historical source integrity without reviving its grant.
-use super::{bundle, descriptors, incompatible, MAX_PACKAGE};
+use super::{bundle, descriptors, incompatible, web, MAX_PACKAGE};
 use crate::rollouts::{error, Result, RolloutRelease};
 use latent_artifacts::{
     AdmissionAuthority, ArtifactRepository, HistoricalExecutionState, LifecycleAuthorityHandle,
@@ -21,7 +21,7 @@ pub(in crate::deployments::rollouts) async fn compare(
     let historical = repository
         .historical_execution_snapshot_selected(&served.component, served.publication.as_ref())
         .await?;
-    let (previous, state) = historical.into_parts();
+    let previous = historical.metadata();
     if previous.verified_digest() != &served.component
         || previous
             .manifest()
@@ -32,7 +32,7 @@ pub(in crate::deployments::rollouts) async fn compare(
     {
         return Err(incompatible());
     }
-    match (&state, owner) {
+    match (historical.state(), owner) {
         (HistoricalExecutionState::Unmanaged, None) if authority.is_none() => {}
         (HistoricalExecutionState::Eligible(token), owner) => {
             if owner.is_some_and(|owner| !token.belongs_to_catalog(owner))
@@ -78,6 +78,23 @@ pub(in crate::deployments::rollouts) async fn compare(
         }
         (None, None) if authority.is_none() => {}
         _ => return Err(owner_mismatch()),
+    }
+    match (
+        historical.web_layout(),
+        target_eligibility
+            .as_ref()
+            .and_then(|token| token.web_projection()),
+    ) {
+        (Some(previous), Some(next)) => {
+            if Some(previous.package()) != served.package.as_ref()
+                || Some(next.layout().package()) != target.package.as_ref()
+            {
+                return Err(incompatible());
+            }
+            return web::compare(previous, next.layout());
+        }
+        (None, None) => {}
+        _ => return Err(incompatible()),
     }
     let old_source = repository
         .retained_package_source_selected(
@@ -129,7 +146,7 @@ pub(in crate::deployments::rollouts) async fn compare(
             {
                 return Err(incompatible());
             }
-            descriptors(&previous, &next, &served.component, &target.component)?;
+            descriptors(previous, &next, &served.component, &target.component)?;
         }
         _ => return Err(incompatible()),
     }
