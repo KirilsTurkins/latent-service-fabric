@@ -8,30 +8,57 @@ permissions:
   contents: read
 
 jobs:
-  tools:
+  focused:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
-          components: rustfmt
-      - name: Stage tracked checkout and exact formatter
-        shell: bash
-        run: |
-          mkdir -p "$RUNNER_TEMP/aot-validation/formatter/bin" "$RUNNER_TEMP/aot-validation/formatter/lib"
-          git archive HEAD | gzip > "$RUNNER_TEMP/aot-validation/source.tar.gz"
-          sysroot="$(rustc --print sysroot)"
-          cp "$sysroot/bin/rustfmt" "$RUNNER_TEMP/aot-validation/formatter/bin/"
-          ldd "$sysroot/bin/rustfmt" | awk '$3 ~ /rustup/ {print $3}' | xargs -r -I{} cp '{}' "$RUNNER_TEMP/aot-validation/formatter/lib/"
-          tar -czf "$RUNNER_TEMP/aot-validation/formatter.tar.gz" -C "$RUNNER_TEMP/aot-validation" formatter
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
-          name: aot-validation-checkout
-          path: |
-            ${{ runner.temp }}/aot-validation/source.tar.gz
-            ${{ runner.temp }}/aot-validation/formatter.tar.gz
-          retention-days: 1
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: true
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+      - name: Build exact AOT products once
+        run: |
+          mkdir -p "$RUNNER_TEMP/aot-observations"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, time
+          start = time.monotonic_ns()
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'aot-observations'
+          with (root / 'inventory.jsonl').open('wb') as output:
+              status = subprocess.call(['cargo', 'test', '-p', 'latent-wasmtime', '--all-features', '--locked', '--no-run', '--test', 'aot_supervisor', '--test', 'isolated_aot', '--test', 'native_aot_cache', '--test', 'aot_sandbox', '--message-format=json,json-render-diagnostics'], stdout=output)
+          (root / 'build.json').write_text(json.dumps({'elapsed_ns':time.monotonic_ns()-start, 'status':status}) + '\n')
+          raise SystemExit(status)
+          PY
+      - name: Prepare immutable copies and compare equal case sets
+        run: |
+          python3 tools/aot_test_inputs.py prepare --inventory "$RUNNER_TEMP/aot-observations/inventory.jsonl" --output "$RUNNER_TEMP/aot-inputs"
+          python3 tools/run_aot_tests.py --manifest "$RUNNER_TEMP/aot-inputs/manifest.json" --report-dir "$RUNNER_TEMP/aot-observations/comparison" --compare
+      - name: Execute unchanged production sandbox tests
+        run: cargo test -p latent-wasmtime --all-features --locked --test aot_sandbox
+      - name: Formatting and focused Clippy
+        if: always()
+        run: |
+          cargo fmt --all --check
+          cargo clippy -p latent-wasmtime --all-features --locked --test aot_supervisor --test isolated_aot --test native_aot_cache --bin latent-aot-compiler --no-deps
+      - name: Retain bounded observations
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: aot-input-observations
+          path: ${{ runner.temp }}/aot-observations
           if-no-files-found: error
+          retention-days: 7
