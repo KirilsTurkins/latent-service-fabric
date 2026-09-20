@@ -556,6 +556,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/capability-broker.md",
           "role": "reference-only"
         },
@@ -570,7 +578,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "examples/policies"
+        "examples/policies",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         226,
@@ -583,6 +593,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
         }
       ],
       "review": {
@@ -606,6 +622,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/outbound-http.md",
           "role": "reference-only"
         },
@@ -616,7 +640,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "crates/latent-wasmtime/src"
+        "crates/latent-wasmtime/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         211,
@@ -629,6 +655,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
         }
       ],
       "review": {
@@ -652,6 +684,18 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/exercise-provider-failure-and-recovery.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/local-blobs.md",
           "role": "reference-only"
         },
@@ -662,7 +706,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "examples"
+        "examples",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         213,
@@ -674,6 +720,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/provider-walkthrough-35454985599.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "05360c50eb6c40212111ad0d87198db5dead78a5",
+          "scope": "Retained actual S3/Vault/NATS TLS guest runs (19 tests) and owned cleanup at 05360c50; the newer guide source and Cargo lock are not claimed to have executed this historical receipt."
         }
       ],
       "review": {
@@ -697,6 +756,18 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/exercise-provider-failure-and-recovery.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/local-secrets.md",
           "role": "reference-only"
         },
@@ -707,7 +778,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "crates/latent-wasmtime/src"
+        "crates/latent-wasmtime/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         215,
@@ -720,6 +793,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/provider-walkthrough-35454985599.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "05360c50eb6c40212111ad0d87198db5dead78a5",
+          "scope": "Retained actual S3/Vault/NATS TLS guest runs (19 tests) and owned cleanup at 05360c50; the newer guide source and Cargo lock are not claimed to have executed this historical receipt."
         }
       ],
       "review": {
@@ -743,6 +829,18 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/exercise-provider-failure-and-recovery.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/nats-events.md",
           "role": "reference-only"
         },
@@ -753,7 +851,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "crates/latent-wasmtime/src"
+        "crates/latent-wasmtime/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         217,
@@ -765,6 +865,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/provider-walkthrough-35454985599.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "05360c50eb6c40212111ad0d87198db5dead78a5",
+          "scope": "Retained actual S3/Vault/NATS TLS guest runs (19 tests) and owned cleanup at 05360c50; the newer guide source and Cargo lock are not claimed to have executed this historical receipt."
         }
       ],
       "review": {
@@ -787,6 +900,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/local-service-invocation.md",
           "role": "reference-only"
         },
@@ -797,7 +918,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "crates/latent-wasmtime/src"
+        "crates/latent-wasmtime/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         208,
@@ -810,6 +933,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
         }
       ],
       "review": {
@@ -833,6 +962,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/random.md",
           "role": "reference-only"
         },
@@ -843,7 +980,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "crates/latent-wasmtime/src"
+        "crates/latent-wasmtime/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         219,
@@ -861,6 +1000,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
         }
       ],
       "review": {
@@ -883,6 +1028,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/provider-pools.md",
           "role": "reference-only"
         },
@@ -901,7 +1054,9 @@
       ],
       "sourceRefs": [
         "SECURITY.md",
-        "apps/latentd/src"
+        "apps/latentd/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         226,
@@ -921,6 +1076,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
         }
       ],
       "review": {
