@@ -15,6 +15,10 @@
       ],
       "pages": [
         {
+          "path": "docs/start/index.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/roadmap.md",
           "role": "reference-only"
         },
@@ -25,7 +29,8 @@
       ],
       "sourceRefs": [
         "README.md",
-        "SECURITY.md"
+        "SECURITY.md",
+        "docs/development/core-guide-validation.md"
       ],
       "implementationPrerequisites": [
         308,
@@ -59,6 +64,14 @@
       ],
       "pages": [
         {
+          "path": "docs/start/first-node.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/installation.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/development/standalone-quickstart.md",
           "role": "reference-only"
         },
@@ -69,7 +82,8 @@
       ],
       "sourceRefs": [
         "apps/latentd/src",
-        "apps/latent/src"
+        "apps/latent/src",
+        "docs/development/core-guide-validation.md"
       ],
       "implementationPrerequisites": [
         308,
@@ -81,6 +95,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_first_node_guide.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Opt-in real CLI/node/echo walkthrough. Synthetic subprocess tests do not establish native LSF execution; inspect the exact emitted receipt and source identities."
         }
       ],
       "review": {
@@ -103,6 +123,10 @@
       ],
       "pages": [
         {
+          "path": "docs/how-to/operate-and-contribute.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/development/ci-profiles.md",
           "role": "reference-only"
         },
@@ -113,7 +137,8 @@
       ],
       "sourceRefs": [
         "CONTRIBUTING.md",
-        "tools/ci_profile.py"
+        "tools/ci_profile.py",
+        "docs/development/core-guide-validation.md"
       ],
       "implementationPrerequisites": [
         338,
@@ -147,6 +172,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/author-your-first-capsule.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/component-development/creating-a-capsule.md",
           "role": "reference-only"
         },
@@ -158,7 +187,8 @@
       "sourceRefs": [
         "sdk/rust-guest/src",
         "sdk/c-guest",
-        "wit"
+        "wit",
+        "docs/development/core-guide-validation.md"
       ],
       "implementationPrerequisites": [
         221,
@@ -170,6 +200,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_first_node_guide.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Opt-in real CLI/node/echo walkthrough. Synthetic subprocess tests do not establish native LSF execution; inspect the exact emitted receipt and source identities."
         }
       ],
       "review": {
@@ -193,6 +229,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/author-your-first-capsule.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/learn/deliver-and-recover-a-capsule.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/component-development/packaging.md",
           "role": "reference-only"
         },
@@ -203,7 +247,8 @@
       ],
       "sourceRefs": [
         "schemas",
-        "apps/latent/src"
+        "apps/latent/src",
+        "docs/development/core-guide-validation.md"
       ],
       "implementationPrerequisites": [
         267,
@@ -237,6 +282,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/deliver-and-recover-a-capsule.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-and-contribute.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/phase-2-rollouts.md",
           "role": "reference-only"
         },
@@ -251,7 +304,8 @@
       ],
       "sourceRefs": [
         "api",
-        "apps/latent/src"
+        "apps/latent/src",
+        "docs/development/core-guide-validation.md"
       ],
       "implementationPrerequisites": [
         267,
@@ -286,6 +340,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -296,7 +354,8 @@
       ],
       "sourceRefs": [
         "sdk/rust/src",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -308,6 +367,20 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -331,6 +404,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -341,7 +418,8 @@
       ],
       "sourceRefs": [
         "sdk/typescript-client/src",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -353,6 +431,20 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -376,6 +468,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -386,7 +482,8 @@
       ],
       "sourceRefs": [
         "sdk/go",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -398,6 +495,20 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -421,6 +532,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -431,7 +546,8 @@
       ],
       "sourceRefs": [
         "sdk/c",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -443,6 +559,20 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -466,6 +596,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -476,7 +610,8 @@
       ],
       "sourceRefs": [
         "sdk/java-client/src",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -488,6 +623,20 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -511,6 +660,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-a-client.mdx",
+          "role": "guide"
+        },
+        {
           "path": "docs/protocol/invocation-service.md",
           "role": "reference-only"
         },
@@ -521,7 +674,8 @@
       ],
       "sourceRefs": [
         "sdk/dotnet/Latent.Sdk",
-        "sdk/profile/README.md"
+        "sdk/profile/README.md",
+        "tools/run_sdk_provider_matrix.sh"
       ],
       "implementationPrerequisites": [
         227,
@@ -533,6 +687,20 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "0b99cd92a455c79f9343c54ec00acd3607063a02",
+          "scope": "Historical merged six-client execution, retained separately from the exact guide-source run below."
+        },
+        {
+          "path": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
         }
       ],
       "review": {
@@ -556,6 +724,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/capability-broker.md",
           "role": "reference-only"
         },
@@ -570,7 +746,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "examples/policies"
+        "examples/policies",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         226,
@@ -583,6 +761,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
         }
       ],
       "review": {
@@ -606,6 +790,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/outbound-http.md",
           "role": "reference-only"
         },
@@ -616,7 +808,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "crates/latent-wasmtime/src"
+        "crates/latent-wasmtime/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         211,
@@ -629,6 +823,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
         }
       ],
       "review": {
@@ -652,6 +852,18 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/exercise-provider-failure-and-recovery.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/local-blobs.md",
           "role": "reference-only"
         },
@@ -662,7 +874,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "examples"
+        "examples",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         213,
@@ -674,6 +888,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/provider-walkthrough-35454985599.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "05360c50eb6c40212111ad0d87198db5dead78a5",
+          "scope": "Retained actual S3/Vault/NATS TLS guest runs (19 tests) and owned cleanup at 05360c50; the newer guide source and Cargo lock are not claimed to have executed this historical receipt."
         }
       ],
       "review": {
@@ -697,6 +924,18 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/exercise-provider-failure-and-recovery.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/local-secrets.md",
           "role": "reference-only"
         },
@@ -707,7 +946,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "crates/latent-wasmtime/src"
+        "crates/latent-wasmtime/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         215,
@@ -720,6 +961,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/provider-walkthrough-35454985599.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "05360c50eb6c40212111ad0d87198db5dead78a5",
+          "scope": "Retained actual S3/Vault/NATS TLS guest runs (19 tests) and owned cleanup at 05360c50; the newer guide source and Cargo lock are not claimed to have executed this historical receipt."
         }
       ],
       "review": {
@@ -743,6 +997,18 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/exercise-provider-failure-and-recovery.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/nats-events.md",
           "role": "reference-only"
         },
@@ -753,7 +1019,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "crates/latent-wasmtime/src"
+        "crates/latent-wasmtime/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         217,
@@ -765,6 +1033,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/provider-walkthrough-35454985599.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "05360c50eb6c40212111ad0d87198db5dead78a5",
+          "scope": "Retained actual S3/Vault/NATS TLS guest runs (19 tests) and owned cleanup at 05360c50; the newer guide source and Cargo lock are not claimed to have executed this historical receipt."
         }
       ],
       "review": {
@@ -787,6 +1068,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/local-service-invocation.md",
           "role": "reference-only"
         },
@@ -797,7 +1086,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "crates/latent-wasmtime/src"
+        "crates/latent-wasmtime/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         208,
@@ -810,6 +1101,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
         }
       ],
       "review": {
@@ -833,6 +1130,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/random.md",
           "role": "reference-only"
         },
@@ -843,7 +1148,9 @@
       ],
       "sourceRefs": [
         "wit",
-        "crates/latent-wasmtime/src"
+        "crates/latent-wasmtime/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         219,
@@ -861,6 +1168,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
         }
       ],
       "review": {
@@ -883,6 +1196,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/use-capabilities.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/operate-capability-providers.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/provider-pools.md",
           "role": "reference-only"
         },
@@ -901,7 +1222,9 @@
       ],
       "sourceRefs": [
         "SECURITY.md",
-        "apps/latentd/src"
+        "apps/latentd/src",
+        "tools/run_phase3_management_workflow.py",
+        "tools/phase3_management_scenario.py"
       ],
       "implementationPrerequisites": [
         226,
@@ -921,6 +1244,12 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_phase3_management_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
         }
       ],
       "review": {

@@ -215,6 +215,7 @@ impl DirectoryArtifactRepository {
             original
         };
         Ok(Entry {
+            projection: super::projection::Projection::new(&disk.record.publication, &layout)?,
             generation: Arc::new(WebGeneration::new(disk.record.generation)),
             record: disk.record,
             completion: disk.completion,

@@ -1,0 +1,155 @@
+name: Protected documentation publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact reviewed development commit built by successful push CI
+        type: string
+        required: true
+      ci_run:
+        description: Successful CI push run that owns the tested site artifact
+        type: string
+        required: true
+      ci_attempt:
+        description: Exact successful attempt of that CI run
+        type: string
+        required: true
+      mode:
+        description: Publish current development or restore a previously published complete artifact
+        type: choice
+        options: [publish, rollback]
+        default: publish
+      previous_publication_run:
+        description: Rollback only - successful publisher run proving prior publication of this artifact
+        type: string
+      expected_live_source:
+        description: Rollback only - exact source currently live, checked again after approval
+        type: string
+
+concurrency:
+  group: documentation-pages-authority
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  select:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/release'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      artifact_id: ${{ steps.staged.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - name: Verify successful push origin, exact attempt, immutable artifact and fresh source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          CI_RUN: ${{ inputs.ci_run }}
+          CI_ATTEMPT: ${{ inputs.ci_attempt }}
+          PUBLICATION_MODE: ${{ inputs.mode }}
+          PREVIOUS_PUBLICATION_RUN: ${{ inputs.previous_publication_run }}
+          EXPECTED_LIVE_SOURCE: ${{ inputs.expected_live_source }}
+        run: |
+          python3 tools/docs_pages.py select --source "$SOURCE_SHA" --run "$CI_RUN" \
+            --attempt "$CI_ATTEMPT" --mode "$PUBLICATION_MODE" \
+            --previous-publication-run "$PREVIOUS_PUBLICATION_RUN" \
+            --expected-live-source "$EXPECTED_LIVE_SOURCE" --output target/docs-pages-staged
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        id: staged
+        with:
+          name: docs-pages-staged-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/docs-pages-staged/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy:
+    needs: select
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          artifact-ids: ${{ needs.select.outputs.artifact_id }}
+          path: candidate
+          merge-multiple: true
+      - name: Recheck exact site bytes and source after protected environment approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/docs_pages.py guard --receipt candidate/publication.json
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          path: candidate/site
+          retention-days: 14
+      - uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        id: deployment
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          timeout: 300000
+      - name: Verify live publication identity and direct static routes
+        run: python3 tools/docs_pages.py verify --receipt candidate/publication.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: docs-pages-receipt-${{ github.run_id }}-${{ github.run_attempt }}
+          path: candidate/publication.json
+          if-no-files-found: error
+          retention-days: 14
+
+  browser:
+    needs: [select, deploy]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+      - name: Install the reviewed browser tools in an unprivileged job
+        run: |
+          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
+          node website/node_modules/playwright/cli.js install-deps chromium
+          node website/scripts/site.mjs browser-install
+      - name: Verify live navigation, assets, search and selected-version examples
+        env:
+          EXPECTED_SITE_SOURCE: ${{ inputs.source_sha }}
+        run: node website/scripts/test-live.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: docs-pages-browser-${{ github.run_id }}-${{ github.run_attempt }}
+          path: website/.generated/live-review/evidence.json
+          if-no-files-found: error
+          retention-days: 14

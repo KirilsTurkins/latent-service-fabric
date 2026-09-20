@@ -7,7 +7,7 @@ use crate::{
     error::Failure,
     operation::Operation,
 };
-pub(in crate::management) use release::release;
+pub(in crate::management) use release::{convert_evidence, parent, release};
 pub(in crate::management) use rollout::rollout;
 
 pub(in crate::management) fn audit(

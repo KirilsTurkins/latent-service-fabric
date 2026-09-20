@@ -3,6 +3,10 @@
 import {render as angularRender} from '../server.js';
 
 let lastContext;
+export function prepare() {
+  return null;
+}
+
 export async function render(request, context) {
   if (request.path === '/spin') { for (;;) {} }
   if (request.path === '/promise-storm') {

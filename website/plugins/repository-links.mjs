@@ -2,6 +2,7 @@ import path from 'node:path';
 import {visit} from 'unist-util-visit';
 import {parseFragment} from 'parse5';
 import {assetRoute, canonicalPath, htmlElements, requireValue, resolveLink, safeFile} from '../lib/repository.mjs';
+import {fileSource} from '../lib/versions/model.mjs';
 
 function isApprovedAssetUrl(url, options) {
   const baseUrl = options.baseUrl ?? '/latent-service-fabric/';
@@ -58,7 +59,7 @@ export function transformDocument(tree, index, source, options) {
           canonicalPath(statement.source.value);
           if (statement.source.value.startsWith('@site/')) {
             const imported = statement.source.value.replace('@site/', 'website/');
-            const candidates = [imported, ...['.tsx', '.jsx', '.ts', '.js', '.mjs', '/index.tsx'].map(suffix => imported + suffix)].filter(candidate => index.paths.includes(candidate));
+            const candidates = [imported, ...['.tsx', '.jsx', '.ts', '.js', '.mjs', '/index.tsx'].map(suffix => imported + suffix)].filter(candidate => (index.componentPaths ?? index.paths).includes(candidate));
             requireValue(candidates.length === 1, `Missing or ambiguous reviewed MDX component: ${source}`);
             safeFile(index.root, candidates[0]);
           }
@@ -79,14 +80,14 @@ export function transformDocument(tree, index, source, options) {
 
 export function remarkRepositoryLinks({index, baseUrl, assets}) {
   return (tree, file) => {
-    const source = path.relative(index.root, file.path).split(path.sep).join('/');
+    const source = fileSource(index, file.path);
     transformDocument(tree, index, source, {baseUrl, assets});
   };
 }
 
 export function rehypeRepositoryLinks({index, baseUrl, assets}) {
   return (tree, file) => {
-    const source = path.relative(index.root, file.path).split(path.sep).join('/');
+    const source = fileSource(index, file.path);
     visit(tree, 'element', node => {
       for (const name of ['href', 'src']) {
         if (typeof node.properties?.[name] === 'string') {

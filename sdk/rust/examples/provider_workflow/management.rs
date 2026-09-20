@@ -71,6 +71,7 @@ pub async fn run(
             .is_some_and(|value| value.generation == receipt.generation),
         "policy-generation",
     )?;
+    // lsf-example-begin: management
     let known = client
         .get_policy_operation(
             GetPolicyOperationRequest {
@@ -84,6 +85,7 @@ pub async fn run(
         known.value.receipt.as_ref() == Some(&receipt),
         "operation-recovery-receipt",
     )?;
+    // lsf-example-end: management
     let absent = client
         .get_policy_operation(
             GetPolicyOperationRequest {

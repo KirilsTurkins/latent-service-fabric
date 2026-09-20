@@ -312,9 +312,13 @@ impl DirectoryArtifactRepository {
             verification_statistics: VerificationStatistics::default(),
             publish_lock: Mutex::new(PublicationState::default()),
             admission_work: Mutex::new(()),
+            web: web::WebCatalog::new(
+                admission
+                    .as_ref()
+                    .map(|configured| Arc::clone(&configured.authority)),
+            )?,
             admission,
             lifecycle: OnceLock::new(),
-            web: web::WebCatalog::new()?,
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_parent_sync_once: AtomicBool::new(false),
@@ -732,6 +736,13 @@ impl ArtifactRepository for DirectoryArtifactRepository {
         >,
     > {
         Box::pin(async move { self.life_store().selected_operation(scope, operation_id) })
+    }
+    fn get_web_operation<'a>(
+        &'a self,
+        scope: &'a crate::LifecycleScope,
+        operation_id: &'a str,
+    ) -> BoxFuture<'a, Result<Option<crate::web::WebOperationReceipt>, PlatformError>> {
+        Box::pin(async move { self.web_operation_status(scope, operation_id) })
     }
     fn change_selected_lifecycle<'a>(
         &'a self,

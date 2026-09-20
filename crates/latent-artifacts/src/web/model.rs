@@ -30,6 +30,44 @@ pub struct WebAsset {
 
 pub use latent_manifest::RendererProfile as WebRendererProfile;
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum WebBackendProfile {
+    #[default]
+    None,
+    ScopedHttpGetV1,
+}
+
+impl WebBackendProfile {
+    #[must_use]
+    pub const fn is_none(&self) -> bool {
+        matches!(self, Self::None)
+    }
+
+    #[must_use]
+    pub const fn world(self) -> &'static str {
+        match self {
+            Self::None => super::WEB_WORLD,
+            Self::ScopedHttpGetV1 => super::WEB_HTTP_WORLD,
+        }
+    }
+
+    pub fn from_imports(
+        imports: &[latent_manifest::ContractImport],
+    ) -> Result<Self, PlatformError> {
+        let mut matching = imports
+            .iter()
+            .filter(|item| item.contract.0 == super::WEB_HTTP_CONTRACT);
+        match matching.next() {
+            None => Ok(Self::None),
+            Some(imported) if !imported.optional && matching.next().is_none() => {
+                Ok(Self::ScopedHttpGetV1)
+            }
+            Some(_) => Err(invalid("web-backend-import-contract")),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WebRenderer {
@@ -39,6 +77,8 @@ pub struct WebRenderer {
     pub profile: WebRendererProfile,
     pub profile_digest: String,
     pub assets_digest: String,
+    #[serde(default, skip_serializing_if = "WebBackendProfile::is_none")]
+    pub backend_profile: WebBackendProfile,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -65,6 +105,8 @@ pub struct WebRoute {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CheckedWebLayout {
     pub(super) package: PackageDigest,
+    pub(super) name: String,
+    pub(super) version: String,
     pub(super) manifest_digest: ArtifactBlobDigest,
     pub(super) assets_digest: ArtifactBlobDigest,
     pub(super) manifest: WebApplicationManifest,
@@ -74,6 +116,16 @@ impl CheckedWebLayout {
     #[must_use]
     pub fn package(&self) -> &PackageDigest {
         &self.package
+    }
+
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    #[must_use]
+    pub fn version(&self) -> &str {
+        &self.version
     }
 
     #[must_use]
@@ -125,6 +177,8 @@ impl CheckedWebLayout {
     pub fn retained_bytes(&self) -> usize {
         let mut bytes = std::mem::size_of::<Self>()
             + 1024
+            + self.name.capacity()
+            + self.version.capacity()
             + self.manifest.profile.capacity()
             + self.manifest.assets_digest.capacity();
         bytes += self.manifest.assets.capacity() * std::mem::size_of::<WebAsset>();

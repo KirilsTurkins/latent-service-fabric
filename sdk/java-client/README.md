@@ -15,17 +15,34 @@ Their existence does not make additional management RPCs supported client APIs.
 
 ## Clean build
 
-The target/runtime toolchain is Java 21; qualification uses Temurin
-21.0.11+10 and Python 3.13. Locked native generators support Linux x86-64 and
-Windows x86-64. Windows development tests also run on JDK 25 with `--release 21`;
-that is not evidence of a Windows JDK 21 qualification. No Android, remote-node,
-TLS/mTLS, browser or Java guest-runtime profile is claimed.
+The build and minimum runtime baseline is **Java 25**. Repository qualification
+uses **Eclipse Temurin 25.0.4.1+1** and Python 3.13.5, pinned in
+`tools/toolchain.toml`. Main sources, generated protocol classes, examples and
+tests all target non-preview Java 25 class files (69.0). The new SDK JAR cannot
+run on Java 21: upgrade the consuming application's build/runtime before adopting
+it. This migration changes the Java baseline, not SDK API or wire semantics.
+
+Locked native generators support Linux x86-64 and Windows x86-64. The maintained
+CI qualification profile is Linux `ubuntu-24.04`; retained Windows development
+tests compiled with `--release 21` remain historical and do not qualify the new
+Java 25 target on Windows. No Android, remote-node, TLS/mTLS, browser or Java
+guest-runtime profile is claimed. Exact-head results, not a configured workflow
+or synthetic test, determine qualification.
+
+Set `JAVA_HOME` to the pinned Temurin installation and put its `bin` first on
+`PATH`. The standalone helper uses that installation for compiler, test runtime
+and JAR creation. With no `JAVA_HOME`, it resolves `java` from `PATH` and checks
+that installation. A wrong explicit JDK fails before dependency downloads;
+there is no fallback, automatic installation or major-version-only acceptance.
+Both the compiler's own runtime/vendor and the runtime launcher are checked.
 
 From the repository root:
 
 ```sh
+python3 sdk/java-client/tools/java_toolchain.py check
 python3 sdk/java-client/tools/build.py test
 python3 sdk/java-client/tools/build.py build
+python3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar
 ```
 
 Use `python` in PowerShell. Outputs and caches stay inside
@@ -34,9 +51,26 @@ directories. Build creates `latent-java-client.jar` with a fixed archive
 timestamp and a manifest referencing only the locked `deps/` JARs. Keep those
 dependencies beside the JAR. `tools/build.py classpath` also prints the explicit
 class directory/dependency path for embedding. No Gradle or Maven installation
-is needed. The Gradle
-project also exposes `semanticTest` and `transportTest`, both included by
-`check`, and runs the same locked preparation before Java compilation.
+is needed for this standalone path. Both builds check every produced SDK class
+header and reject empty outputs, a stale target or preview bytecode.
+
+The optional Gradle path requires **Gradle 9.1.0 or newer**; CI installs 9.1.0
+with the distribution SHA-256 from `tools/toolchain.toml`. It uses the same
+locked preparation and explicitly selected Temurin 25 compiler/test launcher.
+Automatic JDK downloads/discovery are disabled; `JAVA_HOME` must identify the
+exact pinned JDK. Gradle invokes `python3`, which must also be on `PATH`.
+
+```sh
+gradle --no-daemon -p sdk/java-client clean check
+```
+
+`check` requires `semanticTest`, `transportTest` and `verifyJavaBytecode`.
+The bytecode check covers main/test class directories and the Gradle JAR;
+`verifyJavaToolchain` checks the actual selected installation before preparation.
+The existing SDK CI job retains source/JDK/Gradle/OS identities and logs as
+`java-sdk-qualification-<source-sha>`. Real-node provider receipts remain in the
+existing repository-contract artifact, separately from these local client tests.
+See [toolchain setup and evidence](../../docs/development/toolchain.md#java-25-sdk-baseline-and-migration).
 
 The flat [dependency lock](dependencies.lock.json) pins every dependency and
 both native generators by HTTPS Maven Central path, exact size and SHA-256:
@@ -224,8 +258,36 @@ transport. The example does not make provider HTTP/blob requests itself.
 python3 tools/run_sdk_provider_workflow.py \
   --cli /absolute/latent --node /absolute/latentd \
   --fixture-root /absolute/signed-fixture --language java \
-  -- /absolute/java -jar /absolute/sdk/java-client/build/latent-java-client.jar
+  -- /absolute/java --sun-misc-unsafe-memory-access=allow \
+  --enable-native-access=ALL-UNNAMED -jar /absolute/sdk/java-client/build/latent-java-client.jar
 ```
+
+### Java 25 dependency launch profile
+
+The pinned Protobuf 3.25.9 uses `sun.misc.Unsafe` memory access, and the shaded
+Netty dependency probes a native library. Java 25 allows those operations by
+default but emits JVM warnings to stderr. The normal Gradle and standalone
+transport suites deliberately keep those warnings visible and pass without
+these flags. They do not establish that the dependencies are free of deprecated
+or restricted API use.
+
+The provider participant has a stricter machine-readable contract: exactly one
+bounded result and empty stderr on success. Its application-owned launch above,
+and only its Java entry in `tools/run_sdk_provider_matrix.sh`, explicitly use
+`--sun-misc-unsafe-memory-access=allow` and
+`--enable-native-access=ALL-UNNAMED`. The latter acknowledges native access for
+all code on this controlled, locked classpath; it is not a per-library grant.
+Neither flag is added to SDK consumers, global environment variables, the JAR
+manifest, the Rust node or Wasm guests. Application deployers must review their
+own classpath/native-access policy rather than copy these flags indiscriminately.
+See the [Java 25 launcher reference](https://docs.oracle.com/en/java/javase/25/docs/specs/man/java.html).
+
+No stderr is filtered or discarded, and the shared runner still rejects any
+nonempty stderr or unsuccessful exit. All eighteen real-node assertions and
+physical cleanup checks remain required. The receipt hashes the actual Java
+executable and JAR; the exact source revision identifies the reviewed command
+and its explicit flags. This is a Java 25 compatibility profile, not a promise
+that the dependencies or these transitional flags will work on future JDKs.
 
 The JAR's main class is `ProviderWorkflow`. Passing its absolute path lets the
 runner retain both the Java executable and SDK JAR hashes. The runner appends

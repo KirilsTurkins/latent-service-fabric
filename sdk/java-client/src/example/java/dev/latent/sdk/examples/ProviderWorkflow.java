@@ -62,6 +62,7 @@ public final class ProviderWorkflow {
 
     private void invocations(RpcClient client) throws Exception {
         String tenant = input.field("tenant");
+        // lsf-example-begin: invoke
         for (String provider : new String[] {"http", "blob"}) {
             stage = provider + "-guest";
             var response = await(client.invoke(request(provider, provider, null, tenant, false), options())).value();
@@ -69,6 +70,7 @@ public final class ProviderWorkflow {
             require(ProviderInput.guest(response) == (provider.equals("http") ? 2201 : 4));
             identities.add("java-" + provider); passed(provider + "Guest");
         }
+        // lsf-example-end: invoke
         stage = "declared-error";
         var declared = await(client.invoke(request("callee", "declared", "fail", tenant, false), options())).value();
         require(declared.declaredError().isPresent()); input.identity(declared, "callee", "java-declared");
@@ -124,9 +126,11 @@ public final class ProviderWorkflow {
         require(receipt.operationId().equals("java-policy-create"));
         var inspected = await(client.getPolicy(new Management.GetPolicyRequest(policy.id(), policy.recordKind()), options())).value();
         require(inspected.policy().orElseThrow().generation() == receipt.generation());
+        // lsf-example-begin: management
         var recovered = await(client.getPolicyOperation(new Management.GetPolicyOperationRequest("java-policy-create"), options()));
         absentAudit(recovered.metadata());
         require(recovered.value().receipt().equals(Optional.of(receipt)));
+        // lsf-example-end: management
         var absent = await(client.getPolicyOperation(new Management.GetPolicyOperationRequest("java-unknown-operation"), options()));
         require(absent.value().receipt().isEmpty() && absent.metadata().outcome().equals(Management.OutcomeKnowledge.UNKNOWN));
         passed("mutationReceipt");
@@ -173,12 +177,14 @@ public final class ProviderWorkflow {
         require(await(observer.getActivation(new Management.GetActivationRequest(identity), options())).value().terminalState().isEmpty());
         switch (kind) {
             case "local-cancel" -> {
+                // lsf-example-begin: cancel
                 pending.cancel(true);
                 var failure = failed(pending);
                 require(pending.isCancelled() && failure.category().equals(Management.FailureCategory.LOCAL_CANCELLED)
                         && failure.identity().activationId().equals(Optional.of(identity)));
                 var cancelled = await(observer.cancel(new Management.CancelRequest(identity, "explicit recovery"), options())).value();
                 require(cancelled.disposition().equals(Management.CancelDisposition.ACCEPTED) || cancelled.disposition().equals(Management.CancelDisposition.ALREADY_TERMINAL));
+                // lsf-example-end: cancel
                 passed("localCancellation"); passed("lostResponseStatus");
             }
             case "explicit-cancel" -> {

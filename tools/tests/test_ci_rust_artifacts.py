@@ -93,6 +93,27 @@ class InventoryTests(unittest.TestCase):
             with self.subTest(suffix=suffix), self.assertRaises(artifacts.ArtifactError):
                 self.read()
 
+    def test_angular_integration_fixture_requires_its_exact_cargo_owner(self) -> None:
+        self.suite = artifacts.SUITES["angular-t1-fixture"]
+        self.manifest = self.repo / self.suite.manifest
+        self.manifest.parent.mkdir(parents=True)
+        self.manifest.write_text("[package]\n", encoding="utf-8")
+        self.source = self.manifest.parent / self.suite.source
+        self.source.parent.mkdir()
+        self.source.write_text("", encoding="utf-8")
+        self.message.update(manifest_path=str(self.manifest), target={
+            "kind": ["test"], "name": self.suite.target, "src_path": str(self.source)})
+        unrelated = copy.deepcopy(self.message)
+        unrelated["target"]["name"] = "catalog_scale"
+        self.save([unrelated, self.message])
+        self.assertEqual(self.read().executable, self.executable)
+        for change in ({"kind": ["lib"]}, {"src_path": str(self.manifest)}):
+            wrong = copy.deepcopy(self.message)
+            wrong["target"].update(change)
+            self.save([wrong])
+            with self.subTest(change=change), self.assertRaises(artifacts.ArtifactError):
+                self.read()
+
     def test_inventory_decode_and_allocation_bounds_fail_closed(self) -> None:
         for raw in ('{"reason":"x","reason":"build-finished"}', '[]', '{broken'):
             self.inventory.write_text(raw, encoding="utf-8")

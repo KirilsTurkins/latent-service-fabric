@@ -3,7 +3,9 @@ import {parseMetadata, readSchema} from './schema.mjs';
 import {extractRegions} from './regions.mjs';
 
 export const LANGUAGES = Object.freeze(['rust', 'typescript', 'go', 'c', 'java', 'csharp']);
-const extensions = {rust: ['rs'], typescript: ['ts', 'tsx'], go: ['go'], c: ['c', 'h'], java: ['java'], csharp: ['cs']};
+// The maintained Node client also ships runnable ESM examples. These exercise
+// the TypeScript SDK; accepting their explicit .mjs path never executes it.
+const extensions = {rust: ['rs'], typescript: ['ts', 'tsx', 'mjs'], go: ['go'], c: ['c', 'h'], java: ['java'], csharp: ['cs']};
 const audiences = {client: 'client-developer', browser: 'browser-developer', guest: 'guest-author'};
 const registrySchema = readSchema('registry');
 const scenarioSchema = readSchema('scenario');
@@ -54,7 +56,7 @@ function verification(reader, scenario, variant, source, target, matchesRevision
 /** Read only the registry's explicit allowlist. Requests come from parsed public
  * documents, not a glob over code. The returned bundle is the snapshot/UI API;
  * input identities remain private and never include source bodies. */
-export function extractExamples(root, requests, identity) {
+export function extractExamples(root, requests, identity, {reader = createReader(root)} = {}) {
   const {documentVersion, documentationRevision, sourceRevision} = identity;
   requireValue(typeof documentVersion === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$/.test(documentVersion), 'Invalid example document version');
   revision(documentationRevision); revision(sourceRevision);
@@ -65,7 +67,6 @@ export function extractExamples(root, requests, identity) {
       && /^[a-z][a-z0-9-]{0,63}$/.test(request.region), 'Invalid example request');
     requested.add(`${request.example}:${request.region}`);
   }
-  const reader = createReader(root);
   const registry = parseMetadata(reader.read(registryPath, LIMITS.metadataBytes).text, registrySchema);
   const spellings = new Map();
   function uniqueSpelling(relative) {

@@ -58,6 +58,24 @@ impl LocalBlobStore {
             return Err(LocalBlobError::Invalid);
         }
         let _work = self.inner.work()?;
+        self.reclaim_selected(maximum_entries, true, checkpoint)
+    }
+
+    // The caller already owns a bounded physical work slot. Admission pressure
+    // may retire one abandoned stage, never an object or an active writer.
+    pub(super) fn reclaim_retired_stage(
+        &self,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<LocalBlobReclamation> {
+        self.reclaim_selected(1, false, checkpoint)
+    }
+
+    fn reclaim_selected(
+        &self,
+        maximum_entries: usize,
+        include_objects: bool,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<LocalBlobReclamation> {
         let _publication = self.inner.publication()?;
         checkpoint()?;
         let (objects, stages) = {
@@ -66,7 +84,9 @@ impl LocalBlobStore {
                 .objects
                 .iter()
                 .filter(|(_, o)| {
-                    !o.referenced.load(Ordering::Acquire) && o.pins.load(Ordering::Acquire) == 0
+                    include_objects
+                        && !o.referenced.load(Ordering::Acquire)
+                        && o.pins.load(Ordering::Acquire) == 0
                 })
                 .take(maximum_entries)
                 .map(|(key, _)| key.clone())

@@ -24,6 +24,9 @@ selection. Native execution through that front end is intentionally blocked
 until its shared suite and prepared-artifact dependencies are integrated; it does
 not replace the existing Rust, provider or qualification checks.
 
+For timing and cancellation tests, use the [deterministic testing guide](docs/development/deterministic-tests.md), shared clock and current-readiness helpers, and executable deadline/cancellation examples. Assert actual resource ownership; do not use sleeps or yield counts as readiness witnesses.
+
+
 ## Change categories
 
 - **ADR:** a decision that changes a core invariant, dependency direction, execution model, or compatibility promise.
@@ -62,3 +65,7 @@ Run checks appropriate to the change using [VALIDATION.md](VALIDATION.md).
 Normal validation excludes expensive ignored acceptance tests; request
 100,000-release catalog scaling, native profiling, and long resource soaks only
 through their documented explicit commands or manual workflow inputs.
+
+For the isolated compiler and native-cache tests, see the
+[prepared AOT test input guide](docs/development/aot-test-inputs.md) for build-free
+execution, exact executable authentication, and explicit equal-case cost comparisons.
