@@ -25,10 +25,13 @@ async function selectVersion(page, label) {
 }
 try {
   for (const variant of ['project', 'root']) {
+    console.log(`[versions] validate ${fixtures ? 'fixtures' : 'publication'} ${variant}`);
     const directory = path.join(websiteRoot, 'build', variant);
     const built = validateBuiltSite(directory);
     const server = await serveBuiltSite(directory, built.manifest.baseUrl);
     const context = await browser.newContext({permissions: ['clipboard-read', 'clipboard-write'], viewport: {width: 1280, height: 900}});
+    context.setDefaultTimeout(15000);
+    context.setDefaultNavigationTimeout(15000);
     await context.addInitScript(() => {
       if (!navigator.clipboard) return;
       const writeText = navigator.clipboard.writeText.bind(navigator.clipboard);
@@ -46,6 +49,7 @@ try {
         const panel = block.locator('[role="tabpanel"]:not([hidden])');
         const support = page.getByRole('complementary', {name: 'Documentation support'});
         async function verify(expected) {
+          console.log(`[versions] verify ${variant} ${expected.version}`);
           assert.equal(await block.getAttribute('data-document-version'), expected.version);
           assert.equal(await support.getAttribute('data-doc-version'), expected.version);
           assert.match(await support.innerText(), /synthetic-fixture/);

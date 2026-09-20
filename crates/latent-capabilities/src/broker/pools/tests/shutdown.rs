@@ -1,6 +1,31 @@
 use super::*;
 
 #[tokio::test]
+async fn shutdown_observation_contention_preserves_live_owners_until_reclamation() {
+    let setup = Setup::new(single());
+    let (session, _control) = setup.session("shutdown-observation");
+    let observer = session.observer();
+    let call = setup.call(&session).await;
+    let mut shutdown = Box::pin(
+        setup
+            .pools
+            .shutdown(Instant::now() + Duration::from_secs(1)),
+    );
+    pending(shutdown.as_mut());
+    // Let the bounded observation interval expire, then force the next
+    // snapshot to contend, just as the retiring maintenance task can.
+    tokio::time::sleep(Duration::from_millis(30)).await;
+    let registry = setup.pools.inner.state.lock().unwrap();
+    pending(shutdown.as_mut());
+    assert!(!observer.is_quiescent());
+    drop(registry);
+    drop(call);
+    drop(session);
+    assert!(shutdown.await.unwrap().is_clean());
+    assert!(observer.is_quiescent());
+}
+
+#[tokio::test]
 async fn dropping_job_waiter_stops_but_does_not_refund_a_blocked_worker() {
     let setup = Setup::new(single());
     let (session, _control) = setup.session("job-waiter");
