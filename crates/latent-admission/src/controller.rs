@@ -220,7 +220,14 @@ impl LocalAdmissionController {
                 } else {
                     PlatformErrorCode::AdmissionRejected
                 };
-                rejection(code, "revision", "revision", "revision-not-available")
+                let reason = if error.code == PlatformErrorCode::Unavailable
+                    && error.message == "admission-authority-busy"
+                {
+                    "admission-authority-busy"
+                } else {
+                    "revision-not-available"
+                };
+                rejection(code, "revision", "revision", reason)
             })?;
         validate_revision_policy(&policy, node)?;
         let trust = node

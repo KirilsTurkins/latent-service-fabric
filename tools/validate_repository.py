@@ -154,7 +154,7 @@ def validate_svg(root: Path = ROOT) -> None:
     """Enforce the project SVG safety and accessibility baseline."""
 
     for path in files_with_suffix(".svg", root):
-        relative = path.relative_to(root)
+        relative = path.relative_to(root).as_posix()
         try:
             document = ElementTree.parse(path)
         except (ElementTree.ParseError, OSError) as exc:
