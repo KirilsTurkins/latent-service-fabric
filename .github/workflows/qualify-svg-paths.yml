@@ -32,7 +32,10 @@ jobs:
         shell: python
         run: |
           import os
+          import sys
           import unittest
+          # GitHub writes shell scripts outside the checkout; mirror python -m.
+          sys.path.insert(0, os.getcwd())
           names = [
               "tools.tests.test_validate_repository.SourceTraversalTests.test_documentation_svg_rejects_duplicate_definition_ids",
               "tools.tests.test_validate_repository.SourceTraversalTests.test_documentation_svg_rejects_duplicate_title_and_shape_id",
@@ -43,6 +46,11 @@ jobs:
           expected_failures = 2 if os.name == "nt" else 0
           assert len(result.failures) == expected_failures, result.failures
           print(f"Confirmed original baseline: {expected_failures} expected path assertion failures")
+          suite = unittest.defaultTestLoader.loadTestsFromName("tools.tests.test_validate_svg_paths")
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.testsRun == 5 and not result.errors and not result.skipped
+          assert len(result.failures) == 10, result.failures
+          print("Confirmed portable regression catches Windows paths on either host")
       - name: Apply the focused formatting fix
         shell: python
         run: |
