@@ -98,7 +98,9 @@ async fn queue_revocation_denies_fresh_dispatch_and_zero_budget_never_connects()
             &request_zero.budget,
             &request_zero.budget,
             &request_zero.budget,
-            None,
+            // Re-admission must retain the original envelope deadline. A later
+            // clock sample must not grant a new wall-time window to the fixture.
+            request_zero.activation.deadline_unix_millis,
             ClockSample::system_now(),
         )
         .unwrap(),
