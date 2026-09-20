@@ -58,9 +58,9 @@ async fn probe(which: u32, _text: String, handle: u64) -> Result<u64, (u64, raw:
         };
     }
     if which == 5 {
-        return raw::create("text/plain".into(), Some(0))
-            .await
-            .map_err(|error| (1, error));
+        // This case returns an opaque handle, not a fixed success value. Keep
+        // failure trapping so a diagnostic cannot masquerade as a stale handle.
+        return Ok(raw::create("text/plain".into(), Some(0)).await.unwrap());
     }
     let mut writer = Writer::create("text/plain".into(), Some(4))
         .await
@@ -69,7 +69,13 @@ async fn probe(which: u32, _text: String, handle: u64) -> Result<u64, (u64, raw:
         let _abandoned_writer = writer;
         return Ok(1);
     }
-    assert_eq!(writer.write(0, b"data".to_vec()).await.map_err(|error| (3, error))?, 4);
+    assert_eq!(
+        writer
+            .write(0, b"data".to_vec())
+            .await
+            .map_err(|error| (3, error))?,
+        4
+    );
     let reference = writer.seal().await.map_err(|error| (4, error))?;
     let mut reader = Reader::open(reference).await.map_err(|error| (5, error))?;
     let chunk = reader.read(0, 4).await.map_err(|error| (6, error))?;
