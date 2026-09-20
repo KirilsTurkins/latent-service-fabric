@@ -48,7 +48,7 @@ def commands(root: Path) -> dict:
     return result
 
 
-def delegated_owners(root: Path, entries: dict) -> dict[str, str]:
+def delegated_owners(root: Path, entries: dict) -> dict[str, dict[str, str]]:
     # Preserve the internal commands of the existing script owners, including
     # shell-to-shell delegation. Dynamic scenario selection stays in its owner.
     names = set()
@@ -64,7 +64,7 @@ def delegated_owners(root: Path, entries: dict) -> dict[str, str]:
             # implementation helpers do not define a second CI selection list.
             if path.suffix == '.sh':
                 pending.append(path.read_text())
-    return {name: hashlib.sha256((root/name).read_bytes()).hexdigest() for name in sorted(names)}
+    return {name: {"sha256": hashlib.sha256((root/name).read_bytes()).hexdigest()} for name in sorted(names)}
 
 
 def workflow_identities(root: Path) -> dict[str, str]:

@@ -13,6 +13,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import ci_suite_inventory as registry
+from tools.build_process import BuildProcessError, run_bounded
 from tools.ci_rust_artifacts import ArtifactError, require_source, run_owned
 from tools.ci_suite_discovery import discover
 
@@ -50,8 +51,15 @@ def main() -> int:
         def command(argv: list[str], name: str, *, capture: bool = False) -> bytes:
             print("+ " + " ".join(argv), flush=True)
             start = time.monotonic()
-            status, output = run_owned(argv, cwd=registry.ROOT, env=dict(os.environ),
-                                       timeout=900, maximum=32 * 1024 * 1024)
+            if capture:
+                # Cargo's progress and rendered diagnostics use stderr. They are
+                # not JSON inventory records, even when the build succeeds.
+                built = run_bounded(argv, registry.ROOT, dict(os.environ), 900, 32 * 1024 * 1024)
+                status, output = built.returncode, built.stdout
+                (args.output / (name + "-stderr.log")).write_bytes(built.stderr)
+            else:
+                status, output = run_owned(argv, cwd=registry.ROOT, env=dict(os.environ),
+                                           timeout=900, maximum=32 * 1024 * 1024)
             (args.output / (name + ".log")).write_bytes(output)
             result["commands"].append({"argv": argv, "seconds": round(time.monotonic() - start, 6),
                                        "exitCode": status})
@@ -80,7 +88,7 @@ def main() -> int:
         result["passed"] = True
         print(json.dumps(result, sort_keys=True), flush=True)
         return 0
-    except (ArtifactError, ValueError, OSError, TypeError, KeyError) as error:
+    except (BuildProcessError, ArtifactError, ValueError, OSError, TypeError, KeyError) as error:
         result["error"] = str(error)
         print(f"Fast correctness failed: {error}", file=sys.stderr)
         return 1

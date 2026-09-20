@@ -1,9 +1,10 @@
 # Exact CI suites and host correctness
 
 The current integration was refreshed against development
-`9a99d1f364eb0c5d09b879fa857811820c8bb005`: a successful whole-workspace
+`9a99d1f364eb0c5d09b879fa857811820c8bb005`, plus the publication lease
+regression from #458 at `7b3d9a4b1d3635538572e2203aaf737d939b35ed`: a successful whole-workspace
 all-target/all-feature build and exact executable listings found **165 targets,
-2,830 libtest cases and 149 explicit ignores**. The raw current discovery and binary
+2,831 libtest cases and 149 explicit ignores**. The raw current discovery and binary
 identities are in `tools/ci/evidence/current-discovery.json`; the older baseline
 receipt remains historical. The two custom harness contracts have no libtest
 listing and are counted separately. This is build/discovery evidence, not an ordinary
@@ -18,6 +19,13 @@ run blocks and covers 123 current blocks plus 69 delegated script owners. The
 temporary upstream-discovery workflow has been retired; the maintained CI owns
 future build, discovery and execution receipts.
 
+
+The repaired runner also completed the actual narrow five-package selection:
+formatting, Cargo check, Clippy, build/discovery and all **88 active host tests**
+passed. Cargo's diagnostic stderr is retained separately from its JSON artifact
+stdout under one combined output bound. Source-file identities use explicit
+`sha256` fields; scanning the updated inventory with pinned Gitleaks 8.30.1
+reported no leaks. The complete maintained CI remains required.
 
 The versioned contracts live in `tools/ci/suites.json` and
 `tools/ci/commands.json`. The former identifies Cargo artifacts and exact test
