@@ -8,7 +8,7 @@ use clap::{Arg, Command, ValueHint};
 use serde::Serialize;
 
 #[derive(Clone, Serialize)]
-struct Value {
+struct ArgumentMetadata {
     takes_value: bool,
     values: Vec<String>,
     path: &'static str,
@@ -16,8 +16,8 @@ struct Value {
 
 #[derive(Serialize)]
 struct Node {
-    options: BTreeMap<String, Value>,
-    positionals: Vec<Value>,
+    options: BTreeMap<String, ArgumentMetadata>,
+    positionals: Vec<ArgumentMetadata>,
     children: BTreeMap<String, String>,
 }
 
@@ -52,8 +52,8 @@ fn quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "''").replace('’', "'’"))
 }
 
-fn value(arg: &Arg) -> Value {
-    Value {
+fn value(arg: &Arg) -> ArgumentMetadata {
+    ArgumentMetadata {
         takes_value: arg.get_action().takes_values(),
         values: arg
             .get_value_parser()

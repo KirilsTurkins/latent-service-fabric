@@ -11,7 +11,7 @@ use clap::{CommandFactory, ValueEnum};
 use crate::args::{Cli, OutputFormat};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
-pub enum Shell {
+pub enum CompletionShell {
     Bash,
     Zsh,
     Fish,
@@ -19,7 +19,7 @@ pub enum Shell {
     PowerShell,
 }
 
-impl Shell {
+impl CompletionShell {
     fn generator(self) -> clap_complete::Shell {
         match self {
             Self::Bash => clap_complete::Shell::Bash,
@@ -31,7 +31,7 @@ impl Shell {
 }
 
 pub fn execute(
-    shell: Shell,
+    shell: CompletionShell,
     format: OutputFormat,
     stdout: &mut dyn Write,
     stderr: &mut dyn Write,
@@ -43,20 +43,19 @@ pub fn execute(
         );
         return 2;
     }
-    match write_script(shell, Cli::command(), stdout) {
-        Ok(()) => 0,
-        Err(_) => {
-            let _ = writeln!(
-                stderr,
-                "latent: completion output could not be generated or written."
-            );
-            2
-        }
+    if write_script(shell, Cli::command(), stdout).is_ok() {
+        0
+    } else {
+        let _ = writeln!(
+            stderr,
+            "latent: completion output could not be generated or written."
+        );
+        2
     }
 }
 
 fn write_script(
-    shell: Shell,
+    shell: CompletionShell,
     mut command: clap::Command,
     writer: &mut dyn Write,
 ) -> io::Result<()> {
@@ -65,7 +64,7 @@ fn write_script(
     // Upstream's convenience API panics on writer failure. A Vec is an infallible
     // I/O sink; only our checked write_all/flush touches the caller's writer.
     clap_complete::generate(shell.generator(), &mut command, name, &mut bytes);
-    if shell == Shell::PowerShell {
+    if shell == CompletionShell::PowerShell {
         bytes = powershell::augment(&command, bytes)?;
     }
     writer.write_all(&bytes)?;

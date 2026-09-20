@@ -1,7 +1,7 @@
 use super::*;
 use clap::{Arg, Command, Parser, ValueHint};
 
-fn script(shell: Shell, command: Command) -> Vec<u8> {
+fn script(shell: CompletionShell, command: Command) -> Vec<u8> {
     let mut bytes = Vec::new();
     write_script(shell, command, &mut bytes).unwrap();
     bytes
@@ -9,7 +9,7 @@ fn script(shell: Shell, command: Command) -> Vec<u8> {
 
 #[test]
 fn all_generators_are_deterministic_and_include_real_nested_grammar() {
-    for &shell in Shell::value_variants() {
+    for &shell in CompletionShell::value_variants() {
         let bytes = script(shell, Cli::command());
         assert_eq!(bytes, script(shell, Cli::command()), "{shell:?}");
         let text = String::from_utf8(bytes).unwrap();
@@ -34,7 +34,7 @@ fn all_generators_are_deterministic_and_include_real_nested_grammar() {
 
 #[test]
 fn test_only_command_extension_reaches_every_generator_without_a_command_table() {
-    for &shell in Shell::value_variants() {
+    for &shell in CompletionShell::value_variants() {
         let original = String::from_utf8(script(shell, Cli::command())).unwrap();
         assert!(!original.contains("grammar-probe"));
         let command = Cli::command().subcommand(
@@ -88,7 +88,7 @@ fn completion_shell_parser_is_explicit_and_rejects_invalid_arguments() {
 
 #[test]
 fn json_is_rejected_before_any_script_bytes_are_written() {
-    for &shell in Shell::value_variants() {
+    for &shell in CompletionShell::value_variants() {
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
         let code = execute(shell, OutputFormat::Json, &mut stdout, &mut stderr);
@@ -131,7 +131,7 @@ impl Write for FailingWriter {
 
 #[test]
 fn broken_pipe_partial_write_zero_write_and_flush_failure_are_not_success() {
-    for &shell in Shell::value_variants() {
+    for &shell in CompletionShell::value_variants() {
         for (remaining, zero_write, fail_flush) in [
             (0, false, false),
             (7, false, false),
@@ -180,7 +180,7 @@ impl Write for ShortWriter {
 
 #[test]
 fn interrupted_and_short_writes_are_retried_and_success_requires_flush() {
-    for &shell in Shell::value_variants() {
+    for &shell in CompletionShell::value_variants() {
         let mut writer = ShortWriter {
             interrupted: false,
             flushed: false,

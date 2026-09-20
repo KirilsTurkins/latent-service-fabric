@@ -71,7 +71,7 @@ pub enum Command {
     )]
     Completions {
         #[arg(value_enum)]
-        shell: crate::completions::Shell,
+        shell: crate::completions::CompletionShell,
     },
     #[command(subcommand)]
     Trigger(phase3::TriggerCommand),
