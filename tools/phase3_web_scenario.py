@@ -121,10 +121,35 @@ def publication_receipt(result, operation):
 
 def publish(client, fixture, name, operation=None, evidence="evidence", codes=(0,)):
     operation = operation or "publish-" + name
-    result = client.call("--rpc-timeout-ms", "30000", "web", "publish", fixture / name / "package",
-                         "--evidence", fixture / name / evidence / "index.json",
-                         "--operation-id", operation, "--expected-generation", "0", codes=codes, timeout=45)
-    return publication_receipt(result, operation) if codes == (0,) else result
+    arguments = ("--rpc-timeout-ms", "30000", "web", "publish", fixture / name / "package",
+                 "--evidence", fixture / name / evidence / "index.json",
+                 "--operation-id", operation, "--expected-generation", "0")
+    if codes != (0,):
+        return client.call(*arguments, codes=codes, timeout=45)
+    deadline = min(client.deadline, time.monotonic() + 45)
+    for attempt in range(3):
+        client.cancellation.check()
+        remaining = deadline - time.monotonic()
+        require(remaining > 0, "web-publication-setup-deadline")
+        result = client.call(*arguments, codes=(0, 4), timeout=remaining)
+        if result["category"] == "success":
+            return publication_receipt(result, operation)
+        require(result["category"] == "platform-failure" and result.get("error", {}).get("code") == "unavailable",
+                "web-publication-rejected")
+        # A busy catalog is not a successful mutation. Query the original key,
+        # then retry only the identical immutable upload/key/precondition. Never
+        # turn an unknown or already committed operation into a fresh receipt.
+        lookup = client.call("web", "operation", operation, timeout=max(0.001, deadline - time.monotonic()))
+        require(not lookup["outcomeKnown"] and lookup["data"]["operation"] is None,
+                "web-publication-uncertain-requires-recovery")
+        refused = getattr(client, "publication_refusals", [])
+        require(len(refused) < 16, "web-publication-refusal-bound")
+        refused.append({"operationId": operation, "attempt": attempt + 1,
+                        "code": "unavailable", "outcomeKnown": result["outcomeKnown"], "retainedOperation": False})
+        client.publication_refusals = refused
+        require(attempt < 2 and time.monotonic() + 0.025 < deadline, "web-publication-admission-busy")
+        time.sleep(0.025)
+    raise AssertionError("bounded publication attempts")
 
 
 def prepare(client, publication, generation, wait=PREPARATION_MILLIS, codes=(0,)):
