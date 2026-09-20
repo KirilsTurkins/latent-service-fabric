@@ -406,7 +406,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "latent-artifacts"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4-rc.1"
 dependencies = [
  "latent-audit",
  "latent-contracts",
@@ -419,7 +419,7 @@ dependencies = [
 
 [[package]]
 name = "latent-audit"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4-rc.1"
 dependencies = [
  "latent-core",
  "libc",
@@ -431,7 +431,7 @@ dependencies = [
 
 [[package]]
 name = "latent-contracts"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4-rc.1"
 dependencies = [
  "latent-core",
  "semver",
@@ -440,11 +440,11 @@ dependencies = [
 
 [[package]]
 name = "latent-core"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4-rc.1"
 
 [[package]]
 name = "latent-manifest"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4-rc.1"
 dependencies = [
  "latent-core",
  "serde",
@@ -467,7 +467,7 @@ dependencies = [
 
 [[package]]
 name = "latent-packaging"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4-rc.1"
 dependencies = [
  "cap-fs-ext",
  "cap-std",
@@ -485,7 +485,7 @@ dependencies = [
 
 [[package]]
 name = "latent-policy"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4-rc.1"
 dependencies = [
  "blake3",
  "latent-artifacts",
@@ -501,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "latent-signing"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4-rc.1"
 dependencies = [
  "base64",
  "curve25519-dalek",
