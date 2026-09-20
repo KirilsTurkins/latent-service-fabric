@@ -184,7 +184,10 @@ impl ProviderPools {
             .acquire(Kind::Metadata, 4096 + input.credentials.len())?;
         let logical_id = checked_text(input.logical_id)?;
         let registration = self.inner.broker.register_provider(input.authority)?;
-        let mut state = self.inner.state.try_lock().map_err(|_| busy())?;
+        // Trusted configuration must complete its bounded registry update even
+        // when the maintenance owner briefly inspects the same table. There is
+        // no provider I/O or physical resource destruction under this lock.
+        let mut state = self.inner.state.lock().map_err(|_| busy())?;
         self.inner.check()?;
         if input.credentials.len() > self.inner.quotas.limits()?.maximum_configuration_bytes {
             return Err(capacity());
