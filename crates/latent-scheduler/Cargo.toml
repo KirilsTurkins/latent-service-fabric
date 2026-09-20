@@ -17,7 +17,7 @@ latent-admission = { path = "../latent-admission" }
 tokio.workspace = true
 
 [dev-dependencies]
-latent-testkit = { path = "../latent-testkit", default-features = false }
+latent-core = { path = "../latent-core", features = ["test-support"] }
 latent-routing = { path = "../latent-routing" }
 serde.workspace = true
 serde_json.workspace = true

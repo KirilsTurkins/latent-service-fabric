@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 use std::time::{Duration, Instant};
 
-use latent_core::{ActivationClock, ClockSample};
+use crate::{ActivationClock, ClockSample};
 
 #[derive(Debug)]
 struct State {

@@ -1,6 +1,6 @@
 use super::*;
-use crate::coordination::{with_watchdog, PollProbe, WATCHDOG};
-use crate::DeterministicIds;
+use crate::test_support::coordination::{with_watchdog, PollProbe, WATCHDOG};
+use crate::test_support::DeterministicIds;
 
 #[test]
 fn wall_jumps_cannot_restart_a_monotonic_deadline_and_advance_wakes_exactly() {
@@ -134,7 +134,7 @@ async fn tokio_virtual_time_is_not_injected_or_operating_system_time() {
 #[tokio::test]
 async fn system_clock_and_real_timer_integration() {
     with_watchdog(WATCHDOG, async {
-        let clock = latent_core::SystemActivationClock;
+        let clock = crate::SystemActivationClock;
         assert!(clock.uses_system_monotonic());
         let before = clock.monotonic_now();
         tokio::time::sleep(Duration::from_millis(1)).await;

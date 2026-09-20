@@ -1,21 +1,21 @@
 //! Conformance harness, invariant probes, and deterministic test utilities.
 //!
 //! Use `default-features = false` for clocks and coordination without the node harness.
+//! Upstream crates use `latent-core/test-support` directly to keep the workspace acyclic.
 
 #![forbid(unsafe_code)]
 
 pub mod async_runtime;
-pub mod clocks;
 #[cfg(feature = "runtime")]
 pub mod conformance;
-pub mod coordination;
-pub mod deterministic;
 #[cfg(feature = "runtime")]
 pub mod harness;
 pub mod process;
 pub mod resources;
 #[cfg(feature = "runtime")]
 mod runtime_contract;
+
+pub use latent_core::test_support::{clocks, coordination, deterministic};
 
 pub use async_runtime::AsyncTestRuntime;
 pub use clocks::TestClock;

@@ -105,33 +105,55 @@ or blocking code. Do not retry a failed test until it passes.
 
 ## Dependency isolation and validation
 
-Low-level dev-dependencies select:
+Low-level admission/scheduler tests select the neutral implementation directly:
 
 ```toml
-latent-testkit = { path = "../latent-testkit", default-features = false }
+[dev-dependencies]
+latent-core = { path = "../latent-core", features = ["test-support"] }
 ```
 
-The default `runtime` feature preserves the old conformance, node harness and
-crate-root interfaces for existing callers. Only that feature enables the
-optional activation/executor/node/telemetry dependencies. Neutral clocks and
-coordination require neither the node binary, Wasmtime, nor provider crates.
-No production dependency is added to admission or scheduler.
+Use `latent_core::test_support::{TestClock, DeterministicIds}` and
+`latent_core::test_support::coordination::{Rendezvous, PollProbe, Stage}` there.
+The standard-library-only helpers and their 21 unit tests live together under
+`latent-core/src/test_support/`. The feature is opt-in. Tokio and tempfile are
+**dev-dependencies only** of core, used to run the relocated tests; core has no
+production dependencies and no back edge into a workspace crate. No new crate,
+production clock hook or scheduling semantics are introduced.
+
+`latent-testkit` re-exports those exact modules and types, including its existing
+root-level exports. Existing harness users and the executable examples retain
+their import paths. Its default `runtime` feature still gates the optional
+activation/executor/node/telemetry harness dependencies, but **feature gating is
+not an exception to the workspace acyclicity rule**. Upstream crates must not add
+a testkit dependency, even with `default-features = false`.
 
 ```sh
+python3 tools/validate_foundation.py
 python3 tools/check_testkit_dependencies.py
-cargo test -p latent-testkit --no-default-features --lib --locked -- --test-threads=1
-cargo test -p latent-testkit --no-default-features --lib --locked -- --test-threads=4
+python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies
+cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=1
+cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=4
 cargo test -p latent-admission -p latent-scheduler --lib --locked
-cargo test -p latent-testkit --lib --locked
+cargo test -p latent-testkit --no-default-features --lib --test test_support_compatibility --locked
+cargo test -p latent-testkit --lib --test test_support_compatibility --locked
 ```
 
-The graph check inspects independently selected Cargo dependency trees, not the
-all-feature workspace union. The tests cover fixed IDs, explicit wakeups, missing
-readiness, stale/recycled/foreign tickets, premature retirement, buffer ownership,
-capacity limits, abort, panic and real watchdog expiry. Both current-thread and
-multi-thread Tokio runtimes exercise the controlled scripts. Existing ignored
-resource/qualification tests remain ignored in ordinary unit runs and keep their
-separate explicit entrypoints.
+The guard first invokes the existing foundation validator over **all** workspace
+manifest edges, including optional, development, build and target-specific edges.
+Only then does it inspect independently selected Cargo graphs, including their
+test dependencies. The Python regressions reconstruct the originally missed
+admission/testkit/node and scheduler/testkit/node cycles and require failure
+before Cargo is invoked. They also cover aliases, optional/target/build edges,
+missing feature selection, empty graphs and heavyweight dependencies. CI runs
+these regressions and the guard before the expensive workspace build; it does
+not weaken or bypass the foundation validator.
+
+The relocated tests retain fixed IDs, explicit wakeups, missing readiness,
+stale/recycled/foreign tickets, premature retirement, buffer ownership, capacity
+limits, abort, panic and real watchdog expiry. Both current-thread and
+multi-thread Tokio runtimes exercise the controlled scripts. Re-export tests
+ensure both import surfaces use identical types and shared clock state. Existing
+ignored resource/qualification tests keep their separate explicit entrypoints.
 
 ## Before/after execution evidence
 
@@ -191,3 +213,16 @@ the migrated module independently denies `clippy::all` and `clippy::pedantic`.
 The temporary branch-only, write-enabled formatting/validation workflow was
 removed after retaining this evidence. Ordinary repository CI remains unchanged;
 the scoped run does not replace full PR, native-runtime or containment validation.
+
+### Dependency-cycle correction
+
+The initial `b6ae23b` publication failed the unconditional foundation graph:
+`latent-admission -> latent-testkit -> latent-node -> latent-admission`, with
+corresponding scheduler cycles. The earlier feature-selected 21/33/35-node graph
+observations below were not evidence of workspace acyclicity. The retained
+receipt is historical execution evidence for its named revisions, not a passing
+foundation result or a measurement of this corrected revision. The correction
+moves the shared implementation and all 21 helper tests into feature-gated core,
+removes both upstream testkit edges, and preserves the measured admission and
+scheduler case bodies apart from import paths. Testkit's remaining library counts
+therefore change; the original receipt and its source identities are not rewritten.

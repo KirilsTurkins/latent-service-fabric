@@ -16,7 +16,7 @@ default = ["runtime"]
 runtime = ["dep:latent-activation", "dep:latent-executor", "dep:latent-node", "dep:latent-telemetry"]
 
 [dependencies]
-latent-core = { path = "../latent-core" }
+latent-core = { path = "../latent-core", features = ["test-support"] }
 latent-activation = { path = "../latent-activation", optional = true }
 latent-executor = { path = "../latent-executor", optional = true }
 latent-node = { path = "../latent-node", optional = true }

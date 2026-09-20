@@ -15,4 +15,4 @@ latent-core = { path = "../latent-core" }
 latent-routing = { path = "../latent-routing" }
 
 [dev-dependencies]
-latent-testkit = { path = "../latent-testkit", default-features = false }
+latent-core = { path = "../latent-core", features = ["test-support"] }

@@ -2,11 +2,11 @@
 
 use super::support::{acquire, assert_exact_accounting, pool};
 use crate::{CellLease, CellPool, FixedCellPool};
-use latent_core::{ActivationId, PlatformErrorCode};
-use latent_testkit::coordination::{
+use latent_core::test_support::coordination::{
     with_watchdog, CoordinationError, PauseTicket, PollProbe, Rendezvous, Stage, WATCHDOG,
 };
-use latent_testkit::{block_on, DeterministicIds};
+use latent_core::test_support::{block_on, DeterministicIds};
+use latent_core::{ActivationId, PlatformErrorCode};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 

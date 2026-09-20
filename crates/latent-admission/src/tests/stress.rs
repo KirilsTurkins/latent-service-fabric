@@ -85,7 +85,7 @@ fn concurrent_tenant_trust_and_queue_class_reservations_are_linearized() {
 
 struct AdvancingSource {
     inner: Arc<Source>,
-    clock: latent_testkit::TestClock,
+    clock: latent_core::test_support::TestClock,
     policy_work: Duration,
     wall_after_lookup: u64,
 }
@@ -112,7 +112,7 @@ fn admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work
             let mut node = node_policy();
             node.overload.maximum_sample_age_millis = u64::MAX;
             let h = Harness::new(node, revision_policy());
-            let clock = latent_testkit::TestClock::new(10_000, h.sample.monotonic(), 1);
+            let clock = latent_core::test_support::TestClock::new(10_000, h.sample.monotonic(), 1);
             let controller = h.controller.with_policy_source(Arc::new(AdvancingSource {
                 inner: h.source.clone(),
                 clock: clock.clone(),
