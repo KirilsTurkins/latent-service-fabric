@@ -43,6 +43,8 @@ Existing review requirements remain independent of profile selection.
 The [reusable website workflow](../../.github/workflows/docs-site.yml) uses pinned
 Node/npm/dependencies and Chromium, fresh isolated npm installation with lifecycle
 scripts disabled, and no Pages permissions, inherited secrets or dependency cache.
+The package manager itself is pinned in `website/toolchain/package-lock.json`;
+its bundled dependencies are included in the repository's advisory inventory.
 Its artifact name binds the current source SHA, run and attempt; only the project
 build and explicitly listed browser receipts are uploaded. Skipped, cancelled or
 failed site jobs fail `CI result`. This validation artifact alone is not a Pages
