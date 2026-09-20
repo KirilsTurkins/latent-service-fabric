@@ -4,7 +4,7 @@ import {prepareExamples} from './site.mjs';
 import {validateExampleBuild} from './built.mjs';
 
 export default function examplesPlugin(context) {
-  const {examples} = prepare({baseUrl: context.siteConfig.baseUrl});
+  const {examples, snapshots} = prepare({baseUrl: context.siteConfig.baseUrl});
   function checkCurrentInputs() {
     const current = prepareExamples(createRepositoryIndex(), {persist: false});
     if (JSON.stringify(current.identity) !== JSON.stringify(examples.identity)) {
@@ -13,7 +13,9 @@ export default function examplesPlugin(context) {
   }
   return {
     name: 'lsf-examples',
-    loadContent() { checkCurrentInputs(); return examples.bundle; },
+    loadContent() { checkCurrentInputs(); return {bundles: Object.fromEntries([
+      ['development', examples.bundle], ...snapshots.map(snapshot => [snapshot.index.channel, snapshot.examples.bundle]),
+    ])}; },
     contentLoaded({content, actions}) {
       // Only referenced region data. Never publish the registry, input inventory,
       // source bodies, evidence files or local absolute paths through global data.
@@ -22,6 +24,7 @@ export default function examplesPlugin(context) {
     postBuild({outDir}) {
       checkCurrentInputs();
       validateExampleBuild(outDir, createRepositoryIndex(), {examples: examples.identity});
+      for (const snapshot of snapshots) validateExampleBuild(outDir, snapshot.index, {examples: snapshot.examples.identity}, snapshot.examples);
     },
   };
 }

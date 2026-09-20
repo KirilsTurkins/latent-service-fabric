@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import importlib.util
 import json
@@ -199,6 +200,33 @@ def svg_errors(root: Path, paths: list[Path], require_documents: bool = False) -
     return list(module.ERRORS)
 
 
+def registered_snapshot_document(root: Path, source: str, tracked: set[str]) -> bool:
+    """Historical relative links belong to the exact snapshot's repository tree.
+
+    The mandatory site job validates that tree, routes, examples and assets.
+    This prose pass still checks the registered bytes and Markdown fences.
+    """
+    match = re.fullmatch(r"website/versioned_docs/version-([0-9][A-Za-z0-9._-]{0,79})/(.+\.mdx?)", source)
+    if match is None:
+        return False
+    version, relative = match.groups()
+    manifest_path = f"website/versioned_manifests/version-{version}.json"
+    for filename, maximum in (("website/versions.json", 1024), (manifest_path, 2 * 1024 * 1024)):
+        if filename not in tracked or not ordinary_path(root, filename) or (root / filename).stat().st_size > maximum:
+            return False
+    try:
+        versions = json.loads((root / "website/versions.json").read_text(encoding="utf-8"))
+        manifest = json.loads((root / manifest_path).read_text(encoding="utf-8"))
+        return (isinstance(versions, list) and version in versions
+                and manifest.get("version") == version
+                and re.fullmatch(r"[a-f0-9]{40}", manifest.get("documentationSource", "")) is not None
+                and any(document == {"source": "docs/" + relative,
+                                     "sha256": hashlib.sha256((root / source).read_bytes()).hexdigest()}
+                        for document in manifest.get("documents", [])))
+    except (ValueError, TypeError, AttributeError):
+        return False
+
+
 def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
                   *, require_documents: bool = True) -> dict:
     root = root.resolve()
@@ -211,9 +239,10 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
             directories.add(parent)
             parent = posixpath.dirname(parent)
     documents: dict[str, str] = {}
+    snapshots: set[str] = set()
     svgs: list[Path] = []
     for name in sorted(tracked):
-        if Path(name).suffix.lower() not in {".md", ".svg"}:
+        if Path(name).suffix.lower() not in {".md", ".mdx", ".svg"}:
             continue
         path = root / name
         if not ordinary_path(root, name) or not path.is_file():
@@ -227,12 +256,19 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
                 if not content.strip():
                     errors.append(f"{name}: empty Markdown document")
                 documents[name] = prose(content, name, errors)
+                if name.startswith("website/versioned_docs/"):
+                    if registered_snapshot_document(root, name, tracked):
+                        snapshots.add(name)
+                    else:
+                        errors.append(f"{name}: unregistered or altered historical snapshot document")
             except (OSError, UnicodeError) as exc:
                 errors.append(f"{name}: cannot read UTF-8 Markdown: {type(exc).__name__}")
     anchors = {name: heading_anchors(text) for name, text in documents.items()}
     local_targets = tracked | directories
     checked_links = checked_anchors = 0
     for source, text in documents.items():
+        if source in snapshots:
+            continue
         for raw in links(text):
             raw = html.unescape(re.sub(r"\\([!\"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~])", r"\1", raw))
             try:
@@ -266,7 +302,7 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
                 except (OSError, ET.ParseError):
                     pass  # The shared SVG validator reports the parse failure.
     errors.extend(svg_errors(root, svgs, require_documents))
-    return {"documents": len(documents), "svgs": len(svgs), "local_links": checked_links,
+    return {"documents": len(documents), "versioned_documents": len(snapshots), "svgs": len(svgs), "local_links": checked_links,
             "anchors": checked_anchors, "errors": errors}
 
 

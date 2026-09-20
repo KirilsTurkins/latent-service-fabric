@@ -162,7 +162,7 @@ class SecurityFixtureTests(unittest.TestCase):
             packages, records = inventory(ROOT)
         absent = {entry["path"] for entry in records if entry["coverage"] == "not-shipped-at-source-revision"}
         self.assertEqual(absent, {"examples/renderer-profile/package.json", ".github/security/requirements.txt",
-                                 "website/package.json", "tools/native-fixture/Cargo.toml"})
+                             "website/package.json", "website/toolchain/package.json", "tools/native-fixture/Cargo.toml"})
         self.assertTrue(any(package.path == "controls/.github/security/requirements.txt" for package in packages))
         self.assertFalse(any(package.path.startswith("examples/renderer-profile/") for package in packages))
         for partial in ("examples/renderer-profile/README.md", ".github/security/unexpected.json"):
@@ -194,6 +194,33 @@ class SecurityFixtureTests(unittest.TestCase):
         packages = npm_packages(ROOT, {"path": path, "lock": "examples/renderer-profile/package-lock.json"})
         self.assertEqual({package.version for package in packages if package.name == "@bytecodealliance/weval"}, {"0.5.0"})
         self.assertFalse(any(package.name == "decompress" or package.name.startswith("decompress-") for package in packages))
+
+    def test_bundled_dependencies_require_reviewed_integrity_pinned_owner(self) -> None:
+        manifest = {"dependencies": {"npm": "12.0.1"}}
+        resolved = {"": manifest, "node_modules/npm": {"version": "12.0.1",
+                    "resolved": "https://registry.npmjs.org/npm/-/npm-12.0.1.tgz",
+                    "integrity": "sha512-" + "A" * 86 + "==", "bundleDependencies": ["fixture"]},
+                    "node_modules/npm/node_modules/fixture": {"version": "1.2.3", "inBundle": True}}
+        self.write("package.json", json.dumps(manifest))
+        def save():
+            self.write("package-lock.json", json.dumps({"lockfileVersion": 3, "packages": resolved}))
+        entry = {"path": "package.json", "lock": "package-lock.json", "bundled_package": "npm"}
+        save()
+        self.assertEqual({package.name for package in npm_packages(self.root, entry)}, {"npm", "fixture"})
+        with self.assertRaisesRegex(SecurityError, "unreviewed-npm"):
+            npm_packages(self.root, {"path": "package.json", "lock": "package-lock.json"})
+        for field, invalid in (("integrity", ""), ("version", "12.0.2"),
+                               ("resolved", "https://unreviewed.invalid/npm.tgz")):
+            original = resolved["node_modules/npm"][field]
+            resolved["node_modules/npm"][field] = invalid
+            save()
+            with self.assertRaisesRegex(SecurityError, "unlocked-reviewed"):
+                npm_packages(self.root, entry)
+            resolved["node_modules/npm"][field] = original
+        resolved["node_modules/other/node_modules/fixture"] = resolved.pop("node_modules/npm/node_modules/fixture")
+        save()
+        with self.assertRaisesRegex(SecurityError, "unreviewed-npm"):
+            npm_packages(self.root, entry)
 
     def test_synthetic_source_rule_has_pass_and_fail_without_execution(self) -> None:
         path = "tools/fixture.py"

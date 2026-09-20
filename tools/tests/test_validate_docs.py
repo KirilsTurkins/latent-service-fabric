@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -40,6 +42,27 @@ class DocumentationValidationTests(unittest.TestCase):
     def test_empty_markdown_is_rejected(self) -> None:
         self.write("README.md", " \n\t\n")
         self.assertIn("empty Markdown", self.report()["errors"][0])
+
+    def test_mdx_links_and_fences_are_in_the_exact_tracked_inventory(self) -> None:
+        self.write("docs/guide.mdx", "# Guide\n[missing](absent.md)\n```tsx\n<Example />\n")
+        report = self.report()
+        self.assertEqual(report["documents"], 1)
+        self.assertTrue(any("unclosed" in error for error in report["errors"]))
+        self.assertTrue(any("missing" in error for error in report["errors"]))
+
+    def test_historical_links_defer_only_for_exact_registered_snapshot_bytes(self) -> None:
+        source = "website/versioned_docs/version-0.1-alpha/guide.md"
+        document = self.write(source, "# Historical guide\n[historical code](../../sdk/old.rs)\n")
+        self.assertTrue(any("unregistered" in error for error in self.report()["errors"]))
+        self.write("website/versions.json", json.dumps(["0.1-alpha"]))
+        self.write("website/versioned_manifests/version-0.1-alpha.json", json.dumps({
+            "version": "0.1-alpha", "documentationSource": "a" * 40,
+            "documents": [{"source": "docs/guide.md", "sha256": hashlib.sha256(document.read_bytes()).hexdigest()}]}))
+        report = self.report()
+        self.assertEqual(report["errors"], [])
+        self.assertEqual(report["versioned_documents"], 1)
+        self.write(source, "# Altered\n")
+        self.assertTrue(any("altered" in error for error in self.report()["errors"]))
 
     def test_repository_document_inventory_remains_required(self) -> None:
         report = validator.validate_docs(self.root, self.tracked)
