@@ -33,6 +33,16 @@ pub(super) fn authenticate(
         .find(|value| value.token == token)
         .ok_or_else(unauthenticated)?;
     let mut timeouts = request.headers().get_all("grpc-timeout").iter();
+    let maximum = match request.uri().path() {
+        latent_wire::management::WEB_PREPARATION_RPC_PATH => {
+            Duration::from_millis(latent_wire::management::MAX_WEB_PREPARATION_WAIT_MILLIS)
+        }
+        latent_wire::management::WEB_PUBLICATION_RPC_PATH
+        | latent_wire::management::WEB_EVIDENCE_RPC_PATH => {
+            Duration::from_millis(latent_wire::management::MAX_WEB_MUTATION_WAIT_MILLIS)
+        }
+        _ => config.request_timeout,
+    };
     let timeout = timeouts
         .next()
         .map(|value| {
@@ -42,8 +52,8 @@ pub(super) fn authenticate(
                 .and_then(parse_timeout)
         })
         .transpose()?
-        .unwrap_or(config.request_timeout)
-        .min(config.request_timeout);
+        .unwrap_or(maximum)
+        .min(maximum);
     if timeouts.next().is_some() {
         return Err(invalid_timeout());
     }
@@ -52,6 +62,17 @@ pub(super) fn authenticate(
             "standalone request deadline has expired",
         ));
     }
+    let mut bounded = tonic::Request::new(());
+    bounded.set_timeout(timeout);
+    let timeout_header = bounded
+        .metadata()
+        .get("grpc-timeout")
+        .expect("bounded timeout");
+    request.headers_mut().insert(
+        "grpc-timeout",
+        tonic::codegen::http::HeaderValue::from_bytes(timeout_header.as_encoded_bytes())
+            .map_err(|_| invalid_timeout())?,
+    );
     let expiry = sample
         .monotonic()
         .checked_add(timeout)

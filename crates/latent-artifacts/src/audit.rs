@@ -7,7 +7,9 @@
 
 mod mapping;
 mod verification;
+mod web;
 pub use verification::AuditedAdmissionAuthority;
+pub use web::WebAuditGuard;
 
 use latent_audit::{
     AuditAttempt, AuditControlAction, AuditHandle, AuditIdentities, AuditOperationAttempt,
@@ -76,12 +78,19 @@ impl ReleaseAuditGuard {
             return Err(invalid());
         }
         self.previewed = true;
-        let Some(audit) = &self.audit else {
+        if self.audit.is_none() {
             return Ok(());
-        };
+        }
         crate::lifecycle::validate_audit_receipt(preview.receipt)?;
         let mut identity = mapping::attempt(preview.receipt, preview.replay)?;
         identity.identities.publication = preview.publication.cloned();
+        self.begin(identity)
+    }
+
+    fn begin(&mut self, identity: AuditOperationAttempt) -> Result<(), PlatformError> {
+        let Some(audit) = &self.audit else {
+            return Ok(());
+        };
         let accepted = audit
             .try_reserve_critical(&identity)
             .and_then(|reservation| reservation.begin().blocking_wait());
@@ -105,8 +114,8 @@ impl ReleaseAuditGuard {
         self.ack.status = ReleaseAuditStatus::OutcomeUnknown;
         attempt.mutation_started()?;
         self.attempt = Some(attempt);
+        self.replay = identity.replay;
         self.identity = Some(identity);
-        self.replay = preview.replay;
         Ok(())
     }
 
@@ -202,7 +211,9 @@ async fn lookup(
             retryable: false,
             details: Vec::new(),
         }),
-        ReleaseOperationLookup::Found(_) | ReleaseOperationLookup::Unknown => Ok(unknown()),
+        ReleaseOperationLookup::Found(_) | ReleaseOperationLookup::Unknown => {
+            web::lookup(repository, identity, replay).await
+        }
     }
 }
 

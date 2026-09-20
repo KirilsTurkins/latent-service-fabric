@@ -26,6 +26,7 @@ def compile_application(config: dict, captured: Path, work: Path, tools: BuildTo
     stage = work / 'component'
     (stage / 'wit/deps/context').mkdir(parents=True)
     (stage / 'wit/deps/web').mkdir()
+    (stage / 'wit/deps/http').mkdir()
     for source, destination in (
         (ROOT / 'tools/angular-renderer-adapter/runtime/bridge.js', stage / 'bridge.js'),
         (ROOT / 'tools/angular-renderer-adapter/runtime/timers.js', stage / 'timers.js'),
@@ -34,12 +35,14 @@ def compile_application(config: dict, captured: Path, work: Path, tools: BuildTo
         (ROOT / 'tools/angular-renderer-adapter/wit/adapter.wit', stage / 'wit/adapter.wit'),
         (ROOT / 'wit/platform/context/package.wit', stage / 'wit/deps/context/package.wit'),
         (ROOT / 'wit/platform/web/package.wit', stage / 'wit/deps/web/package.wit'),
+        (ROOT / 'wit/platform/http-v2/package.wit', stage / 'wit/deps/http/package.wit'),
     ):
         destination.write_bytes(read(source.parent, source.name, 8 * 1024 * 1024))
     (stage / 'assets.js').write_bytes(b'export const clientAsset=' + canonical(client_path) + b';\n')
     tools.call([node, str(scripts / 'componentize.mjs'), toolchain, str(stage)], stage, node=True, seconds=300)
+    features = ['--features', 'backend-http'] if config.get('backendProfile') == 'scoped-http-get-v1' else []
     cargo_output = tools.call([str(tools.paths['cargo']), 'build', '--locked', '--offline', '-p', 'latent-angular-renderer-adapter',
-                               '--target', 'wasm32-unknown-unknown', '--release', '--message-format=json'], ROOT)
+                               '--target', 'wasm32-unknown-unknown', '--release', '--message-format=json', *features], ROOT)
     dependencies = cargo.observe(cargo_output, tools)
     core = Path(tools.environment['CARGO_TARGET_DIR']) / 'wasm32-unknown-unknown/release/latent_angular_renderer_adapter.wasm'
     adapter = stage / 'adapter.wasm'

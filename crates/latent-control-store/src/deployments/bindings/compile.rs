@@ -19,6 +19,7 @@ use std::{
     time::{Duration, Instant},
 };
 mod invocation;
+mod web;
 
 pub(super) async fn compile(
     catalog: &CompiledCatalog,
@@ -325,6 +326,9 @@ async fn plan(
         ));
     }
     let publication = eligibility(catalog, record)?;
+    if publication.web_projection().is_some() {
+        return web::compile(catalog, record, definitions, owner, &publication, deadline);
+    }
     let comparison = PackageComparisonLimits::default();
     let consumer = bundle(record, owner, artifacts).await?;
     let surface = consumer.surface().ok_or_else(denied)?;

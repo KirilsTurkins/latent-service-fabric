@@ -71,7 +71,9 @@ def read(root: Path, relative: str, maximum: int) -> bytes:
 
 
 def validate(value: dict) -> None:
-    fields(value, {'formatVersion', 'profile', 'name', 'version', 'serverEntry', 'clientEntry', 'sources', 'assets', 'routes'})
+    fields(value, {'formatVersion', 'profile', 'name', 'version', 'serverEntry', 'clientEntry', 'sources', 'assets', 'routes'}, {'backendProfile'})
+    if value.get('backendProfile', 'none') not in ('none', 'scoped-http-get-v1'):
+        raise SnapshotError('unsupported Angular backend profile')
     if type(value['formatVersion']) is not int or value['formatVersion'] != 1 or value['profile'] != PROFILE:
         raise SnapshotError("unsupported Angular build profile")
     if not isinstance(value['name'], str) or not re.fullmatch(r'[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?', value['name']):

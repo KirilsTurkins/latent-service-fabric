@@ -4,7 +4,9 @@
 
 Accepted; Phase 3 #233. Extends ADR-0006, ADR-0037 and ADR-0038. Supersedes
 ADR-0037's pending async-adapter gate for the implemented operator-controlled
-T0 profile. T1 qualification remains gated on #234 and #226.
+T0 profile. The subsequent #234/#226 integration qualifies the explicit
+protected T1 selected-publication path through the
+[actual Angular workflow](../docs/testing/angular-t1-workflow.md).
 
 ## Context
 
@@ -61,13 +63,16 @@ can render every document of that size.
 
 ## Consequences
 
-This installs the approved T0 profile. Reject an Angular opt-in under
-`external-capsule-v1` until the actual observed Angular build and independently
-authorized web deployment path are integrated and tested. Existing Rust/C
-provenance recipes cannot honestly attest an Angular composition. #234 owns
-that recipe; #226 owns projection from componentless web publication into
+This initially installed the approved T0 profile. The integrated #234/#226 gate
+now permits Angular under explicit protected `external-capsule-v1` after testing
+the actual observed build, enforced publisher/builder/SBOM admission, isolated
+compiler, authenticated native cache, independently authorized selected web
+deployment, actual rendering, cancellation, restart and revocation. Existing
+Rust/C provenance recipes cannot honestly attest an Angular composition. #234
+owns that recipe; #226 owns projection from componentless web publication into
 execution authority. A web receipt is never converted into a capsule grant by
-copying digests. T2/T3 remain unsupported.
+copying digests. T2/T3 and parent-owned browser/backend/canary qualification
+remain outside this evidence.
 
 The maintained real-component gate covers fresh principal/cookies/hydration,
 exceptions, resource/callback exhaustion, concurrent progress, cancellation,

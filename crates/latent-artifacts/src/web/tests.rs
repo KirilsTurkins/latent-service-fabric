@@ -14,12 +14,31 @@ use latent_core::TenantId;
 use std::collections::BTreeMap;
 
 pub(crate) fn browser_test_upload() -> crate::PackageAdmissionUpload {
-    let (layout, metadata) = package(&manifest(false));
+    test_upload(false, b"<h1>Example</h1>")
+}
+
+#[cfg(target_os = "linux")]
+pub(crate) fn renderer_test_upload(html: &[u8]) -> crate::PackageAdmissionUpload {
+    test_upload(true, html)
+}
+
+fn test_upload(renderer: bool, html: &[u8]) -> crate::PackageAdmissionUpload {
+    let mut document = manifest(renderer);
+    document.assets[0].digest = artifact_blob_digest(html).to_string();
+    document.assets[0].size = html.len() as u64;
+    document.assets_digest = asset_tree_digest(&document.assets).unwrap().to_string();
+    if let Some(renderer) = &mut document.renderer {
+        renderer.assets_digest.clone_from(&document.assets_digest);
+    }
+    let (layout, metadata) = package(&document);
     let mut layers = vec![
-        ("public/index.html".into(), b"<h1>Example</h1>".to_vec()),
+        ("public/index.html".into(), html.to_vec()),
         (WEB_MANIFEST_PATH.into(), metadata),
         ("metadata/private.json".into(), b"{}".to_vec()),
     ];
+    if renderer {
+        layers.push(("server/renderer.wasm".into(), b"\0asm\x0d\0\x01\0".to_vec()));
+    }
     layers.sort_by(|a: &(String, Vec<u8>), b| a.0.cmp(&b.0));
     let evidence = || crate::AdmissionEvidence {
         manifest: b"{}".to_vec(),
@@ -71,8 +90,65 @@ fn manifest(renderer: bool) -> WebApplicationManifest {
             profile_digest: renderer_profile_digest(WebRendererProfile::WasmWebBufferedV1)
                 .to_string(),
             assets_digest,
+            backend_profile: super::WebBackendProfile::None,
         }),
     }
+}
+
+#[test]
+fn backend_data_requires_an_explicit_angular_profile_and_nonoptional_import() {
+    use super::{WebBackendProfile, WEB_HTTP_CONTRACT, WEB_HTTP_WORLD};
+    use latent_core::ContractId;
+    use latent_manifest::ContractImport;
+
+    let mut document = manifest(true);
+    assert!(!serde_json::to_string(&document)
+        .unwrap()
+        .contains("backendProfile"));
+    document.renderer.as_mut().unwrap().backend_profile = WebBackendProfile::ScopedHttpGetV1;
+    let (layout, bytes) = package(&document);
+    assert!(inspect_web_layout(&layout, &bytes).is_err());
+    let renderer = document.renderer.as_mut().unwrap();
+    renderer.profile = WebRendererProfile::AngularSsrComponentV1;
+    renderer.profile_digest = renderer_profile_digest(renderer.profile).to_string();
+    let (layout, bytes) = package(&document);
+    let checked = inspect_web_layout(&layout, &bytes).unwrap();
+    assert_eq!(
+        checked
+            .manifest()
+            .renderer
+            .as_ref()
+            .unwrap()
+            .backend_profile
+            .world(),
+        WEB_HTTP_WORLD
+    );
+    let mut value = serde_json::to_value(document).unwrap();
+    for unsupported in [
+        serde_json::Value::Null,
+        serde_json::json!("ambient-fetch"),
+        serde_json::json!({}),
+    ] {
+        value["renderer"]["backendProfile"] = unsupported;
+        assert!(serde_json::from_value::<WebApplicationManifest>(value.clone()).is_err());
+    }
+    let mut imports = vec![ContractImport {
+        contract: ContractId(WEB_HTTP_CONTRACT.into()),
+        optional: false,
+    }];
+    assert_eq!(
+        WebBackendProfile::from_imports(&imports).unwrap(),
+        WebBackendProfile::ScopedHttpGetV1
+    );
+    imports[0].optional = true;
+    assert!(WebBackendProfile::from_imports(&imports).is_err());
+    imports[0].optional = false;
+    imports.push(imports[0].clone());
+    assert!(WebBackendProfile::from_imports(&imports).is_err());
+    assert_eq!(
+        WebBackendProfile::from_imports(&[]).unwrap(),
+        WebBackendProfile::None
+    );
 }
 
 // Descriptor-only fixture: these tests establish layout, not executable surface
