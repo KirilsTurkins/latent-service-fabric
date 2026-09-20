@@ -24,10 +24,11 @@ from tools.phase3_resource_profile import integer
 ROOT = Path(__file__).resolve().parents[1]
 NAME = "phase3_resource_small_provider_ownership_checkpoint"
 SUITE = Suite("crates/latent-wasmtime/Cargo.toml", "phase3_resource", "tests/phase3_resource.rs",
-              NAME, frozenset({NAME}), True)
+              NAME, frozenset({NAME}), True, "test")
 
 
 def artifact_from_cargo(output, root, target=None, suite=SUITE):
+    require(suite.kind in ("lib", "test"), "resource-rust-suite-kind")
     require(len(output) <= 2 * 1024 * 1024, "resource-rust-inventory-bytes")
     target_root = (target or root / "target").resolve(strict=True)
     require(target_root.is_relative_to((root / "target").resolve(strict=True)), "resource-rust-target-owner")
@@ -50,11 +51,12 @@ def artifact_from_cargo(output, root, target=None, suite=SUITE):
                 if candidate.is_absolute() and candidate.resolve().is_relative_to(target_root):
                     links.add(candidate.resolve())
                     require(len(links) <= 256, "resource-rust-link-bound")
-        elif message.get("reason") == "compiler-artifact" and message.get("target", {}).get("name") == suite.target:
+        elif (message.get("reason") == "compiler-artifact" and message.get("target", {}).get("name") == suite.target
+              and message.get("profile", {}).get("test") is True):
             require(found is None and Path(message["manifest_path"]).resolve() == expected_manifest,
                     "resource-rust-artifact-owner")
             target, profile = message["target"], message["profile"]
-            require(target["kind"] == ["test"] and profile["test"] is True
+            require(target["kind"] == [suite.kind] and profile["test"] is True
                     and Path(target["src_path"]).resolve() == expected_source, "resource-rust-artifact-target")
             executable = Path(message["executable"])
             require(executable.is_absolute() and executable.is_file() and not executable.is_symlink()
@@ -113,7 +115,8 @@ def execute(command, directory, environment, cancellation, timeout, maximum, com
                       stderr=bytes(process.buffers[1]).decode("utf-8", "replace"))
 
 
-def run(args):
+def run(args, *, suite=SUITE, package="latent-wasmtime", report_env="LSF_PHASE3_RESOURCE_REPORT",
+        validator=validate_observations, ignored=False):
     require(sys.platform == "linux" and re.fullmatch(r"[0-9a-f]{40}", args.revision),
             "resource-rust-linux-and-revision")
     require(all(path.is_absolute() and not path.exists() and path.parent.is_dir()
@@ -127,6 +130,8 @@ def run(args):
                        "memoryLimitBytes": Path("/sys/fs/cgroup/memory.max").read_text().strip(),
                        "hostConditions": args.host_condition, "dedicatedHardware": False},
               "runnerIdentity": file_identity(Path(__file__))}
+    result["selection"] = {"package": package, "kind": suite.kind, "target": suite.target,
+                           "case": suite.filter, "ignored": ignored}
     try:
         source = source_identity(ROOT)
         result["sourceInputs"] = source
@@ -138,24 +143,25 @@ def run(args):
             compiler = execute(["rustc", "--version", "--verbose"], ROOT, environment,
                                cancellation, 10, 4096, commands)
             require(compiler.returncode == 0, "resource-rust-compiler-unavailable")
-            built = execute(["cargo", "test", "--locked", "-p", "latent-wasmtime", "--test", "phase3_resource",
+            selected = ["--lib"] if suite.kind == "lib" else ["--test", suite.target]
+            built = execute(["cargo", "test", "--locked", "-p", package, *selected,
                              "--no-run", "--message-format=json", "-j", "3"], ROOT, environment,
                             cancellation, 900, 2 * 1024 * 1024, commands)
             require(built.returncode == 0, "resource-rust-build-failed")
             target = Path(environment.get("CARGO_TARGET_DIR", ROOT / "target"))
-            artifact, profile = artifact_from_cargo(built.stdout, ROOT, target)
+            artifact, profile = artifact_from_cargo(built.stdout, ROOT, target, suite)
             result["cargoProfile"] = profile
             result["binary"] = file_identity(artifact.executable)
             require(source_identity(ROOT) == source, "resource-rust-source-changed")
             runtime_environment = cargo_environment(ROOT, artifact, environment)
             runtime_environment["LD_LIBRARY_PATH"] = os.pathsep.join(
                 [str(artifact.executable.parent), str(target / "debug"), runtime_environment.get("LD_LIBRARY_PATH", "")])
-            runtime_environment["LSF_PHASE3_RESOURCE_REPORT"] = str(args.report)
-            command = [str(artifact.executable), NAME, "--exact"]
+            runtime_environment[report_env] = str(args.report)
+            command = [str(artifact.executable), suite.filter, "--exact", *(["--ignored"] if ignored else [])]
             listing = execute([*command, "--list"], artifact.package, runtime_environment,
                               cancellation, 10, 4096, commands)
             require(listing.returncode == 0, "resource-rust-list-failed")
-            validate_listing(listing.stdout, SUITE)
+            validate_listing(listing.stdout, suite)
             tested = execute([*command, "--nocapture", "--test-threads=1"], artifact.package, runtime_environment,
                              cancellation, 120, 262144, commands)
             require(tested.returncode == 0 and re.search(
@@ -164,7 +170,7 @@ def run(args):
             require(file_identity(artifact.executable) == result["binary"] and source_identity(ROOT) == source,
                     "resource-rust-input-changed")
             observed = read_json(args.report, 2 * 1024 * 1024)
-            validate_observations(observed, result["binary"])
+            validator(observed, result["binary"])
             result["report"] = {**file_identity(args.report), "observations": len(observed["observations"])}
             result["status"] = "checkpoint-passed"
     except Exception as error:

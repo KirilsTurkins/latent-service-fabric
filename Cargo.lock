@@ -1837,6 +1837,7 @@ dependencies = [
  "latent-network",
  "latent-packaging",
  "latent-signing",
+ "latent-testkit",
  "rcgen",
  "reqwest",
  "rustls",
