@@ -436,7 +436,7 @@ class RealCheckoutTests(unittest.TestCase):
             proc = self.cli(verb, "--suite", local.TOOLING, env=env)
             self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         result = json.loads(proc.stdout)
-        self.assertEqual((result["required_cases"], result["observed_cases"]), (15, 15))
+        self.assertEqual((result["required_cases"], result["observed_cases"]), (16, 16))
         self.assertEqual(result["state"], "passed")
         self.assertFalse(invoked.exists())
 
