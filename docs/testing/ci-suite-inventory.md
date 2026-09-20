@@ -3,9 +3,10 @@
 The current integration was refreshed against development
 `9a99d1f364eb0c5d09b879fa857811820c8bb005`: a successful whole-workspace
 all-target/all-feature build and exact executable listings found **165 targets,
-2,831 cases and 149 explicit ignores**. The raw current discovery and binary
+2,830 libtest cases and 149 explicit ignores**. The raw current discovery and binary
 identities are in `tools/ci/evidence/current-discovery.json`; the older baseline
-receipt remains historical. This is build/discovery evidence, not an ordinary
+receipt remains historical. The two custom harness contracts have no libtest
+listing and are counted separately. This is build/discovery evidence, not an ordinary
 execution PASS. The shared deterministic tests moved to `latent-core`; their
 compatibility tests, current AOT input validation, Angular fixture and physical
 metadata owner are registered without dropping their execution contracts.

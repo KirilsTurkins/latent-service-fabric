@@ -18,7 +18,7 @@
   },
   "discoveryProvenanceCurrent": {
     "artifactInventorySha256": "e200c994d30ad7c2cd6241d06a295b447ee6215f6d75617665a1c6bebdfdff47",
-    "cases": 2831,
+    "cases": 2830,
     "execution": "build-and-exact-listing-only",
     "ignored": 149,
     "receipt": "tools/ci/evidence/current-discovery.json",
