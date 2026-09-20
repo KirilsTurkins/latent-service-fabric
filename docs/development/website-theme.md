@@ -12,7 +12,7 @@ coverage rows and human reviews remain pending until their own evidence passes.
 [`../assets/lsf-palette.json`](../assets/lsf-palette.json) is documentation tooling
 data, not a runtime resource schema. Its forty roles in each light/dark mode are
 checked by the local [schema](../../website/content/palette.schema.json).
-[`palette.mjs`](../../website/lib/palette.mjs) validates 106 explicit pairings,
+[`palette.mjs`](../../website/lib/palette.mjs) validates 128 explicit pairings,
 generates a content-addressed CSS file under ignored `website/.generated/theme/`,
 and supplies Prism colors and the initial Mermaid flowchart configuration.
 There is no independent hand-maintained CSS hex palette or external font/image.
@@ -25,7 +25,8 @@ There is no independent hand-maintained CSS hex palette or external font/image.
 | `disabledText` | `disabledSurface`; disabled label and dashed border retained | 4.5:1 even though inactive controls have an exception in WCAG |
 | `tabText`, `selectionInk`, `accentInk` | Their respective selected/accent surfaces | 4.5:1 |
 | Status `*Text` | Matching `success`, `warning`, `danger`, `info` surface | 4.5:1 |
-| `focus`, `border`, control surface | Adjacent ordinary reading surfaces | 3:1 |
+| `focus`, `border`, `controlSurface`, `controlHover`, `tabSurface` | Adjacent ordinary reading surfaces | 3:1 |
+| `focus` | `codeSurface` and every status surface | 3:1 |
 | Status `*Border` | Matching status surface and canvas | 3:1 |
 
 Gold is an accent and dark-mode control surface, **not** normal text on cream.
@@ -115,6 +116,31 @@ zoom. It writes compact evidence and screenshots under
 `website/.generated/theme-review/`; stale source identities fail the underlying
 built-site check. A timeout/interrupted test is neither a pass nor proof of failure
 in the product.
+
+The control review independently samples the active button, both tabs, text
+field and select at rest, with the button hovered, and after tab selection. It checks value text as well as
+boundaries: input values are not text nodes, and a text-node walk alone does
+not qualify native fields. A filled control must contrast with its adjacent surface,
+or its four visible border sides must do so. This is the theme's explicit
+solid-control contract, not a claim that WCAG requires an outline on every
+text-only button. Two rendered negative canaries remove a field boundary and
+hide its value text; both must fail before evidence is written. Disabled controls
+retain their separate labelled specimen; the native checkbox is exercised with
+Space and checked for visible focus. Native checkbox glyphs and select popups
+still require platform-specific visual review. Gradients, opacity, filters,
+blending and masks fail closed in this bounded control sampler rather than being
+silently certified. The evidence records the actual platform, architecture, OS
+release and Node version instead of assuming the initial Windows review host.
+
+The shared contrast arithmetic, computed-color parser, control sampler and
+negative assertions also have dependency-free unit tests:
+
+```sh
+node --test tests/contrast.test.mjs tests/control-review.test.mjs tests/theme-review.test.mjs
+```
+
+These focused tests do not replace the pinned production builds or browser
+suite above. They do not establish native zoom or complete accessibility.
 
 The responsive fixture additionally uses a 640 CSS-pixel viewport. A separate
 **200% rendering-equivalent** check uses 640 by 450 CSS pixels at device-pixel

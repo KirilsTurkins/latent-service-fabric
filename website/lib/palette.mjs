@@ -1,24 +1,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import Ajv from 'ajv';
+import {contrast} from './contrast.mjs';
 import {readSource, repositoryRoot, requireValue, sha256, websiteRoot} from './repository.mjs';
 import {generatedDirectory} from './prepare.mjs';
+
+export {contrast} from './contrast.mjs';
 
 export const palettePath = 'docs/assets/lsf-palette.json';
 const schema = JSON.parse(fs.readFileSync(path.join(websiteRoot, 'content/palette.schema.json'), 'utf8'));
 const validateSchema = new Ajv({allErrors: true, strict: true}).compile(schema);
 export const syntaxTokens = ['Text', 'Comment', 'Keyword', 'String', 'Number', 'Function', 'Variable'];
 export const statuses = ['success', 'warning', 'danger', 'info'];
-
-export function contrast(foreground, background) {
-  function luminance(color) {
-    const channels = color.slice(1).match(/../g).map(value => Number.parseInt(value, 16) / 255)
-      .map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
-    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
-  }
-  const values = [luminance(foreground), luminance(background)].sort((left, right) => right - left);
-  return (values[0] + 0.05) / (values[1] + 0.05);
-}
 
 export function approvedPairs() {
   const pairs = [];
@@ -29,7 +22,8 @@ export function approvedPairs() {
   for (const foreground of ['focus', 'border']) add(foreground, ['canvas', 'surface', 'raised'], 3);
   for (const foreground of syntaxTokens) add(`code${foreground}`, ['codeSurface', 'raised']);
   add('controlText', ['controlSurface', 'controlHover']);
-  add('controlSurface', ['canvas', 'surface', 'raised'], 3);
+  for (const foreground of ['controlSurface', 'controlHover', 'tabSurface']) add(foreground, ['canvas', 'surface', 'raised'], 3);
+  add('focus', ['codeSurface', ...statuses.map(status => `${status}Surface`)], 3);
   add('disabledText', ['disabledSurface']);
   add('tabText', ['tabSurface']);
   add('selectionInk', ['selection']);

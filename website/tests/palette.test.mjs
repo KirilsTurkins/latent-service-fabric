@@ -50,3 +50,21 @@ test('generated CSS and Prism derive from the same tokens without independent co
   assert.equal(mermaidOptions(palette.modes.dark).themeVariables.primaryTextColor, palette.modes.dark.text);
   assert.equal(mermaidOptions(palette.modes.dark).htmlLabels, false);
 });
+
+test('selected tabs and hover/focus contexts have explicit non-text pairings', () => {
+  const pairs = approvedPairs();
+  for (const foreground of ['controlSurface', 'controlHover', 'tabSurface']) {
+    for (const background of ['canvas', 'surface', 'raised']) {
+      assert.ok(pairs.some(pair => pair.foreground === foreground && pair.background === background && pair.minimum === 3));
+    }
+  }
+  for (const background of ['codeSurface', 'successSurface', 'warningSurface', 'dangerSurface', 'infoSurface']) {
+    assert.ok(pairs.some(pair => pair.foreground === 'focus' && pair.background === background && pair.minimum === 3));
+  }
+  for (const mode of ['light', 'dark']) {
+    const candidate = structuredClone(loadPalette());
+    candidate.modes[mode].tabSurface = candidate.modes[mode].canvas;
+    candidate.modes[mode].tabText = candidate.modes[mode].text;
+    assert.throws(() => validatePalette(candidate), /tabSurface/);
+  }
+});
