@@ -39,16 +39,16 @@ class FoundationRecipeTests(unittest.TestCase):
         for omitted in (0, 1, 2):
             with self.subTest(omitted=omitted):
                 self.foundation.ERRORS.clear()
-                bindings = cargo.RECIPES["bindings"]
-                with mock.patch.dict(cargo.RECIPES, {"bindings": bindings[:omitted] + bindings[omitted + 1:]}):
+                bindings = self.foundation.RECIPES["bindings"]
+                with mock.patch.dict(self.foundation.RECIPES, {"bindings": bindings[:omitted] + bindings[omitted + 1:]}):
                     self.foundation.validate_cargo_workflow(self.workflow)
                 self.assertTrue(any("do not enforce command" in error for error in self.foundation.ERRORS))
 
     def test_workspace_locked_scope_is_not_optional(self):
         from dataclasses import replace
-        invocation = cargo.RECIPES["workspace-check"][0]
+        invocation = self.foundation.RECIPES["workspace-check"][0]
         changed = replace(invocation, args=tuple(arg for arg in invocation.args if arg != "--locked"))
-        with mock.patch.dict(cargo.RECIPES, {"workspace-check": (changed,)}):
+        with mock.patch.dict(self.foundation.RECIPES, {"workspace-check": (changed,)}):
             self.foundation.validate_cargo_workflow(self.workflow)
         self.assertTrue(any("cargo check --workspace" in error for error in self.foundation.ERRORS))
 
