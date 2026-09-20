@@ -77,8 +77,8 @@ workflow/branch/attempt sources, missing and substituted artifacts, path attacks
 size limits, dirty/wrong/synthetic site identities, staged-byte tampering and
 stale publication/rollback guards. These synthetic cases do not publish a site.
 
-Ticket #355 additionally requires an actual protected deployment, live browser
-receipt and controlled rollback/redeployment. Keep it open until those runs are
-recorded. The final guide coverage and human pedagogy review remain owned by
+The [20 September publication evidence](website-publication-evidence.md) records
+the actual protected deployment, live browser checks and controlled redeployment
+of the known complete artifact required by #355. The final guide coverage and human pedagogy review remain owned by
 #345 and its content tickets. GitHub Pages serves static documentation; it does
 not host an LSF runtime or management credentials.
