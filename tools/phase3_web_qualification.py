@@ -50,7 +50,9 @@ def tenant_denial(client, profile, publication):
         client.config = original
 
 
-def native_cache_audit(client, record, kind):
+def native_cache_audit(client, record, kind, *, maximum_matches=32):
+    require(type(maximum_matches) is int and 1 <= maximum_matches <= 512,
+            "native-cache-audit-match-bound")
     found = []
     token = None
     tokens = set()
@@ -67,6 +69,7 @@ def native_cache_audit(client, record, kind):
             identity = observation["identities"]
             if identity["packageDigest"] == record["packageDigest"]:
                 require(identity["componentDigest"] == record["componentDigest"], "native-cache-source-identity")
+                require(len(found) < maximum_matches, "native-cache-audit-match-overflow")
                 found.append({"sequence": row["sequence"], "kind": observation["kind"],
                               "packageDigest": identity["packageDigest"],
                               "componentDigest": identity["componentDigest"]})
@@ -75,7 +78,7 @@ def native_cache_audit(client, record, kind):
             break
         require(token not in tokens and len(token) <= 4096, "native-cache-audit-page")
         tokens.add(token)
-    require(not token and 0 < len(found) <= 32, "native-cache-audit-missing-or-overflow")
+    require(not token and 0 < len(found) <= maximum_matches, "native-cache-audit-missing-or-overflow")
     return found
 
 

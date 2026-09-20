@@ -149,7 +149,7 @@ def run(args, report):
                 "--operation-id", "revoke-reference-blue", "--expected-generation", "1"), "revoke-reference-blue")
             http(client, node, expected=403)
             report["beforeRestart"] = wait_idle(client)
-            hits = native_cache_audit(client, records["green"], "cache-hit")
+            hits = native_cache_audit(client, records["green"], "cache-hit", maximum_matches=128)
             high_watermark = max(int(hit["sequence"]) for hit in hits)
             stop(client, node)
             report["shutdown"].append(stopped_record(node))
@@ -158,7 +158,7 @@ def run(args, report):
             node = restart(client, args, node_root, config, 2)
             prepare(client, publications["blue"], 2, wait=5000, codes=(4,))
             prepare(client, publications["green"], 1)
-            report["authenticatedCacheHits"] = [hit for hit in native_cache_audit(client, records["green"], "cache-hit")
+            report["authenticatedCacheHits"] = [hit for hit in native_cache_audit(client, records["green"], "cache-hit", maximum_matches=128)
                                                  if int(hit["sequence"]) > high_watermark]
             require(report["authenticatedCacheHits"], "reference-native-restart-cache-not-authenticated")
             promoted = report["canary"]["promoted"]
