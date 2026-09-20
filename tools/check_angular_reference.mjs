@@ -167,13 +167,21 @@ try {
   } else {
     const anonymous = await context();
     const denied = await anonymous.newPage();
-    assert.equal((await denied.goto(configuration.origin + '/account', {waitUntil: 'load'})).status(), 401);
+    // Chromium can reject a main-frame navigation after receiving a real 401.
+    // Require that exact network response; a generic navigation error is not denial evidence.
+    const denial = denied.waitForResponse(response => response.url() === configuration.origin + '/account' &&
+      response.request().isNavigationRequest(), {timeout: 15000});
+    const navigation = denied.goto(configuration.origin + '/account', {waitUntil: 'commit', timeout: 15000})
+      .catch(error => { assert.match(error.message, /net::ERR_HTTP_RESPONSE_CODE_FAILURE/); return null; });
+    const [denialResponse] = await Promise.all([denial, navigation]);
+    assert.equal(denialResponse.status(), 401);
+    results.push({route: '/account', status: 401, anonymous: true, transport: 'real-browser-http'});
     await anonymous.close();
     for (const user of configuration.users) {
       const selected = await context(user.token);
-      const page = await hydrate(selected, 'green', '/account', 200, user.displayName, 'authenticated');
+      const page = await hydrate(selected, 'green', '/account', 200, user.subject, 'authenticated');
       for (const other of configuration.users.filter(other => other.subject !== user.subject)) {
-        assert.ok(!(await page.locator('body').textContent()).includes(other.displayName));
+        assert.ok(!(await page.locator('body').textContent()).includes(other.subject));
       }
       await selected.close();
     }
