@@ -55,8 +55,11 @@ jobs:
         run: python -m pip install --requirement tools/requirements.lock
       - name: Validate documentation and profile selection
         run: |
-          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs
           python3 tools/validate_docs.py
+
+      - name: Validate deterministic dependency regressions
+        run: python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies
 
   rust:
     name: Rust 1.97.1
