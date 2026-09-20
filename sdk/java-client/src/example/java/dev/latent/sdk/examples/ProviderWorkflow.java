@@ -30,11 +30,11 @@ public final class ProviderWorkflow {
     private Management.CallOptions options() {
         long remaining = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime());
         require(remaining > 0);
-        return new Management.CallOptions(Optional.of(Math.min(3000, remaining)));
+        return new Management.CallOptions(Optional.of(Math.min(5000, remaining)));
     }
     private <Value> Value await(CompletableFuture<Value> future) throws Exception {
         long remaining = deadline - System.nanoTime(); require(remaining > 0);
-        return future.get(Math.min(remaining, TimeUnit.SECONDS.toNanos(4)), TimeUnit.NANOSECONDS);
+        return future.get(Math.min(remaining, TimeUnit.SECONDS.toNanos(6)), TimeUnit.NANOSECONDS);
     }
     private Management.ClientFailure failed(CompletableFuture<?> future) throws Exception {
         try { await(future); throw new IllegalStateException(stage); }

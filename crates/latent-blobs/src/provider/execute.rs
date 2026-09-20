@@ -34,18 +34,21 @@ pub(super) async fn run<T: Send + 'static>(
     // Hashing, bounded JSON and descriptor bookkeeping have a prepaid workspace.
     let scratch = call.io().reserve_scratch(16384, 2048)?;
     let waiter = call.io().job_waiter();
-    let job = inner.pools.spawn_blocking(call, move |mut call| {
-        let _scratch = scratch;
-        let value = work(&mut call);
-        let outcome = match &value {
-            Ok(_) if operation == "seal" => AuditProviderOutcome::BlobSealed,
-            Ok(_) => AuditProviderOutcome::HostCompleted,
-            Err(BlobError::Uncertain) => AuditProviderOutcome::Unknown,
-            Err(_) => AuditProviderOutcome::Rejected,
-        };
-        let _ = call.io_mut().record_provider_outcome(outcome);
-        Completion { value, call }
-    })?;
+    let job = inner
+        .pools
+        .spawn_blocking_wait(call, move |mut call| {
+            let _scratch = scratch;
+            let value = work(&mut call);
+            let outcome = match &value {
+                Ok(_) if operation == "seal" => AuditProviderOutcome::BlobSealed,
+                Ok(_) => AuditProviderOutcome::HostCompleted,
+                Err(BlobError::Uncertain) => AuditProviderOutcome::Unknown,
+                Err(_) => AuditProviderOutcome::Rejected,
+            };
+            let _ = call.io_mut().record_provider_outcome(outcome);
+            Completion { value, call }
+        })
+        .await?;
     let mut completion = waiter.wait(job.wait()).await??;
     completion.call.io_mut().finish_audit().await;
     Ok(completion)

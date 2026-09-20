@@ -193,6 +193,7 @@ LSF_SHUTDOWN_COMPONENT="${SHUTDOWN_COMPONENT}" \
 
 # Small real CLI/node workflows, including explicit cancellation; no scale workload.
 cargo build -p latent -p latentd --locked
+bash tools/run_sdk_provider_matrix.sh build
 (
     PHASE3_FIXTURE="$(mktemp -d "${TARGET_ROOT}/phase3-provider-fixture.XXXXXX")"
     trap 'rm -rf -- "${PHASE3_FIXTURE}"' EXIT
@@ -205,20 +206,8 @@ cargo build -p latent -p latentd --locked
         --cli "${TARGET_ROOT}/debug/latent" --node "${TARGET_ROOT}/debug/latentd" \
         --fixture-root "${PHASE3_FIXTURE}/inputs" \
         > "${TARGET_ROOT}/phase3-management/provider-receipt.json"
-    cargo build -p latent-sdk --example provider_workflow --locked
-    npm ci --prefix sdk/typescript-client --ignore-scripts
-    npm --prefix sdk/typescript-client run build
-    mkdir -p "${TARGET_ROOT}/phase3-sdk"
-    timeout 300 python3 tools/run_sdk_provider_workflow.py \
-        --cli "${TARGET_ROOT}/debug/latent" --node "${TARGET_ROOT}/debug/latentd" \
-        --fixture-root "${PHASE3_FIXTURE}/inputs" --language rust \
-        -- "${TARGET_ROOT}/debug/examples/provider_workflow" \
-        > "${TARGET_ROOT}/phase3-sdk/rust.json"
-    timeout 300 python3 tools/run_sdk_provider_workflow.py \
-        --cli "${TARGET_ROOT}/debug/latent" --node "${TARGET_ROOT}/debug/latentd" \
-        --fixture-root "${PHASE3_FIXTURE}/inputs" --language typescript \
-        -- "$(command -v node)" "${ROOT}/sdk/typescript-client/tests/provider-workflow.mjs" \
-        > "${TARGET_ROOT}/phase3-sdk/typescript.json"
+    bash tools/run_sdk_provider_matrix.sh run "${TARGET_ROOT}/debug/latent" \
+        "${TARGET_ROOT}/debug/latentd" "${PHASE3_FIXTURE}/inputs"
 )
 LSF_LATENTD_BIN="${TARGET_ROOT}/debug/latentd" \
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
