@@ -1,29 +1,59 @@
 name: Suite inventory audit
-
 on:
   push:
     branches: [feat/427-exact-suite-inventory]
-
 permissions:
   contents: read
-
 jobs:
   inventory:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Capture exact source for the before-after command audit
-        run: |
-          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/suite-source.tar.gz"
-          git rev-parse HEAD > "$RUNNER_TEMP/suite-source-commit.txt"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
-          name: suite-inventory-source
-          path: |
-            ${{ runner.temp }}/suite-source.tar.gz
-            ${{ runner.temp }}/suite-source-commit.txt
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Discover the complete existing workspace
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/suite-audit"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, time, tomllib
+          root = pathlib.Path.cwd()
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'suite-audit'
+          started = time.monotonic()
+          with (out / 'cargo.jsonl').open('w') as stream:
+              subprocess.run(['cargo','test','--workspace','--all-targets','--all-features','--locked','--no-run','--message-format=json,json-render-diagnostics'], stdout=stream, check=True)
+          receipt = {'source': os.environ['GITHUB_SHA'], 'buildSeconds': time.monotonic()-started, 'targets': [], 'packages': []}
+          records = [json.loads(line) for line in (out/'cargo.jsonl').read_text().splitlines()]
+          receipt['packages'] = sorted({r['package_id'] for r in records if r.get('reason') == 'compiler-artifact'})
+          links = [str(root/'target/debug/deps'),str(root/'target/debug'),subprocess.check_output(['rustc','--print','target-libdir'],text=True).strip()]
+          for r in records:
+              if r.get('reason') == 'build-script-executed':
+                  links.extend(p.split('=',1)[-1] for p in r.get('linked_paths',[]) if str(root/'target') in p)
+          env = dict(os.environ, LD_LIBRARY_PATH=os.pathsep.join(links))
+          for r in records:
+              if r.get('reason') != 'compiler-artifact' or not r.get('executable') or not r.get('profile',{}).get('test'):
+                  continue
+              target = r['target']; manifest = pathlib.Path(r['manifest_path']); d = tomllib.loads(manifest.read_text()); kind = target['kind'][0]
+              definitions = d.get(kind, []) if kind != 'lib' else [d.get('lib',{})]
+              custom = any(x.get('name') == target['name'] and x.get('harness') is False for x in definitions)
+              entry = {'manifest':str(manifest.relative_to(root)), 'target':target['name'],'kind':kind,'source':str(pathlib.Path(target['src_path']).relative_to(manifest.parent)), 'custom':custom}
+              if not custom:
+                  t=time.monotonic()
+                  entry['list'] = subprocess.check_output([r['executable'],'--list'], cwd=manifest.parent, env=env, text=True,timeout=30)
+                  entry['ignoredList'] = subprocess.check_output([r['executable'],'--ignored','--list'],cwd=manifest.parent,env=env,text=True,timeout=30)
+                  entry['discoverySeconds'] = time.monotonic()-t
+              receipt['targets'].append(entry)
+          (out/'discovery.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          print('Discovered',len(receipt['targets']),'targets; build seconds:',receipt['buildSeconds'])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: suite-discovery-baseline
+          path: ${{ runner.temp }}/suite-audit/
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 3
