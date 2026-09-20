@@ -201,6 +201,9 @@ impl DirectoryArtifactRepository {
         &self,
         reference: &PublicationRef,
     ) -> Result<crate::ReleaseUseEligibility, PlatformError> {
+        if self.is_web_publication(reference)? {
+            return self.web_execution_eligibility(reference);
+        }
         let mut result = None;
         self.life_store().with_current(&mut |fence| {
             let proof = {

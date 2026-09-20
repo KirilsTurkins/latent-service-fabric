@@ -1,0 +1,11 @@
+.lsf-discovery { max-width: 72rem; padding-top: 2rem; padding-bottom: 3rem; }
+.lsf-discovery-filters { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin: 1.5rem 0; }
+.lsf-discovery-filters > div { display: flex; flex: 1 1 14rem; flex-direction: column; gap: .4rem; min-width: 0; }
+.lsf-discovery-filters label { font-weight: 600; }
+.lsf-discovery-filters input, .lsf-discovery-filters select { background: var(--lsf-surface); color: var(--lsf-text); border: 1px solid var(--lsf-border); border-radius: .3rem; font: inherit; padding: .6rem; width: 100%; min-width: 0; }
+.lsf-search-results { padding-left: 1.5rem; }
+.lsf-search-results li { margin-bottom: 1.5rem; }
+.lsf-search-results h2 { font-size: 1.2rem; }
+.lsf-search-scope { color: var(--lsf-muted); }
+.lsf-discovery .foundation-grid h2 { font-size: 1.15rem; }
+.lsf-discovery p, .lsf-discovery li { overflow-wrap: anywhere; }

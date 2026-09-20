@@ -1673,6 +1673,10 @@ dependencies = [
 [[package]]
 name = "latent-core"
 version = "0.1.0-alpha.4-rc.1"
+dependencies = [
+ "tempfile",
+ "tokio",
+]
 
 [[package]]
 name = "latent-effects"

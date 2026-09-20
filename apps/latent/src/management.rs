@@ -12,6 +12,7 @@ mod response;
 #[cfg(test)]
 mod tests;
 pub(crate) mod triggers;
+pub(crate) mod web;
 
 pub use execute::execute;
 pub use prepare::{prepare, validate};

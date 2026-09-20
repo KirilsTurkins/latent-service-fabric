@@ -31,9 +31,10 @@ pub use sbom::{
 };
 pub use semantics::{
     check_invocation_target, compare_packages, compile_host_binding, compile_local_binding,
-    inspect_web_bundle, validate_capsule, validate_web_renderer, BreakingChangeAllowance,
-    CheckedBinding, CheckedInvocationTarget, CheckedSurface, ComparedPackageIdentity,
-    PackageComparisonLimits, PackageCompatibilityReport, SemanticLimits, SurfaceCounts,
+    inspect_web_bundle, validate_capsule, validate_web_renderer,
+    validate_web_renderer_with_backend, BreakingChangeAllowance, CheckedBinding,
+    CheckedInvocationTarget, CheckedSurface, ComparedPackageIdentity, PackageComparisonLimits,
+    PackageCompatibilityReport, SemanticLimits, SurfaceCounts,
 };
 
 use latent_core::{PlatformError, PlatformErrorCode};

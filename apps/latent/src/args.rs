@@ -7,6 +7,7 @@ pub mod phase3;
 pub mod policy;
 pub mod release;
 pub mod rollout;
+pub mod web;
 pub use package::{PackageCommand, PackagePullArgs, PackagePushArgs};
 mod management;
 #[cfg(test)]
@@ -73,6 +74,8 @@ pub enum Command {
         #[arg(value_enum)]
         shell: crate::completions::CompletionShell,
     },
+    #[command(subcommand)]
+    Web(web::WebCommand),
     #[command(subcommand)]
     Trigger(phase3::TriggerCommand),
     #[command(subcommand)]

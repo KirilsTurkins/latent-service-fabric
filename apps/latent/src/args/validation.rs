@@ -24,6 +24,7 @@ impl Cli {
             path_argument(path)?;
         }
         match &self.command {
+            Command::Web(command) => command.validate(),
             Command::Trigger(command) => command.validate(),
             Command::Capability(command) => command.validate(),
             Command::Policy(command) => command.validate(),

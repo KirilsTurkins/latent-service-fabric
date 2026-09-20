@@ -298,13 +298,21 @@ impl Fixture {
         );
     }
     pub fn request(&self, id: &str, millis: u64) -> (ExecutionRequest, Control) {
+        self.request_with_outbound(id, millis, 32)
+    }
+    pub fn request_with_outbound(
+        &self,
+        id: &str,
+        millis: u64,
+        outbound_requests: u32,
+    ) -> (ExecutionRequest, Control) {
         let grant = ResourceBudget {
             cpu_fuel: 100_000,
             memory_bytes: 1024 * 1024,
             wall_time_limit_millis: Some(millis),
             log_bytes: 1024,
             child_calls: 0,
-            outbound_requests: 32,
+            outbound_requests,
             state_read_bytes: 0,
             state_write_bytes: 0,
             blob_read_bytes: 0,
