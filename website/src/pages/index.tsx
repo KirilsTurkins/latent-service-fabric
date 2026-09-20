@@ -3,12 +3,12 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 
 const sections = [
-  ['Start', '/docs/development/standalone-quickstart/', 'Evaluate the supported standalone boundary and prerequisites.'],
-  ['Learn', '/docs/component-development/creating-a-capsule/', 'Read the existing capsule workflow and owning contracts.'],
+  ['Start', '/docs/start/', 'Choose source evaluation, an approved rootless bundle or native installation.'],
+  ['Learn', '/docs/learn/author-your-first-capsule/', 'Build a maintained guest, then follow trusted delivery and recovery.'],
   ['How-to', '/docs/phase-2-operator-workflows/', 'Find delivery, rollout and recovery procedures.'],
   ['Reference', '/docs/reference/operator-cli/', 'Consult CLI, API, configuration and protocol references.'],
   ['Understand', '/docs/architecture/overview/', 'Trace authority, resource ownership and later-phase boundaries.'],
-  ['Contribute', '/docs/development/ci-profiles/', 'Choose focused checks without bypassing product validation.'],
+  ['Contribute', '/docs/how-to/operate-and-contribute/', 'Diagnose a local node and choose focused contributor validation.'],
 ];
 
 export default function Home(): React.ReactNode {

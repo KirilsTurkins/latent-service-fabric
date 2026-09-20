@@ -8,12 +8,17 @@ const pages = prepare().index.pages as Array<{source: string; id: string; title:
 
 for (const page of pages.filter(page => page.source.startsWith('docs/'))) {
   let group = 'understand';
-  if (start.has(page.id)) group = 'start';
+  if (start.has(page.id) || page.id.startsWith('start/')) group = 'start';
   else if (page.id.startsWith('component-development/') || page.id.startsWith('learn/')) group = 'learn';
   else if (howTo.has(page.id) || /^(operations|how-to)\//.test(page.id)) group = 'howTo';
   else if (/^(reference|protocol)\//.test(page.id) || page.id === 'api-surface') group = 'reference';
   else if (/^(development|testing)\//.test(page.id) || page.id === 'svg-style') group = 'contribute';
   (sidebars[group] as Array<{type: 'doc'; id: string; label: string}>).push({type: 'doc', id: page.id, label: page.title});
 }
+
+// Start at the decision page, then the runnable path; preserve other groups.
+const startOrder = ['start/index', 'start/first-node'];
+const rank = (id: string) => startOrder.includes(id) ? startOrder.indexOf(id) : startOrder.length;
+(sidebars.start as Array<{type: 'doc'; id: string; label: string}>).sort((left, right) => rank(left.id) - rank(right.id));
 
 export default sidebars;
