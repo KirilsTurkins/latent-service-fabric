@@ -1,5 +1,11 @@
+import org.gradle.util.GradleVersion
+
 plugins {
     `java-library`
+}
+
+require(GradleVersion.current() >= GradleVersion.version("9.1.0")) {
+    "Java 25 requires Gradle 9.1.0 or newer; see docs/development/toolchain.md"
 }
 
 group = "dev.latent"
@@ -7,7 +13,8 @@ version = "0.1.0-alpha.3"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
+        vendor.set(JvmVendorSpec.ADOPTIUM)
     }
 }
 
@@ -15,7 +22,21 @@ repositories {
     mavenCentral()
 }
 
+val sdkLauncher = javaToolchains.launcherFor {
+    languageVersion.set(JavaLanguageVersion.of(25))
+    vendor.set(JvmVendorSpec.ADOPTIUM)
+}
+
+val verifyJavaToolchain by tasks.registering(Exec::class) {
+    workingDir(rootDir.parentFile.parentFile)
+    doFirst {
+        commandLine("python3", "sdk/java-client/tools/java_toolchain.py", "check",
+            "--java-home", sdkLauncher.get().metadata.installationPath.asFile.absolutePath)
+    }
+}
+
 val prepareTransport by tasks.registering(Exec::class) {
+    dependsOn(verifyJavaToolchain)
     workingDir(rootDir.parentFile.parentFile)
     commandLine("python3", "sdk/java-client/tools/build.py", "prepare")
 }
@@ -36,8 +57,12 @@ val dependencyFiles = lockedArtifacts.filter { it["platform"] == "any" }
 
 dependencies { api(files(dependencyFiles)) }
 
-tasks.compileJava { dependsOn(prepareTransport); options.release.set(21) }
-tasks.compileTestJava { options.release.set(21) }
+tasks.compileJava { dependsOn(prepareTransport); options.release.set(25) }
+tasks.compileTestJava { options.release.set(25) }
+
+tasks.withType<JavaExec>().configureEach {
+    javaLauncher.set(sdkLauncher)
+}
 
 val semanticTest by tasks.registering(JavaExec::class) {
     dependsOn(tasks.testClasses)
@@ -53,4 +78,15 @@ val transportTest by tasks.registering(JavaExec::class) {
     enableAssertions = true
 }
 
-tasks.check { dependsOn(semanticTest, transportTest) }
+val verifyJavaBytecode by tasks.registering(Exec::class) {
+    dependsOn(tasks.testClasses, tasks.jar)
+    workingDir(rootDir.parentFile.parentFile)
+    doFirst {
+        commandLine("python3", "sdk/java-client/tools/java_toolchain.py", "classes",
+            layout.buildDirectory.dir("classes/java/main").get().asFile.absolutePath,
+            layout.buildDirectory.dir("classes/java/test").get().asFile.absolutePath,
+            tasks.jar.get().archiveFile.get().asFile.absolutePath)
+    }
+}
+
+tasks.check { dependsOn(semanticTest, transportTest, verifyJavaBytecode) }
