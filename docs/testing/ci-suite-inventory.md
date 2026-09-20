@@ -6,8 +6,9 @@ regression from #458 at `7b3d9a4b1d3635538572e2203aaf737d939b35ed`: a successful
 all-target/all-feature build and exact executable listings found **165 targets,
 2,831 libtest cases and 149 explicit ignores**. The raw current discovery and binary
 identities are in `tools/ci/evidence/current-discovery.json`; the older baseline
-receipt remains historical. The two custom harness contracts have no libtest
-listing and are counted separately. This is build/discovery evidence, not an ordinary
+receipt remains historical. The two custom harness contracts are counted separately from libtest. The
+compiler supervisor now provides an exact 23-case custom listing and completion
+records; the sandbox retains its separate fixed completion marker. This is build/discovery evidence, not an ordinary
 execution PASS. The shared deterministic tests moved to `latent-core`; their
 compatibility tests, current AOT input validation, Angular fixture and physical
 metadata owner are registered without dropping their execution contracts.

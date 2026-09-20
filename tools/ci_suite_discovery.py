@@ -104,8 +104,16 @@ def discover(repo: Path, inventory: Path, data: dict, packages: list[str] | None
             source = source.parent / group.source
             registry.require(hashlib.sha256(source.read_bytes()).hexdigest() == suite["sourceSha256"],
                              "custom-harness-identity-changed")
-            receipts.append({"id": group.key, "contract": "custom-no-list", "runArgs": [],
-                             "successMarker": suite["successMarker"]})
+            receipt = {"id": group.key, "contract": "custom-no-list", "runArgs": [],
+                       "successMarker": suite["successMarker"]}
+            if suite.get("listContract") == "custom-list":
+                env = cargo_environment(repo, artifact, dict(os.environ))
+                status, raw = run_owned([str(artifact.executable), "--list"], cwd=artifact.package,
+                                        env=env, timeout=30, maximum=1024 * 1024)
+                registry.require(status == 0 and listing(raw) == set(suite["expectedCustomCases"]),
+                                 "custom-harness-list-changed")
+                receipt.update(contract="custom-list", cases=sorted(suite["expectedCustomCases"]), executed=False)
+            receipts.append(receipt)
             continue
         env = cargo_environment(repo, artifact, dict(os.environ))
         start = time.monotonic()
@@ -144,6 +152,13 @@ def validate_custom_execution(data: dict, raw: str) -> None:
     for suite in data["suites"]:
         if suite["mode"] == "custom":
             registry.require(raw.splitlines().count(suite["successMarker"]) == 1, "missing-custom-harness-execution")
+            if suite["target"] == "aot_supervisor":
+                from tools.run_aot_tests import validate_case_coverage
+                # Cargo's aggregate log also contains unrelated libtest summaries.
+                # Retain every supervisor case record, including malformed/extra ones.
+                selected = "\n".join(line for line in raw.splitlines()
+                                     if line.startswith("LSF_AOT_CASE ") or line == suite["successMarker"])
+                validate_case_coverage(selected, suite["target"])
 
 
 def validate_recipe_execution(data: dict, recipe: str, raw: str) -> None:

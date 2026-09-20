@@ -74,8 +74,12 @@ def load(path: Path = INVENTORY) -> dict:
         require(suite["kind"] in {"lib", "test", "bin", "example", "cdylib"}, "suite-target-kind")
         require(suite["mode"] in {"libtest", "custom", "compile-only"}, "suite-mode")
         if suite["mode"] == "custom":
-            require(suite.get("listContract") == "unsupported" and suite.get("runArgs") == []
+            require(suite.get("listContract") in {"unsupported", "custom-list"} and suite.get("runArgs") == []
                     and suite.get("successMarker"), "custom-harness-contract")
+            if suite["listContract"] == "custom-list":
+                names = suite.get("expectedCustomCases")
+                require(isinstance(names, list) and 0 < len(names) == len(set(names)),
+                        "custom-harness-case-contract")
         if suite["mode"] == "libtest":
             require(suite.get("minimumCases", 0) > 0, "empty-suite-contract")
         if suite["mode"] != "custom":

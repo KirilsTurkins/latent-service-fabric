@@ -62,8 +62,14 @@ class SelectionTests(unittest.TestCase):
     def test_custom_execution_requires_every_exact_marker_once(self):
         data = registry.load()
         markers = [s['successMarker'] for s in data['suites'] if s['mode']=='custom']
-        discovery.validate_custom_execution(data, '\n'.join(markers))
-        for raw in ('',markers[0], '\n'.join(markers+markers)):
+        from tools.run_aot_tests import SUPERVISOR_CASES
+        cases = '\n'.join(f'LSF_AOT_CASE {outcome} {name}' for name in sorted(SUPERVISOR_CASES)
+                          for outcome in ('started', 'passed'))
+        complete = '\n'.join([*markers, cases])
+        discovery.validate_custom_execution(data, complete)
+        for raw in ('',markers[0], '\n'.join(markers+markers), '\n'.join(markers),
+                    complete.replace('LSF_AOT_CASE passed oversized\n', ''),
+                    complete + '\nLSF_AOT_CASE passed oversized'):
             with self.assertRaises(ValueError): discovery.validate_custom_execution(data, raw)
 
 

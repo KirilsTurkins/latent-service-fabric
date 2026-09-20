@@ -2759,7 +2759,7 @@
       "sha256": "1d6ee06dafcd887971ad82a6cf4f2f37ef89c5b93b3949500d44dfaaa3a3a092"
     },
     "tools/ci_suite_discovery.py": {
-      "sha256": "7722751d524f606d67ac73961850a3a4619f4524fcc243d5a2231e0bb203b739"
+      "sha256": "2e4c6ad2ae2e959a960efc157041c617ab052b989532d96cfa71c63c7ef5c9df"
     },
     "tools/docs_pages.py": {
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
@@ -4990,6 +4990,7 @@
     ],
     "tools/tests/test_run_aot_tests.py": [
       "ExecutionTests.test_all_three_exact_selections_and_case_observations",
+      "ExecutionTests.test_case_coverage_without_timings_still_requires_every_completed_case",
       "ExecutionTests.test_list_rejects_omissions_duplicates_zero_or_unknown_cases",
       "ExecutionTests.test_partial_ignored_duplicate_and_not_run_cannot_satisfy_selection",
       "ExecutionTests.test_real_path_sentinels_fail_and_record_every_forbidden_tool",
