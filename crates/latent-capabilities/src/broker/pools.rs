@@ -297,15 +297,26 @@ impl ProviderPools {
             tokio::pin!(changed);
             changed.as_mut().enable();
             control::join_finished_owner(&self.inner).await;
-            let snapshot = self.snapshot()?;
-            if snapshot.connections == 0
-                && snapshot.workers == 0
-                && snapshot.cleanup_jobs == 0
-                && snapshot.running_requests == 0
-                && snapshot.pending_requests == 0
-                && snapshot.control_owners == 0
-            {
-                return Ok(snapshot);
+            // Maintenance may hold a snapshot lock while retiring an owner.
+            // A refused observation is not a failed shutdown: wait within the
+            // original deadline, without retrying or releasing any live work.
+            match self.snapshot() {
+                Ok(snapshot)
+                    if snapshot.connections == 0
+                        && snapshot.workers == 0
+                        && snapshot.cleanup_jobs == 0
+                        && snapshot.running_requests == 0
+                        && snapshot.pending_requests == 0
+                        && snapshot.control_owners == 0 =>
+                {
+                    return Ok(snapshot);
+                }
+                Ok(_) => {}
+                Err(error)
+                    if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                        && error.message == "capability-busy"
+                        && Instant::now() < deadline => {}
+                Err(error) => return Err(error),
             }
             tokio::select! {
                 () = &mut changed => {},
