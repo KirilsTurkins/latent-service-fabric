@@ -71,7 +71,7 @@ def restarted(client, args, node_root, config, original):
         client.cancellation.check()
         require(time.monotonic() < client.deadline, "workflow-deadline")
         time.sleep(0.025)
-    node = connect(client, args.node, node_root, config, TENANT, 2)
+    node = connect(client, args.node, node_root, config, TENANT, 2, startup_timeout=90)
     client_profile(client, 2)
     return node
 
@@ -97,7 +97,7 @@ def run(args):
         node = None
         shutdown = []
         try:
-            node = connect(client, args.node, node_root, config, TENANT, 1)
+            node = connect(client, args.node, node_root, config, TENANT, 1, startup_timeout=90)
             operator = client_profile(client, 1)
             foreign = foreign_profile(client, operator)
             publications = admission(client, args.fixture_root)
@@ -170,6 +170,7 @@ def run(args):
                       "afterRestart": after_restart, "cancellations": cancellations, "http": http,
                       "immutableAssets": assets,
                       "nativeCacheFilesUnchangedOnRestart": True, "cliProcesses": client.calls,
+                      "publicationAdmissionRefusals": getattr(client, "publication_refusals", []),
                       "nativeCacheMisses": cold_native, "authenticatedNativeCacheHits": warm_native,
                       "preRestartNativeCacheHitHighWatermark": str(previous_hit_sequence),
                       "shutdown": shutdown, "temporaryOutputsRemoved": True}

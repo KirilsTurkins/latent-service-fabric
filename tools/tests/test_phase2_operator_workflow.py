@@ -15,6 +15,30 @@ from tools.phase2_operator_scenario import DENIED_TOKEN, TOKEN, configure_node, 
 from tools.run_phase2_operator_workflow import build_identity, inventory, registry_profile
 
 
+class StartupWatchdogTests(unittest.TestCase):
+    def test_invalid_startup_budget_never_launches_and_valid_wait_is_globally_capped(self):
+        from unittest.mock import Mock, patch
+        from types import SimpleNamespace
+        from tools.phase2_operator_scenario import connect
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            caller = SimpleNamespace(environment={}, cancellation=Mock(), deadline=40,
+                call=Mock(return_value={"data": {"inventory": {"health": {"ready": True}, "node": {
+                    "id": "test", "architecture": "x86_64", "operatingSystem": "linux",
+                    "cpuFeatures": [], "trustClasses": []}}}}))
+            process = Mock()
+            process.line.return_value = {"endpoint": "127.0.0.1:12345"}
+            with patch("tools.phase2_operator_scenario.Process", return_value=process) as launch, \
+                 patch("tools.phase2_operator_scenario.time.monotonic", return_value=10):
+                for invalid in (0, 121, True, float("inf")):
+                    with self.assertRaises(WorkflowError):
+                        connect(caller, Path("latentd"), directory, Path("config"), "tests", 1, startup_timeout=invalid)
+                launch.assert_not_called()
+                caller.directory = directory
+                self.assertIs(connect(caller, Path("latentd"), directory, Path("config"), "tests", 1, startup_timeout=90), process)
+                process.line.assert_called_once_with(40)
+
+
 class OperatorWorkflowTests(unittest.TestCase):
     def test_final_receipt_checks_encoded_bytes_including_non_ascii(self):
         self.assertEqual(len(bounded_receipt({"v": "x" * 65528}).encode("utf-8")), 65536)
