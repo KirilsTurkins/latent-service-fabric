@@ -19,7 +19,21 @@ export function providerRequest(target, tenant, activationId, provider, text = "
   };
 }
 
+// Only fixed platform classifications may reach the workflow's bounded stderr.
+// Messages, detail fields and declared-error payloads may contain private data.
+const platformCodes = new Set([
+  "unavailable", "deadline-exceeded", "cancelled", "resource-exhausted",
+  "permission-denied", "unauthenticated", "invalid-argument", "not-found",
+  "already-exists", "incompatible-contract", "state-conflict", "dependency-failed",
+  "guest-trap", "corrupt-artifact", "route-unavailable", "admission-rejected", "internal",
+]);
+
 export function guestU64(response) {
+  if (response.value.platformFailure !== undefined) {
+    const code = response.value.platformFailure?.code;
+    throw new Error(`guest-platform-${platformCodes.has(code) ? code : "unknown"}`);
+  }
+  if (response.value.declaredError !== undefined) throw new Error("guest-declared-error");
   const success = response.value.success;
   if (!success || success.mediaType !== mediaType || success.payload.length > 128) throw new Error("unexpected-guest-result");
   const result = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(success.payload));
