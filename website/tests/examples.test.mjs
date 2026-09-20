@@ -82,19 +82,38 @@ for (const source of ['../secret.rs', '/etc/secret.rs', 'sdk/../secret.rs', 'sdk
   });
 }
 
-test('source and ancestor symlinks, wrong case, nonregular inputs and malformed UTF-8 are rejected', t => {
+test('wrong case, nonregular inputs and malformed UTF-8 are rejected', t => {
   const f = fixture(t, ['rust']); const relative = f.scenario.variants[0].source;
   const original = f.read(relative); const absolute = path.join(f.root, relative);
-  fs.unlinkSync(absolute); fs.symlinkSync(path.join(f.root, 'tools/fixture.py'), absolute);
-  assert.throws(() => extract(f), /Linked/);
   fs.unlinkSync(absolute); fs.mkdirSync(absolute);
   assert.throws(() => extract(f), /Nonregular/);
   fs.rmdirSync(absolute); f.write(relative, Buffer.from([0xC3, 0x28]));
   assert.throws(() => extract(f), /encoded data|encoding/);
   f.write(relative, original); f.scenario.variants[0].source = relative.replace('example', 'EXAMPLE'); f.save();
   assert.throws(() => extract(f), /cased/);
+});
+
+function fileLink(t, target, link) {
+  try { fs.symlinkSync(target, link); return true; }
+  catch (error) {
+    if (process.platform !== 'win32' || error.code !== 'EPERM') throw error;
+    t.skip('This Windows host cannot create file symlinks; Linux runs the negative fixture.');
+    return false;
+  }
+}
+
+test('registered source file symlinks are rejected', t => {
+  const f = fixture(t, ['rust']);
+  const absolute = path.join(f.root, f.scenario.variants[0].source);
+  fs.unlinkSync(absolute);
+  if (!fileLink(t, path.join(f.root, 'tools/fixture.py'), absolute)) return;
+  assert.throws(() => extract(f), /Linked/);
+});
+
+test('source ancestor symlinks and Windows junctions are rejected', t => {
+  const f = fixture(t, ['rust']);
   f.scenario.variants[0].source = 'sdk/linked/example.rs'; f.save();
-  fs.symlinkSync(path.join(f.root, 'sdk/fixture'), path.join(f.root, 'sdk/linked'));
+  fs.symlinkSync(path.join(f.root, 'sdk/fixture'), path.join(f.root, 'sdk/linked'), process.platform === 'win32' ? 'junction' : 'dir');
   assert.throws(() => extract(f), /Linked/);
 });
 
@@ -145,7 +164,7 @@ for (const [name, update, reason] of [
   const f = fixture(t, ['rust']); f.evidence(update); assert.equal(variant(extract(f)).verification.reason, reason);
 });
 
-test('absent, altered, linked and synthetic evidence cannot grant a passing badge', t => {
+test('absent, altered and synthetic evidence cannot grant a passing badge', t => {
   const f = fixture(t, ['rust']); f.evidence();
   const reference = f.scenario.variants[0].validation.evidence;
   f.scenario.variants[0].kind = 'synthetic'; f.save();
@@ -153,7 +172,13 @@ test('absent, altered, linked and synthetic evidence cannot grant a passing badg
   f.scenario.variants[0].kind = 'maintained'; f.save();
   f.write(reference.path, '{}'); assert.equal(variant(extract(f)).verification.reason, 'evidence-digest-mismatch');
   fs.unlinkSync(path.join(f.root, reference.path)); assert.equal(variant(extract(f)).verification.reason, 'evidence-unavailable');
-  fs.symlinkSync(path.join(f.root, 'tools/fixture.py'), path.join(f.root, reference.path));
+});
+
+test('linked evidence cannot grant a passing badge', t => {
+  const f = fixture(t, ['rust']); f.evidence();
+  const evidence = path.join(f.root, f.scenario.variants[0].validation.evidence.path);
+  fs.unlinkSync(evidence);
+  if (!fileLink(t, path.join(f.root, 'tools/fixture.py'), evidence)) return;
   assert.throws(() => extract(f), /Linked/);
 });
 
@@ -172,7 +197,7 @@ test('schema rejects duplicate JSON keys including escaped aliases and unsupport
   for (const sourceRevision of ['development', '--help', 'x'.repeat(40)]) assert.throws(() => extractExamples(f.root, f.requests, {...f.identity(), sourceRevision}), /revision/);
 });
 
-test('content-addressed snapshots are idempotent, private and refuse corrupted or linked outputs', t => {
+test('content-addressed snapshots are idempotent, private and refuse corrupted outputs', t => {
   const f = fixture(t, ['rust']); const bundle = extract(f).bundle;
   const output = writeSnapshot(f.root, bundle);
   assert.match(output, /website[/\\]\.generated[/\\]examples[/\\][a-f0-9]{64}\.json$/);
@@ -180,7 +205,13 @@ test('content-addressed snapshots are idempotent, private and refuse corrupted o
   assert.deepEqual(JSON.parse(fs.readFileSync(output)), bundle);
   fs.writeFileSync(output, '{}'); assert.throws(() => writeSnapshot(f.root, bundle), /collision/);
   fs.unlinkSync(output); assert.equal(writeSnapshot(f.root, bundle), output);
-  fs.unlinkSync(output); fs.symlinkSync(path.join(f.root, 'tools/fixture.py'), output);
+});
+
+test('content-addressed snapshots refuse linked outputs', t => {
+  const f = fixture(t, ['rust']); const bundle = extract(f).bundle;
+  const output = writeSnapshot(f.root, bundle);
+  fs.unlinkSync(output);
+  if (!fileLink(t, path.join(f.root, 'tools/fixture.py'), output)) return;
   assert.throws(() => writeSnapshot(f.root, bundle), /collision/);
 });
 
