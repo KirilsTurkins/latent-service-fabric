@@ -5,6 +5,7 @@ import {htmlElements, parseDocument, readSource, requireValue} from '../../lib/r
 import {prepareExamples} from './site.mjs';
 import {requestsFromTree} from './remark.mjs';
 import {resolveExample} from './resolve.mjs';
+import {documentBytes} from '../../lib/versions/model.mjs';
 
 function nodeText(node) {
   if (node.nodeName === '#text') return node.value;
@@ -33,12 +34,12 @@ export function verifyExampleHtml(html, bundle, requests) {
   }
   return checked;
 }
-export function validateExampleBuild(output, index, manifest) {
-  const current = prepareExamples(index, {persist: false});
+export function validateExampleBuild(output, index, manifest, snapshotExamples) {
+  const current = snapshotExamples ?? prepareExamples(index, {persist: false});
   requireValue(JSON.stringify(current.identity) === JSON.stringify(manifest.examples), 'Built example inputs are stale; rebuild this checkout');
   let checked = 0;
   for (const page of index.pages) {
-    const requests = requestsFromTree(parseDocument(readSource(index.root, page.source).toString('utf8'), page.source));
+    const requests = requestsFromTree(parseDocument(documentBytes(index, page.source).toString('utf8'), page.source));
     if (!requests.length) continue;
     const filename = path.join(output, ...decodeURIComponent(page.route).split('/').filter(Boolean), 'index.html');
     requireValue(fs.statSync(filename).size <= 4 * 1024 * 1024, 'Built example page size limit');

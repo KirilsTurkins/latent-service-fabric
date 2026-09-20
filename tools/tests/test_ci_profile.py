@@ -14,6 +14,21 @@ from tools import ci_profile as profile
 
 
 class ClassificationTests(unittest.TestCase):
+    def test_website_sources_use_only_the_site_and_documentation_jobs(self) -> None:
+        for path in ("website/package-lock.json", "website/docusaurus.config.ts", "website/src/pages/index.tsx",
+                     "website/plugins/examples/remark.mjs", "website/src/css/theme.css", "website/content/coverage.json",
+                     "docs/learn/first.mdx", "adr/design.mdx", "docs/assets/lsf-palette.json"):
+            with self.subTest(path=path):
+                result = profile.classify_paths(["README.md", path])
+                self.assertEqual(result.profile, "website")
+                self.assertFalse(result.renderer)
+        for path in ("website/../Cargo.toml", "website//config.json", "website/new.py",
+                     "website/build/index.js", "website/.generated/evidence.json", "website/.docusaurus/data.json",
+                     "website/node_modules/package/index.js", "tools/ci_result.py", "sdk/go/client.go",
+                     "examples/website-ui/specimen.rs", "benchmarks/receipt.json", "wit/platform/web/world.wit"):
+            with self.subTest(path=path):
+                self.assertEqual(profile.classify_paths(["website/src/pages/index.tsx", path]).profile, "full")
+
     def test_renderer_proof_follows_its_inputs_and_defaults_to_running(self) -> None:
         for path in ["Cargo.lock", "Cargo.toml", "tools/renderer-profile/src/main.rs",
                      "examples/renderer-profile/package-lock.json",
@@ -268,6 +283,23 @@ class GitHistoryTests(unittest.TestCase):
         head = self.git("rev-parse", "HEAD")
         result = self.pr(self.base, head)
         self.assertEqual((result.profile, result.reason), ("full", "non-documentation-mode"))
+
+    def test_site_renames_deletions_and_modes_keep_the_complete_inventory(self) -> None:
+        self.write("website/src/page.tsx", "export default 1;\n")
+        first = self.commit()
+        self.assertEqual(self.pr(self.base, first).profile, "website")
+        (self.repo / "website/src/page.tsx").rename(self.repo / "website/src/page.mjs")
+        renamed = self.commit()
+        self.assertEqual(self.pr(first, renamed).changed_files, 2)
+        self.assertEqual(self.pr(first, renamed).profile, "website")
+        self.git("update-index", "--chmod=+x", "website/src/page.mjs")
+        self.git("commit", "--quiet", "-m", "site mode")
+        changed_mode = self.git("rev-parse", "HEAD")
+        self.assertEqual(self.pr(renamed, changed_mode).profile, "full")
+        (self.repo / "website/src/page.mjs").unlink()
+        deleted = self.commit()
+        self.assertEqual(self.pr(changed_mode, deleted).profile, "full")
+
 
     def test_real_diff_collects_more_than_three_hundred_files(self) -> None:
         for index in range(305):

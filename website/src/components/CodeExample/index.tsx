@@ -92,6 +92,7 @@ export function ExampleView({bundle, ...request}: Props & {bundle: ExampleBundle
 }
 
 export default function CodeExample(props: Props): ReactNode {
-  const bundle = usePluginData('lsf-examples') as ExampleBundle;
+  const data = usePluginData('lsf-examples') as {bundles: Record<string, ExampleBundle>};
+  const bundle = data.bundles[props.documentVersion];
   return <ExampleView bundle={bundle} {...props} />;
 }
