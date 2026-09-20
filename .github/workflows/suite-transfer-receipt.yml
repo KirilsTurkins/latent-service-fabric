@@ -2,12 +2,10 @@ name: Suite transfer receipt
 on:
   push:
     branches: [feat/427-exact-suite-inventory]
-    paths: ['.github/ci-transfer/*.b64']
 permissions:
   contents: read
 jobs:
   receipt:
-    if: github.event.head_commit.message == 'chore(ci): assemble verified implementation objects'
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
