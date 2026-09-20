@@ -11,7 +11,8 @@ Separate small Rust HTTP/blob/secret/event/child measurements are documented in 
 SSR campaign. The event population uses the maintained controlled TLS peer at
 running ceilings one and two. It records four cold/warm acknowledged guest
 publications, then actual peer receipt before cancelling held publications and
-checking physical owner reclamation. The peer is a protocol fixture; these
+checking physical owner reclamation; the [retained event report](phase3-resource-events.md)
+contains its measured values. The peer is a protocol fixture; these
 measurements do not claim durable acceptance by a real JetStream server.
 
 ## Ownership and populations
