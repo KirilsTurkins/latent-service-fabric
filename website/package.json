@@ -19,7 +19,8 @@
     "test:theme": "node scripts/site.mjs test-theme",
     "test:examples": "node scripts/site.mjs test-examples",
     "browser:install": "node scripts/site.mjs browser-install",
-    "coverage:acceptance": "node scripts/check.mjs --acceptance"
+    "coverage:acceptance": "node scripts/check.mjs --acceptance",
+    "snapshot": "node scripts/snapshot.mjs"
   },
   "dependencies": {
     "@docusaurus/core": "3.10.2",
