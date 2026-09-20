@@ -83,30 +83,14 @@ async fn healthy_inflight_requests_share_bounded_provider_capacity() {
 
 #[tokio::test]
 async fn queue_revocation_denies_fresh_dispatch_and_zero_budget_never_connects() {
-    use latent_core::{ActivationBudget, BudgetProfile, ClockSample, EffectiveActivationBudget};
     use latent_policy::capability::{MutationRequest, RecordKind};
     use std::time::Instant;
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
     let f = Fixture::new(config(port));
-    let (mut request_zero, mut control) = f.request("no-egress", 5000);
-    request_zero.budget.outbound_requests = 0;
-    request_zero.activation.budget = request_zero.budget.clone();
-    control.budget = ActivationBudget::with_profile(
-        EffectiveActivationBudget::admit_profile_at(
-            BudgetProfile::Phase3,
-            &request_zero.budget,
-            &request_zero.budget,
-            &request_zero.budget,
-            // Re-admission must retain the original envelope deadline. A later
-            // clock sample must not grant a new wall-time window to the fixture.
-            request_zero.activation.deadline_unix_millis,
-            ClockSample::system_now(),
-        )
-        .unwrap(),
-        BudgetProfile::Phase3,
-    )
-    .unwrap();
+    // Admit the zero-egress request once so the envelope and control share the
+    // same deadline, even when setup crosses a wall-clock millisecond.
+    let (request_zero, control) = f.request_with_outbound("no-egress", 5000, 0);
     let session = f
         .broker
         .open_session(f.plan.clone(), &request_zero, &control, &f.publication)
