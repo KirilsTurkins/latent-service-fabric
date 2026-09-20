@@ -18,6 +18,7 @@
     "test:build": "node scripts/site.mjs test-build",
     "test:theme": "node scripts/site.mjs test-theme",
     "test:examples": "node scripts/site.mjs test-examples",
+    "test:versions": "node scripts/site.mjs test-versions",
     "browser:install": "node scripts/site.mjs browser-install",
     "coverage:acceptance": "node scripts/check.mjs --acceptance",
     "snapshot": "node scripts/snapshot.mjs"

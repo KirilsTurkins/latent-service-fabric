@@ -104,6 +104,21 @@ partial language availability, documentation corrections, linked sources,
 missing regions, altered copies and interrupted publication. Synthetic examples
 remain labelled as rendering fixtures and provide no SDK qualification.
 
+After committing the reviewed sources, install the separately locked package
+manager with `npm ci --prefix website/toolchain --ignore-scripts`. Build both
+base paths, install the pinned browser and run `npm run test:versions` from
+`website/`. This checks the actual released/development switch, then creates an
+isolated local Git checkout containing two synthetic snapshots with different
+Rust snippets and SVGs. It runs the production build and actual version menu
+for both base paths, including the unavailable Go preference and direct reload.
+The checkout never replaces the publication build. Only compact receipts under
+`website/.generated/version-review/` survive; synthetic artifacts are not
+publishable. The ordinary source-backed examples/browser suite remains required.
+
+Each new historical SVG also needs an explicit immutable snapshot entry in
+`docs/assets/illustrations.json`; snapshot ownership does not exempt it from the
+repository-wide illustration inventory.
+
 Rollback uses the complete previously tested site artifact and its source/run/
 attempt manifest through the protected publisher. Do not roll back individual
 HTML pages, snippets or assets: their identities must move together. A local
