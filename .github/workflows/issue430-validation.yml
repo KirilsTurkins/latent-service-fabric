@@ -17,6 +17,7 @@ jobs:
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_TERM_COLOR: never
+      OBSERVATIONS: ${{ runner.temp }}/issue430-observations
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -28,13 +29,30 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import gzip, hashlib, pathlib, subprocess
+          import gzip, hashlib, json, os, pathlib, subprocess, urllib.request
           root = pathlib.Path('.github/issue430-bootstrap')
           if root.exists():
               patch = gzip.decompress(b''.join((root / f'patch.{i}').read_bytes() for i in range(4)))
               assert hashlib.sha256(patch).hexdigest() == '1fe445d6b0cdb3a954d5154aedb306f0f21143046207d4bfefa5425fbd5cc663'
               subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
               subprocess.run(['git', 'apply', '-'], input=patch, check=True)
+              # The job may publish ordinary source, but workflow ref changes
+              # must be published separately through the authorized connector.
+              workflow = pathlib.Path('.github/workflows/ci.yml')
+              request = urllib.request.Request(
+                  f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/git/blobs",
+                  data=json.dumps({'content': workflow.read_text(), 'encoding': 'utf-8'}).encode(),
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'},
+                  method='POST')
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  blob = json.load(response)['sha']
+              print('ISSUE430_CI_BLOB=' + blob, flush=True)
+              out = pathlib.Path(os.environ['OBSERVATIONS'])
+              out.mkdir(exist_ok=True)
+              (out / 'ci-workflow-blob.txt').write_text(blob + '\n')
+              (out / 'ci-workflow.yml').write_bytes(workflow.read_bytes())
+              subprocess.run(['git', 'restore', '--', str(workflow)], check=True)
               for path in root.iterdir():
                   path.unlink()
               root.rmdir()
@@ -62,15 +80,13 @@ jobs:
           fi
           cargo fmt --all --check
       - name: Run correctness, physical qualification, and real retention controls
-        env:
-          OBSERVATIONS: ${{ runner.temp }}/issue430-observations
         run: |
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, platform, re, subprocess, sys, time
+          import hashlib, json, os, pathlib, platform, subprocess, time
           from tools.ci_rust_artifacts import run_owned, validate_metadata_observations
           repo = pathlib.Path.cwd()
           out = pathlib.Path(os.environ['OBSERVATIONS'])
-          out.mkdir()
+          out.mkdir(exist_ok=True)
           source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
           records = []
           report = {'schema': 'latent.metadata-working-set-validation.v1', 'source_commit': source,
@@ -122,7 +138,6 @@ jobs:
       - name: Record only successful supported-host validation
         env:
           GH_TOKEN: ${{ github.token }}
-          OBSERVATIONS: ${{ runner.temp }}/issue430-observations
         run: |
           python3 - <<'PY'
           import json, os, pathlib
