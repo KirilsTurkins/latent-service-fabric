@@ -11,7 +11,7 @@ The runtime binaries were built at `79c295f7c6fcf671c6724db7b08ff8311563a884`; t
 - A pinned in-flight render survives canary promotion; the old browser retains its original revision and assets. Revocation, clean restart on the same ingress port, authenticated native-cache hits and rollback all pass.
 - Three node incarnations stop cleanly and are reaped. The controlled provider peer is reaped, all four held requests close or release, 124 CLI process lifetimes complete, and temporary outputs are removed. The final node snapshot has zero active/queued activations and zero reserved CPU fuel and memory bytes.
 
-This bounded run uses the shared Docker Desktop host. Reproducibility is explicitly **not checked** and dependency completeness is **declared-inputs-incomplete**. It does not certify full #239 resource coverage, #240 performance comparison or the Phase 3 parent gate.
+This bounded run uses the shared Docker Desktop host. Reproducibility is explicitly **not checked** and dependency completeness is **declared-inputs-incomplete**. It does not certify full #239 resource coverage or the #240 Phase 3 gate.
 
 ## Retained attempts
 

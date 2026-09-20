@@ -40,6 +40,8 @@ pub(super) struct WebCatalog {
     reads: Arc<WebReadBudget>,
     #[cfg(test)]
     pub(super) fail_after_head: AtomicBool,
+    #[cfg(test)]
+    pub(super) after_payload_staged: std::sync::Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
 impl WebCatalog {
     pub(super) fn new(
@@ -51,6 +53,8 @@ impl WebCatalog {
             reads: Arc::new(WebReadBudget::new(WebReadLimits::default())?),
             #[cfg(test)]
             fail_after_head: AtomicBool::new(false),
+            #[cfg(test)]
+            after_payload_staged: std::sync::Mutex::new(None),
         })
     }
 }
