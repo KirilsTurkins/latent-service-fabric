@@ -4,7 +4,8 @@
 //! use only the standard library and never depend on node/runtime harnesses.
 //! `latent-testkit` re-exports these same modules for existing harness callers.
 
-#![deny(clippy::all, clippy::pedantic)]
+// Keep active workspace lints strict without overriding its explicit allowances.
+#![deny(warnings)]
 
 pub mod clocks;
 pub mod coordination;
