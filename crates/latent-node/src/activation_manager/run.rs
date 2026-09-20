@@ -136,9 +136,31 @@ impl Inner {
         } else if let Some(permit) = lifecycle.inbound_permit.take() {
             Some(permit)
         } else {
+            let wait = super::admission_wait::Window::new(
+                &token,
+                lifecycle
+                    .incoming_deadline
+                    .map(|deadline| deadline.monotonic()),
+                &self.clock,
+                &transport,
+            );
+            let catalog = self.dependencies.catalog.pin()?;
+            let resolved = wait
+                .check(|| catalog.resolve(&envelope.target, Some(&envelope.activation_id.0)))
+                .await?;
             Some(
-                self.resolve_and_admit(&mut envelope, lifecycle, &token, None)?
-                    .0,
+                wait.check(|| {
+                    self.resolve_and_admit_input(
+                        &mut envelope,
+                        lifecycle,
+                        &token,
+                        None,
+                        None,
+                        Some((resolved.clone(), catalog.clone())),
+                    )
+                    .map(|admitted| admitted.0)
+                })
+                .await?,
             )
         };
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
@@ -316,19 +338,28 @@ impl Inner {
         if let Some(child) = &child {
             child.check_target(&resolved)?;
         }
-        lifecycle.resolved = Some(resolved.clone());
-        envelope.resolved_revision = Some(resolved.clone());
-        lifecycle.advance(
-            ActivationPhase::Resolved,
-            Metadata::from([
-                ("revision".to_owned(), resolved.revision.0.clone()),
-                ("release".to_owned(), resolved.release.0.clone()),
-                (
-                    "route-generation".to_owned(),
-                    resolved.route_generation.0.to_string(),
-                ),
-            ]),
-        )?;
+        if let Some(previous) = &lifecycle.resolved {
+            if previous != &resolved || lifecycle.budget.is_some() {
+                return Err(error(
+                    PlatformErrorCode::IncompatibleContract,
+                    "admission cannot replace or repeat an accepted revision",
+                ));
+            }
+        } else {
+            lifecycle.resolved = Some(resolved.clone());
+            envelope.resolved_revision = Some(resolved.clone());
+            lifecycle.advance(
+                ActivationPhase::Resolved,
+                Metadata::from([
+                    ("revision".to_owned(), resolved.revision.0.clone()),
+                    ("release".to_owned(), resolved.release.0.clone()),
+                    (
+                        "route-generation".to_owned(),
+                        resolved.route_generation.0.to_string(),
+                    ),
+                ]),
+            )?;
+        }
         if token.is_cancelled() {
             return Err(cancelled(token));
         }
