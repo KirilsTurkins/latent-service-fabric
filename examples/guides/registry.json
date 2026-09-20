@@ -1,0 +1,4 @@
+{
+  "schema": 1,
+  "scenarios": ["examples/guides/rust-echo/example.json", "examples/guides/ui-syntax/example.json", "examples/guides/ui-subset/example.json", "examples/guides/ui-browser/example.json"]
+}

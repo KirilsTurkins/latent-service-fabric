@@ -193,6 +193,7 @@ LSF_SHUTDOWN_COMPONENT="${SHUTDOWN_COMPONENT}" \
 
 # Small real CLI/node workflows, including explicit cancellation; no scale workload.
 cargo build -p latent -p latentd --locked
+bash tools/run_sdk_provider_matrix.sh build
 (
     PHASE3_FIXTURE="$(mktemp -d "${TARGET_ROOT}/phase3-provider-fixture.XXXXXX")"
     trap 'rm -rf -- "${PHASE3_FIXTURE}"' EXIT
@@ -205,6 +206,8 @@ cargo build -p latent -p latentd --locked
         --cli "${TARGET_ROOT}/debug/latent" --node "${TARGET_ROOT}/debug/latentd" \
         --fixture-root "${PHASE3_FIXTURE}/inputs" \
         > "${TARGET_ROOT}/phase3-management/provider-receipt.json"
+    bash tools/run_sdk_provider_matrix.sh run "${TARGET_ROOT}/debug/latent" \
+        "${TARGET_ROOT}/debug/latentd" "${PHASE3_FIXTURE}/inputs"
 )
 LSF_LATENTD_BIN="${TARGET_ROOT}/debug/latentd" \
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \

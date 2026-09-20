@@ -95,6 +95,19 @@ not substitute for #236's real-browser application qualification.
 
 ## Current evidence boundary
 
+The workflow also passes on 2026-09-20 after integrating the six-client SDK
+qualification from `development`. This execution uses code
+`3e4c4692e31ac6a62bc615f6435e417bb769a855` and fresh CLI/node binaries in
+`lsf-phase3-angular-completion`. Its [unaltered integration receipt](../evidence/phase3-226-angular-t1-integrated.json)
+has SHA-256 `c862b4badb5bd78434833775cb5b0eda077982c561e0f3bfa6dcbc09166709fc`.
+It records 103 CLI processes, cold isolated compilation in 32828 milliseconds,
+and two clean, reaped nodes. Fresh real-clock signing uses
+`/target/completion-angular-fixture-02`; the actual Angular package, compiler
+and build observation retain the identities described below. This is a new
+runtime integration execution, not a new reproducible Angular build. The
+receipt's `identity` identifies the exact binary bytes; later test-only or
+documentation changes do not relabel this execution.
+
 The complete protected T1 workflow passed on Linux x86-64 on 2026-09-19 after
 integrating startup dependency `3a1f6189`. The qualified code is
 `c767d0a624172e72c1f44bb3d7064bb2c382231e`; the

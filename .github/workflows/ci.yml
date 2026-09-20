@@ -512,6 +512,26 @@ jobs:
           version: "0.16.0"
       - name: Install verified guest binding generator
         run: python3 tools/install_guest_bindgen.py "${RUNNER_TEMP}/lsf-guest-tools" >> "${GITHUB_PATH}"
+      - name: Set up the Node SDK provider participant
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: sdk/typescript-client/package-lock.json
+      - name: Set up the Go SDK provider participant
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: 1.27.1
+          cache-dependency-path: sdk/go/go.sum
+      - name: Set up the Java SDK provider participant
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "21.0.11+10.0.LTS"
+      - name: Set up the .NET SDK provider participant
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 8.0.425
       - name: Validate contracts, echo component, and generated bindings
         run: |
           unset CARGO_INCREMENTAL
@@ -540,6 +560,7 @@ jobs:
           path: |
             target/phase1-conformance/
             target/phase3-management/provider-receipt.json
+            target/phase3-sdk/
           if-no-files-found: warn
           retention-days: 14
       - name: Retain Phase 1 measurement collector smoke diagnostics
@@ -594,7 +615,12 @@ jobs:
           python-version: 3.13.5
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version: 1.23.2
+          go-version: 1.27.1
+          cache-dependency-path: sdk/go/go.sum
+      - uses: bufbuild/buf-setup-action@a47c93e0b1648d5651a065437926377d060baa99 # v1
+        with:
+          version: 1.72.0
+          github_token: ${{ github.token }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24.19.0
@@ -606,7 +632,7 @@ jobs:
           java-version: "21.0.11+10.0.LTS"
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
-          dotnet-version: 8.0.423
+          dotnet-version: 8.0.425
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: "0.16.0"

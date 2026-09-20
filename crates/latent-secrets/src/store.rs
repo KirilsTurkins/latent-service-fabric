@@ -105,6 +105,34 @@ impl LocalSecretStore {
         environment_allowlist: Vec<String>,
         clock: Arc<dyn SecretClock>,
     ) -> Result<BoxFuture<'static, Result<Self, SecretError>>, SecretError> {
+        let work = Self::open_work(pools.clone(), root, limits, environment_allowlist, clock)?;
+        let job = pools.control_blocking(work)?;
+        Ok(Box::pin(async move { Ok(job.wait().await??) }))
+    }
+    pub fn open_before(
+        pools: Arc<ProviderPools>,
+        root: PathBuf,
+        limits: SecretLimits,
+        environment_allowlist: Vec<String>,
+        clock: Arc<dyn SecretClock>,
+        deadline: Instant,
+    ) -> Result<BoxFuture<'static, Result<Self, SecretError>>, SecretError> {
+        let work = Self::open_work(pools.clone(), root, limits, environment_allowlist, clock)?;
+        Ok(Box::pin(async move {
+            let job = pools.control_blocking_before(deadline, work).await?;
+            Ok(job.wait().await??)
+        }))
+    }
+    fn open_work(
+        pools: Arc<ProviderPools>,
+        root: PathBuf,
+        limits: SecretLimits,
+        environment_allowlist: Vec<String>,
+        clock: Arc<dyn SecretClock>,
+    ) -> Result<
+        impl FnOnce() -> Result<Self, latent_core::PlatformError> + Send + 'static,
+        SecretError,
+    > {
         limits.validate()?;
         if root.as_os_str().len() > 4096
             || root.capacity() > 4096
@@ -119,8 +147,7 @@ impl LocalSecretStore {
             return Err(SecretError::Unavailable);
         }
         let metadata = pools.reserve_protocol_metadata(65536)?;
-        let worker_pool = pools.clone();
-        let job = worker_pool.control_blocking(move || {
+        Ok(move || {
             let root = ProtectedRoot::open(&root)?;
             Ok::<_, latent_core::PlatformError>(Self {
                 inner: Arc::new(Inner {
@@ -142,8 +169,7 @@ impl LocalSecretStore {
                     _metadata: metadata,
                 }),
             })
-        })?;
-        Ok(Box::pin(async move { Ok(job.wait().await??) }))
+        })
     }
     pub fn reload(
         &self,
@@ -151,6 +177,14 @@ impl LocalSecretStore {
         specs: Vec<SecretSpec>,
     ) -> Result<BoxFuture<'static, Result<u64, SecretError>>, SecretError> {
         reload::start(&self.inner, expected_generation, specs)
+    }
+    pub fn reload_before(
+        &self,
+        expected_generation: u64,
+        specs: Vec<SecretSpec>,
+        deadline: Instant,
+    ) -> Result<BoxFuture<'static, Result<u64, SecretError>>, SecretError> {
+        reload::start_before(&self.inner, expected_generation, specs, deadline)
     }
     pub fn snapshot(&self) -> Result<SecretSnapshot, SecretError> {
         let state = self

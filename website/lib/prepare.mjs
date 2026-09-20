@@ -3,6 +3,7 @@ import path from 'node:path';
 import {assetRoute, basePath, createRepositoryIndex, git, parseDocument, readSource, repositoryRoot, requireValue, sha256, validateAssets, websiteRoot} from './repository.mjs';
 import {validateCoverage} from './coverage.mjs';
 import {transformDocument} from '../plugins/repository-links.mjs';
+import {prepareExamples} from '../plugins/examples/site.mjs';
 
 let cached;
 
@@ -33,6 +34,7 @@ export function prepare({baseUrl = process.env.LSF_SITE_BASE_URL ?? '/latent-ser
       throw new Error(`${page.source}: ${error.message}`, {cause: error});
     }
   }
+  const examples = prepareExamples(index);
   const assetIdentity = sha256(JSON.stringify(assets));
   const staticDirectory = generatedDirectory(`.generated/assets/${assetIdentity}`);
   for (const asset of assets) {
@@ -44,7 +46,7 @@ export function prepare({baseUrl = process.env.LSF_SITE_BASE_URL ?? '/latent-ser
     } else fs.writeFileSync(destination, readSource(repositoryRoot, asset.path, asset.maxBytes), {flag: 'wx'});
   }
   const dirty = git(repositoryRoot, 'status', '--porcelain=v1', '--untracked-files=all').trim().length > 0;
-  const manifest = {schema: 1, channel: 'development', revision: index.revision, dirty, baseUrl, pages: index.pages, assets, coverage: coverageResult, excludedWikiPaths: index.paths.filter(source => source.startsWith('docs/wiki/')).length};
-  cached = {index, assets, manifest, staticDirectory, baseUrl};
+  const manifest = {schema: 1, channel: 'development', revision: index.revision, dirty, baseUrl, pages: index.pages, assets, examples: examples.identity, coverage: coverageResult, excludedWikiPaths: index.paths.filter(source => source.startsWith('docs/wiki/')).length};
+  cached = {index, assets, examples, manifest, staticDirectory, baseUrl};
   return cached;
 }

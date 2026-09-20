@@ -1,0 +1,78 @@
+{
+  "sourceRevision": "499a6db25d8ed178f71a47749f17117ad773c0c7",
+  "method": "Chromium chrome.tabs.setZoom with observed CSS viewport and DPR",
+  "results": [
+    {
+      "variant": "project",
+      "mode": "light",
+      "browser": "153.0.8010.47",
+      "nativeZoom": 2,
+      "before": {
+        "width": 1280,
+        "ratio": 1
+      },
+      "after": {
+        "width": 640,
+        "ratio": 2,
+        "content": 640
+      },
+      "keyboardControl": true,
+      "navigation": true,
+      "errors": []
+    },
+    {
+      "variant": "project",
+      "mode": "dark",
+      "browser": "153.0.8010.47",
+      "nativeZoom": 2,
+      "before": {
+        "width": 1280,
+        "ratio": 1
+      },
+      "after": {
+        "width": 640,
+        "ratio": 2,
+        "content": 640
+      },
+      "keyboardControl": true,
+      "navigation": true,
+      "errors": []
+    },
+    {
+      "variant": "root",
+      "mode": "light",
+      "browser": "153.0.8010.47",
+      "nativeZoom": 2,
+      "before": {
+        "width": 1280,
+        "ratio": 1
+      },
+      "after": {
+        "width": 640,
+        "ratio": 2,
+        "content": 640
+      },
+      "keyboardControl": true,
+      "navigation": true,
+      "errors": []
+    },
+    {
+      "variant": "root",
+      "mode": "dark",
+      "browser": "153.0.8010.47",
+      "nativeZoom": 2,
+      "before": {
+        "width": 1280,
+        "ratio": 1
+      },
+      "after": {
+        "width": 640,
+        "ratio": 2,
+        "content": 640
+      },
+      "keyboardControl": true,
+      "navigation": true,
+      "errors": []
+    }
+  ]
+}

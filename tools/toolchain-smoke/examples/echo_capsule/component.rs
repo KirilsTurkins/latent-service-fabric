@@ -21,6 +21,7 @@ const LOG_MESSAGE: &str = "echo invocation";
 
 struct EchoCapsule;
 
+// lsf-example-begin: echo
 impl Guest for EchoCapsule {
     fn echo(message: String) -> Result<String, EchoError> {
         let message_bytes = message.len();
@@ -56,5 +57,6 @@ impl Guest for EchoCapsule {
         })
     }
 }
+// lsf-example-end: echo
 
 export!(EchoCapsule);
