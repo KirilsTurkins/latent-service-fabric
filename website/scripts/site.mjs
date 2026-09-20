@@ -4,7 +4,7 @@ import {basePath, requireValue, websiteRoot} from '../lib/repository.mjs';
 
 requireValue(process.versions.node === '24.19.0', 'Use the reviewed website Node 24.19.0 toolchain');
 const command = process.argv[2];
-requireValue(['start', 'build', 'build-root', 'test-build', 'test-theme', 'test-examples', 'test-versions', 'browser-install'].includes(command) && process.argv.length === 3, 'Use a documented website command without arbitrary output paths');
+requireValue(['start', 'build', 'build-root', 'test-build', 'test-theme', 'test-examples', 'test-versions', 'test-discovery', 'browser-install'].includes(command) && process.argv.length === 3, 'Use a documented website command without arbitrary output paths');
 const rootBuild = command === 'build-root';
 const baseUrl = basePath(rootBuild ? '/' : '/latent-service-fabric/');
 let args = command === 'start'
@@ -15,6 +15,7 @@ if (command === 'test-build') { program = path.join(websiteRoot, 'scripts/test-b
 if (command === 'test-theme') { program = path.join(websiteRoot, 'scripts/test-theme.mjs'); args = []; }
 if (command === 'test-examples') { program = path.join(websiteRoot, 'scripts/test-examples.mjs'); args = []; }
 if (command === 'test-versions') { program = path.join(websiteRoot, 'scripts/test-versions.mjs'); args = []; }
+if (command === 'test-discovery') { program = path.join(websiteRoot, 'scripts/test-discovery.mjs'); args = []; }
 if (command === 'browser-install') { program = path.join(websiteRoot, 'node_modules/playwright/cli.js'); args = ['install', 'chromium', '--only-shell']; }
 const child = spawn(process.execPath, [program, ...args], {
   cwd: websiteRoot,
@@ -28,7 +29,7 @@ function stop() {
   if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], {timeout: 15000, stdio: 'ignore'});
   else process.kill(-child.pid, 'SIGKILL');
 }
-const timer = command === 'start' ? undefined : setTimeout(() => { expired = true; stop(); }, ['test-theme', 'test-examples'].includes(command) ? 300000 : ['test-build', 'browser-install'].includes(command) ? 180000 : 600000);
+const timer = command === 'start' ? undefined : setTimeout(() => { expired = true; stop(); }, ['test-theme', 'test-examples', 'test-discovery'].includes(command) ? 300000 : ['test-build', 'browser-install'].includes(command) ? 180000 : 600000);
 process.on('SIGINT', stop);
 process.on('SIGTERM', stop);
 child.on('error', error => { clearTimeout(timer); console.error(error.message); process.exitCode = 1; });

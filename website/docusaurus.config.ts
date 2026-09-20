@@ -71,6 +71,7 @@ const config: Config = {
     }],
     './plugins/repository-content.mjs',
     './plugins/examples/index.mjs',
+    './plugins/discovery.mjs',
   ],
   themes: ['@docusaurus/theme-mermaid'],
   themeConfig: {
@@ -94,6 +95,7 @@ const config: Config = {
         {type: 'docSidebar', sidebarId: 'contribute', label: 'Contribute', position: 'left'},
         {to: '/decisions/', label: 'Decisions', position: 'right'},
         {type: 'docsVersionDropdown', position: 'right', dropdownActiveClassDisabled: true},
+        {type: 'search', position: 'right'},
       ],
     },
     footer: {style: 'dark', links: [{title: 'Provenance', items: [

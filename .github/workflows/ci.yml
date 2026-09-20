@@ -59,6 +59,9 @@ jobs:
           LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner
           python3 tools/validate_docs.py
 
+      - name: Validate deterministic dependency regressions
+        run: python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies
+
   rust:
     name: Rust 1.97.1
     needs: profile
@@ -101,6 +104,16 @@ jobs:
         run: python3 tools/run_angular_renderer_tests.py --preflight --diagnostic-root "$RUNNER_TEMP/owned-renderer"
       - name: Check formatting
         run: cargo fmt --all --check
+      - name: Check deterministic helper dependency boundaries
+        timeout-minutes: 5
+        run: |
+          python3 tools/check_testkit_dependencies.py
+          cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=1
+          cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=4
+          cargo test -p latent-admission -p latent-scheduler --lib --locked
+          cargo test -p latent-testkit --no-default-features --lib --test test_support_compatibility --locked
+          cargo run -p latent-testkit --no-default-features --example deadline --locked
+          cargo run -p latent-testkit --no-default-features --example cancellation --locked
       - name: Check workspace
         run: cargo check --workspace --all-targets --all-features --locked
       - name: Check generated RPC and Component Model bindings
