@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use latent_capabilities::broker::{pools::ProviderPools, secrets::CredentialScope};
 use latent_core::{PlatformError, TenantId};
@@ -12,15 +12,17 @@ use crate::config::HttpInstallation;
 pub(super) async fn install(
     pools: &Arc<ProviderPools>,
     config: &HttpInstallation,
+    deadline: Instant,
 ) -> Result<(HttpProvider, Option<LocalSecretStore>), PlatformError> {
     let mut references = Vec::with_capacity(config.credentials.len());
     let secrets = if let Some(directory) = &config.credential_directory {
-        let store = LocalSecretStore::open(
+        let store = LocalSecretStore::open_before(
             pools.clone(),
             directory.clone(),
             SecretLimits::default(),
             Vec::new(),
             Arc::new(SystemSecretClock),
+            deadline,
         )
         .map_err(|_| super::unavailable())?
         .await
@@ -46,7 +48,7 @@ pub(super) async fn install(
             })
             .collect();
         store
-            .reload(0, specs)
+            .reload_before(0, specs, deadline)
             .map_err(|_| super::unavailable())?
             .await
             .map_err(|_| super::unavailable())?;

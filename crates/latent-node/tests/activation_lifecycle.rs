@@ -39,3 +39,6 @@ mod transport_cleanup_pool;
 mod canary;
 #[path = "activation_lifecycle/inbound.rs"]
 mod inbound;
+
+#[path = "activation_lifecycle/admission_wait.rs"]
+mod admission_wait;
