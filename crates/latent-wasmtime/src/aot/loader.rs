@@ -70,7 +70,7 @@ fn deserialize_authenticated(
     // verifier requires every field of the freshly checked compatibility key;
     // load additionally checks its exact input owner and actual Engine identity.
     // The owner is immutable and retains its full byte reservation throughout
-    // this call. Wasmtime 47.0.3 copies this slice into its own unique MmapVec;
+    // this call. Wasmtime 47.0.4 copies this slice into its own unique MmapVec;
     // it never references a mutable cache file. No arbitrary safe slice can mint
     // this proof. The page-rounded destination mapping was reserved before entry.
     unsafe { Component::deserialize(engine, proof.bytes()) }.map_err(|_| load_failed())
