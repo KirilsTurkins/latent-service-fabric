@@ -7,6 +7,10 @@ license.workspace = true
 authors.workspace = true
 description = "Bounded Wasmtime Component Model runtime with a retained Phase 0 compatibility facade."
 
+[features]
+# Off by default; timing observations cannot authorize compilation or loading.
+aot-test-timings = []
+
 [lints.rust]
 # Only the private authenticated copying loader may locally allow unsafe.
 unsafe_code = "deny"
