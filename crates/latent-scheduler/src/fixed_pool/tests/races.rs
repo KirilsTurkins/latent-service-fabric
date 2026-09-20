@@ -37,25 +37,36 @@ async fn explicit_cancellation_cases() {
                 pool.cancel_queued(&activation).unwrap();
                 assert_eq!(pool.observations().queue_depth, 0);
                 pool.release(owner).await.unwrap();
-                assert_eq!(probe.ready(waiting.as_mut()).unwrap_err().code, PlatformErrorCode::Cancelled);
+                assert_eq!(
+                    probe.ready(waiting.as_mut()).unwrap_err().code,
+                    PlatformErrorCode::Cancelled
+                );
             } else {
                 pool.release(owner).await.unwrap();
                 assert_eq!(pool.observations().queue_depth, 0);
                 assert_eq!(pool.observations().active_leases, 1);
-                assert_eq!(pool.cancel_queued(&activation).unwrap_err().code, PlatformErrorCode::NotFound);
+                assert_eq!(
+                    pool.cancel_queued(&activation).unwrap_err().code,
+                    PlatformErrorCode::NotFound
+                );
                 let lease = probe.ready(waiting.as_mut()).unwrap();
                 pool.release(lease).await.unwrap();
             }
             assert_settled(&pool, 1, 0);
         }
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn release_and_explicit_cancellation_race_is_linearizable() { explicit_cancellation_cases().await; }
+async fn release_and_explicit_cancellation_race_is_linearizable() {
+    explicit_cancellation_cases().await;
+}
 
 #[tokio::test(flavor = "current_thread")]
-async fn explicit_cancellation_single_thread() { explicit_cancellation_cases().await; }
+async fn explicit_cancellation_single_thread() {
+    explicit_cancellation_cases().await;
+}
 
 async fn task_abort_cases() {
     with_watchdog(WATCHDOG, async {
@@ -81,7 +92,9 @@ async fn task_abort_cases() {
             assert!(task.await.unwrap_err().is_cancelled());
             // Joining the cancelled owner, not abort() or a yield, proves destruction.
             assert_eq!(pool.observations().queue_depth, 0);
-            if let Some(owner) = owner { pool.release(owner).await.unwrap(); }
+            if let Some(owner) = owner {
+                pool.release(owner).await.unwrap();
+            }
             assert_settled(&pool, 1, 0);
         }
 
@@ -91,24 +104,35 @@ async fn task_abort_cases() {
         let rendezvous = Rendezvous::new(1);
         let (id, mut owner) = rendezvous.track(lease).unwrap();
         owner.commit(Stage::Entered).unwrap();
-        let mut work = Box::pin(async move { owner.pause().await; drop(owner); });
+        let mut work = Box::pin(async move {
+            owner.pause().await;
+            drop(owner);
+        });
         PollProbe::default().pending(work.as_mut());
         rendezvous.blocked(id, Stage::Entered).unwrap();
         let task = tokio::spawn(work);
         assert_eq!(pool.observations().active_leases, 1);
-        assert_eq!(rendezvous.require_retired(id), Err(CoordinationError::WrongStage));
+        assert_eq!(
+            rendezvous.require_retired(id),
+            Err(CoordinationError::WrongStage)
+        );
         task.abort();
         assert!(task.await.unwrap_err().is_cancelled());
         rendezvous.require_retired(id).unwrap();
         assert_settled(&pool, 0, 1);
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn release_and_task_abort_race_preserves_exact_capacity_accounting() { task_abort_cases().await; }
+async fn release_and_task_abort_race_preserves_exact_capacity_accounting() {
+    task_abort_cases().await;
+}
 
 #[tokio::test(flavor = "current_thread")]
-async fn task_abort_single_thread() { task_abort_cases().await; }
+async fn task_abort_single_thread() {
+    task_abort_cases().await;
+}
 
 struct OwnedWork {
     buffer: Option<Vec<u8>>,
@@ -119,8 +143,16 @@ struct OwnedWork {
 
 impl Drop for OwnedWork {
     fn drop(&mut self) {
-        assert_eq!(self.bytes.load(Ordering::SeqCst), 16, "premature buffer refund");
-        assert_eq!(self.pool.observations().active_leases, 1, "premature work refund");
+        assert_eq!(
+            self.bytes.load(Ordering::SeqCst),
+            16,
+            "premature buffer refund"
+        );
+        assert_eq!(
+            self.pool.observations().active_leases,
+            1,
+            "premature work refund"
+        );
         drop(self.buffer.take());
         self.bytes.store(0, Ordering::SeqCst);
         // The actual cell owner survives until after buffer destruction.
@@ -164,7 +196,10 @@ async fn abandoned_client_case() {
             let rendezvous = Rendezvous::new(1);
             let (id, mut work) = rendezvous.track(work).unwrap();
             work.commit(Stage::Entered).unwrap();
-            let mut future = Box::pin(async move { work.pause().await; drop(work); });
+            let mut future = Box::pin(async move {
+                work.pause().await;
+                drop(work);
+            });
             PollProbe::default().pending(future.as_mut());
             let ticket = rendezvous.blocked(id, Stage::Entered).unwrap();
             let (done, completion) = tokio::sync::oneshot::channel();
@@ -181,7 +216,10 @@ async fn abandoned_client_case() {
             assert!(client.await.unwrap_err().is_cancelled());
             // Client cancellation cannot retire independently owned native work.
             rendezvous.blocked(id, Stage::Entered).unwrap();
-            assert_eq!(rendezvous.require_retired(id), Err(CoordinationError::WrongStage));
+            assert_eq!(
+                rendezvous.require_retired(id),
+                Err(CoordinationError::WrongStage)
+            );
             assert_eq!(pool.observations().active_leases, 1);
             assert_eq!(pool.observations().available, 0);
             assert_eq!(bytes.load(Ordering::SeqCst), 16);
@@ -199,21 +237,30 @@ async fn abandoned_client_case() {
             assert_eq!(bytes.load(Ordering::SeqCst), 0);
             assert_settled(&pool, 0, 1);
         }
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn abandoned_client_keeps_work_and_buffers_charged_single_thread() { abandoned_client_case().await; }
+async fn abandoned_client_keeps_work_and_buffers_charged_single_thread() {
+    abandoned_client_case().await;
+}
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn abandoned_client_keeps_work_and_buffers_charged_multi_thread() { abandoned_client_case().await; }
+async fn abandoned_client_keeps_work_and_buffers_charged_multi_thread() {
+    abandoned_client_case().await;
+}
 
 #[tokio::test(flavor = "current_thread")]
 async fn lease_token_exhaustion_quarantines_the_slot_and_fails_all_waiters() {
     with_watchdog(WATCHDOG, async {
         let pool = pool(1, 2);
         let owner = acquire(&pool, "activation-owner", None).await.unwrap();
-        pool.inner.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner).next_lease_token = u64::MAX;
+        pool.inner
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .next_lease_token = u64::MAX;
         let mut first = Box::pin(acquire(&pool, "activation-waiting-1", None));
         let mut second = Box::pin(acquire(&pool, "activation-waiting-2", None));
         let probe = PollProbe::default();
@@ -221,9 +268,13 @@ async fn lease_token_exhaustion_quarantines_the_slot_and_fails_all_waiters() {
         probe.pending(second.as_mut());
         assert_eq!(pool.observations().queue_depth, 2);
         pool.release(owner).await.unwrap();
-        for error in [probe.ready(first.as_mut()).unwrap_err(), probe.ready(second.as_mut()).unwrap_err()] {
+        for error in [
+            probe.ready(first.as_mut()).unwrap_err(),
+            probe.ready(second.as_mut()).unwrap_err(),
+        ] {
             assert_eq!(error.code, PlatformErrorCode::Internal);
         }
         assert_settled(&pool, 0, 1);
-    }).await;
+    })
+    .await;
 }

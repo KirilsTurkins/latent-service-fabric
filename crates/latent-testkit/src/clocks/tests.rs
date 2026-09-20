@@ -76,7 +76,8 @@ fn overflow_does_not_poison_live_timer_cleanup() {
     assert!(std::panic::catch_unwind(|| {
         let mut extra = Box::pin(clock.sleep_until(deadline));
         PollProbe::default().pending(extra.as_mut());
-    }).is_err());
+    })
+    .is_err());
     assert_eq!(clock.pending_waiters(), 1);
     assert_eq!(probe.wakes(), 0);
     drop(first);
@@ -98,14 +99,19 @@ async fn fixed_script() {
             assert_eq!(clock.monotonic_now(), deadline);
             assert_eq!(clock.pending_waiters(), 0);
         }
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn fixed_seed_current_thread() { fixed_script().await; }
+async fn fixed_seed_current_thread() {
+    fixed_script().await;
+}
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn fixed_seed_multi_thread() { fixed_script().await; }
+async fn fixed_seed_multi_thread() {
+    fixed_script().await;
+}
 
 #[tokio::test(start_paused = true)]
 async fn tokio_virtual_time_is_not_injected_or_operating_system_time() {
@@ -116,9 +122,13 @@ async fn tokio_virtual_time_is_not_injected_or_operating_system_time() {
         let tokio_before = tokio::time::Instant::now();
         tokio::time::advance(Duration::from_hours(1)).await;
         assert_eq!(clock.monotonic_now(), injected_before);
-        assert_eq!(tokio::time::Instant::now() - tokio_before, Duration::from_hours(1));
+        assert_eq!(
+            tokio::time::Instant::now() - tokio_before,
+            Duration::from_hours(1)
+        );
         assert!(os_before.elapsed() < WATCHDOG);
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -129,5 +139,6 @@ async fn system_clock_and_real_timer_integration() {
         let before = clock.monotonic_now();
         tokio::time::sleep(Duration::from_millis(1)).await;
         assert!(clock.monotonic_now() > before);
-    }).await;
+    })
+    .await;
 }
