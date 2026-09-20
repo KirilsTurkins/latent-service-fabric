@@ -6,10 +6,12 @@ import {visit} from 'unist-util-visit';
 import {assetRoute, createRepositoryIndex, git, htmlElements, parseDocument, readSource, repositoryRoot, repositoryUrl, requireValue, resolveLink, sha256} from './repository.mjs';
 import {transformDocument} from '../plugins/repository-links.mjs';
 import {validateExampleBuild} from '../plugins/examples/built.mjs';
+import {loadSnapshots} from './versions/storage.mjs';
+import {documentBytes} from './versions/model.mjs';
 
 function expectedSourceLinks(index, page, manifest) {
-  const options = {baseUrl: manifest.baseUrl, assets: manifest.assets};
-  const tree = transformDocument(parseDocument(readSource(index.root, page.source).toString('utf8'), page.source), index, page.source, options);
+  const options = {baseUrl: manifest.baseUrl, assets: manifest.assets.filter(asset => (asset.channel ?? 'development') === index.channel)};
+  const tree = transformDocument(parseDocument(documentBytes(index, page.source).toString('utf8'), page.source), index, page.source, options);
   const links = new Set();
   function collect(url) {
     if (url?.startsWith(`${repositoryUrl}/blob/`) || url?.startsWith(`${repositoryUrl}/tree/`)) links.add(url);
@@ -54,10 +56,15 @@ function outputPath(output, pathname, baseUrl) {
 export function validateBuiltSite(output) {
   const manifest = JSON.parse(fs.readFileSync(path.join(output, 'site-manifest.json'), 'utf8'));
   const current = createRepositoryIndex();
+  const snapshots = loadSnapshots(repositoryRoot, current.paths);
   const dirty = git(repositoryRoot, 'status', '--porcelain=v1', '--untracked-files=all').trim().length > 0;
   requireValue(manifest.revision === current.revision && manifest.dirty === dirty, 'Built source identity is stale; rebuild this checkout');
-  requireValue(JSON.stringify(manifest.pages) === JSON.stringify(current.pages), 'Built document bytes/routes are stale; rebuild this checkout');
-  const checkedExamples = validateExampleBuild(output, current, manifest);
+  const pages = [...current.pages, ...snapshots.flatMap(snapshot => snapshot.index.pages)];
+  requireValue(JSON.stringify(manifest.pages) === JSON.stringify(pages), 'Built document bytes/routes are stale; rebuild this checkout');
+  requireValue(JSON.stringify(manifest.versions?.map(version => version.snapshotIdentity) ?? [])
+    === JSON.stringify(snapshots.map(snapshot => snapshot.manifest.snapshotIdentity)), 'Built publication identities are stale');
+  let checkedExamples = validateExampleBuild(output, current, manifest);
+  for (const snapshot of snapshots) checkedExamples += validateExampleBuild(output, snapshot.index, {examples: snapshot.examples.identity}, snapshot.examples);
   const publicJavaScript = validatePublicJavaScript(output);
   const documents = new Map();
   let checkedSourceLinks = 0;
@@ -77,8 +84,10 @@ export function validateBuiltSite(output) {
     documents.set(route, {identifiers, links});
     const page = manifest.pages.find(entry => entry.route === route);
     if (page) {
-      requireValue(links.includes(`${repositoryUrl}/edit/${manifest.revision}/${page.source}`), `Missing exact-revision edit link: ${page.source}`);
-      for (const expected of expectedSourceLinks(current, page, manifest)) {
+      const index = page.channel ? snapshots.find(snapshot => snapshot.index.channel === page.channel)?.index : current;
+      requireValue(index, 'Missing built document version');
+      requireValue(links.includes(`${repositoryUrl}/edit/${index.revision}/${page.source}`), `Missing exact-revision edit link: ${page.source}`);
+      for (const expected of expectedSourceLinks(index, page, manifest)) {
         requireValue(links.includes(expected), `Missing or stale commit-bound source link: ${page.source}`);
         checkedSourceLinks += 1;
       }
@@ -101,9 +110,9 @@ export function validateBuiltSite(output) {
     }
   }
   for (const asset of manifest.assets) {
-    const target = path.join(output, ...assetRoute(asset, manifest.channel).split('/').filter(Boolean));
+    const target = path.join(output, ...assetRoute(asset).split('/').filter(Boolean));
     requireValue(sha256(fs.readFileSync(target)) === asset.sha256, `Copied asset changed bytes: ${asset.path}`);
-    requireValue(sha256(readSource(repositoryRoot, asset.path, asset.maxBytes)) === asset.sha256, `Built asset input is stale: ${asset.path}`);
+    requireValue(sha256(readSource(repositoryRoot, asset.file ?? asset.path, asset.maxBytes)) === asset.sha256, `Built asset input is stale: ${asset.path}`);
   }
   return {manifest, pages: documents.size, checkedLinks, checkedSourceLinks, checkedExamples, publicJavaScript};
 }

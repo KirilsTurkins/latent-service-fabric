@@ -4,7 +4,14 @@ The authoritative operator/author instructions are in
 [`docs/development/website.md`](../docs/development/website.md), with the ownership
 decision in [ADR-0041](../adr/0041-publish-single-source-version-bound-documentation.md).
 
-Use Node 24.19.0 and npm 12.0.1. From this directory:
+Use Node 24.19.0 and npm 11.19.1. From this directory:
+
+The separately locked `toolchain/` package selects npm 11.19.1 because its
+maintained security backport patches npm's bundled dependencies. Both the
+package-manager graph and website graph are included in the security inventory.
+CI verifies every installed package-manager version against that lock and
+disables dependency lifecycle scripts. The reviewed source and reason are in
+`content/toolchain.json`; a higher npm major is not an automatic upgrade.
 
 ```text
 npm ci --ignore-scripts --no-audit --no-fund
