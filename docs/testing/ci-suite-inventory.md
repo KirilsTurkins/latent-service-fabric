@@ -16,7 +16,7 @@ metadata owner are registered without dropping their execution contracts.
 Website and MDX selection now retains the required site job in every profile,
 including the host correctness profile. The aggregate independently checks the
 complete job set. The reviewed command map preserves all 97 original required
-run blocks and covers 128 current blocks plus 70 delegated script owners. The
+run blocks and covers 129 current blocks plus 70 delegated script owners. The
 temporary upstream-discovery workflow has been retired; the maintained CI owns
 future build, discovery and execution receipts.
 

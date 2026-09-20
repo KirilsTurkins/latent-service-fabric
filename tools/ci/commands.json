@@ -70,6 +70,16 @@
       "shell": "default",
       "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-state/src/lib.rs'])\nassert selection.profile == 'fast'\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\""
     },
+    ".github/workflows/ci.yml:rust:Install pinned validation dependencies": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Install pinned validation dependencies",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --requirement tools/requirements.lock"
+    },
     ".github/workflows/ci.yml:rust:renderer_preflight": {
       "workflow": ".github/workflows/ci.yml",
       "job": "rust",
@@ -5670,7 +5680,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "67d33885ecfe2a8f5b86e61b68db4b30839721c3649c05bbd1762fce52901a31",
+    ".github/workflows/ci.yml": "d638ec03b92605652fec30a867a03baa277134163cace1154905f6f21d3728a6",
     ".github/workflows/docs-pages.yml": "87ca4f1d44d6de1e14960abb0f1d7a883d40ae52ffcaba8d4cfdcf0a888c7a3e",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0e84b07e365798040f2ff4c360d8fa4b959dfc46fdab8867662381508f1ef15d",

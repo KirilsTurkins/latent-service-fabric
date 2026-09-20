@@ -670,6 +670,7 @@
         "local_repository::tests::web::projection::only_catalog_verified_web_metadata_selects_public_world_validation",
         "local_repository::tests::web::projection::web_evidence_renewal_preserves_immutable_cache_identity_but_retires_start_authority",
         "local_repository::tests::web::projection::web_projection_rejects_foreign_catalog_even_with_the_same_admission_authority",
+        "local_repository::tests::web::staging::control_commit_renews_after_preparation_and_staging_without_reviving_denied_grants",
         "local_repository::tests::web::staging::staged_web_payload_allows_lease_renewal_but_expiry_and_revocation_cannot_commit",
         "local_repository::tests::web::web_capacity_rejection_never_stages_payload_or_consumes_an_operation",
         "local_repository::tests::web::web_durability_faults_poison_held_tokens_and_restart_distinguishes_commit_from_no_commit",
@@ -742,7 +743,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 248,
+      "minimumCases": 249,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
@@ -3372,6 +3373,7 @@
         "supply_chain::tests::web::actual_web_component_passes_signed_ssr_admission_and_restart",
         "supply_chain::tests::web::angular_build::actual_observed_angular_package_authenticates_publisher_builder_sbom_and_restart",
         "supply_chain::tests::web::componentless_web_admission_reverifies_on_restart_and_old_owner_grants_stay_retired",
+        "supply_chain::tests::web::control_lease_renewal_preserves_current_policy_and_retirement_fences",
         "supply_chain::tests::web::corrected_inventory_retains_distinct_package_and_receipt_with_same_web_outputs",
         "supply_chain::tests::web::malformed_web_history_is_rejected_before_expired_evidence_can_leave_history",
         "supply_chain::tests::web::preparation::decoded_web_bytes_cannot_mint_authority_after_policy_replacement_or_retirement",
@@ -3411,7 +3413,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 85,
+      "minimumCases": 86,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
