@@ -247,3 +247,11 @@ including the previously failing protected HTTP/blob configuration. Strict
 application Clippy and ten matrix/scenario unit tests also passed. These tests
 do not relabel the frozen six-client receipt: fresh matrix execution and
 exact-head CI remain required after this repair.
+
+The subsequent [September 20 integrated qualification](../evidence/phase3-sdk-matrix-0b99cd92/README.md)
+passes all six participants at `0b99cd92`, after merging the delivered SDKs and
+fixing the same maintenance-contention boundary for blob worker admission.
+It retains the original call while waiting, rechecks cancellation before each
+admission attempt and never repeats accepted work. The fresh guest suite and
+89 capability regressions pass. Raw receipts preserve all 108 assertions and
+24 physically closed holds; remote CI still qualifies the reviewed PR head.
