@@ -15,6 +15,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from tools import ci_rust_artifacts as artifacts
+from tools.owned_test_process import ProcessFailure, Result
 
 
 def listing(suite: artifacts.Suite) -> bytes:
@@ -138,26 +139,13 @@ class InventoryTests(unittest.TestCase):
 
 
 class SelectionTests(unittest.TestCase):
-    def test_success_retires_timer_before_reap_and_never_signals_a_reaped_pid(self) -> None:
-        cwd = Path.cwd()
-        timer = Mock()
-        process = Mock(returncode=None, pid=42, stdout=io.BytesIO(b"done"))
-
-        def reap(*, timeout: int) -> int:
-            self.assertTrue(timer.cancel.called)
-            self.assertTrue(timer.join.called)
-            process.returncode = 0
-            return 0
-
-        process.wait.side_effect = reap
-        with patch.object(artifacts.subprocess, "Popen", return_value=process), \
-                patch.object(artifacts.threading, "Timer", return_value=timer), \
-                patch.object(artifacts.os, "name", "posix"), \
-                patch.object(artifacts.os, "killpg", create=True) as kill:
-            self.assertEqual(artifacts.run_owned(["fixture"], cwd=cwd, env={}, timeout=5, maximum=16),
+    def test_common_owner_receives_the_same_limits_and_command(self) -> None:
+        with patch.object(artifacts, "supervise", return_value=Result(0, b"done", cleaned=True)) as owner:
+            self.assertEqual(artifacts.run_owned(["fixture"], cwd=Path.cwd(), env={}, timeout=5, maximum=16),
                              (0, b"done"))
-        kill.assert_not_called()
-        process.kill.assert_not_called()
+        owner.assert_called_once_with(["fixture"], cwd=Path.cwd(), env={}, timeout=5, maximum=16)
+        # PID-pinning, inherited writers and actual reap are covered by the
+        # shared native ownership suite, not a mock of the retired Timer.
 
     def test_expected_exact_lists_cover_both_exporters_and_three_currentness_cases(self) -> None:
         for suite in artifacts.SUITES.values():
@@ -192,15 +180,14 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(env["CARGO_MANIFEST_DIR"], str(artifact.package))
         self.assertEqual(base[key], "existing")
 
-    def test_owned_process_rejects_excess_output_and_reaps(self) -> None:
-        with self.assertRaisesRegex(artifacts.ArtifactError, "output-limit"):
-            artifacts.run_owned([sys.executable, "-c", "print('x' * 1000)"], cwd=Path.cwd(),
-                                env=dict(os.environ), timeout=5, maximum=16)
-
-    def test_owned_process_times_out_and_reaps(self) -> None:
-        with self.assertRaisesRegex(artifacts.ArtifactError, "timeout"):
-            artifacts.run_owned([sys.executable, "-c", "import time; time.sleep(30)"], cwd=Path.cwd(),
-                                env=dict(os.environ), timeout=0.1, maximum=16)
+    def test_shared_overflow_timeout_and_cancellation_remain_failures(self) -> None:
+        for category, expected in (("output-overflow", "output-limit"),
+                                   ("infrastructure-timeout", "timeout"),
+                                   ("cancelled", "interrupted"),
+                                   ("unavailable-environment", "prerequisite-unavailable")):
+            with patch.object(artifacts, "supervise", side_effect=ProcessFailure(category, "detail")), \
+                    self.assertRaisesRegex(artifacts.ArtifactError, expected):
+                artifacts.run_owned(["unused"], cwd=Path.cwd(), env={}, timeout=5, maximum=16)
 
 
 if __name__ == "__main__":
