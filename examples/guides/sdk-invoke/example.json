@@ -15,7 +15,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-invoke-rust.json",
+          "sha256": "19a556dbcc8ac2f5fd808daa68841e09e198dbeadaaf2bba85aeefa83fb88a22"
+        }
       }
     },
     {
@@ -28,7 +31,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-invoke-typescript.json",
+          "sha256": "29d58b3263b0a463c5446165c8f48e8bf46ebb68036505ba6fe6b7fcfb478f6e"
+        }
       }
     },
     {
@@ -41,7 +47,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-invoke-go.json",
+          "sha256": "b29442eb817b02553f980aa3591946f06a9ebf0cac372acf9006318fb3963c37"
+        }
       }
     },
     {
@@ -54,7 +63,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-invoke-c.json",
+          "sha256": "a6836c46476a9e7e4a5a8728b62a2ba321773564da5f19919e19d9c84a470e6a"
+        }
       }
     },
     {
@@ -67,7 +79,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-invoke-java.json",
+          "sha256": "2c329d8ddfe4c433ac22053dfcd8095cc16fd85920792a31f749b723115e7ee5"
+        }
       }
     },
     {
@@ -80,7 +95,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-invoke-csharp.json",
+          "sha256": "601071c519e7824bb87954b728f43b11d68d296a6ea088f686567a12207ff25f"
+        }
       }
     }
   ]

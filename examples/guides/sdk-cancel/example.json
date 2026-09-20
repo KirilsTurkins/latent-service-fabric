@@ -15,7 +15,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-cancel-rust.json",
+          "sha256": "3b78cbc50b54cd5e946eb9fc531de25f6d3a75548acd0ac363182fb0ddb6c73b"
+        }
       }
     },
     {
@@ -28,7 +31,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-cancel-typescript.json",
+          "sha256": "ca085af5f2e826c2b7426e9486df1c5c876aa3ce1aff94b276edc746eaafde58"
+        }
       }
     },
     {
@@ -41,7 +47,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-cancel-go.json",
+          "sha256": "028b2dddf7518adedd0a25771fa6b4a247bfaeecdb60531765877608f1704ba5"
+        }
       }
     },
     {
@@ -54,7 +63,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-cancel-c.json",
+          "sha256": "6f60a1439c858ddb54be4b6e5137dd06ab8e753cabbc970b738b2ec6bce2991e"
+        }
       }
     },
     {
@@ -67,7 +79,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-cancel-java.json",
+          "sha256": "2d551398ed55e836db633b50caf539b8253cedc1360fc58b9662fa4f0d717c89"
+        }
       }
     },
     {
@@ -80,7 +95,10 @@
       "validation": {
         "target": "tools/run_sdk_provider_matrix.sh",
         "instructions": "docs/learn/use-a-client.mdx",
-        "evidence": null
+        "evidence": {
+          "path": "examples/guides/evidence/sdk-cancel-csharp.json",
+          "sha256": "154a50ed4aadd1acf254bcb407b2554d5230c8d556a0e58831e56d002b025e7c"
+        }
       }
     }
   ]
