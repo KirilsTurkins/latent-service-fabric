@@ -77,8 +77,6 @@ pub enum Command {
     #[command(subcommand)]
     Web(web::WebCommand),
     #[command(subcommand)]
-    Web(web::WebCommand),
-    #[command(subcommand)]
     Trigger(phase3::TriggerCommand),
     #[command(subcommand)]
     Capability(phase3::CapabilityCommand),

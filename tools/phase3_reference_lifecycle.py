@@ -26,6 +26,43 @@ def require_static_cell_bypass(before, after):
             "reference-prerender-entered-render-cells")
 
 
+def verify_collecting_rejection(client, started, attempted):
+    # The transport envelope preserves Unknown for an unavailable response.
+    # Reconcile the durable rejection and unchanged route without replaying it.
+    operation = "reference-collecting-promote"
+    ack = attempted["data"]["auditAck"]
+    require(ack["status"] == "durable", "reference-collecting-audit-not-durable")
+    sequence = ack["attemptSequence"]
+    lookup = client.call("rollout", "operation", "healthy", operation)
+    require(not lookup["outcomeKnown"] and lookup["data"]["receipt"] is None,
+            "reference-collecting-promotion-committed")
+    status = client.call("rollout", "get", "healthy")["data"]["status"]
+    require(all(status[key] == started[key] for key in ("revision", "routeGeneration", "planDigest")),
+            "reference-collecting-promotion-mutated-route")
+    attempt, outcome, token, seen = None, None, None, set()
+    for _ in range(4):
+        arguments = ["audit", "query", "--scope", "tenant", "--page-size", "128"]
+        if token:
+            arguments += ["--page-token", token]
+        page = client.call(*arguments)["data"]
+        for row in page["records"]:
+            data = row["data"]
+            if row["sequence"] == sequence and "attempt" in data:
+                attempt = data["attempt"]
+            if data.get("outcome", {}).get("attemptSequence") == sequence:
+                outcome = data["outcome"]
+        token = page["page"]["nextPageToken"]
+        if not token:
+            break
+        require(token not in seen, "reference-collecting-audit-cursor-cycle")
+        seen.add(token)
+    require(attempt is not None and attempt["operationId"] == operation
+            and outcome is not None and outcome["result"].endswith("REJECTED")
+            and outcome["reason"] == "canary-collecting", "reference-collecting-rejection-not-observed")
+    return {"response": attempted, "operationLookup": lookup, "status": status,
+            "auditAttempt": attempt, "auditOutcome": outcome}
+
+
 def signal_owned(process):
     require(not process.closed and not process.owner.exited(), "reference-owned-process-ended")
     os.kill(process.owner.process.pid, signal.SIGUSR1)
@@ -157,8 +194,8 @@ def canary(client, node, peer, records, publications):
     require(initial["assessment"]["verdict"].endswith("COLLECTING")
             and all(int(initial[field]) == 0 for field in ("starts", "selected", "admitted", "terminal", "live")),
             "reference-empty-canary-not-collecting")
-    rejected = change(client, "promote", "healthy", started["revision"], "reference-no-data-promote", "--next-step", "1", codes=(4,))
-    require(rejected["outcomeKnown"], "reference-no-data-promotion-uncertain")
+    rejected = change(client, "promote", "healthy", started["revision"], "reference-collecting-promote", "--next-step", "1", codes=(4,))
+    rejection = verify_collecting_rejection(client, started, rejected)
     samples = [invoke(client, records, publications, f"reference-canary-{ordinal:02d}", route=None) for ordinal in range(16)]
     while time.monotonic() < started_at + 10:
         client.cancellation.check()
@@ -172,5 +209,6 @@ def canary(client, node, peer, records, publications):
     require(promoted["state"].endswith("COMPLETED") and promoted["canaryDecision"]["candidate"] == candidate_counts
             and promoted["canaryDecision"]["baseline"] == baseline_counts, "reference-canary-durable-decision")
     return {"started": started, "pinnedRender": pinned, "emptyEvaluation": initial, "samples": samples,
+            "collectingPromotionRejection": rejection,
             "prerenderDuringOccupiedCell": {"before": occupied, "after": unchanged, "cacheControl": static_headers["cache-control"]},
             "evaluation": report, "promoted": promoted, "historicalGeneration": historical}

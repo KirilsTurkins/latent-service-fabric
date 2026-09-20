@@ -1,5 +1,6 @@
 """Focused closed-input tests; real node/browser receipts are separate evidence."""
 import unittest
+from unittest.mock import Mock
 import copy
 from pathlib import Path
 import tempfile
@@ -11,7 +12,7 @@ from tools.build_angular_reference import ROOT, stage_variant
 from tools.phase2_operator_process import WorkflowError, write_json
 from tools.phase3_reference_config import ROUTES, fixtures
 from tools.phase3_reference_scenario import invocation_arguments, manifest
-from tools.phase3_reference_lifecycle import require_static_cell_bypass
+from tools.phase3_reference_lifecycle import require_static_cell_bypass, verify_collecting_rejection
 
 
 class ReferencePeerTests(unittest.TestCase):
@@ -45,6 +46,40 @@ class ReferenceCellBypassTests(unittest.TestCase):
         for key, value in (("active", 0), ("granted", "6"), ("queueDepth", 1), ("available", 1)):
             with self.subTest(key=key), self.assertRaisesRegex(WorkflowError, "entered-render-cells"):
                 require_static_cell_bypass(before, [{**after[0], key: value}])
+
+
+class ReferencePromotionTests(unittest.TestCase):
+    def test_rejection_is_observed_without_replaying_or_fabricating_certainty(self):
+        for changed in (None, "committed", "revision", "operation", "result", "reason", "sequence"):
+            with self.subTest(changed=changed):
+                started = {"revision": "1", "routeGeneration": "2", "planDigest": "sha256:plan"}
+                attempted = {"outcomeKnown": False, "data": {"auditAck": {"status": "durable", "attemptSequence": "32"}}}
+                lookup = {"outcomeKnown": False, "data": {"receipt": None}}
+                status = dict(started)
+                attempt = {"operationId": "reference-collecting-promote"}
+                outcome = {"attemptSequence": "32", "result": "REJECTED", "reason": "canary-collecting"}
+                if changed == "committed":
+                    lookup = {"outcomeKnown": True, "data": {"receipt": {"revision": "2"}}}
+                if changed == "revision":
+                    status["revision"] = "2"
+                if changed == "operation":
+                    attempt["operationId"] = "another-operation"
+                if changed in ("result", "reason"):
+                    outcome[changed] = "ACCEPTED"
+                if changed == "sequence":
+                    outcome["attemptSequence"] = "31"
+                page = {"data": {"page": {"nextPageToken": None}, "records": [
+                    {"sequence": "32", "data": {"attempt": attempt}},
+                    {"sequence": "33", "data": {"outcome": outcome}}]}}
+                client = SimpleNamespace(call=Mock(side_effect=[lookup, {"data": {"status": status}}, page]))
+                if changed:
+                    with self.assertRaises(WorkflowError):
+                        verify_collecting_rejection(client, started, attempted)
+                else:
+                    evidence = verify_collecting_rejection(client, started, attempted)
+                    self.assertFalse(evidence["response"]["outcomeKnown"])
+                    self.assertEqual(evidence["auditOutcome"]["reason"], "canary-collecting")
+                self.assertTrue(all(call.args[:2] != ("rollout", "promote") for call in client.call.call_args_list))
 
 
 class ReferenceBuildTests(unittest.TestCase):
