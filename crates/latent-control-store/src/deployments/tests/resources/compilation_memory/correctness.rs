@@ -13,7 +13,7 @@ use latent_manifest::DeploymentManifest;
 use latent_routing::RouteResolver;
 use serde_json::json;
 
-use super::super::super::super::fixtures::*;
+use super::super::super::fixtures::*;
 use crate::deployments::compiler::metadata_ownership::{Counts, Session};
 use crate::DeploymentStore;
 
@@ -75,7 +75,10 @@ fn assert_routes(store: &Store, expected: &[DeploymentManifest]) {
         assert_eq!(route.release, deployment.release);
         assert_eq!(route.route_generation, RouteGeneration(1));
         assert!(store
-            .resolve(&target("absent-tenant", Some(&deployment.id.0)), Some("stable"))
+            .resolve(
+                &target("absent-tenant", Some(&deployment.id.0)),
+                Some("stable"),
+            )
             .is_err());
     }
 }
@@ -181,7 +184,7 @@ fn fixture(retain: bool) {
     drop(releases);
     drop(root);
     println!(
-        "LSF_METADATA_CORRECTNESS {}",
+        "\nLSF_METADATA_CORRECTNESS {}",
         json!({
             "schemaVersion": "latent.catalog.metadata-correctness.v1",
             "releases": RELEASES,
