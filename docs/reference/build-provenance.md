@@ -204,7 +204,8 @@ binding. A builder signature cannot replace that local native-output authority.
 | Component / observed build duration | 64 MiB / 3600 seconds |
 | Keys / source requirements | 64 / 256 each |
 | Revoked keys / revoked builders | 256 / 256; 64 / 256 |
-| Captured files / per-file / total source / archive | 4096 / 4 MiB / 32 MiB / 40 MiB |
+| Captured files / explicit archive directories | 4096 / 4096 |
+| Per-file / total source / archive | 4 MiB / 32 MiB / 40 MiB |
 
 Configured Rust limits must be positive and within hard ceilings. JSON rejects
 unknown fields, duplicate keys, floats, negative integers and `null`, and bounds
