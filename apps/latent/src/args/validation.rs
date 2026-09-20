@@ -46,7 +46,7 @@ impl Cli {
             ) => path_argument(&args.file),
             Command::Release(command) => release(command),
             Command::Deployment(command) => deployment(command),
-            Command::Route(_) => Ok(()),
+            Command::Completions { .. } | Command::Route(_) => Ok(()),
             Command::Invoke(args) => invoke(args),
             Command::Activation(ActivationCommand::Get(args)) => identifier(&args.id, 512),
             Command::Activation(ActivationCommand::Cancel(args)) => {

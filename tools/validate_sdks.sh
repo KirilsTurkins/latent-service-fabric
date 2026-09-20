@@ -37,9 +37,11 @@ if (( ${#java_sources[@]} == 0 )); then
     echo "no Java SDK sources found" >&2
     exit 1
 fi
-javac --release 21 -d "${OUTPUT}/java" "${java_sources[@]}"
+javac --release 25 -d "${OUTPUT}/java" "${java_sources[@]}"
+python3 sdk/java-client/tools/java_toolchain.py classes "${OUTPUT}/java"
 java -cp "${OUTPUT}/java" dev.latent.sdk.InvocationIdentityTest
 python3 sdk/java-client/tools/build.py test
+python3 sdk/java-client/tools/build.py build
 
 python3 -m unittest discover -s sdk/dotnet -p 'test_validate.py'
 python3 sdk/dotnet/validate.py --check

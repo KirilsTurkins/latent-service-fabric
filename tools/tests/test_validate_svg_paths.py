@@ -77,9 +77,12 @@ class SvgDiagnosticPathTests(unittest.TestCase):
             f"SVG missing non-empty <desc>: {RELATIVE_PATH}",
             f"SVG contains disallowed <script>: {RELATIVE_PATH}",
             f"SVG contains event handler onclick: {RELATIVE_PATH}",
-            f"SVG contains non-local reference in href: {RELATIVE_PATH}",
-            f"SVG contains non-local URL reference: {RELATIVE_PATH}",
-            f"SVG contains external CSS import: {RELATIVE_PATH}",
+            "SVG contains non-local reference in href 'https://example.invalid/external.svg#shape' "
+            f"(<use> element 4, attribute href): {RELATIVE_PATH}",
+            "SVG non-local reference 'https://example.invalid/filter.svg#filter' in <use> element 4 "
+            f"attribute style at CSS offset 8: {RELATIVE_PATH}",
+            "SVG external CSS import (@import) is disallowed in <style> element 5 at CSS offset 0 "
+            f"near \"@import 'https://example.invalid/style.css';\": {RELATIVE_PATH}",
         ])
 
     def test_parse_and_io_error_paths_use_forward_slashes(self) -> None:
