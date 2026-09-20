@@ -141,3 +141,44 @@ percentage promise across machines. Compare execution savings with the complete
 one-time build/preparation and repeated validation costs; moving work into a
 preparation step alone is not a speedup. Retain new observations separately from
 historical Phase 2/3 security evidence.
+
+## Retained Linux observation: 20 September 2026
+
+The [new retained observation](evidence/aot-inputs-20260920.json) records run
+[35516517404](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35516517404)
+on implementation commit `e8fee1fa1eb7aa3dbd2b5807df75ce6926f6e069`. The same 40
+cases passed with original, prepared and reused inputs (120 case completions).
+The unchanged production sandbox target, formatting check and focused Clippy
+also passed. This is one same-job Linux x86_64 observation, not a cross-machine
+performance guarantee or a comparison against an old, smaller test selection.
+
+| Execution-only selection | Original inputs | Prepared inputs | Reused inputs |
+| --- | ---: | ---: | ---: |
+| `aot_supervisor` — 23 cases | 409.388 s | 142.371 s | 142.496 s |
+| `isolated_aot` — 13 cases | 155.747 s | 38.126 s | 38.328 s |
+| `native_aot_cache` — 4 cases | 202.654 s | 46.400 s | 46.413 s |
+| **Total** | **767.789 s** | **226.896 s** | **227.236 s** |
+
+Prepared execution took **70.4% less wall time** in this sample. Mandatory
+production executable verification fell from 716.143 s in total to 160.209 s;
+those checks still ran against the actual selected executable bytes. The compiler
+copy shrank from 319,016,904 to 58,191,480 bytes and the supervisor worker copy from
+358,651,024 to 94,617,088 bytes. Driver harnesses remained the original Cargo
+products. Runtime expected-input validation became more expensive because both
+the original and selected copy are checked once per test process; that cost is
+included in the execution figures, not hidden in preparation.
+
+The separately timed Cargo no-run build took **109.675 s**. Its cache state was
+not measured, so this is not described as a cold build. One-time input preparation
+took **3.029 s**, including 0.858 s of stripping and 0.108 s of selected-copy digest
+work. Initial manifest validation took 1.076 s; the original, prepared and reused
+passes separately validated inputs in 1.076 s, 1.069 s, 1.073 s, respectively. Reuse did not strip
+or rebuild. The JSON keeps the exact nanosecond values, complete case names,
+executable identities and stage totals; it identifies the bounded per-case evidence
+through the original workflow artifact and its digest. Nested stage totals are
+not additive to the wall-time rows above.
+
+This initial observation predates the additional native-cache fixture/session
+spans, Python guard tests and CI handoff in `37b2d89`; it does not claim to measure
+those later spans. Existing production checks and real-child cases were not
+removed by those additions. Historical security receipts are untouched.
