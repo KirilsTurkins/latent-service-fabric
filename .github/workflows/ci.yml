@@ -56,6 +56,7 @@ jobs:
       - name: Validate documentation and profile selection
         run: |
           python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs
+          python3 -m unittest tools.tests.test_local_tests
           python3 tools/validate_docs.py
 
   rust:
@@ -245,7 +246,10 @@ jobs:
         timeout-minutes: 10
         shell: bash
         run: |
-          python3 -m unittest tools.tests.test_ci_rust_artifacts tools.tests.test_phase2_resource_binaries
+          python3 tools/test.py check --suite tooling-artifacts --context ci
+          python3 tools/test.py prepare --suite tooling-artifacts --context ci
+          python3 tools/test.py run --suite tooling-artifacts --context ci
+          python3 -m unittest tools.tests.test_phase2_resource_binaries
           fixture_root="$(mktemp -d "${RUNNER_TEMP}/lsf-operator-fixture.XXXXXXXX")"
           mkdir -p "${RUNNER_TEMP}/phase2-gate"
           trap 'rm -rf -- "$fixture_root"' EXIT

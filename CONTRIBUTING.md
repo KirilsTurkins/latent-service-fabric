@@ -18,6 +18,12 @@ Create your branch from the current `development` branch and target `development
 
 Install the pinned prerequisites from the [development toolchain guide](docs/development/toolchain.md), then select checks appropriate to the change using [VALIDATION.md](VALIDATION.md). Keep expensive scale probes, profiling, calibration, and resource soaks opt-in unless the issue or acceptance criteria explicitly require them.
 
+The [local test command guide](docs/development/local-tests.md) documents explicit
+planning, prerequisite checks, source-only preparation and exact failure
+selection. Native execution through that front end is intentionally blocked
+until its shared suite and prepared-artifact dependencies are integrated; it does
+not replace the existing Rust, provider or qualification checks.
+
 ## Change categories
 
 - **ADR:** a decision that changes a core invariant, dependency direction, execution model, or compatibility promise.
