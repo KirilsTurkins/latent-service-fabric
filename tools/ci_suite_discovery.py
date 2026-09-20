@@ -46,6 +46,12 @@ def artifact_records(path: Path) -> list[dict]:
                 if (record := json.loads(line)).get("reason") == "compiler-artifact"]
 
 
+def validate_custom_listing(raw: bytes, expected: list[str]) -> None:
+    from tools.run_aot_tests import listing as custom_listing
+    registry.require(len(raw) <= 1024 * 1024, "custom-harness-list-limit")
+    custom_listing(raw, frozenset(expected))
+
+
 def validate_cases(suite: dict, available: frozenset[str], ignored: frozenset[str], selections: dict) -> None:
     registry.require(ignored <= available, "ignored-case-not-listed")
     if suite["mode"] == "compile-only":
@@ -110,8 +116,8 @@ def discover(repo: Path, inventory: Path, data: dict, packages: list[str] | None
                 env = cargo_environment(repo, artifact, dict(os.environ))
                 status, raw = run_owned([str(artifact.executable), "--list"], cwd=artifact.package,
                                         env=env, timeout=30, maximum=1024 * 1024)
-                registry.require(status == 0 and listing(raw) == set(suite["expectedCustomCases"]),
-                                 "custom-harness-list-changed")
+                registry.require(status == 0, "custom-harness-list-failed")
+                validate_custom_listing(raw, suite["expectedCustomCases"])
                 receipt.update(contract="custom-list", cases=sorted(suite["expectedCustomCases"]), executed=False)
             receipts.append(receipt)
             continue

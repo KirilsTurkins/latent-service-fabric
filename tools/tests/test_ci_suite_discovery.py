@@ -72,6 +72,16 @@ class SelectionTests(unittest.TestCase):
                     complete + '\nLSF_AOT_CASE passed oversized'):
             with self.assertRaises(ValueError): discovery.validate_custom_execution(data, raw)
 
+    def test_custom_listing_uses_its_exact_hyphenated_case_contract(self):
+        from tools.run_aot_tests import SUPERVISOR_CASES
+        names = sorted(SUPERVISOR_CASES)
+        raw = ('\n'.join(name + ': test' for name in names) + '\n23 tests, 0 benchmarks\n').encode()
+        discovery.validate_custom_listing(raw, names)
+        for bad in (raw.replace(b'active-shutdown', b'unknown-case'), raw + b'oversized: test\n',
+                    raw.replace(b'active-shutdown: test\n', b''), raw.replace(b'23 tests', b'0 tests')):
+            with self.assertRaises(ArtifactError):
+                discovery.validate_custom_listing(bad, names)
+
 
 class ArtifactTests(unittest.TestCase):
     def setUp(self):

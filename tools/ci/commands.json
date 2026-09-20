@@ -2812,7 +2812,7 @@
       "sha256": "5c5743c001f65a141ad42150fe763d52cdb6ca4f6fa6ab7c918df7f29da10cc4"
     },
     "tools/ci_suite_discovery.py": {
-      "sha256": "2e4c6ad2ae2e959a960efc157041c617ab052b989532d96cfa71c63c7ef5c9df"
+      "sha256": "9880f5400a645b52e6e618d5027eac10d3a558e14abe1697a7ae024a8d2e307a"
     },
     "tools/docs_pages.py": {
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
@@ -3345,6 +3345,7 @@
       "ArtifactTests.test_shared_exact_artifact_reader_rejects_missing_duplicate_wrong_owner_and_failed_build",
       "ArtifactTests.test_unregistered_executable_is_not_silently_dropped",
       "SelectionTests.test_custom_execution_requires_every_exact_marker_once",
+      "SelectionTests.test_custom_listing_uses_its_exact_hyphenated_case_contract",
       "SelectionTests.test_empty_renamed_missing_unexpected_ignored_and_ambiguous_selection_fail",
       "SelectionTests.test_explicit_doctests_and_compatibility_feature_must_execute_nonempty_cases",
       "SelectionTests.test_libtest_and_custom_result_contracts_are_not_interchangeable",
