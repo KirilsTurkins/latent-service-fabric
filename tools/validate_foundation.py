@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import sys
+import shlex
+import yaml
 import tomllib
 from collections.abc import Iterator
 from pathlib import Path
@@ -15,6 +17,13 @@ except ModuleNotFoundError as error:
     if error.name != "native_loader_boundary":
         raise
     from tools.native_loader_boundary import validate as validate_native_loader
+
+try:
+    from ci_cargo import RECIPES
+except ModuleNotFoundError as error:
+    if error.name != "ci_cargo":
+        raise
+    from tools.ci_cargo import RECIPES
 
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
@@ -208,23 +217,48 @@ def validate_generated_contract_boundaries(root: Path = ROOT) -> None:
             fail(f"legacy duplicated binding generator must be removed: {relative}")
 
 
+def validate_cargo_workflow(workflow: str) -> None:
+    """Check invoked recipes, excluding comments and unrelated script text."""
+    try:
+        document = yaml.load(workflow, Loader=yaml.BaseLoader)
+        if "pull_request" not in document["on"]:
+            fail("CI workflow does not select pull requests")
+        steps = document["jobs"]["rust"]["steps"]
+        selected = set()
+        for step in steps:
+            if "if" in step:
+                continue
+            for line in step.get("run", "").splitlines():
+                words = shlex.split(line, comments=True)
+                if len(words) >= 4 and words[:3] == ["python3", "tools/ci_cargo.py", "run"]:
+                    selected.add(words[3])
+        required = {"format", "workspace-check", "bindings", "clippy", "test"}
+        for missing in sorted(required - selected):
+            fail(f"CI workflow does not invoke foundation recipe: {missing}")
+        commands = {" ".join(("cargo", *entry.args))
+                    for name in required & selected for entry in RECIPES[name]}
+        for command in (
+            "cargo fmt --all --check",
+            "cargo check --workspace --all-targets --all-features --locked",
+            "cargo clippy --workspace --all-targets --all-features --locked",
+            "cargo test --workspace --all-targets --all-features --locked",
+            "cargo check -p latent-rpc --all-targets --all-features --locked",
+            "cargo check -p latent-component-bindings --locked",
+            "cargo check -p latent-component-bindings --target wasm32-wasip2 --locked",
+        ):
+            if command not in commands:
+                fail(f"CI foundation recipes do not enforce command: {command}")
+    except (KeyError, TypeError, AttributeError, ValueError, yaml.YAMLError) as error:
+        fail(f"invalid CI foundation recipe wiring: {type(error).__name__}")
+
+
 def validate_ci_and_docs(root: Path = ROOT) -> None:
     workflow_path = root / ".github/workflows/ci.yml"
     if not workflow_path.is_file():
         fail("CI workflow missing: .github/workflows/ci.yml")
     else:
         workflow = workflow_path.read_text(encoding="utf-8")
-        for token in (
-            "pull_request:",
-            "cargo fmt --all --check",
-            "cargo check --workspace --all-targets --all-features --locked",
-            "cargo clippy --workspace --all-targets --all-features --locked",
-            "cargo test --workspace --all-targets --all-features --locked",
-            "latent-rpc",
-            "latent-component-bindings",
-        ):
-            if token not in workflow:
-                fail(f"CI workflow does not enforce foundation token: {token}")
+        validate_cargo_workflow(workflow)
 
     makefile = (root / "Makefile").read_text(encoding="utf-8")
     for target in ("rpc-bindings:", "component-bindings:", "phase1-foundation:"):

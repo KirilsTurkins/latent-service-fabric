@@ -11,6 +11,48 @@ from unittest import mock
 from tools import ci_cargo as cargo
 
 
+class FoundationRecipeTests(unittest.TestCase):
+    def setUp(self):
+        from tools import validate_foundation
+        self.foundation = validate_foundation
+        self.foundation.ERRORS.clear()
+        self.addCleanup(self.foundation.ERRORS.clear)
+        self.workflow = (cargo.ROOT / ".github/workflows/ci.yml").read_text()
+
+    def test_real_invocations_satisfy_foundation(self):
+        self.foundation.validate_cargo_workflow(self.workflow)
+        self.assertEqual(self.foundation.ERRORS, [])
+
+    def test_comment_cannot_replace_binding_execution(self):
+        self.foundation.validate_cargo_workflow(self.workflow.replace(
+            "run: python3 tools/ci_cargo.py run bindings",
+            "run: echo disabled # python3 tools/ci_cargo.py run bindings latent-rpc latent-component-bindings"))
+        self.assertIn("CI workflow does not invoke foundation recipe: bindings", self.foundation.ERRORS)
+
+    def test_conditionally_skipped_binding_step_does_not_satisfy_foundation(self):
+        self.foundation.validate_cargo_workflow(self.workflow.replace(
+            "run: python3 tools/ci_cargo.py run bindings",
+            "if: false\n        run: python3 tools/ci_cargo.py run bindings"))
+        self.assertIn("CI workflow does not invoke foundation recipe: bindings", self.foundation.ERRORS)
+
+    def test_recipe_must_contain_host_and_guest_binding_checks(self):
+        for omitted in (0, 1, 2):
+            with self.subTest(omitted=omitted):
+                self.foundation.ERRORS.clear()
+                bindings = cargo.RECIPES["bindings"]
+                with mock.patch.dict(cargo.RECIPES, {"bindings": bindings[:omitted] + bindings[omitted + 1:]}):
+                    self.foundation.validate_cargo_workflow(self.workflow)
+                self.assertTrue(any("do not enforce command" in error for error in self.foundation.ERRORS))
+
+    def test_workspace_locked_scope_is_not_optional(self):
+        from dataclasses import replace
+        invocation = cargo.RECIPES["workspace-check"][0]
+        changed = replace(invocation, args=tuple(arg for arg in invocation.args if arg != "--locked"))
+        with mock.patch.dict(cargo.RECIPES, {"workspace-check": (changed,)}):
+            self.foundation.validate_cargo_workflow(self.workflow)
+        self.assertTrue(any("cargo check --workspace" in error for error in self.foundation.ERRORS))
+
+
 class CargoRecipeTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
