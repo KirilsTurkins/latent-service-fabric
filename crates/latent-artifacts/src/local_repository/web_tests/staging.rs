@@ -7,6 +7,9 @@ struct Lease {
     now: u64,
     ceiling: u64,
     revoked: bool,
+    renew_control: bool,
+    renewals: usize,
+    fail_renewal: bool,
 }
 impl Lease {
     fn check(&self) -> Result<(), PlatformError> {
@@ -56,6 +59,23 @@ impl WebAdmissionGrant for FencedGrant {
     }
 }
 impl AdmissionAuthority for FencedHost {
+    fn renew_control_lease(&self) -> Result<(), PlatformError> {
+        let mut lease = self
+            .0
+            .try_lock()
+            .expect("control renewal outside the fence");
+        if lease.fail_renewal {
+            return Err(super::super::super::error(
+                latent_core::PlatformErrorCode::Unavailable,
+                "test-lease-durability-uncertain",
+            ));
+        }
+        if lease.renew_control {
+            lease.ceiling = lease.now + 5;
+            lease.renewals += 1;
+        }
+        Ok(())
+    }
     fn verify(
         &self,
         tenant: &TenantId,
@@ -99,6 +119,7 @@ fn staged_web_payload_allows_lease_renewal_but_expiry_and_revocation_cannot_comm
             now: 0,
             ceiling: 5,
             revoked: false,
+            ..Lease::default()
         }));
         let repo = DirectoryArtifactRepository::open_enforced(
             root.path(),
@@ -150,5 +171,64 @@ fn staged_web_payload_allows_lease_renewal_but_expiry_and_revocation_cannot_comm
         if outcome != "renew" {
             assert!(reopened.select_web_publication(&reference).is_err());
         }
+    }
+}
+
+#[test]
+fn control_commit_renews_after_preparation_and_staging_without_reviving_denied_grants() {
+    for outcome in ["admit", "revoke", "uncertain"] {
+        let root = TempRoot::new();
+        let lease = Arc::new(Mutex::new(Lease {
+            ceiling: 5,
+            renew_control: true,
+            ..Lease::default()
+        }));
+        let repo = DirectoryArtifactRepository::open_enforced(
+            root.path(),
+            DirectoryArtifactRepositoryConfig::default(),
+            AdmissionStorageLimits::default(),
+            Arc::new(FencedHost(Arc::clone(&lease))),
+        )
+        .unwrap();
+        let staged = Arc::clone(&lease);
+        *repo.web.after_payload_staged.lock().unwrap() = Some(Box::new(move || {
+            let mut value = staged.try_lock().expect("unfenced staging witness");
+            assert_eq!(value.renewals, 1);
+            value.now = 14;
+            value.revoked = outcome == "revoke";
+            value.fail_renewal = outcome == "uncertain";
+        }));
+        let result =
+            repo.publish_web_package(context("publish", 0), browser_test_upload(), &mut |_| {
+                // Preparation used the sole synchronous control worker past
+                // the initial lease; a background timer cannot run here.
+                lease.lock().unwrap().now = 7;
+                Ok(())
+            });
+        let reference = PublicationRef::package(
+            LifecycleScope::Tenant(tenant()),
+            &crate::package::package_digest(&browser_test_upload().manifest),
+        )
+        .unwrap();
+        if outcome == "admit" {
+            assert!(!result.unwrap().replay);
+            assert_eq!(lease.lock().unwrap().renewals, 2);
+            repo.read_web_asset(&reference, "/index.html").unwrap();
+        } else {
+            assert_eq!(
+                result.unwrap_err().code,
+                latent_core::PlatformErrorCode::Unavailable
+            );
+            assert!(repo.select_web_publication(&reference).is_err());
+        }
+        drop(repo);
+        let reopened = open(&root);
+        assert_eq!(
+            reopened
+                .web_operation_status(&reference.scope, "publish")
+                .unwrap()
+                .is_some(),
+            outcome == "admit"
+        );
     }
 }
