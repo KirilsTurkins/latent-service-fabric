@@ -76,7 +76,16 @@ impl Drop for Request {
 }
 pub struct PoolAdmission {
     io: Option<IoAdmission>,
-    request: Arc<Request>,
+    request: Option<Arc<Request>>,
+    registration: Option<Registration>,
+}
+struct Registration {
+    owner: Arc<Inner>,
+    client: Arc<client::ClientCore>,
+    tenant: String,
+    deadline: Instant,
+    pending: Option<Charge>,
+    metadata: Option<Charge>,
 }
 pub struct PoolReady {
     io: IoReady,
@@ -113,7 +122,6 @@ impl ProviderPools {
             return Err(denied());
         }
         let io = self.inner.io.admit_until(session, deadline)?;
-        let mut state = self.inner.state.try_lock().map_err(|_| busy())?;
         self.inner.check()?;
         if client.core.epoch.retired.load(Ordering::Acquire)
             || !client
@@ -127,47 +135,26 @@ impl ProviderPools {
         let limits = self.inner.quotas.limits()?;
         let pending = self.inner.quotas.acquire(Kind::Pending, 1)?;
         let metadata = self.inner.quotas.acquire(Kind::Metadata, 4096)?;
-        let slot = state
-            .requests
-            .iter()
-            .position(|r| r.strong_count() == 0)
-            .ok_or_else(capacity)?;
-        let tenant = tenant(&mut state, &self.inner, &session.core.plan.target.tenant.0)?;
-        let sequence = state.next_request.checked_add(1).ok_or_else(capacity)?;
         let deadline = Instant::now()
             .checked_add(limits.maximum_queue_age)
             .ok_or_else(invalid)?
             .min(io.queue_deadline());
-        limits::increment(&tenant.requests, 1, limits.maximum_requests_per_tenant)?;
-        if let Err(error) = limits::increment(
-            &client.core.epoch.usage.requests,
-            1,
-            limits.maximum_requests_per_provider,
-        ) {
-            tenant.requests.fetch_sub(1, Ordering::AcqRel);
-            return Err(error);
-        }
-        let request = Arc::new(Request {
-            owner: Arc::downgrade(&self.inner),
-            client: Arc::clone(&client.core),
-            tenant,
-            sequence,
-            deadline,
-            phase: AtomicU8::new(PENDING),
-            waiting: AtomicBool::new(false),
-            accounting: Mutex::new(Accounting {
-                pending: Some(pending),
-                running: None,
-            }),
-            _metadata: metadata,
-        });
-        io.retain_owner(request.clone())?;
-        state.requests[slot] = Arc::downgrade(&request);
-        state.next_request = sequence;
-        Ok(PoolAdmission {
+        let mut admission = PoolAdmission {
             io: Some(io),
-            request,
-        })
+            request: None,
+            registration: Some(Registration {
+                owner: Arc::clone(&self.inner),
+                client: Arc::clone(&client.core),
+                tenant: checked_text(&session.core.plan.target.tenant.0)?,
+                deadline,
+                pending: Some(pending),
+                metadata: Some(metadata),
+            }),
+        };
+        // Reserve finite I/O, queue and metadata ownership before returning.
+        // A maintenance reader may delay bookkeeping, never the queue deadline.
+        admission.try_register()?;
+        Ok(admission)
     }
 }
 pub(super) fn tenant(
@@ -200,6 +187,67 @@ pub(super) fn tenant(
     Ok(tenant)
 }
 impl PoolAdmission {
+    fn try_register(&mut self) -> Result<bool, PlatformError> {
+        let Some(registration) = self.registration.as_mut() else {
+            return Ok(true);
+        };
+        let owner = &registration.owner;
+        owner.check()?;
+        let io = self.io.as_ref().expect("affine admission");
+        io.checkpoint()?;
+        if Instant::now() >= registration.deadline {
+            return Err(expired());
+        }
+        let mut state = match owner.state.try_lock() {
+            Ok(state) => state,
+            Err(TryLockError::WouldBlock) => return Ok(false),
+            Err(TryLockError::Poisoned(_)) => return Err(busy()),
+        };
+        if registration.client.epoch.retired.load(Ordering::Acquire) {
+            return Err(denied());
+        }
+        let limits = owner.quotas.limits()?;
+        let slot = state
+            .requests
+            .iter()
+            .position(|r| r.strong_count() == 0)
+            .ok_or_else(capacity)?;
+        let tenant = tenant(&mut state, owner, &registration.tenant)?;
+        let sequence = state.next_request.checked_add(1).ok_or_else(capacity)?;
+        limits::increment(&tenant.requests, 1, limits.maximum_requests_per_tenant)?;
+        if let Err(error) = limits::increment(
+            &registration.client.epoch.usage.requests,
+            1,
+            limits.maximum_requests_per_provider,
+        ) {
+            tenant.requests.fetch_sub(1, Ordering::AcqRel);
+            return Err(error);
+        }
+        let request = Arc::new(Request {
+            owner: Arc::downgrade(owner),
+            client: Arc::clone(&registration.client),
+            tenant,
+            sequence,
+            deadline: registration.deadline,
+            phase: AtomicU8::new(PENDING),
+            waiting: AtomicBool::new(false),
+            accounting: Mutex::new(Accounting {
+                pending: registration.pending.take(),
+                running: None,
+            }),
+            _metadata: registration
+                .metadata
+                .take()
+                .expect("one registration owns metadata"),
+        });
+        io.retain_owner(request.clone())?;
+        state.requests[slot] = Arc::downgrade(&request);
+        state.next_request = sequence;
+        drop(state);
+        self.request = Some(request);
+        self.registration = None;
+        Ok(true)
+    }
     pub fn reserve_input(
         &self,
         bytes: usize,
@@ -221,8 +269,21 @@ impl PoolAdmission {
             .input(capacity, protocol_metadata)
     }
     pub async fn wait(mut self) -> Result<PoolReady, PlatformError> {
-        let owner = self.request.owner.upgrade().ok_or_else(denied)?;
-        self.request.waiting.store(true, Ordering::Release);
+        while !self.try_register()? {
+            let deadline = self
+                .registration
+                .as_ref()
+                .expect("pending registration")
+                .deadline;
+            let io = self.io.as_ref().expect("affine admission");
+            tokio::select! {
+                failure = io.stopped() => return Err(failure),
+                () = tokio::time::sleep_until(deadline.min(Instant::now() + Duration::from_millis(1)).into()) => {},
+            }
+        }
+        let request = Arc::clone(self.request.as_ref().expect("registered admission"));
+        let owner = request.owner.upgrade().ok_or_else(denied)?;
+        request.waiting.store(true, Ordering::Release);
         loop {
             let changed = owner.changed.notified();
             tokio::pin!(changed);
@@ -230,51 +291,47 @@ impl PoolAdmission {
             let io = self.io.as_ref().expect("pool admission");
             io.checkpoint()?;
             owner.check()?;
-            if self.request.client.epoch.retired.load(Ordering::Acquire) {
+            if request.client.epoch.retired.load(Ordering::Acquire) {
                 return Err(denied());
             }
-            if Instant::now() >= self.request.deadline {
+            if Instant::now() >= request.deadline {
                 return Err(expired());
             }
             let scheduled = schedule(&owner)?;
-            if self.request.phase.load(Ordering::Acquire) == READY {
+            if request.phase.load(Ordering::Acquire) == READY {
                 break;
             }
-            // A maintenance/snapshot reader need not notify on unlocking. Keep
-            // this already-charged request, without blocking an executor thread
-            // or replaying admission/provider work, and bound the next turn by
-            // the original deadline. Ordinary capacity waits remain event driven.
-            let wake_at = if scheduled {
-                self.request.deadline
+            let observation = if scheduled {
+                request.deadline
             } else {
-                self.request
+                request
                     .deadline
                     .min(Instant::now() + Duration::from_millis(1))
             };
             tokio::select! {
                 failure = io.stopped() => return Err(failure),
                 () = &mut changed => {},
-                () = tokio::time::sleep_until(wake_at.into()) => {},
+                () = tokio::time::sleep_until(observation.into()) => {},
             }
         }
         // Keep the same absolute I/O queue deadline across both bounded queues.
         let ready = self.io.take().expect("pool admission").wait().await?;
-        Ok(PoolReady {
-            io: ready,
-            request: Arc::clone(&self.request),
-        })
+        Ok(PoolReady { io: ready, request })
     }
 }
 impl Drop for PoolAdmission {
     fn drop(&mut self) {
         if self.io.is_some() {
-            self.request.phase.store(CANCELLED, Ordering::Release);
-            if let Some(owner) = self.request.owner.upgrade() {
-                owner.changed.notify_waiters();
+            if let Some(request) = &self.request {
+                request.phase.store(CANCELLED, Ordering::Release);
+                if let Some(owner) = request.owner.upgrade() {
+                    owner.changed.notify_waiters();
+                }
             }
         }
     }
 }
+
 impl PoolReady {
     /// Re-enter the original activation scope after queue admission. This is a
     /// fresh final grant check, not reuse of an Allow DTO captured before waiting.

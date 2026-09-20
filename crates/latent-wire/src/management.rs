@@ -40,7 +40,11 @@ pub use inventory::{node_inventory_from_proto, node_inventory_to_proto};
 pub use latent_rpc::control::v1 as proto;
 pub use limits::ManagementLimits;
 pub use policies::PolicyResponseService;
-pub use release::{release_descriptor_from_proto, release_descriptor_to_proto};
+pub use release::{
+    release_descriptor_from_proto, release_descriptor_to_proto, MAX_WEB_MUTATION_WAIT_MILLIS,
+    MAX_WEB_PREPARATION_WAIT_MILLIS, WEB_EVIDENCE_RPC_PATH, WEB_PREPARATION_RPC_PATH,
+    WEB_PUBLICATION_RPC_PATH,
+};
 pub use resource::parse_inspection_resource;
 pub use rollouts::RolloutResponseService;
 pub use triggers::{http_trigger_from_proto, http_trigger_to_proto};
@@ -66,6 +70,8 @@ pub struct ManagementServiceAdapter {
     policies: Option<latent_policy::capability::PolicyControlHandle>,
     capabilities: Option<capabilities::Inspection>,
     http: Option<Arc<latent_control_store::DirectoryDeploymentRepository>>,
+    web: Option<Arc<latent_artifacts::DirectoryArtifactRepository>>,
+    web_backend: Option<Arc<dyn latent_executor::ExecutionBackend>>,
 }
 
 impl ManagementServiceAdapter {
@@ -93,6 +99,8 @@ impl ManagementServiceAdapter {
             policies: None,
             capabilities: None,
             http: None,
+            web: None,
+            web_backend: None,
         })
     }
 

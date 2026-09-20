@@ -1,4 +1,5 @@
 use super::{LifecycleScope, ReleaseLifecycleRecord, ReleaseLifecycleState};
+use crate::web::WebUseEligibility;
 use crate::{AdmissionAuthority, AdmissionRecheck, ReleaseEligibility};
 use latent_core::{
     PackageDigest, PlatformError, PlatformErrorCode, PublicationId, ReleaseDigest, TenantId,
@@ -127,6 +128,7 @@ pub struct LifecycleEligibility {
     pub(super) owner: Arc<Owner>,
     pub(super) row: Arc<Row>,
     pub(super) generation: u64,
+    pub(super) projection: Option<Arc<WebUseEligibility>>,
 }
 impl LifecycleEligibility {
     #[must_use]
@@ -160,7 +162,9 @@ impl LifecycleEligibility {
                 "release-lifecycle-ineligible",
             ))
         } else {
-            Ok(())
+            self.projection
+                .as_deref()
+                .map_or(Ok(()), WebUseEligibility::check_generation)
         }
     }
     #[must_use]
@@ -185,6 +189,10 @@ impl LifecycleEligibility {
                 .package
                 .as_ref()
                 .map_or(0, |value| value.as_str().len())
+            + self
+                .projection
+                .as_deref()
+                .map_or(0, WebUseEligibility::retained_bytes)
     }
 }
 impl fmt::Debug for LifecycleEligibility {
@@ -198,7 +206,11 @@ impl fmt::Debug for LifecycleEligibility {
 impl PartialEq for LifecycleEligibility {
     fn eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.owner, &other.owner)
-            && Arc::ptr_eq(&self.row, &other.row)
+            && match (&self.projection, &other.projection) {
+                (Some(projection), Some(other)) => projection == other,
+                (None, None) => Arc::ptr_eq(&self.row, &other.row),
+                _ => false,
+            }
             && self.generation == other.generation
     }
 }
@@ -206,7 +218,10 @@ impl Eq for LifecycleEligibility {}
 impl Hash for LifecycleEligibility {
     fn hash<H: Hasher>(&self, state: &mut H) {
         std::ptr::hash(Arc::as_ptr(&self.owner), state);
-        std::ptr::hash(Arc::as_ptr(&self.row), state);
+        match &self.projection {
+            Some(projection) => projection.hash(state),
+            None => std::ptr::hash(Arc::as_ptr(&self.row), state),
+        }
         self.generation.hash(state);
     }
 }
@@ -228,6 +243,9 @@ impl ReleaseUseEligibility {
         lifecycle: LifecycleEligibility,
         admission: Option<ReleaseEligibility>,
     ) -> Result<Self, PlatformError> {
+        if lifecycle.projection.is_some() {
+            return Err(super::invalid());
+        }
         match (&lifecycle.owner.authority, &admission) {
             (Some(authority), Some(proof))
                 if lifecycle.scope().tenant() == Some(proof.tenant())
@@ -250,6 +268,10 @@ impl ReleaseUseEligibility {
     #[must_use]
     pub fn admission(&self) -> Option<&ReleaseEligibility> {
         self.admission.as_ref()
+    }
+    #[must_use]
+    pub fn web_projection(&self) -> Option<&WebUseEligibility> {
+        self.lifecycle.projection.as_deref()
     }
     #[must_use]
     pub fn scope(&self) -> &LifecycleScope {
@@ -289,7 +311,10 @@ impl ReleaseUseEligibility {
         let mut hash = Sha256::new();
         hash.update(b"lsf-release-use-v1\0");
         hash.update((Arc::as_ptr(&self.lifecycle.owner) as usize).to_le_bytes());
-        hash.update((Arc::as_ptr(&self.lifecycle.row) as usize).to_le_bytes());
+        match self.web_projection() {
+            Some(projection) => hash.update(projection.cache_digest()),
+            None => hash.update((Arc::as_ptr(&self.lifecycle.row) as usize).to_le_bytes()),
+        }
         hash.update(self.generation().to_le_bytes());
         if let Some(proof) = &self.admission {
             hash.update(proof.cache_digest());
@@ -299,7 +324,19 @@ impl ReleaseUseEligibility {
     #[must_use]
     pub fn belongs_to_catalog(&self, handle: &LifecycleAuthorityHandle) -> bool {
         self.lifecycle.belongs_to_catalog(handle)
-            && handle.required_authority().is_some() == self.admission.is_some()
+            && match (
+                handle.required_authority(),
+                &self.admission,
+                self.web_projection(),
+            ) {
+                (Some(authority), None, Some(projection)) => {
+                    projection.belongs_to_authority(authority)
+                        && projection.belongs_to_catalog(handle)
+                }
+                (Some(authority), Some(proof), None) => proof.belongs_to_authority(authority),
+                (None, None, None) => true,
+                _ => false,
+            }
     }
     pub fn authorize_tenant(&self, tenant: &TenantId) -> Result<(), PlatformError> {
         match self.scope() {
@@ -338,6 +375,12 @@ impl ReleaseUseEligibility {
         authority: &Arc<dyn AdmissionAuthority>,
     ) -> Result<(), PlatformError> {
         self.lifecycle.check_current()?;
+        if let Some(projection) = self.web_projection() {
+            if !projection.belongs_to_authority(authority) {
+                return Err(super::invalid());
+            }
+            return projection.check_current(self.tenant().ok_or_else(super::invalid)?);
+        }
         self.admission
             .as_ref()
             .ok_or_else(super::invalid)?
@@ -345,6 +388,9 @@ impl ReleaseUseEligibility {
     }
     pub fn check_current(&self) -> Result<(), PlatformError> {
         self.lifecycle.check_current()?;
+        if let Some(projection) = self.web_projection() {
+            projection.check_current(self.tenant().ok_or_else(super::invalid)?)?;
+        }
         if let Some(proof) = &self.admission {
             proof.check_for_authority(
                 self.lifecycle
@@ -377,12 +423,31 @@ impl ReleaseUseEligibility {
             }
             entry.lifecycle.check_current()?;
         }
-        if let Some(proof) = entries.iter().find_map(|entry| entry.admission.as_ref()) {
+        if let Some(projection) = entries.iter().find_map(Self::web_projection) {
+            projection.with_current(
+                projection
+                    .publication()
+                    .scope
+                    .tenant()
+                    .ok_or_else(super::invalid)?,
+                &mut |admission| {
+                    let checker = Checked {
+                        owner: &first.lifecycle.owner,
+                        entries,
+                        admission: Some(admission),
+                        web: Some(projection),
+                    };
+                    checker.check()?;
+                    action(&checker)
+                },
+            )
+        } else if let Some(proof) = entries.iter().find_map(|entry| entry.admission.as_ref()) {
             proof.with_current(&mut |admission| {
                 let checker = Checked {
                     owner: &first.lifecycle.owner,
                     entries,
                     admission: Some(admission),
+                    web: None,
                 };
                 checker.check()?;
                 action(&checker)
@@ -392,6 +457,7 @@ impl ReleaseUseEligibility {
                 owner: &first.lifecycle.owner,
                 entries,
                 admission: None,
+                web: None,
             };
             checker.check()?;
             action(&checker)
@@ -402,6 +468,7 @@ struct Checked<'a> {
     owner: &'a Arc<Owner>,
     entries: &'a [ReleaseUseEligibility],
     admission: Option<&'a dyn AdmissionRecheck>,
+    web: Option<&'a WebUseEligibility>,
 }
 impl ReleaseUseRecheck for Checked<'_> {
     fn check(&self) -> Result<(), PlatformError> {
@@ -419,6 +486,12 @@ impl ReleaseUseRecheck for Checked<'_> {
             return Err(super::invalid());
         }
         entry.lifecycle.check_current()?;
+        if let Some(projection) = entry.web_projection() {
+            return projection.check_with(
+                self.web.ok_or_else(super::invalid)?,
+                self.admission.ok_or_else(super::invalid)?,
+            );
+        }
         match (&entry.admission, self.admission) {
             (Some(proof), Some(checker)) => proof.check_with(checker),
             (None, None) if self.owner.authority.is_none() => Ok(()),
@@ -426,3 +499,5 @@ impl ReleaseUseRecheck for Checked<'_> {
         }
     }
 }
+
+mod web;

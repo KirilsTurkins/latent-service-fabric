@@ -44,6 +44,15 @@ struct Inner {
     runtime: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
     state: Mutex<State>,
     retired: AtomicBool,
+    verifying: AtomicBool,
+}
+
+struct VerificationPermit<'owner>(&'owner AtomicBool);
+
+impl Drop for VerificationPermit<'_> {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::Release);
+    }
 }
 struct State {
     policy: SupplyChainPolicy,
@@ -123,6 +132,7 @@ impl SupplyChainAuthority {
                 clock,
                 runtime,
                 retired: AtomicBool::new(false),
+                verifying: AtomicBool::new(false),
                 state: Mutex::new(State {
                     policy,
                     verifiers,
@@ -242,8 +252,16 @@ impl AdmissionAuthority for SupplyChainAuthority {
         tenant: &TenantId,
         upload: PackageAdmissionUpload,
     ) -> Result<latent_artifacts::web::VerifiedWebAdmission, PlatformError> {
+        let _verification = self.inner.verification()?;
+        {
+            let mut state = self.inner.lock()?;
+            self.inner.sample(&mut state)?;
+            web::check_tenant(tenant, &state)?;
+        }
+        let prepared = web::prepare(upload)?;
         let mut state = self.inner.lock()?;
-        web::with_state(&self.inner, tenant, upload, None, &mut state)
+        self.renew(&mut state)?;
+        web::with_state(&self.inner, tenant, prepared, None, &mut state)
     }
 
     fn recover_web(
@@ -251,17 +269,19 @@ impl AdmissionAuthority for SupplyChainAuthority {
         binding: &latent_artifacts::web::WebAdmissionBinding,
         upload: PackageAdmissionUpload,
     ) -> Result<latent_artifacts::web::VerifiedWebAdmission, PlatformError> {
+        let _verification = self.inner.verification()?;
+        let upload = web::validate_retained(binding, upload)?;
+        let prepared = web::prepare(upload)?;
         let mut state = self
             .inner
             .state
             .lock()
             .map_err(|_| unavailable("admission-authority-poisoned"))?;
-        let upload = web::validate_retained(binding, upload)?;
         self.renew(&mut state)?;
         web::with_state(
             &self.inner,
             &binding.tenant,
-            upload,
+            prepared,
             Some(binding),
             &mut state,
         )
@@ -279,6 +299,7 @@ impl AdmissionAuthority for SupplyChainAuthority {
         binding: &AdmissionBinding,
         upload: PackageAdmissionUpload,
     ) -> Result<VerifiedAdmission, PlatformError> {
+        let _verification = self.inner.verification()?;
         // Recovery is an explicit synchronous control operation. It may cover
         // the clock lease while scanning; preparation/invocation never renew it.
         let mut state = self
@@ -301,6 +322,16 @@ impl AdmissionAuthority for SupplyChainAuthority {
 }
 
 impl Inner {
+    fn verification(&self) -> Result<VerificationPermit<'_>, PlatformError> {
+        if self.retired.load(Ordering::Acquire) {
+            return Err(unavailable("admission-owner-retired"));
+        }
+        self.verifying
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| unavailable("admission-verification-busy"))?;
+        Ok(VerificationPermit(&self.verifying))
+    }
+
     fn lock(&self) -> Result<MutexGuard<'_, State>, PlatformError> {
         if self.retired.load(Ordering::Acquire) {
             return Err(unavailable("admission-owner-retired"));

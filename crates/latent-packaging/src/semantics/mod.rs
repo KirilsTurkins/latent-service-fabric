@@ -14,7 +14,7 @@ mod tests;
 mod wasm;
 mod web;
 
-pub use web::{inspect_web_bundle, validate_web_renderer};
+pub use web::{inspect_web_bundle, validate_web_renderer, validate_web_renderer_with_backend};
 
 pub use compatibility::{
     check_invocation_target, compare_packages, compile_host_binding, compile_local_binding,
@@ -106,7 +106,12 @@ pub fn validate_capsule(
         if renderer != &latent_manifest::RendererRequirement::angular() {
             return Err(incompatible("renderer-profile-incompatible"));
         }
-        validate_web_renderer(component, renderer.profile, limits)?;
+        validate_web_renderer_with_backend(
+            component,
+            renderer.profile,
+            latent_artifacts::web::WebBackendProfile::from_imports(&manifest.imports)?,
+            limits,
+        )?;
     } else {
         wasm::validate(component, limits)?;
     }

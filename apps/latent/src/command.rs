@@ -217,6 +217,7 @@ fn name(command: &Command) -> &'static str {
         RouteCommand as Route, ValidateCommand as V,
     };
     match command {
+        Command::Web(command) => command.name(),
         Command::Completions { .. } => "completions",
         Command::Trigger(command) => command.name(),
         Command::Capability(command) => command.name(),

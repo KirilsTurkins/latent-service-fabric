@@ -79,6 +79,9 @@ def classify_paths(paths: list[str]) -> Decision:
     renderer = any(
         path in {"Cargo.toml", "Cargo.lock", ".cargo/config.toml", "rust-toolchain.toml",
                  ".github/workflows/ci.yml", "tools/ci_profile.py", "tools/toolchain.toml",
+                 "tools/ci_rust_artifacts.py", "tools/tests/test_angular_t1_workflow.py",
+                 "tools/run_angular_t1_workflow.py", "apps/latent/src/args/web.rs",
+                 "api/proto/latent/control/v1/release.proto",
                  "tools/native_loader_boundary.py", "schemas/capsule-manifest.schema.json",
                  "schemas/angular-build.schema.json", "schemas/web-build-observation.schema.json",
                  "schemas/builder-policy.schema.json",
@@ -90,6 +93,8 @@ def classify_paths(paths: list[str]) -> Decision:
                             "tools/tests/browser_application.test.mjs",
                             "examples/angular-application/", "tools/angular_build/", "tools/build_angular_package.py",
                             "tools/run_angular_build_tests.py", "tools/check_angular_hydration.mjs",
+                            "tools/phase3_web_", "apps/latent/src/management/web",
+                            "crates/latent-wire/src/management/",
                             "tools/build_inventory", "tools/build_sbom_inputs.py", "tools/build_process",
                             "tools/build_observation.py", "tools/build_snapshot.py",
                             "crates/latent-signing/", "crates/latent-policy/", "apps/latent/src/package",

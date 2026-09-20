@@ -152,7 +152,7 @@ fn receipt() -> proto::TriggerOperationReceipt {
         request_digest: digest.clone(),
         expected_state_version: 10,
         expected_generation: 0,
-        object_generation: 1,
+        object_generation: 11,
         state_version: 11,
         route_generation: 2,
         manifest_digest: digest.clone(),
@@ -188,9 +188,46 @@ fn receipts_bind_scope_publication_and_counters_without_rounding() {
         |value| value.action = 999,
         |value| value.state_version = value.expected_state_version,
         |value| value.expected_generation = u64::MAX,
+        |value| value.object_generation = 1,
+        |value| value.route_generation = value.state_version + 1,
+        |value| value.deployment_generation = value.route_generation + 1,
     ] {
         let mut value = original.clone();
         mutate(&mut value);
+        assert!(projection::checked(&value, 4096).is_err());
+    }
+}
+
+#[test]
+fn apply_and_delete_receipts_retain_catalog_assigned_object_generations() {
+    for (action, expected, object) in [
+        (proto::TriggerOperationAction::Apply, 0, 11),
+        (proto::TriggerOperationAction::Apply, 7, 11),
+        (proto::TriggerOperationAction::Delete, 7, 7),
+        (proto::TriggerOperationAction::Delete, 10, 10),
+    ] {
+        let mut value = receipt();
+        value.action = action as i32;
+        value.expected_generation = expected;
+        value.object_generation = object;
+        let decoded = <proto::TriggerOperationReceipt as prost::Message>::decode(
+            prost::Message::encode_to_vec(&value).as_slice(),
+        )
+        .unwrap();
+        response::receipt_scope(&decoded, "tenant-a", "create", Some("web")).unwrap();
+        assert_eq!(decoded.project()["objectGeneration"], object.to_string());
+    }
+    for (action, expected, object) in [
+        (proto::TriggerOperationAction::Apply, 0, 1),
+        (proto::TriggerOperationAction::Apply, 11, 11),
+        (proto::TriggerOperationAction::Delete, 7, 8),
+        (proto::TriggerOperationAction::Delete, 0, 0),
+        (proto::TriggerOperationAction::Delete, 11, 11),
+    ] {
+        let mut value = receipt();
+        value.action = action as i32;
+        value.expected_generation = expected;
+        value.object_generation = object;
         assert!(projection::checked(&value, 4096).is_err());
     }
 }
@@ -218,15 +255,18 @@ fn deletion_retains_uncertainty_and_rejects_misattributed_or_noncanonical_metada
         operation_id: "delete".into(),
         expected_state_version: Some(2),
     };
-    let value = response::deletion(&metadata, &operation, 1, "web").unwrap();
+    let value = response::deletion(&metadata, &operation, 2, "web").unwrap();
     assert_eq!(value["durability"], "uncertain");
     assert_eq!(value["replayed"], true);
-    metadata.insert("latent-trigger-state", "03".parse().unwrap());
+    assert_eq!(value["generation"], "2");
     assert!(response::deletion(&metadata, &operation, 1, "web").is_err());
+    assert!(response::deletion(&metadata, &operation, 0, "web").is_err());
+    metadata.insert("latent-trigger-state", "03".parse().unwrap());
+    assert!(response::deletion(&metadata, &operation, 2, "web").is_err());
     metadata.insert("latent-trigger-state", "3".parse().unwrap());
     metadata.insert_bin(
         "latent-trigger-operation-bin",
         tonic::metadata::MetadataValue::from_bytes(b"other"),
     );
-    assert!(response::deletion(&metadata, &operation, 1, "web").is_err());
+    assert!(response::deletion(&metadata, &operation, 2, "web").is_err());
 }
