@@ -1,0 +1,22 @@
+name: Suite transfer receipt
+on:
+  push:
+    branches: [feat/427-exact-suite-inventory]
+    paths: ['.github/ci-transfer/*.b64']
+permissions:
+  contents: read
+jobs:
+  receipt:
+    if: github.event.head_commit.message == 'chore(ci): assemble verified implementation objects'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: implementation-transfer-receipt
+          path: .github/ci-transfer/*.b64
+          if-no-files-found: error
+          retention-days: 1
