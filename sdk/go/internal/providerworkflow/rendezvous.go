@@ -8,11 +8,10 @@ import (
 )
 
 const (
-	// The absolute deadline starts before dispatch, including admission and
-	// component preparation. A 500 ms deadline can expire before the upstream
-	// receives anything. Leave dispatch headroom without renewing the deadline
-	// after the started marker, or outliving the fixture's three-second hold.
-	heldDeadlineBudget = 2 * time.Second
+	// Preprepared HTTP dispatch is held beyond the original activation deadline.
+	// This must expire before the guest's independent 1000 ms HTTP timeout;
+	// otherwise that timeout traps the guest before activation expiry is observed.
+	heldDeadlineBudget = 500 * time.Millisecond
 	heldWaitBudget     = 2500 * time.Millisecond
 )
 

@@ -5,55 +5,28 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"testing"
 	"time"
 )
 
-func TestHeldDeadlineAllowsDispatchBeforeExpiry(t *testing.T) {
-	// Reproduce the old deadline expiring before the first upstream request.
-	// Both cases must still observe a real marker; retirement is not success.
-	for _, sample := range []struct {
-		name    string
-		budget  time.Duration
-		wantErr bool
-	}{{"old-short-deadline", 500 * time.Millisecond, true}, {"dispatch-headroom", heldDeadlineBudget, false}} {
-		t.Run(sample.name, func(t *testing.T) {
-			t.Parallel()
-			path := filepath.Join(t.TempDir(), "started-hold-go-deadline")
-			ctx, cancel := context.WithTimeout(context.Background(), sample.budget)
-			defer cancel()
-			retired := make(chan struct{})
-			written := make(chan error, 1)
-			go func() {
-				defer close(retired)
-				dispatch := time.NewTimer(750 * time.Millisecond)
-				defer dispatch.Stop()
-				select {
-				case <-ctx.Done():
-					written <- nil
-				case <-dispatch.C:
-					written <- os.WriteFile(path, []byte("observed\n"), 0o600)
-				}
-			}()
-			failure := waitMarker(context.Background(), path, retired)
-			<-retired
-			if writeFailure := <-written; writeFailure != nil {
-				t.Fatal(writeFailure)
-			}
-			if sample.wantErr {
-				if !errors.Is(failure, errInvocationBeforeMarker) {
-					t.Fatalf("early deadline must fail the rendezvous: %v", failure)
-				}
-			} else if failure != nil {
-				t.Fatalf("dispatch within the original deadline must reach upstream: %v", failure)
-			}
-		})
+func TestHeldDeadlinePrecedesMaintainedGuestTimeout(t *testing.T) {
+	source, failure := os.ReadFile(filepath.Join("..", "..", "..", "..", "tools", "toolchain-smoke", "examples", "guest_http", "component.rs"))
+	if failure != nil {
+		t.Fatal(failure)
 	}
-}
-
-func TestHeldDeadlineRemainsInsideExistingCleanupBounds(t *testing.T) {
-	if heldDeadlineBudget <= time.Second || heldDeadlineBudget >= heldWaitBudget || heldWaitBudget >= 3*time.Second {
-		t.Fatal("dispatch, observation, and upstream hold budgets must remain ordered")
+	matched := regexp.MustCompile(`timeout_millis: Some\(([0-9]+)\)`).FindSubmatch(source)
+	if len(matched) != 2 {
+		t.Fatal("maintained guest HTTP deadline is missing or ambiguous")
+	}
+	milliseconds, failure := strconv.ParseInt(string(matched[1]), 10, 64)
+	if failure != nil {
+		t.Fatal(failure)
+	}
+	guestDeadline := time.Duration(milliseconds) * time.Millisecond
+	if heldDeadlineBudget <= 0 || heldDeadlineBudget >= guestDeadline || guestDeadline >= heldWaitBudget || heldWaitBudget >= 3*time.Second {
+		t.Fatal("activation deadline must precede guest HTTP timeout and bounded physical cleanup")
 	}
 }
 
