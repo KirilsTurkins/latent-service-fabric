@@ -117,10 +117,14 @@ fn validate_observation(evidence: &str, mode: &str) -> Result<json::Value, &'sta
             .iter()
             .zip(["distinct-releases", "shared-release-distinct-scopes"])
         {
-            let baseline = scenario["baseline_kib"].as_u64().ok_or("missing-baseline")?;
+            let baseline = scenario["baseline_kib"]
+                .as_u64()
+                .ok_or("missing-baseline")?;
             let peak = scenario["peak_kib"].as_u64().ok_or("missing-peak")?;
             let growth = peak.checked_sub(baseline).ok_or("nonmonotonic-peak")?;
-            let state = scenario["state_bytes"].as_u64().ok_or("missing-state-bytes")?;
+            let state = scenario["state_bytes"]
+                .as_u64()
+                .ok_or("missing-state-bytes")?;
             if scenario["name"].as_str() != Some(name)
                 || scenario["routes"].as_u64() != Some(RELEASES as u64)
                 || scenario["generation"].as_u64() != Some(1)
@@ -345,7 +349,8 @@ fn missing_or_invalid_proc_measurements_fail_closed() {
 
 #[test]
 fn successful_child_without_a_complete_observation_is_not_a_measurement() {
-    let summary = "test result: ok. 1 passed; 0 failed; 0 ignored; 0 filtered out; finished in 0.00s\n";
+    let summary =
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 filtered out; finished in 0.00s\n";
     assert!(validate_observation(summary, "publish").is_err());
     let complete = format!(
         "LSF_METADATA_CHILD {}\n",

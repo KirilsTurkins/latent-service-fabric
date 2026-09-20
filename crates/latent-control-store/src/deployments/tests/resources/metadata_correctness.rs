@@ -30,7 +30,12 @@ struct CountedRepository {
 
 impl CountedRepository {
     fn observe(&self, digest: &ReleaseDigest) {
-        *self.fetches.lock().unwrap().entry(digest.clone()).or_default() += 1;
+        *self
+            .fetches
+            .lock()
+            .unwrap()
+            .entry(digest.clone())
+            .or_default() += 1;
     }
 
     fn take_fetches(&self) -> BTreeMap<ReleaseDigest, usize> {
@@ -67,7 +72,8 @@ impl ArtifactRepository for CountedRepository {
         publication: Option<&'a PublicationId>,
     ) -> BoxFuture<'a, Result<VerifiedArtifactMetadata, PlatformError>> {
         self.observe(digest);
-        self.inner.fetch_verified_metadata_selected(digest, publication)
+        self.inner
+            .fetch_verified_metadata_selected(digest, publication)
     }
 
     fn publish<'a>(
@@ -142,7 +148,11 @@ fn desired(digests: &[ReleaseDigest], distinct: bool) -> Vec<DeploymentManifest>
 
 fn validate_ownership(counters: [Counter; 2], groups: usize) -> Result<(), &'static str> {
     for (kind, growth_error, drop_error) in [
-        (Kind::Release, "release-ownership-growth", "release-not-dropped"),
+        (
+            Kind::Release,
+            "release-ownership-growth",
+            "release-not-dropped",
+        ),
         (
             Kind::Canonical,
             "canonical-ownership-growth",
@@ -240,7 +250,12 @@ fn retained_real_metadata_and_canonical_values_fail_the_same_small_assertion() {
     ] {
         let root = TempRoot::new();
         let (releases, digests) = fixture(&root);
-        let store = run(Store::open(root.0.join("catalog"), releases, Limits::default())).unwrap();
+        let store = run(Store::open(
+            root.0.join("catalog"),
+            releases,
+            Limits::default(),
+        ))
+        .unwrap();
         let observation = Session::start(Fault::Retain(kind));
         let desired = desired(&digests, true);
         run(store.apply_many(desired.clone())).unwrap();
