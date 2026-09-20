@@ -5,7 +5,7 @@ from the complete change. Documentation-only PRs run focused Markdown/SVG
 validation; code, build inputs, evidence, workflow changes and manual runs retain
 the full suite described below. `CI result` checks every selected job's outcome.
 
-Updated on **2026-09-13** for completed Phases 1 and 2 and the Phase 1 performance extension,
+Updated on **2026-09-20** for the Java 25 SDK baseline, completed Phases 1 and 2 and the Phase 1 performance extension,
 the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
@@ -125,7 +125,7 @@ Run it from an isolated clone or worktree when local build output is present.
 - All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
 - JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, release-publish, binding, policy, trigger, and compiled-route examples validate against their corresponding schemas.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interfaces compile and execute small fake-client identity/cancellation fixtures. They cover status/cancellation before invoke completion, transport failures, lost-response status recovery, optional identity and lineage; see the [SDK contract](sdk/README.md#executable-contract-fixtures). These are contract tests, not implemented transport coverage.
-- SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.0 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
+- SDK compiler identities are verified before compilation, including Eclipse Temurin 25.0.4.1+1 with the Java 25 target/runtime baseline and Zig 0.16.0 with its Clang 21.1.0 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
 - Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
 - Source-controlled SVGs are parsed as accessible, local-only XML: each requires a
   descriptive title and description, `role="img"`, a `viewBox`, and no active,

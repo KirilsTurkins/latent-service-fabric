@@ -18,6 +18,7 @@ pub struct TriggerMutation {
 #[derive(Subcommand)]
 pub enum TriggerCommand {
     Apply {
+        #[arg(value_hint = clap::ValueHint::FilePath)]
         file: PathBuf,
         #[command(flatten)]
         mutation: TriggerMutation,
@@ -114,7 +115,7 @@ pub enum CapabilityCommand {
         capability: String,
         #[arg(long)]
         operation: String,
-        #[arg(long)]
+        #[arg(long, value_hint = clap::ValueHint::FilePath)]
         resource: PathBuf,
     },
 }
