@@ -325,8 +325,7 @@ ignored events::typed_event_receipt_denial_and_uncertainty_do_not_retry
 """),
     Group("compiler-supervisor", "crates/latent-wasmtime/Cargo.toml", "aot_supervisor", "test",
           "tests/aot_supervisor.rs", "real-child-supervisor-not-production-sandbox", (238, 280),
-          (), 180, "isolated AOT readiness: six bounded success/rejection/reap scenarios passed\n"
-          "isolated AOT supervisor: 16 bounded protocol/ownership scenarios passed"),
+          (), 180, "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"),
     Group("compiler-sandbox", "crates/latent-wasmtime/Cargo.toml", "aot_sandbox", "test",
           "tests/aot_sandbox.rs", "production-compiler-sandbox-not-guest-process", (238, 273, 280),
           (), 90, "AOT sandbox: 12 unprivileged real-entry probes and exact-policy syscall probe passed"),

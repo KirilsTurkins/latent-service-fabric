@@ -235,8 +235,8 @@ attribute earlier unclassified manual failures to startup recovery.
   rendering and altered result counts are not normalized into a pass.
 - The two `harness = false` compiler mains are never invoked with `--list`.
   Their exact source/artifact identity and distinct successful completion
-  records are checked. The supervisor must emit both its readiness and final
-  ownership records once, in order; arbitrary diagnostics are not stripped.
+  records are checked. The supervisor must emit one exact 23-case summary and
+  one start/pass record for every maintained readiness and ownership case.
   Each main is one custom entry, not a fabricated number of libtest successes.
   The source mains assert their own real child schedules.
 - PR/manual budgets are 600/2400 seconds, with serial execution, 30-second

@@ -142,7 +142,12 @@ def run_cases(runner: Runner, groups: tuple, artifacts: dict, runtime: Path,
             result = runner.command([str(artifact.executable)], cwd=artifact.package,
                                     environment=environment, timeout=group.timeout)
             runner.active_case_completed = True
-            validate_custom(result.stdout + result.stderr, group.marker)
+            if group.target == "aot_supervisor":
+                from tools.run_aot_tests import validate_case_coverage
+                validate_custom(result.stdout, group.marker)
+                validate_case_coverage((result.stdout + result.stderr).decode("utf-8"), group.target)
+            else:
+                validate_custom(result.stdout + result.stderr, group.marker)
             completed.append(group.target)
             runner.validated_cases.append(runner.active_case)
             runner.active_case = None

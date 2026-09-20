@@ -166,20 +166,19 @@ class SelectionTests(unittest.TestCase):
             with self.assertRaises(artifacts.SecurityError):
                 artifacts.validate_custom(output, marker)
 
-    def test_supervisor_requires_both_exact_completion_records_in_order(self):
-        readiness = "isolated AOT readiness: six bounded success/rejection/reap scenarios passed"
-        ownership = "isolated AOT supervisor: 16 bounded protocol/ownership scenarios passed"
-        marker = readiness + "\n" + ownership
+    def test_supervisor_requires_all_actual_case_records_and_exact_summary(self):
+        from tools.run_aot_tests import SUPERVISOR_CASES, validate_case_coverage
         group = next(group for group in cases.GROUPS if group.key == "compiler-supervisor")
+        marker = "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"
         self.assertEqual(group.marker, marker)
+        records = "\n".join(f"LSF_AOT_CASE {outcome} {name}" for name in sorted(SUPERVISOR_CASES)
+                            for outcome in ("started", "passed"))
         artifacts.validate_custom((marker + "\n").encode(), marker)
-        for output in (readiness, ownership, ownership + "\n" + readiness,
-                       readiness + "\n" + marker, marker + "\nextra", marker + "\n" + ownership):
-            with self.subTest(output=output), self.assertRaises(artifacts.SecurityError):
-                artifacts.validate_custom((output + "\n").encode(), marker)
-        for invalid in ("", readiness + "\n", marker + "\nextra"):
-            with self.subTest(marker=invalid), self.assertRaisesRegex(artifacts.SecurityError, "marker"):
-                artifacts.validate_custom(b"", invalid)
+        validate_case_coverage(marker + "\n" + records, group.target)
+        for output in (marker, records, marker + "\n" + records + "\n" + records,
+                       marker + "\n" + records.replace("passed oversized", "passed unexpected")):
+            with self.subTest(output=output), self.assertRaises(ValueError):
+                validate_case_coverage(output, group.target)
 
     def test_inherited_child_output_must_match_one_exact_bounded_receipt(self):
         record = b'{"controlled":true}'
