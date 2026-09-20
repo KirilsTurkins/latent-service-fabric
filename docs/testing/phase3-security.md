@@ -14,6 +14,32 @@ four fixture exporters, plus two custom compiler harnesses. The manual run
 also executes four maintained separate-node workflows. These numbers count
 test entries, not every internal schedule, assertion or provider request.
 
+## Retained qualification on 2026-09-20
+
+The [current raw manual receipt](../evidence/phase3-security-2026-09-20/manual-current.json)
+([SHA-256](../evidence/phase3-security-2026-09-20/manual-current.json.sha256))
+records a complete PASS at source
+`c2a7635f0925af5e158af632696d26663e233752` in 523,245 ms:
+186 libtest entries, both custom compiler mains and all four separate-node
+workflows. The supervisor's 23 internal cases are checked individually; they
+remain one custom entry in the aggregate. The actual publication, T1 security
+profile, provider-management and Angular T1 workflows all passed.
+
+The run used Linux x86_64 (WSL2 kernel `6.6.87.2-microsoft-standard-WSL2`),
+Python 3.13.5, Rust 1.97.1 and Wasmtime 47.0.4 inside the explicitly owned
+2-CPU, 8-GiB container. Fixture and executable hashes are retained. Temporary
+outputs were removed, the enclosing container stopped, and its target volume
+was preserved. Root was limited to this disposable fixture environment; these
+results do not qualify an arbitrary deployment or unsupported host.
+
+The [preceding failed receipt](../evidence/phase3-security-2026-09-20/superseded-output-contract-failure.json)
+is preserved: its 186 libtest entries passed, but the runner still required the
+obsolete compiler completion format, so later workflows were not executed.
+The corrected runner requires every current start/pass record and exact summary.
+It does not relabel that earlier failed run. The separate intermittent CI
+publication-admission failure remains under investigation; this receipt records
+one complete bounded observation, not a universal liveness guarantee.
+
 ## Evidence boundaries
 
 | Concern | Exact inventory groups | Actual boundary and observation |
