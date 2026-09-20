@@ -161,7 +161,7 @@ class SvgReferenceTests(unittest.TestCase):
                     self.assertEqual(len(errors), 1)
                     self.assertIn(target, errors[0])
                     self.assertIn("non-local reference", errors[0])
-                    self.assertIn(str(Path("docs/assets/case.svg")), errors[0])
+                    self.assertIn(Path("docs/assets/case.svg").as_posix(), errors[0])
 
     def test_multiple_forward_resources_and_namespaced_links_pass(self) -> None:
         svg = diagram()
@@ -215,7 +215,7 @@ class SvgReferenceTests(unittest.TestCase):
         self.write(second, "docs/assets/b.svg")
         errors = self.check()
         self.assertEqual(len(errors), 1)
-        self.assertIn(str(Path("docs/assets/b.svg")), errors[0])
+        self.assertIn(Path("docs/assets/b.svg").as_posix(), errors[0])
         ET.SubElement(second, "linearGradient", {"id": "paint"})
         self.write(second, "docs/assets/b.svg")
         self.assertEqual(self.check(), [])
