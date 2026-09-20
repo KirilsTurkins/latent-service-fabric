@@ -38,6 +38,50 @@ fn protected_local_blob_provider_starts_and_reaps_thirty_two_times() {
     repeat_startup(&path);
 }
 
+#[test]
+fn protected_http_credential_bootstrap_starts_and_reaps_thirty_two_times() {
+    let source = TempDir::new().unwrap();
+    let credentials = source.path().join("credentials");
+    std::fs::create_dir(&credentials).unwrap();
+    std::fs::set_permissions(&credentials, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let credential = credentials.join("authorization");
+    std::fs::write(&credential, b"LSF-PUBLIC-PROVIDER-STARTUP-TEST-ONLY").unwrap();
+    std::fs::set_permissions(&credential, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let path = source.path().join("node.json");
+    let document = serde_json::json!({
+        "formatVersion": 1, "dataDirectory": source.path().join("unselected-data"),
+        "nodeId": "http-startup", "bind": "127.0.0.1:0",
+        "credentials": [{"token": "LSF-PUBLIC-PROVIDER-STARTUP-TEST-ONLY",
+            "subject": "operator", "tenant": "tests", "role": "operator"}],
+        "budgetProfile": {"mode": "phase3", "maximumOutboundRequests": 8,
+            "maximumBlobReadBytes": 65536, "maximumBlobWriteBytes": 65536},
+        "audit": {"mode": "durable"}, "capabilityPolicies": {"formatVersion": 1},
+        "providers": {"formatVersion": 1,
+            "http": {
+                "identity": {"id": "http", "tenant": "tests", "service": "http-host", "epoch": 1},
+                "credentialDirectory": "credentials",
+                "credentials": [{"reference": "startup", "file": "authorization",
+                    "destination": 0, "header": "authorization"}],
+                "configuration": {
+                    "formatVersion": 1,
+                    "destinations": [{
+                        "origin": {"scheme": "http", "host": "localhost", "port": 9},
+                        "addresses": {"networks": ["127.0.0.0/8"], "specialAddresses": ["127.0.0.1"]},
+                        "resolution": {"kind": "static", "addresses": ["127.0.0.1"]},
+                        "allowedRequestHeaders": [], "redirectDestinations": []}],
+                    "limits": {"maximumRequestBodyBytes": 4096, "maximumResponseBodyBytes": 4096,
+                        "maximumEncodedResponseBytes": 8192, "maximumHeaderBytes": 4096,
+                        "maximumHeaders": 16, "maximumRedirects": 0},
+                    "extraRoots": [], "publicRoots": false}},
+            "bindings": [{"name": "http-binding", "tenant": "tests",
+                "consumerService": "guest-http", "providerService": "http-host",
+                "contract": "latent:http/client@0.2.0", "providerBinding": "http-installed"}]}
+    });
+    std::fs::write(&path, serde_json::to_vec(&document).unwrap()).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    repeat_startup(&path);
+}
+
 fn repeat_startup(source: &Path) {
     let directory = TempDir::new().unwrap();
     let control = Builder::new_multi_thread()

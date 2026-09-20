@@ -2,12 +2,12 @@ use super::{
     busy, capacity, denied, Arc, AtomicUsize, Charge, Inner, Kind, Mutex, Notify, Ordering,
     PlatformError, PoolCall, PooledConnection, ProviderPools,
 };
-use std::{future::Future, pin::Pin, time::Duration};
+use std::{future::Future, pin::Pin, sync::TryLockError, time::Duration, time::Instant};
 use tokio::{sync::oneshot, task::JoinHandle};
 
 pub(super) struct Control {
     handle: tokio::runtime::Handle,
-    tasks: Mutex<Vec<Option<JoinHandle<()>>>>,
+    pub(super) tasks: Mutex<Vec<Option<JoinHandle<()>>>>,
     pub(super) owner_task: Mutex<Option<JoinHandle<()>>>,
     pub owners: AtomicUsize,
     pub failed: super::AtomicBool,
@@ -81,6 +81,41 @@ impl ProviderPools {
         call.io.checkpoint()?;
         self.control_blocking(move || work(call))
     }
+    /// Retain one admitted call while the fixed worker table is briefly held by
+    /// maintenance. The original I/O deadline and cancellation bound this wait;
+    /// capacity, retirement and poisoned ownership remain immediate failures.
+    pub async fn spawn_blocking_wait<T: Send + 'static>(
+        &self,
+        call: PoolCall,
+        work: impl FnOnce(PoolCall) -> T + Send + 'static,
+    ) -> Result<ProviderJob<T>, PlatformError> {
+        if !call.belongs_to(&self.inner) {
+            return Err(denied());
+        }
+        call.io.checkpoint()?;
+        let deadline = call.io.deadline();
+        let waiter = call.io.job_waiter();
+        let lease = call.io.lease();
+        let mut work = Some(move || work(call));
+        waiter
+            .wait(async {
+                loop {
+                    // The stop observer can already be waiting on its bounded
+                    // timer. Recheck immediately before each admission attempt.
+                    lease.checkpoint()?;
+                    if let Some(job) = self.try_control_blocking(&mut work)? {
+                        return Ok(job);
+                    }
+                    tokio::time::sleep_until(
+                        deadline
+                            .min(Instant::now() + Duration::from_millis(1))
+                            .into(),
+                    )
+                    .await;
+                }
+            })
+            .await?
+    }
     /// Trusted operator work (for example, protected secret reloads) uses the
     /// same finite node worker slots. This is not guest capability authority.
     /// The closure must own prepaid buffers and its actual filesystem work;
@@ -89,7 +124,47 @@ impl ProviderPools {
         &self,
         work: impl FnOnce() -> T + Send + 'static,
     ) -> Result<ProviderJob<T>, PlatformError> {
-        let mut tasks = self.inner.control.tasks.try_lock().map_err(|_| busy())?;
+        self.try_control_blocking(&mut Some(work))?.ok_or_else(busy)
+    }
+    pub async fn control_blocking_before<T: Send + 'static>(
+        &self,
+        deadline: Instant,
+        work: impl FnOnce() -> T + Send + 'static,
+    ) -> Result<ProviderJob<T>, PlatformError> {
+        let mut work = Some(work);
+        loop {
+            self.inner.check()?;
+            if Instant::now() >= deadline {
+                return Err(super::super::error(
+                    latent_core::PlatformErrorCode::DeadlineExceeded,
+                    "provider-control-admission-deadline",
+                ));
+            }
+            if let Some(job) = self.try_control_blocking(&mut work)? {
+                return Ok(job);
+            }
+            tokio::time::sleep_until(
+                deadline
+                    .min(Instant::now() + Duration::from_millis(1))
+                    .into(),
+            )
+            .await;
+        }
+    }
+    fn try_control_blocking<T: Send + 'static>(
+        &self,
+        work: &mut Option<impl FnOnce() -> T + Send + 'static>,
+    ) -> Result<Option<ProviderJob<T>>, PlatformError> {
+        let mut tasks = match self.inner.control.tasks.try_lock() {
+            Ok(tasks) => tasks,
+            Err(TryLockError::WouldBlock) => return Ok(None),
+            Err(TryLockError::Poisoned(_)) => {
+                return Err(super::super::error(
+                    latent_core::PlatformErrorCode::Unavailable,
+                    "provider-control-owner-poisoned",
+                ));
+            }
+        };
         self.inner.check()?;
         let slot = tasks
             .iter()
@@ -98,8 +173,10 @@ impl ProviderPools {
         let charge = charge(
             &self.inner,
             Kind::Worker,
-            std::mem::size_of_val(&work).saturating_add(std::mem::size_of::<T>()),
+            std::mem::size_of_val(work.as_ref().expect("work is retained until admission"))
+                .saturating_add(std::mem::size_of::<T>()),
         )?;
+        let work = work.take().expect("one control admission owns the work");
         let (send, result) = oneshot::channel();
         tasks[slot] = Some(self.inner.control.handle.spawn_blocking(move || {
             let _charge = charge;
@@ -107,7 +184,7 @@ impl ProviderPools {
             // A dropped result waiter destroys actual returned owners here.
             let _ = send.send(value);
         }));
-        Ok(ProviderJob { result })
+        Ok(Some(ProviderJob { result }))
     }
     /// Cleanup has its own fixed slots and remains available during draining.
     /// Success destroys the actual T before releasing any connection charge;

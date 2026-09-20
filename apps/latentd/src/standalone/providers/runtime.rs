@@ -82,7 +82,7 @@ impl ProviderRuntime {
         let installed = tokio::time::timeout_at(deadline.into(), async {
             let mut providers = Vec::with_capacity(2);
             if let Some(http) = &config.http {
-                let (provider, secrets) = http::install(&owner.pools, http).await?;
+                let (provider, secrets) = http::install(&owner.pools, http, deadline).await?;
                 owner.secrets = secrets;
                 providers.push(owner.record(&http.identity, provider.reference()));
                 owner.runtime.install_http(Arc::new(provider))?;
