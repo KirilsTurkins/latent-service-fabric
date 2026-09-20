@@ -19,13 +19,13 @@ pub enum PackageCommand {
 
 #[derive(Args)]
 pub struct PackageBuildArgs {
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub source: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::DirPath)]
     pub input_root: PathBuf,
-    #[arg(long = "output-dir")]
+    #[arg(long = "output-dir", value_hint = clap::ValueHint::DirPath)]
     pub output_dir: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub sbom_inputs: Option<PathBuf>,
     /// Require the closed web manifest, exact assets and supported renderer ABI.
     #[arg(long)]
@@ -34,44 +34,47 @@ pub struct PackageBuildArgs {
 
 #[derive(Args)]
 pub struct PackageDirectoryArgs {
+    #[arg(value_hint = clap::ValueHint::DirPath)]
     pub directory: PathBuf,
 }
 
 #[derive(Args)]
 pub struct PackageVerifyArgs {
+    #[arg(value_hint = clap::ValueHint::DirPath)]
     pub directory: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub evidence_index: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::DirPath)]
     pub evidence_root: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub policy: PathBuf,
 }
 
 #[derive(Args)]
 pub struct PackagePushArgs {
+    #[arg(value_hint = clap::ValueHint::DirPath)]
     pub directory: PathBuf,
     /// Explicit closed registry configuration file, separate from node credentials.
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub registry_profile: PathBuf,
     #[arg(long)]
     pub reference: String,
-    #[arg(long, requires = "evidence_root")]
+    #[arg(long, requires = "evidence_root", value_hint = clap::ValueHint::FilePath)]
     pub evidence_index: Option<PathBuf>,
-    #[arg(long, requires = "evidence_index")]
+    #[arg(long, requires = "evidence_index", value_hint = clap::ValueHint::DirPath)]
     pub evidence_root: Option<PathBuf>,
 }
 
 #[derive(Args)]
 pub struct PackagePullArgs {
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub registry_profile: PathBuf,
     #[arg(long)]
     pub reference: String,
-    #[arg(long = "output-dir")]
+    #[arg(long = "output-dir", value_hint = clap::ValueHint::DirPath)]
     pub output_dir: PathBuf,
     /// Separate new directory for detached evidence and its index.json.
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::DirPath)]
     pub evidence_output: PathBuf,
 }
 

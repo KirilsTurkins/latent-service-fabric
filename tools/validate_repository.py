@@ -15,6 +15,13 @@ from pathlib import Path
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
 
+try:
+    from svg_references import svg_reference_errors
+except ModuleNotFoundError as exc:
+    if exc.name != "svg_references":
+        raise
+    from tools.svg_references import svg_reference_errors
+
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
 WARNINGS: list[str] = []
@@ -67,8 +74,6 @@ PRIVATE_SCHEMA_FILES = {
 }
 
 SVG_UNSAFE_ELEMENTS = frozenset({"embed", "foreignObject", "iframe", "image", "object", "script"})
-SVG_NONLOCAL_URL = re.compile(r"url\(\s*['\"]?\s*(?!#)", re.IGNORECASE)
-SVG_CSS_IMPORT = re.compile(r"@import\b", re.IGNORECASE)
 
 
 def fail(message: str) -> None:
@@ -209,26 +214,12 @@ def validate_svg(root: Path = ROOT) -> None:
             local_name = _xml_local_name(element.tag)
             if local_name in SVG_UNSAFE_ELEMENTS:
                 fail(f"SVG contains disallowed <{local_name}>: {relative}")
-            for attribute, value in element.attrib.items():
+            for attribute in element.attrib:
                 attribute_name = _xml_local_name(attribute)
                 if attribute_name.lower().startswith("on"):
                     fail(f"SVG contains event handler {attribute_name}: {relative}")
-                if (
-                    attribute_name in {"href", "src"}
-                    and (value or "").strip()
-                    and not value.strip().startswith("#")
-                ):
-                    fail(f"SVG contains non-local reference in {attribute_name}: {relative}")
-                if SVG_NONLOCAL_URL.search(value or ""):
-                    fail(f"SVG contains non-local URL reference: {relative}")
-
-        style_text = "\n".join(
-            "".join(element.itertext())
-            for element in elements
-            if isinstance(element.tag, str) and _xml_local_name(element.tag) == "style"
-        )
-        if SVG_CSS_IMPORT.search(style_text):
-            fail(f"SVG contains external CSS import: {relative}")
+        for error in svg_reference_errors(elements, identifiers):
+            fail(f"{error}: {relative}")
 
 
 def validate_workspace() -> None:

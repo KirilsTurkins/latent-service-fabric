@@ -10,7 +10,7 @@
     {"path": "tools/requirements.lock", "kind": "pypi"},
     {"path": ".github/security/requirements.txt", "kind": "pypi", "absent_when_directory_missing": ".github/security"},
     {"path": "sdk/go/go.mod", "kind": "go-locked", "lock": "sdk/go/dependencies.lock.json", "sum": "sdk/go/go.sum", "module": "latent.dev/sdk/go", "legacy_sha256": "c4f1425518140f59773083b82a768a3783befd47246460586999d32fa8d3b28f"},
-    {"path": "sdk/java-client/build.gradle.kts", "kind": "maven-locked", "lock": "sdk/java-client/dependencies.lock.json", "legacy_sha256": "ce07cded5f7ba84687df95129a62fef32c4ba55b4e1ef3fcca69c0c63b86dbdc", "manifest_sha256": "a0812d4197d9551ca83809f677e907b611f9ea9041cc87d74fe89c6707ddae96"},
+    {"path": "sdk/java-client/build.gradle.kts", "kind": "maven-locked", "lock": "sdk/java-client/dependencies.lock.json", "legacy_sha256": "ce07cded5f7ba84687df95129a62fef32c4ba55b4e1ef3fcca69c0c63b86dbdc", "manifest_sha256": "3edeca5be99ddeb9a76ffb3439bc33d428912398f03f5982b6323f651348a010"},
     {"path": "sdk/java-client/settings.gradle.kts", "kind": "no-external-packages", "sha256": "d2bec319296b4d77e1218274e3fecd04bd47d07c92c0064f06876393c49df01b"},
     {"path": "sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj", "kind": "no-external-packages", "sha256": "48bcd87dca0595c0146b10aeb35c0870a7d4c858d9ae263e232f3fa0dc048d8f"},
     {"path": "sdk/dotnet/Latent.Sdk.SemanticTests/Latent.Sdk.SemanticTests.csproj", "kind": "no-external-packages", "sha256": "2ad35b92e0a92c308aecbb9419c868039c4b211929cba6b2194b17e6f023ee12"},

@@ -54,7 +54,10 @@ case "${1:-}" in
                 typescript) participant=("$(command -v node)" "${ROOT}/sdk/typescript-client/tests/provider-workflow.mjs") ;;
                 go) participant=("${NATIVE}/go/provider-workflow") ;;
                 c) participant=("${NATIVE}/c/provider-workflow") ;;
-                java) participant=("$(command -v java)" -jar "${ROOT}/sdk/java-client/build/latent-java-client.jar") ;;
+                # This controlled Java 25 process uses only the locked classpath.
+                # Explicitly acknowledge protobuf Unsafe and Netty native access;
+                # do not discard stderr or weaken the shared result contract.
+                java) participant=("$(command -v java)" --sun-misc-unsafe-memory-access=allow --enable-native-access=ALL-UNNAMED -jar "${ROOT}/sdk/java-client/build/latent-java-client.jar") ;;
                 dotnet) participant=("$(command -v dotnet)" "${NATIVE}/dotnet/bin/Latent.Sdk.ProviderWorkflow/debug/Latent.Sdk.ProviderWorkflow.dll") ;;
             esac
             timeout 300 python3 tools/run_sdk_provider_workflow.py \
