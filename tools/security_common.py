@@ -136,7 +136,12 @@ def tracked_paths(repo: Path) -> list[str]:
 
 def changed_paths(repo: Path, base: str, revision: str) -> list[str]:
     require(all(re.fullmatch(r"[0-9a-f]{40}", value) is not None for value in (base, revision)), "invalid-change-revision")
-    run(["git", "-C", str(repo), "fetch", "--no-tags", "--depth=1", "origin", base], ROOT, timeout=90)
+    # PR merge checkouts can already contain the exact base commit. Do not
+    # make scanning that local snapshot depend on another network request.
+    present, _ = run(["git", "-C", str(repo), "cat-file", "-e", base + "^{commit}"],
+                     ROOT, timeout=15, accepted=(0, 1, 128))
+    if present != 0:
+        run(["git", "-C", str(repo), "fetch", "--no-tags", "--depth=1", "origin", base], ROOT, timeout=90)
     _, output = run(["git", "-C", str(repo), "diff", "--name-only", "--no-renames", "-z", base, revision, "--"],
                     ROOT, timeout=30)
     paths = output.decode().rstrip("\0").split("\0") if output else []
