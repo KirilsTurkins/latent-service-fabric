@@ -89,6 +89,8 @@ jobs:
         with:
           ref: ${{ matrix.ref }}
           path: source
+          # Include merge parents so the exact PR base is available offline.
+          fetch-depth: 2
           persist-credentials: false
       - name: Install digest-pinned Gitleaks without shared caches
         run: python3 controls/tools/security_install.py --tool gitleaks --destination "$RUNNER_TEMP/security-tools"

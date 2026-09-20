@@ -289,11 +289,7 @@ fn durable_attempt_outcome_reopen_and_page_lease() {
             .sequence,
         2
     );
-    let page = handle
-        .query(
-            query(attempt().scope),
-            Instant::now() + Duration::from_secs(2),
-        )
+    let page = admitted_query(&handle, &query(attempt().scope))
         .unwrap()
         .blocking_wait()
         .unwrap();
