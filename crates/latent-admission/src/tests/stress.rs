@@ -83,36 +83,57 @@ fn concurrent_tenant_trust_and_queue_class_reservations_are_linearized() {
     }
 }
 
-struct DelayedSource {
+struct AdvancingSource {
     inner: Arc<Source>,
+    clock: latent_testkit::TestClock,
+    policy_work: Duration,
+    wall_after_lookup: u64,
 }
 
-impl RevisionPolicySource for DelayedSource {
+impl RevisionPolicySource for AdvancingSource {
     fn admission_policy(
         &self,
         revision: &ResolvedRevision,
     ) -> Result<RevisionAdmissionPolicy, PlatformError> {
-        // This is deliberately one-sided: oversleeping cannot make the test
-        // fail. The original 50ms deadline must be past before lookup returns.
-        std::thread::sleep(Duration::from_millis(75));
-        self.inner.admission_policy(revision)
+        let result = self.inner.admission_policy(revision);
+        self.clock.advance(self.policy_work);
+        self.clock.set_wall_unix_millis(self.wall_after_lookup);
+        result
     }
 }
 
 #[test]
-fn live_admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work() {
-    let mut node = node_policy();
-    node.overload.maximum_sample_age_millis = u64::MAX;
-    let h = Harness::new(node, revision_policy());
-    let controller = h.controller.with_policy_source(Arc::new(DelayedSource {
-        inner: h.source.clone(),
-    }));
-    let mut request = Harness::request("delayed");
-    request.requested_budget.wall_time_limit_millis = Some(50);
-    let error = controller.admit_now(request).unwrap_err();
-    assert_eq!(error.code, Code::DeadlineExceeded);
-    assert_eq!(h.source.calls.load(Ordering::Relaxed), 1);
-    h.assert_empty();
+fn admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work() {
+    // Previously: admit_now plus a 75 ms sleep for a 50 ms deadline. Exercise
+    // the same production resampling path at exact boundaries, independently
+    // of wall-clock jumps and operating-system scheduling.
+    for wall_after_lookup in [0, 9_000_000] {
+        for work_millis in [0, 39, 50, 75] {
+            let mut node = node_policy();
+            node.overload.maximum_sample_age_millis = u64::MAX;
+            let h = Harness::new(node, revision_policy());
+            let clock = latent_testkit::TestClock::new(10_000, h.sample.monotonic(), 1);
+            let controller = h.controller.with_policy_source(Arc::new(AdvancingSource {
+                inner: h.source.clone(),
+                clock: clock.clone(),
+                policy_work: Duration::from_millis(work_millis),
+                wall_after_lookup,
+            }));
+            let mut request = Harness::request("controlled-policy-work");
+            request.requested_budget.wall_time_limit_millis = Some(50);
+            let result = controller.admit_with_clock(request, None, &clock);
+            if work_millis < 50 {
+                let permit = result.unwrap();
+                assert_eq!(permit.deadline().monotonic(), Some(h.sample.monotonic() + Duration::from_millis(50)));
+                assert_eq!(h.quotas.usage().unwrap().active_activations, 1);
+                drop(permit);
+            } else {
+                assert_eq!(result.unwrap_err().code, Code::DeadlineExceeded);
+            }
+            assert_eq!(h.source.calls.load(Ordering::Relaxed), 1);
+            h.assert_empty();
+        }
+    }
 }
 
 #[test]

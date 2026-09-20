@@ -1,0 +1,55 @@
+# Temporary branch-only verification. Remove after retaining the measured receipt.
+name: Deterministic branch validation
+on:
+  push:
+    branches: [feat/433-deterministic-test-coordination]
+permissions:
+  contents: write
+concurrency:
+  group: deterministic-branch-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CARGO_TARGET_DIR: /tmp/lsf-deterministic-target
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt, clippy
+      - name: Refresh workspace-only lock entries and format changed Rust
+        run: |
+          cargo update --workspace
+          cargo fmt --all
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Cargo.lock crates/latent-testkit crates/latent-admission/Cargo.toml crates/latent-admission/src/tests/stress.rs crates/latent-scheduler/Cargo.toml crates/latent-scheduler/src/fixed_pool/tests/races.rs
+          if ! git diff --cached --quiet; then
+            git commit -m 'test: format deterministic fixtures and refresh workspace lock'
+            git push origin HEAD:feat/433-deterministic-test-coordination
+          fi
+      - name: Validate neutral helpers and both migrated subsystems
+        run: |
+          cargo test -p latent-testkit --no-default-features --lib --locked -- --test-threads=1
+          cargo test -p latent-testkit --no-default-features --lib --locked -- --test-threads=4
+          cargo test -p latent-admission -p latent-scheduler --lib --locked
+          cargo clippy -p latent-testkit --no-default-features --lib --locked -- -D warnings
+          cargo clippy -p latent-admission -p latent-scheduler --tests --locked -- -D warnings
+          python3 tools/check_testkit_dependencies.py
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 50f003dd006e0786494936c49e55dc683cf26fd6
+          path: .validation-baseline
+          persist-credentials: false
+      - name: Measure prebuilt before and after suites without retries
+        run: python3 tools/measure_deterministic_tests.py --baseline .validation-baseline --output target/deterministic-tests.json
+      - name: Retain timing and count evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deterministic-test-evidence
+          path: target/deterministic-tests.json
+          if-no-files-found: warn

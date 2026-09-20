@@ -13,3 +13,6 @@ workspace = true
 [dependencies]
 latent-core = { path = "../latent-core" }
 latent-routing = { path = "../latent-routing" }
+
+[dev-dependencies]
+latent-testkit = { path = "../latent-testkit", default-features = false }
