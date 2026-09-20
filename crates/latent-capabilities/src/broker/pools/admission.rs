@@ -7,7 +7,13 @@ use crate::broker::{
     io::{IoAdmission, IoCall, IoReady},
     CapabilitySession, ProviderCall,
 };
-use std::sync::atomic::{AtomicU64, AtomicU8};
+use std::{
+    sync::{
+        atomic::{AtomicU64, AtomicU8},
+        TryLockError,
+    },
+    time::Duration,
+};
 
 const PENDING: u8 = 0;
 const READY: u8 = 1;
@@ -230,14 +236,25 @@ impl PoolAdmission {
             if Instant::now() >= self.request.deadline {
                 return Err(expired());
             }
-            schedule(&owner)?;
+            let scheduled = schedule(&owner)?;
             if self.request.phase.load(Ordering::Acquire) == READY {
                 break;
             }
+            // A maintenance/snapshot reader need not notify on unlocking. Keep
+            // this already-charged request, without blocking an executor thread
+            // or replaying admission/provider work, and bound the next turn by
+            // the original deadline. Ordinary capacity waits remain event driven.
+            let wake_at = if scheduled {
+                self.request.deadline
+            } else {
+                self.request
+                    .deadline
+                    .min(Instant::now() + Duration::from_millis(1))
+            };
             tokio::select! {
                 failure = io.stopped() => return Err(failure),
                 () = &mut changed => {},
-                () = tokio::time::sleep_until(self.request.deadline.into()) => return Err(expired()),
+                () = tokio::time::sleep_until(wake_at.into()) => {},
             }
         }
         // Keep the same absolute I/O queue deadline across both bounded queues.
@@ -349,8 +366,19 @@ fn before(left: &Request, right: &Request, last: &str) -> bool {
     };
     key(left) < key(right)
 }
-fn schedule(owner: &Arc<Inner>) -> Result<(), PlatformError> {
-    let mut state = owner.state.try_lock().map_err(|_| busy())?;
+// False means that this turn could not inspect the registry, not that its
+// admitted requests exhausted a budget. Poisoned ownership still fails closed.
+fn schedule(owner: &Arc<Inner>) -> Result<bool, PlatformError> {
+    let mut state = match owner.state.try_lock() {
+        Ok(state) => state,
+        Err(TryLockError::WouldBlock) => return Ok(false),
+        Err(TryLockError::Poisoned(_)) => {
+            return Err(super::super::error(
+                latent_core::PlatformErrorCode::Unavailable,
+                "provider-pool-owner-poisoned",
+            ));
+        }
+    };
     let limits = owner.quotas.limits()?;
     // Finite work per admission turn. Each granted waiter also schedules peers.
     for _ in 0..16 {
@@ -414,5 +442,5 @@ fn schedule(owner: &Arc<Inner>) -> Result<(), PlatformError> {
         state.last_tenant.push_str(&request.tenant.id);
         owner.changed.notify_waiters();
     }
-    Ok(())
+    Ok(true)
 }
