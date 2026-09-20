@@ -1,0 +1,65 @@
+# Temporary branch-only execution; removed after retaining validation results.
+name: Deterministic cycle correction
+on:
+  push:
+    branches: [feat/433-deterministic-test-coordination]
+    paths: [.github/workflows/validate-deterministic-cycle.yml, tools/_migrate_deterministic_cycle.py]
+permissions:
+  contents: write
+concurrency:
+  group: deterministic-cycle-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CARGO_TARGET_DIR: /tmp/lsf-cycle-target
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          toolchain: 1.97.1
+          components: rustfmt, clippy
+      - name: Reproduce all three cycles and move neutral owners
+        run: python3 tools/_migrate_deterministic_cycle.py
+      - name: Refresh workspace lock and publish the formatted fix
+        run: |
+          cargo update --workspace
+          cargo fmt --all
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Cargo.lock .github/workflows/ci.yml crates/latent-core crates/latent-testkit crates/latent-admission/Cargo.toml crates/latent-admission/src/tests/stress.rs crates/latent-scheduler/Cargo.toml crates/latent-scheduler/src/fixed_pool/tests/races.rs docs/development/deterministic-tests.md
+          git commit -m 'fix(testing): move neutral coordination below the workspace dependency graph'
+          git push origin HEAD:feat/433-deterministic-test-coordination
+          git rev-parse HEAD
+      - name: Run actual repository and dependency regression validators
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/validate_repository.py
+          python3 tools/validate_foundation.py
+          python3 tools/validate_docs.py
+          python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies
+          python3 tools/check_testkit_dependencies.py
+      - name: Verify relocated helpers and both migrated subsystems
+        run: |
+          cargo fmt --all --check
+          cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=1
+          cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=4
+          cargo test -p latent-core --features test-support --lib --locked
+          cargo test -p latent-admission -p latent-scheduler --lib --locked
+          cargo test -p latent-testkit --no-default-features --lib --test test_support_compatibility --locked
+          cargo run -p latent-testkit --no-default-features --example deadline --locked
+          cargo run -p latent-testkit --no-default-features --example cancellation --locked
+          cargo test -p latent-testkit --lib --test test_support_compatibility --locked
+      - name: Verify lint and default API contracts
+        run: |
+          cargo clippy -p latent-core --features test-support --all-targets --locked --no-deps
+          cargo clippy -p latent-testkit --all-targets --all-features --locked --no-deps -- -D warnings
+          cargo clippy -p latent-admission --all-targets --locked --no-deps -- -D warnings
+          cargo clippy -p latent-scheduler --tests --locked --no-deps
+          git diff --exit-code
+          git rev-parse HEAD
