@@ -1,0 +1,37 @@
+name: AOT input validation
+
+on:
+  push:
+    branches: [feat/429-prepared-aot-test-inputs]
+
+permissions:
+  contents: read
+
+jobs:
+  tools:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt
+      - name: Stage tracked checkout and exact formatter
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/aot-validation/formatter/bin" "$RUNNER_TEMP/aot-validation/formatter/lib"
+          git archive HEAD | gzip > "$RUNNER_TEMP/aot-validation/source.tar.gz"
+          sysroot="$(rustc --print sysroot)"
+          cp "$sysroot/bin/rustfmt" "$RUNNER_TEMP/aot-validation/formatter/bin/"
+          ldd "$sysroot/bin/rustfmt" | awk '$3 ~ /rustup/ {print $3}' | xargs -r -I{} cp '{}' "$RUNNER_TEMP/aot-validation/formatter/lib/"
+          tar -czf "$RUNNER_TEMP/aot-validation/formatter.tar.gz" -C "$RUNNER_TEMP/aot-validation" formatter
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: aot-validation-checkout
+          path: |
+            ${{ runner.temp }}/aot-validation/source.tar.gz
+            ${{ runner.temp }}/aot-validation/formatter.tar.gz
+          retention-days: 1
+          if-no-files-found: error
