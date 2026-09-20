@@ -423,11 +423,18 @@ fn before(left: &Request, right: &Request, last: &str) -> bool {
     };
     key(left) < key(right)
 }
+// False means that this turn could not inspect the registry, not that its
+// admitted requests exhausted a budget. Poisoned ownership still fails closed.
 fn schedule(owner: &Arc<Inner>) -> Result<bool, PlatformError> {
     let mut state = match owner.state.try_lock() {
         Ok(state) => state,
         Err(TryLockError::WouldBlock) => return Ok(false),
-        Err(TryLockError::Poisoned(_)) => return Err(busy()),
+        Err(TryLockError::Poisoned(_)) => {
+            return Err(super::super::error(
+                latent_core::PlatformErrorCode::Unavailable,
+                "provider-pool-owner-poisoned",
+            ));
+        }
     };
     let limits = owner.quotas.limits()?;
     // Finite work per admission turn. Each granted waiter also schedules peers.

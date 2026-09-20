@@ -114,6 +114,7 @@ func (owner *workflow) request(name, identity string) profile.InvokeRequest {
 }
 
 func (owner *workflow) guests(ctx context.Context) error {
+	// lsf-example-begin: invoke
 	for _, sample := range []struct {
 		name      string
 		id        string
@@ -136,6 +137,7 @@ func (owner *workflow) guests(ctx context.Context) error {
 		}
 		owner.result.Assertions[sample.assertion] = true
 	}
+	// lsf-example-end: invoke
 	declared := owner.request("callee", "go-declared")
 	declared.Target.Function = "fail"
 	response, failure := owner.client.Invoke(ctx, declared, profile.CallOptions{})

@@ -34,9 +34,11 @@ internal sealed partial class Workflow
         Profile.ClientResponse<Profile.GetPolicyResponse> inspected = await client.GetPolicyAsync(new(policy.Id, policy.RecordKind), Calls, stop);
         AbsentAudit(inspected.Metadata);
         Require(inspected.Value.Policy?.Generation == receipt.Generation && inspected.Value.Policy?.ContentDigest == receipt.ContentDigest);
+        // lsf-example-begin: management
         Profile.ClientResponse<Profile.GetPolicyOperationResponse> recovered = await client.GetPolicyOperationAsync(new(request.OperationId), Calls, stop);
         AbsentAudit(recovered.Metadata);
         Require(recovered.Value.Receipt == receipt);
+        // lsf-example-end: management
         Profile.ClientResponse<Profile.GetPolicyOperationResponse> missing = await client.GetPolicyOperationAsync(new("dotnet-not-retained"), Calls, stop);
         AbsentAudit(missing.Metadata);
         Require(missing.Value.Receipt is null && missing.Metadata.Outcome == Profile.OutcomeKnowledge.Unknown);
