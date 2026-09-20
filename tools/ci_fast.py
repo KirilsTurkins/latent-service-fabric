@@ -16,6 +16,7 @@ from tools import ci_suite_inventory as registry
 from tools.build_process import BuildProcessError, run_bounded
 from tools.ci_rust_artifacts import ArtifactError, require_source, run_owned
 from tools.ci_suite_discovery import discover
+from tools.owned_test_process import MAX_OUTPUT as OWNED_OUTPUT_LIMIT
 
 
 def selected_packages(encoded: str, data: dict) -> list[str]:
@@ -59,7 +60,7 @@ def main() -> int:
                 (args.output / (name + "-stderr.log")).write_bytes(built.stderr)
             else:
                 status, output = run_owned(argv, cwd=registry.ROOT, env=dict(os.environ),
-                                           timeout=900, maximum=32 * 1024 * 1024)
+                                           timeout=900, maximum=OWNED_OUTPUT_LIMIT)
             (args.output / (name + ".log")).write_bytes(output)
             result["commands"].append({"argv": argv, "seconds": round(time.monotonic() - start, 6),
                                        "exitCode": status})

@@ -2800,7 +2800,7 @@
       "sha256": "67df58fbde773857194e74f52810f8a5e1458efbfe3d7dfe4166ec19aa1461f1"
     },
     "tools/ci_fast.py": {
-      "sha256": "a5c028c61b1bc1510cf8aeea51b22a18529e2be1daeb21c86733e148f4162371"
+      "sha256": "62bbebe6115eb6932a4aaf92d68ab1794457a4c069c1d32a51eba82b7c829a44"
     },
     "tools/ci_profile.py": {
       "sha256": "63949a0f50b4b7e3554383ade3a5f0ab51fed79a182fa301478df31501359fc8"
