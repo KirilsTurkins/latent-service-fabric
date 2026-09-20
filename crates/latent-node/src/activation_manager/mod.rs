@@ -1,5 +1,6 @@
 //! One lifecycle owner from accepted identity through terminal publication.
 
+mod admission_wait;
 mod control;
 mod inbound;
 mod lifecycle;

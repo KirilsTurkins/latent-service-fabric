@@ -9,6 +9,7 @@ use std::{
     net::{TcpListener, TcpStream},
     time::Duration,
 };
+mod control_admission;
 mod fixture;
 mod ingress;
 mod lifecycle;
