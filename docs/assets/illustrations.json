@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "palette": "docs/assets/lsf-palette.json",
+  "mode": "dark",
+  "generator": "tools/illustration_palette.py",
+  "sources": [
+    {"path": "docs/assets/phase0-gate-decision.svg", "classification": "immutable-historical", "sha256": "f0eaee952678ac1be2bcba3199715e2b59ece24dee54f802236b99134b7a6df7", "generator": "retained hand-authored SVG", "reason": "Dated August 30 measured gate; historical completion page keeps original."},
+    {"path": "docs/assets/phase0-resource-lifecycle.svg", "classification": "immutable-historical", "sha256": "6ff9c70c2809fd064faca2677b04985029f36b77985a799494d6302baf52c6dd", "generator": "retained hand-authored SVG", "reason": "Explicitly retained Phase 0 composition; current overview uses a labelled presentation copy."},
+    {"path": "docs/assets/phase0-scope-boundary.svg", "classification": "immutable-historical", "sha256": "76e4450734b65b91fe4da487043c5cdca43654df53d8ca4f06ca880e0c9b3c6e", "generator": "retained hand-authored SVG", "reason": "Historical measured scope and authorization; README historical evidence section keeps original."},
+    {"path": "docs/assets/phase1-delivery-boundary.svg", "classification": "immutable-historical", "sha256": "9fbfc43a52a5c2fcee967c543627f1b999a805e578698703f58c33ef75aab1b3", "generator": "retained hand-authored SVG", "reason": "Completed Phase 1 handoff and retained measurement statements; historical links keep original."},
+    {"path": "docs/assets/phase2-delivery-boundary.svg", "classification": "immutable-historical", "sha256": "48d13eeb8997ca87d334417db5928a68c317ff0974a601a499482e359cbfeb12", "generator": "retained hand-authored SVG", "reason": "Released alpha Phase 2 boundary and completion evidence; delivery/completion pages keep original."}
+  ],
+  "outputs": [
+    {"path": "docs/assets/phase0-resource-lifecycle-presentation.svg", "classification": "maintained-presentation", "source": "docs/assets/phase0-resource-lifecycle.svg", "consumers": ["docs/architecture/overview.md"], "caption": "Restyled presentation of the retained Phase 0 composition, not new execution evidence."},
+    {"path": "docs/assets/phase2-delivery-boundary-presentation.svg", "classification": "maintained-presentation", "source": "docs/assets/phase2-delivery-boundary.svg", "consumers": ["README.md", "docs/architecture/overview.md"], "caption": "Restyled presentation of the Phase 2 boundary, not a Phase 3 completion claim."}
+  ],
+  "replacements": {
+    "#1b102d": "canvas", "#1e3a5f": "surface", "#7c3aed": "surface", "#2563eb": "raised",
+    "#bfdbfe": "link", "#09090b": "canvas", "#faf5ff": "text", "#ddd6fe": "muted",
+    "#f8fafc": "text", "#e0e7ff": "text", "#c4b5fd": "link", "#312e81": "surface",
+    "#a5b4fc": "border", "#1e40af": "raised", "#93c5fd": "border", "#1e293b": "raised",
+    "#64748b": "border", "#cbd5e1": "muted", "#065f46": "successSurface", "#34d399": "successBorder",
+    "#d1fae5": "successText", "#78350f": "warningSurface", "#fbbf24": "warningBorder", "#fde68a": "warningText"
+  },
+  "legacyWiki": {
+    "revision": "d1035a50d2fd99b076c74dd958ca4437d909f2ec",
+    "ref": "docs/wiki",
+    "classification": "immutable-historical",
+    "disposition": "Read-only Phase 2 source inventory, not migrated or republished. No second generator imported. Issue 356 owns selective migration and publisher retirement; any new editable illustration must enter this inventory with one maintained owner.",
+    "files": [
+      {"path": "wiki/pages/assets/architecture-at-a-glance.svg", "gitBlob": "cddfa29aad87cfb74eb5cd8be29db75ee1bddfb9"},
+      {"path": "wiki/pages/assets/system-decomposition.svg", "gitBlob": "d692ce4239982770ca403eee064371453e87c31a"},
+      {"path": "wiki/visuals/generate_diagrams.py", "gitBlob": "d7c81c70b720d2ac73f1b6762472e90d6ebafc08"}
+    ]
+  }
+}
