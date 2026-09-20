@@ -1,6 +1,5 @@
 name: Issue 430 supported-host validation
-
-# Temporary branch-only transport/validation helper; remove before opening the PR.
+# Temporary branch-only helper. Remove both helper files before opening the PR.
 on:
   push:
     branches: [feat/430-metadata-working-set]
@@ -17,147 +16,38 @@ jobs:
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_TERM_COLOR: never
-      OBSERVATIONS: ${{ runner.temp }}/issue430-observations
+      OBSERVATIONS: /tmp/issue430-observations-${{ github.run_id }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: feat/430-metadata-working-set
           persist-credentials: false
           fetch-depth: 2
-      - name: Apply the hash-verified prepared implementation on the current branch
+      - name: Publish the hash-verified source patch
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import gzip, hashlib, json, os, pathlib, subprocess, urllib.request
-          root = pathlib.Path('.github/issue430-bootstrap')
-          if root.exists():
-              patch = gzip.decompress(b''.join((root / f'patch.{i}').read_bytes() for i in range(4)))
-              assert hashlib.sha256(patch).hexdigest() == '1fe445d6b0cdb3a954d5154aedb306f0f21143046207d4bfefa5425fbd5cc663'
-              subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
-              subprocess.run(['git', 'apply', '-'], input=patch, check=True)
-              # The job may publish ordinary source, but workflow ref changes
-              # must be published separately through the authorized connector.
-              workflow = pathlib.Path('.github/workflows/ci.yml')
-              request = urllib.request.Request(
-                  f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/git/blobs",
-                  data=json.dumps({'content': workflow.read_text(), 'encoding': 'utf-8'}).encode(),
-                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
-                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'},
-                  method='POST')
-              with urllib.request.urlopen(request, timeout=30) as response:
-                  blob = json.load(response)['sha']
-              print('ISSUE430_CI_BLOB=' + blob, flush=True)
-              out = pathlib.Path(os.environ['OBSERVATIONS'])
-              out.mkdir(exist_ok=True)
-              (out / 'ci-workflow-blob.txt').write_text(blob + '\n')
-              (out / 'ci-workflow.yml').write_bytes(workflow.read_bytes())
-              subprocess.run(['git', 'restore', '--', str(workflow)], check=True)
-              for path in root.iterdir():
-                  path.unlink()
-              root.rmdir()
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m 'feat(testing): split metadata correctness from physical working-set qualification'
-            git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push origin HEAD:refs/heads/feat/430-metadata-working-set
-          fi
+        run: python3 .github/issue430-validation.py apply
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
           components: rustfmt, clippy
           targets: wasm32-wasip2,wasm32-unknown-unknown
-      - name: Format the changed Rust package with the pinned toolchain
+      - name: Apply pinned formatting
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cargo fmt -p latent-control-store
-          git add crates/latent-control-store
-          if ! git diff --cached --quiet; then
-            git commit -m 'style(testing): apply pinned rustfmt to metadata fixtures'
-            git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push origin HEAD:refs/heads/feat/430-metadata-working-set
-          fi
+          python3 .github/issue430-validation.py format
           cargo fmt --all --check
-      - name: Run correctness, physical qualification, and real retention controls
-        run: |
-          python3 - <<'PY'
-          import hashlib, json, os, pathlib, platform, subprocess, time
-          from tools.ci_rust_artifacts import run_owned, validate_metadata_observations
-          repo = pathlib.Path.cwd()
-          out = pathlib.Path(os.environ['OBSERVATIONS'])
-          out.mkdir(exist_ok=True)
-          source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-          records = []
-          report = {'schema': 'latent.metadata-working-set-validation.v1', 'source_commit': source,
-                    'run_url': f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
-                    'host': platform.platform(), 'architecture': platform.machine(),
-                    'rustc': subprocess.check_output(['rustc', '--version'], text=True).strip(),
-                    'cargo_build_jobs': 2, 'dependency_cache_restored': False,
-                    'stages': records, 'passed': False}
-          def stage(name, command, *, extra=None, control=False, timeout=960):
-              started = time.monotonic_ns()
-              status, output = run_owned(command, cwd=repo, env={**os.environ, **(extra or {})},
-                                         timeout=timeout, maximum=4 * 1024 * 1024)
-              (out / f'{name}.log').write_bytes(output)
-              expected = (status != 0 and b'compiler retained aggregate full release/contract metadata' in output) if control else status == 0
-              records.append({'name': name, 'command': command, 'inputs': extra or {},
-                              'wall_ns': time.monotonic_ns() - started, 'exit_status': status,
-                              'expected_retention_failure': control, 'passed': expected,
-                              'output_sha256': hashlib.sha256(output).hexdigest()})
-              print(f'=== {name}: exit={status} elapsed_ns={records[-1]["wall_ns"]} ===', flush=True)
-              print(output.decode('utf-8', errors='replace')[-16000:], flush=True)
-              if not expected:
-                  raise RuntimeError(f'{name}: unexpected result')
-              return output
-          try:
-              stage('python-regressions', ['python3', '-m', 'unittest', '-v', 'tools.tests.test_ci_rust_artifacts', 'tools.tests.test_metadata_working_set'])
-              stage('dependency-tree', ['cargo', 'tree', '-p', 'latent-control-store', '--edges', 'normal,dev', '--all-features', '--locked'])
-              stage('build', ['bash', '-c', 'cargo test -p latent-control-store --lib --all-features --locked --no-run --message-format=json,json-render-diagnostics > "$OBSERVATIONS/build.jsonl"'], timeout=1800)
-              cargo = ['cargo', 'test', '-p', 'latent-control-store', '--lib', '--all-features', '--locked']
-              small = stage('correctness', [*cargo, 'deployments::tests::resources::metadata_correctness::', '--', '--show-output', '--test-threads=1'])
-              assert b'test result: ok. 2 passed; 0 failed; 0 ignored;' in small
-              physical = stage('physical', ['python3', 'tools/ci_rust_artifacts.py', '--inventory', str(out / 'build.jsonl'), '--source-commit', source, '--suite', 'metadata-working-set'])
-              report['physical_observations'] = validate_metadata_observations(physical)
-              test = 'deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set'
-              for kind in ('release', 'canonical'):
-                  stage(f'negative-{kind}', [*cargo, test, '--', '--ignored', '--exact', '--show-output', '--test-threads=1'], extra={'LSF_METADATA_RETAIN': kind}, control=True)
-              stage('control-store-library', [*cargo, '--', '--test-threads=2'])
-              stage('clippy', ['cargo', 'clippy', '-p', 'latent-control-store', '--lib', '--tests', '--all-features', '--locked', '--no-deps', '--', '-D', 'warnings'])
-              report['passed'] = True
-          finally:
-              (out / 'validation.json').write_text(json.dumps(report, indent=2) + '\n')
-          PY
-      - name: Retain exact observations, costs, failures and build inventory
+      - name: Validate exact correctness, physical probe, retention controls and library
+        run: python3 .github/issue430-validation.py run
+      - name: Retain bounded logs and observations
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: issue430-supported-host-observations
-          path: ${{ runner.temp }}/issue430-observations
+          path: ${{ env.OBSERVATIONS }}
           if-no-files-found: warn
-      - name: Record only successful supported-host validation
+      - name: Commit successful supported-host evidence
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import json, os, pathlib
-          source = pathlib.Path(os.environ['OBSERVATIONS']) / 'validation.json'
-          value = json.loads(source.read_text())
-          assert value['passed'] is True
-          destination = pathlib.Path('docs/testing/evidence/metadata-working-set-430.json')
-          destination.parent.mkdir(parents=True, exist_ok=True)
-          destination.write_bytes(source.read_bytes())
-          path = pathlib.Path('docs/testing/metadata-working-set.md')
-          text = path.read_text()
-          text = text.replace('These controls have not been measured in the\npreparation environment; do not record them as demonstrated until actually run.', 'Both controls were executed on the supported Linux host recorded below and failed\nthe unchanged retention assertion, not compilation or test discovery.')
-          text = text.split('## Validation status of this patch')[0]
-          text += '## Supported-host validation\n\nThe exact source, host, commands, exit statuses, observation records and stage costs\nare retained in [the validation record](evidence/metadata-working-set-430.json).\nFull logs and the successful Cargo artifact inventory are attached to the Actions\nrun identified in that record. This is focused validation, not an assertion that\nthe complete repository CI has passed.\n\n| Stage | Wall seconds | Result |\n| --- | ---: | --- |\n'
-          for item in value['stages']:
-              result = 'Expected retention assertion failure' if item['expected_retention_failure'] else 'Passed'
-              text += f"| {item['name']} | {item['wall_ns'] / 1e9:.3f} | {result} |\n"
-          text += '\nBuild timing includes dependency acquisition with no restored dependency cache.\nExecution timings are separate and include owned process teardown. No speedup\nagainst an unmeasured historical baseline is claimed.\n'
-          path.write_text(text)
-          PY
-          git add docs/testing/metadata-working-set.md docs/testing/evidence/metadata-working-set-430.json
-          git commit -m 'test(testing): retain supported-host metadata qualification and negative controls'
-          git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push origin HEAD:refs/heads/feat/430-metadata-working-set
+        run: python3 .github/issue430-validation.py record
