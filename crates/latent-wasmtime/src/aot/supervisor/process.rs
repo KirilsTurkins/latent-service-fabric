@@ -82,6 +82,7 @@ pub(super) fn hash_executable(
     path: &Path,
     mut check: impl FnMut() -> Result<(), PlatformError>,
 ) -> Result<[u8; 32], PlatformError> {
+    let _measurement = crate::aot::measurement::Span::new("production-executable-verification");
     let mut file = File::open(path).map_err(|_| failed())?;
     let metadata = file.metadata().map_err(|_| failed())?;
     if !metadata.is_file() || metadata.len() == 0 || metadata.len() > MAX_EXECUTABLE_BYTES {
@@ -149,6 +150,7 @@ mod linux {
     impl Drop for ChildOwner {
         fn drop(&mut self) {
             if !self.reaped {
+                let _measurement = crate::aot::measurement::Span::new("kill-and-reap");
                 // Retain the complete outer job reservation through actual reap,
                 // even if termination or a caller's shutdown deadline is late.
                 let _ = self.child.kill();
@@ -253,6 +255,7 @@ mod linux {
             maximum_output_bytes: limits.compiler.maximum_output_bytes,
         }
         .arguments()?;
+        let launch = crate::aot::measurement::Span::new("startup-launch");
         let child = Command::new(parameters.executable)
             .env_clear()
             .current_dir("/")
@@ -284,6 +287,7 @@ mod linux {
         if &launched != protocol::LAUNCH_MAGIC {
             return Err(rejected("aot-worker-launch-mismatch"));
         }
+        drop(launch);
         // The controlled child blocks before sandbox bootstrap until this header
         // arrives. /proc identifies the actual unreaped process's executable,
         // closing a path replacement between configuration hashing and spawn.
@@ -291,6 +295,7 @@ mod linux {
         if hash_executable(&running, check)? != parameters.compiler_digest {
             return Err(rejected("aot-running-executable-mismatch"));
         }
+        let _readiness = crate::aot::measurement::Span::new("bootstrap-readiness");
         let bootstrap_length =
             u32::try_from(parameters.bootstrap.len()).map_err(|_| exhausted())?;
         pipes.write(&bootstrap_length.to_le_bytes(), check)?;
@@ -329,6 +334,7 @@ mod linux {
         };
         let check = || job.check_control();
         let (mut owner, mut pipes) = start(&parameters, &check)?;
+        let compilation = crate::aot::measurement::Span::new("compilation-and-output-transfer");
         // Only the approved fully isolated child now receives untrusted Wasm.
         pipes.write(&(input.len() as u64).to_le_bytes(), &check)?;
         pipes.write(input, &check)?;
@@ -346,6 +352,8 @@ mod linux {
         }
         output.resize(length, 0);
         pipes.read(&mut output, &check)?;
+        drop(compilation);
+        let _teardown = crate::aot::measurement::Span::new("exit-eof-and-reap");
         // Exact framing includes EOF and successful exit. Never sign a prefix
         // while an approved process is still alive or has emitted extra bytes.
         let mut eof = false;
