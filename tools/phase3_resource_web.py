@@ -9,7 +9,7 @@ from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_resource_identity import file_identity
 from tools.phase3_resource_node import pages, sample, settled_samples
 from tools.phase3_resource_profile import digest, integer, quiescent, summary, validate_schedule
-from tools.phase3_resource_render import RenderClient, finish, prepare_observed, spawn
+from tools.phase3_resource_render import RenderClient, consumption, finish, prepare_observed, spawn
 from tools.phase3_resource_os import Probe
 from tools.phase3_resource_schedule import run_open_loop
 from tools.phase3_resource_storage import failure_storage, storage_snapshot
@@ -128,8 +128,12 @@ def web_run(args, result, cancellation, temporary, deadline):
             failure = invoke(client, records["angular"], publications["angular"],
                              f"resource-angular-exception-{cycle}", "/exception", codes=(4,))
             require(failure["category"] == "platform-failure", "resource-angular-failure-not-observed")
-            result["cancellations"].append(cancel_render(client, records["angular"],
-                f"resource-angular-cancel-{cycle}", disconnect=cycle % 2 == 1))
+            cancelled = cancel_render(client, records["angular"],
+                f"resource-angular-cancel-{cycle}", disconnect=cycle % 2 == 1)
+            terminal = client.call("activation", "get", cancelled["activationId"])["data"]
+            require(terminal["terminalState"] == "cancelled", "resource-angular-cancellation-changed")
+            cancelled["consumption"] = consumption(terminal)
+            result["cancellations"].append(cancelled)
             client.heat = "recovery"
             invoke(client, records["angular"], publications["angular"], f"resource-angular-recovery-{cycle}")
             rows = run_open_loop(profile["arrivalsPerCycle"], profile["arrivalIntervalMillis"] * 1_000_000,
@@ -181,6 +185,34 @@ def overload(client, record, publication, profile, result):
     finally:
         for process in processes:
             process.close()
+
+
+def renderer_memory(value):
+    """Invocation high-water marks, not sampled RSS or live JS allocator bytes."""
+    ceiling = value["configuration"]["cells"][0]["maximumMemoryBytes"]
+    groups = {heat: [row["result"] for row in value["calls"] if row["heat"] == heat]
+              for heat in ("cold", "warm", "failure", "recovery", "post-overload")}
+    groups["cancelled"] = value["cancellations"]
+    groups["churn"] = [row["result"] for cycle in value["cycles"] for row in cycle["arrivals"]
+                       if row["disposition"] == "completed"]
+    groups["overload"] = value["overload"]
+    observed = {}
+    for name, rows in groups.items():
+        peaks = []
+        for row in rows:
+            measured = consumption(row)
+            peak = None if measured is None else integer(measured["peakMemoryBytes"])
+            require(peak is None or peak <= ceiling, "resource-render-memory-ceiling")
+            if name not in ("churn", "overload") or row.get("category") == "success":
+                require(peak is not None and peak > 0, "resource-render-memory-not-observed")
+            peaks.append(peak)
+        require(bool(rows), "resource-render-memory-population")
+        observed[name] = observed_summary(peaks)
+    return {"scope": "per-invocation-aggregate-Wasm-linear-memory-high-water-mark",
+            "source": "runtime-BudgetConsumption-peakMemoryBytes",
+            "configuredPerInvocationCeilingBytes": ceiling, "peakBytes": observed,
+            "includesJavaScriptEngineHeap": True, "javaScriptAllocatorLiveBytes": None,
+            "processRssIsSeparate": True, "sumOfPeaksIsNotConcurrentUsage": True}
 
 
 def validate_web(value):
@@ -261,7 +293,8 @@ def validate_web(value):
             for phase in ("fixed", "dormant", "prepared", "warm", "recovery", "unrouted")},
         "latencyNanos": {heat: summary([integer(row["elapsedNanos"]) for row in value["calls"]
             if row["heat"] == heat]) for heat in ("cold", "warm", "failure", "recovery")},
-        "rendererHeapBytes": None, "rendererHeapReason": "JS-allocator-not-exported-RSS-is-not-heap",
+        "rendererMemory": renderer_memory(value),
+        "rendererHeapBytes": None, "rendererHeapReason": "JS-allocator-not-exported-Wasm-high-water-mark-is-separate",
         "universalPerformanceClaim": False}
     require(all(checks.values()), "resource-angular-plateau-check-failed")
     return True

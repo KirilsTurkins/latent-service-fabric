@@ -16,10 +16,10 @@ from tools.build_process_signals import owned_cancellation
 from tools.phase2_operator_process import Process, WorkflowError
 from tools.phase3_resource_identity import file_identity
 from tools.phase3_resource_os import Probe
-from tools.phase3_resource_render import rendered
+from tools.phase3_resource_render import consumption, outcome, rendered
 from tools.phase3_resource_profile import PROFILES
 from tools.phase3_resource_storage import failure_storage, storage_snapshot
-from tools.phase3_resource_web import configure, observed_summary, warm_cache_observed
+from tools.phase3_resource_web import configure, observed_summary, renderer_memory, warm_cache_observed
 from tools.phase3_web_scenario import MEDIA
 
 
@@ -66,6 +66,38 @@ class StorageTests(unittest.TestCase):
 
 
 class RenderIdentityTests(unittest.TestCase):
+    def test_consumption_retains_measured_usage_and_missing_is_not_zero(self):
+        measured = {key: "0" for key in ("cpuFuel", "peakMemoryBytes", "wallTimeMicros", "childCalls",
+            "outboundRequests", "stateReadBytes", "stateWriteBytes", "blobReadBytes", "blobWriteBytes",
+            "logBytes", "effectCount")}
+        measured["peakMemoryBytes"] = "12582912"
+        value = {"category": "success", "outcomeKnown": True, "requestDispatched": True,
+                 "data": {"activationId": "measured-render", "consumption": measured}}
+        self.assertEqual(outcome(value)["consumption"], measured)
+        self.assertIsNone(consumption({}))
+        for bad in ({**measured, "peakMemoryBytes": True}, {**measured, "peakMemoryBytes": "-1"},
+                    {**measured, "peakMemoryBytes": str(2**64)}, {"peakMemoryBytes": "7"},
+                    {**measured, "rssBytes": "9"}):
+            with self.assertRaises(WorkflowError):
+                consumption({"consumption": bad})
+        result = {"category": "success", "consumption": measured}
+        campaign = {"configuration": {"cells": [{"maximumMemoryBytes": 268435456}]},
+                    "calls": [{"heat": heat, "result": result} for heat in
+                              ("cold", "warm", "failure", "recovery", "post-overload")],
+                    "cancellations": [result], "cycles": [{"arrivals": [
+                        {"disposition": "completed", "result": result}]}],
+                    "overload": [result, {"category": "transport-failure", "consumption": None}]}
+        observed = renderer_memory(campaign)
+        self.assertEqual(observed["peakBytes"]["cold"]["maximum"], 12582912)
+        self.assertEqual(observed["peakBytes"]["overload"]["unavailableCount"], 1)
+        self.assertIsNone(observed["javaScriptAllocatorLiveBytes"])
+        for peak in (None, "0", "268435457"):
+            changed = copy.deepcopy(campaign)
+            changed["calls"][0]["result"]["consumption"] = None if peak is None else {
+                **measured, "peakMemoryBytes": peak}
+            with self.assertRaises(WorkflowError):
+                renderer_memory(changed)
+
     def test_success_requires_actual_selected_html_and_not_a_success_status_alone(self):
         record = {"componentDigest": "sha256:" + "a" * 64,
                   "assets": [{"path": "/app.js", "mediaType": "text/javascript"}]}

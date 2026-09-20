@@ -12,12 +12,24 @@ from tools.phase3_resource_profile import LIMITS, digest, integer
 from tools.phase3_web_scenario import MEDIA, invocation_arguments, selected_client_asset
 
 
+def consumption(value):
+    """Keep measured runtime consumption; absent execution is never zero usage."""
+    measured = value.get("consumption")
+    if measured is None:
+        return None
+    fields = ("cpuFuel", "peakMemoryBytes", "wallTimeMicros", "childCalls", "outboundRequests",
+              "stateReadBytes", "stateWriteBytes", "blobReadBytes", "blobWriteBytes", "logBytes", "effectCount")
+    require(isinstance(measured, dict) and set(measured) == set(fields), "resource-render-consumption-shape")
+    return {key: str(integer(measured[key])) for key in fields}
+
+
 def outcome(value):
     error = value.get("error") or {}
     return {"category": value["category"], "outcomeKnown": value["outcomeKnown"],
             "requestDispatched": value["requestDispatched"], "code": error.get("code"),
             "grpcCode": error.get("grpcCode"), "message": error.get("message"),
-            "activationId": value["data"].get("activationId")}
+            "activationId": value["data"].get("activationId"),
+            "consumption": consumption(value["data"])}
 
 
 def rendered(value, record, publication):
