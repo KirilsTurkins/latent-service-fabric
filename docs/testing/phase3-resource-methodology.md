@@ -171,3 +171,5 @@ file. Failed execution or incomplete active/recovered populations cannot pass.
 python3 tools/phase3_resource_rust.py --revision FULL_TESTED_COMMIT --output /workspace/target/resource-rust-run.json --report /workspace/target/resource-rust-observations.json --host-condition shared-docker-desktop-host
 cargo test --locked -p latent-wasmtime --test phase3_resource -- --test-threads=1
 ```
+
+See [renderer memory and shared storage qualification](phase3-resource-renderer.md) for the measured one-cell/two-cell Angular profiles.
