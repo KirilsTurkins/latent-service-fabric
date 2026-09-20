@@ -2,6 +2,8 @@ mod admission;
 pub(super) mod execution;
 mod fingerprint;
 mod index;
+#[cfg(test)]
+pub(super) mod metadata_ownership;
 mod packing;
 mod records;
 mod reuse;
@@ -13,12 +15,16 @@ use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-use latent_artifacts::{ArtifactRepository, ReleaseUseEligibility, VerifiedArtifactMetadata};
+#[cfg(not(test))]
+use latent_artifacts::VerifiedArtifactMetadata;
+use latent_artifacts::{ArtifactRepository, ReleaseUseEligibility};
 use latent_core::{Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, RouteGeneration};
 use latent_manifest::{
     __serde_json as json, JsonManifestCodec, ManifestCodec, ManifestValidator,
     Phase1ManifestValidator,
 };
+#[cfg(test)]
+use metadata_ownership::ObservedMetadata as VerifiedArtifactMetadata;
 
 use super::observation::{count, Work};
 use super::pagination::DeploymentIndex;
@@ -444,6 +450,8 @@ async fn compile_catalog_inner(
             Option<latent_core::PublicationId>,
             VerifiedArtifactMetadata,
         )> = None;
+        #[cfg(test)]
+        let mut retention_control = metadata_ownership::Retainer::default();
         let compatible = reuse::compatible(previous, config);
         let mut memo = reuse::MemoBuilder::new(deployments.len(), config);
         let mut release_surface = None;
@@ -528,6 +536,10 @@ async fn compile_catalog_inner(
                     lifecycle,
                 )
                 .await?;
+                #[cfg(test)]
+                let artifact = VerifiedArtifactMetadata::fetched(artifact);
+                #[cfg(test)]
+                retention_control.observe(&artifact);
                 match execution {
                     execution::Execution::Eligible(grant) => {
                         charge(&mut metadata_budget, grant.retained_bytes())?;
