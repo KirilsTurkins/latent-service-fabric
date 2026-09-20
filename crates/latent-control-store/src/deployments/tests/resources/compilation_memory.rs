@@ -108,7 +108,9 @@ fn desired(distinct_releases: bool) -> Vec<DeploymentManifest> {
 }
 
 fn parse_high_water(status: &str) -> Option<u64> {
-    let mut lines = status.lines().filter_map(|line| line.strip_prefix("VmHWM:"));
+    let mut lines = status
+        .lines()
+        .filter_map(|line| line.strip_prefix("VmHWM:"));
     let mut fields = lines.next()?.split_whitespace();
     let value = fields.next()?.parse().ok()?;
     (value > 0 && fields.next() == Some("kB") && fields.next().is_none() && lines.next().is_none())
@@ -191,7 +193,14 @@ fn child_probe(mode: &str, root: &Path) {
         }
         let after = releases.verification_snapshot();
         let fetches = after.metadata_fetch_attempts - before.metadata_fetch_attempts;
-        assert_eq!(fetches, if distinct_releases { RELEASES as u64 } else { 1 });
+        assert_eq!(
+            fetches,
+            if distinct_releases {
+                RELEASES as u64
+            } else {
+                1
+            }
+        );
         assert_eq!(after.full_fetch_attempts, before.full_fetch_attempts);
         let peak = high_water_kib();
         let growth = peak.checked_sub(baseline).expect("VmHWM cannot decrease");
@@ -236,7 +245,9 @@ fn emit_child(mode: &str, scenarios: Vec<Value>) {
 }
 
 fn validate_child(evidence: &str, mode: &str) -> Result<Value, String> {
-    let mut records = evidence.lines().filter_map(|line| line.strip_prefix(CHILD_PREFIX));
+    let mut records = evidence
+        .lines()
+        .filter_map(|line| line.strip_prefix(CHILD_PREFIX));
     let record = records.next().ok_or("missing-child-observation")?;
     let record: Value = serde_json::from_str(record).map_err(|_| "invalid-child-observation")?;
     if records.next().is_some()
@@ -261,7 +272,9 @@ fn validate_child(evidence: &str, mode: &str) -> Result<Value, String> {
             return Err("missing-physical-scenario".to_owned());
         }
         for (index, scenario) in scenarios.iter().enumerate() {
-            let baseline = scenario["baseline_kib"].as_u64().ok_or("missing-baseline")?;
+            let baseline = scenario["baseline_kib"]
+                .as_u64()
+                .ok_or("missing-baseline")?;
             let peak = scenario["peak_kib"].as_u64().ok_or("missing-peak")?;
             let growth = scenario["growth_kib"].as_u64().ok_or("missing-growth")?;
             let state = scenario["state_bytes"].as_u64().ok_or("missing-state")?;
@@ -287,8 +300,15 @@ fn validate_child(evidence: &str, mode: &str) -> Result<Value, String> {
 fn missing_or_malformed_proc_measurement_never_becomes_zero() {
     assert_eq!(parse_high_water("Name: test\nVmHWM:\t123 kB\n"), Some(123));
     for status in [
-        "", "VmRSS: 123 kB", "VmHWM: 0 kB", "VmHWM: -1 kB", "VmHWM: x kB",
-        "VmHWM: 1", "VmHWM: 1 MB", "VmHWM: 1 kB extra", "VmHWM: 1 kB\nVmHWM: 2 kB",
+        "",
+        "VmRSS: 123 kB",
+        "VmHWM: 0 kB",
+        "VmHWM: -1 kB",
+        "VmHWM: x kB",
+        "VmHWM: 1",
+        "VmHWM: 1 MB",
+        "VmHWM: 1 kB extra",
+        "VmHWM: 1 kB\nVmHWM: 2 kB",
     ] {
         assert_eq!(parse_high_water(status), None, "{status}");
     }
