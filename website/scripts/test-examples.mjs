@@ -18,6 +18,13 @@ try {
     const server = await serveBuiltSite(directory, built.manifest.baseUrl);
     const url = server.origin + built.manifest.baseUrl + 'docs/development/website-code-examples/';
     const context = await browser.newContext({permissions: ['clipboard-read', 'clipboard-write'], viewport: {width: 1280, height: 900}});
+    await context.addInitScript(() => {
+      const writeText = navigator.clipboard.writeText.bind(navigator.clipboard);
+      navigator.clipboard.writeText = text => {
+        window.__lsfCopiedText = text;
+        return writeText(text);
+      };
+    });
     const errors = [];
     context.on('page', page => page.on('pageerror', error => errors.push(error.message)));
     try {
@@ -44,7 +51,12 @@ try {
         await panel.getByRole('button', {name: `Copy ${language} snippet`, exact: true}).click();
         await panel.getByText(`${language} snippet copied.`, {exact: true}).waitFor();
         const key = await panel.locator('[data-example-language]').getAttribute('data-example-language');
-        assert.equal(await page.evaluate(() => navigator.clipboard.readText()), specimen.regions[0].variants.find(v => v.language === key).snippet.code);
+        const expected = specimen.regions[0].variants.find(v => v.language === key).snippet.code;
+        assert.equal(await page.evaluate(() => window.__lsfCopiedText), expected);
+        // Windows' native clipboard converts LF to CRLF. The API input above
+        // must still be byte-for-byte source text, before that OS conversion.
+        const nativeText = await page.evaluate(() => navigator.clipboard.readText());
+        assert.equal(nativeText.replace(/\r\n/g, '\n'), expected);
       }
       const remembered = await context.newPage();
       await remembered.goto(url, {waitUntil: 'networkidle'});
@@ -77,7 +89,7 @@ try {
       } finally { await denied.close(); }
       assert.deepEqual(errors, []);
       results.push({variant, sourceRevision: built.manifest.revision, documentVersion: examples.bundle.documentVersion, languages: 6,
-        staticVariants: true, synchronizedBlocks: 2, separateTargets: true, nativeClipboard: true, deniedApis: true,
+        staticVariants: true, synchronizedBlocks: 2, separateTargets: true, exactCopyPayload: true, nativeClipboard: true, deniedApis: true,
         keyboardRelations: true, mobileWidth: 390, hydrationErrors: 0});
     } finally { await context.close(); await server.close(); }
   }
