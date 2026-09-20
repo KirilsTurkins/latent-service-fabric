@@ -63,16 +63,18 @@ export default function Search(): React.ReactNode {
       <h1>Search documentation</h1>
       <p>Search guides, reference pages, section headings and available code examples in one documentation version. Queries stay in your browser.</p>
       <form className="lsf-discovery-filters" onSubmit={event => { event.preventDefault(); update(draft, selected.version); }} role="search">
-        <label htmlFor="documentation-query">Search terms
+        <div>
+          <label htmlFor="documentation-query">Search terms</label>
           <input id="documentation-query" type="search" value={draft} maxLength={SEARCH_LIMITS.query} onChange={event => setDraft(event.target.value)} autoComplete="off" />
-        </label>
-        <label htmlFor="documentation-version">Documentation version
+        </div>
+        <div>
+          <label htmlFor="documentation-version">Documentation version</label>
           <select id="documentation-version" value={selected.version} onChange={event => update(draft, event.target.value)}>
             {!channels.includes(selected.version) && <option value={selected.version}>Unavailable version</option>}
             <option value="development">Development — work in progress</option>
             {publications.map(item => <option key={item.version} value={item.version}>{item.runtimeVersion} · {item.profile}</option>)}
           </select>
-        </label>
+        </div>
         <button className="button button--primary" type="submit">Search</button>
       </form>
       <p role="status" aria-live="polite">{selected.error ?? (failure || (!index ? 'Loading the local search index…'

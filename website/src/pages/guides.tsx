@@ -33,14 +33,14 @@ export default function Guides(): React.ReactNode {
     <main className="container lsf-discovery">
       <h1>Guide catalogue</h1>
       <p>Find current development documentation by task. References describe contracts; walkthroughs provide a sequence to follow. Each page states its supported version and verification scope.</p>
-      <div className="lsf-discovery-filters">{(['audience', 'language', 'topic'] as const).map(key => <label key={key} htmlFor={`guide-${key}`}>
-        {key === 'audience' ? 'Audience' : key === 'language' ? 'SDK language' : 'Topic'}
+      <div className="lsf-discovery-filters">{(['audience', 'language', 'topic'] as const).map(key => <div key={key}>
+        <label htmlFor={`guide-${key}`}>{key === 'audience' ? 'Audience' : key === 'language' ? 'SDK language' : 'Topic'}</label>
         <select id={`guide-${key}`} value={selected[key]} onChange={event => update(key, event.target.value)}>
           <option value="">All {key === 'language' ? 'languages' : key === 'audience' ? 'audiences' : 'topics'}</option>
           {selected[key] && !options[key].includes(selected[key]) && <option value={selected[key]}>Unavailable filter</option>}
           {options[key].map(value => <option key={value} value={value}>{key === 'audience' ? audiences[value] : key === 'topic' ? topics[value] : value}</option>)}
         </select>
-      </label>)}</div>
+      </div>)}</div>
       <p role="status">{invalid ? 'That filter is unavailable. Choose one of the listed options.' : matches.length ? `${matches.length} tasks with existing documentation.` : 'No tasks match these filters. Clear a filter to broaden the catalogue.'}</p>
       <p><Link to="/guides/">Clear filters</Link> · <Link to="/search/?version=development">Search development documentation</Link></p>
       <div className="foundation-grid">{!invalid && matches.map(guide => <section key={guide.id} data-guide={guide.id}>
