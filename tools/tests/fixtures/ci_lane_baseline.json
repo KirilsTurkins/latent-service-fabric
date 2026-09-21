@@ -1,326 +1,101 @@
 {
-  "schema": "lsf.ci-lane-baseline.v1",
-  "source_revision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "schema": "lsf.ci-lane-baseline.v2",
   "workflow_path": ".github/workflows/ci.yml",
-  "workflow_git_blob": "c4725b368b9d2b4df19c7f6700f21a63178a1b6b",
-  "scope": "Top-level command slots and triggering conditions only; exact nested suites remain owned by #427.",
-  "jobs": {
-    "profile": {
-      "needs": [],
-      "if": "",
-      "commands": [
-        {
-          "name": "Classify the complete change",
-          "if": "",
-          "boundary": "selection"
-        }
-      ]
-    },
-    "docs": {
-      "needs": [
-        "profile"
-      ],
-      "if": "",
-      "commands": [
-        {
-          "name": "Install documentation validator dependencies",
-          "if": "",
-          "boundary": "preparation"
-        },
-        {
-          "name": "Validate documentation and profile selection",
-          "if": "",
-          "boundary": "correctness"
-        }
-      ]
-    },
-    "rust": {
-      "needs": [
-        "profile"
-      ],
-      "if": "needs.profile.outputs.profile == 'full'",
-      "commands": [
-        {
-          "name": "Check formatting",
-          "if": "",
-          "boundary": "correctness"
-        },
-        {
-          "name": "Check workspace",
-          "if": "",
-          "boundary": "host-build"
-        },
-        {
-          "name": "Check generated RPC and Component Model bindings",
-          "if": "",
-          "boundary": "host-and-wasm-build"
-        },
-        {
-          "name": "Check independently selected production packages",
-          "if": "",
-          "boundary": "host-build"
-        },
-        {
-          "name": "Run Clippy",
-          "if": "",
-          "boundary": "host-build"
-        },
-        {
-          "name": "Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}",
-          "if": "failure() && steps.clippy.outcome == 'failure'",
-          "boundary": "diagnostics"
-        },
-        {
-          "name": "Build workspace binaries and test harnesses",
-          "if": "",
-          "boundary": "host-build"
-        },
-        {
-          "name": "Run tests",
-          "if": "",
-          "boundary": "runtime-and-physical"
-        },
-        {
-          "name": "Qualify bounded Angular SSR and browser hydration",
-          "if": "needs.profile.outputs.renderer == 'true'",
-          "boundary": "mixed-renderer"
-        },
-        {
-          "name": "Validate browser boundary with live ingress",
-          "if": "needs.profile.outputs.renderer == 'true'",
-          "boundary": "mixed-renderer"
-        },
-        {
-          "name": "Build the public Angular renderer fixture",
-          "if": "needs.profile.outputs.renderer == 'true'",
-          "boundary": "component-generation"
-        },
-        {
-          "name": "Validate Angular in generic cells and the shared HTTP node",
-          "if": "needs.profile.outputs.renderer == 'true'",
-          "boundary": "native-preparation-and-execution"
-        },
-        {
-          "name": "Check observed Angular build and source separation boundaries",
-          "if": "needs.profile.outputs.renderer == 'true'",
-          "boundary": "preparation-and-correctness"
-        },
-        {
-          "name": "Produce the observed Angular application package",
-          "if": "needs.profile.outputs.renderer == 'true'",
-          "boundary": "component-generation"
-        },
-        {
-          "name": "Verify actual Angular package admission, fresh rendering and browser hydration",
-          "if": "needs.profile.outputs.renderer == 'true'",
-          "boundary": "native-preparation-and-execution"
-        },
-        {
-          "name": "Fetch the pinned operator workflow registry",
-          "if": "",
-          "boundary": "provider-preparation"
-        },
-        {
-          "name": "Fetch the pinned S3 conformance server",
-          "if": "",
-          "boundary": "provider-preparation"
-        },
-        {
-          "name": "Validate S3 blobs with the existing test harness",
-          "if": "",
-          "boundary": "provider-execution"
-        },
-        {
-          "name": "Fetch the pinned Vault conformance server",
-          "if": "",
-          "boundary": "provider-preparation"
-        },
-        {
-          "name": "Validate Vault secrets with the existing test harness",
-          "if": "",
-          "boundary": "provider-execution"
-        },
-        {
-          "name": "Fetch the pinned NATS conformance server",
-          "if": "",
-          "boundary": "provider-preparation"
-        },
-        {
-          "name": "Validate NATS events with the existing test harness",
-          "if": "",
-          "boundary": "provider-execution"
-        },
-        {
-          "name": "Validate NATS triggers with the existing test harness",
-          "if": "",
-          "boundary": "provider-execution"
-        },
-        {
-          "name": "Validate capability policy CLI lifecycle",
-          "if": "",
-          "boundary": "provider-execution"
-        },
-        {
-          "name": "Validate bounded Phase 2 delivery and resource workflows",
-          "if": "",
-          "boundary": "mixed-physical-security-provider"
-        }
-      ],
-      "conditional_actions": [
-        {
-          "name": "Set up the qualified Angular build runtime",
-          "if": "needs.profile.outputs.renderer == 'true'"
-        },
-        {
-          "name": "Set up the pinned component composer",
-          "if": "needs.profile.outputs.renderer == 'true'"
-        },
-        {
-          "name": "Retain bounded browser boundary observations",
-          "if": "always() && needs.profile.outputs.renderer == 'true'"
-        }
-      ]
-    },
-    "oci-registry": {
-      "needs": [
-        "profile",
-        "contracts"
-      ],
-      "if": "needs.profile.outputs.profile == 'full'",
-      "commands": [
-        {
-          "name": "Fetch pinned disposable registry",
-          "if": "",
-          "boundary": "provider-preparation"
-        },
-        {
-          "name": "Check runner ownership and cleanup guards",
-          "if": "",
-          "boundary": "correctness"
-        },
-        {
-          "name": "Validate bounded authenticated OCI distribution",
-          "if": "",
-          "boundary": "provider-execution"
-        },
-        {
-          "name": "Validate signed web package registry and catalog round trips",
-          "if": "",
-          "boundary": "provider-execution"
-        },
-        {
-          "name": "Recover only this job's disposable registry",
-          "if": "always()",
-          "boundary": "teardown"
-        }
-      ]
-    },
-    "catalog": {
-      "needs": [
-        "profile"
-      ],
-      "if": "needs.profile.outputs.profile == 'full'",
-      "commands": [
-        {
-          "name": "Run catalog recovery, routing, and dormancy regressions",
-          "if": "",
-          "boundary": "runtime-and-physical"
-        },
-        {
-          "name": "Check catalog probe supervision",
-          "if": "",
-          "boundary": "correctness"
-        },
-        {
-          "name": "Publish and reopen 100,000 dormant releases in isolated processes",
-          "if": "github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale",
-          "boundary": "physical"
-        }
-      ]
-    },
-    "msrv": {
-      "needs": [
-        "profile"
-      ],
-      "if": "needs.profile.outputs.profile == 'full'",
-      "commands": [
-        {
-          "name": "Check workspace at MSRV",
-          "if": "",
-          "boundary": "host-build"
-        }
-      ]
-    },
-    "contracts": {
-      "needs": [
-        "profile"
-      ],
-      "if": "needs.profile.outputs.profile == 'full'",
-      "commands": [
-        {
-          "name": "Install Python validator dependencies",
-          "if": "",
-          "boundary": "preparation"
-        },
-        {
-          "name": "Install verified guest binding generator",
-          "if": "",
-          "boundary": "preparation"
-        },
-        {
-          "name": "Validate contracts, echo component, and generated bindings",
-          "if": "",
-          "boundary": "mixed-build-runtime-provider"
-        },
-        {
-          "name": "Run executable outcome and recovery matrix",
-          "if": "",
-          "boundary": "runtime"
-        },
-        {
-          "name": "Validate standalone optimization benchmark smoke",
-          "if": "",
-          "boundary": "physical"
-        },
-        {
-          "name": "Record echo capsule build evidence",
-          "if": "",
-          "boundary": "diagnostics"
-        }
-      ]
-    },
-    "sdks": {
-      "needs": [
-        "profile"
-      ],
-      "if": "needs.profile.outputs.profile == 'full'",
-      "commands": [
-        {
-          "name": "Validate SDK surfaces",
-          "if": "",
-          "boundary": "sdk-correctness"
-        }
-      ]
-    },
-    "result": {
-      "needs": [
-        "profile",
-        "docs",
-        "rust",
-        "oci-registry",
-        "catalog",
-        "msrv",
-        "contracts",
-        "sdks"
-      ],
-      "if": "always()",
-      "commands": [
-        {
-          "name": "Require every selected validation job",
-          "if": "",
-          "boundary": "aggregate"
-        }
-      ]
-    }
+  "required_jobs": [
+    "profile",
+    "docs",
+    "fast",
+    "rust",
+    "oci-registry",
+    "catalog",
+    "msrv",
+    "contracts",
+    "sdks",
+    "result",
+    "website"
+  ],
+  "result_needs": [
+    "profile",
+    "docs",
+    "website",
+    "fast",
+    "rust",
+    "oci-registry",
+    "catalog",
+    "msrv",
+    "contracts",
+    "sdks"
+  ],
+  "rust": {
+    "needs": [
+      "profile"
+    ],
+    "if": "needs.profile.outputs.profile == 'full'",
+    "lane_step": "Run bounded renderer and provider integration lanes",
+    "lane_id": "integration_lanes",
+    "lane_command_fragments": [
+      "tools/run_ci_lanes.py",
+      "--inventory",
+      "--renderer",
+      "--workers",
+      "--output",
+      "tools/ci_lane_worker.py",
+      "tools/run_s3_blob_tests.py",
+      "tools/run_angular_renderer_tests.py"
+    ],
+    "prepared_step": "Prepare immutable browser lane component",
+    "prepared_command_fragments": [
+      "cargo build --locked -p latent-toolchain-smoke --example web-contract",
+      "wasm-tools component new",
+      "wasm-tools validate"
+    ],
+    "renderer_condition": "needs.profile.outputs.renderer == 'true'",
+    "renderer_actions": [
+      "Set up the qualified Angular build runtime",
+      "Set up the pinned component composer"
+    ],
+    "renderer_run_steps": [
+      "Check selected renderer prerequisites before building",
+      "Prepare immutable browser lane component"
+    ],
+    "physical_after": [
+      "Fetch the pinned operator workflow registry",
+      "Validate bounded Phase 2 delivery and resource workflows",
+      "Build the optimized isolated Angular compiler",
+      "Export actual signed Angular T1 fixtures",
+      "Qualify actual Angular on the protected T1 node"
+    ],
+    "removed_serial_steps": [
+      "Qualify bounded Angular SSR and browser hydration",
+      "Validate browser boundary with live ingress",
+      "Build the public Angular renderer fixture",
+      "Validate Angular in generic cells and the shared HTTP node",
+      "Exercise renderer ownership failure after exact discovery",
+      "Check observed Angular build and source separation boundaries",
+      "Produce the observed Angular application package",
+      "Verify actual Angular package admission, fresh rendering and browser hydration",
+      "Fetch the pinned S3 conformance server",
+      "Validate S3 blobs with the existing test harness",
+      "Fetch the pinned Vault conformance server",
+      "Validate Vault secrets with the existing test harness",
+      "Fetch the pinned NATS conformance server",
+      "Validate NATS events with the existing test harness",
+      "Validate NATS triggers with the existing test harness",
+      "Validate capability policy CLI lifecycle"
+    ]
+  },
+  "catalog": {
+    "manual_step": "Publish and reopen 100,000 dormant releases in isolated processes",
+    "manual_if": "github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale"
+  },
+  "inventory": {
+    "provider_selections": [
+      "s3-blobs",
+      "vault-secrets",
+      "nats-events",
+      "nats-triggers"
+    ],
+    "browser_selection": "browser-boundary",
+    "renderer_process_contract": "angular-renderer"
   }
 }

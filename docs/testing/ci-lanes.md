@@ -1,126 +1,175 @@
-# Bounded CI lane rollout
+# Bounded runtime, provider and renderer CI lanes
 
-## Status and scope
+This document owns the execution-layout decisions for issue #431. Exact suite and
+case selection remains owned by 'tools/ci/suites.json'; exact workflow command
+review remains owned by 'tools/ci/commands.json'. The lane implementation consumes
+those contracts instead of introducing a second changed-file classifier, artifact
+manifest, process supervisor, or result gate.
 
-This is **pre-integration work for [#431](https://github.com/KirilsTurkins/latent-service-fabric/issues/431), not its completed implementation**. The production workflow still runs the existing commands, in their existing jobs and order. No speedup, product qualification, build-free execution, artifact relocation, or process-cleanup qualification is claimed by these policy tests.
+## Current production layout
 
-The implementation contains a small, compiler/network-free scheduling state machine and a coverage-slot drift guard. It deliberately does not invent replacements for the pending exact suite contract (#427), prepared-artifact manifest contract (#428), or timing records (#426). Actual runner integration, a separate fast correctness result, compatible immutable Wasmtime preparation reuse, live cancellation tests, and completed serial/two-worker qualification are outstanding.
+The full Rust job remains the single producer for the compatible host build:
 
-The current full profile remains the compatibility fallback. No production deadlines, resource/security policies, release gates, installation requirements, branch protection, cache configuration, or product acceptance commands change.
+1. Cargo checks, Clippy and the ordinary all-target/all-feature workspace build
+   run exactly once.
+2. The successful Cargo JSON inventory is verified by
+   'tools/ci_suite_discovery.py' and remains the source of prepared libtest
+   identities.
+3. AOT inputs are prepared through the existing authenticated preparation
+   boundary.
+4. Ordinary workspace tests, doctests, signing compatibility, metadata and
+   Phase 3 security qualification complete before product integration starts.
+5. When renderer coverage is selected, the browser component is composed once
+   from the already built workspace input.
+6. 'tools/run_ci_lanes.py' dispatches the co-located provider and renderer lanes.
+7. The existing Phase 2 delivery/security/resource work, isolated Angular T1
+   compiler and protected T1 qualification remain after the lanes. They are not
+   overlapped with product integration because their physical/resource evidence
+   must remain uncontaminated.
 
-## Inspected baseline and dependency graph
+No native target tree is uploaded to another Actions job. #428's prepared-artifact
+boundary authenticates same-checkout Cargo artifacts and their runtime link paths;
+this change deliberately keeps compatible consumers on the producing runner
+rather than inventing path rewriting or cross-job native relocation.
 
-Source: `50f003dd006e0786494936c49e55dc683cf26fd6` on `development`.
-Workflow: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), Git blob `c4725b368b9d2b4df19c7f6700f21a63178a1b6b`.
+The fast correctness job delivered by #427 remains a separate prompt result.
+'CI result' stays unconditional and continues to aggregate the complete selected
+job set. The lane coordinator is inside the required Rust job, so any missing,
+failed or cancelled required lane makes that job fail.
 
-```text
-profile --+--> docs ------------------------------------+
-          +--> rust ------------------------------------+
-          +--> catalog ---------------------------------+
-          +--> msrv ------------------------------------+--> CI result (always)
-          +--> contracts --> oci-registry ---------------+
-          +--> sdks ------------------------------------+
-          +---------------------------------------------+
-```
+## Bounded scheduler
 
-`profile` and `docs` run for both profiles. The six other validation jobs are selected for `full`. The result job needs all eight preceding jobs and rejects an unknown profile or an unexpected result. Superseded runs use workflow/ref-scoped cancellation.
+'tools/ci_lanes.py' is the small compiler/network-free scheduling policy. It
+accepts an already selected graph and supports exactly one or two workers. Resource
+groups are declared and capacity remains charged until the process owner confirms
+teardown.
 
-The machine-readable [baseline snapshot](../../tools/tests/fixtures/ci_lane_baseline.json) registers all **45 top-level `run` steps across nine jobs**, their job dependencies, and their triggering conditions. The snapshot includes the original immutable workflow identity so the full original commands remain attributable. It is **not** an exact test-discovery inventory: a change inside an existing command body requires the #427 command/case coverage review even when the slot guard passes.
+The production graph has two independent execution stages:
 
-| Current job | Coverage that must survive movement | Layout in this PR |
+| Stage | Resource group | Selected work |
 | --- | --- | --- |
-| `profile` | Complete-change classification; renderer selection | Unchanged |
-| `docs` | Pinned validator setup, documentation/SVG validation, profile tests | Unchanged |
-| `rust` | Workspace/independent-package/target checks, Clippy, ordinary tests, doctests, signing compatibility, selected renderer, providers, security and Phase 2 resources | Unchanged |
-| `contracts` | Contract validation and nested suites, generated fixtures/bindings, outcome matrix, optimization smoke, exported build inputs | Unchanged |
-| `oci-registry` | Observed provenance and public-web input handoff, authenticated distribution, signed package round trips, owned registry cleanup | Unchanged |
-| `catalog` | Recovery/routing/dormancy, supervision, explicitly selected 100,000-publication probe | Unchanged |
-| `msrv` | Independent MSRV workspace check | Unchanged |
-| `sdks` | Cross-language surfaces and exact TypeScript version check | Unchanged |
-| `result` | Unconditional, fail-closed aggregate | Unchanged |
+| provider-integrations | provider | S3 blobs, Vault secrets, NATS events, NATS triggers, capability-policy CLI |
+| renderer-integrations | renderer | Angular SSR/hydration, browser boundary, generic renderer/node cases, build/package admission and hydration |
 
-The drift guard rejects deleted, renamed, duplicated and unregistered top-level command slots, changed job dependencies, missing renderer setup conditions, altered catalog dispatch conditions and weakened superseded-run cancellation. It runs through the existing `python3 -m unittest discover -s tools/tests` invocation in `tools/validate_contracts.sh`; no issue-numbered workflow is added.
+The renderer stage exists only when the existing profile output selects renderer
+coverage. Provider coverage remains required for every full profile.
 
-### The expensive Rust chain, including its late steps
+Normal pull-request and push CI uses **two workers**. 'workflow_dispatch' exposes
+'ci_lane_workers' with only 1 or 2, so the same source and selection can be
+run serially for comparable evidence without changing commands, cases or resource
+policy.
 
-The current Rust job first checks formatting; performs workspace, binding and independent production-package checks; runs both Clippy configurations; builds binaries and Cargo JSON test inventory; then executes ordinary workspace tests, admission/scheduler doctests, and the separate signing compatibility-feature tests. The ordinary suite still contains physical probes, so this entire boundary must remain exclusive until #427 classifies its exact cases.
+A failed prerequisite blocks only its consumers. Independent work may finish.
+Whole-run cancellation is latched; already-started leases are not released until
+the underlying owned process has reclaimed descendants. A successful child exit
+followed by cancellation before cleanup cannot become a passing lane.
 
-When the existing renderer output is `true`, the same job then installs the pinned Node runtime, qualifies SSR/hydration, installs the component composer, builds and exercises the live browser boundary, builds the public Angular fixture, tests generic cells/shared HTTP, checks observed-build/source-separation boundaries, builds the observed application package, and validates admission/rendering/hydration. Several steps mix build, native preparation and execution; their current step duration is not an isolated rendering measurement.
+## Prepared inputs and exact selection
 
-After the renderer steps come the operator registry pull, S3 pull/test, Vault pull/test, NATS pull/event test/trigger test, and capability-policy CLI lifecycle. Do not drop these simply because a previous renderer step failed in a historical run.
+'tools/run_ci_lanes.py' reads the current 'tools/ci/suites.json' before dispatch.
+The child worker then consumes the existing workspace Cargo inventory.
 
-The last combined Phase 2 step includes all of these responsibilities:
+Provider selections are the existing registered s3-blobs, vault-secrets,
+nats-events and nats-triggers cases. The renderer receipt binds the existing
+browser-boundary selection, the exact angular-renderer process-contract cases
+(including the selected latentd Angular HTTP case), and the maintained
+angular-build ignored case.
 
-- Artifact-runner/resource-binary tests; a private operator fixture root; operator fixture export; operator/canary/offline runner tests; real operator workflow execution.
-- A stripped, separately owned AOT compiler copy; exact trust-currentness cases; security-profile and offline workflows; publication fixture export and publication workflow execution.
-- Separately stripped CLI/node resource copies; resource fixture export; resource schema/clock tests; source/lock/compiler/binary build identity; real resource-gate execution **and** validation of its receipt.
+The coordinator accepts a child receipt only when:
 
-The corresponding compact receipts remain product evidence, not optional continuous-workstream output. The separate #238/PR #374 security, #239/PR #376 resource, #226/PR #410 reference and #236/PR #372 Angular acceptance authorities remain untouched. Workflow changes must also be reconciled with #355/PR #415 before the production switch; the baseline guard is not permission to discard that work.
+- the lane identity and schema are current;
+- every expected logical step completed;
+- the exact selected-case set matches the central inventory;
+- a nonempty stage timing record is present; and
+- the child reports success.
 
-## Scheduling policy
+A missing receipt, renamed/extra case, missing timing, wrong step list or failed
+child cannot unblock the scheduler.
 
-[`tools/ci_lanes.py`](../../tools/ci_lanes.py) accepts a graph already selected by the suite owner. It has no changed-file classifier, preview CLI, Cargo invocation, package installer, artifact loader or subprocess launcher.
+## Process ownership, watchdogs and cancellation
 
-A stage declares its prerequisites, resource group, total fixture/stage watchdog, exact expected case names and expected receipt roles. Preparation stages may have no cases; execution stages may not have an empty selection. Phase tags distinguish host compilation, component generation, native preparation, execution, teardown, transfer and cache warming. The stage watchdog is metadata for the eventual process-owner adapter, not an enforced timer in this module and never an override of a production activation deadline.
+Each lane worker is launched through 'owned_test_process.run_owned_async'. That
+owner uses the existing Linux subreaper contract and does not return until
+descendant retirement is acknowledged. The scheduler calls retire only after
+that acknowledgement.
 
-Worker count must be explicitly **one or two**. Resource-group capacities must be declared and may not exceed that bound. There is intentionally no newly chosen production default before a real comparison. A physical probe declares exclusive runner ownership: already running work drains before it begins, and other groups cannot run during its execution or teardown. A ready exclusive stage acts as a barrier rather than starving behind newly launched work. This is a same-runner guarantee; independently hosted Actions jobs do not share this scheduler.
+Inside the lane, 'TestRun' supplies one total watchdog, private fixture state,
+redacted diagnostics, source identity, artifact digests, cleanup and per-stage
+monotonic elapsed records. Behavioral activation deadlines inside LSF and its
+provider/browser fixtures are unchanged; the lane watchdog never rewrites them.
 
-The state transitions are:
+GitHub's existing 'concurrency.cancel-in-progress: true' remains required.
+'run_ci_lanes.py' installs termination handlers, cancels live async owners, and
+waits for 'run_owned_async' to finish cleanup before recording the lane as
+cancelled.
 
-```text
-pending -> running -> retiring -> success / failure / cancelled
-                    ^
-           cancelling
-pending -> blocked (unsuccessful prerequisite)
-pending -> cancelled (whole-run interruption)
-```
+## Real negative controls
 
-Dispatch reserves resource capacity atomically in the single coordinator. A process exit only records completion; **it does not release capacity**. The existing process owner must reclaim its descendants, provider fixtures and private temporary roots, then call `retire`. Missing retirement keeps the run incomplete and prevents dependent work. This contract must be wired to the existing runner owners/#434; these tests do not prove live OS-process cleanup.
+The integrated lane contains failure controls rather than relying only on the
+scheduler model:
 
-Prerequisite failure blocks all transitive consumers. An unrelated diagnostic lane may still finish. Cancellation is latched, stops future dispatch, and returns the still-owned leases for cleanup. Cancellation between a successful exit and finished cleanup cannot become success. Reconstructed, foreign-run and retired leases cannot submit a completion.
+- The provider lane first completes the real S3 suite, then supplies the same
+  S3 runner with a Cargo inventory whose S3 executable identity was replaced by
+  a nonexistent target-owned harness. Acceptance is a failure; the runner's
+  finally cleanup still owns the MinIO fixture.
+- The renderer lane performs real prepared-harness discovery and then invokes
+  the maintained after-discovery fault. Its diagnostic is checked with
+  'check_owned_diagnostics.py'; no selected renderer case executes after that
+  injected failure.
+- Unit regressions reject missing lane receipts, case/step/timing drift,
+  cancellation-before-retirement, duplicate/foreign leases and missing required
+  job results.
+- Existing #434 owned-process tests continue to exercise cancellation and
+  descendant cleanup independently of this orchestration layer.
 
-A successful exit with missing observations, a wrong stage, missing/extra/duplicate cases, or missing/wrong/duplicate receipt roles becomes failure. Receipt-role matching is **not artifact authentication**: the #428 adapter must validate actual bytes/provenance/compatibility, and the product runner must validate its actual receipt before submitting these observations. The wrong-role unit control does not satisfy the real wrong-artifact negative control in #431.
+These controls do not turn a failed product run into evidence. The normal provider
+and renderer runs must still complete successfully.
 
-The aggregate helper receives the exact expected job sets from the selection owner. Missing/unregistered jobs, failed/cancelled/skipped required jobs, and unexpectedly executed unselected jobs fail closed. It does not replace the current `CI result` implementation before the new lanes exist.
+## Timing evidence
 
-## Preparation reuse and proposed integration boundary
+Each child diagnostic records named preparation/execution/teardown stages through
+'TestRun'. The aggregate 'latent.ci-lanes.v1' receipt records:
 
-The eventual minimum useful layout is a prompt correctness result plus a co-located integration owner that prepares each compatible recipe once, schedules provider/renderer consumers, and isolates remaining physical work. This is a proposal, not the current workflow.
+- source revision when Actions supplies it;
+- exact Cargo-inventory SHA-256;
+- selected worker count and renderer selection;
+- aggregate elapsed time;
+- terminal stage states/reasons; and
+- the validated child receipts and their stage timings.
 
-Cross-job relocation is not enabled. `ci_rust_artifacts.read_inventory` resolves absolute manifest/source/executable paths under the producing checkout, requires executables under `target/debug/deps`, and preserves runtime library search paths; `cargo_environment` also resolves the active Rust sysroot libraries. Uploading an arbitrary subset of `target/` and rewriting these paths is not a verified handoff. Until #428 specifies relocation and runtime dependencies, same-runner consumption avoids that correctness risk. This is not a measured claim that transfer would be slower.
+Actions retains the complete '$RUNNER_TEMP/ci-lanes/' directory for 14 days.
+Browser receipts and existing Phase 2 receipts remain separate artifacts.
 
-No compiled native image is loaded by the scheduler. Any future immutable preparation reuse must preserve the tested cold-start, cache-miss and restart transitions. Each activation still needs fresh Store/application state and independently scoped authority. Mutable applications, catalogs and credentials must never be shared to save fixture time.
+The serial pre-lane baseline for the current integration source is Actions run
+35634834989 at development ffa90dc3f76f4bc589be63d313103fdb67fb5f1b.
+That run uses the old consecutive renderer/provider layout. It was still executing
+when this implementation revision was first published, so no completed speedup
+claim is made from it here. The PR must retain a completed two-worker run and a
+comparable one-worker dispatch before an elapsed-time improvement is stated.
 
-The integration order is: consume #427 selections and recipes; validate #428 prepared inputs; have existing runners execute only valid leased stages; record #426 stage outcomes; clean up through their process owners; retire leases; validate exact required completion; expose the result through the unconditional aggregate. Missing dependency interfaces must fail the selected integration rather than silently inventing another suite/manifest format.
+Elapsed workflow time and summed runner time are distinct. Cache restore, npm
+preparation, Docker pulls, component composition and any transfer work remain
+visible stages rather than being subtracted from the comparison. Resource fields
+that are unavailable are unavailable, not fabricated zeros.
 
-## Validation and remaining acceptance
+## Coverage and rollback
 
-The compiler/network-free local checks executed for this change are:
+'tools/ci_lane_inventory.py' now checks only lane-specific architecture. The more
+general 'tools/ci/commands.json' still reviews every required run block and hashes
+the delegated script owners. The lane workflow command explicitly names its
+Python child owners so moving them behind a coordinator does not remove them from
+command-owner review.
 
-```sh
-python3 -m unittest tools.tests.test_ci_lanes \
-  tools.tests.test_ci_lane_inventory.InventoryTests -v
-```
+The structural guard requires:
 
-Result: **43 tests passed**. They include 60 deterministic generated-DAG schedules (30 fixed seeds under each worker bound). These are synthetic scheduling/coverage models, not serial/two-worker LSF performance samples.
+- the complete current job set and unconditional CI result;
+- superseded-run cancellation;
+- one lane coordinator using the prepared workspace inventory;
+- renderer setup/component preparation under the existing renderer condition;
+- removal of the old consecutive provider/renderer run slots;
+- Phase 2/T1 physical work after the lane; and
+- manual catalog scale remaining manual.
 
-The separate `RepositoryInventoryTests` class reads the actual workflow with the already-pinned PyYAML dependency. It is required by normal repository test discovery; a missing workflow/dependency is a failure, never an intentional skip. It was not run in the limited local checkout used for the policy tests. A full checkout runs both modules, including that class, with:
-
-```sh
-python3 -m unittest tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory -v
-```
-
-| Required evidence | Current status |
-| --- | --- |
-| Exact selected-case discovery and narrow correctness build graph | Awaiting #427 integration |
-| Validated build-free manifests, clean/reused real inputs and wrong-byte controls | Awaiting #428 integration |
-| Before/after nested build/preparation/execution/teardown records | Awaiting #426 integration |
-| Immutable native preparation reuse preserving fresh activation/cold transitions | Not implemented |
-| Existing-runner dispatch, watchdog enforcement, live supersession cleanup | Not integrated or qualified |
-| Complete affected CI execution with new lane layout | Not performed |
-| Comparable serial/two-worker elapsed-job and summed-runner observations | Not measured |
-| Transfer/extraction/cache-warming cost and peak resources | Unavailable, not zero |
-
-Before selecting a default, collect completed serial and two-worker runs with identical source/recipes/cases and recorded environment/cold-warm state. Retain failed/cancelled/incomplete runs diagnostically, but exclude them from successful-complete speed comparisons. In particular, failed run `34983892143` with skipped late steps is not a successful full baseline. Report elapsed workflow time separately from summed job/runner time; include transfer/extraction and cache-warming work and retain unavailable resource fields as unavailable. Use #342 for offline comparison instead of adding another timing analyzer here.
-
-Keep the PR draft and #431 open until those requirements are actually met. Reverting the policy and inventory additions restores the prior developer surface; there is no production lane, cache, resource or release configuration to roll back in this pre-integration change.
+Rollback is mechanical: restore the prior serial run slots and remove the two lane
+scripts, worker input and lane receipts. It requires no runtime, release,
+security, resource-policy, installation or branch-protection change.

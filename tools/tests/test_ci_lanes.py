@@ -1,13 +1,18 @@
 """Compiler/network-free scheduling tests; not product qualification evidence."""
 
 from dataclasses import replace
+import json
+from pathlib import Path
 import random
+import tempfile
 import unittest
 
+from tools import ci_suite_inventory
 from tools.ci_lanes import (
     Completion, LaneError, Lease, Phase, Scheduler, Stage, State,
     require_job_results,
 )
+from tools.run_ci_lanes import CHILD_SCHEMA, _expected_cases, _read_receipt, stages
 
 
 def stage(name, *, needs=(), group="runtime", exclusive=False, phase=Phase.EXECUTION):
@@ -346,6 +351,61 @@ class JobResultTests(unittest.TestCase):
                                      (frozenset({"a"}), frozenset({"a"}))):
             with self.assertRaises(LaneError):
                 require_job_results({}, required=required, unselected=unselected)
+
+
+class IntegrationContractTests(unittest.TestCase):
+    def test_current_inventory_supplies_nonempty_exact_lane_cases(self):
+        data = ci_suite_inventory.load()
+        provider = _expected_cases(data, "provider")
+        renderer = _expected_cases(data, "renderer")
+        self.assertGreater(len(provider), 10)
+        self.assertGreater(len(renderer), 4)
+        self.assertEqual(len(provider), len(set(provider)))
+        self.assertEqual(len(renderer), len(set(renderer)))
+        self.assertTrue(set(data["selections"]["browser-boundary"]["names"]) <= set(renderer))
+
+    def test_real_lane_graph_dispatches_provider_and_renderer_together(self):
+        sched = Scheduler(stages(True), workers=2, capacities={"provider": 1, "renderer": 1})
+        leases = sched.claim_ready()
+        self.assertEqual({lease.stage.name for lease in leases},
+                         {"provider-integrations", "renderer-integrations"})
+
+    def test_receipt_requires_exact_steps_cases_and_timing(self):
+        data = ci_suite_inventory.load()
+        sched = Scheduler(stages(False), workers=1, capacities={"provider": 1, "renderer": 1})
+        lease, = sched.claim_ready()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "provider.json"
+            valid = {
+                "schemaVersion": CHILD_SCHEMA,
+                "lane": "provider",
+                "outcome": "passed",
+                "steps": list(lease.stage.cases),
+                "selectedCases": list(_expected_cases(data, "provider")),
+                "timings": [{"stage": "execution", "elapsedMs": 1.0}],
+                "diagnostic": "diagnostic.json",
+                "reason": None,
+            }
+            path.write_text(json.dumps(valid), encoding="utf-8")
+            self.assertEqual(_read_receipt(path, lease, data)["outcome"], "passed")
+            for key, value in (
+                ("steps", valid["steps"][:-1]),
+                ("selectedCases", valid["selectedCases"][:-1]),
+                ("timings", []),
+            ):
+                changed = dict(valid)
+                changed[key] = value
+                path.write_text(json.dumps(changed), encoding="utf-8")
+                with self.subTest(key=key), self.assertRaises(LaneError):
+                    _read_receipt(path, lease, data)
+
+    def test_missing_lane_receipt_fails_closed(self):
+        data = ci_suite_inventory.load()
+        sched = Scheduler(stages(False), workers=1, capacities={"provider": 1, "renderer": 1})
+        lease, = sched.claim_ready()
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(LaneError, "missing-lane-receipt"):
+                _read_receipt(Path(directory) / "missing.json", lease, data)
 
 
 if __name__ == "__main__":
