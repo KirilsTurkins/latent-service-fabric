@@ -1062,14 +1062,16 @@
         "broker::tests::stopped_sessions_keep_response_and_original_ledger_until_actual_drop",
         "broker::tests::typed_input_reservations_precede_construction_and_survive_session_close",
         "broker::tests::unpolled_calls_reserve_nothing_and_revocation_denies_before_dispatch",
-        "broker::tests::unused_multi_dimension_reservations_refund_together_without_refunding_other_work"
+        "broker::tests::unused_multi_dimension_reservations_refund_together_without_refunding_other_work",
+        "broker::tests::web_imports::ordinary_capsule_context_still_requires_its_provider_binding",
+        "broker::tests::web_imports::web_context_is_distinct_from_exact_provider_imports"
       ],
       "expectedIgnored": [],
       "id": "latent-capabilities.lib.latent-capabilities",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 102,
+      "minimumCases": 104,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -1355,6 +1357,9 @@
         "deployments::tests::rollouts::staged_cutpoint_recovers_old_whole_state_and_rename_uncertainty_is_explicit",
         "deployments::tests::rollouts::stages_commit_one_combined_catalog_and_replay_exact_history_after_restart",
         "deployments::tests::rollouts::stale_ordinary_writer_cannot_erase_state_only_commit_and_manual_drift_conflicts",
+        "deployments::tests::rollouts::web::revoked_web_rollback_target_is_rejected_before_preparation_and_after_preflight",
+        "deployments::tests::rollouts::web::web_canary_preserves_pinned_assets_and_restarts_with_revoked_candidate_identity_only",
+        "deployments::tests::rollouts::web::web_rollout_rejects_route_removal_mode_change_and_backend_expansion_without_mutation",
         "deployments::tests::root_identity::during_open::relative_root_stays_owned_while_open_is_suspended_at_release_fetch",
         "deployments::tests::root_identity::mutations_stay_in_the_owned_root_after_working_directory_changes",
         "deployments::tests::root_ownership_limits_and_hot_path_are_explicit",
@@ -1408,7 +1413,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 230,
+      "minimumCases": 233,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [
