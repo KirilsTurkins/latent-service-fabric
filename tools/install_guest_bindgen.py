@@ -32,6 +32,9 @@ def contract() -> tuple[str, str]:
     return version, checksum
 
 
+VERSION, ARCHIVE_SHA256 = contract()
+
+
 def release_url(version: str) -> str:
     return (
         f"https://github.com/bytecodealliance/wit-bindgen/releases/download/v{version}/"
@@ -39,8 +42,9 @@ def release_url(version: str) -> str:
     )
 
 
-def binary(archive: bytes, expected_sha256: str) -> bytes:
-    if len(archive) > MAX_ARCHIVE or hashlib.sha256(archive).hexdigest() != expected_sha256:
+def binary(archive: bytes, expected_sha256: str | None = None) -> bytes:
+    checksum = ARCHIVE_SHA256 if expected_sha256 is None else expected_sha256
+    if len(archive) > MAX_ARCHIVE or hashlib.sha256(archive).hexdigest() != checksum:
         raise ValueError("wit-bindgen archive identity mismatch")
     with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as source:
         matches = []
