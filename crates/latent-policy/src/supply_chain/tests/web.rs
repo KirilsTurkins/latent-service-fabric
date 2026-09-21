@@ -3,6 +3,7 @@ use latent_artifacts::{web::WEB_MANIFEST_PATH, AdmissionAuthority, PackageAdmiss
 use latent_core::{PlatformErrorCode, TenantId};
 
 mod angular_build;
+mod preparation;
 
 fn fixture() -> Fixture {
     let mut fixture = Fixture::new();
@@ -14,6 +15,44 @@ fn upload(fixture: &Fixture) -> PackageAdmissionUpload {
 }
 fn authority(fixture: &Fixture, path: &std::path::Path) -> SupplyChainAuthority {
     SupplyChainAuthority::open(path, fixture.approved(), fixture.clock.clone(), 5).unwrap()
+}
+
+#[test]
+fn control_lease_renewal_preserves_current_policy_and_retirement_fences() {
+    let fixture = fixture();
+    let directory = tempfile::tempdir().unwrap();
+    let owner = authority(&fixture, directory.path());
+    let grant = owner
+        .verify_web(&TenantId("tests".into()), upload(&fixture))
+        .unwrap()
+        .grant;
+    fixture.clock.set(NOW + 7);
+    assert_eq!(
+        grant.check_current().unwrap_err().message,
+        "admission-clock-lease-uncovered"
+    );
+    AdmissionAuthority::renew_control_lease(&owner).unwrap();
+    grant.check_current().unwrap();
+    let mut next = fixture.policy.clone();
+    next["generation"] = 2.into();
+    next["tenants"] = serde_json::json!([]);
+    owner
+        .replace_policy(SupplyChainPolicy::from_json(&serde_json::to_vec(&next).unwrap()).unwrap())
+        .unwrap();
+    fixture.clock.set(NOW + 14);
+    AdmissionAuthority::renew_control_lease(&owner).unwrap();
+    assert_eq!(
+        grant.check_current().unwrap_err().message,
+        "admission-grant-stale"
+    );
+    owner.retire();
+    assert_eq!(
+        AdmissionAuthority::renew_control_lease(&owner)
+            .unwrap_err()
+            .message,
+        "admission-owner-retired"
+    );
+    assert!(grant.check_current().is_err());
 }
 
 #[test]

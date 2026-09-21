@@ -58,6 +58,7 @@ internal sealed partial class Workflow
 
     private async Task Invocations(BoundedClient client)
     {
+        // lsf-example-begin: invoke
         foreach (string provider in new[] { "http", "blob" })
         {
             Stage = provider + "-guest";
@@ -68,6 +69,7 @@ internal sealed partial class Workflow
             identities.Add(identity);
             Passed(provider + "Guest");
         }
+        // lsf-example-end: invoke
         Stage = "declared-error";
         Profile.InvokeResponse declared = (await client.InvokeAsync(input.Request("callee", "dotnet-declared", "fail"), Calls, stop)).Value;
         input.Receipt(declared, "callee", "dotnet-declared");

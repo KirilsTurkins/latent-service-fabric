@@ -38,6 +38,7 @@ class SnapshotError(RuntimeError):
 @dataclass(frozen=True)
 class SnapshotLimits:
     max_entries: int = 4096
+    max_directories: int = 4096
     max_file_bytes: int = 4 * 1024 * 1024
     max_total_bytes: int = 32 * 1024 * 1024
     max_archive_bytes: int = 40 * 1024 * 1024
@@ -137,11 +138,19 @@ def extract_archive(archive: bytes, destination: Path, limits: SnapshotLimits,
     parent_paths: set[str] = set()
     file_paths: set[str] = set()
     total = 0
+    files = directories = 0
     with tarfile.open(fileobj=io.BytesIO(archive), mode="r:") as stream:
-        for count, entry in enumerate(stream, 1):
+        for entry in stream:
             if cancellation is not None:
                 cancellation.check()
-            if count > limits.max_entries:
+            # Git ls-tree counts files; git archive also emits directory
+            # headers. Bound both inventories without charging those headers
+            # against the documented source-file allowance a second time.
+            if entry.isdir():
+                directories += 1
+            else:
+                files += 1
+            if files > limits.max_entries or directories > limits.max_directories:
                 raise SnapshotError("source archive entry limit exceeded")
             path = portable_path(entry.name.rstrip("/") if entry.isdir() else entry.name)
             if not _selected(path) and not any(root.startswith(path + "/") for root in SOURCE_ALLOWLIST):

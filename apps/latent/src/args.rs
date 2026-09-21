@@ -7,6 +7,7 @@ pub mod phase3;
 pub mod policy;
 pub mod release;
 pub mod rollout;
+pub mod web;
 pub use package::{PackageCommand, PackagePullArgs, PackagePushArgs};
 mod management;
 #[cfg(test)]
@@ -35,7 +36,7 @@ pub use release::OptionalReleaseOperation;
 )]
 pub struct Cli {
     /// Explicit JSON credential profile file; no automatic discovery.
-    #[arg(long, global = true, value_name = "FILE")]
+    #[arg(long, global = true, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub config: Option<PathBuf>,
     #[arg(long, global = true, value_name = "NAME")]
     pub profile: Option<String>,
@@ -65,6 +66,16 @@ pub enum OutputFormat {
 
 #[derive(Subcommand)]
 pub enum Command {
+    /// Print an offline completion script; never installs files or contacts a node.
+    #[command(
+        after_help = "Writes only shell source. --quiet preserves the script; --output json is rejected. Installation and removal: docs/cli-completions.md"
+    )]
+    Completions {
+        #[arg(value_enum)]
+        shell: crate::completions::CompletionShell,
+    },
+    #[command(subcommand)]
+    Web(web::WebCommand),
     #[command(subcommand)]
     Trigger(phase3::TriggerCommand),
     #[command(subcommand)]

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "latent.provider-guide.ci-evidence.v1",
+  "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
+  "reviewedHead": "55ba1c301518c670820d482bcc991780167e903c",
+  "sourceTree": "0aa0c219d1c14175f874fddb8df155c1e7602855",
+  "sourceTreeEqualityVerified": true,
+  "workflowRun": 35543957986,
+  "attempt": 1,
+  "jobId": 106166512363,
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35543957986/job/106166512363",
+  "jobConclusion": "failure",
+  "unrelatedFailedStep": "Qualify actual Angular on the protected T1 node",
+  "fullLogSha256": "1bb29493a5abc6d861034555b68352b233d365c49adda38454cdb65e91891f8a",
+  "totalPassedCases": 19,
+  "suites": [
+    {
+      "runner": "run_s3_blob_tests.py",
+      "passedCases": [
+        "real_s3_guest_multipart_ranges_credentials_and_restart",
+        "real_s3_wrong_credentials_are_not_retried"
+      ],
+      "summary": "2026-09-20T23:41:08.8003011Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 6.50s",
+      "cleanup": "2026-09-20T23:41:10.0449950Z Removed owned S3 server, payload storage and temporary inventory",
+      "logSegmentSha256": "86ec3c3089bde2dfa901149986b6a6bf248926c5d115c0bc3aa1b19757f33497"
+    },
+    {
+      "runner": "run_vault_secret_tests.py",
+      "passedCases": [
+        "audit::real_vault_audit_and_status_redact_token_and_value_material",
+        "real_vault_versions_rotation_revocation_and_guest_cleanup",
+        "transport::real_vault_transport_cancellation_outage_tls_and_healthy_reuse"
+      ],
+      "summary": "2026-09-20T23:41:20.2741721Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 2.67s",
+      "cleanup": "2026-09-20T23:41:20.5369850Z Removed owned Vault server and temporary TLS files",
+      "logSegmentSha256": "12a3fef9bd2fd730d5a95c7e17be3322f84c26fa578ae906b6f8d5e59cc9559b"
+    },
+    {
+      "runner": "run_nats_event_tests.py",
+      "passedCases": [
+        "audit::real_nats_audit_preserves_broker_ack_and_uncertainty_without_event_or_credentials",
+        "faults::real_nats_lost_ack_cancelled_guest_outage_and_fresh_connection_recovery",
+        "real_nats_credentials_tls_budget_and_retained_receipt_ownership",
+        "real_nats_guest_ack_denial_duplicates_and_connection_reuse"
+      ],
+      "summary": "2026-09-20T23:41:27.1899151Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 4.41s",
+      "cleanup": "2026-09-20T23:41:27.3443576Z Removed owned NATS server, bounded stream storage and TLS files",
+      "logSegmentSha256": "edbeac9267a92c2bb3fb8c21a6a28c35617ad9df171045d715096ac508994bd4"
+    },
+    {
+      "runner": "run_nats_event_tests.py",
+      "passedCases": [
+        "acceptance::real_nats_declared_failure_terminates_and_transient_poison_exhausts_three_deliveries",
+        "acceptance::real_nats_idle_256_triggers_keep_two_connections_and_zero_guest_stores",
+        "acceptance::real_nats_invalid_payload_terminates_without_guest_execution",
+        "acceptance::real_nats_overload_reserves_before_pull_and_recovers_without_prefetch",
+        "acceptance::real_nats_routes_change_future_deliveries_and_revocation_is_tenant_scoped",
+        "real_nats_trigger_executes_two_tenants_and_reuses_bounded_connections",
+        "recovery::real_nats_lost_ack_receipt_remains_uncertain_when_the_broker_already_committed",
+        "recovery::real_nats_lost_ack_restart_redelivers_and_can_execute_the_guest_twice",
+        "recovery::real_nats_shutdown_during_guest_execution_keeps_ownership_through_cleanup",
+        "recovery::real_nats_shutdown_reclaims_pending_delivery_without_running_guest_or_acknowledging"
+      ],
+      "summary": "2026-09-20T23:42:12.4756340Z test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 44.45s",
+      "cleanup": "2026-09-20T23:42:12.8695174Z Removed owned NATS server, bounded stream storage and TLS files",
+      "logSegmentSha256": "743bee46f9f78cc92b1bed2e708dafacb94d715d22226bc7f90acd9ad0da1f11"
+    }
+  ],
+  "humanReview": "pending"
+}

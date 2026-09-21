@@ -109,8 +109,12 @@ sequential. Only these positively identified counts are subtracted for the
 retained-descriptor comparison. The authority lock, unrelated files, sockets,
 additional descriptors and changed objects remain subject to the original
 checks. Quiet invocation inventory does not suspend these periodic operations.
-No missing observation is converted to zero. A raced, inaccessible or
-oversized proc observation fails the experiment instead of extending its bounds.
+No missing observation is converted to zero. If a proc entry disappears while
+it is read, the collector discards the entire partial observation and starts
+another complete snapshot of the same still-owned process. At most three
+attempts share the original two-second and four-MiB read budgets. Continuous
+churn, changed process identity, other I/O failures and oversized observations
+still fail the experiment. This does not retry an Invoke or control command.
 
 The configured topology and all non-observation active owner counts must also
 match the warm baseline. Preparation-cache misses must not increase after

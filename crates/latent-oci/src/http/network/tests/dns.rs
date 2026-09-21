@@ -21,17 +21,17 @@ use std::{
 };
 use tokio::{net::UdpSocket, sync::Semaphore, task::JoinHandle, time::Instant};
 
-struct DnsPeer {
-    address: SocketAddr,
+pub(super) struct DnsPeer {
+    pub(super) address: SocketAddr,
     answer: Arc<Mutex<IpAddr>>,
-    count: Arc<AtomicUsize>,
-    hold: Arc<AtomicBool>,
-    release: Arc<Semaphore>,
+    pub(super) count: Arc<AtomicUsize>,
+    pub(super) hold: Arc<AtomicBool>,
+    pub(super) release: Arc<Semaphore>,
     worker: JoinHandle<()>,
 }
 
 impl DnsPeer {
-    async fn new() -> Self {
+    pub(super) async fn new() -> Self {
         let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
         let address = socket.local_addr().unwrap();
         let answer = Arc::new(Mutex::new("127.0.0.1".parse::<IpAddr>().unwrap()));
@@ -82,6 +82,11 @@ impl DnsPeer {
             release,
             worker,
         }
+    }
+
+    pub(super) async fn close(mut self) {
+        self.worker.abort();
+        assert!((&mut self.worker).await.unwrap_err().is_cancelled());
     }
 }
 

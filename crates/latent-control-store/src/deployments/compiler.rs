@@ -2,6 +2,8 @@ mod admission;
 pub(super) mod execution;
 mod fingerprint;
 mod index;
+#[cfg(test)]
+pub(in crate::deployments) mod ownership;
 mod packing;
 mod records;
 mod reuse;
@@ -29,6 +31,11 @@ use fingerprint::contract_fingerprint;
 pub(super) use index::RouteView;
 use index::{EndpointRow, RouteRow, WeightedCandidate};
 pub(super) use records::{DesiredDeployments, ObjectVersions, RecordIndex, RevisionRecord};
+
+#[cfg(not(test))]
+type CompilationMetadata = VerifiedArtifactMetadata;
+#[cfg(test)]
+type CompilationMetadata = ownership::Owned<VerifiedArtifactMetadata>;
 
 pub(super) type PublicationPins = BTreeMap<latent_core::DeploymentId, latent_core::PublicationId>;
 
@@ -442,7 +449,7 @@ async fn compile_catalog_inner(
         let mut release: Option<(
             ReleaseDigest,
             Option<latent_core::PublicationId>,
-            VerifiedArtifactMetadata,
+            CompilationMetadata,
         )> = None;
         let compatible = reuse::compatible(previous, config);
         let mut memo = reuse::MemoBuilder::new(deployments.len(), config);
@@ -528,6 +535,8 @@ async fn compile_catalog_inner(
                     lifecycle,
                 )
                 .await?;
+                #[cfg(test)]
+                let artifact = ownership::metadata(artifact);
                 match execution {
                     execution::Execution::Eligible(grant) => {
                         charge(&mut metadata_budget, grant.retained_bytes())?;
@@ -603,9 +612,14 @@ async fn compile_catalog_inner(
                     return Err(denied.error());
                 }
             }
-            Phase1ManifestValidator
-                .validate_deployment_against_capsule(deployment, artifact.manifest())
-                .map_err(manifest_error)?;
+            if artifact.is_web_execution_projection() {
+                Phase1ManifestValidator
+                    .validate_web_execution_projection(deployment, artifact.manifest())
+            } else {
+                Phase1ManifestValidator
+                    .validate_deployment_against_capsule(deployment, artifact.manifest())
+            }
+            .map_err(manifest_error)?;
             let mut descriptors = BTreeMap::new();
             if release_surface.is_none() {
                 for descriptor in artifact.contracts() {

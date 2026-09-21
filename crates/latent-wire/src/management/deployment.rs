@@ -36,6 +36,7 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
                 input,
                 principal.tenant.as_ref().expect("authenticated tenant"),
                 self.services.artifacts.as_ref(),
+                self.web.as_deref(),
                 &self.limits,
             ),
         )

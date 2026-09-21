@@ -94,6 +94,7 @@ pub(super) struct SessionCore {
     pub state: Mutex<SessionState>,
     pub random_bytes: AtomicUsize,
     pub metrics: Mutex<super::metrics::SessionUsage>,
+    web_context: bool,
     _metadata: Charge,
     _slot: Charge,
 }
@@ -210,22 +211,41 @@ fn check_envelope(
             .is_some_and(|limit| deadline.unix_millis().is_none_or(|actual| actual > limit))
         || budget.granted() != &request.budget
         || request.activation.budget != request.budget
-        || request.imports.len() != plan.bindings.len()
-        || !plan.bindings.iter().all(|b| {
-            request
-                .imports
-                .iter()
-                .filter(|i| {
-                    i.contract == b.provider.capability && i.capability.0 == b.provider.capability
-                })
-                .count()
-                == 1
-        })
+        || !imports_match(plan, request, publication.web_projection().is_some())
     {
         return Err(denied());
     }
     Ok(())
 }
+// Web metadata includes core invocation context, which has no provider binding.
+// Only the sealed web projection selects this form; provider imports still match
+// the exact compiled plan once each, with no unknown or duplicate imports.
+pub(super) fn imports_match(
+    plan: &CompiledCapabilityPlan,
+    request: &ExecutionRequest,
+    web_projection: bool,
+) -> bool {
+    const CONTEXT: &str = "latent:context/context@0.1.0";
+    let context_count = request
+        .imports
+        .iter()
+        .filter(|i| i.contract == CONTEXT && i.capability.0 == CONTEXT)
+        .count();
+    request.imports.len() == plan.bindings.len() + usize::from(web_projection)
+        && (!web_projection || context_count == 1)
+        && plan.bindings.iter().all(|binding| {
+            request
+                .imports
+                .iter()
+                .filter(|import| {
+                    import.contract == binding.provider.capability
+                        && import.capability.0 == binding.provider.capability
+                })
+                .count()
+                == 1
+        })
+}
+
 impl ActivationCapabilityBroker {
     pub fn open_session(
         &self,
@@ -306,6 +326,7 @@ impl ActivationCapabilityBroker {
             stats,
             random_bytes: AtomicUsize::new(0),
             metrics: Mutex::new(super::metrics::SessionUsage::default()),
+            web_context: publication.web_projection().is_some(),
             state: Mutex::new(SessionState {
                 slots: (0..self.inner.limits.maximum_handles_per_session)
                     .map(|_| None)
@@ -419,6 +440,16 @@ impl SessionCore {
     }
 }
 impl CapabilitySession {
+    /// Verified web projections expose their own invocation context as core ABI.
+    /// This does not authorize a provider or another activation's context.
+    pub fn uses_core_web_context(&self, output_bytes: usize) -> Result<bool, PlatformError> {
+        self.core.check()?;
+        if self.core.web_context && output_bytes > self.core.owner.limits.maximum_output_bytes {
+            return Err(capacity());
+        }
+        Ok(self.core.web_context)
+    }
+
     pub fn reserve_resource_table(
         &self,
         bytes: usize,

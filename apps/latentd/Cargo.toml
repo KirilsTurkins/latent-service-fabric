@@ -88,3 +88,11 @@ path = "tests/standalone_shutdown.rs"
 [[test]]
 name = "phase3_workflow_fixture"
 path = "tests/phase3_workflow_fixture.rs"
+
+[[test]]
+name = "phase3_angular_fixture"
+path = "tests/phase3_angular_fixture.rs"
+
+[[test]]
+name = "phase3_reference_fixture"
+path = "tests/phase3_reference_fixture.rs"

@@ -12,6 +12,37 @@ use tokio::{
 };
 
 #[tokio::test]
+async fn clean_http_shutdown_rebinds_the_same_port_after_server_closed_connections() {
+    let root = TempDir::new().unwrap();
+    let value = config(&root);
+    let fixture = Fixture::start(root, value.clone(), None).await;
+    let address = fixture.node.http_endpoint().unwrap();
+    let mut socket = fixture.connect().await;
+    socket
+        .write_all(request("GET", "/", TOKEN, 0, true).as_bytes())
+        .await
+        .unwrap();
+    assert_eq!(response(&mut socket).await.0, 404);
+    // Observe the server's FIN before closing the client. The old server port
+    // now has a real TIME_WAIT connection, although its listener can retire.
+    assert!(
+        tokio::time::timeout(Duration::from_secs(2), socket.read_u8())
+            .await
+            .unwrap()
+            .is_err()
+    );
+    drop(socket);
+    fixture.idle().await;
+    let root = fixture.shutdown().await;
+    let mut value = value;
+    value["httpIngress"]["bind"] = json!(address.to_string());
+    let reopened = Fixture::start(root, value, None).await;
+    assert_eq!(reopened.node.http_endpoint().unwrap(), address);
+    assert_eq!(call(&reopened, "/").await.0, 404);
+    reopened.shutdown().await;
+}
+
+#[tokio::test]
 async fn failed_http_bind_retires_started_rpc_and_catalog_owners() {
     let root = TempDir::new().unwrap();
     let occupied = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -71,6 +102,33 @@ fn public_request(path: &str) -> String {
     format!("GET {path} HTTP/1.1\r\nHost: {AUTHORITY}\r\n\r\n")
 }
 
+// The lifecycle deadlines below begin with guest execution. Compilation is
+// bounded setup, using the exact tenant-scoped publication selected by ingress.
+async fn prepare_lifecycle_component(fixture: &Fixture, release: &latent_core::ReleaseDigest) {
+    use latent_artifacts::ArtifactRepository;
+    use latent_executor::ExecutionBackend;
+    let mut key = fixture.node.backend.preparation_key(release).unwrap();
+    key.publication = Some(
+        fixture
+            .artifacts
+            .select_execution_publication(&latent_core::TenantId("tests".into()), release, None)
+            .unwrap()
+            .expect("published lifecycle component")
+            .id,
+    );
+    let prepared = tokio::time::timeout(
+        Duration::from_secs(5),
+        fixture
+            .node
+            .backend
+            .prepare_from_repository(fixture.artifacts.as_ref(), &key),
+    )
+    .await
+    .expect("bounded lifecycle compilation setup")
+    .expect("lifecycle component preparation");
+    drop(prepared);
+}
+
 #[tokio::test]
 #[ignore = "requires the public web component built by contract CI"]
 async fn actual_http_component_public_origin_deadline_and_forced_shutdown_reclaim_owners() {
@@ -81,7 +139,9 @@ async fn actual_http_component_public_origin_deadline_and_forced_shutdown_reclai
     value["httpIngress"]["limits"]["maximumRequestsPerConnection"] = json!(2);
     value["httpIngress"]["authentication"] = json!({"mode":"public-origins", "origins":[{"authority":AUTHORITY,"subject":"public-web","tenant":"tests"}]});
     let bytes = std::fs::read(std::env::var_os("LSF_WEB_COMPONENT").unwrap()).unwrap();
+    let release = latent_artifacts::content_digest(&bytes);
     let fixture = Fixture::start(root, value, Some(bytes)).await;
+    prepare_lifecycle_component(&fixture, &release).await;
     let mut socket = fixture.connect().await;
     for _ in 0..2 {
         socket

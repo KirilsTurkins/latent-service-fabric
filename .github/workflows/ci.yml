@@ -11,6 +11,10 @@ on:
         description: "Run the heavyweight 100,000-release catalog acceptance probe"
         type: boolean
         default: false
+      run_phase3_resources:
+        description: "Run the declared bounded provider and actual Angular resource matrix"
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,10 +33,13 @@ jobs:
       reason: ${{ steps.select.outputs.reason }}
       changed_files: ${{ steps.select.outputs.changed_files }}
       renderer: ${{ steps.select.outputs.renderer }}
+      fast_packages: ${{ steps.select.outputs.fast_packages }}
+      expected_jobs: ${{ steps.select.outputs.expected_jobs }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Classify the complete change
         id: select
         run: python3 tools/ci_profile.py
@@ -55,8 +62,61 @@ jobs:
         run: python -m pip install --requirement tools/requirements.lock
       - name: Validate documentation and profile selection
         run: |
-          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts
+          python3 tools/ci_coverage.py
+          LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner
           python3 tools/validate_docs.py
+      - name: Preserve repository source contracts in the host-only profile
+        if: needs.profile.outputs.profile == 'fast'
+        run: |
+          python3 tools/validate_repository.py
+          python3 tools/validate_foundation.py
+
+      - name: Validate deterministic dependency regressions
+        run: python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies
+
+  fast:
+    name: Fast host correctness
+    env:
+      RUSTUP_TOOLCHAIN: 1.97.1
+    needs: profile
+    if: needs.profile.outputs.fast_packages != '' && needs.profile.outputs.fast_packages != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: rustfmt, clippy
+      - name: Run the selected dependency-bounded correctness suites
+        env:
+          CI_FAST_PACKAGES: ${{ needs.profile.outputs.fast_packages }}
+        run: python3 tools/ci_fast.py --packages-json "$CI_FAST_PACKAGES" --output "$RUNNER_TEMP/ci-fast/affected"
+      - name: Qualify the genuinely narrow reverse-dependent fixture
+        if: needs.profile.outputs.profile == 'full'
+        run: |
+          packages="$(python3 - <<'PYCODE'
+          from tools.ci_profile import classify_paths
+          selection = classify_paths(['crates/latent-state/src/lib.rs'])
+          assert selection.profile == 'fast'
+          print(selection.outputs()['fast_packages'])
+          PYCODE
+          )"
+          python3 tools/ci_fast.py --packages-json "$packages" --output "$RUNNER_TEMP/ci-fast/narrow"
+      - name: Retain exact host dependency, discovery and timing receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-host-correctness-${{ github.sha }}
+          path: ${{ runner.temp }}/ci-fast/
+          if-no-files-found: error
+          retention-days: 7
+
 
   rust:
     name: Rust 1.97.1
@@ -89,8 +149,29 @@ jobs:
             ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
                 (github.event_name == 'workflow_dispatch' &&
                  (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+          cache: pip
+          cache-dependency-path: tools/requirements.lock
+      - name: Install pinned validation dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Check selected renderer prerequisites before building
+        id: renderer_preflight
+        if: needs.profile.outputs.renderer == 'true'
+        run: python3 tools/run_angular_renderer_tests.py --preflight --diagnostic-root "$RUNNER_TEMP/owned-renderer"
       - name: Check formatting
         run: cargo fmt --all --check
+      - name: Check deterministic helper dependency boundaries
+        timeout-minutes: 5
+        run: |
+          python3 tools/check_testkit_dependencies.py
+          cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=1
+          cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=4
+          cargo test -p latent-admission -p latent-scheduler --lib --locked
+          cargo test -p latent-testkit --no-default-features --lib --test test_support_compatibility --locked
+          cargo run -p latent-testkit --no-default-features --example deadline --locked
+          cargo run -p latent-testkit --no-default-features --example cancellation --locked
       - name: Check workspace
         run: cargo check --workspace --all-targets --all-features --locked
       - name: Check generated RPC and Component Model bindings
@@ -133,17 +214,59 @@ jobs:
         run: |
           cargo build --workspace --all-targets --all-features --locked
           cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics > "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
+      - name: Verify complete registered workspace test discovery
+        run: python3 tools/ci_suite_discovery.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --receipt "$RUNNER_TEMP/ci-discovery.json"
+      - name: Prepare authenticated AOT test inputs
+        run: |
+          python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests
+          python3 tools/aot_test_inputs.py prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --output "$RUNNER_TEMP/lsf-aot-test-inputs"
+          # Cargo supplies each harness's runtime environment itself. Export only
+          # this recipe's input selectors, not CARGO_MANIFEST_DIR/library paths.
+          python3 tools/aot_test_inputs.py environment --manifest "$RUNNER_TEMP/lsf-aot-test-inputs/manifest.json" | grep '^LSF_AOT_' >> "$GITHUB_ENV"
+
       - name: Run tests
         run: |
-          cargo test --workspace --all-targets --all-features --locked
-          cargo test -p latent-admission -p latent-scheduler --doc --locked
-          cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests
+          set -o pipefail
+          cargo test --workspace --all-targets --all-features --locked 2>&1 | tee "$RUNNER_TEMP/ci-workspace-tests.log"
+          python3 tools/ci_suite_discovery.py --execution-log "$RUNNER_TEMP/ci-workspace-tests.log"
+          cargo test -p latent-admission -p latent-scheduler --doc --locked 2>&1 | tee "$RUNNER_TEMP/ci-doctests.log"
+          python3 tools/ci_suite_discovery.py --recipe explicit-doctests --execution-log "$RUNNER_TEMP/ci-doctests.log"
+          cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests 2>&1 | tee "$RUNNER_TEMP/ci-signing-compatibility.log"
+          python3 tools/ci_suite_discovery.py --recipe signing-compatibility --execution-log "$RUNNER_TEMP/ci-signing-compatibility.log"
 
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - name: Check metadata working-set suite selection and observation validation
+        run: python3 -m unittest tools.tests.test_metadata_working_set
+      - name: Qualify catalog metadata compilation working set
+        id: metadata-working-set
+        timeout-minutes: 16
+        # Required on every full profile. No narrowed selection until #427 is qualified.
+        # The ordinary test invocation skips the ignored physical parent.
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite metadata-working-set 2>&1 | tee "$RUNNER_TEMP/metadata-working-set.log"
+      - name: Retain metadata working-set inputs and publication/apply/reopen costs
+        if: always() && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          python-version: 3.13.5
-          cache: pip
-          cache-dependency-path: tools/requirements.lock
+          name: metadata-working-set-observations
+          path: ${{ runner.temp }}/metadata-working-set.log
+          if-no-files-found: error
+
+      - name: Qualify the deterministic Phase 3 security matrix
+        timeout-minutes: 12
+        run: |
+          python3 -m unittest tools.tests.test_phase3_security
+          mkdir -p target/phase3-security
+          python3 tools/phase3_security.py --profile pr --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --source-commit "$GITHUB_SHA" --output target/phase3-security/pr-receipt.json
+      - name: Retain the bounded Phase 3 security receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: phase3-security-pr-${{ github.sha }}
+          path: target/phase3-security/pr-receipt.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Set up the qualified Angular build runtime
         if: needs.profile.outputs.renderer == 'true'
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -151,6 +274,9 @@ jobs:
           node-version: 24.19.0
           cache: npm
           cache-dependency-path: examples/renderer-profile/package-lock.json
+      - name: Validate small Phase 3 resource regressions
+        timeout-minutes: 2
+        run: python3 -m unittest tools.tests.test_phase3_resource tools.tests.test_phase3_resource_web
       - name: Qualify bounded Angular SSR and browser hydration
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 10
@@ -168,6 +294,7 @@ jobs:
         with:
           version: 1.254.0
       - name: Validate browser boundary with live ingress
+        id: browser_boundary
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 5
         run: |
@@ -178,7 +305,11 @@ jobs:
           wasm-tools validate "$RUNNER_TEMP/browser-boundary/application.wasm"
           LSF_WEB_COMPONENT="$RUNNER_TEMP/browser-boundary/application.wasm" LSF_BROWSER_BUILD="$RUNNER_TEMP/browser-boundary" LSF_BROWSER_NODE="$(command -v node)" LSF_BROWSER_CHROME="$(command -v google-chrome)" LSF_BROWSER_TOOLCHAIN="$PWD/examples/renderer-profile" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite browser-boundary
       - name: Retain bounded browser boundary observations
-        if: always() && needs.profile.outputs.renderer == 'true'
+        # Earlier gate failures produce no browser receipts. Retain diagnostics
+        # after an attempted validation, including failures and cancellations.
+        if: >-
+          always() && needs.profile.outputs.renderer == 'true' &&
+          steps.browser_boundary.outcome != '' && steps.browser_boundary.outcome != 'skipped'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: browser-boundary-observations
@@ -194,7 +325,15 @@ jobs:
       - name: Validate Angular in generic cells and the shared HTTP node
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 15
-        run: python3 tools/run_angular_renderer_tests.py --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --component examples/renderer-profile/dist/runtime/application.wasm
+        run: python3 tools/run_angular_renderer_tests.py --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --component examples/renderer-profile/dist/runtime/application.wasm --diagnostic-root "$RUNNER_TEMP/owned-renderer"
+      - name: Exercise renderer ownership failure after exact discovery
+        if: needs.profile.outputs.renderer == 'true'
+        run: |
+          status=0
+          python3 tools/run_angular_renderer_tests.py --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --component examples/renderer-profile/dist/runtime/application.wasm --inject-failure after-discovery --diagnostic-root "$RUNNER_TEMP/owned-renderer-fault" || status=$?
+          test "$status" -eq 1
+          python3 tools/check_owned_diagnostics.py "$RUNNER_TEMP/owned-renderer-fault" --suite angular-renderer --reason injected-after-discovery
+
       - name: Check observed Angular build and source separation boundaries
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 3
@@ -293,12 +432,96 @@ jobs:
           PY
           python3 tools/phase2_gate_resource.py --cli "${resource_bin}/latent" --node "${resource_bin}/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
           python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+      - name: Build the optimized isolated Angular compiler
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 25
+        env:
+          CARGO_BUILD_JOBS: 2
+          CARGO_TARGET_DIR: ${{ runner.temp }}/angular-t1-compiler
+        run: cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked
+      - name: Export actual signed Angular T1 fixtures
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 5
+        env:
+          LSF_ANGULAR_BUILD_DIR: ${{ runner.temp }}/angular-build/actual
+          LSF_ANGULAR_T1_FIXTURE_ROOT: ${{ runner.temp }}/angular-t1-fixture
+        run: python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite angular-t1-fixture
+      - name: Qualify actual Angular on the protected T1 node
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 22
+        run: |
+          python3 -m unittest tools.tests.test_angular_t1_workflow
+          mkdir "$RUNNER_TEMP/angular-t1-bin"
+          for binary in latent latentd; do
+            objcopy --strip-debug "$PWD/target/debug/$binary" "$RUNNER_TEMP/angular-t1-bin/$binary"
+          done
+          objcopy --strip-debug "$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler" "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler"
+          python3 tools/run_angular_t1_workflow.py --cli "$RUNNER_TEMP/angular-t1-bin/latent" --node "$RUNNER_TEMP/angular-t1-bin/latentd" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --fixture-root "$RUNNER_TEMP/angular-t1-fixture" > "$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json"
       - name: Retain compact Phase 2 gate receipts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: phase-2-gate-${{ github.sha }}
           path: ${{ runner.temp }}/phase2-gate/*.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Set up the bounded resource guest compiler
+        if: github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: "0.16.0"
+      - name: Build fresh resource guest inputs
+        if: github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        timeout-minutes: 20
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target/phase3-resource
+          CARGO_BUILD_JOBS: 3
+        run: |
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/resource-guest-tools"
+          PATH="$RUNNER_TEMP/resource-guest-tools:$PATH" python3 tools/build_guest_capsules.py --output "$PWD/target/phase3-resource-guests"
+      - name: Execute the bounded Phase 3 resource matrix
+        if: github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        timeout-minutes: 70
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target/phase3-resource
+          CARGO_BUILD_JOBS: 3
+          CARGO_PROFILE_DEV_DEBUG: 0
+          CARGO_PROFILE_TEST_DEBUG: 0
+        run: |
+          python3 tools/phase3_resource_campaign.py --matrix
+          python3 tools/run_phase3_resource_acceptance.py --revision "$GITHUB_SHA" --output "$RUNNER_TEMP/phase3-resource-matrix" --guest-capsules "$PWD/target/phase3-resource-guests" --angular-build "$RUNNER_TEMP/angular-build/actual" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --host-condition shared-github-runner
+      - name: Retain immutable Phase 3 resource attempts
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: phase3-resource-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/phase3-resource-matrix/*.json
+            ${{ runner.temp }}/phase3-resource-matrix/*.sha256
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Retain exact workspace test discovery and custom-harness execution
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-runtime-discovery-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/ci-discovery.json
+            ${{ runner.temp }}/ci-workspace-tests.log
+            ${{ runner.temp }}/ci-doctests.log
+            ${{ runner.temp }}/ci-signing-compatibility.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Retain attempted renderer ownership diagnostics
+        if: always() && steps.renderer_preflight.outcome != '' && steps.renderer_preflight.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: owned-renderer-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/owned-renderer/*.json
+            ${{ runner.temp }}/owned-renderer-fault/*.json
           if-no-files-found: warn
           retention-days: 7
 
@@ -338,20 +561,47 @@ jobs:
           path: target/capsules/echo-provenance
       - name: Fetch pinned disposable registry
         run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - name: Check owned registry prerequisites before building
+        id: oci_preflight
+        run: python3 tools/run_oci_registry_tests.py --preflight --diagnostic-root "$RUNNER_TEMP/owned-oci"
+      - name: Demonstrate live provider startup and injected failure cleanup
+        env:
+          LSF_REQUIRE_NATIVE_PROCESS_TESTS: '1'
+          LSF_LIVE_OCI_DEMO: '1'
+          LSF_OWNED_DEMO_DIAGNOSTICS: ${{ runner.temp }}/owned-oci-demo
+        run: python3 -m unittest tools.tests.test_owned_runners.NativeRunnerDemonstrations.test_live_provider_normal_and_injected_failure_leave_no_owned_container
+      - name: Prepare exact OCI and web admission harnesses
+        run: |
+          cargo test -p latent-oci --test registry --locked --no-run --message-format=json,json-render-diagnostics > "$RUNNER_TEMP/lsf-oci-tests.jsonl"
+          cargo test -p latent-policy --lib --locked --no-run --message-format=json,json-render-diagnostics > "$RUNNER_TEMP/lsf-web-registry-tests.jsonl"
       - name: Check runner ownership and cleanup guards
         run: python3 -m unittest discover -s tools/tests -p test_oci_registry_runner.py
       - name: Validate bounded authenticated OCI distribution
-        run: python3 tools/run_oci_registry_tests.py --state-file "$RUNNER_TEMP/lsf-oci-registry.json" --provenance-input target/capsules/echo-provenance
+        run: python3 tools/run_oci_registry_tests.py --test-manifest "$RUNNER_TEMP/lsf-oci-tests.jsonl" --state-file "$RUNNER_TEMP/lsf-oci-registry.json" --provenance-input target/capsules/echo-provenance --diagnostic-root "$RUNNER_TEMP/owned-oci"
       - name: Receive bounded public web component
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: phase-3-web-contract-${{ github.sha }}
           path: target/capsules/web-contract
       - name: Validate signed web package registry and catalog round trips
-        run: python3 tools/run_oci_registry_tests.py --state-file "$RUNNER_TEMP/lsf-oci-registry.json" --web-admission-component target/capsules/web-contract/component.wasm
+        run: python3 tools/run_oci_registry_tests.py --test-manifest "$RUNNER_TEMP/lsf-web-registry-tests.jsonl" --state-file "$RUNNER_TEMP/lsf-oci-registry.json" --web-admission-component target/capsules/web-contract/component.wasm --diagnostic-root "$RUNNER_TEMP/owned-oci"
       - name: Recover only this job's disposable registry
         if: always()
-        run: python3 tools/run_oci_registry_tests.py --cleanup-state "$RUNNER_TEMP/lsf-oci-registry.json"
+        run: python3 tools/run_oci_registry_tests.py --cleanup-state "$RUNNER_TEMP/lsf-oci-registry.json" --diagnostic-root "$RUNNER_TEMP/owned-oci"
+
+      - name: Retain attempted registry ownership diagnostics
+        if: always() && steps.oci_preflight.outcome != '' && steps.oci_preflight.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: owned-oci-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/owned-oci/*.json
+            ${{ runner.temp }}/owned-oci-demo/*.json
+          if-no-files-found: warn
+          retention-days: 7
 
   catalog:
     name: Durable catalog acceptance
@@ -410,7 +660,7 @@ jobs:
   msrv:
     name: Rust MSRV 1.94.1
     needs: profile
-    if: needs.profile.outputs.profile == 'full'
+    if: needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -436,7 +686,22 @@ jobs:
                 (github.event_name == 'workflow_dispatch' &&
                  (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Check workspace at MSRV
+        if: needs.profile.outputs.profile == 'full'
         run: cargo +1.94.1 check --workspace --all-targets --all-features --locked
+
+      - name: Check all selected reverse dependents at MSRV
+        if: needs.profile.outputs.profile == 'fast'
+        env:
+          CI_FAST_PACKAGES: ${{ needs.profile.outputs.fast_packages }}
+        run: python3 tools/ci_fast.py --msrv --packages-json "$CI_FAST_PACKAGES" --output "$RUNNER_TEMP/ci-fast-msrv"
+      - name: Retain narrow MSRV timing evidence
+        if: always() && needs.profile.outputs.profile == 'fast'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-host-msrv-${{ github.sha }}
+          path: ${{ runner.temp }}/ci-fast-msrv/
+          if-no-files-found: error
+          retention-days: 7
 
   contracts:
     name: Repository contracts
@@ -502,7 +767,8 @@ jobs:
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
-          java-version: "21.0.11+10.0.LTS"
+          # Exact Temurin runtime 25.0.4.1+1; Adoptium SemVer patch/build encoding.
+          java-version: "25.0.4+101.0.LTS"
       - name: Set up the .NET SDK provider participant
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
@@ -604,48 +870,78 @@ jobs:
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
-          java-version: "21.0.11+10.0.LTS"
+          # Exact Temurin runtime 25.0.4.1+1; Adoptium SemVer patch/build encoding.
+          java-version: "25.0.4+101.0.LTS"
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: 8.0.425
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: "0.16.0"
+      - name: Install the checksum-pinned Java-compatible Gradle
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("tools/toolchain.toml", "rb"))["sdk"]["gradle"])')"
+          checksum="$(python3 -c 'import tomllib; print(tomllib.load(open("tools/toolchain.toml", "rb"))["sdk"]["gradle_sha256"])')"
+          destination="${RUNNER_TEMP}/lsf-gradle"
+          mkdir -p "$destination"
+          curl --fail --location --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 180 \
+            "https://services.gradle.org/distributions/gradle-${version}-bin.zip" -o "$destination/gradle.zip"
+          printf '%s  %s\n' "$checksum" "$destination/gradle.zip" | sha256sum --check --strict
+          unzip -q "$destination/gradle.zip" -d "$destination"
+          echo "$destination/gradle-${version}/bin" >> "$GITHUB_PATH"
+      - name: Qualify the Java 25 Gradle build
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/java-sdk"
+          git rev-parse HEAD | tee "$RUNNER_TEMP/java-sdk/gradle.log"
+          uname -srm | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          python3 sdk/java-client/tools/java_toolchain.py check | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          gradle --version | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          python3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          timeout 540 gradle --no-daemon --console=plain -p sdk/java-client clean check 2>&1 | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          echo 'Gradle qualification passed' | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
       - name: Validate SDK surfaces
+        shell: bash
         env:
           EXPECTED_TYPESCRIPT_VERSION: 5.8.3
         run: |
-          tools/validate_sdks.sh
+          set -euo pipefail
+          tools/validate_sdks.sh 2>&1 | tee "$RUNNER_TEMP/java-sdk/sdk.log"
+          sha256sum sdk/java-client/build/latent-java-client.jar | tee "$RUNNER_TEMP/java-sdk/jar.sha256"
+          python3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar > "$RUNNER_TEMP/java-sdk/jar-classfile.json"
           test "$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)" = \
             "Version ${EXPECTED_TYPESCRIPT_VERSION}"
+      - name: Retain Java SDK qualification diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: java-sdk-qualification-${{ github.sha }}
+          path: ${{ runner.temp }}/java-sdk/
+          if-no-files-found: warn
+          retention-days: 14
 
   result:
     name: CI result
     if: always()
-    needs: [profile, docs, rust, oci-registry, catalog, msrv, contracts, sdks]
+    needs: [profile, docs, website, fast, rust, oci-registry, catalog, msrv, contracts, sdks]
+
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Require every selected validation job
         env:
           CI_JOB_RESULTS: ${{ toJSON(needs) }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import sys
-          results = json.loads(os.environ['CI_JOB_RESULTS'])
-          profile = results['profile']['outputs'].get('profile')
-          full = {'rust', 'oci-registry', 'catalog', 'msrv', 'contracts', 'sdks'}
-          required = {'profile', 'docs'} | (full if profile == 'full' else set())
-          failures = [name for name in required if results[name]['result'] != 'success']
-          if profile not in {'docs', 'full'}:
-              failures.append('unknown CI profile')
-          if profile == 'docs':
-              failures.extend(name for name in full if results[name]['result'] != 'skipped')
-          print('Selected profile:', profile)
-          print('Job results:', {name: value['result'] for name, value in results.items()})
-          if failures:
-              print('CI did not satisfy its selected profile:', ', '.join(failures), file=sys.stderr)
-              sys.exit(1)
-          PY
+        run: python3 tools/ci_result.py
+
+  website:
+    name: Documentation website
+    needs: profile
+    uses: $/.github/workflows/docs-site.yml

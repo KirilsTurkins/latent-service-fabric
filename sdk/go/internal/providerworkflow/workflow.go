@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -114,6 +115,7 @@ func (owner *workflow) request(name, identity string) profile.InvokeRequest {
 }
 
 func (owner *workflow) guests(ctx context.Context) error {
+	// lsf-example-begin: invoke
 	for _, sample := range []struct {
 		name      string
 		id        string
@@ -121,8 +123,18 @@ func (owner *workflow) guests(ctx context.Context) error {
 		assertion string
 	}{{"http", "go-http", 2201, "httpGuest"}, {"blob", "go-blob", 4, "blobGuest"}} {
 		response, failure := owner.client.Invoke(ctx, owner.request(sample.name, sample.id), profile.CallOptions{})
-		if failure != nil || !u64Result(response.Value, sample.value) || !owner.pin(response.Value, sample.name) {
-			return errors.New("participant-" + sample.assertion + "-failed")
+		if failure != nil {
+			return &stepFailure{reason: "participant-" + sample.assertion + "-rpc-failed", cause: failure}
+		}
+		actual, valid := u64Value(response.Value)
+		if !valid {
+			return errors.New("participant-" + sample.assertion + "-result-shape")
+		}
+		if actual != sample.value {
+			return fmt.Errorf("participant-%s-result-%d", sample.name, actual)
+		}
+		if !owner.pin(response.Value, sample.name) {
+			return errors.New("participant-" + sample.assertion + "-pin-failed")
 		}
 		owner.observe(response.Metadata)
 		if failure := owner.retain(ctx, sample.id); failure != nil {
@@ -130,6 +142,7 @@ func (owner *workflow) guests(ctx context.Context) error {
 		}
 		owner.result.Assertions[sample.assertion] = true
 	}
+	// lsf-example-end: invoke
 	declared := owner.request("callee", "go-declared")
 	declared.Target.Function = "fail"
 	response, failure := owner.client.Invoke(ctx, declared, profile.CallOptions{})
@@ -207,15 +220,19 @@ func (owner *workflow) responseLimit(ctx context.Context) error {
 }
 
 func u64Result(value profile.InvokeResponse, expected uint64) bool {
+	actual, valid := u64Value(value)
+	return valid && actual == expected
+}
+
+func u64Value(value profile.InvokeResponse) (uint64, bool) {
 	if value.Success == nil || value.Success.MediaType != mediaType || len(value.Success.Payload) > 1024 {
-		return false
+		return 0, false
 	}
 	var result []string
 	if decodeJSON(value.Success.Payload, &result) != nil || len(result) != 1 {
-		return false
+		return 0, false
 	}
-	parsed, valid := profile.ParseU64Decimal(result[0])
-	return valid && parsed == expected
+	return profile.ParseU64Decimal(result[0])
 }
 
 func rpcStatus(failure error, expected int32) bool {

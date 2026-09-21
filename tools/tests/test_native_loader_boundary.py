@@ -43,6 +43,32 @@ all = "warn"
     def test_reviewed_boundary_passes(self) -> None:
         self.assertEqual(boundary.validate(self.root), [])
 
+    def test_actual_guest_matches_the_two_closed_profile_generators(self) -> None:
+        self.assertEqual(boundary.validate_guest(Path(__file__).resolve().parents[2]), [])
+
+    def test_guest_profile_conditions_cannot_be_removed_or_coenabled(self) -> None:
+        self.write(f"{boundary.GUEST}/src/lib.rs", '#![cfg(target_arch = "wasm32")]\n' + boundary.GUEST_ALLOW)
+        for selector in ('#[cfg(not(feature = "backend-http"))]', '#[cfg(feature = "backend-http")]'):
+            for replacement in ("", '#[cfg(feature = "another-backend")]'):
+                with self.subTest(selector=selector, replacement=replacement):
+                    self.write(f"{boundary.GUEST}/src/abi.rs", boundary.GUEST_ABI.replace(selector, replacement))
+                    self.assertTrue(boundary.validate_guest(self.root))
+        self.write(f"{boundary.GUEST}/src/abi.rs", boundary.GUEST_ABI.replace(
+            '#[cfg(not(feature = "backend-http"))]', '#[cfg(feature = "backend-http")]'))
+        self.assertTrue(boundary.validate_guest(self.root))
+
+    def test_guest_world_and_wit_sources_remain_exact(self) -> None:
+        self.write(f"{boundary.GUEST}/src/lib.rs", '#![cfg(target_arch = "wasm32")]\n' + boundary.GUEST_ALLOW)
+        for before, after in (
+            ('adapter-http@0.1.0', 'adapter-http@0.2.0'),
+            ('adapter@0.1.0', 'adapter-http@0.1.0'),
+            ('"../../wit/platform/http-v2"', '"../../wit/platform/sockets"'),
+            ('generate_all,', 'generate_all, with: {"latent:ambient/io": custom_io},'),
+        ):
+            with self.subTest(replacement=after):
+                self.write(f"{boundary.GUEST}/src/abi.rs", boundary.GUEST_ABI.replace(before, after))
+                self.assertTrue(boundary.validate_guest(self.root))
+
     def test_second_unsafe_site_and_nested_allowance_fail(self) -> None:
         for addition in ("unsafe { second_load() }", "#[allow(unsafe_code)]\nfn extra() {}"):
             with self.subTest(addition=addition):

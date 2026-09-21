@@ -57,6 +57,7 @@ impl DirectoryArtifactRepository {
         self.lifecycle
             .set(store)
             .map_err(|_| corrupt("catalog-lifecycle-already-initialized"))?;
+        self.web.epoch.bind_catalog(self.lifecycle_authority())?;
         if !marker_exists {
             let temporary = self.root.join("LIFECYCLE_MODE.next");
             if fs::symlink_metadata(&temporary).is_ok() {

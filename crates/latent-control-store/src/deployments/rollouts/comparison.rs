@@ -1,4 +1,5 @@
 mod rollback;
+mod web;
 use crate::rollouts::{corrupt, error, Result};
 use latent_artifacts::{ArtifactRepository, RetainedPackageSource};
 use latent_contracts::{compare_descriptors, ComparisonLimits, StructuralCompatibility};
@@ -57,14 +58,35 @@ pub(super) async fn compare(
     let cp = candidate_release.publication.as_ref();
     let old_eligibility = repository.execution_eligibility_selected(old, op)?;
     let new_eligibility = repository.execution_eligibility_selected(candidate, cp)?;
-    for (eligibility, publication) in [(&old_eligibility, op), (&new_eligibility, cp)] {
-        if let Some(e) = eligibility {
-            if Some(e.publication()) != publication {
+    for (eligibility, publication, release) in [
+        (&old_eligibility, op, old),
+        (&new_eligibility, cp, candidate),
+    ] {
+        if let Some(token) = eligibility {
+            if Some(token.publication()) != publication || token.release() != release {
                 return Err(incompatible());
             }
-            e.authorize_tenant(tenant)?;
-            e.check_current()?;
+            token.authorize_tenant(tenant)?;
+            token.check_current()?;
         }
+    }
+    match (
+        old_eligibility
+            .as_ref()
+            .and_then(|token| token.web_projection()),
+        new_eligibility
+            .as_ref()
+            .and_then(|token| token.web_projection()),
+    ) {
+        (Some(previous), Some(next)) => {
+            web::compare(previous.layout(), next.layout())?;
+            return Ok((
+                Some(previous.layout().package().clone()),
+                Some(next.layout().package().clone()),
+            ));
+        }
+        (None, None) => {}
+        _ => return Err(incompatible()),
     }
     let old_proof = match &old_eligibility {
         Some(e) => e.admission().cloned(),

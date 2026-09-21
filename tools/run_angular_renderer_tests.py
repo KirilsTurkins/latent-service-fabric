@@ -1,52 +1,60 @@
 #!/usr/bin/env python3
-"""Run the real renderer gates using the already-built workspace harnesses."""
+"""Execute the real renderer/node gates from explicitly prepared artifacts."""
+from __future__ import annotations
 import argparse
-import json
 import os
 from pathlib import Path
-import subprocess
+import sys
+
+try:
+    from tools.test_run import ProcessFailure, TestRun, contract, require, selected_contract
+    from tools.prepared_test_harness import execute, wasm
+except ModuleNotFoundError as error:
+    if error.name != "tools":
+        raise
+    from test_run import ProcessFailure, TestRun, contract, require, selected_contract
+    from prepared_test_harness import execute, wasm
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main():
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--test-manifest", type=Path, required=True)
-    parser.add_argument("--component", type=Path, required=True)
-    args = parser.parse_args()
-    component = args.component.resolve(strict=True)
-    if not component.is_file() or not 8 <= component.stat().st_size <= 32 * 1024 * 1024:
-        raise RuntimeError("expected a bounded real Angular component")
-    target = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")).resolve()
-    found = {"angular_renderer": set(), "latentd": set()}
-    with args.test_manifest.open(encoding="utf-8") as source:
-        for line in source:
-            if len(line) > 131072:
-                raise RuntimeError("Cargo manifest line exceeds limit")
-            entry = json.loads(line)
-            name = entry.get("target", {}).get("name")
-            if entry.get("reason") != "compiler-artifact" or name not in found:
-                continue
-            if not entry.get("profile", {}).get("test") or not entry.get("executable"):
-                continue
-            if name == "latentd" and entry["target"]["kind"] != ["lib"]:
-                continue
-            found[name].add(Path(entry["executable"]).resolve())
-    private = component.parent / "renderer.wasm"
-    if not private.is_file() or not 8 <= private.stat().st_size <= 32 * 1024 * 1024:
-        raise RuntimeError("required private composition fixture is missing")
-    environment = dict(os.environ, LSF_ANGULAR_COMPONENT=str(component),
-                       LSF_ANGULAR_PRIVATE_COMPONENT=str(private))
-    for name, paths in found.items():
-        if len(paths) != 1:
-            raise RuntimeError(f"expected one {name} test harness")
-        executable = paths.pop()
-        if not executable.is_file() or not executable.is_relative_to(target):
-            raise RuntimeError("harness must belong to this Cargo target")
-        filter_args = ["actual_angular_http_"] if name == "latentd" else []
-        subprocess.run([str(executable), *filter_args, "--ignored", "--nocapture", "--test-threads=1"],
-                       cwd=ROOT, env=environment, check=True, timeout=600)
+    parser.add_argument("--test-manifest", type=Path)
+    parser.add_argument("--component", type=Path)
+    parser.add_argument("--preflight", action="store_true", help="environment only, before builds")
+    parser.add_argument("--diagnostic-root", type=Path)
+    parser.add_argument("--inject-failure", choices=["after-discovery"], help="no execution after a real harness discovery")
+    args = parser.parse_args(argv)
+    policy, rows = selected_contract("angular-renderer", repo=ROOT, diagnostic_root=args.diagnostic_root)
+    with TestRun("angular-renderer", policy, repo=ROOT, diagnostic_root=args.diagnostic_root,
+                 reproduction={"suite": "angular-renderer", "preflight": args.preflight,
+                               "fault": args.inject_failure or "none"}) as owner:
+        owner.source_identity()
+        owner.prerequisites(before_build=True)
+        if args.preflight:
+            return 0
+        require(args.component is not None and args.test_manifest is not None,
+                "invalid-fixture", "explicit-renderer-artifacts-required")
+        private = args.component.parent / "renderer.wasm"
+        owner.prerequisites({"test-manifest": args.test_manifest, "component": args.component,
+                             "private-renderer": private})
+        component = wasm(owner, "component", args.component)
+        private = wasm(owner, "private-renderer", private)
+        environment = dict(os.environ, LSF_ANGULAR_COMPONENT=str(component),
+                           LSF_ANGULAR_PRIVATE_COMPONENT=str(private))
+        for key in policy["suiteIds"]:
+            row = rows[key]
+            selected = [name for name in row["expectedIgnored"]
+                        if row["target"] != "latentd" or "actual_angular_http_" in name]
+            execute(owner, row, args.test_manifest, environment, selected=selected, fault=args.inject_failure)
+        return 0
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        raise SystemExit(main())
+    except (ProcessFailure, OSError, ValueError, KeyboardInterrupt) as error:
+        reason = error.reason if isinstance(error, ProcessFailure) else type(error).__name__
+        print("Angular renderer test failed: " + reason, file=sys.stderr)
+        raise SystemExit(1)

@@ -12,6 +12,18 @@ DIGEST = "a" * 64
 
 
 class WorkflowActionPolicyTests(unittest.TestCase):
+    def test_same_commit_repository_syntax_keeps_dependency_and_path_checks(self) -> None:
+        temporary, root = self._root("jobs: {reuse: {uses: '$/.github/workflows/reuse.yml'}}\n")
+        self.addCleanup(temporary.cleanup)
+        target = root / ".github/workflows/reuse.yml"
+        target.write_text("jobs: {check: {steps: [{uses: 'actions/checkout@v4'}]}}\n")
+        _, _, findings = validate_workflow_actions.validate_repository(root)
+        self.assertTrue(findings)
+        target.write_text(f"jobs:\n  check:\n    steps:\n      - uses: actions/checkout@{PIN} # v4\n")
+        self.assertEqual(validate_workflow_actions.validate_repository(root)[2], [])
+        for reference in ("$/../outside", "$/.github/workflows/reuse.yml@main", "$/", "$/${{ inputs.path }}"):
+            self.assertTrue(validate_workflow_actions._validate_local(target, 1, reference))
+
     def _root(self, workflow: str) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temporary = tempfile.TemporaryDirectory()
         root = Path(temporary.name)

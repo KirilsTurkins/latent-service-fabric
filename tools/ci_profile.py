@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Select docs/full from complete local Git diffs; uncertainty never selects docs."""
+"""Select registered suites from complete offline Git diffs; uncertainty selects full."""
+
 
 from __future__ import annotations
 
@@ -13,6 +14,11 @@ import subprocess
 import sys
 import threading
 from dataclasses import dataclass
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from tools import ci_suite_inventory as registry
 
 MAX_EVENT_BYTES = 1_048_576
 MAX_GIT_BYTES = 8_388_608
@@ -44,6 +50,17 @@ class Decision:
     reason: str
     changed_files: int
     renderer: bool = True
+    fast_packages: tuple[str, ...] = ()
+
+    def outputs(self) -> dict[str, str]:
+        packages = self.fast_packages
+        if self.profile == "full" and not packages:
+            packages = tuple(registry.load()["fastPackages"])
+        return {"profile": self.profile, "reason": self.reason,
+                "changed_files": str(self.changed_files), "renderer": str(self.renderer).lower(),
+                "fast_packages": json.dumps(packages, separators=(",", ":")),
+                "expected_jobs": json.dumps(sorted(registry.expected_jobs(self.profile, packages)),
+                                            separators=(",", ":"))}
 
 
 def documentation_path(name: str) -> bool:
@@ -67,44 +84,46 @@ def documentation_path(name: str) -> bool:
     return len(parts) > 1 and parts[0] in README_AREAS and path.name == "README.md"
 
 
-def classify_paths(paths: list[str]) -> Decision:
+def classify_paths(paths: list[str], repo: Path | None = None) -> Decision:
     if not paths:
         return Decision("full", "empty-diff", 0)
     if len(paths) > MAX_PATHS:
         return Decision("full", "diff-limit", len(paths))
     if all(documentation_path(path) for path in paths):
         return Decision("docs", "documentation-only", len(paths), renderer=False)
-    renderer = any(
-        path in {"Cargo.toml", "Cargo.lock", ".cargo/config.toml", "rust-toolchain.toml",
-                 ".github/workflows/ci.yml", "tools/ci_profile.py", "tools/toolchain.toml",
-                 "tools/native_loader_boundary.py", "schemas/capsule-manifest.schema.json",
-                 "schemas/angular-build.schema.json", "schemas/web-build-observation.schema.json",
-                 "schemas/builder-policy.schema.json",
-                 "tools/tests/test_build_angular_package.py", "tools/tests/test_angular_build_runner.py",
-                 "tools/tests/test_build_inventory.py", "tools/tests/test_web_admission_schemas.py",
-                 "schemas/node-renderer-profile.schema.json"}
-        or path.startswith(("examples/renderer-profile/", "tools/renderer-profile/", "tools/angular-renderer-adapter/",
-                            "examples/browser-boundary/", "tools/browser-boundary/", "tools/tests/browser_hydration.test.mjs",
-                            "tools/tests/browser_application.test.mjs",
-                            "examples/angular-application/", "tools/angular_build/", "tools/build_angular_package.py",
-                            "tools/run_angular_build_tests.py", "tools/check_angular_hydration.mjs",
-                            "tools/build_inventory", "tools/build_sbom_inputs.py", "tools/build_process",
-                            "tools/build_observation.py", "tools/build_snapshot.py",
-                            "crates/latent-signing/", "crates/latent-policy/", "apps/latent/src/package",
-                            "apps/latent/src/args/package.rs",
-                            "tools/build_angular_renderer.py", "tools/run_angular_renderer_tests.py",
-                            "crates/latent-manifest/", "crates/latent-packaging/", "crates/latent-artifacts/",
-                            "apps/latentd/", "crates/latent-executor/", "crates/latent-node/", "crates/latent-ingress/",
-                            "crates/latent-wasmtime/", "crates/latent-component-bindings/",
-                            "crates/latent-core/", "crates/latent-admission/", "crates/latent-control-store/",
-                            "wit/platform/web/", "wit/platform/context/", "wit/host-abi-"))
-        for path in paths
-    )
-    return Decision("full", "non-documentation-path", len(paths), renderer=renderer)
+    if all(documentation_path(path) or website_path(path) for path in paths):
+        return Decision("website", "website-only", len(paths), renderer=False)
+    try:
+        selected, packages, renderer = registry.affected(repo or registry.ROOT, paths)
+        reason = "reverse-dependent-host-only" if selected == "fast" else "affected-full-validation"
+        return Decision(selected, reason, len(paths), renderer, packages)
+    except (ValueError, OSError, KeyError, TypeError):
+        return Decision("full", "dependency-graph-unavailable", len(paths))
+
+
+
+
+def website_path(name: str) -> bool:
+    """Allow only reviewed site source kinds; shared/product inputs stay full."""
+    if (not name or len(name.encode("utf-8")) > MAX_PATH_BYTES or "\\" in name
+            or any(ord(char) < 32 for char in name)
+            or any(part in ("", ".", "..") for part in name.split("/"))):
+        return False
+    if name in {"docs/assets/illustrations.json", "docs/assets/lsf-palette.json"}:
+        return True
+    if name.startswith(("docs/", "adr/")) and name.endswith(".mdx"):
+        return True
+    if not name.startswith("website/") or name.startswith((
+            "website/build/", "website/.docusaurus/", "website/.generated/",
+            "website/node_modules/")):
+        return False
+    return PurePosixPath(name).suffix in {
+        ".mjs", ".cjs", ".js", ".ts", ".tsx", ".css", ".json", ".md", ".mdx", ".svg", ".png",
+    }
 
 
 def git_command(repo: Path, *arguments: str, allow_failure: bool = False) -> bytes | None:
-    """Bound stdout and duration, including fetch; do not invoke hooks or a shell."""
+    """Bound offline Git stdout and duration; do not invoke hooks or a shell."""
     try:
         process = subprocess.Popen(
             ["git", "-c", "gc.auto=0", *arguments], cwd=repo,
@@ -120,7 +139,7 @@ def git_command(repo: Path, *arguments: str, allow_failure: bool = False) -> byt
     def stop() -> None:
         try:
             if os.name == "posix":
-                # A fetch helper may inherit stdout; retire the owned group too.
+                # A child may inherit stdout; retire the owned group too.
                 os.killpg(process.pid, signal.SIGKILL)
             else:
                 process.kill()
@@ -188,16 +207,10 @@ def comparison_base(repo: Path, base: str, head: str, pull_request: bool) -> str
         except (UnicodeError, ProfileError):
             return None
 
-    found = available()
-    if found is not None:
-        return found
-    for depth in (128, 512):
-        git_command(repo, "fetch", "--no-tags", "--filter=blob:none", f"--depth={depth}",
-                    "origin", base, head)
-        found = available()
-        if found is not None:
-            return found
-    return None
+    # History acquisition belongs to checkout, never cheap selection/preview.
+    # Missing or ambiguous ancestry preserves the full compatibility profile.
+    return available()
+
 
 
 def diff_paths(output: bytes) -> list[str]:
@@ -239,9 +252,10 @@ def classify_event(event_name: str, event: dict, repo: Path) -> Decision:
     output = git_command(repo, "diff", "--no-ext-diff", "--no-textconv", "--name-only",
                          "-z", "--no-renames", start, head, "--")
     assert output is not None
-    decision = classify_paths(diff_paths(output))
-    if decision.profile == "docs":
+    decision = classify_paths(diff_paths(output), repo)
+    if decision.profile in {"docs", "website", "fast"}:
         # A Markdown/YAML symlink or executable-mode change is not documentation-only.
+
         modes = git_command(repo, "diff", "--no-ext-diff", "--no-textconv", "--raw",
                             "-z", "--no-renames", start, head, "--")
         assert modes is not None
@@ -290,15 +304,15 @@ def main(argv: list[str] | None = None) -> int:
             raise ProfileError("missing-event-input")
         decision = classify_event(args.event_name, read_event(args.event_path), args.repo)
         summary = (f"CI profile: {decision.profile}; reason: {decision.reason}; "
-                   f"changed paths: {decision.changed_files}; renderer: {decision.renderer}")
+                   f"changed paths: {decision.changed_files}; renderer: {decision.renderer}; "
+                   f"host packages: {decision.outputs()['fast_packages']}; "
+                   f"expected jobs: {decision.outputs()['expected_jobs']}")
         if args.github_step_summary:
             with args.github_step_summary.open("a", encoding="utf-8") as target:
                 target.write(summary + "\n")
         if args.github_output:
             with args.github_output.open("a", encoding="utf-8") as target:
-                target.write(f"profile={decision.profile}\nreason={decision.reason}\n"
-                             f"changed_files={decision.changed_files}\n"
-                             f"renderer={str(decision.renderer).lower()}\n")
+                target.write("".join(f"{key}={value}\n" for key, value in decision.outputs().items()))
         print(summary)
         return 0
     except (ProfileError, OSError, ValueError, TypeError, RecursionError, subprocess.SubprocessError) as error:

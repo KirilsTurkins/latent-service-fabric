@@ -123,7 +123,7 @@ charges and quarantine the cell until it is safe to reuse.
 
 | Candidate | T0 | T1 | T2/T3 |
 | --- | --- | --- | --- |
-| Closed Angular component | Executed controlled SSR/hydration and finite Store failure probes. Selected for adapter work. | Not enabled. The adapter explicitly refuses external-capsule-v1 until #234/#226 integrate and test observed Angular evidence and selected web deployment authority; the qualification proof cannot enable T1. | Unsupported; no external guest process/stronger OS boundary is established. |
+| Closed Angular component | Executed controlled SSR/hydration and finite Store failure probes. Selected for adapter work. | Enabled only under explicit protected `external-capsule-v1` with enforced publisher/builder/SBOM admission, isolated compilation, authenticated native loading and sealed selected web authority. The [actual #226 T1 workflow](../testing/angular-t1-workflow.md), not the earlier T0 feasibility proof, qualifies this path. | Unsupported; no external guest process/stronger OS boundary is established. |
 | Fixed node-owned Node compatibility slot | Real SSR, child interruption/reap and fresh-process reset measured. Retained module state and non-total heap limit remain constraints. Rejected for this first profile. | No implemented hostile-code process/filesystem/network boundary; rejected. | Unsupported and rejected. |
 
 The Node experiment allows only one trusted child at a time. It executes two

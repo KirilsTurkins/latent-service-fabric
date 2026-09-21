@@ -77,7 +77,9 @@ impl Transport {
             control_runtime,
         };
         let server = tonic::transport::Server::builder()
-            .timeout(shared.config.request_timeout)
+            .timeout(shared.config.request_timeout.max(Duration::from_millis(
+                latent_wire::management::MAX_WEB_PREPARATION_WAIT_MILLIS,
+            )))
             // Dispatch denies new RPCs after the accept-time age limit. This
             // independent driver timeout also retires a backpressured HTTP/2
             // connection that has stopped polling its underlying socket.

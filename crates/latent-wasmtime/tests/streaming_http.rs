@@ -203,7 +203,16 @@ async fn cancellation_of_a_suspended_guest_read_closes_socket_and_all_resources(
             .unwrap();
         sent.send(()).unwrap();
         let mut b = [0];
-        assert_eq!(stream.read(&mut b).await.unwrap(), 0);
+        // Cancelling with unread response bytes may close TCP with FIN or RST.
+        // Both prove physical closure; data, another error, or a stalled peer do not.
+        match tokio::time::timeout(Duration::from_secs(2), stream.read(&mut b))
+            .await
+            .expect("cancelled guest must close its socket")
+        {
+            Ok(0) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => {}
+            other => panic!("expected socket closure after cancellation, got {other:?}"),
+        }
     });
     let f = Fixture::new(port, "/allowed").await;
     let (request, control) = f.request("cancel-read", 2);
