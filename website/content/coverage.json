@@ -101,6 +101,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Opt-in real CLI/node/echo walkthrough. Synthetic subprocess tests do not establish native LSF execution; inspect the exact emitted receipt and source identities."
+        },
+        {
+          "path": "docs/evidence/first-node-guide-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "21e03395d4f062d290fec21951439f9b09302cd8",
+          "scope": "Actual source-based first node: 19 CLI commands, protected authentication, two invocations, five negative cases, retained deployment after restart and physical cleanup. Collector and binary hashes are separate; native bundle installation remains with #308."
         }
       ],
       "review": {
@@ -206,6 +213,20 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Opt-in real CLI/node/echo walkthrough. Synthetic subprocess tests do not establish native LSF execution; inspect the exact emitted receipt and source identities."
+        },
+        {
+          "path": "docs/evidence/first-node-build-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "55ba1c301518c670820d482bcc991780167e903c",
+          "scope": "Fresh maintained Rust echo build, extracted WIT, component validation and generated capsule/contracts/deployment inputs; paired with the actual first-node invocation receipt."
+        },
+        {
+          "path": "docs/evidence/first-node-guide-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "21e03395d4f062d290fec21951439f9b09302cd8",
+          "scope": "Actual generated echo invocation, declared error and authenticated restart; source-based scope with separately hashed artifacts."
         }
       ],
       "review": {
@@ -260,6 +281,20 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/guide-publication-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
+          "scope": "Actual managed publication, independent identities and denied invocations from retained CI receipts; synthetic fixture signing material is explicitly identified."
+        },
+        {
+          "path": "docs/evidence/guide-offline-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
+          "scope": "Actual offline package transfer, authenticated publication and invocation at the same CI source tree."
         }
       ],
       "review": {
@@ -317,6 +352,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/guide-operator-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
+          "scope": "Actual operator rollout/canary/rollback, recovery and reaped node processes from the successful Phase 2 CI step."
         }
       ],
       "review": {
@@ -767,6 +809,20 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/guide-management-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "55ba1c301518c670820d482bcc991780167e903c",
+          "scope": "Actual HTTP/blob provider workflow: 31 CLI commands, nine activations, four authorized upstream requests, grant revocation, selected revision after restart and two clean reaped nodes. CLI/node byte identities are retained separately."
+        },
+        {
+          "path": "docs/evidence/guide-capability-policy-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "55ba1c301518c670820d482bcc991780167e903c",
+          "scope": "Actual capability policy CRUD, replay and revocation recovery: 15 CLI calls, two node starts and owned cleanup. This workflow performs no guest invocation; the paired management receipt supplies real HTTP/blob invocations."
         }
       ],
       "review": {
@@ -829,6 +885,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/guide-management-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "55ba1c301518c670820d482bcc991780167e903c",
+          "scope": "Actual HTTP/blob provider workflow: 31 CLI commands, nine activations, four authorized upstream requests, grant revocation, selected revision after restart and two clean reaped nodes. CLI/node byte identities are retained separately."
         }
       ],
       "review": {
@@ -901,6 +964,20 @@
           "status": "executed",
           "sourceCommit": "05360c50eb6c40212111ad0d87198db5dead78a5",
           "scope": "Retained actual S3/Vault/NATS TLS guest runs (19 tests) and owned cleanup at 05360c50; the newer guide source and Cargo lock are not claimed to have executed this historical receipt."
+        },
+        {
+          "path": "docs/evidence/provider-guide-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
+          "scope": "Actual S3/Vault/NATS TLS guests: 19 passing selected cases and explicit owned-service cleanup. CI merge tree equals reviewed 55ba1c30; the separate failed Angular T1 step is retained as a limitation, not reclassified."
+        },
+        {
+          "path": "docs/evidence/guide-management-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "55ba1c301518c670820d482bcc991780167e903c",
+          "scope": "Actual HTTP/blob provider workflow: 31 CLI commands, nine activations, four authorized upstream requests, grant revocation, selected revision after restart and two clean reaped nodes. CLI/node byte identities are retained separately."
         }
       ],
       "review": {
@@ -974,6 +1051,13 @@
           "status": "executed",
           "sourceCommit": "05360c50eb6c40212111ad0d87198db5dead78a5",
           "scope": "Retained actual S3/Vault/NATS TLS guest runs (19 tests) and owned cleanup at 05360c50; the newer guide source and Cargo lock are not claimed to have executed this historical receipt."
+        },
+        {
+          "path": "docs/evidence/provider-guide-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
+          "scope": "Actual S3/Vault/NATS TLS guests: 19 passing selected cases and explicit owned-service cleanup. CI merge tree equals reviewed 55ba1c30; the separate failed Angular T1 step is retained as a limitation, not reclassified."
         }
       ],
       "review": {
@@ -1046,6 +1130,13 @@
           "status": "executed",
           "sourceCommit": "05360c50eb6c40212111ad0d87198db5dead78a5",
           "scope": "Retained actual S3/Vault/NATS TLS guest runs (19 tests) and owned cleanup at 05360c50; the newer guide source and Cargo lock are not claimed to have executed this historical receipt."
+        },
+        {
+          "path": "docs/evidence/provider-guide-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
+          "scope": "Actual S3/Vault/NATS TLS guests: 19 passing selected cases and explicit owned-service cleanup. CI merge tree equals reviewed 55ba1c30; the separate failed Angular T1 step is retained as a limitation, not reclassified."
         }
       ],
       "review": {
@@ -1107,6 +1198,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/provider-libraries-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "061cad145c6bfeb452c584b75144d316db88afc4",
+          "scope": "The documented seven-target provider command passed 79 cases and one isolated environment child execution, including real Wasm local calls, descendant denial/cancellation, randomness, metrics and ownership cleanup. Human walkthrough remains pending."
         }
       ],
       "review": {
@@ -1174,6 +1272,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/provider-libraries-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "061cad145c6bfeb452c584b75144d316db88afc4",
+          "scope": "The documented seven-target provider command passed 79 cases and one isolated environment child execution, including real Wasm local calls, descendant denial/cancellation, randomness, metrics and ownership cleanup. Human walkthrough remains pending."
         }
       ],
       "review": {
@@ -1250,6 +1355,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/guide-security-profile-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
+          "scope": "Actual protected external-capsule configuration, negative checks, cold/warm/restarted native execution and clean shutdown; security-monitor activation remains with #282."
         }
       ],
       "review": {
@@ -1272,6 +1384,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/build-and-deliver-angular.mdx",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/diagnose-angular-delivery.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/component-development/angular-build.md",
           "role": "reference-only"
         },
@@ -1282,7 +1402,11 @@
       ],
       "sourceRefs": [
         "examples/renderer-profile",
-        "tools/run_angular_build_tests.py"
+        "tools/run_angular_build_tests.py",
+        "examples/angular-reference-application",
+        "tools/build_angular_reference.py",
+        "tools/run_angular_reference_workflow.py",
+        "tools/check_angular_reference.mjs"
       ],
       "implementationPrerequisites": [
         44,
@@ -1295,6 +1419,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_angular_reference_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "The complete real-node/browser workflow owns guide execution; partial browser or restart results do not qualify it."
+        },
+        {
+          "path": "docs/evidence/angular-guide-2026-09-20.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         }
       ],
       "review": {
@@ -1318,6 +1455,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/build-and-deliver-angular.mdx",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/diagnose-angular-delivery.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/reference/web-release-admission.md",
           "role": "reference-only"
         },
@@ -1332,7 +1477,11 @@
       ],
       "sourceRefs": [
         "schemas",
-        "apps/latentd/src"
+        "apps/latentd/src",
+        "examples/angular-reference-application",
+        "tools/build_angular_reference.py",
+        "tools/run_angular_reference_workflow.py",
+        "tools/check_angular_reference.mjs"
       ],
       "implementationPrerequisites": [
         231,
@@ -1345,6 +1494,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_angular_reference_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "The complete real-node/browser workflow owns guide execution; partial browser or restart results do not qualify it."
+        },
+        {
+          "path": "docs/evidence/angular-guide-2026-09-20.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         }
       ],
       "review": {
@@ -1367,6 +1529,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/build-and-deliver-angular.mdx",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/diagnose-angular-delivery.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/angular-renderer-runtime.md",
           "role": "reference-only"
         },
@@ -1377,7 +1547,11 @@
       ],
       "sourceRefs": [
         "examples/renderer-profile",
-        "tools/run_angular_renderer_tests.py"
+        "tools/run_angular_renderer_tests.py",
+        "examples/angular-reference-application",
+        "tools/build_angular_reference.py",
+        "tools/run_angular_reference_workflow.py",
+        "tools/check_angular_reference.mjs"
       ],
       "implementationPrerequisites": [
         232,
@@ -1390,6 +1564,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_angular_reference_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "The complete real-node/browser workflow owns guide execution; partial browser or restart results do not qualify it."
+        },
+        {
+          "path": "docs/evidence/angular-guide-2026-09-20.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         }
       ],
       "review": {
