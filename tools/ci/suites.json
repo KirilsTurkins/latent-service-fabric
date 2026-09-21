@@ -7759,6 +7759,37 @@
       "timeoutSeconds": 300
     },
     {
+      "boundary": "product",
+      "expectedCases": [
+        "export_actual_angular_reference_fixtures"
+      ],
+      "expectedIgnored": [
+        "export_actual_angular_reference_fixtures"
+      ],
+      "id": "latentd.test.phase3-reference-fixture",
+      "ignoredLeaves": [
+        "export_actual_angular_reference_fixtures"
+      ],
+      "kind": "test",
+      "manifest": "apps/latentd/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latentd",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "two actual maintained Angular builds"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase3_reference_fixture.rs",
+      "target": "phase3_reference_fixture",
+      "timeoutSeconds": 300
+    },
+    {
       "boundary": "runtime",
       "expectedCases": [
         "export_signed_provider_workflow_fixtures"
