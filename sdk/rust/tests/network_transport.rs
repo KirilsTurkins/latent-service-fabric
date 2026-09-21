@@ -14,6 +14,18 @@ use network_support::{request, wait_until, Peer};
 use std::{sync::atomic::Ordering, time::Duration};
 use tokio::time::Instant;
 
+async fn expire_call<T>(call: tokio::task::JoinHandle<T>, deadline: Instant) -> T {
+    assert!(!call.is_finished());
+    tokio::time::pause();
+    tokio::time::advance(deadline - Instant::now()).await;
+    let result = tokio::time::timeout_at(deadline + Duration::from_millis(1), call)
+        .await
+        .expect("the original absolute deadline must end the call")
+        .unwrap();
+    tokio::time::resume();
+    result
+}
+
 #[tokio::test]
 async fn channel_is_reused_outcomes_stay_distinct_and_shutdown_reaps_real_owners() {
     let peer = Peer::start().await;
@@ -115,15 +127,7 @@ async fn absolute_deadline_and_capacity_do_not_create_hidden_retries_or_extra_ch
     assert_eq!(failure.kind, FailureKind::Capacity);
     assert!(!failure.dispatched);
     assert!(client.usage().reserved_message_bytes > 0);
-    assert!(!call.is_finished());
-    tokio::time::pause();
-    tokio::time::advance(deadline - Instant::now()).await;
-    let failure = tokio::time::timeout_at(deadline + Duration::from_millis(1), call)
-        .await
-        .expect("the original absolute deadline must end the call")
-        .unwrap()
-        .unwrap_err();
-    tokio::time::resume();
+    let failure = expire_call(call, deadline).await.unwrap_err();
     assert_eq!(failure.kind, FailureKind::Deadline);
     assert!(failure.dispatched);
     assert!(!failure.outcome_known);
@@ -177,10 +181,12 @@ async fn mutation_loss_retains_recovery_audit_and_exact_explicit_replay() {
     let peer = Peer::start().await;
     let client = peer.client();
     let request = network_support::policy("lost-operation");
-    let failure = client
-        .apply_policy_until(request.clone(), Instant::now() + Duration::from_millis(100))
-        .await
-        .unwrap_err();
+    let active = client.clone();
+    let submitted = request.clone();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let call = tokio::spawn(async move { active.apply_policy_until(submitted, deadline).await });
+    wait_until(|| peer.state.mutations.load(Ordering::Acquire) == 1).await;
+    let failure = expire_call(call, deadline).await.unwrap_err();
     assert_eq!(failure.kind, FailureKind::Deadline);
     assert!(!failure.outcome_known);
     assert_eq!(

@@ -1,38 +1,59 @@
+"""The unconditional merge gate distinguishes intentional skips from missing work."""
 import copy
+import json
 import unittest
 
-from tools.ci_result import COMMON, PRODUCT, failures
+from tools import ci_result, ci_profile, ci_suite_inventory as registry
 
 
-class AggregateTests(unittest.TestCase):
-    def state(self, profile):
-        result = {name: {"result": "success" if profile == "full" or name in COMMON else "skipped"}
-                  for name in COMMON | PRODUCT}
-        result["profile"]["outputs"] = {"profile": profile}
-        return result
-
-    def test_every_profile_requires_current_site_success(self):
-        for profile in ("docs", "website", "full"):
-            result = self.state(profile)
-            self.assertEqual(failures(result), [])
-            for job in COMMON | (PRODUCT if profile == "full" else frozenset()):
-                for state in ("failure", "cancelled", "skipped"):
-                    changed = copy.deepcopy(result)
-                    changed[job]["result"] = state
-                    self.assertIn(job, failures(changed))
-
-    def test_unknown_incomplete_and_inconsistent_results_fail_closed(self):
-        for profile in ("docs", "website"):
-            state = self.state(profile)
-            state["rust"]["result"] = "success"
-            self.assertIn("rust", failures(state))
-        self.assertTrue(failures(self.state("unknown")))
-        for invalid in ({}, [], None, {"website": {"result": "success"}}):
-            self.assertTrue(failures(invalid))
-        state = self.state("full")
-        state["website"]["result"] = "pending"
-        self.assertTrue(failures(state))
+def successful(profile):
+    decision = ci_profile.classify_paths({'docs': ['README.md'], 'website': ['website/src/css/custom.css'], 'fast': ['crates/latent-state/src/lib.rs'],
+                                         'full': ['Cargo.lock']}[profile])
+    outputs = decision.outputs()
+    required = set(json.loads(outputs['expected_jobs']))
+    results = {name: {'result': 'success' if name in required else 'skipped', 'outputs': {}}
+               for name in registry.ALL_JOBS}
+    results['profile']['outputs'] = outputs
+    return results
 
 
-if __name__ == "__main__":
-    unittest.main()
+class ResultTests(unittest.TestCase):
+    def test_all_profiles_require_their_exact_jobs(self):
+        for profile in ('docs', 'website', 'fast', 'full'):
+            self.assertEqual(ci_result.validate(successful(profile)),
+                             set(json.loads(successful(profile)['profile']['outputs']['expected_jobs'])))
+
+    def test_every_failure_cancellation_and_unexpected_skip_is_fatal(self):
+        for profile in ('docs', 'website', 'fast', 'full'):
+            valid = successful(profile)
+            for job in registry.ALL_JOBS:
+                for status in ('success', 'failure', 'cancelled', 'skipped', None):
+                    if status == valid[job]['result']:
+                        continue
+                    changed = copy.deepcopy(valid); changed[job]['result'] = status
+                    with self.subTest(profile=profile, job=job, status=status), self.assertRaises(ValueError):
+                        ci_result.validate(changed)
+
+    def test_missing_jobs_and_outputs_cannot_be_success(self):
+        for profile in ('docs', 'website', 'fast', 'full'):
+            valid = successful(profile)
+            for job in registry.ALL_JOBS:
+                changed = copy.deepcopy(valid); del changed[job]
+                with self.subTest(profile=profile, missing=job), self.assertRaises(ValueError):
+                    ci_result.validate(changed)
+            for key in valid['profile']['outputs']:
+                changed = copy.deepcopy(valid); del changed['profile']['outputs'][key]
+                with self.subTest(profile=profile, missing=key), self.assertRaises(ValueError):
+                    ci_result.validate(changed)
+
+    def test_declared_expected_set_is_not_trusted(self):
+        for key, value in [('profile', 'almost-full'), ('expected_jobs', '["profile","docs"]'),
+                           ('renderer', ''), ('fast_packages', '[]'), ('fast_packages', '["wasmtime"]'),
+                           ('changed_files', '-1'), ('reason', '')]:
+            changed = successful('full'); changed['profile']['outputs'][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                ci_result.validate(changed)
+
+    def test_unexpected_job_is_not_silently_dropped(self):
+        changed = successful('full'); changed['missing-from-needs-contract'] = {'result': 'success'}
+        with self.assertRaises(ValueError): ci_result.validate(changed)
