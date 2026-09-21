@@ -3316,6 +3316,7 @@
         "capability::store::tests::authority::principal_policy_and_binding_revisions_narrow_and_invalidate_independently",
         "capability::store::tests::authority::publication::final_admission_checks_real_catalog_owner_publication_and_every_narrowing",
         "capability::store::tests::authority::publication::service::only_the_explicit_service_publication_can_cross_the_policy_tenant_fence",
+        "capability::store::tests::authority::resource_live_and_staged_snapshots_share_the_configured_read_owner_ceiling",
         "capability::store::tests::bounded_outcome_retention_never_evicts_identity_tombstones",
         "capability::store::tests::competing_cas_writers_have_exactly_one_winner",
         "capability::store::tests::every_uncertain_write_poison_invalidates_live_owner_and_recovery_checks_the_floor",
@@ -3418,7 +3419,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 86,
+      "minimumCases": 87,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -6552,6 +6553,33 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/nats_triggers.rs",
       "target": "nats_triggers",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "phase3_resource_small_provider_ownership_checkpoint"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.test.phase3-resource",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "Linux procfs and loopback provider fixtures"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase3_resource.rs",
+      "target": "phase3_resource",
       "timeoutSeconds": 900
     },
     {
