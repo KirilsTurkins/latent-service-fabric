@@ -88,9 +88,16 @@ def _expected_cases(data: dict, lane: str) -> tuple[str, ...]:
         if row["target"] == "latentd":
             selected = [name for name in selected if "actual_angular_http_" in name]
         values.extend(selected)
-    build = suites.get("latent-wasmtime.test.angular-build")
-    require(isinstance(build, dict) and build.get("expectedIgnored"), "angular-build-suite-contract")
-    values.extend(build["expectedIgnored"])
+    for key in ("latent-packaging.test.angular-build", "latent-wasmtime.test.angular-build"):
+        build = suites.get(key)
+        require(isinstance(build, dict) and build.get("expectedIgnored"), "angular-build-suite-contract")
+        values.extend(build["expectedIgnored"])
+    policy = suites.get("latent-policy.lib.latent-policy")
+    require(isinstance(policy, dict), "angular-policy-suite-contract")
+    policy_cases = [name for name in policy["expectedIgnored"]
+                    if "supply_chain::tests::web::angular_build::" in name]
+    require(len(policy_cases) == 1, "angular-policy-case-contract")
+    values.extend(policy_cases)
     return tuple(values)
 
 

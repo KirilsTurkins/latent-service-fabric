@@ -73,9 +73,14 @@ def _renderer_cases(data: dict) -> list[str]:
         if row["target"] == "latentd":
             selected_cases = [name for name in selected_cases if "actual_angular_http_" in name]
         values.extend(selected_cases)
-    build = rows["latent-wasmtime.test.angular-build"]
-    require(build["expectedIgnored"], "invalid-fixture", "angular-build-suite-contract")
-    values.extend(build["expectedIgnored"])
+    for key in ("latent-packaging.test.angular-build", "latent-wasmtime.test.angular-build"):
+        build = rows[key]
+        require(build["expectedIgnored"], "invalid-fixture", "angular-build-suite-contract")
+        values.extend(build["expectedIgnored"])
+    policy_cases = [name for name in rows["latent-policy.lib.latent-policy"]["expectedIgnored"]
+                    if "supply_chain::tests::web::angular_build::" in name]
+    require(len(policy_cases) == 1, "invalid-fixture", "angular-policy-case-contract")
+    values.extend(policy_cases)
     return values
 
 
