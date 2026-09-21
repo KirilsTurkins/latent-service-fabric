@@ -1,8 +1,10 @@
 # Wiki migration and publication continuity
 
-The source inventory and migration work are ready for review. Public cutover is
-pending a successful protected Pages publication and the reviewed essential
-guides. Existing Wiki entries remain available during that transition.
+The source inventory and migration work are ready for review. The documentation
+site has a successful protected publication; public Wiki cutover is still pending
+the reviewed essential guides and publication of the remaining destinations.
+The [cutover review](wiki-cutover-review.md) records the complete entry map and
+actual live route checks. Existing Wiki entries remain available during that transition.
 
 ## Preserved source and published identities
 
