@@ -120,6 +120,17 @@ def load_toolchain() -> dict[str, Any]:
     return tomllib.loads(TOOLCHAIN.read_text(encoding="utf-8"))
 
 
+def workspace_dependency_version(name: str) -> str:
+    manifest = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
+    specification = manifest.get("workspace", {}).get("dependencies", {}).get(name)
+    version = specification if isinstance(specification, str) else (
+        specification.get("version") if isinstance(specification, dict) else None
+    )
+    if not isinstance(version, str) or not version.startswith("=") or len(version) == 1:
+        raise BuildError(f"workspace dependency {name} is not exactly pinned in Cargo.toml")
+    return version[1:]
+
+
 def parse_version(output: str, tool: str) -> str:
     match = re.search(r"\b(\d+\.\d+\.\d+)\b", output)
     if not match:
@@ -556,7 +567,7 @@ def validate_and_stage_output(
             "exports": sorted(EXPECTED_EXPORTS),
             "toolchain": {
                 "rust": str(toolchain["rust"]["toolchain"]),
-                "witBindgen": str(toolchain["rust"]["dependencies"]["wit-bindgen"]),
+                "witBindgen": workspace_dependency_version("wit-bindgen"),
                 "wasmTools": str(toolchain["contracts"]["wasm-tools"]),
             },
             "trust": {
