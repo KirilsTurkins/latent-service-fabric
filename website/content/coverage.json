@@ -42,6 +42,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
@@ -157,6 +164,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
@@ -1560,6 +1574,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
@@ -1618,6 +1639,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
@@ -1670,6 +1698,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
@@ -1723,6 +1758,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
