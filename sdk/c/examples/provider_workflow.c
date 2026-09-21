@@ -65,8 +65,11 @@ static bool terminal(workflow *state, const char *identity, bool expected_termin
 static const char *guest_reason(const ex_result *result, unsigned index) {
     if (index == 0 && ex_guest(result, 10)) return "http-guest-permission-denied";
     if (index == 0 && ex_guest(result, 11)) return "http-guest-outcome-uncertain";
+    if (index == 0 && ex_guest(result, 2201)) return "http-guest-returned-before-hold";
     if (result->platform && strcmp(result->platform_code, "unavailable") == 0) return "platform-unavailable";
     if (result->platform && strcmp(result->platform_code, "permission-denied") == 0) return "platform-permission-denied";
+    if (result->platform && strcmp(result->platform_code, "deadline-exceeded") == 0) return "platform-deadline-exceeded";
+    if (result->platform && strcmp(result->platform_code, "resource-exhausted") == 0) return "platform-resource-exhausted";
     const char *const reasons[] = {"http-guest-outcome", "blob-guest-outcome", "declared-error-variant", "platform-failure-variant"};
     return reasons[index];
 }
@@ -224,7 +227,11 @@ static bool held(workflow *state, unsigned kind) {
     ex_result pending = {0};
     latent_profile_call *call = ex_invoke(&state->config, owner, 0, suffix, NULL, false, kind == 2 ? 500 : 3000, &pending);
     bool passed = false;
-    if (call == NULL || !require(state, marker(state, owner, "started", token, &pending), "provider-not-started")) goto cleanup;
+    if (call == NULL || !marker(state, owner, "started", token, &pending)) {
+        state->last = pending;
+        state->reason = pending.callbacks == 1 ? guest_reason(&pending, 0) : "provider-not-started";
+        goto cleanup;
+    }
     state->admitted[kind + 5] = true;
     if (!require(state, terminal(state, activations[kind + 5], false), "pending-status")) goto cleanup;
     if (kind == 0 || kind == 1) {

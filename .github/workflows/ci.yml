@@ -253,6 +253,20 @@ jobs:
           path: ${{ runner.temp }}/metadata-working-set.log
           if-no-files-found: error
 
+      - name: Qualify the deterministic Phase 3 security matrix
+        timeout-minutes: 12
+        run: |
+          python3 -m unittest tools.tests.test_phase3_security
+          mkdir -p target/phase3-security
+          python3 tools/phase3_security.py --profile pr --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --source-commit "$GITHUB_SHA" --output target/phase3-security/pr-receipt.json
+      - name: Retain the bounded Phase 3 security receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: phase3-security-pr-${{ github.sha }}
+          path: target/phase3-security/pr-receipt.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Set up the qualified Angular build runtime
         if: needs.profile.outputs.renderer == 'true'
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
