@@ -7788,7 +7788,7 @@
       "prerequisites": [
         "pinned Rust toolchain",
         "successful source-matched Cargo artifact inventory",
-        "two actual maintained Angular builds"
+        "two actual maintained Angular builds and a fresh private fixture root"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
