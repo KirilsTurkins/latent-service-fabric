@@ -1319,6 +1319,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 controls/tools/security_scan.py rustsec --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
+    },
+    ".github/workflows/ci.yml:rust:Qualify the deterministic Phase 3 security matrix": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Qualify the deterministic Phase 3 security matrix",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_phase3_security\nmkdir -p target/phase3-security\npython3 tools/phase3_security.py --profile pr --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --source-commit \"$GITHUB_SHA\" --output target/phase3-security/pr-receipt.json"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2871,6 +2881,9 @@
     },
     "tools/phase3_resource_campaign.py": {
       "sha256": "6d4f990fd2fa02b9c0b3c4c133161516d36bd60e01da3dd2549258ce3cb841cf"
+    },
+    "tools/phase3_security.py": {
+      "sha256": "5f904fc5c0ee5da777645fbc6b86215592a6bfe4fb98faf16bf147b3da7f7e41"
     },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
@@ -5152,6 +5165,46 @@
       "WorkflowTests.test_warm_cache_claim_needs_a_measured_hit_not_a_native_cache_label",
       "WorkflowTests.test_web_preparation_budgets_its_observer_without_changing_runtime_limits"
     ],
+    "tools/tests/test_phase3_security.py": [
+      "ContainerTests.test_failed_inner_process_still_stops_only_the_preverified_container_id",
+      "ContainerTests.test_false_failure_schema_cannot_be_coerced_into_a_success",
+      "ContainerTests.test_negative_inner_receipt_stops_the_container_and_exits_nonzero",
+      "ContainerTests.test_unlabelled_unbounded_or_foreign_workspaces_are_not_owned",
+      "ContainerTests.test_unowned_container_is_not_started_stopped_or_removed",
+      "InventoryTests.test_duplicate_json_keys_and_inventory_bounds_are_rejected",
+      "InventoryTests.test_dynamic_links_stay_inside_the_owned_target_and_are_bounded",
+      "InventoryTests.test_exact_integration_owner_ignores_stale_executable_neighbours",
+      "InventoryTests.test_failed_missing_or_nonterminal_build_record_is_not_evidence",
+      "InventoryTests.test_fixture_identity_is_bounded_nonempty_and_sensitive_to_changed_bytes",
+      "InventoryTests.test_library_and_integration_names_are_not_interchangeable",
+      "InventoryTests.test_non_test_profiles_and_external_executables_are_rejected",
+      "InventoryTests.test_wrong_source_foreign_target_and_duplicate_artifacts_fail_closed",
+      "ProcessTests.test_timed_out_process_group_retires_the_observed_real_descendant",
+      "SelectionTests.test_custom_harness_never_uses_a_libtest_summary_or_unsupported_host_marker",
+      "SelectionTests.test_duplicate_selection_is_not_hidden_by_a_set",
+      "SelectionTests.test_empty_listing_duplicates_and_surplus_records_do_not_pass",
+      "SelectionTests.test_exact_listing_and_ignored_classification",
+      "SelectionTests.test_inherited_child_output_must_match_one_exact_bounded_receipt",
+      "SelectionTests.test_matrix_has_fixed_pr_inventory_and_manual_superset",
+      "SelectionTests.test_negative_receipt_separates_validated_active_and_unexecuted_cases",
+      "SelectionTests.test_original_deadline_and_capture_bound_reach_the_existing_owner",
+      "SelectionTests.test_private_envelope_keeps_failures_explicit_and_diagnostics_redacted",
+      "SelectionTests.test_source_mismatch_or_dirty_checkout_cannot_report_current_head",
+      "SelectionTests.test_supervisor_requires_all_actual_case_records_and_exact_summary",
+      "SelectionTests.test_zero_ignored_wrong_name_or_extra_results_are_not_success",
+      "WorkflowTests.test_actual_angular_requires_protected_t1_not_a_t0_or_partial_receipt",
+      "WorkflowTests.test_angular_restart_requires_new_hits_and_both_cancelled_owners",
+      "WorkflowTests.test_browser_receipt_requires_real_observations_without_a_component_claim",
+      "WorkflowTests.test_ci_runs_the_exact_current_inventory_and_retains_its_receipt",
+      "WorkflowTests.test_failure_locations_keep_source_coordinates_without_exception_text",
+      "WorkflowTests.test_failure_locations_reject_private_paths_text_and_unbounded_metadata",
+      "WorkflowTests.test_mutated_manual_binary_prevents_a_final_fixture_identity_claim",
+      "WorkflowTests.test_provider_workflow_is_validated_without_inventing_its_absent_pass_flag",
+      "WorkflowTests.test_public_browser_application_cannot_reuse_assets_only_observations",
+      "WorkflowTests.test_raw_failure_text_is_never_returned_by_the_cli",
+      "WorkflowTests.test_unknown_workflow_cannot_claim_a_shutdown_profile",
+      "WorkflowTests.test_workflow_receipts_need_the_exact_reaped_clean_node_lifetimes"
+    ],
     "tools/tests/test_publisher_trust_schemas.py": [
       "PublisherTrustSchemaTests.test_envelope_has_one_signature_and_canonical_bounded_base64",
       "PublisherTrustSchemaTests.test_every_structural_field_is_required_and_unknown_fields_are_rejected",
@@ -5739,6 +5792,7 @@
     "tools/tests/test_phase3_resource_oci.py",
     "tools/tests/test_phase3_resource_outcome.py",
     "tools/tests/test_phase3_resource_web.py",
+    "tools/tests/test_phase3_security.py",
     "tools/tests/test_publisher_trust_schemas.py",
     "tools/tests/test_reassemble_phase0_hot_path_profile_archive.py",
     "tools/tests/test_release_compatibility_schema.py",
@@ -5779,7 +5833,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "c7bd4ac50ecdce3ae71c158790cae318918b5fc0bf17a717f6f349e4ca2ec34a",
+    ".github/workflows/ci.yml": "8b1e6e34025714532b981d443ece54bb1722f9c4bbf033719f6ea137fa7c6975",
     ".github/workflows/docs-pages.yml": "87ca4f1d44d6de1e14960abb0f1d7a883d40ae52ffcaba8d4cfdcf0a888c7a3e",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0e84b07e365798040f2ff4c360d8fa4b959dfc46fdab8867662381508f1ef15d",
