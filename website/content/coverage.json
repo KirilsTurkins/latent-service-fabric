@@ -1525,6 +1525,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/read-contracts-and-evidence.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/reference/operator-cli.md",
           "role": "reference-only"
         },
@@ -1541,7 +1545,8 @@
         "api",
         "wit",
         "schemas",
-        "sdk/README.md"
+        "sdk/README.md",
+        "tools/verify_sdk_provider_matrix.py"
       ],
       "implementationPrerequisites": [
         227,
@@ -1578,6 +1583,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/read-contracts-and-evidence.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/architecture/overview.md",
           "role": "reference-only"
         },
@@ -1592,7 +1601,8 @@
       ],
       "sourceRefs": [
         "adr",
-        "crates/latent-core/src"
+        "crates/latent-core/src",
+        "tools/verify_sdk_provider_matrix.py"
       ],
       "implementationPrerequisites": [
         267,
@@ -1631,6 +1641,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/read-contracts-and-evidence.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/testing/benchmark-retention.md",
           "role": "reference-only"
         },
@@ -1644,7 +1658,8 @@
         }
       ],
       "sourceRefs": [
-        "benchmarks/README.md"
+        "benchmarks/README.md",
+        "tools/verify_sdk_provider_matrix.py"
       ],
       "implementationPrerequisites": [
         239
@@ -1678,6 +1693,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/read-contracts-and-evidence.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/roadmap.md",
           "role": "reference-only"
         },
@@ -1691,7 +1710,8 @@
         }
       ],
       "sourceRefs": [
-        "adr/0030-bound-disconnected-authorization-validity.md"
+        "adr/0030-bound-disconnected-authorization-validity.md",
+        "tools/verify_sdk_provider_matrix.py"
       ],
       "implementationPrerequisites": [
         271,
