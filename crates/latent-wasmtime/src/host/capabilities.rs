@@ -163,6 +163,17 @@ impl HostCapabilities {
         )
     }
     pub(super) fn context(&mut self, operation: &str, output_bytes: usize) -> wasmtime::Result<()> {
+        // Web context is part of the sealed core ABI even when this activation
+        // also has a provider session. The owned host context and request
+        // preflight already charge and bound its strings and canonical lowering.
+        if let Some(session) = &self.session {
+            if session
+                .uses_core_web_context(output_bytes)
+                .map_err(host_error)?
+            {
+                return Ok(());
+            }
+        }
         if let Some(call) = self
             .begin(
                 "latent:context/context@0.1.0",
@@ -189,6 +200,18 @@ impl HostCapabilities {
         resource: ResourceTarget<'_>,
         output_bytes: usize,
     ) -> wasmtime::Result<Option<ProviderCall>> {
+        if capability == "latent:context/context@0.1.0"
+            && matches!(resource, ResourceTarget::Context)
+        {
+            if let Some(session) = &self.session {
+                if session
+                    .uses_core_web_context(output_bytes)
+                    .map_err(host_error)?
+                {
+                    return Ok(None);
+                }
+            }
+        }
         self.begin(capability, operation, resource, &[], output_bytes)
             .map_err(host_error)
     }

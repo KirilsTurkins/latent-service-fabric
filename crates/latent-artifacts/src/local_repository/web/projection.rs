@@ -143,6 +143,7 @@ impl DirectoryArtifactRepository {
                 .as_ref()
                 .ok_or_else(crate::web::incompatible)?,
         );
+        let layout = Arc::clone(&entry.layout);
         let renderer = entry
             .layout
             .manifest()
@@ -156,7 +157,7 @@ impl DirectoryArtifactRepository {
             .checked_add(self.web_authority()?.limits.max_document_bytes * 8)
             .and_then(|bytes| bytes.checked_add(16 * 1024))
             .ok_or_else(capacity)?;
-        let _permit = self.web.reads.reserve(charge)?;
+        let permit = self.web.reads.reserve(charge)?;
         drop(state);
         let directory = self.web_publication_path(&reference.id);
         let stored = storage::Stored::read_header(
@@ -185,11 +186,13 @@ impl DirectoryArtifactRepository {
             projection.descriptor.release_digest.clone(),
         )
         .with_web_execution_projection();
-        HistoricalExecutionSnapshot::directory(
+        HistoricalExecutionSnapshot::directory_web(
             metadata,
             reference.clone(),
             self.lifecycle_authority(),
             self.web_execution_eligibility(reference),
+            layout,
+            permit,
         )
     }
 }

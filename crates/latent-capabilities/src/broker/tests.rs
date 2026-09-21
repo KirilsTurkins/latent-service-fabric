@@ -7,6 +7,7 @@ use fixture::*;
 mod audit;
 mod diagnostics;
 mod route_fence;
+mod web_imports;
 
 fn output() -> CapabilityCallCost {
     CapabilityCallCost::new(32)

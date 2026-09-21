@@ -7,6 +7,7 @@ mod cache;
 mod fixture;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod integration;
+mod prerender;
 mod request;
 mod source;
 mod wire;
@@ -26,7 +27,9 @@ use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 type TestPause = (std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>);
 
 const MAX_READS: usize = 4;
+pub(super) use prerender::select as prerender;
 pub(super) use wire::exchange;
+pub(super) use wire::exchange_routed;
 
 #[derive(Clone, Copy, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -174,6 +177,13 @@ struct Prepared {
 }
 impl Prepared {
     fn accept(&self, tenant: &TenantId) -> Result<(), u16> {
+        if let Some(route) = &self.request.route {
+            use latent_routing::RevisionPolicySource;
+            route
+                .catalog()
+                .admission_policy(route.revision())
+                .map_err(|error| status(&error))?;
+        }
         // Required even for cache hits, HEAD and 304. Generation/policy changes
         // invalidate this acceptance instead of silently switching publications.
         self.selection

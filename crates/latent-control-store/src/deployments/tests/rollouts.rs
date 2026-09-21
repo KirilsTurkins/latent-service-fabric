@@ -12,6 +12,7 @@ mod canary;
 mod compatibility;
 mod recovery;
 mod rollback;
+mod web;
 
 fn alice() -> TenantId {
     TenantId("alice".into())
