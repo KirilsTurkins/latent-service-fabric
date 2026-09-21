@@ -152,7 +152,6 @@ class Probe:
         deadline = time.monotonic() + limits["sampleSeconds"]
         remaining = 4 * 1024 * 1024
         root = Path(f"/proc/{self.pid}")
-        self.current()
 
         def read(path, maximum=limits["fileBytes"]):
             nonlocal remaining
@@ -163,6 +162,23 @@ class Probe:
             remaining -= len(value)
             return value.decode("ascii")
 
+        # A fixed sampler/lease descriptor can close between directory listing
+        # and readlink/fdinfo. Discard the whole partial observation; never omit
+        # the missing entry from a supposedly complete descriptor count.
+        # All attempts share the original wall and aggregate read-byte budgets.
+        for _ in range(3):
+            self.current()
+            require(time.monotonic() < deadline, "proc-sample-deadline")
+            try:
+                result = self._snapshot(root, read, deadline, limits)
+            except FileNotFoundError:
+                continue
+            result["procBytesRead"] = 4 * 1024 * 1024 - remaining
+            return result
+        self.current()
+        require(False, "proc-snapshot-unsettled")
+
+    def _snapshot(self, root, read, deadline, limits):
         status = dict(line.split(":", 1) for line in read(root / "status").splitlines())
         io = dict(line.split(":", 1) for line in read(root / "io").splitlines())
         sockets, descriptors, sampler_descriptors, clock_descriptors = set(), 0, 0, 0
@@ -212,5 +228,5 @@ class Probe:
             "loadSamplerFdCount": sampler_descriptors,
             "clockLeaseFdCount": clock_descriptors,
             "socketCount": len(sockets), "listeningTcpSockets": len(listening),
-            "descendants": len(children), "procBytesRead": 4 * 1024 * 1024 - remaining,
+            "descendants": len(children),
         }
