@@ -14,7 +14,7 @@ use std::{
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpListener,
-    sync::Semaphore,
+    sync::{oneshot, Semaphore},
     task::{JoinHandle, JoinSet},
     time::timeout,
 };
@@ -35,6 +35,8 @@ pub(in crate::http) struct State {
     pub token_redirect: Mutex<Option<String>>,
     pub storage: AtomicBool,
     pub hold_body: AtomicBool,
+    pub hold_headers: AtomicBool,
+    pub headers_release: Semaphore,
     pub body_release: Semaphore,
     pub response_headers: Mutex<String>,
     pub response_body: Mutex<Vec<u8>>,
@@ -48,6 +50,7 @@ pub(in crate::http) struct Peer {
     pub state: Arc<State>,
     certificate: Vec<u8>,
     worker: JoinHandle<()>,
+    stop: Option<oneshot::Sender<()>>,
 }
 
 impl Peer {
@@ -87,6 +90,8 @@ impl Peer {
             token_redirect: Mutex::new(None),
             storage: false.into(),
             hold_body: false.into(),
+            hold_headers: false.into(),
+            headers_release: Semaphore::new(0),
             body_release: Semaphore::new(0),
             response_headers: Mutex::new(String::new()),
             response_body: Mutex::new(b"abc".to_vec()),
@@ -95,10 +100,12 @@ impl Peer {
             delete_release: Semaphore::new(0),
         });
         let shared = Arc::clone(&state);
+        let (stop, mut stopped) = oneshot::channel();
         let worker = tokio::spawn(async move {
             let mut connections = JoinSet::new();
             loop {
                 tokio::select! {
+                    _ = &mut stopped => break,
                     accepted = listener.accept(), if connections.len() < 32 => {
                         let (socket, _) = accepted.unwrap();
                         let acceptor = acceptor.clone();
@@ -117,12 +124,14 @@ impl Peer {
                     }
                 }
             }
+            connections.shutdown().await;
         });
         Self {
             address,
             state,
             certificate: der.to_vec(),
             worker,
+            stop: Some(stop),
         }
     }
 
@@ -155,6 +164,14 @@ impl Peer {
 
     pub async fn wait_tokens(&self, count: usize) {
         wait_until(|| self.state.tokens.load(Ordering::Acquire) >= count).await;
+    }
+
+    pub async fn close(mut self) {
+        self.stop.take().unwrap().send(()).unwrap();
+        timeout(Duration::from_secs(3), &mut self.worker)
+            .await
+            .unwrap()
+            .unwrap();
     }
 }
 
@@ -305,6 +322,16 @@ async fn serve_read(
     if let Some(redirect) = redirect {
         reply(socket, 307, &format!("Location: {redirect}\r\n"), b"").await;
         return;
+    }
+    if state.hold_headers.load(Ordering::Acquire) {
+        let mut byte = [0];
+        tokio::select! {
+            permit = state.headers_release.acquire() => permit.unwrap().forget(),
+            _ = socket.read(&mut byte) => {
+                state.disconnected.fetch_add(1, Ordering::AcqRel);
+                return;
+            }
+        }
     }
     if state.hold_body.load(Ordering::Acquire) {
         let headers = b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: 3\r\nConnection: close\r\n\r\n";
