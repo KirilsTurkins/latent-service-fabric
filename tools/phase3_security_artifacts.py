@@ -149,13 +149,14 @@ def read_inventory(path: Path, repo: Path, groups: tuple) -> dict[str, Artifact]
                 if profile.get("test") is not True:
                     continue
                 kinds = target.get("kind")
-                if kinds not in (["lib"], ["test"]):
+                if kinds not in (["lib"], ["test"], ["bin"], ["example"], ["cdylib"]):
                     continue
                 key = (manifest, target.get("name"), kinds[0])
                 if key not in expected:
                     continue
                 executable = checked_path(entry.get("executable"))
-                require(executable.is_file() and executable.is_relative_to(executable_root),
+                owned_root = target_root / "debug/examples" if kinds == ["example"] else executable_root
+                require(executable.is_file() and executable.is_relative_to(owned_root),
                         "executable-outside-deps")
                 actual_source = checked_path(target.get("src_path"))
                 for group in expected[key]:
