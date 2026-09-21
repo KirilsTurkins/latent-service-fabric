@@ -178,6 +178,12 @@ fn staged_web_payload_allows_lease_renewal_but_expiry_and_revocation_cannot_comm
 fn control_commit_renews_after_preparation_and_staging_without_reviving_denied_grants() {
     for outcome in ["admit", "revoke", "uncertain"] {
         let root = TempRoot::new();
+        let audit_root = TempRoot::new();
+        let (audit, mut worker) = latent_audit::DirectoryPhase2AuditJournal::open(
+            audit_root.path().join("audit"),
+            latent_audit::AuditLimits::default(),
+        )
+        .unwrap();
         let lease = Arc::new(Mutex::new(Lease {
             ceiling: 5,
             renew_control: true,
@@ -187,7 +193,10 @@ fn control_commit_renews_after_preparation_and_staging_without_reviving_denied_g
             root.path(),
             DirectoryArtifactRepositoryConfig::default(),
             AdmissionStorageLimits::default(),
-            Arc::new(FencedHost(Arc::clone(&lease))),
+            Arc::new(crate::AuditedAdmissionAuthority::new(
+                Arc::new(FencedHost(Arc::clone(&lease))),
+                audit.clone(),
+            )),
         )
         .unwrap();
         let staged = Arc::clone(&lease);
@@ -230,5 +239,9 @@ fn control_commit_renews_after_preparation_and_staging_without_reviving_denied_g
                 .is_some(),
             outcome == "admit"
         );
+        audit.close();
+        assert!(worker
+            .join_until(std::time::Instant::now() + std::time::Duration::from_secs(5))
+            .unwrap());
     }
 }
