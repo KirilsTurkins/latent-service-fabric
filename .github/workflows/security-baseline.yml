@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.scope.outputs.matrix) }}
-    uses: ./.github/workflows/security-rustsec.yml
+    uses: $/.github/workflows/security-rustsec.yml
     with:
       source-ref: ${{ matrix.ref }}
       controls-ref: ${{ github.sha }}

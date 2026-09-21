@@ -29,7 +29,7 @@ class SecurityWorkflowTests(unittest.TestCase):
         for event in ("pull_request", "push"):
             self.assertEqual(self.baseline["on"][event]["branches"], ["development", "release"])
             self.assertNotIn("paths", self.baseline["on"][event])
-        self.assertEqual(self.baseline["jobs"]["rustsec"]["uses"], "./.github/workflows/security-rustsec.yml")
+        self.assertEqual(self.baseline["jobs"]["rustsec"]["uses"], "$/.github/workflows/security-rustsec.yml")
         self.assertEqual(self.rustsec["on"]["workflow_call"]["inputs"]["controls-ref"]["required"], "true")
         self.assertEqual(self.baseline["jobs"]["rustsec"]["with"]["controls-ref"], "${{ github.sha }}")
         checkouts = {step["with"]["path"]: step["with"] for step in self.rustsec["jobs"]["audit"]["steps"]
