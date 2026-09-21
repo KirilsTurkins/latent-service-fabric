@@ -18,7 +18,7 @@ SCHEMA = "latent.ci.suites.v1"
 MAX_BYTES = 2 * 1024 * 1024
 BOUNDARIES = {"host", "runtime", "product", "qualification"}
 FULL_JOBS = {"rust", "oci-registry", "catalog", "msrv", "contracts", "sdks"}
-ALL_JOBS = {"profile", "docs", "fast", *FULL_JOBS}
+ALL_JOBS = {"profile", "docs", "website", "fast", *FULL_JOBS}
 
 
 class InventoryError(ValueError):
@@ -74,8 +74,12 @@ def load(path: Path = INVENTORY) -> dict:
         require(suite["kind"] in {"lib", "test", "bin", "example", "cdylib"}, "suite-target-kind")
         require(suite["mode"] in {"libtest", "custom", "compile-only"}, "suite-mode")
         if suite["mode"] == "custom":
-            require(suite.get("listContract") == "unsupported" and suite.get("runArgs") == []
+            require(suite.get("listContract") in {"unsupported", "custom-list"} and suite.get("runArgs") == []
                     and suite.get("successMarker"), "custom-harness-contract")
+            if suite["listContract"] == "custom-list":
+                names = suite.get("expectedCustomCases")
+                require(isinstance(names, list) and 0 < len(names) == len(set(names)),
+                        "custom-harness-case-contract")
         if suite["mode"] == "libtest":
             require(suite.get("minimumCases", 0) > 0, "empty-suite-contract")
         if suite["mode"] != "custom":
@@ -204,14 +208,14 @@ def affected(root: Path, paths: list[str], data: dict | None = None) -> tuple[st
 
 
 def expected_jobs(profile: str, packages: tuple[str, ...] | list[str]) -> set[str]:
-    require(profile in {"docs", "fast", "full"}, "unknown-profile")
-    required = {"profile", "docs"}
+    require(profile in {"docs", "website", "fast", "full"}, "unknown-profile")
+    required = {"profile", "docs", "website"}
     if profile == "full":
         required |= FULL_JOBS
     if profile == "fast":
         require(packages, "empty-fast-profile")
         required.add("msrv")
     if packages:
-        require(profile != "docs", "docs-with-rust-selection")
+        require(profile not in {"docs", "website"}, "docs-with-rust-selection")
         required.add("fast")
     return required
