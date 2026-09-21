@@ -9,13 +9,17 @@ type Backend = {outcome: 'response'; status: number; body: string} | {outcome: '
 
 const SERVER_ONLY = 'lsf-private-angular-reference-v1';
 let calls = 0;
+// Fixture account data is display text, separate from authenticated identifiers.
+const displayNames: Readonly<Record<string, string>> = Object.freeze({alice: 'Alice<unsafe>', bob: 'Bob'});
 
+// lsf-example-begin: dependency
 export async function prepare(request: Request) {
   if (request.path === '/data') return {url: 'http://127.0.0.1:19090/message'};
   if (request.path === '/slow') return {url: 'http://127.0.0.1:19090/slow'};
   if (request.path === '/denied') return {url: 'http://127.0.0.1:19091/message'};
   return null;
 }
+// lsf-example-end: dependency
 
 function publicMessage(backend: Backend): {message: string; outcome: string} {
   if (!backend) return {message: '', outcome: 'not-requested'};
@@ -39,7 +43,7 @@ export async function render(request: Request, context: Context, backend: Backen
   const result = publicMessage(backend);
   const status = failed ? 422 : account && !authenticated ? 403 : result.outcome === 'permission-denied' ? 403 : 200;
   const page: Page = {
-    subject: account && authenticated ? context.principal.subject : 'visitor',
+    subject: account && authenticated ? (displayNames[context.principal.subject] ?? context.principal.subject) : 'visitor',
     heading: failed ? 'Reference request rejected' : account && !authenticated ? 'Sign in required' : 'Hello from Angular',
     message: failed ? 'This is a declared application failure, not a runtime trap.' : result.message,
     outcome: failed ? 'application-error' : account ? authenticated ? 'authenticated' : 'denied' : result.outcome,

@@ -1,6 +1,7 @@
 //! A sealed historical metadata read, explicitly separate from permission to run.
 
 use latent_core::{PlatformError, PlatformErrorCode, PublicationId, ReleaseDigest, TenantId};
+use std::sync::Arc;
 
 use crate::{
     LifecycleAuthorityHandle, LifecycleScope, ReleaseUseEligibility, VerifiedArtifactMetadata,
@@ -11,6 +12,12 @@ use crate::{
 pub struct HistoricalExecutionSnapshot {
     metadata: VerifiedArtifactMetadata,
     state: HistoricalExecutionState,
+    web: Option<HistoricalWebLayout>,
+}
+
+struct HistoricalWebLayout {
+    layout: Arc<crate::web::CheckedWebLayout>,
+    _retention: Arc<crate::web::WebReadPermit>,
 }
 
 #[derive(Clone)]
@@ -35,6 +42,7 @@ impl HistoricalExecutionSnapshot {
         Self {
             metadata,
             state: HistoricalExecutionState::Unmanaged,
+            web: None,
         }
     }
 
@@ -91,12 +99,56 @@ impl HistoricalExecutionSnapshot {
                 })
             }
         };
-        Ok(Self { metadata, state })
+        Ok(Self {
+            metadata,
+            state,
+            web: None,
+        })
+    }
+
+    pub(crate) fn directory_web(
+        metadata: VerifiedArtifactMetadata,
+        publication: crate::PublicationRef,
+        owner: LifecycleAuthorityHandle,
+        eligibility: Result<ReleaseUseEligibility, PlatformError>,
+        layout: Arc<crate::web::CheckedWebLayout>,
+        retention: Arc<crate::web::WebReadPermit>,
+    ) -> Result<Self, PlatformError> {
+        if !metadata.is_web_execution_projection()
+            || layout
+                .manifest()
+                .renderer
+                .as_ref()
+                .is_none_or(|renderer| renderer.digest != metadata.verified_digest().0)
+            || publication
+                != crate::PublicationRef::package(publication.scope.clone(), layout.package())?
+        {
+            return Err(error(
+                PlatformErrorCode::CorruptArtifact,
+                "historical-web-association-mismatch",
+            ));
+        }
+        let mut snapshot = Self::directory(metadata, publication, owner, eligibility)?;
+        snapshot.web = Some(HistoricalWebLayout {
+            layout,
+            _retention: retention,
+        });
+        Ok(snapshot)
     }
 
     #[must_use]
     pub fn metadata(&self) -> &VerifiedArtifactMetadata {
         &self.metadata
+    }
+
+    #[must_use]
+    pub fn state(&self) -> &HistoricalExecutionState {
+        &self.state
+    }
+
+    #[must_use]
+    pub fn web_layout(&self) -> Option<&crate::web::CheckedWebLayout> {
+        self.web.as_ref().map(|web| web.layout.as_ref())
     }
 
     #[must_use]

@@ -138,6 +138,22 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     // The immutable namespace never reaches trigger lookup or cell reservation,
     // including misses, malformed locators, HEAD, 304 and rejected methods.
     let selected = dispatch::select(&head, shared)?;
+    if let Some(mut request) = super::assets::prerender(&head, shared, &selected, &buffer[..end])? {
+        if used != end {
+            return Err(400);
+        }
+        request.route = Some(selected);
+        return super::assets::exchange_routed(
+            socket,
+            shared,
+            head,
+            &mut buffer[..end],
+            deadline,
+            close,
+            request,
+        )
+        .await;
+    }
     head.collector
         .append(&buffer[end..used])
         .map_err(|e| e.status().unwrap_or(0))?;

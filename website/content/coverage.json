@@ -1398,6 +1398,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/build-and-deliver-angular.mdx",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/diagnose-angular-delivery.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/component-development/angular-build.md",
           "role": "reference-only"
         },
@@ -1408,7 +1416,11 @@
       ],
       "sourceRefs": [
         "examples/renderer-profile",
-        "tools/run_angular_build_tests.py"
+        "tools/run_angular_build_tests.py",
+        "examples/angular-reference-application",
+        "tools/build_angular_reference.py",
+        "tools/run_angular_reference_workflow.py",
+        "tools/check_angular_reference.mjs"
       ],
       "implementationPrerequisites": [
         44,
@@ -1421,6 +1433,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_angular_reference_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "The complete real-node/browser workflow owns guide execution; partial browser or restart results do not qualify it."
+        },
+        {
+          "path": "docs/evidence/angular-guide-2026-09-20.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         }
       ],
       "review": {
@@ -1444,6 +1469,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/build-and-deliver-angular.mdx",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/diagnose-angular-delivery.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/reference/web-release-admission.md",
           "role": "reference-only"
         },
@@ -1458,7 +1491,11 @@
       ],
       "sourceRefs": [
         "schemas",
-        "apps/latentd/src"
+        "apps/latentd/src",
+        "examples/angular-reference-application",
+        "tools/build_angular_reference.py",
+        "tools/run_angular_reference_workflow.py",
+        "tools/check_angular_reference.mjs"
       ],
       "implementationPrerequisites": [
         231,
@@ -1471,6 +1508,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_angular_reference_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "The complete real-node/browser workflow owns guide execution; partial browser or restart results do not qualify it."
+        },
+        {
+          "path": "docs/evidence/angular-guide-2026-09-20.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         }
       ],
       "review": {
@@ -1493,6 +1543,14 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/build-and-deliver-angular.mdx",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/diagnose-angular-delivery.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/runtime/angular-renderer-runtime.md",
           "role": "reference-only"
         },
@@ -1503,7 +1561,11 @@
       ],
       "sourceRefs": [
         "examples/renderer-profile",
-        "tools/run_angular_renderer_tests.py"
+        "tools/run_angular_renderer_tests.py",
+        "examples/angular-reference-application",
+        "tools/build_angular_reference.py",
+        "tools/run_angular_reference_workflow.py",
+        "tools/check_angular_reference.mjs"
       ],
       "implementationPrerequisites": [
         232,
@@ -1516,6 +1578,19 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "tools/run_angular_reference_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "The complete real-node/browser workflow owns guide execution; partial browser or restart results do not qualify it."
+        },
+        {
+          "path": "docs/evidence/angular-guide-2026-09-20.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         }
       ],
       "review": {

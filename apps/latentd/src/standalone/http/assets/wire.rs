@@ -22,6 +22,30 @@ pub(in crate::standalone::http) async fn exchange<S: AsyncRead + AsyncWrite + Un
     // until writes/shutdown finish. No activation or renderer reservation exists.
     let result = prepare_request(&head, raw);
     raw.zeroize();
+    exchange_prepared(socket, shared, head, result, deadline, close).await
+}
+
+pub(in crate::standalone::http) async fn exchange_routed<S: AsyncRead + AsyncWrite + Unpin>(
+    socket: &mut S,
+    shared: &Shared,
+    head: Head,
+    raw: &mut [u8],
+    deadline: IncomingDeadline,
+    close: bool,
+    request: Request,
+) -> Result<bool, u16> {
+    raw.zeroize();
+    exchange_prepared(socket, shared, head, Ok(request), deadline, close).await
+}
+
+async fn exchange_prepared<S: AsyncRead + AsyncWrite + Unpin>(
+    socket: &mut S,
+    shared: &Shared,
+    head: Head,
+    result: Result<Request, u16>,
+    deadline: IncomingDeadline,
+    close: bool,
+) -> Result<bool, u16> {
     let result = match result {
         Ok(request) => serve(socket, shared, request, deadline, close).await,
         Err(code) => Err(code),
@@ -99,8 +123,13 @@ async fn delivery<W: AsyncWrite + Unpin>(
     close: bool,
     scheme: Scheme,
 ) -> io::Result<()> {
+    let cache_control = if response.request.route.is_some() {
+        "private, no-cache"
+    } else {
+        "private, max-age=31536000, immutable"
+    };
     let mut head = format!(
-        "HTTP/1.1 {} Response\r\nETag: {}\r\nCache-Control: private, max-age=31536000, immutable\r\nVary: Authorization, Accept-Encoding\r\nAccept-Ranges: none\r\n",
+        "HTTP/1.1 {} Response\r\nETag: {}\r\nCache-Control: {cache_control}\r\nVary: Authorization, Accept-Encoding\r\nAccept-Ranges: none\r\n",
         response.code, response.etag,
     );
     if close {

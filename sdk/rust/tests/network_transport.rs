@@ -96,12 +96,12 @@ async fn absolute_deadline_and_capacity_do_not_create_hidden_retries_or_extra_ch
     config.limits.maximum_calls = 1;
     let client = latent_sdk::network::RpcClient::new(config).unwrap();
     let active = client.clone();
+    // Keep real socket setup inside its readiness watchdog. Only advance the
+    // deadline clock after the peer has observed the one accepted invocation.
+    let deadline = Instant::now() + Duration::from_secs(30);
     let call = tokio::spawn(async move {
         active
-            .invoke_until(
-                request("bounded", "hold"),
-                Instant::now() + Duration::from_millis(150),
-            )
+            .invoke_until(request("bounded", "hold"), deadline)
             .await
     });
     wait_until(|| peer.state.invocations.load(Ordering::Acquire) == 1).await;
@@ -115,7 +115,15 @@ async fn absolute_deadline_and_capacity_do_not_create_hidden_retries_or_extra_ch
     assert_eq!(failure.kind, FailureKind::Capacity);
     assert!(!failure.dispatched);
     assert!(client.usage().reserved_message_bytes > 0);
-    let failure = call.await.unwrap().unwrap_err();
+    assert!(!call.is_finished());
+    tokio::time::pause();
+    tokio::time::advance(deadline - Instant::now()).await;
+    let failure = tokio::time::timeout_at(deadline + Duration::from_millis(1), call)
+        .await
+        .expect("the original absolute deadline must end the call")
+        .unwrap()
+        .unwrap_err();
+    tokio::time::resume();
     assert_eq!(failure.kind, FailureKind::Deadline);
     assert!(failure.dispatched);
     assert!(!failure.outcome_known);
