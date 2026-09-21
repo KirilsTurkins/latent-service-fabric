@@ -24,7 +24,44 @@ other guide owners, historical evidence or review status. All six human reviews
 remain pending until the reviewer checks the actual rendered paths at an exact
 commit. Passing synthetic tests cannot supply an `execution-receipt` for LSF.
 
+The documented seven-target [provider embedding command](../evidence/provider-libraries-2026-09-21.json)
+also passed 79 cases plus one isolated environment child execution at `061cad14`.
+The [raw log](../evidence/provider-libraries-2026-09-21.log) and receipt retain
+all selected case names and seven executable hashes. This includes local-call
+authority and descendant cleanup, bounded randomness and custom metrics; it
+leaves rendered human walkthrough review pending.
+
 ## First-node runner contract
+
+The [HTTP/blob execution](../evidence/guide-management-2026-09-21.json) records
+31 CLI commands, nine guest activations, four authorized HTTP requests and no
+unexpected requests. Grant revocation denies subsequent execution; selected
+revisions survive restart and both node processes report clean shutdown.
+The [capability-policy execution](../evidence/guide-capability-policy-2026-09-21.json)
+adds 15 real CLI calls for policy CRUD, replay and persisted revocation. It has
+no guest invocations; the paired management receipt supplies that coverage.
+Both collectors ran from `55ba1c30` with the separately identified runtime
+binaries used by the first-node run. Neither receipt supplies human review.
+
+The [21 September execution receipt](../evidence/first-node-guide-2026-09-21.json)
+records 19 actual CLI commands: two successful invocations, a declared error,
+invalid configuration/capsule, wrong credentials, a stopped-node read and
+retained deployment after restart. Both owned node processes were reaped cleanly
+and all temporary outputs were removed. The [fresh echo build](../evidence/first-node-build-2026-09-21.json)
+records the component/WIT/toolchain inputs. Runtime build source `21e03395` and
+the later collector/build source `55ba1c30` retain separate byte identities.
+This source-based execution leaves native-bundle installation under #308 and
+human newcomer review pending.
+
+The same maintained tree also has current successful CI receipts for
+[operator delivery and recovery](../evidence/guide-operator-2026-09-21.json),
+[managed publication](../evidence/guide-publication-2026-09-21.json),
+[offline transfer](../evidence/guide-offline-2026-09-21.json), and
+[protected native execution](../evidence/guide-security-profile-2026-09-21.json).
+These receipts identify synthetic signing fixtures explicitly. The
+[provider summary](../evidence/provider-guide-2026-09-21.json) binds their CI
+source tree and records the separate Angular failure without treating the
+whole workflow as passed.
 
 [run_first_node_guide.py](../../tools/run_first_node_guide.py) accepts explicit
 prebuilt CLI/node paths, the echo builder's five generated inputs and a full

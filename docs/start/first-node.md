@@ -38,6 +38,7 @@ umask 077
 test -z "$(git status --porcelain=v1 --untracked-files=all)"
 SOURCE_COMMIT=$(git -c gc.auto=0 rev-parse HEAD)
 export CARGO_TARGET_DIR="$PWD/target"
+python3 -m pip install -r tools/requirements.lock
 cargo build -p latent -p latentd --locked
 make echo-capsule
 ```

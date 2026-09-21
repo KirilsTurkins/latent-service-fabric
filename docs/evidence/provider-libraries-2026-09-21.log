@@ -1,0 +1,129 @@
+   Compiling latent-wasmtime v0.1.0-alpha.4-rc.1 (/tmp/sdk-fixture-clock-29/crates/latent-wasmtime)
+    Finished `test` profile [unoptimized] target(s) in 8.26s
+     Running tests/http.rs (/target/debug/deps/http-03196eb2c66eafc7)
+
+running 5 tests
+test maintained_http_capsule_has_exact_wit_package_and_async_metadata ... ok
+test guest_cancellation_closes_inflight_io_and_reclaims_store ... ok
+test real_guest_executes_every_method_and_reclaims_the_same_warm_cell ... ok
+test revoked_policy_and_missing_provider_cannot_use_prepared_http_imports ... ok
+test guest_denial_and_trap_preserve_transport_and_store_cleanup ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.58s
+
+     Running tests/local_blobs.rs (/target/debug/deps/local_blobs-187e833691f01029)
+
+running 10 tests
+test a_previous_activation_numeric_handle_cannot_be_reused ... ok
+test guest_handle_abandonment_wrong_kind_and_trap_reclaim_actual_owners ... ok
+test guest_writes_seals_and_reads_exact_bounded_chunks ... ok
+test provider::chunks_and_file_handles_keep_independent_ownership_until_real_drop ... ok
+test dormant_blob_deployments_allocate_no_store_provider_work_or_file_handles ... ok
+test provider::closed_session_cannot_reauthorize_retained_writer ... ok
+test provider::missing_provider_rejects_preparation_before_creating_a_store ... ok
+test provider::package_binding_preserves_owned_blob_chunks_and_value_only_exports ... ok
+test provider::cumulative_byte_budgets_reject_before_further_physical_io ... ok
+test provider::retained_writer_rechecks_revocation_before_physical_write ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.92s
+
+     Running tests/local_secrets.rs (/target/debug/deps/local_secrets-c1f295a771459440)
+
+running 17 tests
+test cancellation_stale_sessions_revocation_and_traps_release_reads ... ok
+
+running 1 test
+test audit::real_secret_audit_and_status_contain_no_plaintext_or_value_digest ... ok
+test environment::initial_environment_child ... ok
+test environment::initial_environment_child ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.16s
+
+test environment::bounded_initial_environment_capture_uses_only_allowlisted_names ... ok
+test expiry_is_checked_at_disclosure_and_cannot_be_undone_by_clock_rollback ... ok
+test failed_reload_preserves_generation_and_current_guest_value ... ok
+test guest_read_version_errors_rotation_and_cell_reuse ... ok
+test dormant_deployments_acquire_no_secret_owner_or_provider_work ... ok
+test held_read_is_rejected_after_rotation_and_keeps_old_generation_charged ... ok
+test limits::invalid_sources_counts_and_capacity_preserve_the_current_generation ... ok
+test ownership::a_queued_read_selects_current_material_and_rechecks_revocation ... ok
+test ownership::abandoned_reload_does_not_refund_or_commit_its_still_running_worker ... ok
+test ownership::actual_guest_waiting_for_a_read_rejects_rotation_and_cancellation ... ok
+test ownership::closing_the_store_fences_retained_reads_and_a_candidate_worker ... ok
+test startup::explicit_open_deadline_and_unpolled_drop_preserve_existing_credentials ... ok
+test startup::expired_or_abandoned_reload_reclaims_candidate_without_generation_change ... ok
+test tls_credentials::protocol_purpose_and_destination_cannot_be_substituted_or_retained_after_rotation ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.02s
+
+     Running tests/local_service.rs (/target/debug/deps/local_service-e02c2b97ec36153c)
+
+running 14 tests
+test acceptance::abandoning_parent_awaiter_still_drives_child_cleanup ... ok
+test acceptance::cancellation_during_child_execution_reclaims_both_stores_and_reservations ... ok
+test acceptance::changed_route_requires_a_new_plan_and_revocation_denies_cached_target ... ok
+test acceptance::declared_failure_is_distinct_from_a_platform_failure ... ok
+test acceptance::concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_call_grant ... ok
+test acceptance::denied_service_publication_never_starts_a_child ... ok
+test acceptance::explicit_cross_tenant_policy_and_fresh_activation_identity ... ok
+test acceptance::oversized_input_unknown_targets_and_expired_deadline_never_start_children ... ok
+test asynchronous_application_export_waits_for_the_canonical_async_service_import ... ok
+test both_real_components_have_checked_packages_and_exact_async_metadata ... ok
+test declared_service_import_without_a_node_adapter_has_no_execution_authority ... ok
+test acceptance::parent_occupying_the_only_cell_rejects_children_promptly_and_keeps_running ... ok
+test two_real_components_use_compiled_binding_normal_admission_and_child_accounting ... ok
+test acceptance::required_audit_records_real_local_acceptance_and_denies_full_sink_before_child_admission ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.77s
+
+     Running tests/metrics.rs (/target/debug/deps/metrics-236b9f0a650a441c)
+
+running 12 tests
+test activation_allowance_resets_but_shared_cardinality_does_not ... ok
+test all_four_kinds_use_shared_export_and_host_owned_identity_on_reused_cells ... ok
+test audit::required_audit_records_capture_acceptance_and_rejection_but_not_export_durability ... ok
+test isolation::cancelled_guest_and_retired_provider_do_not_emit_or_retain_store_resources ... ok
+test closed_exporter_is_typed_unavailable_and_denied_principals_cannot_emit ... ok
+test isolation::identical_components_in_different_tenants_cannot_share_identity_or_aggregation ... ok
+test nonfinite_conflicting_and_injected_observations_never_create_series ... ok
+test isolation::uninstalled_metrics_import_is_rejected_before_a_store_is_created ... ok
+test ownership::abandoned_work_refunds_activation_series_observations_and_record_bytes ... ok
+test ownership::fuel_exhaustion_and_cancelled_pending_work_never_touch_aggregation ... ok
+test ownership::identical_configuration_on_another_pipeline_does_not_borrow_the_installed_grant ... ok
+test ownership::queue_failure_refunds_a_pending_activation_and_does_not_create_its_series ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.90s
+
+     Running tests/random.rs (/target/debug/deps/random-0a606f42dd752f43)
+
+running 12 tests
+test cancellation_before_and_after_entropy_prevents_delivery_and_reclaims_the_store ... ok
+test both_os_methods_execute_on_a_reused_cell_and_have_no_dormant_entropy_owner ... ok
+test audit::required_audit_records_operations_and_outcomes_without_generated_bytes_or_digests ... ok
+test denied_principal_and_retired_provider_never_access_entropy ... ok
+test failed_entropy_never_returns_partial_bytes_and_does_not_refund_attempted_bytes ... ok
+test ownership::a_second_provider_with_identical_metadata_cannot_borrow_the_installed_grant ... ok
+test ownership::abandoned_pending_calls_refund_aggregate_but_started_failures_spend_it ... ok
+test ownership::fuel_and_buffer_capacity_are_reserved_before_entropy_or_result_allocation ... ok
+test ownership::original_output_owner_outlives_closed_session_and_cancelled_pending_work_skips_entropy ... ok
+test revocation_after_one_guest_call_denies_the_next_without_reusing_cached_authority ... ok
+test zero_max_overflow_and_shared_aggregate_return_exact_typed_results ... ok
+test ownership::uninstalled_random_import_is_rejected_before_any_store ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
+
+     Running tests/streaming_http.rs (/target/debug/deps/streaming_http-29d81472fc610de8)
+
+running 9 tests
+test cancellation_of_a_suspended_guest_read_closes_socket_and_all_resources ... ok
+test a_revoked_grant_blocks_a_new_stream_before_any_network_work ... ok
+test abort_or_trap_before_upload_finishes_reclaims_the_connection ... ok
+test guest_reads_before_full_body_and_store_drop_closes_the_stream ... ok
+test no_streaming_provider_means_no_prepared_stream_import ... ok
+test streaming_package_preserves_exact_owned_resources_and_value_only_exports ... ok
+test resource_guest_drains_chunks_and_trailers_then_reclaims_all_owners ... ok
+test dormant_streaming_deployments_create_no_provider_or_activation_owners ... ok
+test traps_wrong_kind_stale_handles_and_abort_close_real_owners ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.42s
+
