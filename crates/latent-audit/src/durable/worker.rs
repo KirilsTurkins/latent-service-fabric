@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod control_tests;
 mod critical;
 mod run;
 use super::{
@@ -242,6 +244,12 @@ impl DirectoryPhase2AuditJournal {
     }
 }
 impl Shared {
+    // Only bounded control owners use this synchronization. State holders do
+    // bounded memory work; the audit worker performs all journal I/O outside it.
+    fn control_lock(&self) -> Result<std::sync::MutexGuard<'_, State>> {
+        self.state.lock().map_err(|_| unavailable())
+    }
+
     fn lock(&self) -> Result<std::sync::MutexGuard<'_, State>> {
         self.state.try_lock().map_err(|e| match e {
             std::sync::TryLockError::WouldBlock => error(
@@ -378,7 +386,7 @@ impl AuditHandle {
         Ok(AuditQueryTicket(ticket))
     }
     pub fn pending_attempts(&self) -> Result<Vec<AuditPendingAttempt>> {
-        let s = self.shared.lock()?;
+        let s = self.shared.control_lock()?;
         Ok(s.pending
             .as_ref()
             .filter(|p| p.sequence.load(Ordering::Acquire) > 0)

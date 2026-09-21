@@ -36,6 +36,8 @@ pub(super) struct Ledger {
     owner_lock: Option<File>,
     #[cfg(test)]
     pub fault: std::sync::atomic::AtomicU8,
+    #[cfg(test)]
+    pub checkpoint_hook: Option<std::sync::Arc<dyn Fn(u8) + Send + Sync>>,
 }
 impl Ledger {
     pub fn open(root: &Path) -> Result<Self, PlatformError> {
@@ -72,6 +74,8 @@ impl Ledger {
             owner_lock: Some(lock),
             #[cfg(test)]
             fault: std::sync::atomic::AtomicU8::new(0),
+            #[cfg(test)]
+            checkpoint_hook: None,
         })
     }
     pub fn read(&self) -> Result<Option<DurableFloor>, PlatformError> {
@@ -191,6 +195,9 @@ impl Ledger {
     }
     #[cfg(test)]
     fn checkpoint(&self, point: u8) -> Result<(), PlatformError> {
+        if let Some(hook) = &self.checkpoint_hook {
+            hook(point);
+        }
         if self.fault.load(std::sync::atomic::Ordering::SeqCst) == point {
             return Err(super::unavailable("admission-durability-uncertain"));
         }
