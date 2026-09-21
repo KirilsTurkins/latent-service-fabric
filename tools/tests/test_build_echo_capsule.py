@@ -37,6 +37,23 @@ class BuildEchoCapsuleTests(unittest.TestCase):
         finally:
             build_echo_capsule.configure_source_root(original)
 
+    def test_wit_bindgen_receipt_version_comes_from_cargo_manifest(self) -> None:
+        original = build_echo_capsule.ROOT
+        try:
+            with tempfile.TemporaryDirectory() as temporary:
+                source = Path(temporary)
+                (source / "Cargo.toml").write_text(
+                    '[workspace]\n[workspace.dependencies]\nwit-bindgen = { version = "=0.62.0" }\n',
+                    encoding="utf-8",
+                )
+                build_echo_capsule.configure_source_root(source)
+                self.assertEqual(
+                    build_echo_capsule.workspace_dependency_version("wit-bindgen"),
+                    "0.62.0",
+                )
+        finally:
+            build_echo_capsule.configure_source_root(original)
+
     def test_component_build_uses_a_self_contained_core_target(self) -> None:
         self.assertEqual(build_echo_capsule.BINDINGS_TARGET, "wasm32-wasip2")
         self.assertEqual(build_echo_capsule.CORE_TARGET, "wasm32-unknown-unknown")
