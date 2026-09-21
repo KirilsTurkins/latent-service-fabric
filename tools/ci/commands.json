@@ -5115,6 +5115,11 @@
       "ProviderWorkflowTests.test_only_actual_installed_profiles_and_canonical_identity_are_accepted",
       "ProviderWorkflowTests.test_startup_failure_keeps_only_closed_node_stage_and_code"
     ],
+    "tools/tests/test_phase3_native_cache_audit.py": [
+      "NativeCacheAuditTests.test_empty_baseline_does_not_waive_component_identity",
+      "NativeCacheAuditTests.test_required_observation_and_original_overflow_limit_stay_fail_closed",
+      "NativeCacheAuditTests.test_resident_image_can_have_no_pre_restart_native_store_hits"
+    ],
     "tools/tests/test_phase3_reference_workflow.py": [
       "ReferenceBuildTests.test_reference_fixture_rejects_wrapper_only_releases",
       "ReferenceBuildTests.test_reference_inputs_request_one_capability_but_never_claim_principal_authority",
@@ -5797,6 +5802,7 @@
     "tools/tests/test_phase2_resource_clock.py",
     "tools/tests/test_phase2_resource_probe.py",
     "tools/tests/test_phase3_management_workflow.py",
+    "tools/tests/test_phase3_native_cache_audit.py",
     "tools/tests/test_phase3_reference_workflow.py",
     "tools/tests/test_phase3_resource.py",
     "tools/tests/test_phase3_resource_oci.py",
