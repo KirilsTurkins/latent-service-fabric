@@ -1,7 +1,9 @@
 # Toolchain and reproducibility baseline
 
-The executable build foundation uses exact project-selected versions from
-`tools/toolchain.toml` and the committed root `Cargo.lock`. It preserves the
+The executable build foundation keeps Rust dependency requirements in the root
+`Cargo.toml`, the resolved Rust graph in the committed `Cargo.lock`, and
+compiler, contract-tool, SDK, and external guest-tool selections in
+`tools/toolchain.toml`. It preserves the
 Phase 0 Component Model evidence path and supplies maintained Protobuf RPC
 generation, centralized WIT bindings and test infrastructure for the current
 runtime and completed Phase 2 delivery surface. Toolchain and code-generation
@@ -10,35 +12,25 @@ startup command.
 
 See [build-foundation.md](build-foundation.md) for generation ownership, focused commands, test utilities, dependency-cycle validation, and the clean-checkout Phase 1 sequence.
 
-## Selected versions
+## Version authorities
 
-| Area | Version | Purpose |
-| --- | ---: | --- |
-| Rust toolchain | 1.97.1 | Default formatter, compiler, Clippy, tests, code generation, and component build |
-| Rust MSRV | 1.94.1 | Oldest compiler checked for all native workspace targets |
-| Rust binding-check target | `wasm32-wasip2` | Compile generated Rust guest bindings against Preview 2 |
-| Rust component-core target | `wasm32-unknown-unknown` | Build self-contained cores before explicit componentization |
-| Tokio | 1.53.1 | Fixed node runtimes, async adapters, and explicit test runtimes |
-| Prost | 0.14.4 | Generated Protobuf message implementation |
-| Tonic / `tonic-prost` | 0.14.6 / 0.14.6 | Generated RPC clients, servers, and Prost codec |
-| `tonic-prost-build` | 0.14.6 | Build-time Rust generation from every authoritative `.proto` |
-| `protoc-bin-vendored` | 3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
-| Tracing / tracing-subscriber | 0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
-| Wasmtime | 47.0.4 | Generic Component Model runtime and retained Phase 0 compatibility facade |
-| `wit-bindgen` | 0.60.0 | Guest bindings and canonical ABI exports generated from WIT |
-| Serde / `serde_json` | 1.0.229 / 1.0.150 | Rust contract serialization |
-| TOML | 1.1.4 | Configuration parsing and serialization |
-| BLAKE3 / SHA-256 | 1.8.5 / 0.10.9 | Cache/prepared identity and artifact digest verification |
-| Clap / `tempfile` | 4.6.4 / 3.27.0 | CLI surfaces and test-only temporary storage |
-| `wasm-tools` | 1.254.0 | WIT parsing, validation, componentization, and interface extraction |
-| Buf | 1.72.0 | Protobuf linting and independent descriptor-set generation |
-| Python / `jsonschema` | 3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
-| Go / Node / TypeScript / .NET | 1.23.2 / 24.19.0 / 5.8.3 / 8.0.425 | Cross-language interfaces and bounded native clients |
-| Eclipse Temurin JDK | 25.0.4.1+1 | Java SDK build and runtime qualification; Java 25 minimum runtime |
-| Gradle (optional Java build) | 9.1.0 | Java 25-compatible Gradle path; distribution SHA-256 pinned in `tools/toolchain.toml` |
-| Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
+Version ownership is intentionally split by what consumes the value. Cargo dependency
+updates must not require a second manually maintained Rust-dependency version table.
 
-Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.4`; the resolved package may display `1.1.4+spec-1.1.0` in `Cargo.lock`.
+| Area | Authority | Purpose |
+| --- | --- | --- |
+| Rust toolchain, MSRV, and compilation targets | `tools/toolchain.toml` | Compiler and target qualification |
+| Rust workspace dependencies | root `Cargo.toml` | Exact direct requirements; every versioned workspace dependency must use `=version` |
+| Resolved Rust dependency graph | root `Cargo.lock` | Reproducible `--locked` builds |
+| Guest `wit-bindgen` CLI release and archive digest | `[guest-tools.wit-bindgen]` in `tools/toolchain.toml` | Independently reviewed external generator binary |
+| `wasm-tools`, Buf, Python, and schema tooling | `tools/toolchain.toml` | Contract validation toolchain |
+| Go, Node, TypeScript, Java, .NET, Gradle, Zig, and C tooling | `tools/toolchain.toml` plus their native lock/config files where applicable | SDK and native fixture qualification |
+
+`tools/validate_repository.py` enforces these ownership boundaries. In particular,
+it rejects non-exact Cargo workspace requirements and rejects any reintroduced
+`[rust.dependencies]` mirror in `tools/toolchain.toml`. Cargo ignores SemVer build
+metadata in requirements, so an exact TOML requirement can resolve to a lockfile
+version that additionally displays build metadata.
 
 ## Java 25 SDK baseline and migration
 
@@ -181,12 +173,17 @@ Build and validation code starts compiler/validator subprocesses only when a com
 ## Phase 3 guest contract tools
 
 The full contract gate also builds the Rust guest SDK examples and the C
-canonical ABI fixture. Install the pinned `wit-bindgen` 0.60.0 CLI and Zig
-0.16.0 alongside the existing Rust, Python and wasm-tools pins. On Linux x86_64,
-`python3 tools/install_guest_bindgen.py "$HOME/.local/lsf-guest-tools"` installs
-the SHA-verified upstream generator into a new directory; add that directory
-to `PATH`. CI uses this same verifier and the existing pinned Zig setup action.
-The installer refuses to overwrite an existing executable.
+canonical ABI fixture. Install the guest `wit-bindgen` CLI selected by
+`[guest-tools.wit-bindgen]` in `tools/toolchain.toml` and the pinned Zig
+toolchain alongside the existing Rust, Python, and wasm-tools pins. On Linux
+x86_64, `python3 tools/install_guest_bindgen.py "$HOME/.local/lsf-guest-tools"`
+reads that external-tool contract, downloads the matching upstream release, and
+verifies its committed SHA-256 before writing the executable into a new
+directory; add that directory to `PATH`. CI uses this same verifier and the
+existing pinned Zig setup action. The installer refuses to overwrite an existing
+executable. The guest CLI selection is deliberately independent of the Cargo
+`wit-bindgen` crate requirement so a Dependabot crate update cannot silently
+replace a reviewed executable checksum.
 
 Generated source, components and observations stay under the selected target
 root. See the [guest SDK workflow](../component-development/guest-sdk.md) for
