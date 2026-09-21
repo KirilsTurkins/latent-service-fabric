@@ -7440,6 +7440,7 @@
         "standalone::http::assets::request::tests::conditional_lists_support_weak_comparison_commas_and_strong_precedence",
         "standalone::http::assets::request::tests::identity_exclusion_is_honored_without_decompression_or_qvalue_guessing",
         "standalone::http::assets::request::tests::immutable_locator_rejects_aliases_and_private_or_noncanonical_paths",
+        "standalone::http::assets::request::tests::selected_prerender_keeps_conditional_headers_and_rejects_foreign_scope",
         "standalone::http::assets::tests::representation_identity_includes_media_size_and_encoding_domain",
         "standalone::http::tests::angular::actual_angular_http_queue_disconnect_recovery_and_revocation",
         "standalone::http::tests::browser::browser_boundary_framing_traversal_cookie_and_compression_abuse_is_bounded",
@@ -7649,7 +7650,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 208,
+      "minimumCases": 209,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
