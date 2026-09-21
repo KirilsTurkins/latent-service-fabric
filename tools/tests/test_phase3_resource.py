@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from tools.build_process_signals import owned_cancellation
 from tools.phase2_operator_process import Process, WorkflowError
-from tools.phase3_resource_campaign import write_receipt
+from tools.phase3_resource_campaign import verify_receipt_checksum, write_receipt
 from tools.phase3_resource_analysis import complete_populations
 from tools.phase3_resource_identity import file_identity, inventory
 from tools.phase3_resource_fixture import validity
@@ -145,6 +145,34 @@ class ScheduleTests(unittest.TestCase):
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_retained_checksum_accepts_collector_and_exact_sha256sum_records(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "receipt.json"
+            output.write_bytes(b'{"synthetic":true}\n')
+            identity = file_identity(output)["sha256"]
+            for record in (identity, identity[7:] + "  receipt.json", identity[7:] + " *receipt.json"):
+                with self.subTest(record=record):
+                    output.with_suffix(".json.sha256").write_bytes((record + "\n").encode("ascii"))
+                    verify_receipt_checksum(output)
+
+    def test_retained_checksum_rejects_wrong_file_digest_extra_records_and_oversize(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "receipt.json"
+            output.write_bytes(b'{"synthetic":true}\n')
+            identity = file_identity(output)["sha256"]
+            valid = identity[7:] + "  receipt.json"
+            for record in (identity[:-1], "sha256:" + "0" * 64,
+                           identity[7:] + "  different.json", identity[7:] + "  ../receipt.json",
+                           valid + "\n" + valid, valid + " extra", "x" * 4097):
+                with self.subTest(record=record[:90]):
+                    output.with_suffix(".json.sha256").write_bytes((record + "\n").encode("ascii"))
+                    with self.assertRaisesRegex(WorkflowError, "resource-receipt-checksum"):
+                        verify_receipt_checksum(output)
+            output.with_suffix(".json.sha256").write_bytes((valid + "\n").encode("ascii"))
+            output.write_bytes(b'{"synthetic":"changed"}\n')
+            with self.assertRaisesRegex(WorkflowError, "resource-receipt-checksum"):
+                verify_receipt_checksum(output)
+
     def test_grpc_overload_is_not_relabelled_as_known_platform_nonacceptance(self):
         outcome = {"code": "rpc-failed", "grpcCode": "resource-exhausted", "outcomeKnown": False}
         observed = overload_counts([outcome])
