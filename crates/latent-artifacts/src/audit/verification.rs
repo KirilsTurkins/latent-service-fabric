@@ -137,6 +137,12 @@ impl AuditedAdmissionAuthority {
 }
 
 impl AdmissionAuthority for AuditedAdmissionAuthority {
+    fn renew_control_lease(&self) -> Result<(), PlatformError> {
+        // The wrapped authority owns the lease and any durability failure.
+        // Audit capture cannot replace this control operation with a no-op.
+        self.inner.renew_control_lease()
+    }
+
     fn verify(
         &self,
         tenant: &TenantId,
