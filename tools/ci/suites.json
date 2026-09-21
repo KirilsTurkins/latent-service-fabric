@@ -667,6 +667,7 @@
         "local_repository::tests::web::projection::browser_layout_and_retained_receipts_never_supply_an_execution_projection",
         "local_repository::tests::web::projection::denied_web_projection_still_rejects_tampered_renderer_instead_of_hiding_corruption",
         "local_repository::tests::web::projection::exact_web_projection_keeps_package_authority_separate_from_executable_deduplication",
+        "local_repository::tests::web::projection::historical_web_layout_retains_its_read_lease_without_reviving_revoked_authority",
         "local_repository::tests::web::projection::only_catalog_verified_web_metadata_selects_public_world_validation",
         "local_repository::tests::web::projection::web_evidence_renewal_preserves_immutable_cache_identity_but_retires_start_authority",
         "local_repository::tests::web::projection::web_projection_rejects_foreign_catalog_even_with_the_same_admission_authority",
@@ -743,7 +744,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 249,
+      "minimumCases": 250,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
