@@ -7,6 +7,8 @@ mod catalog;
 #[cfg(target_os = "linux")]
 mod clock;
 #[cfg(target_os = "linux")]
+mod clock_renewal;
+#[cfg(target_os = "linux")]
 mod history;
 #[cfg(target_os = "linux")]
 mod lifecycle;
