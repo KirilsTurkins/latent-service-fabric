@@ -875,6 +875,9 @@
         "durable::tests::recovered_pending_reserves_terminal_and_unknown_is_durable",
         "durable::tests::rollback_target_precondition_and_validated_history_are_distinct_and_optional",
         "durable::tests::strict_model_rejects_unknown_null_and_invalid_component",
+        "durable::worker::control_tests::control_reservation_preserves_capacity_pending_and_closed_rejection",
+        "durable::worker::control_tests::control_reservation_waits_for_memory_fence_while_hot_reservation_rejects",
+        "durable::worker::control_tests::recovery_snapshot_and_reconciliation_wait_for_memory_fence",
         "phase2::tests::capacity_rejects_new_events_without_evicting_existing_audit_history",
         "phase2::tests::event_kind_wire_names_are_fixed_low_cardinality_values",
         "phase2::tests::excessive_and_aggregate_limits_are_rejected_before_allocation",
@@ -888,7 +891,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-audit/Cargo.toml",
-      "minimumCases": 31,
+      "minimumCases": 34,
       "mode": "libtest",
       "package": "latent-audit",
       "platforms": [
