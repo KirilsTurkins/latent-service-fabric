@@ -427,8 +427,8 @@ class DependencyVersionAuthorityTests(unittest.TestCase):
             with patch.object(installer, "TOOLCHAIN", config):
                 self.assertEqual(installer.contract(), ("9.8.7", "b" * 64))
 
-        self.assertFalse(hasattr(installer, "VERSION"))
-        self.assertFalse(hasattr(installer, "ARCHIVE_SHA256"))
+        self.assertEqual(installer.VERSION, installer.contract()[0])
+        self.assertEqual(installer.ARCHIVE_SHA256, installer.contract()[1])
 
 
 class WorkspaceDependencyTests(unittest.TestCase):
