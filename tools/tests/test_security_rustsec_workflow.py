@@ -30,6 +30,12 @@ class SecurityWorkflowTests(unittest.TestCase):
             self.assertEqual(self.baseline["on"][event]["branches"], ["development", "release"])
             self.assertNotIn("paths", self.baseline["on"][event])
         self.assertEqual(self.baseline["jobs"]["rustsec"]["uses"], "./.github/workflows/security-rustsec.yml")
+        self.assertEqual(self.rustsec["on"]["workflow_call"]["inputs"]["controls-ref"]["required"], "true")
+        self.assertEqual(self.baseline["jobs"]["rustsec"]["with"]["controls-ref"], "${{ github.sha }}")
+        checkouts = {step["with"]["path"]: step["with"] for step in self.rustsec["jobs"]["audit"]["steps"]
+                     if step.get("uses", "").startswith("actions/checkout@")}
+        self.assertEqual(checkouts["controls"]["ref"], "${{ inputs.controls-ref }}")
+        self.assertEqual(checkouts["source"]["ref"], "${{ inputs.source-ref }}")
         with patch("tools.security_scope.changed_paths", side_effect=AssertionError("must not need a changed lock")):
             for event in ("schedule", "workflow_dispatch"):
                 selection = select(event, {}, ROOT, "a" * 40)

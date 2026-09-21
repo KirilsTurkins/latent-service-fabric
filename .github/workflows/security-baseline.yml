@@ -45,6 +45,7 @@ jobs:
     uses: ./.github/workflows/security-rustsec.yml
     with:
       source-ref: ${{ matrix.ref }}
+      controls-ref: ${{ github.sha }}
 
   dependencies:
     name: SDK advisories ${{ matrix.ref }}
