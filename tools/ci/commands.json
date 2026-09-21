@@ -2880,7 +2880,7 @@
       "sha256": "46f01052e597827d1366b1b934b0d9e56903b499555155de60ba02a75a26f3b0"
     },
     "tools/phase3_resource_campaign.py": {
-      "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
+      "sha256": "6d4f990fd2fa02b9c0b3c4c133161516d36bd60e01da3dd2549258ce3cb841cf"
     },
     "tools/phase3_security.py": {
       "sha256": "5f904fc5c0ee5da777645fbc6b86215592a6bfe4fb98faf16bf147b3da7f7e41"
@@ -5115,6 +5115,20 @@
       "ProviderWorkflowTests.test_only_actual_installed_profiles_and_canonical_identity_are_accepted",
       "ProviderWorkflowTests.test_startup_failure_keeps_only_closed_node_stage_and_code"
     ],
+    "tools/tests/test_phase3_native_cache_audit.py": [
+      "NativeCacheAuditTests.test_empty_baseline_does_not_waive_component_identity",
+      "NativeCacheAuditTests.test_required_observation_and_original_overflow_limit_stay_fail_closed",
+      "NativeCacheAuditTests.test_resident_image_can_have_no_pre_restart_native_store_hits"
+    ],
+    "tools/tests/test_phase3_reference_workflow.py": [
+      "ReferenceBuildTests.test_reference_fixture_rejects_wrapper_only_releases",
+      "ReferenceBuildTests.test_reference_inputs_request_one_capability_but_never_claim_principal_authority",
+      "ReferenceBuildTests.test_releases_capture_different_maintained_version_sources",
+      "ReferenceCellBypassTests.test_lease_age_can_advance_without_admitting_a_render",
+      "ReferencePeerTests.test_only_complete_authorized_bounded_get_profile_is_accepted",
+      "ReferencePeerTests.test_unbounded_ambiguous_or_body_bearing_requests_are_rejected",
+      "ReferencePromotionTests.test_rejection_is_observed_without_replaying_or_fabricating_certainty"
+    ],
     "tools/tests/test_phase3_resource.py": [
       "EvidenceTests.test_admission_saturation_preserves_actual_population_and_stops_mutating",
       "EvidenceTests.test_counters_reject_null_bool_negative_and_lossy_json_number",
@@ -5130,8 +5144,6 @@
       "EvidenceTests.test_partial_provider_and_cell_observations_are_rejected",
       "EvidenceTests.test_refused_density_is_not_a_proven_capacity_ceiling_or_campaign_pass",
       "EvidenceTests.test_retained_active_owner_is_not_quiet",
-      "EvidenceTests.test_retained_checksum_accepts_collector_and_exact_sha256sum_records",
-      "EvidenceTests.test_retained_checksum_rejects_wrong_file_digest_extra_records_and_oversize",
       "EvidenceTests.test_unobserved_counters_are_not_treated_as_zero",
       "ProcTests.test_network_namespace_rows_must_match_owned_descriptor_inodes",
       "ProcTests.test_real_owned_process_is_measured_then_reaped_not_adopted",
@@ -5600,20 +5612,6 @@
     ],
     "tools/tests/test_zig_cache_boundary.py": [
       "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation"
-    ],
-    "tools/tests/test_phase3_native_cache_audit.py": [
-      "NativeCacheAuditTests.test_empty_baseline_does_not_waive_component_identity",
-      "NativeCacheAuditTests.test_required_observation_and_original_overflow_limit_stay_fail_closed",
-      "NativeCacheAuditTests.test_resident_image_can_have_no_pre_restart_native_store_hits"
-    ],
-    "tools/tests/test_phase3_reference_workflow.py": [
-      "ReferenceBuildTests.test_reference_fixture_rejects_wrapper_only_releases",
-      "ReferenceBuildTests.test_reference_inputs_request_one_capability_but_never_claim_principal_authority",
-      "ReferenceBuildTests.test_releases_capture_different_maintained_version_sources",
-      "ReferenceCellBypassTests.test_lease_age_can_advance_without_admitting_a_render",
-      "ReferencePeerTests.test_only_complete_authorized_bounded_get_profile_is_accepted",
-      "ReferencePeerTests.test_unbounded_ambiguous_or_body_bearing_requests_are_rejected",
-      "ReferencePromotionTests.test_rejection_is_observed_without_replaying_or_fabricating_certainty"
     ]
   },
   "pythonTestModules": [

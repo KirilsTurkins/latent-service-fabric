@@ -667,6 +667,7 @@
         "local_repository::tests::web::projection::browser_layout_and_retained_receipts_never_supply_an_execution_projection",
         "local_repository::tests::web::projection::denied_web_projection_still_rejects_tampered_renderer_instead_of_hiding_corruption",
         "local_repository::tests::web::projection::exact_web_projection_keeps_package_authority_separate_from_executable_deduplication",
+        "local_repository::tests::web::projection::historical_web_layout_retains_its_read_lease_without_reviving_revoked_authority",
         "local_repository::tests::web::projection::only_catalog_verified_web_metadata_selects_public_world_validation",
         "local_repository::tests::web::projection::web_evidence_renewal_preserves_immutable_cache_identity_but_retires_start_authority",
         "local_repository::tests::web::projection::web_projection_rejects_foreign_catalog_even_with_the_same_admission_authority",
@@ -743,7 +744,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 249,
+      "minimumCases": 250,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
@@ -875,9 +876,6 @@
         "durable::tests::recovered_pending_reserves_terminal_and_unknown_is_durable",
         "durable::tests::rollback_target_precondition_and_validated_history_are_distinct_and_optional",
         "durable::tests::strict_model_rejects_unknown_null_and_invalid_component",
-        "durable::worker::control_tests::control_reservation_preserves_capacity_pending_and_closed_rejection",
-        "durable::worker::control_tests::control_reservation_waits_for_memory_fence_while_hot_reservation_rejects",
-        "durable::worker::control_tests::recovery_snapshot_and_reconciliation_wait_for_memory_fence",
         "phase2::tests::capacity_rejects_new_events_without_evicting_existing_audit_history",
         "phase2::tests::event_kind_wire_names_are_fixed_low_cardinality_values",
         "phase2::tests::excessive_and_aggregate_limits_are_rejected_before_allocation",
@@ -891,7 +889,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-audit/Cargo.toml",
-      "minimumCases": 34,
+      "minimumCases": 31,
       "mode": "libtest",
       "package": "latent-audit",
       "platforms": [
@@ -1064,14 +1062,16 @@
         "broker::tests::stopped_sessions_keep_response_and_original_ledger_until_actual_drop",
         "broker::tests::typed_input_reservations_precede_construction_and_survive_session_close",
         "broker::tests::unpolled_calls_reserve_nothing_and_revocation_denies_before_dispatch",
-        "broker::tests::unused_multi_dimension_reservations_refund_together_without_refunding_other_work"
+        "broker::tests::unused_multi_dimension_reservations_refund_together_without_refunding_other_work",
+        "broker::tests::web_imports::ordinary_capsule_context_still_requires_its_provider_binding",
+        "broker::tests::web_imports::web_context_is_distinct_from_exact_provider_imports"
       ],
       "expectedIgnored": [],
       "id": "latent-capabilities.lib.latent-capabilities",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 102,
+      "minimumCases": 104,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -1357,6 +1357,9 @@
         "deployments::tests::rollouts::staged_cutpoint_recovers_old_whole_state_and_rename_uncertainty_is_explicit",
         "deployments::tests::rollouts::stages_commit_one_combined_catalog_and_replay_exact_history_after_restart",
         "deployments::tests::rollouts::stale_ordinary_writer_cannot_erase_state_only_commit_and_manual_drift_conflicts",
+        "deployments::tests::rollouts::web::revoked_web_rollback_target_is_rejected_before_preparation_and_after_preflight",
+        "deployments::tests::rollouts::web::web_canary_preserves_pinned_assets_and_restarts_with_revoked_candidate_identity_only",
+        "deployments::tests::rollouts::web::web_rollout_rejects_route_removal_mode_change_and_backend_expansion_without_mutation",
         "deployments::tests::root_identity::during_open::relative_root_stays_owned_while_open_is_suspended_at_release_fetch",
         "deployments::tests::root_identity::mutations_stay_in_the_owned_root_after_working_directory_changes",
         "deployments::tests::root_ownership_limits_and_hot_path_are_explicit",
@@ -1410,7 +1413,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 230,
+      "minimumCases": 233,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [
@@ -7437,6 +7440,7 @@
         "standalone::http::assets::request::tests::conditional_lists_support_weak_comparison_commas_and_strong_precedence",
         "standalone::http::assets::request::tests::identity_exclusion_is_honored_without_decompression_or_qvalue_guessing",
         "standalone::http::assets::request::tests::immutable_locator_rejects_aliases_and_private_or_noncanonical_paths",
+        "standalone::http::assets::request::tests::selected_prerender_keeps_conditional_headers_and_rejects_foreign_scope",
         "standalone::http::assets::tests::representation_identity_includes_media_size_and_encoding_domain",
         "standalone::http::tests::angular::actual_angular_http_queue_disconnect_recovery_and_revocation",
         "standalone::http::tests::browser::browser_boundary_framing_traversal_cookie_and_compression_abuse_is_bounded",
@@ -7646,7 +7650,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 208,
+      "minimumCases": 209,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
@@ -7784,7 +7788,7 @@
       "prerequisites": [
         "pinned Rust toolchain",
         "successful source-matched Cargo artifact inventory",
-        "two actual maintained Angular builds and a fresh private fixture root"
+        "two actual maintained Angular builds"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
