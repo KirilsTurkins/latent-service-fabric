@@ -269,6 +269,47 @@ def dependency_specifications(manifest: dict) -> Iterator[tuple[str, object]]:
             yield from target.get(table_name, {}).items()
 
 
+def workspace_dependency_version(specification: object) -> str | None:
+    if isinstance(specification, str):
+        return specification
+    if isinstance(specification, dict):
+        value = specification.get("version")
+        return value if isinstance(value, str) else None
+    return None
+
+
+def validate_workspace_dependency_pins(workspace: dict) -> None:
+    dependencies = workspace.get("workspace", {}).get("dependencies", {})
+    for dependency, specification in sorted(dependencies.items()):
+        version = workspace_dependency_version(specification)
+        if version is None:
+            if isinstance(specification, dict) and any(
+                key in specification for key in ("path", "git")
+            ):
+                continue
+            fail(f"workspace dependency {dependency} has no exact version requirement")
+            continue
+        if not version.startswith("=") or len(version) == 1:
+            fail(
+                f"workspace dependency {dependency} must use an exact =version requirement, "
+                f"found {version!r}"
+            )
+
+
+def validate_guest_tool_contracts(baseline: dict) -> None:
+    guest_tools = baseline.get("guest-tools", {})
+    wit_bindgen = guest_tools.get("wit-bindgen") if isinstance(guest_tools, dict) else None
+    if not isinstance(wit_bindgen, dict):
+        fail("guest tool contract missing: wit-bindgen")
+        return
+    version = wit_bindgen.get("version")
+    checksum = wit_bindgen.get("archive_sha256")
+    if not isinstance(version, str) or not version.strip():
+        fail("guest tool wit-bindgen must declare a non-empty version")
+    if not isinstance(checksum, str) or re.fullmatch(r"[0-9a-f]{64}", checksum) is None:
+        fail("guest tool wit-bindgen must declare a lowercase SHA-256 archive digest")
+
+
 def validate_toolchain_baseline() -> None:
     required = [
         ROOT / "Cargo.lock",
@@ -309,20 +350,10 @@ def validate_toolchain_baseline() -> None:
             f"Cargo.toml has {actual_msrv}"
         )
 
-    cargo_dependencies = workspace["workspace"].get("dependencies", {})
-    for dependency, expected_version in baseline["rust"]["dependencies"].items():
-        specification = cargo_dependencies.get(dependency)
-        if specification is None:
-            fail(f"pinned workspace dependency missing: {dependency}")
-            continue
-        actual_version = (
-            specification if isinstance(specification, str) else specification.get("version")
-        )
-        if actual_version != f"={expected_version}":
-            fail(
-                f"workspace dependency {dependency} must be pinned to "
-                f"={expected_version}, found {actual_version!r}"
-            )
+    if "dependencies" in baseline.get("rust", {}):
+        fail("tools/toolchain.toml must not mirror Cargo dependency versions")
+    validate_workspace_dependency_pins(workspace)
+    validate_guest_tool_contracts(baseline)
 
     requirements = (ROOT / "tools/requirements.lock").read_text(encoding="utf-8")
     expected_jsonschema = baseline["contracts"]["jsonschema"]
