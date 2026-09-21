@@ -20,6 +20,12 @@ assert FOUNDATION_SPEC is not None and FOUNDATION_SPEC.loader is not None
 foundation = importlib.util.module_from_spec(FOUNDATION_SPEC)
 FOUNDATION_SPEC.loader.exec_module(foundation)
 
+INSTALLER_MODULE_PATH = Path(__file__).resolve().parents[1] / "install_guest_bindgen.py"
+INSTALLER_SPEC = importlib.util.spec_from_file_location("install_guest_bindgen", INSTALLER_MODULE_PATH)
+assert INSTALLER_SPEC is not None and INSTALLER_SPEC.loader is not None
+installer = importlib.util.module_from_spec(INSTALLER_SPEC)
+INSTALLER_SPEC.loader.exec_module(installer)
+
 
 class SourceTraversalTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -356,6 +362,73 @@ class RetainedEmptyEvidenceTests(unittest.TestCase):
         (self.root / "files.manifest.json").write_text(json.dumps(self.document), encoding="utf-8")
         validator.validate_nonempty_files(self.root)
         self.assertTrue(any("empty file:" in error for error in validator.ERRORS))
+
+
+class DependencyVersionAuthorityTests(unittest.TestCase):
+    def setUp(self) -> None:
+        validator.ERRORS.clear()
+
+    def tearDown(self) -> None:
+        validator.ERRORS.clear()
+
+    def test_workspace_dependency_versions_are_validated_from_cargo(self) -> None:
+        workspace = {
+            "workspace": {
+                "dependencies": {
+                    "plain": "=1.2.3",
+                    "featured": {"version": "=4.5.6", "features": ["derive"]},
+                    "local": {"path": "crates/local"},
+                }
+            }
+        }
+
+        validator.validate_workspace_dependency_pins(workspace)
+
+        self.assertEqual(validator.ERRORS, [])
+
+    def test_workspace_dependency_ranges_are_rejected_without_toolchain_mirror(self) -> None:
+        workspace = {
+            "workspace": {
+                "dependencies": {
+                    "floating": "1.2",
+                    "caret": {"version": "^3.4"},
+                }
+            }
+        }
+
+        validator.validate_workspace_dependency_pins(workspace)
+
+        self.assertEqual(len(validator.ERRORS), 2)
+        self.assertTrue(all("exact =version requirement" in error for error in validator.ERRORS))
+
+    def test_guest_bindgen_binary_contract_is_separate_from_cargo(self) -> None:
+        baseline = {
+            "guest-tools": {
+                "wit-bindgen": {
+                    "version": "0.60.0",
+                    "archive_sha256": "a" * 64,
+                }
+            }
+        }
+
+        validator.validate_guest_tool_contracts(baseline)
+
+        self.assertEqual(validator.ERRORS, [])
+
+    def test_guest_bindgen_installer_reads_toolchain_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            config = Path(temporary) / "toolchain.toml"
+            config.write_text(
+                '[guest-tools.wit-bindgen]\nversion = "9.8.7"\narchive_sha256 = "'
+                + "b" * 64
+                + '"\n',
+                encoding="utf-8",
+            )
+            with patch.object(installer, "TOOLCHAIN", config):
+                self.assertEqual(installer.contract(), ("9.8.7", "b" * 64))
+
+        self.assertFalse(hasattr(installer, "VERSION"))
+        self.assertFalse(hasattr(installer, "ARCHIVE_SHA256"))
 
 
 class WorkspaceDependencyTests(unittest.TestCase):
