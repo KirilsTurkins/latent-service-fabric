@@ -23,6 +23,41 @@ fn configure(store: &PolicyStore) {
         .unwrap();
 }
 #[test]
+fn resource_live_and_staged_snapshots_share_the_configured_read_owner_ceiling() {
+    for maximum_read_owners in [32, 64] {
+        let fixture = Fixture::new();
+        let store = fixture.store(PolicyStoreLimits {
+            maximum_read_owners,
+            ..PolicyStoreLimits::default()
+        });
+        configure(&store);
+        let snapshot =
+            || store.snapshot(&TenantId("a".into()), &["p".into()], "binding", deadline());
+        let live = (0..16).map(|_| snapshot().unwrap()).collect::<Vec<_>>();
+        assert_eq!(store.retained_read_owners(), 16);
+        let staged = (0..16).map(|_| snapshot().unwrap()).collect::<Vec<_>>();
+        assert_eq!(store.retained_read_owners(), 32);
+        let next = snapshot();
+        if maximum_read_owners == 32 {
+            let failure = next.err().expect("the 33rd real snapshot is refused");
+            assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
+            assert_eq!(store.retained_read_owners(), 32);
+        } else {
+            let next = next.unwrap();
+            assert_eq!(store.retained_read_owners(), 33);
+            drop(next);
+        }
+        drop(staged);
+        assert_eq!(store.retained_read_owners(), 16);
+        let replacement = snapshot().unwrap();
+        assert_eq!(store.retained_read_owners(), 17);
+        drop(replacement);
+        drop(live);
+        assert_eq!(store.retained_read_owners(), 0);
+    }
+}
+
+#[test]
 fn held_policy_snapshots_reject_later_calls_after_revocation_and_owner_retirement() {
     let fixture = Fixture::new();
     let store = fixture.store(PolicyStoreLimits {
