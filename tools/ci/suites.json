@@ -2545,6 +2545,7 @@
         "http::network::tests::redirects::approved_content_redirects_strip_credentials_and_retain_digest_validation",
         "http::network::tests::redirects::foreign_origins_paths_userinfo_downgrades_and_token_targets_are_denied",
         "http::network::tests::redirects::token_redirects_and_mutation_redirects_never_replay_or_forward_credentials",
+        "http::network::tests::resource::bounded_oci_pool_resource_checkpoint",
         "http::network::tests::upload::cancellation_before_upload_location_keeps_socket_bytes_and_cleanup_owned",
         "http::network::tests::upload::cancelled_upload_put_closes_its_socket_but_keeps_the_cleanup_reservation",
         "http::push::location::tests::opaque_upload_query_remains_byte_exact",
@@ -2564,12 +2565,16 @@
         "tests::raw_identity_enforces_lowered_and_hard_bounds_and_discards_spare_capacity",
         "tests::raw_identity_preserves_exact_bytes_and_is_not_json_validation"
       ],
-      "expectedIgnored": [],
+      "expectedIgnored": [
+        "http::network::tests::resource::bounded_oci_pool_resource_checkpoint"
+      ],
       "id": "latent-oci.lib.latent-oci",
-      "ignoredLeaves": [],
+      "ignoredLeaves": [
+        "bounded_oci_pool_resource_checkpoint"
+      ],
       "kind": "lib",
       "manifest": "crates/latent-oci/Cargo.toml",
-      "minimumCases": 54,
+      "minimumCases": 55,
       "mode": "libtest",
       "package": "latent-oci",
       "platforms": [

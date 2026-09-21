@@ -220,6 +220,16 @@
       "shell": "bash",
       "run": "set -o pipefail\npython3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite metadata-working-set 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\""
     },
+    ".github/workflows/ci.yml:rust:Validate small Phase 3 resource regressions": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Validate small Phase 3 resource regressions",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_phase3_resource tools.tests.test_phase3_resource_web"
+    },
     ".github/workflows/ci.yml:rust:Qualify bounded Angular SSR and browser hydration": {
       "workflow": ".github/workflows/ci.yml",
       "job": "rust",
@@ -429,6 +439,26 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 -m unittest tools.tests.test_angular_t1_workflow\nmkdir \"$RUNNER_TEMP/angular-t1-bin\"\nfor binary in latent latentd; do\n  objcopy --strip-debug \"$PWD/target/debug/$binary\" \"$RUNNER_TEMP/angular-t1-bin/$binary\"\ndone\nobjcopy --strip-debug \"$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler\" \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\"\npython3 tools/run_angular_t1_workflow.py --cli \"$RUNNER_TEMP/angular-t1-bin/latent\" --node \"$RUNNER_TEMP/angular-t1-bin/latentd\" --compiler \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\" --fixture-root \"$RUNNER_TEMP/angular-t1-fixture\" > \"$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json\""
+    },
+    ".github/workflows/ci.yml:rust:Build fresh resource guest inputs": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Build fresh resource guest inputs",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/resource-guest-tools\"\nPATH=\"$RUNNER_TEMP/resource-guest-tools:$PATH\" python3 tools/build_guest_capsules.py --output \"$PWD/target/phase3-resource-guests\""
+    },
+    ".github/workflows/ci.yml:rust:Execute the bounded Phase 3 resource matrix": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Execute the bounded Phase 3 resource matrix",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/phase3_resource_campaign.py --matrix\npython3 tools/run_phase3_resource_acceptance.py --revision \"$GITHUB_SHA\" --output \"$RUNNER_TEMP/phase3-resource-matrix\" --guest-capsules \"$PWD/target/phase3-resource-guests\" --angular-build \"$RUNNER_TEMP/angular-build/actual\" --compiler \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\" --host-condition shared-github-runner"
     },
     ".github/workflows/ci.yml:oci-registry:Fetch pinned disposable registry": {
       "workflow": ".github/workflows/ci.yml",
@@ -2839,6 +2869,9 @@
     "tools/phase2_gate_resource.py": {
       "sha256": "46f01052e597827d1366b1b934b0d9e56903b499555155de60ba02a75a26f3b0"
     },
+    "tools/phase3_resource_campaign.py": {
+      "sha256": "6d4f990fd2fa02b9c0b3c4c133161516d36bd60e01da3dd2549258ce3cb841cf"
+    },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
     },
@@ -2898,6 +2931,9 @@
     },
     "tools/run_phase3_management_workflow.py": {
       "sha256": "9c21b9690acdd54e419c82e27c2caf9ff25057b978e123e8524114775e60367d"
+    },
+    "tools/run_phase3_resource_acceptance.py": {
+      "sha256": "1c59a51493d89074474527ce496123b0078e968013a8a35a78ad907e56ede3e7"
     },
     "tools/run_publication_workflow.py": {
       "sha256": "dfd90f3469a21b130d6f1640fc72409c61d571770f04731dd978a676c09a0ac9"
@@ -5058,6 +5094,56 @@
       "ProviderWorkflowTests.test_only_actual_installed_profiles_and_canonical_identity_are_accepted",
       "ProviderWorkflowTests.test_startup_failure_keeps_only_closed_node_stage_and_code"
     ],
+    "tools/tests/test_phase3_resource.py": [
+      "EvidenceTests.test_admission_saturation_preserves_actual_population_and_stops_mutating",
+      "EvidenceTests.test_counters_reject_null_bool_negative_and_lossy_json_number",
+      "EvidenceTests.test_distribution_requires_nonempty_finite_observations",
+      "EvidenceTests.test_dormant_density_does_not_create_per_deployment_provider_bindings",
+      "EvidenceTests.test_existing_sidecar_is_not_overwritten_or_paired_with_new_output",
+      "EvidenceTests.test_expired_or_too_short_signatures_cannot_qualify_an_entire_campaign",
+      "EvidenceTests.test_failed_call_is_retained_before_its_expected_outcome_is_checked",
+      "EvidenceTests.test_grpc_overload_is_not_relabelled_as_known_platform_nonacceptance",
+      "EvidenceTests.test_immutable_receipts_bind_exact_bytes_and_refuse_replacement",
+      "EvidenceTests.test_inventory_is_bounded_nonempty_and_content_addressed",
+      "EvidenceTests.test_live_and_staged_policy_populations_are_preflighted_without_changing_runtime_limits",
+      "EvidenceTests.test_partial_provider_and_cell_observations_are_rejected",
+      "EvidenceTests.test_refused_density_is_not_a_proven_capacity_ceiling_or_campaign_pass",
+      "EvidenceTests.test_retained_active_owner_is_not_quiet",
+      "EvidenceTests.test_unobserved_counters_are_not_treated_as_zero",
+      "ProcTests.test_network_namespace_rows_must_match_owned_descriptor_inodes",
+      "ProcTests.test_real_owned_process_is_measured_then_reaped_not_adopted",
+      "ProcTests.test_stat_uses_final_parenthesis_and_preserves_start_identity",
+      "RustInventoryTests.test_exact_successful_cargo_artifact_is_required_not_a_binary_glob",
+      "RustInventoryTests.test_rust_measurement_cannot_pass_empty_active_or_recovery_populations",
+      "ScheduleTests.test_deadline_closes_every_launched_process",
+      "ScheduleTests.test_empty_fake_complete_and_omitted_arrivals_are_rejected",
+      "ScheduleTests.test_late_launch_does_not_reset_the_arrival_origin",
+      "ScheduleTests.test_observation_failure_also_reaps_every_owner",
+      "ScheduleTests.test_overload_accounts_for_every_scheduled_arrival_without_unbounded_queue"
+    ],
+    "tools/tests/test_phase3_resource_oci.py": [
+      "OciResourceTests.test_incomplete_population_unbounded_cost_or_unreaped_peer_cannot_pass",
+      "OciResourceTests.test_library_artifact_ignores_ordinary_rlib_but_requires_exact_test_owner",
+      "OciResourceTests.test_retained_resolver_configuration_is_distinct_from_active_ownership"
+    ],
+    "tools/tests/test_phase3_resource_outcome.py": [
+      "ResourceProbeOutcomeTests.test_recovery_requires_the_original_success_value",
+      "ResourceProbeOutcomeTests.test_resource_pressure_is_retained_as_provider_failure",
+      "ResourceProbeOutcomeTests.test_success_and_unknown_values_are_not_interpreted_as_typed_errors",
+      "ResourceProbeOutcomeTests.test_typed_error_is_not_counted_as_successful_provider_work"
+    ],
+    "tools/tests/test_phase3_resource_web.py": [
+      "RenderIdentityTests.test_consumption_retains_measured_usage_and_missing_is_not_zero",
+      "RenderIdentityTests.test_success_requires_actual_selected_html_and_not_a_success_status_alone",
+      "StorageTests.test_actual_files_and_hardlinks_have_separate_logical_and_inode_counts",
+      "StorageTests.test_failed_run_retains_finite_on_disk_stage_counts_not_active_owner_claims",
+      "StorageTests.test_storage_scan_refuses_links_to_unowned_paths",
+      "WorkflowTests.test_expensive_matrix_is_manual_and_failed_receipts_are_retained",
+      "WorkflowTests.test_protected_child_descriptors_are_unavailable_not_zero",
+      "WorkflowTests.test_unavailable_preparation_metrics_are_not_zero_or_full_population",
+      "WorkflowTests.test_warm_cache_claim_needs_a_measured_hit_not_a_native_cache_label",
+      "WorkflowTests.test_web_preparation_budgets_its_observer_without_changing_runtime_limits"
+    ],
     "tools/tests/test_publisher_trust_schemas.py": [
       "PublisherTrustSchemaTests.test_envelope_has_one_signature_and_canonical_bounded_base64",
       "PublisherTrustSchemaTests.test_every_structural_field_is_required_and_unknown_fields_are_rejected",
@@ -5640,6 +5726,10 @@
     "tools/tests/test_phase2_resource_binaries.py",
     "tools/tests/test_phase2_resource_clock.py",
     "tools/tests/test_phase3_management_workflow.py",
+    "tools/tests/test_phase3_resource.py",
+    "tools/tests/test_phase3_resource_oci.py",
+    "tools/tests/test_phase3_resource_outcome.py",
+    "tools/tests/test_phase3_resource_web.py",
     "tools/tests/test_publisher_trust_schemas.py",
     "tools/tests/test_reassemble_phase0_hot_path_profile_archive.py",
     "tools/tests/test_release_compatibility_schema.py",
@@ -5680,7 +5770,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "d638ec03b92605652fec30a867a03baa277134163cace1154905f6f21d3728a6",
+    ".github/workflows/ci.yml": "c7bd4ac50ecdce3ae71c158790cae318918b5fc0bf17a717f6f349e4ca2ec34a",
     ".github/workflows/docs-pages.yml": "87ca4f1d44d6de1e14960abb0f1d7a883d40ae52ffcaba8d4cfdcf0a888c7a3e",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0e84b07e365798040f2ff4c360d8fa4b959dfc46fdab8867662381508f1ef15d",
