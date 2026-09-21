@@ -24,6 +24,19 @@ def output(suite):
 
 
 class ExecutionTests(unittest.TestCase):
+    def test_case_coverage_without_timings_still_requires_every_completed_case(self):
+        text = "\n".join(line for line in output("aot_supervisor").decode().splitlines()
+                         if not line.startswith("LSF_AOT_MEASURE "))
+        runner.validate_case_coverage(text, "aot_supervisor")
+        for changed in (text + "\nLSF_AOT_CASE unknown healthy-after-failures",
+                        text.replace("LSF_AOT_CASE passed oversized\n", ""),
+                        text.replace("passed oversized", "passed readiness-success"),
+                        text.replace("23 passed", "22 passed"), text + "\n" + text):
+            with self.assertRaises(inputs.InputError):
+                runner.validate_case_coverage(changed, "aot_supervisor")
+        with self.assertRaisesRegex(inputs.InputError, "missing-or-excessive-stage-observations"):
+            runner.result(text.encode(), "aot_supervisor")
+
     def test_all_three_exact_selections_and_case_observations(self):
         for suite, names in runner.CASES.items():
             raw = ("\n".join(f"{name}: test" for name in sorted(names)) + f"\n\n{len(names)} tests, 0 benchmarks\n").encode()
