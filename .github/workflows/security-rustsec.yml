@@ -21,7 +21,7 @@ jobs:
         with:
           path: controls
           persist-credentials: false
-          ref: c501bba1e7aca609b1dacd9dda2d51bcb8100b50 # reviewed scanner controls
+          ref: e852442ab2801388e06d420ca6c389031c8bdd14 # reviewed scanner controls
       - name: Check out scan input, never execute it
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
