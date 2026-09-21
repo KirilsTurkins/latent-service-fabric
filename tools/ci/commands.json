@@ -3133,6 +3133,11 @@
       "PreparedInputsTests.test_validation_and_environment_do_not_build_strip_or_query_rustc",
       "PreparedInputsTests.test_wrong_profile_and_missing_role_are_rejected"
     ],
+    "tools/tests/test_artifact_identity_compression.py": [
+      "ProfileCompressionTests.test_compressed_byte_bomb_and_truncated_trailer_are_rejected",
+      "ProfileCompressionTests.test_compression_is_deterministic_and_cannot_replace_existing_output",
+      "ProfileCompressionTests.test_large_valid_profile_preserves_every_row_and_exact_weight"
+    ],
     "tools/tests/test_artifact_identity_compression_guard.py": [
       "CompressionGuardTests.test_compression_loop_deadline_preserves_partial_output",
       "CompressionGuardTests.test_directory_minimum_is_not_a_replacement_for_larger_actual_sizes_or_caps",
@@ -3148,11 +3153,6 @@
       "CompressionGuardTests.test_roundtrip_loop_checks_deadline_after_actual_decompression",
       "CompressionGuardTests.test_source_change_still_fails_the_original_hash_roundtrip_check",
       "CompressionGuardTests.test_stale_open_output_size_still_rejects_before_the_over_budget_write"
-    ],
-    "tools/tests/test_artifact_identity_compression.py": [
-      "ProfileCompressionTests.test_compressed_byte_bomb_and_truncated_trailer_are_rejected",
-      "ProfileCompressionTests.test_compression_is_deterministic_and_cannot_replace_existing_output",
-      "ProfileCompressionTests.test_large_valid_profile_preserves_every_row_and_exact_weight"
     ],
     "tools/tests/test_artifact_identity_evidence.py": [
       "EvidenceTests.test_allocation_command_and_decoder_identity_are_bound",
@@ -3285,14 +3285,6 @@
       "BuildProcessTests.test_silent_deadline_reaps_leader",
       "BuildProcessTests.test_successful_early_parent_exit_cleans_inherited_pipe_descendant"
     ],
-    "tools/tests/test_build_provenance_schemas.py": [
-      "BuildProvenanceSchemaTests.test_all_closed_fields_required_recursively",
-      "BuildProvenanceSchemaTests.test_envelope_canonical_base64_and_exact_decoded_ceiling",
-      "BuildProvenanceSchemaTests.test_explicit_builder_requirements_and_revocations",
-      "BuildProvenanceSchemaTests.test_observation_profile_and_material_constraints",
-      "BuildProvenanceSchemaTests.test_repository_grammar_matches_observation_and_policy",
-      "BuildProvenanceSchemaTests.test_statement_subject_and_signed_shape"
-    ],
     "tools/tests/test_build_provenance.py": [
       "BuildProvenanceTests.test_actual_toolchain_binaries_are_selected_instead_of_shims",
       "BuildProvenanceTests.test_clock_regression_duration_and_empty_output_suppress_observation",
@@ -3305,6 +3297,14 @@
       "BuildProvenanceTests.test_pipeline_publishes_only_exact_package_inputs_and_compact_observation",
       "BuildProvenanceTests.test_repository_label_rejects_credentials_private_paths_and_ambiguous_urls",
       "BuildProvenanceTests.test_windows_installer_discovery_matches_the_approved_host_environment"
+    ],
+    "tools/tests/test_build_provenance_schemas.py": [
+      "BuildProvenanceSchemaTests.test_all_closed_fields_required_recursively",
+      "BuildProvenanceSchemaTests.test_envelope_canonical_base64_and_exact_decoded_ceiling",
+      "BuildProvenanceSchemaTests.test_explicit_builder_requirements_and_revocations",
+      "BuildProvenanceSchemaTests.test_observation_profile_and_material_constraints",
+      "BuildProvenanceSchemaTests.test_repository_grammar_matches_observation_and_policy",
+      "BuildProvenanceSchemaTests.test_statement_subject_and_signed_shape"
     ],
     "tools/tests/test_build_snapshot.py": [
       "BuildSnapshotTests.test_archive_entry_file_and_aggregate_ceilings",
@@ -3661,6 +3661,15 @@
       "BackendBuildTests.test_non_sha_and_dirty_harness_fail_before_owned_build",
       "BackendBuildTests.test_only_two_collectors_and_one_echo_share_exact_owned_paths"
     ],
+    "tools/tests/test_optimization_backend_revision.py": [
+      "BackendRevisionTests.test_current_repository_preparation_cannot_be_labelled_as_old_direct_prepare",
+      "BackendRevisionTests.test_dropped_or_reordered_warmup_is_rejected",
+      "BackendRevisionTests.test_failed_terminal_or_unclean_owner_never_contributes_latency",
+      "BackendRevisionTests.test_first_real_rpc_is_distinct_from_backend_preparation_and_warm_population",
+      "BackendRevisionTests.test_hidden_initial_preparation_or_extra_refill_rejected",
+      "BackendRevisionTests.test_last_cache_snapshot_cannot_hide_late_invalidation",
+      "BackendRevisionTests.test_old_method_cannot_accept_revision_rows"
+    ],
     "tools/tests/test_optimization_backend_revision_cli.py": [
       "BackendValidatorCliTests.test_all_historical_schemas_keep_their_call_field_and_unit",
       "BackendValidatorCliTests.test_catalog_mutation_displays_all_commands_and_requires_identical_replay",
@@ -3680,15 +3689,6 @@
       "BackendSuiteTests.test_rehashed_crossed_probe_pid_is_rejected",
       "BackendSuiteTests.test_rehashed_unobserved_warmup_cannot_be_hidden"
     ],
-    "tools/tests/test_optimization_backend_revision.py": [
-      "BackendRevisionTests.test_current_repository_preparation_cannot_be_labelled_as_old_direct_prepare",
-      "BackendRevisionTests.test_dropped_or_reordered_warmup_is_rejected",
-      "BackendRevisionTests.test_failed_terminal_or_unclean_owner_never_contributes_latency",
-      "BackendRevisionTests.test_first_real_rpc_is_distinct_from_backend_preparation_and_warm_population",
-      "BackendRevisionTests.test_hidden_initial_preparation_or_extra_refill_rejected",
-      "BackendRevisionTests.test_last_cache_snapshot_cannot_hide_late_invalidation",
-      "BackendRevisionTests.test_old_method_cannot_accept_revision_rows"
-    ],
     "tools/tests/test_optimization_budget_builds.py": [
       "BudgetBuildTests.test_generic_receipt_reuses_strict_build_graph_without_echo",
       "BudgetBuildTests.test_legacy_echo_recipe_and_unreclaimed_build_cannot_qualify",
@@ -3705,6 +3705,18 @@
       "BudgetEvidenceTests.test_rehashed_changed_cpu_resolution_rejected",
       "BudgetEvidenceTests.test_rehashed_measured_miss_cannot_claim_warm_work",
       "BudgetEvidenceTests.test_target_keeps_all_offers_and_rejects_smoke_qualification"
+    ],
+    "tools/tests/test_optimization_budget_lifecycle.py": [
+      "BudgetLifecycleTests.test_cancel_trigger_must_bind_actual_running_record",
+      "BudgetLifecycleTests.test_candidate_extension_fails_but_control_records_actual_difference",
+      "BudgetLifecycleTests.test_changed_budget_and_fast_failure_cannot_be_success",
+      "BudgetLifecycleTests.test_exact_population_and_wire_response",
+      "BudgetLifecycleTests.test_execution_deadline_cannot_change_only_its_admission_origin",
+      "BudgetLifecycleTests.test_failed_population_keeps_started_and_missing_final_rows_separate",
+      "BudgetLifecycleTests.test_native_grant_and_longer_transport_are_distinct_proved_limits",
+      "BudgetLifecycleTests.test_terminal_decision_at_expiry_is_late_even_if_winner_claims_success",
+      "BudgetLifecycleTests.test_token_sequence_and_remaining_cannot_be_rehashed_into_proof",
+      "BudgetLifecycleTests.test_wait_ownership_and_unavailable_are_not_zero"
     ],
     "tools/tests/test_optimization_budget_lifecycle_fixture.py": [
       "ActualLifecycleFixtureTests.test_actual_control_missing_preledger_decision_remains_unobserved",
@@ -3724,18 +3736,6 @@
       "ActualLifecycleFixtureTests.test_rehashed_reserved_grant_and_live_timer_are_rejected",
       "ActualLifecycleFixtureTests.test_rehashed_success_cannot_omit_its_actual_deadline_lineage",
       "ActualLifecycleFixtureTests.test_rehashed_terminal_failure_cannot_be_completed"
-    ],
-    "tools/tests/test_optimization_budget_lifecycle.py": [
-      "BudgetLifecycleTests.test_cancel_trigger_must_bind_actual_running_record",
-      "BudgetLifecycleTests.test_candidate_extension_fails_but_control_records_actual_difference",
-      "BudgetLifecycleTests.test_changed_budget_and_fast_failure_cannot_be_success",
-      "BudgetLifecycleTests.test_exact_population_and_wire_response",
-      "BudgetLifecycleTests.test_execution_deadline_cannot_change_only_its_admission_origin",
-      "BudgetLifecycleTests.test_failed_population_keeps_started_and_missing_final_rows_separate",
-      "BudgetLifecycleTests.test_native_grant_and_longer_transport_are_distinct_proved_limits",
-      "BudgetLifecycleTests.test_terminal_decision_at_expiry_is_late_even_if_winner_claims_success",
-      "BudgetLifecycleTests.test_token_sequence_and_remaining_cannot_be_rehashed_into_proof",
-      "BudgetLifecycleTests.test_wait_ownership_and_unavailable_are_not_zero"
     ],
     "tools/tests/test_optimization_budget_runner.py": [
       "BudgetRunnerTests.test_actual_config_is_written_once_and_existing_attempt_is_preserved",
@@ -3795,6 +3795,16 @@
       "SymbolIdentityTests.test_valid_demangled_rendering_still_matches_same_verified_function",
       "SymbolIdentityTests.test_verified_symbol_and_resolved_other_allocations_can_prove_zero",
       "SymbolIdentityTests.test_verified_symbol_with_unresolved_ip_is_unavailable_not_zero"
+    ],
+    "tools/tests/test_optimization_catalog.py": [
+      "CatalogFixtureTests.test_case_inputs_keep_misses_on_existing_scope_and_named_route_index",
+      "CatalogFixtureTests.test_route_frame_preserves_utf8_lengths_and_absent_empty_key_equivalence",
+      "CatalogFixtureTests.test_variant_is_exact_original_component_plus_one_index_section",
+      "CatalogFixtureTests.test_weight_changes_owned_attributes_but_not_revision_identity",
+      "CatalogModelTests.test_all_model_plans_validate_and_schema_rejects_open_selection",
+      "CatalogModelTests.test_exact_selection_rejects_boolean_ordinal_and_crossed_stage",
+      "CatalogModelTests.test_full_has_four_initial_and_four_adjacent_reopen_owners",
+      "CatalogModelTests.test_populations_count_pin_reopen_preflight_and_warmup"
     ],
     "tools/tests/test_optimization_catalog_boundaries.py": [
       "CatalogDataTests.test_native_reserve_is_explicit_and_does_not_assert_host_capacity",
@@ -3883,16 +3893,6 @@
     "tools/tests/test_optimization_catalog_schemas.py": [
       "CatalogEnvelopeTests.test_envelopes_accept_the_fixed_plans_and_reject_outside_bounds"
     ],
-    "tools/tests/test_optimization_catalog.py": [
-      "CatalogFixtureTests.test_case_inputs_keep_misses_on_existing_scope_and_named_route_index",
-      "CatalogFixtureTests.test_route_frame_preserves_utf8_lengths_and_absent_empty_key_equivalence",
-      "CatalogFixtureTests.test_variant_is_exact_original_component_plus_one_index_section",
-      "CatalogFixtureTests.test_weight_changes_owned_attributes_but_not_revision_identity",
-      "CatalogModelTests.test_all_model_plans_validate_and_schema_rejects_open_selection",
-      "CatalogModelTests.test_exact_selection_rejects_boolean_ordinal_and_crossed_stage",
-      "CatalogModelTests.test_full_has_four_initial_and_four_adjacent_reopen_owners",
-      "CatalogModelTests.test_populations_count_pin_reopen_preflight_and_warmup"
-    ],
     "tools/tests/test_optimization_cgroups.py": [
       "CgroupReadTests.test_aliases_must_have_same_directory_identity",
       "CgroupReadTests.test_nonregular_files_do_not_block_and_membership_change_discards_values",
@@ -3901,16 +3901,6 @@
       "CgroupResolutionTests.test_bad_or_unresolvable_membership_never_becomes_mount_root",
       "CgroupResolutionTests.test_native_nested_bind_subtree_and_namespace_root",
       "CgroupResolutionTests.test_paths_use_component_prefix_and_decode_escapes_once"
-    ],
-    "tools/tests/test_optimization_codec_shared_limits.py": [
-      "SharedRecordLimits.test_historical_replay_is_identical_and_other_guards_remain_independent",
-      "SharedRecordLimits.test_only_two_exact_integer_record_counts_are_accepted_before_io",
-      "SharedRecordLimits.test_whole_and_both_attribution_wrappers_forward_explicit_or_default_count",
-      "SharedRecordLimits.test_whole_and_selected_readers_enforce_same_closed_record_count",
-      "SharedStorageLimits.test_actual_small_files_keep_default_strict_and_explicit_extension_exact",
-      "SharedStorageLimits.test_explicit_historical_cap_has_identical_artifacts_and_file_limit",
-      "SharedStorageLimits.test_live_collector_uses_selected_remaining_budget_and_closes_on_overflow",
-      "SharedStorageLimits.test_only_two_exact_integer_totals_are_accepted_before_io"
     ],
     "tools/tests/test_optimization_codec.py": [
       "AggregateSchemas.test_actual_empty_codec_projection_and_all_eight_schema_documents",
@@ -3933,6 +3923,16 @@
       "SemanticProjection.test_rehashed_input_or_expected_bytes_reject",
       "SemanticProjection.test_rehashed_lineage_and_preflight_erasure_reject",
       "SemanticProjection.test_same_task_clock_and_direction_order_are_required"
+    ],
+    "tools/tests/test_optimization_codec_shared_limits.py": [
+      "SharedRecordLimits.test_historical_replay_is_identical_and_other_guards_remain_independent",
+      "SharedRecordLimits.test_only_two_exact_integer_record_counts_are_accepted_before_io",
+      "SharedRecordLimits.test_whole_and_both_attribution_wrappers_forward_explicit_or_default_count",
+      "SharedRecordLimits.test_whole_and_selected_readers_enforce_same_closed_record_count",
+      "SharedStorageLimits.test_actual_small_files_keep_default_strict_and_explicit_extension_exact",
+      "SharedStorageLimits.test_explicit_historical_cap_has_identical_artifacts_and_file_limit",
+      "SharedStorageLimits.test_live_collector_uses_selected_remaining_budget_and_closes_on_overflow",
+      "SharedStorageLimits.test_only_two_exact_integer_totals_are_accepted_before_io"
     ],
     "tools/tests/test_optimization_cold_revision.py": [
       "ColdRevisionTests.test_cancellation_cannot_precede_its_deciding_capture",
@@ -4080,6 +4080,19 @@
       "DockerImageSetup.test_scratch_separation_counts_only_one_import_and_one_current_context",
       "DockerImageSetup.test_three_actual_context_streams_bind_raw_http_and_distinct_images"
     ],
+    "tools/tests/test_optimization_engine.py": [
+      "EngineMemoryTests.test_available_zero_and_missing_field_remain_distinct",
+      "EngineMemoryTests.test_resource_identity_clock_and_high_water_mutations",
+      "EngineMemoryTests.test_unavailable_identity_and_unsupported_platform_are_bound",
+      "EngineModelTests.test_all_generated_plans_validate_and_schema_rejects_crossings",
+      "EngineModelTests.test_complete_work_denominators_include_functional_and_setup",
+      "EngineModelTests.test_configuration_contrasts_reference_same_actual_D0",
+      "EngineModelTests.test_exact_rotation_and_shared_control_population",
+      "EngineModelTests.test_model_rejects_reordered_or_crossed_selection",
+      "EngineSemanticTests.test_functional_plan_has_real_faults_and_three_recovery_reset_boundaries",
+      "EngineSemanticTests.test_guest_log_uses_declared_struct_order_and_same_activation",
+      "EngineSemanticTests.test_rehashed_payload_and_crossed_response_projection_reject"
+    ],
     "tools/tests/test_optimization_engine_deadlines.py": [
       "EngineFailedSmokeTests.test_actual_snapshot_uses_wit_none_and_inner_ledger_deadline",
       "EngineFailedSmokeTests.test_original_failed_population_cannot_become_qualified",
@@ -4119,19 +4132,6 @@
       "EngineProfileFieldsTests.test_old_control_requires_its_existing_residency_key_and_rejects_new_fields",
       "EngineProfileFieldsTests.test_pooling_and_optimization_profiles_cannot_cross",
       "EngineProfileFieldsTests.test_selector_target_cpu_extra_fields_and_nonstring_values_are_rejected"
-    ],
-    "tools/tests/test_optimization_engine.py": [
-      "EngineMemoryTests.test_available_zero_and_missing_field_remain_distinct",
-      "EngineMemoryTests.test_resource_identity_clock_and_high_water_mutations",
-      "EngineMemoryTests.test_unavailable_identity_and_unsupported_platform_are_bound",
-      "EngineModelTests.test_all_generated_plans_validate_and_schema_rejects_crossings",
-      "EngineModelTests.test_complete_work_denominators_include_functional_and_setup",
-      "EngineModelTests.test_configuration_contrasts_reference_same_actual_D0",
-      "EngineModelTests.test_exact_rotation_and_shared_control_population",
-      "EngineModelTests.test_model_rejects_reordered_or_crossed_selection",
-      "EngineSemanticTests.test_functional_plan_has_real_faults_and_three_recovery_reset_boundaries",
-      "EngineSemanticTests.test_guest_log_uses_declared_struct_order_and_same_activation",
-      "EngineSemanticTests.test_rehashed_payload_and_crossed_response_projection_reject"
     ],
     "tools/tests/test_optimization_evidence.py": [
       "OptimizationEvidenceTests.test_actual_deadline_failure_is_retained_and_replayed",
@@ -4178,14 +4178,6 @@
       "KubernetesAttach.test_read_deadline_then_explicit_force_reaps_original_helper",
       "KubernetesAttach.test_unconsumed_partial_or_complete_tail_cannot_claim_clean_close"
     ],
-    "tools/tests/test_optimization_kubernetes_bootstrap_evidence.py": [
-      "KubectlArchive.test_exact_member_hash_and_worker_hash_all_bind",
-      "KubectlArchive.test_rehashed_extra_member_or_crossed_stat_header_rejected",
-      "OriginalBootstrapJournal.test_incomplete_transport_clock_or_worker_result_cannot_qualify",
-      "OriginalBootstrapJournal.test_original_fourteen_operations_replay_without_keys_binaries_or_api",
-      "OriginalBootstrapJournal.test_rehashed_crossed_node_uid_alias_and_path_are_rejected",
-      "WindowsSetupCommands.test_original_outputs_and_rehashed_active_job_failure"
-    ],
     "tools/tests/test_optimization_kubernetes_bootstrap.py": [
       "BootstrapBindings.test_engine_initialization_failure_retains_attempt_and_original_failure_body",
       "BootstrapBindings.test_resume_requires_actual_original_bytes_and_exact_owner_fields",
@@ -4193,6 +4185,14 @@
       "ClusterCleanup.test_failed_stop_retains_credentials_and_original_error_receipt",
       "ClusterCleanup.test_foreign_member_wrong_alias_or_crossed_node_prevents_all_mutation",
       "ClusterCleanup.test_only_recorded_nodes_are_removed_then_hash_matched_credentials"
+    ],
+    "tools/tests/test_optimization_kubernetes_bootstrap_evidence.py": [
+      "KubectlArchive.test_exact_member_hash_and_worker_hash_all_bind",
+      "KubectlArchive.test_rehashed_extra_member_or_crossed_stat_header_rejected",
+      "OriginalBootstrapJournal.test_incomplete_transport_clock_or_worker_result_cannot_qualify",
+      "OriginalBootstrapJournal.test_original_fourteen_operations_replay_without_keys_binaries_or_api",
+      "OriginalBootstrapJournal.test_rehashed_crossed_node_uid_alias_and_path_are_rejected",
+      "WindowsSetupCommands.test_original_outputs_and_rehashed_active_job_failure"
     ],
     "tools/tests/test_optimization_kubernetes_cleanup_completion.py": [
       "CleanupCompletionTests.test_actual_original_warning_binds_exited_container_and_original_deletes",
@@ -4427,6 +4427,17 @@
       "SuiteIndexTests.test_missing_extra_reordered_or_boolean_identity_rejects",
       "SuiteIndexTests.test_wrong_path_bytes_or_rehashed_crossed_sidecar_rejects"
     ],
+    "tools/tests/test_optimization_kubernetes_transport.py": [
+      "TransportTests.test_api_owner_and_path_not_redirectable",
+      "TransportTests.test_exec_stream_rejects_truncation_and_wrong_channel",
+      "TransportTests.test_exec_stream_retains_both_channels",
+      "TransportTests.test_failed_status_keeps_original_response",
+      "TransportTests.test_observer_preserves_missing_fields_as_missing",
+      "TransportTests.test_observer_rejects_ambiguous_or_unbounded_bytes",
+      "TransportTests.test_original_success_bytes_and_closed_connection",
+      "TransportTests.test_partial_or_oversized_response_cannot_qualify",
+      "TransportTests.test_pod_log_is_original_text_not_json"
+    ],
     "tools/tests/test_optimization_kubernetes_transport_evidence.py": [
       "TransportEvidenceTests.test_404_is_explicit_absence_not_permission_to_hide_other_api_errors",
       "TransportEvidenceTests.test_api_timeout_and_expected_status_declarations_are_required_and_bounded",
@@ -4442,23 +4453,20 @@
       "TransportEvidenceTests.test_transfer_path_header_and_artifact_binding_reject",
       "TransportEvidenceTests.test_worker_exec_must_retain_exact_owned_three_step_protocol"
     ],
-    "tools/tests/test_optimization_kubernetes_transport.py": [
-      "TransportTests.test_api_owner_and_path_not_redirectable",
-      "TransportTests.test_exec_stream_rejects_truncation_and_wrong_channel",
-      "TransportTests.test_exec_stream_retains_both_channels",
-      "TransportTests.test_failed_status_keeps_original_response",
-      "TransportTests.test_observer_preserves_missing_fields_as_missing",
-      "TransportTests.test_observer_rejects_ambiguous_or_unbounded_bytes",
-      "TransportTests.test_original_success_bytes_and_closed_connection",
-      "TransportTests.test_partial_or_oversized_response_cannot_qualify",
-      "TransportTests.test_pod_log_is_original_text_not_json"
-    ],
     "tools/tests/test_optimization_nested_paths.py": [
       "NestedPathReplayTests.test_fresh_hash_cannot_replace_the_registered_nested_identity",
       "NestedPathReplayTests.test_nested_binding_works_for_absolute_relative_and_normalized_roots",
       "NestedPathReplayTests.test_real_behavior_graph_replays_identically_from_relative_root",
       "NestedPathReplayTests.test_relative_fix_preserves_path_digest_size_and_registration_rejections",
       "NestedPathReplayTests.test_whole_backend_suite_and_fresh_relative_cli_replay_match"
+    ],
+    "tools/tests/test_optimization_ownership.py": [
+      "AllocationTests.test_repeated_free_rejects_even_after_the_frame_is_gone",
+      "AllocationTests.test_union_counts_once_and_frees_after_frame_exit_refund_origin",
+      "AllocationTests.test_unresolved_origin_is_never_proved_zero",
+      "PopulationTests.test_all_explicit_populations_include_proofs_and_profile_warmup",
+      "PopulationTests.test_external_cases_are_exact_original_frames_and_no_hidden_prewarm",
+      "PopulationTests.test_invalid_shape_repetition_or_mode_cannot_expand_profile"
     ],
     "tools/tests/test_optimization_ownership_fixture.py": [
       "FunctionalReplayTests.test_declared_pending_requires_actual_live_native_store",
@@ -4485,14 +4493,6 @@
       "OwnershipSchemaTests.test_all_eight_envelopes_are_valid_schemas",
       "OwnershipSchemaTests.test_exact_plans_reject_changed_or_extended_populations",
       "OwnershipSchemaTests.test_full_completion_requires_correct_counts_and_both_flags"
-    ],
-    "tools/tests/test_optimization_ownership.py": [
-      "AllocationTests.test_repeated_free_rejects_even_after_the_frame_is_gone",
-      "AllocationTests.test_union_counts_once_and_frees_after_frame_exit_refund_origin",
-      "AllocationTests.test_unresolved_origin_is_never_proved_zero",
-      "PopulationTests.test_all_explicit_populations_include_proofs_and_profile_warmup",
-      "PopulationTests.test_external_cases_are_exact_original_frames_and_no_hidden_prewarm",
-      "PopulationTests.test_invalid_shape_repetition_or_mode_cannot_expand_profile"
     ],
     "tools/tests/test_optimization_plans.py": [
       "OptimizationPlanDeadlineTests.test_all_selected_budgets_leave_absolute_deadline_quantization_headroom",
@@ -4964,11 +4964,6 @@
       "OwnershipArchiveTests.test_suite_is_required_even_for_shape_only_verification",
       "OwnershipArchiveTests.test_unknown_schema_version_cannot_dispatch_as_supported_ownership"
     ],
-    "tools/tests/test_phase1_paired_runner.py": [
-      "PairedRunnerTests.test_control_artifact_cannot_escape_or_change_after_receipt",
-      "PairedRunnerTests.test_failed_control_is_retained_and_candidate_never_started",
-      "PairedRunnerTests.test_historical_child_runs_in_declared_source_directory"
-    ],
     "tools/tests/test_phase1_paired.py": [
       "PairedEvidenceTests.test_dirty_smoke_allowed_but_full_rejected",
       "PairedEvidenceTests.test_full_cannot_hide_smoke_population",
@@ -4988,6 +4983,11 @@
       "PairedEvidenceTests.test_replay_recomputes_every_statistic",
       "PairedEvidenceTests.test_shape_schemas_cover_plan_suite_candidate_and_aggregate",
       "PairedEvidenceTests.test_zero_control_never_creates_infinite_percentage"
+    ],
+    "tools/tests/test_phase1_paired_runner.py": [
+      "PairedRunnerTests.test_control_artifact_cannot_escape_or_change_after_receipt",
+      "PairedRunnerTests.test_failed_control_is_retained_and_candidate_never_started",
+      "PairedRunnerTests.test_historical_child_runs_in_declared_source_directory"
     ],
     "tools/tests/test_phase1_recovery_archive.py": [
       "RecoveryArchiveTests.test_new_formats_keep_both_bounded_transports_and_mandatory_replay",
@@ -5124,29 +5124,6 @@
       "ReferencePeerTests.test_unbounded_ambiguous_or_body_bearing_requests_are_rejected",
       "ReferencePromotionTests.test_rejection_is_observed_without_replaying_or_fabricating_certainty"
     ],
-    "tools/tests/test_phase3_resource_oci.py": [
-      "OciResourceTests.test_incomplete_population_unbounded_cost_or_unreaped_peer_cannot_pass",
-      "OciResourceTests.test_library_artifact_ignores_ordinary_rlib_but_requires_exact_test_owner",
-      "OciResourceTests.test_retained_resolver_configuration_is_distinct_from_active_ownership"
-    ],
-    "tools/tests/test_phase3_resource_outcome.py": [
-      "ResourceProbeOutcomeTests.test_recovery_requires_the_original_success_value",
-      "ResourceProbeOutcomeTests.test_resource_pressure_is_retained_as_provider_failure",
-      "ResourceProbeOutcomeTests.test_success_and_unknown_values_are_not_interpreted_as_typed_errors",
-      "ResourceProbeOutcomeTests.test_typed_error_is_not_counted_as_successful_provider_work"
-    ],
-    "tools/tests/test_phase3_resource_web.py": [
-      "RenderIdentityTests.test_consumption_retains_measured_usage_and_missing_is_not_zero",
-      "RenderIdentityTests.test_success_requires_actual_selected_html_and_not_a_success_status_alone",
-      "StorageTests.test_actual_files_and_hardlinks_have_separate_logical_and_inode_counts",
-      "StorageTests.test_failed_run_retains_finite_on_disk_stage_counts_not_active_owner_claims",
-      "StorageTests.test_storage_scan_refuses_links_to_unowned_paths",
-      "WorkflowTests.test_expensive_matrix_is_manual_and_failed_receipts_are_retained",
-      "WorkflowTests.test_protected_child_descriptors_are_unavailable_not_zero",
-      "WorkflowTests.test_unavailable_preparation_metrics_are_not_zero_or_full_population",
-      "WorkflowTests.test_warm_cache_claim_needs_a_measured_hit_not_a_native_cache_label",
-      "WorkflowTests.test_web_preparation_budgets_its_observer_without_changing_runtime_limits"
-    ],
     "tools/tests/test_phase3_resource.py": [
       "EvidenceTests.test_admission_saturation_preserves_actual_population_and_stops_mutating",
       "EvidenceTests.test_counters_reject_null_bool_negative_and_lossy_json_number",
@@ -5173,6 +5150,29 @@
       "ScheduleTests.test_late_launch_does_not_reset_the_arrival_origin",
       "ScheduleTests.test_observation_failure_also_reaps_every_owner",
       "ScheduleTests.test_overload_accounts_for_every_scheduled_arrival_without_unbounded_queue"
+    ],
+    "tools/tests/test_phase3_resource_oci.py": [
+      "OciResourceTests.test_incomplete_population_unbounded_cost_or_unreaped_peer_cannot_pass",
+      "OciResourceTests.test_library_artifact_ignores_ordinary_rlib_but_requires_exact_test_owner",
+      "OciResourceTests.test_retained_resolver_configuration_is_distinct_from_active_ownership"
+    ],
+    "tools/tests/test_phase3_resource_outcome.py": [
+      "ResourceProbeOutcomeTests.test_recovery_requires_the_original_success_value",
+      "ResourceProbeOutcomeTests.test_resource_pressure_is_retained_as_provider_failure",
+      "ResourceProbeOutcomeTests.test_success_and_unknown_values_are_not_interpreted_as_typed_errors",
+      "ResourceProbeOutcomeTests.test_typed_error_is_not_counted_as_successful_provider_work"
+    ],
+    "tools/tests/test_phase3_resource_web.py": [
+      "RenderIdentityTests.test_consumption_retains_measured_usage_and_missing_is_not_zero",
+      "RenderIdentityTests.test_success_requires_actual_selected_html_and_not_a_success_status_alone",
+      "StorageTests.test_actual_files_and_hardlinks_have_separate_logical_and_inode_counts",
+      "StorageTests.test_failed_run_retains_finite_on_disk_stage_counts_not_active_owner_claims",
+      "StorageTests.test_storage_scan_refuses_links_to_unowned_paths",
+      "WorkflowTests.test_expensive_matrix_is_manual_and_failed_receipts_are_retained",
+      "WorkflowTests.test_protected_child_descriptors_are_unavailable_not_zero",
+      "WorkflowTests.test_unavailable_preparation_metrics_are_not_zero_or_full_population",
+      "WorkflowTests.test_warm_cache_claim_needs_a_measured_hit_not_a_native_cache_label",
+      "WorkflowTests.test_web_preparation_budgets_its_observer_without_changing_runtime_limits"
     ],
     "tools/tests/test_phase3_security.py": [
       "ContainerTests.test_failed_inner_process_still_stops_only_the_preverified_container_id",
