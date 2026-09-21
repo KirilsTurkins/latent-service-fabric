@@ -2820,7 +2820,7 @@
       "sha256": "7a52c2a73e1178a12066b940849fc1ddfc5504705621cb11c920552258e1a809"
     },
     "tools/build_echo_capsule.py": {
-      "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
+      "sha256": "64eac2e3b3b3762197072cc42b38cd6bdc2e196db999d89ab0a9be8ee0c42826"
     },
     "tools/build_guest_capsules.py": {
       "sha256": "ba8763f38cbd11f41a526bcc4a59ac6c09b9c456f137d337598f333174d1eaab"
@@ -2868,7 +2868,7 @@
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
     },
     "tools/install_guest_bindgen.py": {
-      "sha256": "39d851e5fea222e68164c7bfb36dc8d924d2c839b01d6b3af94acc65d5fa21ab"
+      "sha256": "abe8f869c2e1d7b4f815c22c03f0982d1a7e85a8fdf91504c3eb3c9e23ea533f"
     },
     "tools/native_release_gate.py": {
       "sha256": "422d2f5ed37378b20b001dcbde435ee16e68679becf64582bf062e8722ad4a46"
@@ -3000,7 +3000,7 @@
       "sha256": "86090f52c2264d8fa6a9f0800c8917bc4319f3540ebd8bdd2502811ac7154393"
     },
     "tools/validate_repository.py": {
-      "sha256": "193a70e7ee64254adb4469193759f6246c0e0793c026d4f120f339768c8830a5"
+      "sha256": "ca0c278e737221887c0c488bb8de840234ef8af5f0c70349dc6e8be9d46e30f7"
     },
     "tools/validate_sdks.sh": {
       "sha256": "5c3d2bfcca6364aeea85de29a102cac3d712459f9db96421a664a9c28b9ee0b4"
@@ -3250,7 +3250,8 @@
       "BuildEchoCapsuleTests.test_generated_manifest_uses_the_computed_digest_and_local_trust",
       "BuildEchoCapsuleTests.test_output_directory_must_be_below_target_root",
       "BuildEchoCapsuleTests.test_root_world_surface_is_exact",
-      "BuildEchoCapsuleTests.test_wit_bindgen_loads_dependencies_before_the_echo_world"
+      "BuildEchoCapsuleTests.test_wit_bindgen_loads_dependencies_before_the_echo_world",
+      "BuildEchoCapsuleTests.test_wit_bindgen_receipt_version_comes_from_cargo_manifest"
     ],
     "tools/tests/test_build_imports.py": [
       "BuildImportTests.test_direct_cli_entrypoints_work_outside_repository_current_directory",
@@ -5531,6 +5532,10 @@
     ],
     "tools/tests/test_validate_repository.py": [
       "BenchmarkRetentionTests.test_budget_counts_combined_files_including_generated_directory_names",
+      "DependencyVersionAuthorityTests.test_guest_bindgen_binary_contract_is_separate_from_cargo",
+      "DependencyVersionAuthorityTests.test_guest_bindgen_installer_reads_toolchain_contract",
+      "DependencyVersionAuthorityTests.test_workspace_dependency_ranges_are_rejected_without_toolchain_mirror",
+      "DependencyVersionAuthorityTests.test_workspace_dependency_versions_are_validated_from_cargo",
       "GeneratedBoundaryTests.test_accepts_exhaustive_out_dir_generation_owners",
       "GeneratedBoundaryTests.test_rejects_unlisted_proto_and_checked_in_generated_source",
       "GeneratedBoundaryTests.test_rejects_wasmtime_build_script_binding_generation",
