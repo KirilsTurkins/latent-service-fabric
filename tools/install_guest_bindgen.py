@@ -9,18 +9,38 @@ from pathlib import Path
 import platform
 import tarfile
 import time
+import tomllib
 import urllib.request
 
-VERSION = "0.60.0"
-ARCHIVE_SHA256 = "6dc887e6d66a183d196885ff611e7f0a7db64db189f95c18f2a65fcf65d3651b"
-URL = (f"https://github.com/bytecodealliance/wit-bindgen/releases/download/v{VERSION}/"
-       f"wit-bindgen-{VERSION}-x86_64-linux.tar.gz")
+ROOT = Path(__file__).resolve().parents[1]
+TOOLCHAIN = ROOT / "tools" / "toolchain.toml"
 MAX_ARCHIVE = 32 * 1024 * 1024
 MAX_BINARY = 64 * 1024 * 1024
 
 
-def binary(archive: bytes) -> bytes:
-    if len(archive) > MAX_ARCHIVE or hashlib.sha256(archive).hexdigest() != ARCHIVE_SHA256:
+def contract() -> tuple[str, str]:
+    baseline = tomllib.loads(TOOLCHAIN.read_text(encoding="utf-8"))
+    selected = baseline.get("guest-tools", {}).get("wit-bindgen", {})
+    version = selected.get("version")
+    checksum = selected.get("archive_sha256")
+    if not isinstance(version, str) or not version.strip():
+        raise ValueError("wit-bindgen guest tool version is missing")
+    if not isinstance(checksum, str) or len(checksum) != 64 or any(
+        character not in "0123456789abcdef" for character in checksum
+    ):
+        raise ValueError("wit-bindgen guest tool archive checksum is invalid")
+    return version, checksum
+
+
+def release_url(version: str) -> str:
+    return (
+        f"https://github.com/bytecodealliance/wit-bindgen/releases/download/v{version}/"
+        f"wit-bindgen-{version}-x86_64-linux.tar.gz"
+    )
+
+
+def binary(archive: bytes, expected_sha256: str) -> bytes:
+    if len(archive) > MAX_ARCHIVE or hashlib.sha256(archive).hexdigest() != expected_sha256:
         raise ValueError("wit-bindgen archive identity mismatch")
     with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as source:
         matches = []
@@ -47,14 +67,15 @@ def main() -> None:
     args = parser.parse_args()
     if platform.system() != "Linux" or platform.machine() != "x86_64":
         raise ValueError("this installer supports only the pinned Linux CI profile")
+    version, expected_sha256 = contract()
     deadline = time.monotonic() + 90
     archive = bytearray()
-    with urllib.request.urlopen(URL, timeout=30) as response:
+    with urllib.request.urlopen(release_url(version), timeout=30) as response:
         while block := response.read(65536):
             archive.extend(block)
             if len(archive) > MAX_ARCHIVE or time.monotonic() > deadline:
                 raise ValueError("wit-bindgen download bound exceeded")
-    data = binary(bytes(archive))
+    data = binary(bytes(archive), expected_sha256)
     args.output.mkdir(parents=True, exist_ok=True)
     destination = args.output / "wit-bindgen"
     with destination.open("xb") as output:
