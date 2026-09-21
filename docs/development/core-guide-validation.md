@@ -24,6 +24,13 @@ other guide owners, historical evidence or review status. All six human reviews
 remain pending until the reviewer checks the actual rendered paths at an exact
 commit. Passing synthetic tests cannot supply an `execution-receipt` for LSF.
 
+The documented seven-target [provider embedding command](../evidence/provider-libraries-2026-09-21.json)
+also passed 79 cases plus one isolated environment child execution at `061cad14`.
+The [raw log](../evidence/provider-libraries-2026-09-21.log) and receipt retain
+all selected case names and seven executable hashes. This includes local-call
+authority and descendant cleanup, bounded randomness and custom metrics; it
+leaves rendered human walkthrough review pending.
+
 ## First-node runner contract
 
 The [HTTP/blob execution](../evidence/guide-management-2026-09-21.json) records

@@ -1198,6 +1198,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/provider-libraries-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "061cad145c6bfeb452c584b75144d316db88afc4",
+          "scope": "The documented seven-target provider command passed 79 cases and one isolated environment child execution, including real Wasm local calls, descendant denial/cancellation, randomness, metrics and ownership cleanup. Human walkthrough remains pending."
         }
       ],
       "review": {
@@ -1265,6 +1272,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Maintained native HTTP/blob authority, denial, revoke, restart and cleanup walkthrough; source-pinned guide commands require an execution receipt and rendered maintainer review."
+        },
+        {
+          "path": "docs/evidence/provider-libraries-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "061cad145c6bfeb452c584b75144d316db88afc4",
+          "scope": "The documented seven-target provider command passed 79 cases and one isolated environment child execution, including real Wasm local calls, descendant denial/cancellation, randomness, metrics and ownership cleanup. Human walkthrough remains pending."
         }
       ],
       "review": {
