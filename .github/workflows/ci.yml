@@ -302,11 +302,12 @@ jobs:
         timeout-minutes: 70
         env:
           CI_LANE_WORKERS: ${{ github.event_name == 'workflow_dispatch' && inputs.ci_lane_workers || '2' }}
+          CI_LANE_RENDERER: ${{ needs.profile.outputs.renderer }}
         run: |
           # Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py
           # tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py
           # tools/build_angular_package.py tools/run_angular_build_tests.py
-          python3 tools/run_ci_lanes.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --renderer "${{ needs.profile.outputs.renderer }}" --workers "$CI_LANE_WORKERS" --output "$RUNNER_TEMP/ci-lanes"
+          python3 tools/run_ci_lanes.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --renderer "$CI_LANE_RENDERER" --workers "$CI_LANE_WORKERS" --output "$RUNNER_TEMP/ci-lanes"
       - name: Retain bounded CI lane timing and completion receipts
         if: always() && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

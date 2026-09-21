@@ -1188,7 +1188,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"${{ needs.profile.outputs.renderer }}\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\""
+      "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -5772,7 +5772,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "86af33e8cdda87ed67176a38a43958131a35e2199c97ad5691c516d7270f1899",
+    ".github/workflows/ci.yml": "6c729bb1b3f840ccbadea2ca6f7ddf452ab8e52a437b983c8c76da65d6ea07bd",
     ".github/workflows/docs-pages.yml": "87ca4f1d44d6de1e14960abb0f1d7a883d40ae52ffcaba8d4cfdcf0a888c7a3e",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0e84b07e365798040f2ff4c360d8fa4b959dfc46fdab8867662381508f1ef15d",
