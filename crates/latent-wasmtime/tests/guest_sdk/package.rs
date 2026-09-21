@@ -8,10 +8,10 @@ use latent_artifacts::{
     ReleaseActor, ReleaseActorKind, ReleaseEvidenceUpload, ReleaseMutationContext,
     ReleaseOperationPrecondition,
 };
-use latent_core::{PublisherId, ReleaseDigest, TenantId};
+use latent_core::{PlatformError, PublisherId, ReleaseDigest, TenantId};
 use latent_packaging::{PackageBundle, PackagingLimits};
 use latent_policy::supply_chain::{
-    SupplyChainAuthority, SupplyChainPolicy, SystemSupplyChainClock,
+    SupplyChainAuthority, SupplyChainClock, SupplyChainPolicy, SystemSupplyChainClock,
 };
 use latent_signing::*;
 use serde_json::json;
@@ -245,12 +245,24 @@ fn policy_document(
     serde_json::to_vec(&policy).unwrap()
 }
 
+// These direct-library SDK fixtures have no node control loop to renew a clock
+// lease. Keep their trusted admission time fixed while testing guest ownership
+// and provider semantics; clock expiry and renewal have their own policy tests.
+struct FixtureClock(u64);
+
+impl SupplyChainClock for FixtureClock {
+    fn now(&self) -> Result<u64, PlatformError> {
+        Ok(self.0)
+    }
+}
+
 pub fn catalog(root: &Path, policy: SupplyChainPolicy) -> Arc<DirectoryArtifactRepository> {
+    let clock = Arc::new(FixtureClock(SystemSupplyChainClock.now().unwrap()));
     let authority = Arc::new(
         SupplyChainAuthority::open_with_runtime(
             &root.join("trust"),
             policy,
-            Arc::new(SystemSupplyChainClock),
+            clock,
             5,
             Arc::new(super::support::config().detected_runtime_profile().unwrap()),
         )
