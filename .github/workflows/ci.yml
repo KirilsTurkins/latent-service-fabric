@@ -16,6 +16,10 @@ on:
         description: "Run the heavyweight 100,000-release catalog acceptance probe"
         type: boolean
         default: false
+      run_phase3_resources:
+        description: "Run the declared bounded provider and actual Angular resource matrix"
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -190,6 +194,9 @@ jobs:
           node-version: 24.19.0
           cache: npm
           cache-dependency-path: examples/renderer-profile/package-lock.json
+      - name: Validate small Phase 3 resource regressions
+        timeout-minutes: 2
+        run: python3 -m unittest tools.tests.test_phase3_resource tools.tests.test_phase3_resource_web
       - name: Qualify bounded Angular SSR and browser hydration
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 10
@@ -378,6 +385,41 @@ jobs:
           path: ${{ runner.temp }}/phase2-gate/*.json
           if-no-files-found: warn
           retention-days: 7
+      - name: Set up the bounded resource guest compiler
+        if: github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: "0.16.0"
+      - name: Build fresh resource guest inputs
+        if: github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        timeout-minutes: 20
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target/phase3-resource
+          CARGO_BUILD_JOBS: 3
+        run: |
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/resource-guest-tools"
+          PATH="$RUNNER_TEMP/resource-guest-tools:$PATH" python3 tools/build_guest_capsules.py --output "$PWD/target/phase3-resource-guests"
+      - name: Execute the bounded Phase 3 resource matrix
+        if: github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        timeout-minutes: 70
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target/phase3-resource
+          CARGO_BUILD_JOBS: 3
+          CARGO_PROFILE_DEV_DEBUG: 0
+          CARGO_PROFILE_TEST_DEBUG: 0
+        run: |
+          python3 tools/phase3_resource_campaign.py --matrix
+          python3 tools/run_phase3_resource_acceptance.py --revision "$GITHUB_SHA" --output "$RUNNER_TEMP/phase3-resource-matrix" --guest-capsules "$PWD/target/phase3-resource-guests" --angular-build "$RUNNER_TEMP/angular-build/actual" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --host-condition shared-github-runner
+      - name: Retain immutable Phase 3 resource attempts
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: phase3-resource-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/phase3-resource-matrix/*.json
+            ${{ runner.temp }}/phase3-resource-matrix/*.sha256
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Retain the opt-in dependency-cache identity
         if: always() && steps.cargo-cache-identity.outcome == 'success'
