@@ -1,5 +1,7 @@
 mod dns;
 mod ownership;
+#[cfg(target_os = "linux")]
+mod resource;
 use crate::http::auth::security_tests::peer;
 mod redirects;
 mod upload;
