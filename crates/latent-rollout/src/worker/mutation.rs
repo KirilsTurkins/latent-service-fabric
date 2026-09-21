@@ -85,7 +85,7 @@ pub(crate) async fn commit<I>(
         terminal.canary_decision = canary_decision;
         audit_handle.preflight_conclusion(&description, &terminal)?;
     }
-    let reservation = audit_handle.reserve_control_critical(&description)?;
+    let reservation = audit_handle.try_reserve_critical(&description)?;
     job.check(shared)?;
     // The worker retains all accepted ownership while the audit owner performs
     // real durable I/O, even if the waiting client disappears or times out.

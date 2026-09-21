@@ -161,7 +161,7 @@ impl DeploymentAudit {
             preview_receipt_digest: None,
         };
         let mut accepted = audit
-            .reserve_control_critical(&attempt)
+            .try_reserve_critical(&attempt)
             .map_err(|error| platform_status(error, limits))?
             .begin()
             .wait()

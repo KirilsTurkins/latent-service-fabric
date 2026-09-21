@@ -7,9 +7,9 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
     time::{Duration, Instant},
 };
-pub(super) struct Directory(pub(super) PathBuf);
+struct Directory(PathBuf);
 impl Directory {
-    pub(super) fn new() -> Self {
+    fn new() -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(0);
         let path = std::env::temp_dir().join(format!(
             "lsf-audit-{}-{}-{}",
@@ -30,7 +30,7 @@ impl Drop for Directory {
         }
     }
 }
-pub(super) struct TestWorker {
+struct TestWorker {
     worker: AuditWorker,
     handle: AuditHandle,
 }
@@ -59,7 +59,7 @@ impl Drop for TestWorker {
         }
     }
 }
-pub(super) fn open(
+fn open(
     path: impl AsRef<std::path::Path>,
     limits: AuditLimits,
 ) -> Result<(AuditHandle, TestWorker)> {
@@ -74,7 +74,7 @@ pub(super) fn open(
 fn digest() -> ArtifactBlobDigest {
     format!("sha256:{}", "a".repeat(64)).parse().unwrap()
 }
-pub(super) fn attempt() -> AuditOperationAttempt {
+fn attempt() -> AuditOperationAttempt {
     AuditOperationAttempt {
         expected_state_version: None,
         expected_rollback_target_generation: None,
@@ -95,7 +95,7 @@ pub(super) fn attempt() -> AuditOperationAttempt {
         occurred_at_unix_millis: 1,
     }
 }
-pub(super) fn conclusion() -> AuditOperationConclusion {
+fn conclusion() -> AuditOperationConclusion {
     AuditOperationConclusion {
         canary_decision: None,
         result: AuditOperationResult::Committed,

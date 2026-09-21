@@ -80,7 +80,7 @@ pub async fn record_rejection(
     };
     audit.preflight_conclusion(&expected, &terminal)?;
     audit.preflight_conclusion(&expected, &mapping::conclusion(&expected, None))?;
-    let reservation = audit.reserve_control_critical(&expected)?;
+    let reservation = audit.try_reserve_critical(&expected)?;
     check_deadline(expires)?;
     let attempt = tokio::time::timeout_at(expires.into(), reservation.begin().wait())
         .await

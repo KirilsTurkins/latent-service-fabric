@@ -11,16 +11,6 @@ pub struct AuditAttempt {
     pending: Option<Arc<Pending>>,
 }
 impl AuditHandle {
-    /// Reserve on an existing bounded control worker, outside runtime fences.
-    /// This entrypoint may synchronize with the audit worker's memory state.
-    pub fn reserve_control_critical(
-        &self,
-        attempt: &AuditOperationAttempt,
-    ) -> Result<AuditCriticalReservation> {
-        codec::attempt(attempt)?;
-        self.reserve_critical_locked(attempt, self.shared.control_lock()?)
-    }
-
     /// Reject-only shape and complete-envelope size validation. Does not reserve
     /// journal capacity or authorize a control mutation.
     pub fn preflight_conclusion(
@@ -47,14 +37,7 @@ impl AuditHandle {
         attempt: &AuditOperationAttempt,
     ) -> Result<AuditCriticalReservation> {
         codec::attempt(attempt)?;
-        self.reserve_critical_locked(attempt, self.shared.lock()?)
-    }
-
-    fn reserve_critical_locked(
-        &self,
-        attempt: &AuditOperationAttempt,
-        mut s: std::sync::MutexGuard<'_, super::State>,
-    ) -> Result<AuditCriticalReservation> {
+        let mut s = self.shared.lock()?;
         self.shared.queue_room(&s, 16384)?;
         if s.pending.is_some() {
             return Err(error(
@@ -95,7 +78,7 @@ impl AuditHandle {
     ) -> Result<AuditAppendTicket> {
         codec::conclusion(&conclusion)?;
         let p = {
-            let s = self.shared.control_lock()?;
+            let s = self.shared.lock()?;
             if s.closed || s.summary.recovery_pending {
                 return Err(unavailable());
             }

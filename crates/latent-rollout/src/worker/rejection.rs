@@ -14,7 +14,7 @@ pub(crate) async fn finish<I>(
 ) -> Result<MutationResult> {
     audit_handle.preflight_conclusion(&attempt, &terminal)?;
     job.check(shared)?;
-    let reservation = audit_handle.reserve_control_critical(&attempt)?;
+    let reservation = audit_handle.try_reserve_critical(&attempt)?;
     job.check(shared)?;
     let attempt = reservation.begin().wait().await?;
     let sequence = attempt.sequence();
