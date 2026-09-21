@@ -1,0 +1,40 @@
+{
+    "Id":  "26183d7daeb97fa069159316354f659dec6a447b35d1f9bdfe0f45ed312ac83b",
+    "Created":  "2026-09-19T16:40:44.146140943Z",
+    "Image":  "sha256:74d69233189f84d2f56332f5bb09902eb413a2c54768fb55b9d547ded1bf5311",
+    "State":  {
+                  "Status":  "exited",
+                  "Running":  false,
+                  "Paused":  false,
+                  "Restarting":  false,
+                  "OOMKilled":  false,
+                  "Dead":  false,
+                  "Pid":  0,
+                  "ExitCode":  255,
+                  "Error":  "",
+                  "StartedAt":  "2026-09-19T16:40:44.212223978Z",
+                  "FinishedAt":  "2026-09-19T16:56:07.924178783Z"
+              },
+    "Mounts":  [
+                   {
+                       "Type":  "bind",
+                       "Source":  "C:/Users/turkins/Desktop/latent-fabric/target/phase3-239",
+                       "Destination":  "/workspace",
+                       "Mode":  "",
+                       "RW":  true,
+                       "Propagation":  "rprivate"
+                   },
+                   {
+                       "Type":  "volume",
+                       "Name":  "lsf-phase3-239-target",
+                       "Source":  "/var/lib/docker/volumes/lsf-phase3-239-target/_data",
+                       "Destination":  "/workspace/target",
+                       "Driver":  "local",
+                       "Mode":  "z",
+                       "RW":  true,
+                       "Propagation":  ""
+                   }
+               ],
+    "CpuLimit":  3000000000,
+    "MemoryLimit":  6442450944
+}
