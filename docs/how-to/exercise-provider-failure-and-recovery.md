@@ -25,7 +25,7 @@ No paid hosted provider, existing user container or operator credential is used.
 ## Prerequisites and complete source
 
 The commands select development source
-`3c2f3e7d84aca662a71f621ece35c2cdc8be9c30`, the merged base reviewed for this
+`55ba1c301518c670820d482bcc991780167e903c`, the merged base reviewed for this
 documentation handoff. Start in a new, clean, private checkout at that exact
 commit; do not reset an existing worktree. Use
 [Rust 1.97.1 and the pinned contributor tools](../development/toolchain.md),
@@ -33,12 +33,12 @@ Python 3.13.5, OpenSSL, GNU `timeout` and a working Docker CLI/daemon. The selec
 real-provider targets are Linux x86_64 gated; a Windows build with zero matching
 tests is not execution evidence. Use only this checkout's Cargo target.
 
-Source/parser checks at this base are not a new provider execution receipt.
-The retained 19-test run below uses `05360c50`; its Cargo lock differs from the
-newer base. Standalone startup/browser-resolution integration belongs to
-[#344](https://github.com/KirilsTurkins/latent-service-fabric/pull/344), inspected
-at `bcd902cdde567745c8783ce995188cc105a12fd9`, not to these embedding commands.
-That feature branch is not incorporated or qualified by this documentation PR.
+The [current executed receipt](../evidence/provider-guide-2026-09-21.json)
+records all 19 selected tests and owned-service cleanup. Its CI merge commit
+`5f192095e761c5899626bc83eec77d128eba55f7` has the same Git tree as this reviewed
+base. The separate Angular T1 step failed; that result does not alter these
+completed provider steps. The earlier `05360c50` receipt remains historical.
+Standalone management composition has its own maintained node workflow.
 
 Follow these maintained sources while running the scenarios; do not copy their
 test credentials or synthetic package trust into an installed node:
@@ -67,7 +67,7 @@ umask 077
 test "$(uname -s)" = Linux
 test "$(uname -m)" = x86_64
 test -z "$(git status --porcelain=v1 --untracked-files=normal)"
-SOURCE_COMMIT=3c2f3e7d84aca662a71f621ece35c2cdc8be9c30
+SOURCE_COMMIT=55ba1c301518c670820d482bcc991780167e903c
 test "$(git -c gc.auto=0 rev-parse HEAD)" = "$SOURCE_COMMIT"
 export CARGO_TARGET_DIR="$PWD/target"
 PROVIDER_REVIEW=$(mktemp -d "${TMPDIR:-/tmp}/lsf-provider-guide.XXXXXXXX")
@@ -119,7 +119,7 @@ timeout --kill-after=30s 420s python3 tools/run_nats_event_tests.py \
 grep -H -E '^test result:|^Removed owned ' "$PROVIDER_REVIEW"/*.log
 ```
 
-At the [retained executed source](../evidence/provider-walkthrough-35454985599.json),
+At the [current executed source](../evidence/provider-guide-2026-09-21.json),
 the selected suites pass **2 S3, 3 Vault, 4 NATS publication and 10 NATS trigger
 tests**, with zero failures or ignored selected tests. Every runner confirms
 owned cleanup. Other test cases are deliberately filtered from these real-server
