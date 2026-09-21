@@ -156,10 +156,11 @@ reproducibility rejects the ordinary `not-checked` observation.
 
 An unsigned observation grants nothing. A separately approved builder signs it
 after tool cleanup, and publisher, builder, SBOM and tenant verification must
-all succeed against the actual package. The native execution T1 gate remains
-closed until [#226](https://github.com/KirilsTurkins/latent-service-fabric/issues/226)
-supplies the sealed web-publication execution projection and proves enforced
-admission, isolated native preparation and restart with these actual artifacts.
+all succeed against the actual package. The [enforced T1 workflow](../testing/angular-t1-workflow.md) binds the sealed
+web-publication execution projection and verifies admission, isolated native
+preparation and restart. Continue with the [complete application guide](../learn/build-and-deliver-angular.mdx)
+for scoped backend calls, actual browser navigation and controlled updates;
+its complete execution receipt remains a separate acceptance boundary.
 
 ## Required conformance
 

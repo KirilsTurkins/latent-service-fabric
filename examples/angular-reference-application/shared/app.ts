@@ -50,12 +50,14 @@ export class App {
     }
   }
 
+  // lsf-example-begin: navigate
   navigate(event: MouseEvent, view: 'main' | 'about') {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     this.view.set(view);
     globalThis.history.pushState(null, '', view === 'about' ? '/about' : '/');
   }
+  // lsf-example-end: navigate
 
   increment() {
     this.count.update(value => value + 1);
