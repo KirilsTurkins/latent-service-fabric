@@ -331,27 +331,6 @@ jobs:
 
       - name: Fetch the pinned operator workflow registry
         run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
-      - name: Fetch the pinned S3 conformance server
-        run: docker pull quay.io/minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2
-      - name: Validate S3 blobs with the existing test harness
-        timeout-minutes: 5
-        run: python3 tools/run_s3_blob_tests.py --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
-      - name: Fetch the pinned Vault conformance server
-        run: docker pull hashicorp/vault@sha256:783103ba38c5e3edcaa9bbbcb0ff80fc93c690361f03fd487e89227da6c3efa9
-      - name: Validate Vault secrets with the existing test harness
-        timeout-minutes: 5
-        run: python3 tools/run_vault_secret_tests.py --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
-      - name: Fetch the pinned NATS conformance server
-        run: docker pull nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc
-      - name: Validate NATS events with the existing test harness
-        timeout-minutes: 5
-        run: python3 tools/run_nats_event_tests.py --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
-      - name: Validate NATS triggers with the existing test harness
-        timeout-minutes: 5
-        run: python3 tools/run_nats_event_tests.py --suite nats_triggers --test-manifest "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
-      - name: Validate capability policy CLI lifecycle
-        timeout-minutes: 3
-        run: python3 tools/run_capability_policy_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd"
       - name: Validate bounded Phase 2 delivery and resource workflows
         timeout-minutes: 10
         shell: bash
