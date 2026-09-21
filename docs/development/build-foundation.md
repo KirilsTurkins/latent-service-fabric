@@ -21,21 +21,18 @@ Code generation runs only as a Cargo build step and writes generated Rust to `OU
 
 ## Pinned Rust inputs
 
-The exact dependency baseline is recorded in both the root `Cargo.toml` and `tools/toolchain.toml`:
+The root `Cargo.toml` is the single authority for direct Rust workspace dependency
+requirements, and every versioned workspace dependency is required to use an exact
+`=version` requirement. The committed root `Cargo.lock` is the authority for the
+resolved graph. Local commands and CI use `--locked`; they do not silently replace
+that graph.
 
-| Area | Version |
-| --- | ---: |
-| Rust toolchain / MSRV | 1.97.1 / 1.94.1 |
-| Tokio | 1.53.1 |
-| Prost | 0.14.4 |
-| Tonic / Tonic Prost | 0.14.6 / 0.14.6 |
-| Tonic Prost Build | 0.14.6 |
-| Vendored `protoc` | 3.2.0 |
-| Tracing / tracing-subscriber | 0.1.44 / 0.3.23 |
-| Wasmtime | 47.0.4 |
-| `wit-bindgen` | 0.60.0 |
-
-The committed root `Cargo.lock` is authoritative. Local commands and CI use `--locked`; they do not silently replace the dependency graph.
+`tools/toolchain.toml` intentionally does **not** duplicate Cargo dependency
+versions. It owns compiler/target selections, contract tooling, SDK toolchains,
+and separately reviewed external binaries such as the checksum-pinned guest
+`wit-bindgen` CLI. Repository validation rejects a reintroduced Rust dependency
+version mirror, so Dependabot can update `Cargo.toml` and `Cargo.lock` without
+creating artificial toolchain-baseline drift.
 
 ## Code-generation ownership
 
