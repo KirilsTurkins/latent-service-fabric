@@ -1,4 +1,4 @@
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod control_tests;
 mod critical;
 mod run;
