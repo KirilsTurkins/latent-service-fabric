@@ -175,9 +175,11 @@ They are not cold-cache performance guarantees. Both receipts preserve every
 command, discovered case, ignore state and compiled package identity, with an
 adjacent checksum for their exact bytes.
 
-The full Rust/runtime/product job in that run remains a separate acceptance
-condition. Neither successful host selection substitutes for its result, the
-six-language provider contracts or the selected security/browser checks.
+The full CI run also completed successfully: exact workspace discovery,
+Rust/runtime/product execution, six-language provider contracts, catalog, MSRV,
+OCI, website and selected security checks passed. All 18 PR checks were successful
+or intentionally unselected. The host receipts remain evidence for their own
+scopes; they do not substitute for those separately executed jobs.
 
 ## Before/after command review
 
