@@ -50,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.scope.outputs.matrix) }}
-    uses: ./.github/workflows/security-rustsec.yml
+    uses: KirilsTurkins/latent-service-fabric/.github/workflows/security-rustsec.yml@9a99d1f364eb0c5d09b879fa857811820c8bb005
     with:
       source-ref: ${{ matrix.ref }}
 
