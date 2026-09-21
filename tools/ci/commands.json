@@ -2898,7 +2898,7 @@
       "sha256": "2cbf01c9f6bdd0f81d2824e07ce382cd298717758c86b67fd7b03360b08662df"
     },
     "tools/run_angular_t1_workflow.py": {
-      "sha256": "9acd623b3e78e6e02309b2acb11d1da3d976bc528afb3d80415c60367ebf11b6"
+      "sha256": "75adf306aa051e3fb0731b4a9713b64b5663bf20f5a65b790c7e5db50917deef"
     },
     "tools/run_capability_policy_workflow.py": {
       "sha256": "0db72276676bd30bfc1a1ed9bb01c3e0e634c25d02dd6af1f62067a070c27518"
@@ -5115,6 +5115,20 @@
       "ProviderWorkflowTests.test_only_actual_installed_profiles_and_canonical_identity_are_accepted",
       "ProviderWorkflowTests.test_startup_failure_keeps_only_closed_node_stage_and_code"
     ],
+    "tools/tests/test_phase3_native_cache_audit.py": [
+      "NativeCacheAuditTests.test_empty_baseline_does_not_waive_component_identity",
+      "NativeCacheAuditTests.test_required_observation_and_original_overflow_limit_stay_fail_closed",
+      "NativeCacheAuditTests.test_resident_image_can_have_no_pre_restart_native_store_hits"
+    ],
+    "tools/tests/test_phase3_reference_workflow.py": [
+      "ReferenceBuildTests.test_reference_fixture_rejects_wrapper_only_releases",
+      "ReferenceBuildTests.test_reference_inputs_request_one_capability_but_never_claim_principal_authority",
+      "ReferenceBuildTests.test_releases_capture_different_maintained_version_sources",
+      "ReferenceCellBypassTests.test_lease_age_can_advance_without_admitting_a_render",
+      "ReferencePeerTests.test_only_complete_authorized_bounded_get_profile_is_accepted",
+      "ReferencePeerTests.test_unbounded_ambiguous_or_body_bearing_requests_are_rejected",
+      "ReferencePromotionTests.test_rejection_is_observed_without_replaying_or_fabricating_certainty"
+    ],
     "tools/tests/test_phase3_resource.py": [
       "EvidenceTests.test_admission_saturation_preserves_actual_population_and_stops_mutating",
       "EvidenceTests.test_counters_reject_null_bool_negative_and_lossy_json_number",
@@ -5788,6 +5802,8 @@
     "tools/tests/test_phase2_resource_clock.py",
     "tools/tests/test_phase2_resource_probe.py",
     "tools/tests/test_phase3_management_workflow.py",
+    "tools/tests/test_phase3_native_cache_audit.py",
+    "tools/tests/test_phase3_reference_workflow.py",
     "tools/tests/test_phase3_resource.py",
     "tools/tests/test_phase3_resource_oci.py",
     "tools/tests/test_phase3_resource_outcome.py",
