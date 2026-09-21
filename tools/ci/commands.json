@@ -5084,6 +5084,14 @@
       "ClockDescriptorTests.test_live_linux_renewal_files_are_classified_and_lock_is_retained",
       "ClockDescriptorTests.test_unknown_paths_oversized_files_and_sockets_are_not_exempt"
     ],
+    "tools/tests/test_phase2_resource_probe.py": [
+      "ProcSnapshotTests.test_continuous_disappearance_has_a_finite_attempt_bound",
+      "ProcSnapshotTests.test_disappearance_does_not_refresh_the_original_deadline",
+      "ProcSnapshotTests.test_disappearance_does_not_reset_aggregate_read_bytes",
+      "ProcSnapshotTests.test_fd_closing_during_enumeration_requires_a_new_complete_snapshot",
+      "ProcSnapshotTests.test_other_io_failures_remain_visible",
+      "ProcSnapshotTests.test_owner_exit_is_not_treated_as_a_transient_entry"
+    ],
     "tools/tests/test_phase3_management_workflow.py": [
       "ProviderWorkflowTests.test_explicit_invocation_budgets_fit_the_http_and_blob_capsules",
       "ProviderWorkflowTests.test_http_fixture_checks_credential_and_counts_denied_requests_without_echo",
@@ -5725,6 +5733,7 @@
     "tools/tests/test_phase2_operator_workflow.py",
     "tools/tests/test_phase2_resource_binaries.py",
     "tools/tests/test_phase2_resource_clock.py",
+    "tools/tests/test_phase2_resource_probe.py",
     "tools/tests/test_phase3_management_workflow.py",
     "tools/tests/test_phase3_resource.py",
     "tools/tests/test_phase3_resource_oci.py",
@@ -5779,7 +5788,7 @@
     ".github/workflows/phase0-regression.yml": "615f39a20d24e9b5ba6479edb8bbb8cd803da2d5115bc1cf2a231c2a2dc7be84",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
-    ".github/workflows/security-baseline.yml": "b95b736313e9e06217a89cbef802ab42fa20db97fb5e4601de93baea36b4e0ce",
-    ".github/workflows/security-rustsec.yml": "5a0ccef921b7fcf9dc7fd1029ca3d4b57591d091016858dcb78876b29fd7eaeb"
+    ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
+    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b"
   }
 }
