@@ -6,11 +6,10 @@ mod signing;
 use latent_packaging::{read_package_directory, PackagingLimits};
 use latent_signing::{decode_web_build_observation, ProvenanceLimits, WEB_ASSEMBLY_BUILD_TYPE};
 use serde_json::json;
-use std::{fs, os::unix::fs::PermissionsExt, path::Path};
+use std::{fs, io::Write, os::unix::fs::PermissionsExt, path::Path};
 
 fn write(path: &Path, bytes: &[u8]) {
     assert!(bytes.len() <= 256 * 1024);
-    use std::io::Write;
     let mut file = fs::OpenOptions::new()
         .write(true)
         .create_new(true)

@@ -70,17 +70,24 @@ fn execute_inner(cli: &Cli, command: &PackageCommand) -> Result<Outcome, Failure
             let tenant = TenantId(cli.tenant.clone().ok_or_else(|| {
                 Failure::local("tenant-required", "Package verification requires --tenant.")
             })?);
-            let report = latent_policy::supply_chain::verify_package_once(
-                &policy,
-                latent_policy::supply_chain::PackageVerificationRequest {
-                    tenant: &tenant,
-                    package: &package,
-                    evidence: &evidence,
-                    unix_seconds: now,
-                },
-            )
-            .map_err(failure)?;
-            let mut document = serde_json::to_value(report).map_err(|_| {
+            let request = latent_policy::supply_chain::PackageVerificationRequest {
+                tenant: &tenant,
+                package: &package,
+                evidence: &evidence,
+                unix_seconds: now,
+            };
+            let report = match package.layout().config().kind {
+                latent_artifacts::package::PackageKind::BrowserAssets
+                | latent_artifacts::package::PackageKind::SsrPackage => serde_json::to_value(
+                    latent_policy::supply_chain::verify_web_package_once(&policy, request)
+                        .map_err(failure)?,
+                ),
+                latent_artifacts::package::PackageKind::Capsule => serde_json::to_value(
+                    latent_policy::supply_chain::verify_package_once(&policy, request)
+                        .map_err(failure)?,
+                ),
+            };
+            let mut document = report.map_err(|_| {
                 Failure::local(
                     "report-limit",
                     "Could not encode the bounded verification report.",
