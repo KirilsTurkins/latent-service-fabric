@@ -194,14 +194,14 @@ fn static_web_routes_mount_exact_publication_without_application_identity_and_su
         Some(TriggerTargetIdentity::StaticWeb { .. })
     ));
 
-    let selected = selected(&store, "alice", "/docs/guide/").unwrap();
-    assert!(selected.revision().is_none());
+    let accepted = selected(&store, "alice", "/docs/guide/").unwrap();
+    assert!(accepted.revision().is_none());
     let AcceptedHttpTarget::StaticWeb {
         publication: selected_publication,
         mount_path,
         site_path,
         selection,
-    } = selected.target()
+    } = accepted.target()
     else {
         panic!("static target")
     };
@@ -212,7 +212,7 @@ fn static_web_routes_mount_exact_publication_without_application_identity_and_su
         .with_current(&TenantId("alice".into()), &mut |_| Ok(()))
         .unwrap();
     assert!(selected(&store, "alice", "/_lsf/assets/anything").is_err());
-    drop(selected);
+    drop(accepted);
 
     drop(store);
     let store = catalog(&roots[1], &repo);
