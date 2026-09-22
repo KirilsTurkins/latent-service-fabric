@@ -52,8 +52,20 @@ def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
 
+def load_toolchain() -> dict:
+    return tomllib.loads((ROOT / "tools/toolchain.toml").read_text(encoding="utf-8"))
+
+
+def guest_tool_version(config: dict, name: str) -> str:
+    selected = config.get("guest-tools", {}).get(name, {})
+    version = selected.get("version") if isinstance(selected, dict) else None
+    if not isinstance(version, str) or not version.strip():
+        raise ValueError(f"missing guest tool contract version: {name}")
+    return version
+
+
 def check_tools() -> None:
-    config = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
+    config = load_toolchain()
     paths, materials = resolve_tools(config, ROOT, BUILD_ENVIRONMENT)
     TOOL_PATHS.update(paths)
     TOOL_MATERIALS.update({item["name"]: item for item in materials})
@@ -65,7 +77,7 @@ def check_tools() -> None:
         TOOL_PATHS[tool] = Path(located).resolve(strict=True)
         TOOL_MATERIALS[tool] = file_identity(TOOL_PATHS[tool], tool)
     for tool, version in (("wasm-tools", config["contracts"]["wasm-tools"]),
-                          ("wit-bindgen", config["rust"]["dependencies"]["wit-bindgen"]),
+                          ("wit-bindgen", guest_tool_version(config, "wit-bindgen")),
                           ("zig", config["sdk"]["zig"])):
         actual = run(tool, "version" if tool == "zig" else "--version", capture=True).strip()
         if version not in actual.split():
@@ -137,7 +149,7 @@ def bindings(output: Path, update: bool) -> None:
         for path in sorted(destination.iterdir()):
             if path.is_file():
                 hashes[f"{language}/{path.name}"] = digest(path.read_bytes())
-    value = {"formatVersion": 1, "generator": "wit-bindgen 0.60.0",
+    value = {"formatVersion": 1, "generator": f"wit-bindgen {guest_tool_version(load_toolchain(), 'wit-bindgen')}",
              "world": "latent:platform/capsule@0.4.0", "outputs": hashes}
     if update:
         write_json(LOCK, value)
