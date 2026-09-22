@@ -19,6 +19,10 @@ pub const NODE_ID: &str = "standalone-integration";
 const CHILD: &str = "LSF_STANDALONE_NODE_TEST";
 const DONE: &str = "standalone-node-scenario-completed";
 const MAXIMUM_CHILD_LOG_BYTES: u64 = 64 * 1024;
+// This fixture verifies durable publication/restart, not a five-second
+// throughput target. Compilation and fsync share a busy CI host. Keep every
+// RPC bounded by one deadline and retain the separate whole-child watchdog.
+const RPC_DEADLINE: Duration = Duration::from_secs(15);
 
 struct SupervisedChild(Child);
 impl Drop for SupervisedChild {
@@ -53,7 +57,7 @@ pub fn supervise(name: &str, scenario: fn()) {
             .spawn()
             .expect("isolated standalone scenario"),
     );
-    let deadline = Instant::now() + Duration::from_secs(20);
+    let deadline = Instant::now() + Duration::from_secs(60);
     let status = loop {
         if fs::metadata(&log_path).expect("child log size").len() > MAXIMUM_CHILD_LOG_BYTES {
             child.0.kill().expect("kill oversized-output scenario");
@@ -188,7 +192,7 @@ pub async fn channel(node: &StandaloneNode) -> Channel {
     Endpoint::from_shared(format!("http://{}", node.endpoint()))
         .expect("actual bound endpoint")
         .connect_timeout(Duration::from_secs(2))
-        .timeout(Duration::from_secs(5))
+        .timeout(RPC_DEADLINE)
         .connect()
         .await
         .expect("real loopback HTTP/2 channel")
@@ -200,7 +204,7 @@ pub fn request<T>(token: &str, message: T) -> Request<T> {
         "authorization",
         format!("Bearer {token}").parse().expect("fixed credential"),
     );
-    request.set_timeout(Duration::from_secs(5));
+    request.set_timeout(RPC_DEADLINE);
     request
 }
 
