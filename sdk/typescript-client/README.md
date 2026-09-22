@@ -1,7 +1,10 @@
 # TypeScript client
 
-The browser-safe package root contains transport-neutral interfaces and the
-shared [eight-operation profile](../profile/README.md). The separate
+The browser-safe package root exposes the shared
+[eight-operation profile](../profile/README.md) as `profile`. Its obsolete
+root-level invocation models, `LatentClient` and guest-context scaffolding have
+been removed during alpha. Import request, response and publication types from
+`profile`. The separate
 `@latent/sdk/node` entry implements that profile with a bounded Node.js HTTP/2
 Protobuf client. It is intentionally unavailable through a browser export
 condition. Do not bundle the Node transport, client bearer token, management

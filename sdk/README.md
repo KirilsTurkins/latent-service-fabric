@@ -36,7 +36,7 @@ profiles, signed admission and runtime validation.
 
 WIT remains authoritative for typed capsule contracts. Language SDKs are convenience surfaces and must preserve deadlines, cancellation, platform errors, domain errors, resource budgets, identity, and idempotency semantics.
 
-Go, .NET and Java use their complete profile interfaces and native transport
+Go, .NET, Java and TypeScript use their complete profile interfaces and native transport
 clients. Their obsolete invocation models, compatibility constructors and
 adapters have been removed. The older interfaces described below still apply only to their
 remaining language-specific implementations.
