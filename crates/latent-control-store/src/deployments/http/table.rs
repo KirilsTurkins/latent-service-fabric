@@ -113,14 +113,12 @@ impl HttpTable {
             if stored.manifest.capacity() > MAX_DEFINITION_BYTES
                 || stored.generation == 0
                 || stored.generation > state
-                || stored.component.0.capacity() > 71
-                || stored.component.0.parse::<ArtifactBlobDigest>().is_err()
             {
                 return Err(corrupt());
             }
             // Four serialized lengths plus a fixed node allowance cover the
             // retained canonical string, decoded strings/maps, matcher and keys.
-            retained = retained.saturating_add(4 * stored.manifest.capacity() + 4096);
+            retained = retained.saturating_add(4 * stored.manifest.capacity() + 6144);
             if retained > MAX_TABLE_BYTES {
                 return Err(crate::http_routes::capacity());
             }
@@ -128,16 +126,25 @@ impl HttpTable {
                 .decode_trigger(stored.manifest.as_bytes())
                 .map_err(|_| corrupt())?;
             let (manifest, matcher) = definition::normalize(decoded).map_err(|_| corrupt())?;
-            if manifest
-                .target
-                .deployment_generation
-                .is_none_or(|g| g > route)
-            {
-                return Err(corrupt());
-            }
             if codec::manifest(&manifest)? != stored.manifest {
                 return Err(corrupt());
             }
+            let target = match data.format_version {
+                1 => {
+                    if stored.target.is_some() {
+                        return Err(corrupt());
+                    }
+                    legacy_target(&manifest, stored.component.as_ref().ok_or_else(corrupt)?)?
+                }
+                2 => {
+                    if stored.component.is_some() {
+                        return Err(corrupt());
+                    }
+                    stored.target.clone().ok_or_else(corrupt)?
+                }
+                _ => return Err(corrupt()),
+            };
+            validate_target(&manifest, &target, route)?;
             let key = (&manifest.metadata.tenant, &manifest.id);
             if rows
                 .last()
@@ -153,7 +160,11 @@ impl HttpTable {
                     return Err(corrupt());
                 }
             }
-            rows.push(Row { manifest, matcher });
+            rows.push(Row {
+                manifest,
+                matcher,
+                target,
+            });
         }
         let mut last_state = 0;
         let mut ids = std::collections::BTreeSet::new();
@@ -195,11 +206,7 @@ impl HttpTable {
                 if r.action != TriggerOperationAction::Apply
                     || r.object_generation != stored.generation
                     || r.manifest_digest != codec::hash(stored.manifest.as_bytes())
-                    || r.component != stored.component
-                    || Some(&r.publication.id) != row.manifest.target.publication.as_ref()
-                    || Some(&r.deployment_id) != row.manifest.target.route.as_ref()
-                    || Some(&r.revision) != row.manifest.target.revision.as_ref()
-                    || Some(r.deployment_generation) != row.manifest.target.deployment_generation
+                    || r.target_identity().as_ref() != Some(&row.target)
                 {
                     return Err(corrupt());
                 }
@@ -237,7 +244,7 @@ impl HttpTable {
         VersionedTrigger {
             manifest: self.rows[index].manifest.clone(),
             generation: self.data.records[index].generation,
-            component: self.data.records[index].component.clone(),
+            component: self.rows[index].target.component().cloned(),
         }
     }
     pub fn floor(&self) -> u64 {
@@ -248,14 +255,94 @@ impl HttpTable {
     }
 }
 
+fn legacy_target(
+    manifest: &TriggerManifest,
+    component: &ReleaseDigest,
+) -> Result<TriggerTargetIdentity, PlatformError> {
+    let tenant = manifest.metadata.tenant.clone().ok_or_else(corrupt)?;
+    let TriggerTarget::Application(target) = &manifest.target else {
+        return Err(corrupt());
+    };
+    Ok(TriggerTargetIdentity::Application {
+        publication: PublicationRef {
+            id: target.publication.clone().ok_or_else(corrupt)?,
+            scope: LifecycleScope::Tenant(tenant),
+        },
+        component: component.clone(),
+        deployment_id: target.route.clone().ok_or_else(corrupt)?,
+        deployment_generation: target.deployment_generation.ok_or_else(corrupt)?,
+        revision: target.revision.clone().ok_or_else(corrupt)?,
+    })
+}
+
+fn validate_target(
+    manifest: &TriggerManifest,
+    target: &TriggerTargetIdentity,
+    route_generation: u64,
+) -> Result<(), PlatformError> {
+    let tenant = manifest.metadata.tenant.as_ref().ok_or_else(corrupt)?;
+    if target
+        .publication()
+        .scope
+        .tenant()
+        .is_none_or(|scope| scope != tenant)
+    {
+        return Err(corrupt());
+    }
+    match (target, &manifest.target) {
+        (
+            TriggerTargetIdentity::Application {
+                publication,
+                component,
+                deployment_id,
+                deployment_generation,
+                revision,
+            },
+            TriggerTarget::Application(manifest_target),
+        ) => {
+            if component.0.capacity() > 71
+                || component.0.parse::<ArtifactBlobDigest>().is_err()
+                || deployment_id.capacity() > MAX_IDENTIFIER_BYTES
+                || !definition::token(deployment_id, MAX_IDENTIFIER_BYTES)
+                || *deployment_generation == 0
+                || *deployment_generation > route_generation
+                || revision.capacity() > 83
+                || revision
+                    .strip_prefix("revision-v1:")
+                    .is_none_or(|digest| digest.parse::<ArtifactBlobDigest>().is_err())
+                || manifest_target.publication.as_ref() != Some(&publication.id)
+                || manifest_target.route.as_ref() != Some(deployment_id)
+                || manifest_target.deployment_generation != Some(*deployment_generation)
+                || manifest_target.revision.as_ref() != Some(revision)
+            {
+                return Err(corrupt());
+            }
+        }
+        (
+            TriggerTargetIdentity::StaticWeb {
+                publication,
+                web_manifest_digest,
+                assets_digest,
+                web_generation,
+            },
+            TriggerTarget::StaticWeb(manifest_target),
+        ) => {
+            if manifest_target.publication != publication.id
+                || *web_generation == 0
+                || [web_manifest_digest, assets_digest].iter().any(|digest| {
+                    digest.capacity() > 71 || digest.parse::<ArtifactBlobDigest>().is_err()
+                })
+            {
+                return Err(corrupt());
+            }
+        }
+        _ => return Err(corrupt()),
+    }
+    Ok(())
+}
+
 fn validate_receipt(r: &TriggerOperationReceipt) -> Result<(), PlatformError> {
-    for value in [
-        &r.tenant,
-        &r.actor.subject,
-        &r.operation_id,
-        &r.trigger_id,
-        &r.deployment_id,
-    ] {
+    for value in [&r.tenant, &r.actor.subject, &r.operation_id, &r.trigger_id] {
         if value.capacity() > MAX_IDENTIFIER_BYTES
             || !definition::token(value, MAX_IDENTIFIER_BYTES)
         {
@@ -263,31 +350,78 @@ fn validate_receipt(r: &TriggerOperationReceipt) -> Result<(), PlatformError> {
         }
     }
     r.actor.validate().map_err(|_| corrupt())?;
-    if r.format_version != 1
+    let target = r.target_identity().ok_or_else(corrupt)?;
+    let version_valid = match r.format_version {
+        1 => {
+            r.target.is_none()
+                && r.publication.is_some()
+                && r.component.is_some()
+                && r.deployment_id.is_some()
+                && r.deployment_generation.is_some()
+                && r.revision.is_some()
+                && matches!(target, TriggerTargetIdentity::Application { .. })
+        }
+        2 => {
+            r.target.is_some()
+                && r.publication.is_none()
+                && r.component.is_none()
+                && r.deployment_id.is_none()
+                && r.deployment_generation.is_none()
+                && r.revision.is_none()
+        }
+        _ => false,
+    };
+    if !version_valid
         || r.expected_state_version.checked_add(1) != Some(r.state_version)
-        || r.route_generation == 0
         || r.route_generation > r.state_version
-        || r.deployment_generation == 0
-        || r.deployment_generation > r.route_generation
-        || r.publication
+        || target
+            .publication()
             .scope
             .tenant()
-            .is_none_or(|t| t.0 != r.tenant || t.0.capacity() > MAX_IDENTIFIER_BYTES)
-        || r.revision.capacity() > 83
-        || r.revision
-            .strip_prefix("revision-v1:")
-            .is_none_or(|s| s.parse::<ArtifactBlobDigest>().is_err())
-        || [
-            &r.request_digest,
-            &r.manifest_digest,
-            &r.receipt_digest,
-            &r.component.0,
-        ]
-        .iter()
-        .any(|s| s.capacity() > 71 || s.parse::<ArtifactBlobDigest>().is_err())
+            .is_none_or(|tenant| tenant.0 != r.tenant || tenant.0.capacity() > MAX_IDENTIFIER_BYTES)
+        || [&r.request_digest, &r.manifest_digest, &r.receipt_digest]
+            .iter()
+            .any(|digest| digest.capacity() > 71 || digest.parse::<ArtifactBlobDigest>().is_err())
         || codec::receipt_hash(r)? != r.receipt_digest
     {
         return Err(corrupt());
+    }
+    match &target {
+        TriggerTargetIdentity::Application {
+            component,
+            deployment_id,
+            deployment_generation,
+            revision,
+            ..
+        } => {
+            if component.0.capacity() > 71
+                || component.0.parse::<ArtifactBlobDigest>().is_err()
+                || deployment_id.capacity() > MAX_IDENTIFIER_BYTES
+                || !definition::token(deployment_id, MAX_IDENTIFIER_BYTES)
+                || *deployment_generation == 0
+                || *deployment_generation > r.route_generation
+                || revision.capacity() > 83
+                || revision
+                    .strip_prefix("revision-v1:")
+                    .is_none_or(|digest| digest.parse::<ArtifactBlobDigest>().is_err())
+            {
+                return Err(corrupt());
+            }
+        }
+        TriggerTargetIdentity::StaticWeb {
+            web_manifest_digest,
+            assets_digest,
+            web_generation,
+            ..
+        } => {
+            if *web_generation == 0
+                || [web_manifest_digest, assets_digest].iter().any(|digest| {
+                    digest.capacity() > 71 || digest.parse::<ArtifactBlobDigest>().is_err()
+                })
+            {
+                return Err(corrupt());
+            }
+        }
     }
     match r.action {
         TriggerOperationAction::Apply
