@@ -147,7 +147,7 @@ def bindings(output: Path, update: bool) -> None:
     if update:
         write_json(LOCK, value)
     elif json.loads(LOCK.read_text()) != value:
-        raise ValueError("guest binding drift: review WIT/generator changes and use --update-bindings\n" +\n                         json.dumps(value, indent=2))
+        raise ValueError("guest binding drift: review WIT/generator changes and use --update-bindings\n" + json.dumps(value, indent=2))
 
 
 def package_inputs(directory: Path, profile: dict, source: Path, component: Path) -> None:
