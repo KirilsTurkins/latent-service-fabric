@@ -145,7 +145,7 @@ pub struct TriggerOperationReceipt {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "crate::http_routes::codec::release_option"
+        with = "crate::rollouts::codec::optional"
     )]
     pub component: Option<ReleaseDigest>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
