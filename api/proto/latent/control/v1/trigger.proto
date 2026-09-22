@@ -95,6 +95,26 @@ enum TriggerOperationAction {
   TRIGGER_OPERATION_ACTION_APPLY = 1;
   TRIGGER_OPERATION_ACTION_DELETE = 2;
 }
+enum TriggerReceiptTargetKind {
+  TRIGGER_RECEIPT_TARGET_KIND_UNSPECIFIED = 0;
+  TRIGGER_RECEIPT_TARGET_KIND_APPLICATION = 1;
+  TRIGGER_RECEIPT_TARGET_KIND_STATIC_WEB = 2;
+}
+
+message TriggerReceiptTarget {
+  TriggerReceiptTargetKind kind = 1;
+  PublicationRef publication = 2;
+  // Application-only identity.
+  string component_digest = 3;
+  string deployment_id = 4;
+  uint64 deployment_generation = 5;
+  string revision = 6;
+  // Static-web-only identity.
+  string web_manifest_digest = 7;
+  string assets_digest = 8;
+  uint64 web_generation = 9;
+}
+
 // Retained history is never current permission to route or execute a request.
 message TriggerOperationReceipt {
   uint32 format_version = 1;
@@ -117,6 +137,9 @@ message TriggerOperationReceipt {
   string revision = 18;
   uint64 completed_at_unix_millis = 19;
   string receipt_digest = 20;
+  // Format-v2 exact target identity. Fields 14-18 are retained only for
+  // format-v1 application receipt compatibility and are empty for v2 writes.
+  TriggerReceiptTarget target = 21;
 }
 message GetTriggerOperationRequest {
   string operation_id = 1;
