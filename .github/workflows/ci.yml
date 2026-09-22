@@ -7,6 +7,11 @@ on:
       - development
   workflow_dispatch:
     inputs:
+      cargo_dependency_cache:
+        description: "Dependency-cache experiment (baseline remains the default)"
+        type: choice
+        options: [baseline, recipe]
+        default: baseline
       run_catalog_scale:
         description: "Run the heavyweight 100,000-release catalog acceptance probe"
         type: boolean
@@ -69,7 +74,7 @@ jobs:
         run: python -m pip install --requirement tools/requirements.lock
       - name: Validate documentation and profile selection
         run: |
-          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff
           python3 tools/ci_coverage.py
           LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner
           python3 tools/validate_docs.py
@@ -138,11 +143,19 @@ jobs:
         with:
           components: rustfmt, clippy
           targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Identify the opt-in dependency-cache recipe
+        if: github.event_name == 'workflow_dispatch' && inputs.cargo_dependency_cache == 'recipe'
+        id: cargo-cache-identity
+        env:
+          # Match rust-cache's non-incremental CI default before observing inputs.
+          CARGO_INCREMENTAL: "0"
+        run: python3 tools/ci_cargo_cache.py --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/lsf-cargo-cache-identity.json"
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: lsf-ci-dependencies-v1
-          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          prefix-key: ${{ inputs.cargo_dependency_cache == 'recipe' && steps.cargo-cache-identity.outputs.prefix || 'lsf-ci-dependencies-v1' }}
+          shared-key: ${{ inputs.cargo_dependency_cache == 'recipe' && 'host-correctness' || '' }}
+          key: ${{ inputs.cargo_dependency_cache == 'recipe' && 'ubuntu-24.04-recipe' || format('ubuntu-24.04-{0}', hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml')) }}
           cache-targets: false
           cache-bin: false
           cache-workspace-crates: false
@@ -168,40 +181,25 @@ jobs:
         if: needs.profile.outputs.renderer == 'true'
         run: python3 tools/run_angular_renderer_tests.py --preflight --diagnostic-root "$RUNNER_TEMP/owned-renderer"
       - name: Check formatting
-        run: cargo fmt --all --check
+        run: python3 tools/ci_cargo.py run format
       - name: Check deterministic helper dependency boundaries
         timeout-minutes: 5
         run: |
           python3 tools/check_testkit_dependencies.py
-          cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=1
-          cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=4
-          cargo test -p latent-admission -p latent-scheduler --lib --locked
-          cargo test -p latent-testkit --no-default-features --lib --test test_support_compatibility --locked
-          cargo run -p latent-testkit --no-default-features --example deadline --locked
-          cargo run -p latent-testkit --no-default-features --example cancellation --locked
+          python3 tools/ci_cargo.py run deterministic
       - name: Check workspace
-        run: cargo check --workspace --all-targets --all-features --locked
+        run: python3 tools/ci_cargo.py run workspace-check
       - name: Check generated RPC and Component Model bindings
-        run: |
-          cargo check -p latent-rpc --all-targets --all-features --locked
-          cargo check -p latent-component-bindings --locked
-          cargo check -p latent-component-bindings --target wasm32-wasip2 --locked
-          cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
-          cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
+        run: python3 tools/ci_cargo.py run bindings
       - name: Check independently selected production packages
-        run: |
-          cargo check -p latent -p latentd --all-features --locked
-          cargo check -p latent-wasmtime --bin latent-aot-compiler --all-features --locked
+        run: python3 tools/ci_cargo.py run production
       - name: Run Clippy
         id: clippy
         env:
           CARGO_TERM_COLOR: never
         run: |
           status=0
-          cargo clippy --workspace --all-targets --all-features --locked > "$RUNNER_TEMP/lsf-clippy.log" 2>&1 || status=$?
-          if [ "$status" -eq 0 ]; then
-            cargo clippy -p latent -p latentd -p latent-testkit -p latent-admission --all-targets --all-features --locked --no-deps -- -D warnings >> "$RUNNER_TEMP/lsf-clippy.log" 2>&1 || status=$?
-          fi
+          python3 tools/ci_cargo.py run clippy > "$RUNNER_TEMP/lsf-clippy.log" 2>&1 || status=$?
           tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
           python3 - <<'PY'
           import os
@@ -218,9 +216,7 @@ jobs:
         if: failure() && steps.clippy.outcome == 'failure'
         run: tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
       - name: Build workspace binaries and test harnesses
-        run: |
-          cargo build --workspace --all-targets --all-features --locked
-          cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics > "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
+        run: python3 tools/ci_cargo.py run prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
       - name: Verify complete registered workspace test discovery
         run: python3 tools/ci_suite_discovery.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --receipt "$RUNNER_TEMP/ci-discovery.json"
       - name: Prepare authenticated AOT test inputs
@@ -234,11 +230,11 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
-          cargo test --workspace --all-targets --all-features --locked 2>&1 | tee "$RUNNER_TEMP/ci-workspace-tests.log"
+          python3 tools/ci_cargo.py run workspace-tests 2>&1 | tee "$RUNNER_TEMP/ci-workspace-tests.log"
           python3 tools/ci_suite_discovery.py --execution-log "$RUNNER_TEMP/ci-workspace-tests.log"
-          cargo test -p latent-admission -p latent-scheduler --doc --locked 2>&1 | tee "$RUNNER_TEMP/ci-doctests.log"
+          python3 tools/ci_cargo.py run doctests 2>&1 | tee "$RUNNER_TEMP/ci-doctests.log"
           python3 tools/ci_suite_discovery.py --recipe explicit-doctests --execution-log "$RUNNER_TEMP/ci-doctests.log"
-          cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests 2>&1 | tee "$RUNNER_TEMP/ci-signing-compatibility.log"
+          python3 tools/ci_cargo.py run signing-compatibility 2>&1 | tee "$RUNNER_TEMP/ci-signing-compatibility.log"
           python3 tools/ci_suite_discovery.py --recipe signing-compatibility --execution-log "$RUNNER_TEMP/ci-signing-compatibility.log"
 
       - name: Check metadata working-set suite selection and observation validation
@@ -454,6 +450,14 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Retain the opt-in dependency-cache identity
+        if: always() && steps.cargo-cache-identity.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cargo-dependency-cache-identity-${{ github.sha }}
+          path: ${{ runner.temp }}/lsf-cargo-cache-identity.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Retain exact workspace test discovery and custom-harness execution
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -640,7 +644,7 @@ jobs:
                  (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Check workspace at MSRV
         if: needs.profile.outputs.profile == 'full'
-        run: cargo +1.94.1 check --workspace --all-targets --all-features --locked
+        run: python3 tools/ci_cargo.py run msrv
 
       - name: Check all selected reverse dependents at MSRV
         if: needs.profile.outputs.profile == 'fast'
