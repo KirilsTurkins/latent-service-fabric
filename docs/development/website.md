@@ -181,6 +181,8 @@ human review of an exact commit and version-bound execution receipts. A page
 being present or a test file existing cannot satisfy those conditions. #237
 retains the integrated runbook/support matrix, with #357/#358/#359/#361 as its
 delegated authoring owners. No runtime examples are executed by this checker.
+Use the [27-outcome review checklist](phase3-guide-review.md) to collect rendered
+walkthrough results and record the exact source reviewed.
 
 ## Narrow handoffs to the remaining children
 

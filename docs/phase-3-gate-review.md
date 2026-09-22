@@ -4,13 +4,17 @@
 [#240](https://github.com/KirilsTurkins/latent-service-fabric/issues/240), not a
 Phase 3 completion declaration or runtime release. The implementation receipts
 below retain their original source and measurement identities. Required guide
-reviews, public Wiki cutover, native delivery and security-monitoring activation
-remain separate acceptance work.
+reviews, public Wiki cutover, native delivery and the static-site extension
+remain separate acceptance work. Security-monitoring activation #282 and the
+actual Angular reference workflow #236 are complete.
 
 This review starts from development
 `6c63b68064ae44284d931e80d76d1e9012189b2b`, after the integrated security and
 guide-execution changes were merged. It does not certify a later integration
 commit merely because that commit contains the same documentation.
+Delivery status was refreshed against development
+`02b7989a7eff58620863cb678a099ecbacd98274` on September 22, 2026. The retained
+receipts below keep their original execution identities.
 
 ## Dependency and evidence closure
 
@@ -21,14 +25,18 @@ commit merely because that commit contains the same documentation.
 | Six executable clients #228/#230/#260–#263 | [Six-client guide receipts](evidence/phase3-sdk-guides-35509915448/README.md): 18 assertions per language, 54 activation identities, six operation receipts and 24 physically closed held requests. | Human guide review is separate from native transport and lifecycle qualification. |
 | Publication correction #264–#267 | The [security matrix](testing/phase3-security.md) binds unchanged-component corrections, independent publications/tenants, revocation, legacy ambiguity and restart authority to exact maintained cases. All four implementation tickets are closed. | Preserve exact publication selection across every API/client and the final integration. |
 | Registry policy #268–#270 and decisions #271–#274 | [OCI resource qualification](testing/phase3-resource-oci.md), the integrated security selection, and the accepted versioned registry, effects, wait-ownership, isolation and freshness decisions. These tickets are closed. | #274 remains a design handoff; it does not deliver cluster routing. |
-| Runtime security #277–#281 and #238 | [Source-clean manual receipt](evidence/phase3-security-2026-09-20/manual-current.json), with [checksum](evidence/phase3-security-2026-09-20/manual-current.json.sha256): 186 libtest entries, two compiler mains and four separate-node workflows. #374 merged at `2967a9a1f069aaa476e2a294137bf7843a632a88` after all 17 checks passed; #238 is closed. | Security monitoring #282 has its own default-branch activation and scheduled-ref evidence. |
+| Runtime security #277–#281 and #238 | [Source-clean manual receipt](evidence/phase3-security-2026-09-20/manual-current.json), with [checksum](evidence/phase3-security-2026-09-20/manual-current.json.sha256): 186 libtest entries, two compiler mains and four separate-node workflows. #374 merged at `2967a9a1f069aaa476e2a294137bf7843a632a88` after all 17 checks passed; #238 is closed. | #282 is closed: [activation and monitoring evidence](development/security-baseline-evidence.md) retains the approved default-branch workflow, scheduled run `35586505063`, manual run `35752339515`, both maintained refs and the required security aggregate. |
 | Resource equation #239 | [Provider recovery](testing/phase3-resource-recovery.md), [renderer memory/storage](testing/phase3-resource-renderer.md), [event and child ownership](testing/phase3-resource-events.md), and OCI qualification. #376 merged after exact-head CI passed; #239 is closed. | Keep profile-specific measurements, failed attempts and unexported counters explicit. |
-| Angular application/reference #44/#236 | [Protected T1 workflow contract](testing/angular-t1-workflow.md) and [renderer qualification](testing/angular-renderer-qualification.md). | Finish the current reference PR's actual application/browser checks and close #236 before the umbrella. |
+| Angular application/reference #44/#236 | [Actual Angular reference workflow](testing/angular-reference-workflow.md): real signed two-build publication, public/authenticated browser delivery, DOM-reusing hydration, provider denial/cancellation, canary/revocation/restart/rollback and cleanup. #372 merged as `ffa90dc3f76f4bc589be63d313103fdb67fb5f1b`; both tickets are closed. | Preserve the restricted profile, unchecked reproducibility and declared incomplete dependency coverage. Guide review #361 remains separate. |
+| Static web extension #495/#496/#497 | [Contract PR #498](https://github.com/KirilsTurkins/latent-service-fabric/pull/498), [delivery PR #501](https://github.com/KirilsTurkins/latent-service-fabric/pull/501), and [actual CSR/static-generator workflow PR #502](https://github.com/KirilsTurkins/latent-service-fabric/pull/502). | These children remain open until their full criteria and exact-head CI pass and their implementations merge. This evidence supplements the SSR workflow. |
+| Native distribution #308 | [Nonpublishing foundation run 35763422270](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35763422270) passed both native VM profiles; [final-pair preparation #503](https://github.com/KirilsTurkins/latent-service-fabric/pull/503) binds the authenticated predecessor. | A foundation run without an upgrade pair is incomplete acceptance. Retain the genuine compatible-version pair and publish the authenticated bundle through the protected release owner. |
 | Runbooks and guides #237/#357/#358/#359/#361 | Executed first-node, delivery, provider and six-client receipts are retained. [Guide execution PR #467](https://github.com/KirilsTurkins/latent-service-fabric/pull/467) merged after all 17 checks passed. | Native bundle/upgrade evidence under #308, rendered newcomer walkthroughs and maintainer pedagogy review remain required. |
 | Finite documentation gate #345 | Foundation, theme, diagrams, examples, version binding, discovery and initial protected Pages publication are delivered. The [coverage contract](development/website.md#coverage-is-a-review-contract-not-a-page-counter) retains 27 required outcomes. | Complete their exact-revision human reviews, publish the complete reviewed site, verify live routes, and finish #356's content cutover; remove the Wiki and retire its writer after Phase 3 completion. |
 
 The [continuous Documentation & Learning workstream](development/website.md)
 stays open. Its later tasks do not enlarge the finite #345 gate.
+The [27-outcome checklist](development/phase3-guide-review.md) gives the
+maintainer a finite review path without changing any pending review status.
 
 ## Fixed, active and bounded shared resources
 
@@ -80,13 +88,13 @@ not rewrite measured bytes or convert an earlier failed attempt into a pass.
 
 ## Final integration and publication checks
 
-1. Finish and review the current shared runtime fixes and Angular reference
-   integration. Run the required checks on each exact head before squash merge.
+1. Finish and review the current shared runtime fixes and static-site extension.
+   Run the required checks on each exact head before squash merge.
    Inspect final development CI and retained six-client, browser, security and
    cleanup receipts for the resulting integration source.
-2. Complete #282's narrowly scoped monitoring activation and scheduled-ref
-   observations. Complete #308's verified compatible native bundle pair and
-   installer/upgrade evidence through its existing protected publisher.
+2. Preserve #282's activated monitoring and scheduled-ref evidence. Complete
+   #308's verified compatible native bundle pair and installer/upgrade evidence
+   through its existing protected publisher.
 3. Have the named reviewers execute the rendered guide paths at an exact source
    revision. Record each required outcome, expected failure, cleanup, version
    and reviewer in the coverage inventory. Automation cannot create a human
