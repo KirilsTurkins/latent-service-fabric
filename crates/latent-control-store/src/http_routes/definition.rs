@@ -3,6 +3,7 @@ use latent_core::PlatformError;
 use latent_ingress::http::{CanonicalTarget, Method, Scheme, CONTRACT, FUNCTION, PROFILE};
 use latent_manifest::{
     __serde_json as json, JsonManifestCodec, ManifestCodec, TriggerKind, TriggerManifest,
+    TriggerTarget,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,6 +40,26 @@ impl Matcher {
     pub fn precedence(&self) -> (usize, bool) {
         (self.path.len(), self.path_match == PathMatch::Exact)
     }
+
+    /// Derives a canonical site-local path from the already-canonical external
+    /// request. No second URL parser or normalization pass participates.
+    pub fn site_path(&self, target: &CanonicalTarget) -> Option<String> {
+        if self.path == "/" {
+            return Some(target.path().to_owned());
+        }
+        if target.path() == self.path {
+            return Some("/".into());
+        }
+        target
+            .path()
+            .strip_prefix(&self.path)
+            .filter(|suffix| suffix.starts_with('/'))
+            .map(str::to_owned)
+    }
+}
+
+pub(crate) fn reserved_node_path(path: &str) -> bool {
+    path == "/_lsf" || path.starts_with("/_lsf/")
 }
 
 /// Bound every field before the generic manifest codec can traverse or copy it.
@@ -47,25 +68,7 @@ pub(crate) fn normalize(
     mut value: TriggerManifest,
 ) -> Result<(TriggerManifest, Matcher), PlatformError> {
     bounded(&value)?;
-    if value.kind != TriggerKind::Http
-        || value.target.contract.0 != CONTRACT
-        || value.target.function != FUNCTION
-        || value
-            .target
-            .route
-            .as_deref()
-            .is_none_or(|route| route == "default")
-        || value.target.publication.is_none()
-        || value
-            .target
-            .deployment_generation
-            .is_none_or(|generation| generation == 0)
-        || !value.target.revision.as_ref().is_some_and(|revision| {
-            revision
-                .strip_prefix("revision-v1:")
-                .is_some_and(|digest| digest.parse::<latent_core::ArtifactBlobDigest>().is_ok())
-        })
-    {
+    if value.kind != TriggerKind::Http {
         return Err(invalid());
     }
     let field = |key: &str| {
@@ -75,8 +78,28 @@ pub(crate) fn normalize(
             .and_then(json::Value::as_str)
             .ok_or_else(invalid)
     };
-    if field("profile")? != PROFILE {
-        return Err(invalid());
+    let profile = field("profile")?;
+    match &value.target {
+        TriggerTarget::Application(target) => {
+            if profile != PROFILE
+                || target.contract.0 != CONTRACT
+                || target.function != FUNCTION
+                || target.route.as_deref().is_none_or(|route| route == "default")
+                || target.publication.is_none()
+                || target
+                    .deployment_generation
+                    .is_none_or(|generation| generation == 0)
+                || !target.revision.as_ref().is_some_and(|revision| {
+                    revision
+                        .strip_prefix("revision-v1:")
+                        .is_some_and(|digest| digest.parse::<latent_core::ArtifactBlobDigest>().is_ok())
+                })
+            {
+                return Err(invalid());
+            }
+        }
+        TriggerTarget::StaticWeb(_) if profile == latent_artifacts::web::STATIC_SITE_PROFILE => {}
+        TriggerTarget::StaticWeb(_) => return Err(invalid()),
     }
     let scheme = match field("scheme")? {
         "http" => Scheme::Http,
@@ -84,6 +107,11 @@ pub(crate) fn normalize(
         _ => return Err(invalid()),
     };
     let method = Method::parse(field("method")?).map_err(|_| invalid())?;
+    if matches!(value.target, TriggerTarget::StaticWeb(_))
+        && !matches!(method, Method::Get | Method::Head)
+    {
+        return Err(invalid());
+    }
     let path_match = match field("pathMatch")? {
         "exact" => PathMatch::Exact,
         "prefix" => PathMatch::Prefix,
@@ -118,7 +146,6 @@ pub(crate) fn normalize(
     }
     Ok((value, matcher))
 }
-
 pub(crate) fn token(value: &str, maximum: usize) -> bool {
     !value.is_empty() && value.len() <= maximum && !value.chars().any(char::is_control)
 }
@@ -131,11 +158,9 @@ pub(crate) fn bounded(value: &TriggerManifest) -> Result<(), PlatformError> {
         || value.api_version.capacity() > 32
         || value.id.0 != value.metadata.name
         || value.metadata.tenant.is_none()
-        || ![&value.id.0, &value.metadata.name, &value.target.service.0]
+        || ![&value.id.0, &value.metadata.name]
             .into_iter()
             .all(|s| text(s, MAX_IDENTIFIER_BYTES))
-        || !text(&value.target.contract.0, 256)
-        || !text(&value.target.function, 128)
         || value
             .metadata
             .tenant
@@ -146,19 +171,32 @@ pub(crate) fn bounded(value: &TriggerManifest) -> Result<(), PlatformError> {
             .namespace
             .as_ref()
             .is_some_and(|s| !text(s, MAX_IDENTIFIER_BYTES))
-        || value
-            .target
-            .route
-            .as_ref()
-            .is_some_and(|s| !text(s, MAX_IDENTIFIER_BYTES))
-        || value
-            .target
-            .revision
-            .as_ref()
-            .is_some_and(|s| !text(s, 128))
         || value.configuration.len() != 6
     {
         return Err(invalid());
+    }
+    match &value.target {
+        TriggerTarget::Application(target) => {
+            if !text(&target.service.0, MAX_IDENTIFIER_BYTES)
+                || !text(&target.contract.0, 256)
+                || !text(&target.function, 128)
+                || target
+                    .route
+                    .as_ref()
+                    .is_some_and(|s| !text(s, MAX_IDENTIFIER_BYTES))
+                || target
+                    .revision
+                    .as_ref()
+                    .is_some_and(|s| !text(s, 128))
+            {
+                return Err(invalid());
+            }
+        }
+        TriggerTarget::StaticWeb(target) => {
+            if target.publication.as_str().len() > 83 {
+                return Err(invalid());
+            }
+        }
     }
     for fields in [&value.metadata.labels, &value.metadata.annotations] {
         if fields.len() > 16
@@ -189,3 +227,4 @@ pub(crate) fn bounded(value: &TriggerManifest) -> Result<(), PlatformError> {
     }
     Ok(())
 }
+
