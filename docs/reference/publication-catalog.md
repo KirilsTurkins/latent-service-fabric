@@ -70,8 +70,8 @@ The catalog root contains:
 | `.tmp/` | Owned publication/reclamation staging |
 | `.publication-migration/` | Migration progress, original lifecycle archive and legacy associations |
 
-The node still places this catalog root at `<dataDirectory>/releases`; the inner
-format-1 `releases/<component hex>` directory is historical after migration.
+The node places this catalog root at `<dataDirectory>/releases`. Its publications
+use independent publication identities; obsolete component-keyed roots are rejected.
 Updates persist the bounded changed row, receipt, intent and HEAD rather than
 rewriting the whole catalog. No publication owns a worker, file descriptor,
 guest store, execution cell or provider pool.
@@ -81,8 +81,7 @@ publication link's full logical byte size. It is an exposure bound, not a disk
 or RSS measurement. Metadata, file counts, publication counts, input sizes and
 startup directory scans have independent limits. Incomplete directories retain
 their disk and directory charges. Node configuration exposes the content limits
-under [`catalogs`](standalone-node.md); lifecycle and archived migration history
-have separate finite limits.
+under [`catalogs`](standalone-node.md); lifecycle history has separate finite limits.
 
 `reclaim_uncommitted_content` accepts a batch of 1–1024 entries. It only removes
 uncommitted publications and zero-reference blobs. A committed publication,
@@ -93,70 +92,33 @@ write or reclamation failure requires reopening; it cannot refund a live owner.
 Unknown incomplete directories require offline inspection and repair. This
 implementation does not offer deletion of committed historical payloads.
 
-## Offline upgrade and recovery
+## Supported storage and fresh state
 
-Stop the node and preserve a complete, consistent backup of its data directory,
-configuration and trust history. Use the same filesystem with working file
-locks, hard links, atomic same-filesystem renames and directory synchronization.
-Run on a supported Linux host:
+Current alpha builds accept the publication catalog and lifecycle format 2.
+The Phase 2 format-1 reader, offline migrator, retained migration associations
+and `latentd migrate-catalog` command have been removed. Obsolete roots and
+interrupted migration fences are rejected before temporary cleanup, publication
+indexing or lifecycle grants. Startup preserves their existing bytes.
 
-```sh
-latentd migrate-catalog --config /secure/node.json
-```
+For an obsolete root, stop the old node and preserve a complete, consistent
+backup of its data directory, protected configuration and trust history.
+Provision a separate empty data directory with the current configuration,
+explicitly publish and admit the intended packages, and apply current deployment
+and trigger manifests. Historical operation identities and receipts are not
+imported. Do not copy individual rows, remove format markers or point the new
+node at an old root to force startup.
 
-The command starts no listener, guest engine, compiler or worker pool. It derives
-the original node settings, opens the configured trust owner when required, and
-acquires the existing exclusive catalog root owner. An already running owner
-prevents migration. It prints one bounded JSON receipt after completion.
-
-| Option | Default | Scope |
-| --- | --- | --- |
-| `--batch-size` | 32 | 1–1024 publication rows or operation receipts per durable progress batch |
-| `--max-metadata-bytes` | 268435456 | Retained migration/index planning ceiling, at most 1 GiB |
-| `--max-disk-bytes` | 8589934592 | Conservative old/new content and history exposure estimate |
-| `--max-files` | 1000000 | Conservative source/destination file and directory bound |
-| `--max-work-bytes` | 68719476736 | Conservative bounded verification-work estimate |
-
-Destination catalog, content and migration limits are checked before fencing.
-Planning reserves the configured maximum future admission-grant size without
-requiring expired historical evidence to become current. If these limits reject
-an upgrade before fencing, size the limits for the actual retained catalog and
-retry. The estimate is not an OS I/O meter. Small defaults in an operator's
-existing catalog configuration can reject a larger retained catalog.
-
-The first durable fence replaces `LIFECYCLE_MODE` with the migration intent.
-The old reader rejects that marker before cleanup or adoption. Migration uses a
-separate namespace outside its temporary cleanup path. Original COMPLETE,
-immutable content and lifecycle archive bytes remain exact. Rows and retained
-receipts gain deterministic publication associations; missing, damaged or
-ambiguous history fails closed. Selected expired evidence remains history and
-does not gain positive authority from the migration.
-
-After interruption, keep the original configuration and all migration options
-unchanged and rerun the same command. The intent binds the source, configuration
-and limits. Progress resumes verified batches, including interruptions at both
-lifecycle directory swaps. Changed inputs or missing history require restoration
-of the complete consistent backup and an operator investigation. Do not delete
-markers or copy individual rows to force startup.
-
-Completion restores the root marker only after format-2 lifecycle history and
-the migration receipt are durable. Old readers then reject the lifecycle format
-version. Downgrading in place is unsupported. Restoring the complete offline
-backup is the rollback path, and discards any subsequent format-2 operations.
-An idempotent invocation validates the current catalog before returning the
-historical migration receipt; its publication count describes the migration,
-not later admissions.
-
-This storage migration preserves the configured trust mode. Converting local
-trusted content into enforced signed admission remains the separate procedure in
-[authenticated package admission](package-admission.md).
+Current-format reopen, crash recovery, policy denial and operation receipts
+retain their normal semantics. The qualified native upgrade pair uses current
+storage formats; it does not provide Phase 2 format conversion. Downgrading a
+binary does not undo storage changes. Preserve stopped backups independently.
 
 ## Validation
 
 Small Linux fixtures cover concurrent publications, scoped selection, independent
 revocation/retirement, successful legacy replay after coexistence, storage limits,
-shared inode retention during orphan reclamation, original-byte preservation,
-empty catalogs and eight migration interruption points. Policy integration uses
+shared inode retention during orphan reclamation, preservation of rejected obsolete roots,
+empty catalogs and current lifecycle interruption recovery. Policy integration uses
 real publisher and builder signatures with corrected embedded inventories and
 identical packages in two tenants. These are functional tests, with no guest
 invocations or 100k load campaign.

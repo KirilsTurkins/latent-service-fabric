@@ -38,23 +38,6 @@ pub(super) fn open(
     enforced: bool,
     baseline: &[LifecycleIdentity],
 ) -> Result<State, PlatformError> {
-    open_version(root, limits, enforced, baseline, 2)
-}
-
-/// The v1 adapter is private to offline migration; it never exposes a live store.
-pub(super) fn open_version(
-    root: &Path,
-    limits: LifecycleLimits,
-    enforced: bool,
-    baseline: &[LifecycleIdentity],
-    version: u32,
-) -> Result<State, PlatformError> {
-    if !matches!(version, 1 | 2) {
-        return Err(corrupt());
-    }
-    if version == 1 && io::read(&root.join("INITIALIZED"), 128)?.is_none() {
-        return Err(corrupt());
-    }
     if baseline.len() > limits.max_records {
         return Err(exhausted());
     }
@@ -73,22 +56,14 @@ pub(super) fn open_version(
     io::create_directory(&root.join("evidence"))?;
     let mut baseline_hash = sha2::Sha256::new();
     use sha2::Digest;
-    baseline_hash.update(if version == 1 {
-        b"lsf-lifecycle-baseline-v1\0"
-    } else {
-        b"lsf-lifecycle-baseline-v2\0"
-    });
-    let mut ordered: Vec<_> = identities.values().copied().collect();
-    if version == 1 {
-        ordered.sort_by(|a, b| a.release.cmp(&b.release));
-    }
-    for identity in ordered {
+    baseline_hash.update(b"lsf-lifecycle-baseline-v2\0");
+    for identity in identities.values() {
         let bytes = encode(identity, limits.max_record_bytes)?;
         baseline_hash.update((bytes.len() as u64).to_le_bytes());
         baseline_hash.update(bytes);
     }
     let expected_mode = Mode {
-        format_version: version,
+        format_version: 2,
         enforced,
         receipt_capacity: limits.max_recent_operations,
         baseline_digest: baseline_hash.finalize().into(),
@@ -99,7 +74,7 @@ pub(super) fn open_version(
     let mode = match io::read(&mode_path, 4096)? {
         Some(bytes) => {
             let mode: Mode = decode(&bytes, 4096)?;
-            if mode.format_version != version
+            if mode.format_version != 2
                 || mode.enforced != enforced
                 || mode.receipt_capacity != limits.max_recent_operations
             {
@@ -135,11 +110,10 @@ pub(super) fn open_version(
     }
     if let Some(bytes) = io::read(&root.join("INTENT"), limits.max_intent_bytes)? {
         let intent: Intent = decode(&bytes, limits.max_intent_bytes)?;
-        recover_intent(root, limits, &mode_digest, &intent, version)?;
+        recover_intent(root, limits, &mode_digest, &intent)?;
     }
     let head: Head = decode(&io::required(&root.join("HEAD"), 4096)?, 4096)?;
-    if head.format_version != version || head.mode != mode_digest || head.rows > limits.max_records
-    {
+    if head.format_version != 2 || head.mode != mode_digest || head.rows > limits.max_records {
         return Err(corrupt());
     }
     let mut entries = BTreeMap::new();
@@ -153,11 +127,7 @@ pub(super) fn open_version(
         let stored: StoredRow = decode(&bytes, limits.max_record_bytes)?;
         validation::identity(&stored.identity, enforced)?;
         validation::record(&stored.record, limits)?;
-        let expected_name = if version == 1 {
-            format!("{}.json", &stored.identity.release.0[7..])
-        } else {
-            row_name(&stored.identity.publication()?.id)
-        };
+        let expected_name = row_name(&stored.identity.publication()?.id);
         if name != expected_name
             || stored.identity.scope != stored.record.scope
             || stored.identity.release != stored.record.release
@@ -201,23 +171,6 @@ pub(super) fn open_version(
     for identity in identities.values() {
         if state.entries.contains_key(&identity.publication()?.id) {
             state.index_identity(identity)?;
-        }
-    }
-    if version == 1 {
-        for value in state.receipts.values_mut() {
-            if value.publication.is_some() {
-                return Err(corrupt());
-            }
-            if let Some(record) = &value.receipt.record {
-                let rows = state
-                    .by_scope
-                    .get(&(record.scope.clone(), record.release.clone()))
-                    .ok_or_else(corrupt)?;
-                if rows.len() != 1 {
-                    return Err(corrupt());
-                }
-                value.publication = rows.first().cloned();
-            }
         }
     }
     for value in state.receipts.values() {
@@ -448,7 +401,7 @@ pub(super) fn commit(
         &encode(&intent, limits.max_intent_bytes)?,
     )?;
     fault(1)?;
-    recover_intent(root, limits, &state.head.mode, &intent, 2)?;
+    recover_intent(root, limits, &state.head.mode, &intent)?;
     if let Some(stored) = intent.new_row {
         let bytes = encode(&stored, limits.max_record_bytes)?.len();
         if let Some(entry) = state.entries.get_mut(&stored.identity.publication()?.id) {
@@ -473,9 +426,8 @@ fn recover_intent(
     limits: LifecycleLimits,
     mode: &[u8; 32],
     intent: &Intent,
-    version: u32,
 ) -> Result<(), PlatformError> {
-    if intent.format_version != version
+    if intent.format_version != 2
         || intent.mode != *mode
         || intent.old_head.mode != *mode
         || intent.new_head.mode != *mode
@@ -505,18 +457,11 @@ fn recover_intent(
     if let Some(row) = &intent.new_row {
         if intent.new_receipt.receipt.disposition != ReleaseOperationDisposition::Committed
             || intent.new_receipt.receipt.record.as_ref() != Some(&row.record)
-            || (version == 2
-                && intent.new_receipt.publication.as_ref() != Some(&row.identity.publication()?.id))
-            || (version == 1 && intent.new_receipt.publication.is_some())
+            || intent.new_receipt.publication.as_ref() != Some(&row.identity.publication()?.id)
         {
             return Err(corrupt());
         }
-        let path = if version == 1 {
-            root.join("records")
-                .join(format!("{}.json", &row.identity.release.0[7..]))
-        } else {
-            row_path(root, &row.identity.publication()?.id)?
-        };
+        let path = row_path(root, &row.identity.publication()?.id)?;
         replace_checked(
             &path,
             intent.old_row_digest,

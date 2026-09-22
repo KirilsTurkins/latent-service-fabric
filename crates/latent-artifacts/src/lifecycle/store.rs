@@ -13,11 +13,9 @@ use std::{
 };
 mod evidence;
 mod io;
-mod migration;
 mod persistence;
 mod validation;
 pub(crate) use evidence::LifecycleEvidence;
-pub(crate) use migration::LegacyLifecycleSnapshot;
 
 pub(crate) fn validate_audit_receipt(value: &ReleaseOperationReceipt) -> Result<(), PlatformError> {
     validation::receipt(value, LifecycleLimits::default())

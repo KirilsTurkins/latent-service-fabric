@@ -61,8 +61,8 @@ pub use local_repository::contract_metadata::{
     decode_contract_metadata, encode_contract_metadata, ContractMetadataLimits,
 };
 pub use local_repository::{
-    CatalogMigrationLimits, CatalogMigrationReceipt, DirectoryArtifactRepository,
-    DirectoryArtifactRepositoryConfig, PublicationContentReclamation, PublicationStorageSnapshot,
+    DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig, PublicationContentReclamation,
+    PublicationStorageSnapshot,
 };
 
 /// Contract metadata accepted by artifact publication and consumed by route compilation.
@@ -289,8 +289,8 @@ pub trait ArtifactRepository: Send + Sync {
                 })
         })
     }
-    /// Recover a previously persisted legacy selection from the immutable migration
-    /// association, or from a unique scoped match. This creates no execution grant.
+    /// Recover a stored component selection from a unique current scoped match.
+    /// Archived Phase 2 migration mappings are unsupported. This creates no grant.
     fn recover_execution_publication(
         &self,
         tenant: &TenantId,

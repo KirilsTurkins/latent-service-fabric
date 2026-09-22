@@ -9,7 +9,7 @@ RPCs or provider credentials into an application.
 
 ## Node.js
 
-Use Node.js 24.19.x, the checked-in lockfile and TypeScript 5.8.3. The selected
+Use Node.js 24.19.x, the checked-in lockfile and TypeScript 7.0.2. The selected
 node transport is explicitly configured plaintext **numeric loopback**, not a
 remote/TLS endpoint or a browser API. Endpoint, tenant and client credential
 are mandatory. The transport does not inspect environment variables, cookies,

@@ -304,6 +304,19 @@
       "testThreads": "libtest default",
       "timeoutSeconds": 300
     },
+    "static-site-fixture": {
+      "exact": true,
+      "filter": "export_actual_static_site_fixtures",
+      "ignored": true,
+      "names": [
+        "export_actual_static_site_fixtures"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latentd.test.phase3-static-fixture",
+      "testThreads": 1,
+      "timeoutSeconds": 300
+    },
     "trust-currentness": {
       "exact": false,
       "filter": "standalone::start::tests::trust_currentness::",
@@ -530,7 +543,6 @@
         "local_repository::tests::admission::exact_retry_preserves_bytes_and_history_but_refreshes_grant_incarnation",
         "local_repository::tests::admission::foreign_owner_and_spare_capacity_fail_without_staging",
         "local_repository::tests::admission::new_package_coexists_but_cannot_replace_an_existing_packages_evidence",
-        "local_repository::tests::admission::offline_migration_preserves_denied_admission_without_issuing_new_authority",
         "local_repository::tests::admission::parent_sync_failure_retains_pending_bytes_without_positive_index",
         "local_repository::tests::admission::post_rename_expiry_does_not_adopt_and_exact_retry_recovers",
         "local_repository::tests::admission::preflight_runs_once_without_locks_and_cannot_stage_on_rejection",
@@ -551,6 +563,9 @@
         "local_repository::tests::concurrent_identical_publishers_on_one_owned_handle_observe_one_release",
         "local_repository::tests::digest_disagreement_is_corrupt_and_not_visible",
         "local_repository::tests::exclusive_root_ownership_prevents_conflicting_independent_handles",
+        "local_repository::tests::format::current_publication_catalog_reopens_with_the_same_identity",
+        "local_repository::tests::format::obsolete_catalog_names_and_migration_fences_are_rejected_before_cleanup",
+        "local_repository::tests::format::unsupported_lifecycle_formats_preserve_source_and_staged_bytes",
         "local_repository::tests::full_contract_metadata_round_trips",
         "local_repository::tests::incomplete_directories_do_not_consume_completed_index_quota",
         "local_repository::tests::integrity::completion_record_binds_exact_payloads_without_changing_release_identity",
@@ -581,11 +596,6 @@
         "local_repository::tests::listing_is_entry_and_byte_bounded_and_deterministic",
         "local_repository::tests::lock_release::dropping_owner_releases_lock_while_duplicate_descriptor_remains_open",
         "local_repository::tests::lock_release::initialization_error_releases_lock_before_repository_construction",
-        "local_repository::tests::migration::changed_source_missing_history_and_modified_configuration_never_resume",
-        "local_repository::tests::migration::empty_legacy_catalog_is_fenced_and_migrated_explicitly",
-        "local_repository::tests::migration::every_migration_cutpoint_resumes_without_restoring_revoked_authority",
-        "local_repository::tests::migration::migration_requires_the_owner_and_preflights_limits_before_fencing",
-        "local_repository::tests::migration::offline_migration_preserves_original_bytes_receipts_and_revocation",
         "local_repository::tests::missing_and_corrupt_entries_are_rejected",
         "local_repository::tests::one_hundred_thousand_index_adoptions_are_bounded",
         "local_repository::tests::oversized_descriptor_fields_are_rejected_before_visibility",
@@ -745,7 +755,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 251,
+      "minimumCases": 248,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
@@ -3397,6 +3407,9 @@
         "supply_chain::tests::verification::local_check_denies_wrong_tenant_expiry_missing_and_corrupt_evidence",
         "supply_chain::tests::verification::local_check_uses_current_publisher_policy_and_sbom_requirements",
         "supply_chain::tests::verification::local_report_binds_joint_policy_without_grant_or_clock_history",
+        "supply_chain::tests::verification::local_web_check_rejects_foreign_expired_revoked_missing_and_corrupt_evidence",
+        "supply_chain::tests::verification::local_web_check_rejects_signed_inconsistent_assets_and_executable_capsules",
+        "supply_chain::tests::verification::local_web_report_binds_actual_outputs_without_component_authority",
         "supply_chain::tests::web::actual_web_component_passes_signed_ssr_admission_and_restart",
         "supply_chain::tests::web::angular_build::actual_observed_angular_package_authenticates_publisher_builder_sbom_and_restart",
         "supply_chain::tests::web::componentless_web_admission_reverifies_on_restart_and_old_owner_grants_stay_retired",
@@ -3440,7 +3453,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 92,
+      "minimumCases": 95,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -7346,7 +7359,7 @@
       "boundary": "runtime",
       "expectedCases": [
         "command::tests::check_config_requires_an_explicit_file_and_never_selects_serve",
-        "command::tests::offline_migration_has_finite_defaults_and_rejects_unbounded_batches",
+        "command::tests::obsolete_catalog_migration_command_is_rejected",
         "command::tests::serve_requires_configuration_and_help_advertises_only_product_surfaces",
         "command::tests::status_encoding_is_one_bounded_json_line",
         "config::aot::tests::input::compiler_digest_spelling_and_bounded_path_copies_are_exact",
@@ -7737,6 +7750,37 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/phase3_reference_fixture.rs",
       "target": "phase3_reference_fixture",
+      "timeoutSeconds": 300
+    },
+    {
+      "boundary": "product",
+      "expectedCases": [
+        "export_actual_static_site_fixtures"
+      ],
+      "expectedIgnored": [
+        "export_actual_static_site_fixtures"
+      ],
+      "id": "latentd.test.phase3-static-fixture",
+      "ignoredLeaves": [
+        "export_actual_static_site_fixtures"
+      ],
+      "kind": "test",
+      "manifest": "apps/latentd/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latentd",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "actual static-site reference builds and a fresh private fixture root"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase3_static_fixture.rs",
+      "target": "phase3_static_fixture",
       "timeoutSeconds": 300
     },
     {

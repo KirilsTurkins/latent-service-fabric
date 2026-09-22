@@ -329,6 +329,18 @@ jobs:
 
       - name: Fetch the pinned operator workflow registry
         run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
+      - name: Qualify signed static sites through OCI and actual browsers
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 12
+        shell: bash
+        run: |
+          # Reviewed capture owner: tools/static_site.py
+          static_root="${RUNNER_TEMP}/static-site"
+          mkdir -p "$static_root" "${RUNNER_TEMP}/phase2-gate"
+          objcopy --strip-debug "${PWD}/target/debug/latentd" "${static_root}/latentd"
+          python3 tools/build_static_sites.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --toolchain examples/renderer-profile --output "${static_root}/builds"
+          LSF_STATIC_BUILDS="${static_root}/builds" LSF_STATIC_FIXTURE_ROOT="${static_root}/fixture" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite static-site-fixture
+          python3 tools/run_static_site_workflow.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --node "${static_root}/latentd" --fixture "${static_root}/fixture" --toolchain examples/renderer-profile --chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"
       - name: Validate bounded Phase 2 delivery and resource workflows
         timeout-minutes: 10
         shell: bash
@@ -716,7 +728,7 @@ jobs:
           cache: npm
           cache-dependency-path: sdk/typescript-client/package-lock.json
       - name: Set up the Go SDK provider participant
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: 1.27.1
           cache-dependency-path: sdk/go/go.sum
@@ -809,7 +821,7 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: 1.27.1
           cache-dependency-path: sdk/go/go.sum
@@ -863,7 +875,7 @@ jobs:
       - name: Validate SDK surfaces
         shell: bash
         env:
-          EXPECTED_TYPESCRIPT_VERSION: 5.8.3
+          EXPECTED_TYPESCRIPT_VERSION: 7.0.2
         run: |
           set -euo pipefail
           tools/validate_sdks.sh 2>&1 | tee "$RUNNER_TEMP/java-sdk/sdk.log"
