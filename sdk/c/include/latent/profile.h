@@ -386,13 +386,6 @@ typedef struct latent_profile_publication_ref {
     latent_string tenant;
 } latent_profile_publication_ref;
 
-typedef struct latent_profile_release_selector {
-    bool has_component_digest;
-    latent_string component_digest;
-    bool has_publication;
-    latent_profile_publication_ref publication;
-} latent_profile_release_selector;
-
 typedef struct latent_profile_publication_identity {
     latent_profile_publication_ref publication;
     latent_string component_digest;

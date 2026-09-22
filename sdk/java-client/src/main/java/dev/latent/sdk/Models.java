@@ -12,9 +12,6 @@ public final class Models {
     /** Tenant must match authenticated scope. An ID does not confer authority. */
     public record PublicationRef(String id, String tenant) { }
 
-    /** Exactly one selector is valid; preserve present empty/both for rejection. */
-    public record ReleaseSelector(Optional<String> componentDigest, Optional<PublicationRef> publication) { }
-
     public record PublicationIdentity(PublicationRef publication, String componentDigest, String packageDigest) { }
 
     public record ResourceBudget(

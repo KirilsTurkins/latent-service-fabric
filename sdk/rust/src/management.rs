@@ -368,12 +368,6 @@ pub struct PublicationRef {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct ReleaseSelector {
-    pub component_digest: Option<String>,
-    pub publication: Option<PublicationRef>,
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PublicationIdentity {
     pub publication: PublicationRef,
     pub component_digest: String,

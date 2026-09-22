@@ -22,10 +22,6 @@
     "OutcomeKnowledge": {"UNSPECIFIED": 0, "NOT_DISPATCHED": 1, "UNKNOWN": 2, "OBSERVED": 3}
   },
   "local_messages": {
-    "ReleaseSelector": [
-      {"name": "component_digest", "type": "string", "optional": true},
-      {"name": "publication", "type": "PublicationRef", "optional": true}
-    ],
     "PublicationIdentity": [
       {"name": "publication", "type": "PublicationRef", "required": true},
       {"name": "component_digest", "type": "string"},

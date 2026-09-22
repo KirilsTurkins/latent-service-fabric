@@ -285,10 +285,6 @@ public final class Management {
             String id,
             String tenant) { }
 
-    public record ReleaseSelector(
-            Optional<String> componentDigest,
-            Optional<PublicationRef> publication) { }
-
     public record PublicationIdentity(
             PublicationRef publication,
             String componentDigest,

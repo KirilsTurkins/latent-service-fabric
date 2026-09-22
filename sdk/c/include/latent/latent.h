@@ -74,14 +74,6 @@ typedef struct latent_publication_ref {
     latent_string tenant;
 } latent_publication_ref;
 
-/* Exactly one member is valid. Presence is independent of string length. */
-typedef struct latent_release_selector {
-    bool has_component_digest;
-    latent_string component_digest;
-    bool has_publication;
-    latent_publication_ref publication;
-} latent_release_selector;
-
 typedef struct latent_publication_identity {
     latent_publication_ref publication;
     latent_string component_digest;

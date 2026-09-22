@@ -884,24 +884,14 @@ internal static class ProfileVectors
             Check(!(value.AttemptSequence is not null), "audit-disabled-distinct-from-absence.attempt_sequence.presence");
         }
         {
-            var value = new Profile.ReleaseSelector(null, null);
-            Check(!(value.ComponentDigest is not null), "selector-absent-not-fallback.component_digest.presence");
-            Check(!(value.Publication is not null), "selector-absent-not-fallback.publication.presence");
+            var value = new Profile.PublicationRef("", "tenant-a");
+            Check(value.Id == "", "publication-reference-invalid-id.id");
+            Check(value.Tenant == "tenant-a", "publication-reference-invalid-id.tenant");
         }
         {
-            var value = new Profile.ReleaseSelector(null, new Profile.PublicationRef("", "tenant-a"));
-            Check(!(value.ComponentDigest is not null), "selector-invalid-present-not-absent.component_digest.presence");
-            Check(value.Publication is not null, "selector-invalid-present-not-absent.publication.presence");
-            Check(value.Publication!.Id == "", "selector-invalid-present-not-absent.publication.id");
-            Check(value.Publication!.Tenant == "tenant-a", "selector-invalid-present-not-absent.publication.tenant");
-        }
-        {
-            var value = new Profile.ReleaseSelector("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", new Profile.PublicationRef("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "tenant-a"));
-            Check(value.ComponentDigest is not null, "selector-ambiguous-not-auto-selected.component_digest.presence");
-            Check(value.ComponentDigest! == "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "selector-ambiguous-not-auto-selected.component_digest");
-            Check(value.Publication is not null, "selector-ambiguous-not-auto-selected.publication.presence");
-            Check(value.Publication!.Id == "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "selector-ambiguous-not-auto-selected.publication.id");
-            Check(value.Publication!.Tenant == "tenant-a", "selector-ambiguous-not-auto-selected.publication.tenant");
+            var value = new Profile.PublicationRef("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "tenant-b");
+            Check(value.Id == "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "publication-reference-tenant-scope.id");
+            Check(value.Tenant == "tenant-b", "publication-reference-tenant-scope.tenant");
         }
         {
             var value = new Profile.PublicationIdentity(new Profile.PublicationRef("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "tenant-a"), "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "sha256:1111111111111111111111111111111111111111111111111111111111111111");
@@ -940,6 +930,6 @@ internal static class ProfileVectors
         Rejects(() => Profile.UnsignedDecimal.Parse("1\u0000"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\n"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\r\n"));
-        Console.WriteLine("shared profile vectors: 68");
+        Console.WriteLine("shared profile vectors: 67");
     }
 }

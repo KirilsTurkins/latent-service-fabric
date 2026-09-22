@@ -5,11 +5,6 @@ namespace Latent.Sdk;
 /// <param name="Tenant">The authenticated tenant scope.</param>
 public sealed record PublicationRef(string Id, string Tenant);
 
-/// <summary>Exactly one member is valid. Preserve present empty/both for rejection.</summary>
-/// <param name="ComponentDigest">The optional legacy component identity.</param>
-/// <param name="Publication">The optional exact scoped selector.</param>
-public sealed record ReleaseSelector(string? ComponentDigest = null, PublicationRef? Publication = null);
-
 /// <summary>Distinct publication, executable and immutable package identities.</summary>
 /// <param name="Publication">The scoped publication.</param>
 /// <param name="ComponentDigest">The executable component bytes digest.</param>

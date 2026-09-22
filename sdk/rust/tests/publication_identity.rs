@@ -1,10 +1,10 @@
 use latent_core::{
     ActivationId, BudgetConsumption, ReleaseDigest, RevisionId, RouteGeneration, TenantId,
 };
-use latent_sdk::{InvocationReceipt, PublicationIdentity, PublicationRef, ReleaseSelector};
+use latent_sdk::{InvocationReceipt, PublicationIdentity, PublicationRef};
 
 #[test]
-fn scoped_coexistence_legacy_presence_and_full_width_receipts() {
+fn scoped_coexistence_publication_presence_and_full_width_receipts() {
     let component = ReleaseDigest(format!("sha256:{}", "a".repeat(64)));
     let publications: Vec<_> = (0..4)
         .map(|index| PublicationIdentity {
@@ -29,12 +29,6 @@ fn scoped_coexistence_legacy_presence_and_full_width_receipts() {
         publications[0].package_digest,
         publications[1].package_digest
     );
-    let selection = ReleaseSelector {
-        component_digest: Some(ReleaseDigest(String::new())),
-        publication: Some(publications[3].publication.clone()),
-    };
-    assert_eq!(selection.component_digest.unwrap().0, "");
-    assert_eq!(selection.publication.unwrap().tenant.0, "tenant-b");
     assert!("".parse::<latent_core::PublicationId>().is_err());
     let mut receipt = InvocationReceipt {
         activation_id: ActivationId("known".into()),
