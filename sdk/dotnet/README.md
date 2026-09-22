@@ -1,9 +1,10 @@
 # Bounded .NET client
 
-`Latent.Sdk.Transport.BoundedClient` is the executable implementation of both
-`ILatentClient` and the complete [eight-operation profile](../profile/README.md).
-Generated Protobuf/gRPC types stay in the transport assembly; callers use the
-portable `Latent.Sdk` and `Latent.Sdk.Profile` types. This is a host client, not
+`Latent.Sdk.Transport.BoundedClient` implements the complete
+[eight-operation profile](../profile/README.md). Generated Protobuf/gRPC types
+stay in the transport assembly; callers use `Latent.Sdk.Profile` models. The
+obsolete `ILatentClient`, root-namespace DTOs and `client.Legacy` adapter have
+been removed during alpha. This is a host client, not
 a .NET Wasm guest binding or a browser transport.
 
 ## Qualified profile
@@ -69,8 +70,7 @@ Lost responses remain uncertain. Query GetActivation/GetPolicyOperation using
 the original identity; bounded not-found does not prove nonexecution. Mutations
 retain generation preconditions, exact replay receipts and independent audit
 status/attempt fields. No retry, new ID, fabricated acknowledgement or automatic
-Cancel is added. Legacy interfaces remain available via `client.Legacy`, but
-use the profile facade to retain rich management/error metadata.
+Cancel is added. The profile facade retains complete management/error metadata.
 
 ## Clean-checkout validation and example
 

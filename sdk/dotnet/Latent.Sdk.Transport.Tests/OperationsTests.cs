@@ -101,13 +101,12 @@ internal static partial class Program
         Check(MemoryMarshal.TryGetArray(invoked.Value.Success.Payload, out ArraySegment<byte> firstMemory) && MemoryMarshal.TryGetArray(second.Success!.Payload, out ArraySegment<byte> nextMemory) &&
             !ReferenceEquals(firstMemory.Array, nextMemory.Array), "response buffers alias another call");
         Check((await client.InvokeAsync(Invoke(null), Defaults)).Metadata.Identity.ActivationId == "server-assigned", "assigned identity not retained");
-        var legacyBudget = new ResourceBudget(ulong.MaxValue, 4096, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         foreach (string kind in new[] { "success", "declared", "platform" })
         {
-            var legacy = new InvokeRequest(new("tenant-a", "echo", "tests:echo/api@1.0.0", kind, null), new byte[] { 0, 255 }, "application/octet-stream",
-                new(null, 0, null, legacyBudget, new Dictionary<string, string>()), "activation-a");
-            InvocationOutcome outcome = await client.Legacy.InvokeAsync(legacy);
-            Check(kind switch { "success" => outcome is InvocationOutcome.Succeeded, "declared" => outcome is InvocationOutcome.DeclaredFailure, _ => outcome is InvocationOutcome.PlatformFailure }, "legacy outcome collapsed");
+            Profile.InvokeRequest input = Invoke() with { Target = Invoke().Target! with { Function = kind } };
+            Profile.InvokeResponse outcome = (await client.InvokeAsync(input, Defaults)).Value;
+            Check(kind switch { "success" => outcome.Success is not null, "declared" => outcome.DeclaredError is not null,
+                _ => outcome.PlatformFailure is not null }, "profile outcome collapsed");
         }
         Check(peer.Requests.Count == 8 && peer.Connections.Count == 1, "eight generated operations did not reuse one TCP connection");
         await client.DisposeAsync();
