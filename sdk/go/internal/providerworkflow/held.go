@@ -44,8 +44,8 @@ func (owner *workflow) held(parent context.Context, kind string) (outcome error)
 	options := profile.CallOptions{}
 	started := time.Now()
 	if kind == "deadline" {
-		request.DeadlineUnixMillis = reference(uint64(time.Now().Add(500 * time.Millisecond).UnixMilli()))
-		options.TimeoutMillis = reference(uint64(500))
+		request.DeadlineUnixMillis = reference(uint64(started.Add(heldDeadlineBudget).UnixMilli()))
+		options.TimeoutMillis = reference(uint64(heldDeadlineBudget / time.Millisecond))
 	}
 	result := make(chan invocationResult, 1)
 	retired := make(chan struct{})
@@ -56,7 +56,7 @@ func (owner *workflow) held(parent context.Context, kind string) (outcome error)
 	}()
 	defer func() {
 		cancel()
-		timer := time.NewTimer(2500 * time.Millisecond)
+		timer := time.NewTimer(heldWaitBudget)
 		defer timer.Stop()
 		select {
 		case <-retired:
@@ -64,10 +64,11 @@ func (owner *workflow) held(parent context.Context, kind string) (outcome error)
 			outcome = errors.New("participant-invocation-owner-did-not-retire")
 		}
 	}()
-	if failure := owner.marker(parent, "started-"+mode); failure != nil {
+	if failure := waitMarker(parent, filepath.Join(owner.input.ControlDirectory, "started-"+mode), retired); failure != nil {
 		cancel()
-		_, _ = awaitInvocation(parent, result)
-		return failure
+		completed, waitFailure := awaitInvocation(parent, result)
+		return &stepFailure{reason: "participant-" + kind + "-started-rendezvous-failed",
+			cause: errors.Join(failure, completed.failure, waitFailure)}
 	}
 	status, failure := owner.client.GetActivation(parent, profile.GetActivationRequest{ActivationId: identity}, profile.CallOptions{TimeoutMillis: reference(uint64(1000))})
 	if failure != nil || status.Value.TerminalState != nil {
@@ -103,7 +104,7 @@ func (owner *workflow) held(parent context.Context, kind string) (outcome error)
 	case "deadline":
 		deadlineFailure := errors.Is(completed.failure, context.DeadlineExceeded) ||
 			(completed.response.Value.PlatformFailure != nil && completed.response.Value.PlatformFailure.Code == "deadline-exceeded")
-		if !deadlineFailure || time.Since(started) > 2500*time.Millisecond {
+		if !deadlineFailure || time.Since(started) > heldWaitBudget {
 			return errors.New("participant-original-absolute-deadline-not-observed")
 		}
 		owner.result.Assertions["absoluteDeadline"] = true
@@ -128,7 +129,7 @@ func (owner *workflow) held(parent context.Context, kind string) (outcome error)
 	}
 	// lsf-example-end: cancel
 	if failure := owner.marker(parent, "closed-"+mode); failure != nil {
-		return failure
+		return &stepFailure{reason: "participant-" + kind + "-closed-rendezvous-failed", cause: failure}
 	}
 	if failure := owner.retain(parent, identity); failure != nil {
 		return failure
@@ -140,7 +141,7 @@ func (owner *workflow) held(parent context.Context, kind string) (outcome error)
 }
 
 func awaitInvocation(parent context.Context, result <-chan invocationResult) (invocationResult, error) {
-	timer := time.NewTimer(2500 * time.Millisecond)
+	timer := time.NewTimer(heldWaitBudget)
 	defer timer.Stop()
 	select {
 	case value := <-result:
@@ -203,25 +204,5 @@ func (owner *workflow) mode(value string) error {
 }
 
 func (owner *workflow) marker(parent context.Context, name string) error {
-	ctx, cancel := context.WithTimeout(parent, 2500*time.Millisecond)
-	defer cancel()
-	ticker := time.NewTicker(5 * time.Millisecond)
-	defer ticker.Stop()
-	for {
-		info, failure := os.Lstat(filepath.Join(owner.input.ControlDirectory, name))
-		if failure == nil {
-			if !info.Mode().IsRegular() || info.Size() > 64 {
-				return errors.New("participant-invalid-private-rendezvous")
-			}
-			return nil
-		}
-		if !errors.Is(failure, os.ErrNotExist) {
-			return errors.New("participant-private-rendezvous-read-failed")
-		}
-		select {
-		case <-ctx.Done():
-			return errors.New("participant-private-rendezvous-timeout")
-		case <-ticker.C:
-		}
-	}
+	return waitMarker(parent, filepath.Join(owner.input.ControlDirectory, name), nil)
 }
