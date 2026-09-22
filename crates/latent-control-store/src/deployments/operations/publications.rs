@@ -30,7 +30,7 @@ pub(in crate::deployments) fn recover_publications(
         let receipt = &mut row.receipt;
         if legacy {
             // A still-retained exact object revision proves its original pin.
-            // Otherwise use only the catalog's retained legacy association.
+            // Otherwise require a unique current scoped catalog match.
             let retained = catalog
                 .record_by_id(&receipt.deployment_id)
                 .filter(|record| {

@@ -20,9 +20,17 @@ trust checks, native currentness and a predefined 32-release resource profile.
 The [Phase 1 review](docs/phase-1-completion.md) and
 [extension report](docs/phase-1-extension-completion.md) preserve the earlier
 scale, soak, optimization and Docker/Kubernetes comparisons. These are scoped
-engineering results, not production SLOs. Phase 3 has
-[41 planned tickets](docs/roadmap.md#phase-3-capabilities-and-application-hosting)
-for capability providers, application/web hosting, SDK delivery and validation.
+engineering results, not production SLOs. Phase 3 capability providers,
+application/web hosting and executable SDKs are being integrated on `development`.
+The [Phase 3 gate review](docs/phase-3-gate-review.md) tracks completed evidence
+and the remaining guide review, native release and static-site acceptance work.
+Phase 3 is not yet declared complete.
+
+Read the [documentation website](https://kirilsturkins.github.io/latent-service-fabric/)
+for published alpha and development guides. The site identifies the source and
+supported profile of its content; repository documentation can be newer than
+the deployed snapshot. Start with the [runtime concepts guide](docs/learn/runtime-identities.md)
+for the source-reviewed learning path.
 
 ## Core invariant
 
@@ -75,7 +83,7 @@ offline bundles, rootless local evaluation and persistent systemd servers from
 application development and contributor builds. The page explicitly records
 pending release/VM gates; the historical `0.1.0-alpha.3` release remains source-only.
 
-- `latentd`: standalone Linux node through `check-config`, `serve --config PATH`, and offline catalog migration.
+- `latentd`: standalone Linux node through `check-config` and `serve --config PATH`. Obsolete Phase 2 catalogs require [fresh state](docs/reference/publication-catalog.md#supported-storage-and-fresh-state).
 - `latent-control`: clustered control-plane application placeholder.
 - `latent`: bounded local package build/inspect/verification and OCI transfer; authenticated release lifecycle, managed deployment receipts, rollout/canary/rollback, audit, invocation/cancellation/status, routing and node commands.
 
