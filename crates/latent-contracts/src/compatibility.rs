@@ -1,4 +1,4 @@
-//! Conservative bounded previous-to-candidate analysis of legacy descriptors.
+//! Conservative bounded previous-to-candidate analysis of contract descriptors.
 mod descriptor;
 mod limits;
 #[cfg(test)]
@@ -68,50 +68,6 @@ pub struct StructuralReport {
     pub diagnostics_truncated: bool,
     pub issues: Box<[StructuralIssue]>,
     pub work: ComparisonWork,
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct BoundedCompatibilityChecker;
-
-impl crate::CompatibilityChecker for BoundedCompatibilityChecker {
-    fn compare(
-        &self,
-        previous: &crate::ContractDescriptor,
-        candidate: &crate::ContractDescriptor,
-    ) -> crate::CompatibilityReport {
-        match compare_descriptors(previous, candidate, ComparisonLimits::default()) {
-            Ok(report) => crate::CompatibilityReport {
-                level: match report.level {
-                    StructuralCompatibility::Identical => crate::CompatibilityLevel::Identical,
-                    StructuralCompatibility::BackwardCompatible => {
-                        crate::CompatibilityLevel::BackwardCompatible
-                    }
-                    StructuralCompatibility::Breaking => crate::CompatibilityLevel::Breaking,
-                    StructuralCompatibility::Unsupported | StructuralCompatibility::Unknown => {
-                        crate::CompatibilityLevel::Unknown
-                    }
-                },
-                issues: report
-                    .issues
-                    .into_vec()
-                    .into_iter()
-                    .map(|issue| crate::CompatibilityIssue {
-                        path: issue.path.into_string(),
-                        code: issue.code.as_str().to_owned(),
-                        message: issue.code.as_str().to_owned(),
-                    })
-                    .collect(),
-            },
-            Err(_) => crate::CompatibilityReport {
-                level: crate::CompatibilityLevel::Unknown,
-                issues: vec![crate::CompatibilityIssue {
-                    path: "$".to_owned(),
-                    code: "invalid-comparison-input".to_owned(),
-                    message: "invalid-comparison-input".to_owned(),
-                }],
-            },
-        }
-    }
 }
 
 fn invalid() -> PlatformError {

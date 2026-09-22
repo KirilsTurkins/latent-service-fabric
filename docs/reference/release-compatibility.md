@@ -160,9 +160,9 @@ analysis remains denied. The returned boolean describes compatibility only.
 `latent_contracts::compare_descriptors` provides the separate limited descriptor
 analysis. Its `StructuralReport` distinguishes `analysis_complete` from
 `diagnostics_truncated`: a bounded diagnostic list is not a complete inventory
-of every difference. `BoundedCompatibilityChecker` adapts that checker to the
-older trait, mapping unsupported or invalid analysis to its legacy unknown
-result. Neither API trusts equal declared digest or display-signature strings.
+of every difference. Callers use `compare_descriptors` with explicit
+`ComparisonLimits` and handle its typed `StructuralReport` or input error.
+The checker does not trust equal declared digest or display-signature strings.
 
 ## Bound the control operation
 
