@@ -206,6 +206,11 @@ still reserves its complete payload charge before reading and verifying the
 captured source. It neither waits for the cache lock nor acquires extra capacity;
 read-gate or memory exhaustion still returns 503 before unowned work begins.
 
+Mandatory catalog admission remains nonqueueing: concurrent selection may
+return a bounded 503 before asset dispatch. This response has an empty body and
+`Cache-Control: no-store`; it never becomes an SPA document. A subsequent
+explicit GET can succeed after the owner releases its reservation.
+
 ## Regression coverage and validation
 
 Run the targeted checks with the repository's pinned toolchain:
