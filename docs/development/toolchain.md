@@ -33,7 +33,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `wasm-tools` |                              1.254.0 | WIT parsing, validation, componentization, and interface extraction |
 | Buf |                               1.72.0 | Protobuf linting and independent descriptor-set generation |
 | Python / `jsonschema` |                      3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
-| Go / Node / TypeScript / .NET |   1.23.2 / 24.19.0 / 5.8.3 / 8.0.425 | Cross-language interfaces and bounded native clients |
+| Go / Node / TypeScript / .NET |   1.27.1 / 24.19.0 / 7.0.2 / 8.0.425 | Cross-language interfaces and bounded native clients |
 | Eclipse Temurin JDK |                           25.0.4.1+1 | Java SDK build and runtime qualification; Java 25 minimum runtime |
 | Gradle (optional Java build) |                                9.1.0 | Java 25-compatible Gradle path; distribution SHA-256 pinned in `tools/toolchain.toml` |
 | Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
