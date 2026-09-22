@@ -122,6 +122,7 @@ pub(super) fn manifest_to_proto(manifest: TriggerManifest, generation: u64) -> p
 }
 pub(super) fn receipt(r: TriggerOperationReceipt) -> proto::TriggerOperationReceipt {
     use latent_artifacts::ReleaseActorKind as D;
+    use latent_control_store::http_routes::TriggerTargetIdentity;
     let actor = match r.actor.kind {
         D::User => proto::ReleaseActorKind::User,
         D::Service => proto::ReleaseActorKind::Service,
@@ -131,6 +132,43 @@ pub(super) fn receipt(r: TriggerOperationReceipt) -> proto::TriggerOperationRece
         D::Anonymous => proto::ReleaseActorKind::Anonymous,
         D::Host => proto::ReleaseActorKind::Host,
     };
+    let tenant = r.tenant.clone();
+    let target = r.target.clone().map(|target| match target {
+        TriggerTargetIdentity::Application {
+            publication,
+            component,
+            deployment_id,
+            deployment_generation,
+            revision,
+        } => proto::TriggerReceiptTarget {
+            kind: proto::TriggerReceiptTargetKind::Application as i32,
+            publication: Some(proto::PublicationRef {
+                id: publication.id.into_string(),
+                tenant: tenant.clone(),
+            }),
+            component_digest: component.0,
+            deployment_id,
+            deployment_generation,
+            revision,
+            ..Default::default()
+        },
+        TriggerTargetIdentity::StaticWeb {
+            publication,
+            web_manifest_digest,
+            assets_digest,
+            web_generation,
+        } => proto::TriggerReceiptTarget {
+            kind: proto::TriggerReceiptTargetKind::StaticWeb as i32,
+            publication: Some(proto::PublicationRef {
+                id: publication.id.into_string(),
+                tenant: tenant.clone(),
+            }),
+            web_manifest_digest,
+            assets_digest,
+            web_generation,
+            ..Default::default()
+        },
+    });
     proto::TriggerOperationReceipt {
         format_version: r.format_version,
         tenant: r.tenant.clone(),
@@ -151,16 +189,17 @@ pub(super) fn receipt(r: TriggerOperationReceipt) -> proto::TriggerOperationRece
         state_version: r.state_version,
         route_generation: r.route_generation,
         manifest_digest: r.manifest_digest,
-        publication: Some(proto::PublicationRef {
-            id: r.publication.id.into_string(),
-            tenant: r.tenant,
+        publication: r.publication.map(|publication| proto::PublicationRef {
+            id: publication.id.into_string(),
+            tenant,
         }),
-        component_digest: r.component.0,
-        deployment_id: r.deployment_id,
-        deployment_generation: r.deployment_generation,
-        revision: r.revision,
+        component_digest: r.component.map_or_else(String::new, |component| component.0),
+        deployment_id: r.deployment_id.unwrap_or_default(),
+        deployment_generation: r.deployment_generation.unwrap_or_default(),
+        revision: r.revision.unwrap_or_default(),
         completed_at_unix_millis: r.completed_at_unix_millis,
         receipt_digest: r.receipt_digest,
+        target,
     }
 }
 pub(super) fn lookup(value: TriggerOperationLookup) -> proto::GetTriggerOperationResponse {
