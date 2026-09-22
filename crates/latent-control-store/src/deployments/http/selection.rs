@@ -120,7 +120,7 @@ impl DirectoryDeploymentRepository {
                 let (_, revision, catalog) = self.http_target(&previous, &row.manifest)?;
                 if &revision.release != component
                     || previous.http.data.records[index].generation == 0
-                    || previous.http.rows[index].target != *expected
+                    || &previous.http.rows[index].target != expected
                 {
                     return Err(corrupt());
                 }
@@ -146,7 +146,7 @@ impl DirectoryDeploymentRepository {
                     || selection.layout().manifest_digest().as_str() != web_manifest_digest
                     || selection.layout().assets_digest().as_str() != assets_digest
                     || selection.eligibility().generation() != *web_generation
-                    || previous.http.rows[index].target != *expected
+                    || &previous.http.rows[index].target != expected
                 {
                     return Err(conflict());
                 }
