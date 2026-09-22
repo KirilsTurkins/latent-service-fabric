@@ -56,6 +56,38 @@ pub(super) fn durability(value: i32) -> Result<&'static str, Failure> {
     }
 }
 
+// The receipt is structurally checked first. Match its exact variant and
+// publication to the submitted target without inventing application identity.
+pub(super) fn target_matches(
+    receipt: &proto::TriggerOperationReceipt,
+    expected: &proto::TriggerTarget,
+) -> bool {
+    let application = matches!(
+        proto::TriggerTargetKind::try_from(expected.kind),
+        Ok(proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application)
+    );
+    match receipt.target.as_ref() {
+        Some(target) if target.publication == expected.publication => {
+            if application {
+                target.kind == proto::TriggerReceiptTargetKind::Application as i32
+                    && Some(&target.deployment_id) == expected.route.as_ref()
+                    && Some(target.deployment_generation) == expected.deployment_generation
+                    && Some(&target.revision) == expected.revision.as_ref()
+            } else {
+                expected.kind == proto::TriggerTargetKind::StaticWeb as i32
+                    && target.kind == proto::TriggerReceiptTargetKind::StaticWeb as i32
+            }
+        }
+        None if application => {
+            receipt.publication == expected.publication
+                && Some(&receipt.deployment_id) == expected.route.as_ref()
+                && Some(receipt.deployment_generation) == expected.deployment_generation
+                && Some(&receipt.revision) == expected.revision.as_ref()
+        }
+        _ => false,
+    }
+}
+
 pub(in crate::management) fn page(
     value: Option<&String>,
     previous: Option<&String>,
