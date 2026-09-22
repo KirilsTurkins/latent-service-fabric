@@ -1,8 +1,7 @@
 use super::*;
 use latent_audit::{AuditHandle, AuditOperationResult, AuditRecordData};
 use latent_control_store::http_routes::{
-    TriggerOperationContext, TriggerOperationLookup, TriggerOperationRequest,
-    TriggerTargetIdentity,
+    TriggerOperationContext, TriggerOperationLookup, TriggerOperationRequest, TriggerTargetIdentity,
 };
 use latent_core::{PlatformErrorCode, TriggerId};
 use latent_rollout::trigger_audit::{reconcile_trigger_audit, ManagedTriggerAudit};
