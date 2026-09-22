@@ -80,7 +80,11 @@ fn unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_s
     value.target.application_mut().unwrap().revision = None;
     assert!(normalize(value).is_err());
     let mut value = original.clone();
-    value.target.application_mut().unwrap().deployment_generation = Some(0);
+    value
+        .target
+        .application_mut()
+        .unwrap()
+        .deployment_generation = Some(0);
     assert!(normalize(value).is_err());
     let mut value = original.clone();
     value.target.application_mut().unwrap().contract.0 = "example:echo/api@0.1.0".into();

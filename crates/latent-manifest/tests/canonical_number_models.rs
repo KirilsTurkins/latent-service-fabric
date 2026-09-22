@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use latent_core::{ContractId, ServiceId, TenantId, TriggerId};
 use latent_manifest::{
-    ApplicationTriggerTarget, JsonManifestCodec, ManifestCodec, ObjectMetadata, TriggerKind, TriggerManifest, TriggerTarget,
-    MANIFEST_API_VERSION,
+    ApplicationTriggerTarget, JsonManifestCodec, ManifestCodec, ObjectMetadata, TriggerKind,
+    TriggerManifest, TriggerTarget, MANIFEST_API_VERSION,
 };
 use serde_json::Value;
 

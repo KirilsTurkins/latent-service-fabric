@@ -87,7 +87,9 @@ fn static_web_http_target_round_trips_and_hybrids_are_rejected() {
     let bytes = serde_json::to_vec(&document).unwrap();
     let decoded = codec.decode_trigger(&bytes).expect("static web trigger");
     assert!(decoded.target.static_web().is_some());
-    let encoded = codec.encode_trigger(&decoded).expect("canonical static trigger");
+    let encoded = codec
+        .encode_trigger(&decoded)
+        .expect("canonical static trigger");
     assert_eq!(decoded, codec.decode_trigger(&encoded).unwrap());
 
     let mut hybrid = document.clone();

@@ -26,9 +26,9 @@ pub(super) fn manifest(value: proto::Trigger) -> Result<TriggerManifest, Status>
     let target = match proto::TriggerTargetKind::try_from(target.kind)
         .map_err(|_| Status::invalid_argument("invalid trigger target kind"))?
     {
-        proto::TriggerTargetKind::StaticWeb => TriggerTarget::StaticWeb(StaticWebTriggerTarget {
-            publication,
-        }),
+        proto::TriggerTargetKind::StaticWeb => {
+            TriggerTarget::StaticWeb(StaticWebTriggerTarget { publication })
+        }
         proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application => {
             TriggerTarget::Application(ApplicationTriggerTarget {
                 service: ServiceId(target.service),
@@ -193,7 +193,9 @@ pub(super) fn receipt(r: TriggerOperationReceipt) -> proto::TriggerOperationRece
             id: publication.id.into_string(),
             tenant,
         }),
-        component_digest: r.component.map_or_else(String::new, |component| component.0),
+        component_digest: r
+            .component
+            .map_or_else(String::new, |component| component.0),
         deployment_id: r.deployment_id.unwrap_or_default(),
         deployment_generation: r.deployment_generation.unwrap_or_default(),
         revision: r.revision.unwrap_or_default(),
