@@ -38,6 +38,23 @@ pub(in crate::standalone::http) async fn exchange_routed<S: AsyncRead + AsyncWri
     exchange_prepared(socket, shared, head, Ok(request), deadline, close).await
 }
 
+pub(in crate::standalone::http) async fn exchange_static<S: AsyncRead + AsyncWrite + Unpin>(
+    socket: &mut S,
+    shared: &Shared,
+    head: Head,
+    raw: &mut [u8],
+    deadline: IncomingDeadline,
+    close: bool,
+    selected: latent_control_store::http_routes::AcceptedHttpRoute,
+) -> Result<bool, u16> {
+    let request = super::static_site::select(&head, &selected, raw).map(|mut request| {
+        request.route = Some(selected);
+        request
+    });
+    raw.zeroize();
+    exchange_prepared(socket, shared, head, request, deadline, close).await
+}
+
 async fn exchange_prepared<S: AsyncRead + AsyncWrite + Unpin>(
     socket: &mut S,
     shared: &Shared,
@@ -63,6 +80,17 @@ async fn exchange_prepared<S: AsyncRead + AsyncWrite + Unpin>(
     };
     drop(head);
     result
+}
+pub(in crate::standalone::http) async fn reject<S: AsyncRead + AsyncWrite + Unpin>(
+    socket: &mut S,
+    shared: &Shared,
+    head: Head,
+    raw: &mut [u8],
+    deadline: IncomingDeadline,
+    code: u16,
+) -> Result<bool, u16> {
+    raw.zeroize();
+    exchange_prepared(socket, shared, head, Err(code), deadline, true).await
 }
 fn prepare_request(head: &Head, raw: &[u8]) -> Result<Request, u16> {
     LocalPrincipalPolicy
@@ -128,14 +156,28 @@ async fn delivery<W: AsyncWrite + Unpin>(
     } else {
         "private, max-age=31536000, immutable"
     };
+    let vary = if response
+        .request
+        .route
+        .as_ref()
+        .is_some_and(|route| route.target().web_selection().is_some())
+    {
+        "Authorization, Accept-Encoding, Accept, Sec-Fetch-Mode, Sec-Fetch-Dest, Sec-Fetch-Site, Sec-Fetch-User"
+    } else {
+        "Authorization, Accept-Encoding"
+    };
     let mut head = format!(
-        "HTTP/1.1 {} Response\r\nETag: {}\r\nCache-Control: {cache_control}\r\nVary: Authorization, Accept-Encoding\r\nAccept-Ranges: none\r\n",
+        "HTTP/1.1 {} Response\r\nETag: {}\r\nCache-Control: {cache_control}\r\nVary: {vary}\r\nAccept-Ranges: none\r\n",
         response.code, response.etag,
     );
     if close {
         head.push_str("Connection: close\r\n");
     }
-    if response.code != 304 {
+    if let Some(location) = &response.request.redirect {
+        head.push_str("Content-Length: 0\r\nLocation: ");
+        head.push_str(location);
+        head.push_str("\r\n");
+    } else if response.code != 304 {
         use std::fmt::Write as _;
         write!(
             &mut head,
@@ -147,12 +189,12 @@ async fn delivery<W: AsyncWrite + Unpin>(
     }
     security(&mut head, scheme);
     head.push_str("\r\n");
-    if head.len() > 2048 {
+    if head.len() > latent_ingress::http::MAX_TARGET_BYTES + 2048 {
         return Err(io::ErrorKind::InvalidData.into());
     }
     socket.write_all(head.as_bytes()).await?;
     socket.flush().await?;
-    if !response.request.head && response.code != 304 {
+    if !response.request.head && response.code != 304 && response.request.redirect.is_none() {
         for chunk in response.buffer.bytes.chunks(16 * 1024) {
             socket.write_all(chunk).await?;
             socket.flush().await?;

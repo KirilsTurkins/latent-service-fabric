@@ -52,9 +52,98 @@ rules; a stale winning static route fails closed.
 This metadata does not change the reserved `/_lsf/assets/*` endpoint described
 above. Direct immutable asset URLs still have no directory-index or SPA-fallback
 behavior. Site-level entry/index/fallback behavior is consumed only by the
-dependent static-serving runtime after a first-class static target has been
+shared static-serving runtime after a first-class static target has been
 selected. No filesystem root, directory listing, arbitrary rewrite/redirect,
 proxy, SSR, weighted backend or per-site cache is implied.
+
+## Routed static sites
+
+A `static-web` HTTP trigger selects one admitted browser publication and one
+canonical mount. The shared ingress authenticates the request and selects the
+winning exact/prefix matcher before resolving any package path. For example,
+`/docs/guide/?tab=history` under mount `/docs` has site path `/guide/`. `/docs2`
+does not match that mount. Queries remain request data and do not enter asset
+lookup. The resolver never decodes URLs again or probes a filesystem directory.
+
+Resolution follows this order:
+
+1. Exact signed client/prerender `WebRoute`.
+2. Exact admitted public asset.
+3. Configured directory index, when enabled.
+4. Configured SPA document, for an eligible navigation only.
+5. Empty 404 with `Cache-Control: no-store`.
+
+With `directoryIndex: redirect` and `directoryIndexDocument: /index.html`,
+`/docs/guide/` selects `/guide/index.html`. If those checked bytes exist,
+`/docs/guide?tab=history` returns an empty 308 with root-relative
+`Location: /docs/guide/?tab=history`. The redirect verifies the selected index
+and its current authority too. Forwarding headers cannot set the location.
+Disabling directory indexes disables this slash behavior. `entryDocument`
+identifies package input; it does not create an implicit route. A CSR package
+with indexes disabled should include an explicit signed `/` route to its entry
+document as well as its optional navigation fallback.
+
+If any Fetch Metadata is present, SPA fallback requires both
+`Sec-Fetch-Mode: navigate` and `Sec-Fetch-Dest: document`. The existing
+[same-origin browser policy](security/browser-boundary.md) still applies.
+Without Fetch Metadata, fallback requires an explicit nonzero `text/html`
+range in `Accept`. Missing `Accept` and `*/*` alone do not qualify. No other
+HTML media type is supported. Script/style/image/font/manifest destinations
+and JSON/API misses receive 404 even when fallback is enabled; filename
+extensions do not decide navigation eligibility.
+
+Static content negotiation accepts at most 16 media ranges in 2,048 bytes.
+It supports exact media types, type wildcards, `*/*`, and at most eight unique
+parameters per range, including one `q` parameter with up to three fractional
+digits. Token and quoted parameter values are bounded and validated. A range
+with media parameters does not match an unparameterized representation; valid
+parameters in browser navigation headers therefore do not make the request
+malformed. A more specific matching range overrides a wildcard, including
+`text/html;q=0`. Duplicate ranges/headers/parameters and malformed qualities
+receive 400; excess ranges/bytes receive 431. A resolved
+representation excluded by `Accept` or identity encoding receives 406.
+
+Create separate GET and HEAD trigger matchers. A missing HEAD application
+matcher does not invoke its GET application. Other methods receive 405 when
+an eligible static GET/HEAD matcher owns that path; a matched application
+method retains its existing behavior. Static GET/HEAD bodies receive 400.
+
+Routed HTML and assets carry `Cache-Control: private, no-cache` and the same
+strong representation ETag as immutable assets. They additionally vary on
+`Accept` and the four supported Fetch Metadata fields. Immutable URLs keep
+their one-year private immutable policy. GET, HEAD and 304 each require current
+publication authority; cached bytes grant none. A trigger update affects later
+selections. An already captured request keeps its original exact publication,
+while revocation of that publication denies acceptance. A stale specific
+matcher never falls through to a broader one.
+
+The resolver uses a 240-byte stack buffer for index derivation and at most
+8 KiB for a canonical redirect location, within the existing 4 MiB HTTP
+exchange reservation. It uses the existing node-wide asset cache and four
+nonblocking read/output permits. No activation request, scheduler admission,
+renderer, cell, Wasmtime store, per-site task, listener or cache is created.
+Corruption/impossible checked associations produce 502; stopped/exhausted
+owners produce 503. Neither becomes a fallback document. Disconnects and
+deadlines retain the actual blocking read charge until that owner retires.
+
+### Migrating a conventional static host
+
+The supported counterpart to nginx `try_files $uri $uri/ /index.html` is an
+explicit admitted asset inventory, optional checked directory indexes, and
+navigation-qualified SPA fallback. A static generator normally enables
+directory indexes and disables fallback; Angular CSR normally disables indexes
+and enables `/index.html` fallback. Host/mount/method remain operator trigger
+policy; document routing remains signed package metadata. Regex rewrites,
+directory listings, arbitrary filesystem roots, reverse proxying, custom
+error-page fallbacks and transparent compression are outside this profile.
+
+The `static_tests` real-node suite covers root/non-root mounts, exact route
+precedence, queries, redirects, hostile paths, missing assets, methods,
+negotiation, GET/HEAD/304, cutover, rollback, delete/recreate, revocation,
+concurrent cache use, corruption, read saturation, disconnect and shutdown.
+It checks zero begun activations/activation observations and zero created
+Wasmtime stores, then verifies drained shared ownership. These bounded checks
+are runtime conformance, not a framework/browser or performance qualification.
 
 ## HTTP behavior
 

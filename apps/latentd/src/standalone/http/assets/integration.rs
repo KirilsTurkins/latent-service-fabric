@@ -26,6 +26,7 @@ pub(super) struct Harness {
     pub(super) owner: HttpOwner,
     pub(super) node: node_fixture::Fixture,
     pub(super) repository: Arc<DirectoryArtifactRepository>,
+    pub(super) deployments: Arc<latent_control_store::DirectoryDeploymentRepository>,
     current: Arc<AtomicBool>,
     storage: TempDir,
 }
@@ -39,6 +40,24 @@ impl Harness {
     pub(super) async fn configured_application(
         configure: impl FnOnce(&mut serde_json::Value),
         component: Option<Vec<u8>>,
+    ) -> Self {
+        Self::configured_catalog(configure, component, false).await
+    }
+    pub(super) async fn static_site() -> Self {
+        Self::configured_catalog(
+            |value| {
+                value["httpIngress"]["browserOrigins"] =
+                    serde_json::json!([{"authority":node_fixture::AUTHORITY,"tenant":"tests"}]);
+            },
+            None,
+            true,
+        )
+        .await
+    }
+    async fn configured_catalog(
+        configure: impl FnOnce(&mut serde_json::Value),
+        component: Option<Vec<u8>>,
+        static_catalog: bool,
     ) -> Self {
         let root = TempDir::new().unwrap();
         let mut value = node_fixture::config(&root);
@@ -75,11 +94,36 @@ impl Harness {
             )
             .unwrap(),
         );
+        let deployments = if static_catalog {
+            Arc::new(
+                latent_control_store::DirectoryDeploymentRepository::open_with_catalog(
+                    storage.path().join("deployments"),
+                    repository.clone(),
+                    latent_control_store::DirectoryDeploymentRepositoryConfig::default(),
+                    repository.lifecycle_authority(),
+                    Arc::new(
+                        latent_manifest::RuntimeCompatibilityProfile::new(
+                            "wasmtime",
+                            "47.0.4",
+                            "x86_64-unknown-linux-gnu",
+                            &["x86_64.sse2"],
+                            65_536,
+                            1000,
+                        )
+                        .unwrap(),
+                    ),
+                )
+                .await
+                .unwrap(),
+            )
+        } else {
+            node.deployments.clone()
+        };
         let owner = HttpOwner::start(
             settings.http.unwrap(),
             HttpServices {
                 manager: node.node.manager.clone(),
-                deployments: node.deployments.clone(),
+                deployments: deployments.clone(),
                 cleanup: node.node.cleanup.as_ref().unwrap().handle(),
                 clock: node.node.clock.clone(),
                 budget: settings.admission.budget_ceiling.clone(),
@@ -92,11 +136,12 @@ impl Harness {
             owner,
             node,
             repository,
+            deployments,
             current,
             storage,
         }
     }
-    fn store(&self) -> Arc<Store> {
+    pub(super) fn store(&self) -> Arc<Store> {
         Arc::clone(self.owner.handle().0.assets.get().unwrap())
     }
     pub(super) fn publish(&self, operation: &str, bytes: &[u8]) -> String {
@@ -107,7 +152,7 @@ impl Harness {
             .asset_url("/index.html")
             .unwrap()
     }
-    async fn call(
+    pub(super) async fn call(
         &self,
         method: &str,
         path: &str,

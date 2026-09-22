@@ -137,7 +137,28 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     }
     // The immutable namespace never reaches trigger lookup or cell reservation,
     // including misses, malformed locators, HEAD, 304 and rejected methods.
-    let selected = dispatch::select(&head, shared)?;
+    if path == "/_lsf" || path.starts_with("/_lsf/") {
+        return Err(404);
+    }
+    let selected = match dispatch::select(&head, shared) {
+        Ok(selected) => selected,
+        Err(code) => {
+            return super::assets::reject(socket, shared, head, &mut buffer[..end], deadline, code)
+                .await
+        }
+    };
+    if selected.target().web_selection().is_some() {
+        return super::assets::exchange_static(
+            socket,
+            shared,
+            head,
+            &mut buffer[..end],
+            deadline,
+            close,
+            selected,
+        )
+        .await;
+    }
     if let Some(mut request) = super::assets::prerender(&head, shared, &selected, &buffer[..end])? {
         if used != end {
             return Err(400);
