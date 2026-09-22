@@ -152,6 +152,35 @@ receipt is `tools/ci/evidence/baseline-discovery.json`. This establishes discove
 completeness and names, **not execution success** for the runtime test suite.
 Actual host/full execution qualification must use the current CI receipts.
 
+### Hosted host-correctness execution, 2026-09-21
+
+[CI run 35553538203, attempt 1](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35553538203)
+executed the affected host set and the separate narrow dependency fixture for
+PR #445 head `149abd76ad4752007babf467c46d392c7464519d`. Both unchanged receipts
+identify the tested pull-request merge `888f9fceb36344675ee1604c02d0acddd9c13234`.
+They are actual execution receipts, separate from the earlier listing-only
+discovery evidence.
+
+| Observed selection | Selected packages | Compiled package identities | Active cases | Cargo test build | Listed test execution |
+| --- | --- | --- | --- | --- | --- |
+| [Affected host set](../evidence/ci-suite-inventory-35553538203/affected.json) | 14 | 95 | 358 | 24.947669 s | 1.258160 s |
+| [Narrow reverse dependents](../evidence/ci-suite-inventory-35553538203/narrow.json) | 5 | 21 | 88 | 3.049295 s | 0.070497 s |
+
+The narrow selection contains `latent-commit`, `latent-core`, `latent-effects`,
+`latent-state` and `latent-workflows`. Its actual dependency list contains no
+Wasmtime, Cranelift, renderer or `latent-testkit`. The timing columns are the
+observed Cargo test build and sum of per-suite execution durations; they exclude
+job setup, formatting, checking, Clippy and the affected set's separate doctests.
+They are not cold-cache performance guarantees. Both receipts preserve every
+command, discovered case, ignore state and compiled package identity, with an
+adjacent checksum for their exact bytes.
+
+The full CI run also completed successfully: exact workspace discovery,
+Rust/runtime/product execution, six-language provider contracts, catalog, MSRV,
+OCI, website and selected security checks passed. All 18 PR checks were successful
+or intentionally unselected. The host receipts remain evidence for their own
+scopes; they do not substitute for those separately executed jobs.
+
 ## Before/after command review
 
 The baseline is `50f003dd006e0786494936c49e55dc683cf26fd6`. All **97 existing required
