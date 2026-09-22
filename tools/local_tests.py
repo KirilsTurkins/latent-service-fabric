@@ -141,7 +141,8 @@ def plan_suite(repo: Path, key: str, case: str | None = None,
     if selection is not None and runner not in {"ci_rust_artifacts"}:
         run_supported = False
         blocker = f"selection execution remains owned by {runner}; this entry point will not bypass its fixture/service owner"
-    qualification = row["boundary"] == "qualification" or row["resourceClass"].startswith("physical")
+    resource_class = selection["resourceClass"] if selection is not None else row["resourceClass"]
+    qualification = row["boundary"] == "qualification" or resource_class.startswith("physical")
     preparation_state = "not-provided"
     if inventory is not None:
         preparation_state = "present" if inventory.is_file() and not inventory.is_symlink() else "missing"
@@ -166,7 +167,7 @@ def plan_suite(repo: Path, key: str, case: str | None = None,
         "purpose": data["boundaries"][row["boundary"]],
         "boundary": row["boundary"],
         "classification": "explicit qualification" if qualification else "ordinary correctness",
-        "resourceClass": row["resourceClass"],
+        "resourceClass": resource_class,
         "platforms": row["platforms"],
         "prerequisites": row["prerequisites"],
         "recipe": row["recipe"],

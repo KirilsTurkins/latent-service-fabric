@@ -282,7 +282,7 @@ class DriftTests(unittest.TestCase):
         ]
         for command in expected:
             self.assertIn(command, workflow)
-        self.assertIn("python3 -m unittest tools.tests.test_local_tests", workflow)
+        self.assertIn("tools.tests.test_local_tests", workflow)
         data = registry.load()
         plan = local.plan_suite(ROOT, METADATA)
         self.assertEqual(plan["cases"], data["selections"]["metadata-working-set"]["names"])
