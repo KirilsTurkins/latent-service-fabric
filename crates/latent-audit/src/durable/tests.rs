@@ -1,6 +1,8 @@
 use super::*;
 #[cfg(unix)]
 mod capability;
+#[cfg(unix)]
+mod static_trigger;
 use latent_core::{ArtifactBlobDigest, TenantId};
 use std::{
     path::PathBuf,

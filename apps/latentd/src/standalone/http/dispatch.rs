@@ -1,6 +1,6 @@
 use super::{head::Head, Shared};
 use latent_activation::{ActivationOutcome, ActivationRequest};
-use latent_control_store::http_routes::AcceptedHttpRoute;
+use latent_control_store::http_routes::{AcceptedHttpRoute, AcceptedHttpTarget};
 use latent_core::{Metadata, PlatformError, PlatformErrorCode};
 use latent_ingress::http::{
     self,
@@ -28,13 +28,23 @@ pub(super) fn select(head: &Head, shared: &Shared) -> Result<AcceptedHttpRoute, 
                 status(e)
             }
         })?;
-    let revision = accepted.revision();
-    LocalPrincipalPolicy
-        .authorize_target(&head.principal, &revision.target.tenant.0)
-        .map_err(status)?;
-    if revision.target.contract.0 != http::CONTRACT || revision.target.function.0 != http::FUNCTION
-    {
-        return Err(502);
+    match accepted.target() {
+        AcceptedHttpTarget::Application { revision, .. } => {
+            LocalPrincipalPolicy
+                .authorize_target(&head.principal, &revision.target.tenant.0)
+                .map_err(status)?;
+            if revision.target.contract.0 != http::CONTRACT
+                || revision.target.function.0 != http::FUNCTION
+            {
+                return Err(502);
+            }
+        }
+        AcceptedHttpTarget::StaticWeb { publication, .. } => {
+            let tenant = publication.scope.tenant().ok_or(403u16)?;
+            LocalPrincipalPolicy
+                .authorize_target(&head.principal, &tenant.0)
+                .map_err(status)?;
+        }
     }
     if let Some(cache) = &shared.handle.0.response_cache {
         let _ = cache.observe_generation(accepted.state_version());
@@ -73,7 +83,13 @@ pub(super) fn begin(
     let invocation = mapped
         .into_invocation()
         .map_err(|e| e.status().unwrap_or(0))?;
-    let (revision, catalog, lease) = accepted.into_parts();
+    let (target, lease) = accepted.into_parts();
+    let AcceptedHttpTarget::Application { revision, catalog } = target else {
+        // Static delivery is intentionally implemented by the dependent runtime
+        // issue; this ticket only installs first-class selection authority.
+        drop(lease);
+        return Err(501);
+    };
     let request = ActivationRequest {
         activation_id: None,
         parent_activation_id: None,
@@ -136,7 +152,9 @@ fn cache_request(
     shared: &Shared,
 ) -> Option<CacheRequest> {
     let cache = shared.handle.0.response_cache.as_ref()?;
-    let revision = accepted.revision();
+    let AcceptedHttpTarget::Application { revision, .. } = accepted.target() else {
+        return None;
+    };
     let publication = revision.publication.as_ref()?;
     cache.request(
         mapped,

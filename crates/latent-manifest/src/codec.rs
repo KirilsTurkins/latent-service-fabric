@@ -11,11 +11,11 @@ use serde_json::{Map, Number, Value};
 
 use crate::schema::{schema_text, validate_schema};
 use crate::{
-    AvailabilityPolicy, BindingEndpoint, BindingManifest, BindingMode, CapabilityGrantSpec,
-    CapsuleManifest, ContractExport, ContractImport, DeploymentManifest, ExecutionBackendKind,
-    ExecutionRequirements, JsonObject, ManifestCodec, ManifestResult, ManifestViolation,
-    ObjectMetadata, PlacementPolicy, PolicyManifest, StateModel, ThreadingModel, TriggerKind,
-    TriggerManifest, TriggerTarget,
+    ApplicationTriggerTarget, AvailabilityPolicy, BindingEndpoint, BindingManifest, BindingMode,
+    CapabilityGrantSpec, CapsuleManifest, ContractExport, ContractImport, DeploymentManifest,
+    ExecutionBackendKind, ExecutionRequirements, JsonObject, ManifestCodec, ManifestResult,
+    ManifestViolation, ObjectMetadata, PlacementPolicy, PolicyManifest, StateModel,
+    StaticWebTriggerTarget, ThreadingModel, TriggerKind, TriggerManifest, TriggerTarget,
 };
 
 const DEFAULT_MAX_DOCUMENT_BYTES: usize = 1024 * 1024;
@@ -942,6 +942,23 @@ struct DeploymentDocumentWire {
     spec: DeploymentSpecWire,
 }
 
+mod publication {
+    use super::*;
+    pub fn serialize<S: Serializer>(
+        value: &latent_core::PublicationId,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        value.as_str().serialize(serializer)
+    }
+    pub fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<latent_core::PublicationId, D::Error> {
+        String::deserialize(deserializer)?
+            .parse()
+            .map_err(de::Error::custom)
+    }
+}
+
 mod publication_option {
     use super::*;
     pub fn serialize<S: Serializer>(
@@ -1167,8 +1184,15 @@ impl From<BindingDocumentWire> for BindingManifest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+enum TriggerTargetWire {
+    StaticWeb(StaticWebTriggerTargetWire),
+    Application(ApplicationTriggerTargetWire),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct TriggerTargetWire {
+struct ApplicationTriggerTargetWire {
     service: String,
     contract: String,
     function: String,
@@ -1192,6 +1216,20 @@ struct TriggerTargetWire {
         deserialize_with = "trigger_present"
     )]
     deployment_generation: Option<u64>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+enum StaticWebTargetKind {
+    #[serde(rename = "static-web")]
+    StaticWeb,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct StaticWebTriggerTargetWire {
+    kind: StaticWebTargetKind,
+    #[serde(with = "publication")]
+    publication: latent_core::PublicationId,
 }
 
 fn trigger_present<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
@@ -1246,14 +1284,24 @@ impl From<&TriggerManifest> for TriggerDocumentWire {
             kind: value.kind,
             metadata: ObjectMetadataWire::from(&value.metadata),
             spec: TriggerSpecWire {
-                target: TriggerTargetWire {
-                    service: value.target.service.0.clone(),
-                    contract: value.target.contract.0.clone(),
-                    function: value.target.function.clone(),
-                    route: value.target.route.clone(),
-                    publication: value.target.publication.clone(),
-                    revision: value.target.revision.clone(),
-                    deployment_generation: value.target.deployment_generation,
+                target: match &value.target {
+                    TriggerTarget::Application(target) => {
+                        TriggerTargetWire::Application(ApplicationTriggerTargetWire {
+                            service: target.service.0.clone(),
+                            contract: target.contract.0.clone(),
+                            function: target.function.clone(),
+                            route: target.route.clone(),
+                            publication: target.publication.clone(),
+                            revision: target.revision.clone(),
+                            deployment_generation: target.deployment_generation,
+                        })
+                    }
+                    TriggerTarget::StaticWeb(target) => {
+                        TriggerTargetWire::StaticWeb(StaticWebTriggerTargetWire {
+                            kind: StaticWebTargetKind::StaticWeb,
+                            publication: target.publication.clone(),
+                        })
+                    }
                 },
                 configuration: value.configuration.clone(),
             },
@@ -1269,14 +1317,23 @@ impl From<TriggerDocumentWire> for TriggerManifest {
             id,
             metadata: value.metadata.into_domain(),
             kind: value.kind,
-            target: TriggerTarget {
-                service: ServiceId(value.spec.target.service),
-                contract: ContractId(value.spec.target.contract),
-                function: value.spec.target.function,
-                route: value.spec.target.route,
-                publication: value.spec.target.publication,
-                revision: value.spec.target.revision,
-                deployment_generation: value.spec.target.deployment_generation,
+            target: match value.spec.target {
+                TriggerTargetWire::Application(target) => {
+                    TriggerTarget::Application(ApplicationTriggerTarget {
+                        service: ServiceId(target.service),
+                        contract: ContractId(target.contract),
+                        function: target.function,
+                        route: target.route,
+                        publication: target.publication,
+                        revision: target.revision,
+                        deployment_generation: target.deployment_generation,
+                    })
+                }
+                TriggerTargetWire::StaticWeb(target) => {
+                    TriggerTarget::StaticWeb(StaticWebTriggerTarget {
+                        publication: target.publication,
+                    })
+                }
             },
             configuration: value.spec.configuration,
         }

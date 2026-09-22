@@ -83,6 +83,18 @@ fn assert_supported_schema(schema: &Value, path: &str) {
                     assert_supported_schema(child, &format!("{path}.{keyword}.{name}"));
                 }
             }
+            "oneOf" => {
+                let children = value.as_array().unwrap_or_else(|| {
+                    panic!("embedded schema keyword `{path}.{keyword}` must be an array")
+                });
+                assert!(
+                    !children.is_empty(),
+                    "embedded schema keyword `{path}.{keyword}` must not be empty"
+                );
+                for (index, child) in children.iter().enumerate() {
+                    assert_supported_schema(child, &format!("{path}.{keyword}[{index}]"));
+                }
+            }
             "items" | "if" | "then" => assert_supported_schema(value, &format!("{path}.{keyword}")),
             "additionalProperties" if value.is_object() => {
                 assert_supported_schema(value, &format!("{path}.additionalProperties"));
@@ -116,6 +128,27 @@ fn validate_node(
             }
         }
         if violations.len() >= max_violations {
+            return;
+        }
+    }
+
+    if let Some(alternatives) = schema.get("oneOf").and_then(Value::as_array) {
+        let mut matches = 0usize;
+        for alternative in alternatives {
+            let mut probe = Vec::new();
+            validate_node(alternative, instance, path, root, &mut probe, 1);
+            if probe.is_empty() {
+                matches += 1;
+            }
+        }
+        if matches != 1 {
+            push_violation(
+                violations,
+                max_violations,
+                path,
+                "invalid-value",
+                "value must match exactly one schema-defined alternative".to_owned(),
+            );
             return;
         }
     }

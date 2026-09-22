@@ -143,6 +143,20 @@ pub(super) fn actor(v: &AuditActorIdentity) -> Result<()> {
     token(&v.subject, 512)
 }
 pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
+    if let Some(web) = &v.static_web {
+        if web.web_generation == 0
+            || v.trigger.is_none()
+            || v.publication.is_none()
+            || v.component.is_some()
+            || v.deployment.is_some()
+            || v.deployment_generation.is_some()
+            || v.revision.is_some()
+            || v.rollout.is_some()
+            || v.capability.is_some()
+        {
+            return Err(invalid());
+        }
+    }
     if let Some(trigger) = &v.trigger {
         token(trigger, 128)?;
     }
@@ -187,7 +201,10 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
         || v.state_version == Some(0)
         || v.rollout_step.is_some_and(|step| step >= 64)
         || (v.rollout.is_none() && (v.rollout_revision.is_some() || v.rollout_step.is_some()))
-        || (v.state_version.is_some() && v.rollout.is_none() && v.deployment.is_none())
+        || (v.state_version.is_some()
+            && v.rollout.is_none()
+            && v.deployment.is_none()
+            && v.static_web.is_none())
     {
         return Err(invalid());
     }
@@ -215,11 +232,14 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
         if !matches!(v.scope, AuditScope::Tenant(_))
             || v.identities.trigger.is_none()
             || v.identities.publication.is_none()
-            || v.identities.component.is_none()
-            || v.identities.revision.is_none()
-            || v.identities.deployment.is_none()
-            || v.identities.deployment_generation.is_none_or(|g| g == 0)
-            || v.identities.route_generation.is_none_or(|g| g.0 == 0)
+            || (v.identities.static_web.is_none()
+                && (v.identities.component.is_none()
+                    || v.identities.revision.is_none()
+                    || v.identities.deployment.is_none()
+                    || v.identities.deployment_generation.is_none_or(|g| g == 0)))
+            || v.identities.route_generation.is_none()
+            || (v.identities.static_web.is_none()
+                && v.identities.route_generation == Some(latent_core::RouteGeneration(0)))
             || v.identities.state_version.is_none()
             || v.expected_state_version.is_none()
             || v.expected_generation.is_none()

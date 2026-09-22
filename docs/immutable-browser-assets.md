@@ -12,11 +12,49 @@ Use the URL returned by the admitted web selection's `asset_url` method. Its sha
 
 The publication identity binds the tenant and package. The existing HTTP credential and authority checks run first. The authenticated principal supplies the tenant scope; neither a URL digest nor cached bytes grant access. A fresh `WebSelection` resolves the exact publication, and only an entry in its validated public asset manifest may be served. Package metadata, evidence, renderer code, private layers, and unlisted files are not exposed. A public path is not a path under the node's filesystem.
 
-The reserved namespace is dispatched before HTTP trigger lookup and activation reservation. Misses, rejected methods, malformed asset locators, cache hits, HEAD, and conditional requests do not fall through to a renderer. There are no directory indexes, SPA fallbacks, query-string aliases, percent-encoded aliases, or double decoding. Dot segments, encoded separators, backslashes, and noncanonical package paths are rejected.
+The reserved namespace is dispatched before HTTP trigger lookup and activation reservation. Misses, rejected methods, malformed asset locators, cache hits, HEAD, and conditional requests do not fall through to a renderer. The reserved asset endpoint itself has no directory indexes, SPA fallbacks, query-string aliases, percent-encoded aliases, or double decoding. Dot segments, encoded separators, backslashes, and noncanonical package paths are rejected.
 
 The same publication identity cannot silently select another package. Publishing a replacement produces a different URL; an old URL continues to identify the old bytes while that exact publication remains selectable. Current lifecycle and policy permission is checked again at response acceptance, after reading/verifying the representation and immediately before beginning output. Revocation or a stale selection causes rejection even when the bytes are cached or the conditional result would otherwise be 304.
 
 Browser caching is not a revocation channel: an origin cannot recall a representation already stored by a client. This profile uses private caching and varies on authorization to prevent shared/inter-credential cache reuse, while retaining immutable content semantics. The origin rechecks admission whenever a request actually reaches it.
+
+## Signed static-site routing metadata
+
+A BrowserAssets publication may additionally carry a closed `staticRouting`
+record inside its signed web application manifest:
+
+```json
+{
+  "profile": "static-site-v1",
+  "entryDocument": "/index.html",
+  "directoryIndex": "redirect",
+  "directoryIndexDocument": "/index.html",
+  "fallback": {
+    "mode": "spa",
+    "document": "/index.html"
+  }
+}
+```
+
+Every document path is canonical, listed in the same publication's public asset
+manifest and has media type `text/html`. `directoryIndex` is only `disabled`
+or `redirect`; fallback is only `none` or `spa`, and `spa` requires its
+document. The record is rejected on SSR packages. Unknown fields are rejected,
+so it cannot smuggle hostnames, tenants, credentials, filesystem paths, proxy
+destinations or mutable external URLs into publication authority.
+
+The record participates in the web-manifest/package digest and admission proof.
+It is not an external host/path rule. A `static-web` HTTP trigger supplies that
+external mount and stores the exact publication plus manifest/assets/generation
+identity. The shared trigger matcher keeps exact/prefix precedence and conflict
+rules; a stale winning static route fails closed.
+
+This metadata does not change the reserved `/_lsf/assets/*` endpoint described
+above. Direct immutable asset URLs still have no directory-index or SPA-fallback
+behavior. Site-level entry/index/fallback behavior is consumed only by the
+dependent static-serving runtime after a first-class static target has been
+selected. No filesystem root, directory listing, arbitrary rewrite/redirect,
+proxy, SSR, weighted backend or per-site cache is implied.
 
 ## HTTP behavior
 

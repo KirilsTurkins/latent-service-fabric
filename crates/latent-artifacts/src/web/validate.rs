@@ -1,6 +1,6 @@
 use super::{
-    exhausted, incompatible, invalid, CheckedWebLayout, WebApplicationManifest, WebAsset,
-    WebRenderMode, MAX_WEB_ASSETS, MAX_WEB_ASSET_BYTES, MAX_WEB_ASSET_TREE_BYTES,
+    exhausted, incompatible, invalid, CheckedWebLayout, StaticFallbackMode, WebApplicationManifest,
+    WebAsset, WebRenderMode, MAX_WEB_ASSETS, MAX_WEB_ASSET_BYTES, MAX_WEB_ASSET_TREE_BYTES,
     MAX_WEB_MANIFEST_BYTES, MAX_WEB_RENDERER_BYTES, MAX_WEB_ROUTES, WEB_MANIFEST_PATH,
     WEB_RELEASE_PROFILE,
 };
@@ -122,8 +122,12 @@ pub fn inspect_web_layout(
             {
                 return Err(invalid("web-entrypoint-not-public"));
             }
+            static_routing(&manifest)?;
         }
         (Some(renderer), PackageKind::SsrPackage) => {
+            if manifest.static_routing.is_some() {
+                return Err(incompatible());
+            }
             if !renderer.backend_profile.is_none()
                 && renderer.profile != super::WebRendererProfile::AngularSsrComponentV1
             {
@@ -162,7 +166,9 @@ pub fn inspect_web_layout(
 }
 
 fn routes(manifest: &WebApplicationManifest) -> Result<(), PlatformError> {
-    if manifest.routes.is_empty() || manifest.routes.capacity() > MAX_WEB_ROUTES {
+    if manifest.routes.capacity() > MAX_WEB_ROUTES
+        || (manifest.routes.is_empty() && manifest.static_routing.is_none())
+    {
         return Err(exhausted());
     }
     let mut previous: Option<&str> = None;
@@ -186,6 +192,38 @@ fn routes(manifest: &WebApplicationManifest) -> Result<(), PlatformError> {
             }
             _ => return Err(invalid("web-route-mode")),
         }
+    }
+    Ok(())
+}
+
+fn static_routing(manifest: &WebApplicationManifest) -> Result<(), PlatformError> {
+    let Some(routing) = &manifest.static_routing else {
+        return Ok(());
+    };
+    document(manifest, &routing.entry_document)?;
+    document(manifest, &routing.directory_index_document)?;
+    match (routing.fallback.mode, routing.fallback.document.as_ref()) {
+        (StaticFallbackMode::None, None) => {}
+        (StaticFallbackMode::Spa, Some(document_path)) => {
+            document(manifest, document_path)?;
+        }
+        _ => return Err(invalid("web-static-fallback")),
+    }
+    Ok(())
+}
+
+fn document(
+    manifest: &WebApplicationManifest,
+    document_path: &String,
+) -> Result<(), PlatformError> {
+    path(document_path)?;
+    let asset = manifest
+        .assets
+        .iter()
+        .find(|asset| &asset.path == document_path)
+        .ok_or_else(|| invalid("web-static-document-missing"))?;
+    if asset.media_type != "text/html" {
+        return Err(invalid("web-static-document-type"));
     }
     Ok(())
 }

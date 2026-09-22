@@ -194,6 +194,7 @@ pub(super) fn publish(
             mode: WebRenderMode::Server,
             asset: None,
         }],
+        static_routing: None,
         renderer: Some(WebRenderer {
             layer: "server/renderer.wasm".into(),
             digest: artifact_blob_digest(&renderer).to_string(),

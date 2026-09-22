@@ -4,7 +4,8 @@ use latent_control_store::http_routes::{
 };
 use latent_core::{ContractId, ServiceId, TenantId, TriggerId};
 use latent_manifest::{
-    __serde_json as json, ObjectMetadata, TriggerKind, TriggerManifest, TriggerTarget,
+    __serde_json as json, ApplicationTriggerTarget, ObjectMetadata, StaticWebTriggerTarget,
+    TriggerKind, TriggerManifest, TriggerTarget,
 };
 use tonic::Status;
 
@@ -18,6 +19,28 @@ pub(super) fn manifest(value: proto::Trigger) -> Result<TriggerManifest, Status>
     let publication = target
         .publication
         .ok_or_else(|| Status::invalid_argument("explicit trigger publication is required"))?;
+    let publication = publication
+        .id
+        .parse()
+        .map_err(|_| Status::invalid_argument("invalid publication identity"))?;
+    let target = match proto::TriggerTargetKind::try_from(target.kind)
+        .map_err(|_| Status::invalid_argument("invalid trigger target kind"))?
+    {
+        proto::TriggerTargetKind::StaticWeb => {
+            TriggerTarget::StaticWeb(StaticWebTriggerTarget { publication })
+        }
+        proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application => {
+            TriggerTarget::Application(ApplicationTriggerTarget {
+                service: ServiceId(target.service),
+                contract: ContractId(target.contract),
+                function: target.function,
+                route: target.route,
+                publication: Some(publication),
+                revision: target.revision,
+                deployment_generation: target.deployment_generation,
+            })
+        }
+    };
     Ok(TriggerManifest {
         api_version: latent_manifest::MANIFEST_API_VERSION.into(),
         id: TriggerId(value.id),
@@ -29,20 +52,7 @@ pub(super) fn manifest(value: proto::Trigger) -> Result<TriggerManifest, Status>
             labels: metadata.labels.into_iter().collect(),
             annotations: metadata.annotations.into_iter().collect(),
         },
-        target: TriggerTarget {
-            service: ServiceId(target.service),
-            contract: ContractId(target.contract),
-            function: target.function,
-            route: target.route,
-            publication: Some(
-                publication
-                    .id
-                    .parse()
-                    .map_err(|_| Status::invalid_argument("invalid publication identity"))?,
-            ),
-            revision: target.revision,
-            deployment_generation: target.deployment_generation,
-        },
+        target,
         configuration: value
             .configuration
             .into_iter()
@@ -58,15 +68,13 @@ pub(super) fn manifest_to_proto(manifest: TriggerManifest, generation: u64) -> p
         id: manifest.id.0,
         kind: "HttpTrigger".into(),
         generation,
-        target: Some(proto::TriggerTarget {
-            service: manifest.target.service.0,
-            contract: manifest.target.contract.0,
-            function: manifest.target.function,
-            route: manifest.target.route,
-            publication: manifest
-                .target
-                .publication
-                .map(|publication| proto::PublicationRef {
+        target: Some(match manifest.target {
+            TriggerTarget::Application(target) => proto::TriggerTarget {
+                service: target.service.0,
+                contract: target.contract.0,
+                function: target.function,
+                route: target.route,
+                publication: target.publication.map(|publication| proto::PublicationRef {
                     id: publication.into_string(),
                     tenant: manifest
                         .metadata
@@ -76,8 +84,24 @@ pub(super) fn manifest_to_proto(manifest: TriggerManifest, generation: u64) -> p
                         .0
                         .clone(),
                 }),
-            revision: manifest.target.revision,
-            deployment_generation: manifest.target.deployment_generation,
+                revision: target.revision,
+                deployment_generation: target.deployment_generation,
+                kind: proto::TriggerTargetKind::Application as i32,
+            },
+            TriggerTarget::StaticWeb(target) => proto::TriggerTarget {
+                publication: Some(proto::PublicationRef {
+                    id: target.publication.into_string(),
+                    tenant: manifest
+                        .metadata
+                        .tenant
+                        .as_ref()
+                        .expect("scoped HTTP trigger")
+                        .0
+                        .clone(),
+                }),
+                kind: proto::TriggerTargetKind::StaticWeb as i32,
+                ..Default::default()
+            },
         }),
         configuration: manifest
             .configuration
@@ -98,6 +122,7 @@ pub(super) fn manifest_to_proto(manifest: TriggerManifest, generation: u64) -> p
 }
 pub(super) fn receipt(r: TriggerOperationReceipt) -> proto::TriggerOperationReceipt {
     use latent_artifacts::ReleaseActorKind as D;
+    use latent_control_store::http_routes::TriggerTargetIdentity;
     let actor = match r.actor.kind {
         D::User => proto::ReleaseActorKind::User,
         D::Service => proto::ReleaseActorKind::Service,
@@ -107,6 +132,43 @@ pub(super) fn receipt(r: TriggerOperationReceipt) -> proto::TriggerOperationRece
         D::Anonymous => proto::ReleaseActorKind::Anonymous,
         D::Host => proto::ReleaseActorKind::Host,
     };
+    let tenant = r.tenant.clone();
+    let target = r.target.clone().map(|target| match target {
+        TriggerTargetIdentity::Application {
+            publication,
+            component,
+            deployment_id,
+            deployment_generation,
+            revision,
+        } => proto::TriggerReceiptTarget {
+            kind: proto::TriggerReceiptTargetKind::Application as i32,
+            publication: Some(proto::PublicationRef {
+                id: publication.id.into_string(),
+                tenant: tenant.clone(),
+            }),
+            component_digest: component.0,
+            deployment_id,
+            deployment_generation,
+            revision,
+            ..Default::default()
+        },
+        TriggerTargetIdentity::StaticWeb {
+            publication,
+            web_manifest_digest,
+            assets_digest,
+            web_generation,
+        } => proto::TriggerReceiptTarget {
+            kind: proto::TriggerReceiptTargetKind::StaticWeb as i32,
+            publication: Some(proto::PublicationRef {
+                id: publication.id.into_string(),
+                tenant: tenant.clone(),
+            }),
+            web_manifest_digest,
+            assets_digest,
+            web_generation,
+            ..Default::default()
+        },
+    });
     proto::TriggerOperationReceipt {
         format_version: r.format_version,
         tenant: r.tenant.clone(),
@@ -127,16 +189,19 @@ pub(super) fn receipt(r: TriggerOperationReceipt) -> proto::TriggerOperationRece
         state_version: r.state_version,
         route_generation: r.route_generation,
         manifest_digest: r.manifest_digest,
-        publication: Some(proto::PublicationRef {
-            id: r.publication.id.into_string(),
-            tenant: r.tenant,
+        publication: r.publication.map(|publication| proto::PublicationRef {
+            id: publication.id.into_string(),
+            tenant,
         }),
-        component_digest: r.component.0,
-        deployment_id: r.deployment_id,
-        deployment_generation: r.deployment_generation,
-        revision: r.revision,
+        component_digest: r
+            .component
+            .map_or_else(String::new, |component| component.0),
+        deployment_id: r.deployment_id.unwrap_or_default(),
+        deployment_generation: r.deployment_generation.unwrap_or_default(),
+        revision: r.revision.unwrap_or_default(),
         completed_at_unix_millis: r.completed_at_unix_millis,
         receipt_digest: r.receipt_digest,
+        target,
     }
 }
 pub(super) fn lookup(value: TriggerOperationLookup) -> proto::GetTriggerOperationResponse {

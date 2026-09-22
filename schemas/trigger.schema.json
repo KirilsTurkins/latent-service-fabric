@@ -136,6 +136,163 @@
           }
         }
       }
+    },
+    "applicationTarget": {
+      "type": "object",
+      "maxProperties": 7,
+      "additionalProperties": false,
+      "required": [
+        "service",
+        "contract",
+        "function"
+      ],
+      "properties": {
+        "service": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contract": {
+          "type": "string",
+          "minLength": 1
+        },
+        "function": {
+          "type": "string",
+          "minLength": 1
+        },
+        "route": {
+          "type": "string",
+          "minLength": 1
+        },
+        "publication": {
+          "type": "string",
+          "minLength": 83,
+          "maxLength": 83,
+          "pattern": "^publication:sha256:[a-f0-9]{64}$"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 83,
+          "maxLength": 83,
+          "pattern": "^revision-v1:sha256:[a-f0-9]{64}$"
+        },
+        "deploymentGeneration": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 18446744073709551615
+        }
+      }
+    },
+    "staticWebTarget": {
+      "type": "object",
+      "maxProperties": 2,
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "publication"
+      ],
+      "properties": {
+        "kind": {
+          "const": "static-web"
+        },
+        "publication": {
+          "type": "string",
+          "minLength": 83,
+          "maxLength": 83,
+          "pattern": "^publication:sha256:[a-f0-9]{64}$"
+        }
+      }
+    },
+    "staticHttpTrigger": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "required": [
+            "tenant"
+          ],
+          "properties": {
+            "name": {
+              "maxLength": 128
+            },
+            "tenant": {
+              "maxLength": 128
+            },
+            "namespace": {
+              "maxLength": 128
+            },
+            "labels": {
+              "maxProperties": 16
+            },
+            "annotations": {
+              "maxProperties": 16
+            }
+          }
+        },
+        "spec": {
+          "type": "object",
+          "properties": {
+            "target": {
+              "$ref": "#/$defs/staticWebTarget"
+            },
+            "configuration": {
+              "type": "object",
+              "additionalProperties": false,
+              "maxProperties": 6,
+              "required": [
+                "profile",
+                "scheme",
+                "host",
+                "path",
+                "pathMatch",
+                "method"
+              ],
+              "properties": {
+                "profile": {
+                  "const": "static-site-v1"
+                },
+                "scheme": {
+                  "enum": [
+                    "http",
+                    "https"
+                  ]
+                },
+                "host": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 8192
+                },
+                "pathMatch": {
+                  "enum": [
+                    "exact",
+                    "prefix"
+                  ]
+                },
+                "method": {
+                  "enum": [
+                    "GET",
+                    "HEAD"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "httpTrigger": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/bufferedHttpTrigger"
+        },
+        {
+          "$ref": "#/$defs/staticHttpTrigger"
+        }
+      ]
     }
   },
   "properties": {
@@ -198,49 +355,14 @@
       ],
       "properties": {
         "target": {
-          "type": "object",
-          "maxProperties": 7,
-          "additionalProperties": false,
-          "required": [
-            "service",
-            "contract",
-            "function"
-          ],
-          "properties": {
-            "service": {
-              "type": "string",
-              "minLength": 1
+          "oneOf": [
+            {
+              "$ref": "#/$defs/applicationTarget"
             },
-            "contract": {
-              "type": "string",
-              "minLength": 1
-            },
-            "function": {
-              "type": "string",
-              "minLength": 1
-            },
-            "route": {
-              "type": "string",
-              "minLength": 1
-            },
-            "publication": {
-              "type": "string",
-              "minLength": 83,
-              "maxLength": 83,
-              "pattern": "^publication:sha256:[a-f0-9]{64}$"
-            },
-            "revision": {
-              "type": "string",
-              "minLength": 83,
-              "maxLength": 83,
-              "pattern": "^revision-v1:sha256:[a-f0-9]{64}$"
-            },
-            "deploymentGeneration": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 18446744073709551615
+            {
+              "$ref": "#/$defs/staticWebTarget"
             }
-          }
+          ]
         },
         "configuration": {
           "type": "object",
@@ -276,7 +398,7 @@
     }
   },
   "then": {
-    "$ref": "#/$defs/bufferedHttpTrigger"
+    "$ref": "#/$defs/httpTrigger"
   },
-  "description": "Generic trigger envelope. HttpTrigger configuration with a profile selects the closed buffered-v1 profile; older profile-less examples are structural declarations and cannot be published as executable HTTP routes."
+  "description": "Generic trigger envelope. HttpTrigger configuration selects exactly one closed target/profile pair: buffered-v1 application execution or static-site-v1 browser publication routing."
 }

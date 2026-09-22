@@ -1,7 +1,7 @@
 use super::*;
 use latent_audit::{AuditHandle, AuditOperationResult, AuditRecordData};
 use latent_control_store::http_routes::{
-    TriggerOperationContext, TriggerOperationLookup, TriggerOperationRequest,
+    TriggerOperationContext, TriggerOperationLookup, TriggerOperationRequest, TriggerTargetIdentity,
 };
 use latent_core::{PlatformErrorCode, TriggerId};
 use latent_rollout::trigger_audit::{reconcile_trigger_audit, ManagedTriggerAudit};
@@ -113,7 +113,14 @@ async fn trigger_audit_expiry_caller_loss_and_identity_mismatch_never_claim_fals
         },
         {
             let mut r = copy_result();
-            r.receipt.deployment_generation += 1;
+            let Some(TriggerTargetIdentity::Application {
+                deployment_generation,
+                ..
+            }) = r.receipt.target.as_mut()
+            else {
+                panic!("application target")
+            };
+            *deployment_generation += 1;
             r
         },
         {

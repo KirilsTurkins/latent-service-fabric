@@ -32,6 +32,7 @@ fn request() -> proto::ApplyTriggerRequest {
                 }),
                 revision: Some(format!("revision-v1:sha256:{}", "b".repeat(64))),
                 deployment_generation: Some(1),
+                kind: proto::TriggerTargetKind::Application as i32,
             }),
             configuration: [
                 ("profile", "buffered-v1"),
@@ -65,8 +66,9 @@ fn trigger_wire_derives_actor_and_preserves_explicit_cas_and_publication() {
     let TriggerOperationRequest::Apply { manifest, .. } = result else {
         panic!("apply")
     };
-    assert_eq!(manifest.target.deployment_generation, Some(1));
-    assert!(manifest.target.publication.is_some());
+    let target = manifest.target.application().expect("application target");
+    assert_eq!(target.deployment_generation, Some(1));
+    assert!(target.publication.is_some());
     let limits = super::super::ManagementLimits::default();
     let mut missing = request();
     missing.operation.as_mut().unwrap().expected_state_version = None;
@@ -93,6 +95,48 @@ fn trigger_wire_derives_actor_and_preserves_explicit_cas_and_publication() {
         tonic::Code::PermissionDenied
     );
 }
+#[test]
+fn static_web_wire_has_no_application_target_fields_and_rejects_hybrids() {
+    let mut value = request();
+    let trigger = value.trigger.as_mut().unwrap();
+    let target = trigger.target.as_mut().unwrap();
+    target.kind = proto::TriggerTargetKind::StaticWeb as i32;
+    target.service.clear();
+    target.contract.clear();
+    target.function.clear();
+    target.route = None;
+    target.revision = None;
+    target.deployment_generation = None;
+    trigger
+        .configuration
+        .insert("profile".into(), "static-site-v1".into());
+    let validated = validation::apply(
+        value.clone(),
+        principal(),
+        &super::super::ManagementLimits::default(),
+    )
+    .unwrap();
+    let TriggerOperationRequest::Apply { manifest, .. } = validated else {
+        panic!("apply")
+    };
+    assert!(manifest.target.static_web().is_some());
+
+    value
+        .trigger
+        .as_mut()
+        .unwrap()
+        .target
+        .as_mut()
+        .unwrap()
+        .service = "hybrid".into();
+    assert!(validation::apply(
+        value,
+        principal(),
+        &super::super::ManagementLimits::default()
+    )
+    .is_err());
+}
+
 #[test]
 fn trigger_native_wire_sparse_maps_and_reserved_strings_deny_before_conversion() {
     let mut huge = request();

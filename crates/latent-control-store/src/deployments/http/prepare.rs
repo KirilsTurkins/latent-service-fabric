@@ -5,11 +5,12 @@ use super::{
 };
 use crate::http_routes::{
     capacity, codec, conflict, corrupt, definition, invalid, TriggerOperationAction,
-    TriggerOperationReceipt, TriggerOperationRequest, VersionedTrigger, MAX_DEFINITION_BYTES,
-    MAX_IDENTIFIER_BYTES, MAX_RECEIPT_BYTES, MAX_RECORDS, MAX_TABLE_BYTES,
+    TriggerOperationReceipt, TriggerOperationRequest, TriggerTargetIdentity, VersionedTrigger,
+    MAX_DEFINITION_BYTES, MAX_IDENTIFIER_BYTES, MAX_RECEIPT_BYTES, MAX_RECORDS, MAX_TABLE_BYTES,
 };
 use latent_artifacts::{LifecycleScope, PublicationRef};
 use latent_core::{PlatformError, PlatformErrorCode};
+use latent_manifest::TriggerTarget;
 use std::sync::Arc;
 
 impl DirectoryDeploymentRepository {
@@ -65,7 +66,9 @@ impl DirectoryDeploymentRepository {
                 TriggerOperationRequest::Apply { manifest, .. } => Some(VersionedTrigger {
                     manifest,
                     generation: receipt.object_generation,
-                    component: receipt.component.clone(),
+                    component: receipt
+                        .target_identity()
+                        .and_then(|target| target.component().cloned()),
                 }),
                 TriggerOperationRequest::Delete { .. } => None,
             };
@@ -78,6 +81,7 @@ impl DirectoryDeploymentRepository {
                 bytes: Vec::new(),
                 replayed: true,
                 reply,
+                static_selection: None,
                 _scratch: scratch,
                 _work: work,
             });
@@ -99,7 +103,16 @@ impl DirectoryDeploymentRepository {
         // Reserve the entire bounded candidate before copying any current rows.
         let reservation = self.http_budget.reserve(MAX_TABLE_BYTES)?;
         let mut data = previous.http.data.clone();
-        let (manifest, component, publication, action, object_generation, apply_result) =
+        // Legacy format-v1 rows are application-only. Upgrade them in-memory
+        // only when this table is already being mutated; recovery remains read-compatible.
+        if data.format_version == 1 {
+            for (stored, row) in data.records.iter_mut().zip(previous.http.rows.iter()) {
+                stored.target = Some(row.target.clone());
+                stored.component = None;
+            }
+            data.format_version = 2;
+        }
+        let (manifest, target_identity, action, object_generation, apply_result, static_selection) =
             match request {
                 TriggerOperationRequest::Apply { manifest, .. } => {
                     let (_, matcher) = definition::normalize(manifest.clone())?;
@@ -118,11 +131,54 @@ impl DirectoryDeploymentRepository {
                     if index.is_none() && data.records.len() == MAX_RECORDS {
                         return Err(capacity());
                     }
-                    let (publication, resolved, _) = self.http_target(&previous, &manifest)?;
+                    let (target_identity, component, static_selection) = match &manifest.target {
+                        TriggerTarget::Application(target) => {
+                            let (publication, resolved, _) =
+                                self.http_target(&previous, &manifest)?;
+                            let identity = TriggerTargetIdentity::Application {
+                                publication,
+                                component: resolved.release.clone(),
+                                deployment_id: target.route.clone().ok_or_else(corrupt)?,
+                                deployment_generation: target
+                                    .deployment_generation
+                                    .ok_or_else(corrupt)?,
+                                revision: target.revision.clone().ok_or_else(corrupt)?,
+                            };
+                            (identity, Some(resolved.release), None)
+                        }
+                        TriggerTarget::StaticWeb(target) => {
+                            let publication = PublicationRef {
+                                id: target.publication.clone(),
+                                scope: LifecycleScope::Tenant(context.tenant.clone()),
+                            };
+                            let selection = self.artifacts.select_web_publication(&publication)?;
+                            if selection.publication() != &publication
+                                || selection.layout().manifest().static_routing.is_none()
+                            {
+                                return Err(conflict());
+                            }
+                            let identity = TriggerTargetIdentity::StaticWeb {
+                                publication,
+                                web_manifest_digest: selection
+                                    .layout()
+                                    .manifest_digest()
+                                    .as_str()
+                                    .to_owned(),
+                                assets_digest: selection
+                                    .layout()
+                                    .assets_digest()
+                                    .as_str()
+                                    .to_owned(),
+                                web_generation: selection.eligibility().generation(),
+                            };
+                            (identity, None, Some(selection))
+                        }
+                    };
                     let stored = StoredRecord {
                         manifest: definition.ok_or_else(corrupt)?,
                         generation,
-                        component: resolved.release.clone(),
+                        component: None,
+                        target: Some(target_identity.clone()),
                     };
                     if let Some(i) = index {
                         data.records[i] = stored;
@@ -138,37 +194,34 @@ impl DirectoryDeploymentRepository {
                     let result = VersionedTrigger {
                         manifest: manifest.clone(),
                         generation,
-                        component: resolved.release.clone(),
+                        component,
                     };
                     (
                         manifest,
-                        resolved.release,
-                        publication,
+                        target_identity,
                         TriggerOperationAction::Apply,
                         generation,
                         Some(result),
+                        static_selection,
                     )
                 }
                 TriggerOperationRequest::Delete { .. } => {
                     let i = index.ok_or_else(super::not_found)?;
                     let manifest = previous.http.rows[i].manifest.clone();
-                    let publication = PublicationRef {
-                        id: manifest.target.publication.clone().ok_or_else(corrupt)?,
-                        scope: LifecycleScope::Tenant(context.tenant.clone()),
-                    };
+                    let target_identity = previous.http.rows[i].target.clone();
                     let removed = data.records.remove(i);
                     (
                         manifest,
-                        removed.component,
-                        publication,
+                        target_identity,
                         TriggerOperationAction::Delete,
                         removed.generation,
+                        None,
                         None,
                     )
                 }
             };
         let mut receipt = TriggerOperationReceipt {
-            format_version: 1,
+            format_version: 2,
             tenant: context.tenant.0,
             actor: context.actor,
             operation_id: context.operation_id,
@@ -181,11 +234,12 @@ impl DirectoryDeploymentRepository {
             state_version: generation,
             route_generation: previous.routes.generation.0,
             manifest_digest: codec::hash(codec::manifest(&manifest)?.as_bytes()),
-            publication,
-            component,
-            deployment_id: manifest.target.route.ok_or_else(corrupt)?,
-            deployment_generation: manifest.target.deployment_generation.ok_or_else(corrupt)?,
-            revision: manifest.target.revision.ok_or_else(corrupt)?,
+            target: Some(target_identity),
+            publication: None,
+            component: None,
+            deployment_id: None,
+            deployment_generation: None,
+            revision: None,
             completed_at_unix_millis: super::super::now()?,
             receipt_digest: codec::hash(b""),
         };
@@ -222,6 +276,7 @@ impl DirectoryDeploymentRepository {
             bytes,
             replayed: false,
             reply,
+            static_selection,
             _scratch: scratch,
             _work: work,
         })

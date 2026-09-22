@@ -9,7 +9,7 @@ use crate::{
     deployment_operations::budget::Charge,
     http_routes::{TriggerOperationReceipt, TriggerReadLease, VersionedTrigger},
 };
-pub use selection::AcceptedHttpRoute;
+pub use selection::{AcceptedHttpRoute, AcceptedHttpTarget};
 use std::sync::{atomic::AtomicBool, Arc};
 
 pub struct PreparedTriggerOperation {
@@ -21,6 +21,7 @@ pub struct PreparedTriggerOperation {
     bytes: Vec<u8>,
     replayed: bool,
     reply: TriggerReadLease,
+    static_selection: Option<latent_artifacts::web::WebSelection>,
     _scratch: Charge,
     _work: super::rollouts::WorkReservation,
 }

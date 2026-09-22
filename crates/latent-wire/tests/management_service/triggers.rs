@@ -97,6 +97,7 @@ async fn setup(h: &Harness) -> proto::ApplyTriggerRequest {
                 }),
                 revision: Some(selected.revision.0),
                 deployment_generation: Some(1),
+                kind: proto::TriggerTargetKind::Application as i32,
             }),
             configuration: [
                 ("profile", "buffered-v1"),

@@ -11,10 +11,13 @@ pub(in crate::standalone::http) fn select(
     accepted: &AcceptedHttpRoute,
     raw: &[u8],
 ) -> Result<Option<Request>, u16> {
-    let Some(publication) = &accepted.revision().publication else {
+    let Some(revision) = accepted.revision() else {
         return Ok(None);
     };
-    let tenant = &accepted.revision().target.tenant;
+    let Some(publication) = &revision.publication else {
+        return Ok(None);
+    };
+    let tenant = &revision.target.tenant;
     let reference = PublicationRef {
         id: publication.clone(),
         scope: LifecycleScope::Tenant(tenant.clone()),
@@ -30,7 +33,7 @@ pub(in crate::standalone::http) fn select(
         .manifest()
         .renderer
         .as_ref()
-        .is_none_or(|renderer| renderer.digest != accepted.revision().release.0)
+        .is_none_or(|renderer| renderer.digest != revision.release.0)
     {
         return Err(502);
     }
@@ -45,7 +48,8 @@ pub(in crate::standalone::http) fn select(
     }
     accepted
         .catalog()
-        .admission_policy(accepted.revision())
+        .ok_or(502u16)?
+        .admission_policy(revision)
         .map_err(|error| super::status(&error))?;
     if head.content_length != 0 {
         return Err(400);

@@ -6,6 +6,7 @@ use crate::{
 };
 use clap::Parser;
 use std::time::Duration;
+mod static_targets;
 
 fn manifest() -> Value {
     json!({"apiVersion":"latent.dev/v1alpha1","kind":"HttpTrigger",
@@ -166,6 +167,7 @@ fn receipt() -> proto::TriggerOperationReceipt {
         revision: format!("revision-v1:{digest}"),
         completed_at_unix_millis: u64::MAX,
         receipt_digest: digest,
+        target: None,
     }
 }
 

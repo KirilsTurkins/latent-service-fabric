@@ -166,3 +166,84 @@ fn http_pages_receipt_eviction_and_read_owners_remain_bounded_and_scoped() {
     let store = catalog(&roots[1], &repo);
     assert!(store.list_triggers(&page("alice", Some(token))).is_err());
 }
+
+#[test]
+fn http_format_v1_application_state_recovers_and_static_cannot_masquerade_as_legacy() {
+    let (_roots, _repo, store, _) = setup();
+    execute(
+        &store,
+        request(
+            &store,
+            "legacy-create",
+            definition(&store, "alice", "browser", "web", "/", "prefix"),
+            0,
+        ),
+    );
+    let snapshot = store.read_publication();
+    let mut legacy = snapshot.http.data.clone();
+    legacy.format_version = 1;
+    for record in &mut legacy.records {
+        let target = record.target.take().unwrap();
+        let TriggerTargetIdentity::Application { component, .. } = target else {
+            panic!("application target")
+        };
+        record.component = Some(component);
+    }
+    for receipt in &mut legacy.receipts {
+        let target = receipt.target.take().unwrap();
+        let TriggerTargetIdentity::Application {
+            publication,
+            component,
+            deployment_id,
+            deployment_generation,
+            revision,
+        } = target
+        else {
+            panic!("application target")
+        };
+        receipt.format_version = 1;
+        receipt.publication = Some(publication);
+        receipt.component = Some(component);
+        receipt.deployment_id = Some(deployment_id);
+        receipt.deployment_generation = Some(deployment_generation);
+        receipt.revision = Some(revision);
+        receipt.receipt_digest = crate::http_routes::codec::hash(b"");
+        receipt.receipt_digest = crate::http_routes::codec::receipt_hash(receipt).unwrap();
+    }
+    assert!(crate::deployments::http::table::HttpTable::new(
+        legacy,
+        &store.http_budget,
+        snapshot.transaction,
+        snapshot.routes.generation.0,
+    )
+    .is_ok());
+    drop(snapshot);
+
+    let roots = [TempRoot::new(), TempRoot::new()];
+    let repo = static_repo(&roots[0]);
+    let publication = publish_static(&repo, "alice");
+    let static_store = catalog(&roots[1], &repo);
+    execute(
+        &static_store,
+        request(
+            &static_store,
+            "static-create",
+            static_definition("alice", "site", &publication, "/", "prefix"),
+            0,
+        ),
+    );
+    let snapshot = static_store.read_publication();
+    let mut corrupt_legacy = snapshot.http.data.clone();
+    corrupt_legacy.format_version = 1;
+    for record in &mut corrupt_legacy.records {
+        record.target = None;
+        record.component = None;
+    }
+    assert!(crate::deployments::http::table::HttpTable::new(
+        corrupt_legacy,
+        &static_store.http_budget,
+        snapshot.transaction,
+        snapshot.routes.generation.0,
+    )
+    .is_err());
+}

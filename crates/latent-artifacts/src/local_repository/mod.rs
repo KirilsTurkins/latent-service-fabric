@@ -737,6 +737,13 @@ impl ArtifactRepository for DirectoryArtifactRepository {
     > {
         Box::pin(async move { self.life_store().selected_operation(scope, operation_id) })
     }
+    fn select_web_publication(
+        &self,
+        reference: &crate::PublicationRef,
+    ) -> Result<crate::web::WebSelection, PlatformError> {
+        DirectoryArtifactRepository::select_web_publication(self, reference)
+    }
+
     fn get_web_operation<'a>(
         &'a self,
         scope: &'a crate::LifecycleScope,

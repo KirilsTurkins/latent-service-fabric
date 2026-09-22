@@ -39,7 +39,7 @@ async fn enabled_fixture() -> Fixture {
             http::Method::Get,
         )
         .unwrap();
-    let revision = selected.revision();
+    let revision = selected.revision().expect("application route");
     value["httpIngress"]["responseCache"] = json!([{
         "dependencyProfile": "immutable-public-v1",
         "tenant": "tests", "publication": revision.publication.as_ref().unwrap().as_str(),
@@ -101,7 +101,12 @@ async fn actual_http_component_cache_preserves_admission_revocation_and_owner_re
             http::Method::Get,
         )
         .unwrap();
-    let publication = selected.revision().publication.clone().unwrap();
+    let publication = selected
+        .revision()
+        .expect("application route")
+        .publication
+        .clone()
+        .unwrap();
     drop(selected);
     fixture
         .artifacts

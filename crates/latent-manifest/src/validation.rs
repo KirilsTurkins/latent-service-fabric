@@ -378,38 +378,48 @@ impl ManifestValidator for Phase1ManifestValidator {
             &mut violations,
         );
         validate_required_tenant(&manifest.metadata, &mut violations);
-        validate_resource_identifier(
-            &manifest.target.service.0,
-            "$.spec.target.service",
-            "target service ID",
-            &mut violations,
-        );
-        validate_scoped_value(
-            &manifest.target.service.0,
-            manifest
-                .metadata
-                .tenant
-                .as_ref()
-                .map(|tenant| tenant.0.as_str()),
-            "$.spec.target.service",
-            &mut violations,
-        );
-        validate_contract_id(
-            &manifest.target.contract.0,
-            "$.spec.target.contract",
-            &mut violations,
-        );
-        validate_token(
-            &manifest.target.function,
-            "$.spec.target.function",
-            "target function",
-            &mut violations,
-        );
-        validate_optional_route(
-            manifest.target.route.as_deref(),
-            "$.spec.target.route",
-            &mut violations,
-        );
+        match &manifest.target {
+            crate::TriggerTarget::Application(target) => {
+                validate_resource_identifier(
+                    &target.service.0,
+                    "$.spec.target.service",
+                    "target service ID",
+                    &mut violations,
+                );
+                validate_scoped_value(
+                    &target.service.0,
+                    manifest
+                        .metadata
+                        .tenant
+                        .as_ref()
+                        .map(|tenant| tenant.0.as_str()),
+                    "$.spec.target.service",
+                    &mut violations,
+                );
+                validate_contract_id(
+                    &target.contract.0,
+                    "$.spec.target.contract",
+                    &mut violations,
+                );
+                validate_token(
+                    &target.function,
+                    "$.spec.target.function",
+                    "target function",
+                    &mut violations,
+                );
+                validate_optional_route(
+                    target.route.as_deref(),
+                    "$.spec.target.route",
+                    &mut violations,
+                );
+            }
+            crate::TriggerTarget::StaticWeb(_) if manifest.kind == crate::TriggerKind::Http => {}
+            crate::TriggerTarget::StaticWeb(_) => violations.push(ManifestViolation::new(
+                "$.spec.target.kind",
+                "static-web-target-kind",
+                "static-web targets are valid only for HttpTrigger resources",
+            )),
+        }
 
         finish_violations(violations)
     }

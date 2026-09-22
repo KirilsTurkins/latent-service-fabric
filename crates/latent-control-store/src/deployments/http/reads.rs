@@ -112,10 +112,12 @@ impl DirectoryDeploymentRepository {
         let mut next = None;
         for (i, row) in current.http.rows.iter().enumerate().skip(start) {
             if row.manifest.metadata.tenant.as_ref() != Some(&request.tenant)
-                || request
-                    .target_service
-                    .as_ref()
-                    .is_some_and(|s| s != &row.manifest.target.service)
+                || request.target_service.as_ref().is_some_and(|service| {
+                    row.manifest
+                        .target
+                        .application()
+                        .is_none_or(|target| service != &target.service)
+                })
             {
                 continue;
             }

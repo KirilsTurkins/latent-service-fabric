@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use latent_core::{ContractId, ServiceId, TenantId, TriggerId};
 use latent_manifest::{
-    JsonManifestCodec, ManifestCodec, ObjectMetadata, TriggerKind, TriggerManifest, TriggerTarget,
-    MANIFEST_API_VERSION,
+    ApplicationTriggerTarget, JsonManifestCodec, ManifestCodec, ObjectMetadata, TriggerKind,
+    TriggerManifest, TriggerTarget, MANIFEST_API_VERSION,
 };
 use serde_json::Value;
 
@@ -158,7 +158,7 @@ fn base_trigger() -> TriggerManifest {
             annotations: BTreeMap::new(),
         },
         kind: TriggerKind::Http,
-        target: TriggerTarget {
+        target: TriggerTarget::Application(ApplicationTriggerTarget {
             service: ServiceId("examples/echo".to_owned()),
             contract: ContractId("examples:echo/api@0.1.0".to_owned()),
             function: "echo".to_owned(),
@@ -166,7 +166,7 @@ fn base_trigger() -> TriggerManifest {
             publication: None,
             revision: None,
             deployment_generation: None,
-        },
+        }),
         configuration: BTreeMap::new(),
     }
 }

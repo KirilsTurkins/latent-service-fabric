@@ -31,6 +31,7 @@ pub fn web_input(renderer: Option<&[u8]>) -> PackageInput {
             },
             asset: renderer.is_none().then(|| "/index.html".into()),
         }],
+        static_routing: None,
         renderer: renderer.map(|bytes| WebRenderer {
             layer: "server/renderer.wasm".into(),
             digest: artifact_blob_digest(bytes).to_string(),

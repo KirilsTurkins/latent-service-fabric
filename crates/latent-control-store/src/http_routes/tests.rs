@@ -31,7 +31,13 @@ fn exact_publication_selector_survives_manifest_codec_and_canonical_matching() {
     );
     assert_eq!(value.configuration["host"], "example.test");
     assert_eq!(value.configuration["path"], "/api/~user");
-    assert_eq!(value.target.deployment_generation, Some(1));
+    assert_eq!(
+        value
+            .target
+            .application()
+            .and_then(|target| target.deployment_generation),
+        Some(1)
+    );
     assert_eq!(matcher.path_match, PathMatch::Prefix);
     for (path, expected) in [
         ("/api/~user", true),
@@ -68,19 +74,23 @@ fn unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_s
         assert!(normalize(value).is_err(), "{key}");
     }
     let mut value = original.clone();
-    value.target.publication = None;
+    value.target.application_mut().unwrap().publication = None;
     assert!(normalize(value).is_err());
     let mut value = original.clone();
-    value.target.revision = None;
+    value.target.application_mut().unwrap().revision = None;
     assert!(normalize(value).is_err());
     let mut value = original.clone();
-    value.target.deployment_generation = Some(0);
+    value
+        .target
+        .application_mut()
+        .unwrap()
+        .deployment_generation = Some(0);
     assert!(normalize(value).is_err());
     let mut value = original.clone();
-    value.target.contract.0 = "example:echo/api@0.1.0".into();
+    value.target.application_mut().unwrap().contract.0 = "example:echo/api@0.1.0".into();
     assert!(normalize(value).is_err());
     let mut value = original.clone();
-    value.target.route = Some("default".into());
+    value.target.application_mut().unwrap().route = Some("default".into());
     assert!(normalize(value).is_err());
     let mut value = original;
     let mut retained = String::with_capacity(65_536);

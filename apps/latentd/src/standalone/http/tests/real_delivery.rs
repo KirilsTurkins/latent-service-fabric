@@ -119,7 +119,7 @@ async fn actual_http_component_pinned_cutover_and_revocation_use_current_authori
             http::Method::Post,
         )
         .unwrap();
-    let expected = captured.revision().clone();
+    let expected = captured.revision().expect("application route").clone();
     drop(captured);
     let mut pending = fixture.connect().await;
     pending
@@ -182,8 +182,12 @@ async fn actual_http_component_pinned_cutover_and_revocation_use_current_authori
         .get_trigger(&tenant, &TriggerId("web-post".into()))
         .unwrap();
     let mut definition = trigger.value().trigger.as_ref().unwrap().manifest.clone();
-    definition.target.revision = Some(next.revision.0);
-    definition.target.deployment_generation = Some(version);
+    let target = definition
+        .target
+        .application_mut()
+        .expect("application trigger target");
+    target.revision = Some(next.revision.0);
+    target.deployment_generation = Some(version);
     let prepared = fixture
         .deployments
         .prepare_trigger_operation(TriggerOperationRequest::Apply {

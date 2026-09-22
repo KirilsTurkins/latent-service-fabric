@@ -138,3 +138,8 @@ T1 remains gated on observed Angular build and web deployment authority.
 [ADR-0042](0042-bound-angular-render-data-through-the-capability-broker.md)
 proposes one explicitly requested, broker-mediated HTTP data step inside the
 fresh Angular render activation, without ambient JavaScript networking.
+
+[ADR-0043](0043-select-static-web-publications-as-first-class-http-targets.md)
+defines componentless static-web trigger targets, signed `static-site-v1`
+browser routing metadata, shared external matcher semantics, exact web
+publication currentness and format-v1 HTTP state compatibility.

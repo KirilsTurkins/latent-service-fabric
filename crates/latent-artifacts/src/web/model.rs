@@ -13,6 +13,8 @@ pub struct WebApplicationManifest {
     pub assets: Vec<WebAsset>,
     pub routes: Vec<WebRoute>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub static_routing: Option<StaticWebRouting>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub renderer: Option<WebRenderer>,
 }
 
@@ -79,6 +81,46 @@ pub struct WebRenderer {
     pub assets_digest: String,
     #[serde(default, skip_serializing_if = "WebBackendProfile::is_none")]
     pub backend_profile: WebBackendProfile,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StaticWebRoutingProfile {
+    #[serde(rename = "static-site-v1")]
+    StaticSiteV1,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum StaticDirectoryIndexMode {
+    Disabled,
+    Redirect,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum StaticFallbackMode {
+    None,
+    Spa,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StaticWebFallback {
+    pub mode: StaticFallbackMode,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub document: Option<String>,
+}
+
+/// Closed, publication-signed site-local routing metadata. It contains no
+/// hostname, tenant, filesystem root, credential, proxy or mutable URL.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StaticWebRouting {
+    pub profile: StaticWebRoutingProfile,
+    pub entry_document: String,
+    pub directory_index: StaticDirectoryIndexMode,
+    pub directory_index_document: String,
+    pub fallback: StaticWebFallback,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -191,6 +233,16 @@ impl CheckedWebLayout {
         bytes += self.manifest.routes.capacity() * std::mem::size_of::<WebRoute>();
         for route in &self.manifest.routes {
             bytes += route.path.capacity() + route.asset.as_ref().map_or(0, String::capacity);
+        }
+        if let Some(routing) = &self.manifest.static_routing {
+            bytes += std::mem::size_of::<StaticWebRouting>()
+                + routing.entry_document.capacity()
+                + routing.directory_index_document.capacity()
+                + routing
+                    .fallback
+                    .document
+                    .as_ref()
+                    .map_or(0, String::capacity);
         }
         if let Some(renderer) = &self.manifest.renderer {
             bytes += renderer.layer.capacity()
