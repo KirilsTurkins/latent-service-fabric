@@ -94,6 +94,127 @@ hashed asset names so stale HTML cannot silently load a different version at the
 same name; any intentionally retained assets must be present in the selected
 publication's signed inventory.
 
-The adapter and package round-trip are implemented. The maintained Angular CSR,
-static-generator and end-to-end deployment/browser receipts for issue #497 are
-still being qualified; this page does not claim their completion.
+## Build and qualify the maintained references
+
+`examples/static-sites/csr` is an Angular client-only application with a home
+view, a lazy `/orders/:id` route, CSS and visible A/B version markers. Its build
+uses the pinned Angular compiler and linker in `examples/renderer-profile`;
+the application contains no server renderer. `examples/static-sites/generator`
+contains two finite pages representative of a static generator's directory
+output. The generator is a conformance fixture, not a Docusaurus runtime.
+
+On the qualified Linux toolchain, build the CLI/node and install the locked
+JavaScript toolchain before running the maintained reference build:
+
+```sh
+cargo build --locked -p latent -p latentd --all-features
+npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund
+mkdir -p target/static-conformance
+objcopy --strip-debug target/debug/latent target/static-conformance/latent
+objcopy --strip-debug target/debug/latentd target/static-conformance/latentd
+python3 tools/build_static_sites.py \
+  --cli target/static-conformance/latent \
+  --toolchain examples/renderer-profile \
+  --output target/static-conformance/builds
+LSF_STATIC_BUILDS="$PWD/target/static-conformance/builds" \
+LSF_STATIC_FIXTURE_ROOT="$PWD/target/static-conformance/fixture" \
+  cargo test --locked -p latentd --test phase3_static_fixture --all-features \
+  -- --ignored --exact export_actual_static_site_fixtures
+python3 tools/run_static_site_workflow.py \
+  --cli target/static-conformance/latent \
+  --node target/static-conformance/latentd \
+  --fixture target/static-conformance/fixture \
+  --toolchain examples/renderer-profile \
+  --chrome "$(command -v google-chrome)" \
+  > target/static-conformance/receipt.json
+```
+
+The build output directory must be new. Docker supplies the owned, pinned TLS
+OCI registry; an explicitly supplied `--registry-origin` and `--registry-ca`
+can select an existing test registry. The fixture exporter signs the actual
+four packages using test publisher/builder keys and a finite test policy.
+Export fresh evidence immediately before the workflow so its admission proof
+remains current. These fixture keys and policy are local conformance inputs;
+operator deployments use their own publisher, builder and tenant policy.
+
+The build keeps source, toolchain, generated-byte and package observations
+separate. It records the supplied-file assembly profile, incomplete declared
+dependency coverage and `reproducibility: not-checked`. It does not claim a
+hermetic or independently reproduced framework build. B explicitly retains A's
+content hashed public assets in B's signed inventory so an A document already
+loaded during cutover can finish loading its original scripts.
+
+The workflow inspects and verifies every package, pushes it to OCI, pulls by
+exact package digest, compares all package/evidence bytes and publishes the
+pulled package. It then uses the existing `trigger` management commands and
+recovers each operation receipt by operation ID. Real Chromium checks deep
+links, router navigation without a document reload, refresh, lazy scripts,
+CSS, CSP, missing scripts/API requests, root and `/docs` generator mounts and
+canonical 308 redirects. It holds A's script request across a committed B
+trigger update and proves both the completed A view and a fresh B view.
+
+The same run performs an explicit rollback to A, switches to B again, revokes
+A, rejects conditional reads of A and refuses a new rollback to revoked A.
+It checks foreign publication denial and paginates the actual audit API to
+associate committed operations with exact static identities. Initial, dormant
+and final node inventories retain zero granted cells, active activations and
+compiled images; request owners return to baseline and the actual node joins
+its HTTP, asset, compiler and control owners during shutdown. Cold and warm
+request timings are bounded observations, not throughput or CDN benchmarks.
+The [retained local qualification](../evidence/static-site-local-2026-09-22.json)
+records Chromium 153, 73 actual CLI processes, ten committed static operations
+across 15 audit pages, and the exact CLI/node and package digests. The CI receipt
+is produced independently from its checked-out source and built executables.
+
+CI runs this workflow inside the existing conditional renderer/browser job
+and retains `static-site-receipt.json` with the other delivery receipts. The
+adapter's adversarial tests and the real HTTP tests additionally cover path
+aliases, private outputs, symlinks, saturation, corrupt assets, revocation
+between selection and delivery and blocking-read ownership during shutdown.
+
+## Apply a static publication and recover an operation
+
+After verifying and publishing your signed package, put the returned exact
+publication ID into a trigger such as:
+
+```yaml
+apiVersion: latent.dev/v1alpha1
+kind: HttpTrigger
+metadata:
+  name: orders-get
+  tenant: customer-a
+spec:
+  target:
+    kind: static-web
+    publication: publication:sha256:<admitted-publication-id>
+  configuration:
+    profile: static-site-v1
+    scheme: https
+    host: customer-a.example.com
+    path: /
+    pathMatch: prefix
+    method: GET
+```
+
+Use the authenticated operator profile and the generation/state version from
+`latent trigger get orders-get` as explicit compare-and-set preconditions:
+
+```sh
+latent trigger apply orders-get.yaml --operation-id orders-to-b \
+  --expected-generation <current-trigger-generation> \
+  --expected-state-version <current-state-version>
+latent trigger operation orders-to-b
+```
+
+A new trigger has generation zero. Create a separate named HEAD trigger with
+`method: HEAD` when HEAD is required; unrelated application triggers do not
+inherit GET behavior. For the generator mounted at `/docs`, build its public
+links with that mount and use `path: /docs` with `pathMatch: prefix`.
+
+If a connection fails after submission, query the original operation ID before
+deciding whether to retry. A cutover changes the exact publication in a new
+trigger operation using current preconditions. Rollback follows the same
+procedure and selects a still-eligible prior publication; a revoked publication
+must remain denied even when its bytes are cached. Inspect the returned target,
+trigger generation, publication, web manifest and asset digests before treating
+the operation as complete.

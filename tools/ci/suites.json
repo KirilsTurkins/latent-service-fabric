@@ -304,6 +304,19 @@
       "testThreads": "libtest default",
       "timeoutSeconds": 300
     },
+    "static-site-fixture": {
+      "exact": true,
+      "filter": "export_actual_static_site_fixtures",
+      "ignored": true,
+      "names": [
+        "export_actual_static_site_fixtures"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latentd.test.phase3-static-fixture",
+      "testThreads": 1,
+      "timeoutSeconds": 300
+    },
     "trust-currentness": {
       "exact": false,
       "filter": "standalone::start::tests::trust_currentness::",

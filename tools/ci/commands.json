@@ -1189,6 +1189,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\""
+    },
+    ".github/workflows/ci.yml:rust:Qualify signed static sites through OCI and actual browsers": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Qualify signed static sites through OCI and actual browsers",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "# Reviewed capture owner: tools/static_site.py\nstatic_root=\"${RUNNER_TEMP}/static-site\"\nmkdir -p \"$static_root\" \"${RUNNER_TEMP}/phase2-gate\"\nobjcopy --strip-debug \"${PWD}/target/debug/latentd\" \"${static_root}/latentd\"\npython3 tools/build_static_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --toolchain examples/renderer-profile --output \"${static_root}/builds\"\nLSF_STATIC_BUILDS=\"${static_root}/builds\" LSF_STATIC_FIXTURE_ROOT=\"${static_root}/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_static_site_workflow.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${static_root}/latentd\" --fixture \"${static_root}/fixture\" --toolchain examples/renderer-profile --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/static-site-receipt.json\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2879,6 +2889,15 @@
     },
     "tools/test.py": {
       "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
+    },
+    "tools/build_static_sites.py": {
+      "sha256": "5acd3d499791273271236d0e60077763b6e9dd22ccee58aaac46d2b69733035c"
+    },
+    "tools/run_static_site_workflow.py": {
+      "sha256": "24c2ae9bec2896dc799e2a977978952189f810a6fdd2ede0caf839b7a4d41264"
+    },
+    "tools/static_site.py": {
+      "sha256": "5e2a5228f9bd06b06534a7b5c5b51b8e3a42ec0d924c82e661f4af44249504ce"
     }
   },
   "pythonCases": {
@@ -5815,7 +5834,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "67c04dd0e9012fe4ae7d8f3acd8198b8f6b8e59a278de92eceb45c3275fd3f99",
+    ".github/workflows/ci.yml": "3a8f6e4c5656e75dcea82ffab64eac9065b773d8f210d86ae3a2b093dc416a72",
     ".github/workflows/docs-pages.yml": "87ca4f1d44d6de1e14960abb0f1d7a883d40ae52ffcaba8d4cfdcf0a888c7a3e",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0e84b07e365798040f2ff4c360d8fa4b959dfc46fdab8867662381508f1ef15d",
