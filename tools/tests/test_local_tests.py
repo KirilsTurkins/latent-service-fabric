@@ -87,6 +87,18 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(plan["runner"], "provider-owner")
         self.assertIn("fixture/service owner", plan["blocker"])
 
+        browser = local.plan_suite(ROOT, "selection.browser-boundary")
+        self.assertFalse(browser["runSupported"])
+        self.assertIn("renderer-lane", browser["blocker"])
+
+        data = registry.load()
+        angular = local.plan_suite(ROOT, local.ANGULAR_PROCESS)
+        self.assertTrue(angular["runSupported"])
+        self.assertEqual(angular["runner"], "run_angular_renderer_tests")
+        self.assertEqual(angular["ownerSuite"], data["processContracts"]["angular-renderer"]["suiteIds"])
+        self.assertEqual(angular["cases"], local._angular_cases(data))
+        self.assertEqual(angular["prerequisites"], data["processContracts"]["angular-renderer"]["prerequisites"])
+
     def test_prepare_and_run_commands_keep_exact_suite_and_case(self) -> None:
         case = "digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain"
         plan = local.plan_suite(ROOT, CORE, case)

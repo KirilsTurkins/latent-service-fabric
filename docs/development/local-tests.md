@@ -65,6 +65,7 @@ success: select one exact ignored case.
 ```bash
 python3 tools/test.py plan --suite latent-wasmtime.test.echo-backend --case invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary
 python3 tools/test.py prepare --suite latent-wasmtime.test.echo-backend --case invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary --inventory target/local-tests/echo-backend.jsonl
+python3 tools/test.py check --suite latent-wasmtime.test.echo-backend --case invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary --inventory target/local-tests/echo-backend.jsonl
 python3 tools/test.py run --suite latent-wasmtime.test.echo-backend --case invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary --inventory target/local-tests/echo-backend.jsonl
 ```
 
@@ -75,42 +76,64 @@ owned-process runner retains bounded diagnostics and cleanup status.
 
 ## Angular/provider failure reproduction
 
-The browser-boundary selection is an existing CI-owned Angular/browser integration
-selection. It is exposed through the same entry point without inventing another
-fixture recipe.
+The maintained Angular renderer process is exposed as
+`process.angular-renderer`. It composes the registered
+`processContracts["angular-renderer"]` suite set and delegates execution to
+`run_angular_renderer_tests.py`; the local front end does not reproduce its
+fixture or child-process logic.
 
 ```bash
-python3 tools/test.py check --suite selection.browser-boundary
-python3 tools/test.py prepare --suite selection.browser-boundary --inventory target/local-tests/browser-boundary.jsonl
-python3 tools/test.py run --suite selection.browser-boundary --inventory target/local-tests/browser-boundary.jsonl
+python3 tools/test.py check --suite process.angular-renderer
+python3 tools/test.py prepare --suite process.angular-renderer --inventory target/local-tests/angular-renderer.jsonl
+python3 tools/test.py check --suite process.angular-renderer --inventory target/local-tests/angular-renderer.jsonl
+python3 tools/test.py run --suite process.angular-renderer --inventory target/local-tests/angular-renderer.jsonl --fault after-discovery
 ```
 
-On failure, the command reports the `target/test-diagnostics/...json` record written
-by the shared `TestRun` owner. Re-run the exact recorded cases with the same
-prepared inventory:
+The first `check` reports every missing prepared input before execution.
+`prepare` is the only command in this workflow that may build: it produces the
+registered Cargo inventory, runs the existing renderer-profile `npm ci` /
+`npm run build` preparation, and calls the maintained
+`build_angular_renderer.py` preparer. This explicit step can use the network
+through npm when the local cache is insufficient. The later `run` is
+execution-only and consumes those exact files.
+
+The `--fault after-discovery` command is an intentional negative control and is
+expected to exit nonzero after real prepared-harness discovery. Its maintained
+`TestRun` owner writes
+`target/test-diagnostics/angular-renderer-RECORD.json`. Re-run only that
+sanitized source/recipe/case/fixture selection:
 
 ```bash
-python3 tools/test.py reproduce target/test-diagnostics/selection.browser-boundary-RECORD.json --inventory target/local-tests/browser-boundary.jsonl
+python3 tools/test.py reproduce target/test-diagnostics/angular-renderer-RECORD.json --inventory target/local-tests/angular-renderer.jsonl
 ```
 
 A changed checkout is rejected by default. For investigation only, it can be
-labelled explicitly; recipe/case and prepared-inventory identity are still not
-bypassed:
+labelled explicitly; recipe, case list, Cargo inventory, public/private renderer
+WASM, and inventoried harness identities are still checked:
 
 ```bash
-python3 tools/test.py reproduce target/test-diagnostics/selection.browser-boundary-RECORD.json --inventory target/local-tests/browser-boundary.jsonl --allow-changed-checkout
+python3 tools/test.py reproduce target/test-diagnostics/angular-renderer-RECORD.json --inventory target/local-tests/angular-renderer.jsonl --allow-changed-checkout
 ```
 
-Provider-owned selections such as `selection.s3-blobs`, `selection.vault-secrets`,
-and NATS selections are listed and explained, but `run` refuses to bypass their
-existing provider/service owner. Use the owner named by the plan (the same owner
-used by `run_ci_lanes.py`) when a real provider fixture is required. This is a
-deliberate distinction between “known selection” and “safe generic execution.”
+For a successful renderer integration after the failure/reproduction exercise:
 
-Private test fixtures and owned children remain the responsibility of their
-registered runner and are cleaned during normal/fault teardown. The local front
-end never issues a blanket process/container kill. Remove only the inventory or
-other output you explicitly created after the run.
+```bash
+python3 tools/test.py run --suite process.angular-renderer --inventory target/local-tests/angular-renderer.jsonl
+```
+
+Provider-owned selections such as `selection.s3-blobs`,
+`selection.vault-secrets`, and the NATS selections remain with
+`run_ci_lanes.py` / their provider owners. The local front end lists and
+explains them but will not turn a provider selection into an unprepared generic
+libtest. This preserves Docker image, service readiness, credential, cleanup,
+and negative-control ownership.
+
+The maintained Angular runner owns its test children and writes bounded cleanup
+diagnostics on normal and fault teardown. When finished, remove only the local
+inventory and generated renderer-profile preparation you created, for example
+`target/local-tests/angular-renderer.jsonl` and, if no longer useful,
+`examples/renderer-profile/node_modules` / `examples/renderer-profile/dist`.
+No blanket process or container cleanup is performed.
 
 ## Explicit qualification
 
@@ -121,6 +144,7 @@ same prepared selection exercised by full CI:
 ```bash
 python3 tools/test.py plan --suite selection.metadata-working-set
 python3 tools/test.py check --suite selection.metadata-working-set --inventory target/local-tests/metadata.jsonl
+python3 tools/test.py prepare --suite selection.metadata-working-set --inventory target/local-tests/metadata.jsonl
 python3 tools/test.py run --suite selection.metadata-working-set --inventory target/local-tests/metadata.jsonl
 ```
 
