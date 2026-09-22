@@ -5,15 +5,26 @@ package latent.control.v1;
 import "latent/control/v1/common.proto";
 import "latent/control/v1/release.proto";
 
+enum TriggerTargetKind {
+  TRIGGER_TARGET_KIND_UNSPECIFIED = 0;
+  // Legacy buffered-v1 clients may omit this discriminator. When present,
+  // application fields 1-7 remain the wire-compatible application variant.
+  TRIGGER_TARGET_KIND_APPLICATION = 1;
+  // Carries only publication plus this discriminator. Application fields are
+  // required to be absent/default and are rejected as a hybrid by validation.
+  TRIGGER_TARGET_KIND_STATIC_WEB = 2;
+}
+
 message TriggerTarget {
   string service = 1;
   string contract = 2;
   string function = 3;
   optional string route = 4;
-  // Required for the buffered-v1 HTTP profile. Component digests are not selectors.
+  // Required for both supported HTTP target variants.
   PublicationRef publication = 5;
   optional string revision = 6;
   optional uint64 deployment_generation = 7;
+  TriggerTargetKind kind = 8;
 }
 
 message Trigger {
