@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 autotests = false
-description = "Data-plane node runtime and explicit Phase 0 spike composition root."
+description = "Data-plane node runtime and standalone service composition root."
 
 [lib]
 path = "src/lib_root.rs"
@@ -64,10 +64,6 @@ tempfile.workspace = true
 tokio = { workspace = true, features = ["test-util"] }
 wasm-encoder.workspace = true
 wasmparser.workspace = true
-
-[[test]]
-name = "phase0_spike_e2e"
-path = "tests/phase0_spike_e2e_root.rs"
 
 [[test]]
 name = "catalog_scale"
