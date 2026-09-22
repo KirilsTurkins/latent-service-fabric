@@ -2743,7 +2743,7 @@
       "sha256": "46f01052e597827d1366b1b934b0d9e56903b499555155de60ba02a75a26f3b0"
     },
     "tools/phase3_resource_campaign.py": {
-      "sha256": "6d4f990fd2fa02b9c0b3c4c133161516d36bd60e01da3dd2549258ce3cb841cf"
+      "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
     },
     "tools/phase3_security.py": {
       "sha256": "5f904fc5c0ee5da777645fbc6b86215592a6bfe4fb98faf16bf147b3da7f7e41"
@@ -5014,6 +5014,8 @@
       "EvidenceTests.test_partial_provider_and_cell_observations_are_rejected",
       "EvidenceTests.test_refused_density_is_not_a_proven_capacity_ceiling_or_campaign_pass",
       "EvidenceTests.test_retained_active_owner_is_not_quiet",
+      "EvidenceTests.test_retained_checksum_accepts_collector_and_exact_sha256sum_records",
+      "EvidenceTests.test_retained_checksum_rejects_wrong_file_digest_extra_records_and_oversize",
       "EvidenceTests.test_unobserved_counters_are_not_treated_as_zero",
       "ProcTests.test_network_namespace_rows_must_match_owned_descriptor_inodes",
       "ProcTests.test_real_owned_process_is_measured_then_reaped_not_adopted",

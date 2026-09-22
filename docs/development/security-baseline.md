@@ -5,8 +5,9 @@ The [coordinator](../../.github/workflows/security-baseline.yml) reuses the exis
 [RustSec worker](../../.github/workflows/security-rustsec.yml), rather than adding a
 second advisory schedule. It adds SDK inventory, redacted secret checks, reviewed
 source/workflow rules, expiring exceptions and bounded canaries. Deployment and
-finding triage remain explicit gates; implementation is not a claim that #282 is
-complete. See the [dated evidence and gaps](security-baseline-evidence.md).
+finding triage remain explicit gates. Default-branch activation, both-ref scans
+and required-check enforcement are recorded in the
+[dated evidence ledger](security-baseline-evidence.md#verified-activation-22-september-2026).
 
 ## Events and scope
 
@@ -31,12 +32,13 @@ credentials on its eight checkout steps; four manual workflows receive the same
 fix rather than suppressing existing workflow findings.
 
 GitHub activates schedules from the default branch, currently `release`.
-The security coordinator was **not present on `release`** when settings were
-observed on 2026-09-19. Merging into `development` alone does not activate weekly
-coverage or make default-branch manual dispatch available. Normal centralized
-promotion must carry the controls to `release`; this ticket does not bypass it.
-After promotion, run a manual both-ref scan and retain the first scheduled
-both-ref result with unchanged locks. A green PR is not that evidence.
+The separately approved [activation PR #461](https://github.com/KirilsTurkins/latent-service-fabric/pull/461)
+merged on 2026-09-21. The default-branch coordinator pins scanner controls to
+`e852442ab2801388e06d420ca6c389031c8bdd14`, independently of each scanned source.
+An actual scheduled run and a later manual run passed all checks against both
+maintained refs. Their exact source and advisory-database identities are retained
+in the evidence ledger. Subsequent dependency or control changes still require
+their own selected checks; an earlier green scan does not cover a later commit.
 
 ## Reviewed tools and rules
 
@@ -321,8 +323,10 @@ Before the parent can claim acceptance, it must review exact exceptions and
 findings, audit the final PR head, promote controls normally to default `release`,
 retain both-ref manual and scheduled results without changing locks, and require
 `Security baseline result` alongside the existing `CI result` once deployed.
-The 2026-09-19 snapshot still has only `CI result` required; this implementation
-does not prematurely change protection on other in-flight Phase 3 PRs.
+The 2026-09-22 API verification confirms both contexts are required on
+`development`, bound to the GitHub Actions application. Existing strictness and
+the `CI result` requirement were preserved. The older 2026-09-19 snapshot below
+remains historical evidence of the pre-activation state.
 
 The renderer's initial advisory matches are removed by a reviewed, exact
 `@bytecodealliance/weval` 0.5.0 override, without changing the renderer's AOT-disabled
