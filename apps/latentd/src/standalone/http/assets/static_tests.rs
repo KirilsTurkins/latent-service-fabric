@@ -10,7 +10,7 @@ use std::{sync::Arc, time::Duration};
 use tokio::{io::AsyncWriteExt, net::TcpStream, time::Instant};
 
 const HTML: &str = "Accept: text/html\r\n";
-const NAVIGATION: &str = "Accept: text/html\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Site: same-origin\r\n";
+const NAVIGATION: &str = "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Site: same-origin\r\n";
 
 fn publish(h: &Harness, operation: &str, page: &[u8]) -> PublicationRef {
     let upload = fixture::configured_upload(
