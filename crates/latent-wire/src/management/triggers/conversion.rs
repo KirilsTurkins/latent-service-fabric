@@ -4,7 +4,8 @@ use latent_control_store::http_routes::{
 };
 use latent_core::{ContractId, ServiceId, TenantId, TriggerId};
 use latent_manifest::{
-    __serde_json as json, ObjectMetadata, TriggerKind, TriggerManifest, TriggerTarget,
+    __serde_json as json, ApplicationTriggerTarget, ObjectMetadata, StaticWebTriggerTarget,
+    TriggerKind, TriggerManifest, TriggerTarget,
 };
 use tonic::Status;
 
@@ -18,6 +19,28 @@ pub(super) fn manifest(value: proto::Trigger) -> Result<TriggerManifest, Status>
     let publication = target
         .publication
         .ok_or_else(|| Status::invalid_argument("explicit trigger publication is required"))?;
+    let publication = publication
+        .id
+        .parse()
+        .map_err(|_| Status::invalid_argument("invalid publication identity"))?;
+    let target = match proto::TriggerTargetKind::try_from(target.kind)
+        .map_err(|_| Status::invalid_argument("invalid trigger target kind"))?
+    {
+        proto::TriggerTargetKind::StaticWeb => TriggerTarget::StaticWeb(StaticWebTriggerTarget {
+            publication,
+        }),
+        proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application => {
+            TriggerTarget::Application(ApplicationTriggerTarget {
+                service: ServiceId(target.service),
+                contract: ContractId(target.contract),
+                function: target.function,
+                route: target.route,
+                publication: Some(publication),
+                revision: target.revision,
+                deployment_generation: target.deployment_generation,
+            })
+        }
+    };
     Ok(TriggerManifest {
         api_version: latent_manifest::MANIFEST_API_VERSION.into(),
         id: TriggerId(value.id),
@@ -29,20 +52,7 @@ pub(super) fn manifest(value: proto::Trigger) -> Result<TriggerManifest, Status>
             labels: metadata.labels.into_iter().collect(),
             annotations: metadata.annotations.into_iter().collect(),
         },
-        target: TriggerTarget {
-            service: ServiceId(target.service),
-            contract: ContractId(target.contract),
-            function: target.function,
-            route: target.route,
-            publication: Some(
-                publication
-                    .id
-                    .parse()
-                    .map_err(|_| Status::invalid_argument("invalid publication identity"))?,
-            ),
-            revision: target.revision,
-            deployment_generation: target.deployment_generation,
-        },
+        target,
         configuration: value
             .configuration
             .into_iter()
@@ -58,15 +68,13 @@ pub(super) fn manifest_to_proto(manifest: TriggerManifest, generation: u64) -> p
         id: manifest.id.0,
         kind: "HttpTrigger".into(),
         generation,
-        target: Some(proto::TriggerTarget {
-            service: manifest.target.service.0,
-            contract: manifest.target.contract.0,
-            function: manifest.target.function,
-            route: manifest.target.route,
-            publication: manifest
-                .target
-                .publication
-                .map(|publication| proto::PublicationRef {
+        target: Some(match manifest.target {
+            TriggerTarget::Application(target) => proto::TriggerTarget {
+                service: target.service.0,
+                contract: target.contract.0,
+                function: target.function,
+                route: target.route,
+                publication: target.publication.map(|publication| proto::PublicationRef {
                     id: publication.into_string(),
                     tenant: manifest
                         .metadata
@@ -76,8 +84,24 @@ pub(super) fn manifest_to_proto(manifest: TriggerManifest, generation: u64) -> p
                         .0
                         .clone(),
                 }),
-            revision: manifest.target.revision,
-            deployment_generation: manifest.target.deployment_generation,
+                revision: target.revision,
+                deployment_generation: target.deployment_generation,
+                kind: proto::TriggerTargetKind::Application as i32,
+            },
+            TriggerTarget::StaticWeb(target) => proto::TriggerTarget {
+                publication: Some(proto::PublicationRef {
+                    id: target.publication.into_string(),
+                    tenant: manifest
+                        .metadata
+                        .tenant
+                        .as_ref()
+                        .expect("scoped HTTP trigger")
+                        .0
+                        .clone(),
+                }),
+                kind: proto::TriggerTargetKind::StaticWeb as i32,
+                ..Default::default()
+            },
         }),
         configuration: manifest
             .configuration
