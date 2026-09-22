@@ -194,7 +194,7 @@ pub(super) async fn compile_versioned_inner(
 /// compiled owner so its final v3 envelope is encoded once after that metadata exists.
 #[expect(
     clippy::too_many_arguments,
-    reason = "same closed compiler inputs as legacy encoding"
+    reason = "same closed compiler inputs as ordinary encoding"
 )]
 pub(super) async fn compile_catalog_with_runtime(
     deployments: DesiredDeployments,
@@ -353,7 +353,7 @@ pub(super) async fn compile_for_publication(
             lifecycle,
         )
         .await
-        .map(super::persistence::PublicationCandidate::Legacy)
+        .map(super::persistence::PublicationCandidate::Encoded)
     }
 }
 

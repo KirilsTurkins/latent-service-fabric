@@ -442,39 +442,12 @@ impl DirectoryDeploymentRepository {
                 .as_mut()
                 .and_then(|record| record.payload.control.take());
             let needs_initial_state = restored.is_none();
-            let needs_publication_upgrade = restored
-                .as_ref()
-                .is_some_and(persistence::Record::needs_publication_upgrade);
             let mut publication_pins = None;
             let (deployments, versions, generation, generated_at) = match &restored {
                 Some(record) => {
                     let deployments = record.deployments(config)?;
                     let versions = record.object_generations(&deployments)?;
                     publication_pins = record.publication_pins(&deployments)?;
-                    if needs_publication_upgrade {
-                        let mut pins = compiler::PublicationPins::new();
-                        for (id, manifest) in &deployments {
-                            let tenant = manifest.metadata.tenant.as_ref().ok_or_else(|| {
-                                error(
-                                    PlatformErrorCode::CorruptArtifact,
-                                    "persisted-tenant-missing",
-                                )
-                            })?;
-                            let selected = match &manifest.publication {
-                                Some(publication) => artifacts.select_execution_publication(
-                                    tenant,
-                                    &manifest.release,
-                                    Some(publication),
-                                )?,
-                                None => artifacts
-                                    .recover_execution_publication(tenant, &manifest.release)?,
-                            };
-                            if let Some(selected) = selected {
-                                pins.insert(id.clone(), selected.id);
-                            }
-                        }
-                        publication_pins = Some(pins);
-                    }
                     (
                         deployments
                             .into_iter()
@@ -543,15 +516,13 @@ impl DirectoryDeploymentRepository {
                 }
                 None => http::table::HttpTable::empty(&http_budget)?,
             };
-            let mut needs_operation_upgrade = false;
             let operations = if let Some(mut data) = control
                 .as_mut()
                 .and_then(|value| value.deployment_operations.take())
             {
-                needs_operation_upgrade = operations::table::recover_publications(
+                operations::table::validate_publications(
                     &mut data,
                     artifacts.as_ref(),
-                    &catalog,
                     &operation_budget,
                 )?;
                 operations::table::OperationTable::new(data, true, &operation_budget)?
@@ -560,12 +531,8 @@ impl DirectoryDeploymentRepository {
             };
             operations.validate_catalog(transaction, generation.0)?;
             let rollout_table = if let Some(mut control) = control {
-                rollouts::table::recover_publications(
-                    &mut control.rollouts,
-                    artifacts.as_ref(),
-                    needs_publication_upgrade,
-                )
-                .await?;
+                rollouts::table::validate_publications(&mut control.rollouts, artifacts.as_ref())
+                    .await?;
                 let enabled = !control.rollouts.rows.is_empty();
                 rollouts::table::RolloutTable::new(
                     control.rollouts,
@@ -577,21 +544,7 @@ impl DirectoryDeploymentRepository {
                 rollouts::table::RolloutTable::empty(&rollout_budget, rollout_limits)?
             };
             rollout_table.validate_catalog(transaction, generation)?;
-            if (needs_publication_upgrade || needs_operation_upgrade)
-                && (rollout_table.enabled || operations.enabled)
-            {
-                bytes = persistence::encode_combined(
-                    &catalog,
-                    &persistence::ControlPayloadRef {
-                        transaction_version: transaction,
-                        rollouts: &rollout_table.data,
-                        deployment_operations: operations.enabled.then_some(&operations.data),
-                        http_routes: http.enabled.then_some(&http.data),
-                    },
-                    config.max_state_bytes,
-                    &mut work,
-                )?;
-            }
+            persistence::discard_staging(&root)?;
             let repository = Self {
                 root,
                 config,
@@ -634,7 +587,7 @@ impl DirectoryDeploymentRepository {
                 let mut started = false;
                 let result = catalog.with_current_admission(&mut |checker| {
                     started = true;
-                    if needs_initial_state || needs_publication_upgrade || needs_operation_upgrade {
+                    if needs_initial_state {
                         persistence::stage(&repository.root, &bytes, &mut work)?;
                         if let Some(checker) = checker {
                             checker.check()?;
@@ -734,7 +687,7 @@ impl DirectoryDeploymentRepository {
         precondition: Option<&ObjectPrecondition>,
         work: &mut Work,
     ) -> Result<CommitOutcome, PlatformError> {
-        let (next, legacy_bytes) = next.into().into_parts();
+        let (next, encoded_bytes) = next.into().into_parts();
         let publication = self.read_publication();
         if let Some(precondition) = precondition {
             precondition.check(&publication.routes)?;
@@ -766,10 +719,10 @@ impl DirectoryDeploymentRepository {
                     .then_some(&publication.operations.data),
                 http_routes: publication.http.enabled.then_some(&publication.http.data),
             };
-            drop(legacy_bytes);
+            drop(encoded_bytes);
             persistence::encode_combined(&next, &control, self.config.max_state_bytes, work)?
         } else {
-            legacy_bytes
+            encoded_bytes
                 .ok_or_else(|| error(PlatformErrorCode::Internal, "catalog-format-mismatch"))?
         };
         next.check_admission_mode(self.admission.as_ref(), self.lifecycle.as_ref())?;

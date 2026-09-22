@@ -297,52 +297,56 @@ fn staging_marker_cleanup_never_repairs_corrupt_completed_state() {
 }
 
 #[test]
-fn publication_upgrade_interruptions_expose_no_partial_catalog_and_retry_from_disk() {
+fn obsolete_catalog_rejection_preserves_state_and_staging_without_write_attempts() {
     use latent_manifest::__serde_json as json;
-    for step in [
-        IoStep::StateCreated,
-        IoStep::StateWritten,
-        IoStep::StateFileSynced,
-        IoStep::StateRename,
-        IoStep::StateDirectorySync,
-    ] {
+    for format in 1..=4 {
         let scratch = Scratch::new();
         let root = scratch.0.join("catalog");
         drop(open(&root).unwrap());
         let path = root.join(STATE_FILE);
         let mut value: json::Value = json::from_slice(&fs::read(&path).unwrap()).unwrap();
-        value["format_version"] = json::json!(2);
+        value["format_version"] = json::json!(format);
         value["payload"]
             .as_object_mut()
             .unwrap()
             .remove("publication_pins");
+        if format == 1 {
+            value["payload"]
+                .as_object_mut()
+                .unwrap()
+                .remove("object_generations");
+        }
         let mut record: super::Record = json::from_value(value).unwrap();
         record.checksum =
             latent_artifacts::content_digest(&json::to_vec(&record.payload).unwrap()).0;
         let original = json::to_vec(&record).unwrap();
         fs::write(&path, &original).unwrap();
-        let failed_path = if step == IoStep::StateDirectorySync {
-            root.clone()
-        } else {
-            root.join(super::PENDING_FILE)
-        };
-        let guard = Guard::new(Some((step, failed_path.clone())));
-        assert!(
-            open(&root).is_err(),
-            "an interrupted upgrade cannot return a catalog handle"
-        );
-        assert_eq!(guard.events().last(), Some(&(step, failed_path)));
-        drop(guard);
-        if step != IoStep::StateDirectorySync {
-            assert_eq!(fs::read(&path).unwrap(), original);
+        fs::write(root.join(super::PENDING_FILE), b"retained pending bytes").unwrap();
+        fs::write(
+            root.join(INITIALIZED_PENDING_FILE),
+            b"retained pending marker",
+        )
+        .unwrap();
+        let guard = Guard::new(None);
+        for _ in 0..2 {
+            assert!(open(&root).is_err());
         }
-        drop(open(&root).unwrap());
-        let upgraded = fs::read(&path).unwrap();
-        let parsed: json::Value = json::from_slice(&upgraded).unwrap();
-        assert_eq!(parsed["format_version"], 5);
-        assert_eq!(parsed["payload"]["generation"], 0);
-        assert!(!root.join(super::PENDING_FILE).exists());
-        drop(open(&root).unwrap());
-        assert_eq!(fs::read(&path).unwrap(), upgraded);
+        assert!(!guard.events().iter().any(|(step, _)| matches!(
+            step,
+            IoStep::StateCreated
+                | IoStep::StateWritten
+                | IoStep::StateFileSynced
+                | IoStep::StateRename
+                | IoStep::StateDirectorySync
+        )));
+        assert_eq!(fs::read(&path).unwrap(), original);
+        assert_eq!(
+            fs::read(root.join(super::PENDING_FILE)).unwrap(),
+            b"retained pending bytes"
+        );
+        assert_eq!(
+            fs::read(root.join(INITIALIZED_PENDING_FILE)).unwrap(),
+            b"retained pending marker"
+        );
     }
 }

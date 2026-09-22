@@ -27,27 +27,23 @@ route digests also authenticate publication selection. A projection must keep
 the attribute and typed ID consistent. A held route cannot substitute another
 publication with identical component bytes.
 
-Deployment catalog envelope **format 5** stores exact publication pins separately
-from the original canonical deployment manifests. It also retains combined
-rollout and deployment-operation histories. These are different versions from
-artifact catalog format 2 and the public manifest API version.
+Deployment catalog envelopes **5, 6 and 7** store exact publication pins separately
+from canonical deployment manifests. Format 5 covers ordinary deployments,
+format 6 adds capability bindings, and format 7 includes HTTP route state. These
+are current formats, distinct from artifact catalog format 2 and the public
+manifest API version. Current operation tables use format 2; their canonical
+receipts still use format 1.
 
-Startup accepts deployment formats 1â€“4 after validating their original checksum,
-snapshot, object versions and histories. It resolves old associations through the
-retained scoped catalog association, or through unique scoped resolution when
-no retained mapping exists. Ambiguous unmapped history is
-rejected. The mapping is used only for recovery; it grants no current permission.
+Startup rejects obsolete deployment envelopes 1?4, operation tables 1 and rollout
+plans 1. It neither infers publication associations nor rewrites old state. The
+stored catalog and pending staging files remain unchanged on rejection. Use the
+[fresh-state procedure](publication-catalog.md#supported-storage-and-fresh-state)
+and explicitly admit and deploy the intended packages again.
 
-Before exposing routes, startup durably writes format 5 through the existing
-staging, rename and directory-sync protocol under the exclusive owner lock and
-current admission fence. It preserves canonical legacy manifests, revision IDs,
-object generations, route generations, transaction versions and historical
-receipt bytes. A failed upgrade returns no usable catalog; reopening resumes
-from the validated old or completed new record. A current format-5 restart does
-not rewrite accepted source bytes once its operation tables are also current.
-The [public API integration](publication-api.md) upgrades legacy deployment
-operation tables to format 2 without changing canonical receipt bytes. Keep a stopped backup for rollback to older
-binaries, which cannot read this new envelope.
+Current catalogs retain exact manifests, revisions, object generations, route
+generations, transaction versions and historical receipts across restart. Startup
+validates the complete catalog and histories before discarding abandoned staging
+files or exposing routes. It does not rewrite accepted current catalog bytes.
 
 ## Rollouts and historical authority
 
@@ -56,10 +52,9 @@ identities. Distinct packages with unchanged executable bytes may participate in
 a rollout. Forward compatibility, retained package inputs, reverse compatibility
 and rollback authorization all use the selected publication.
 
-New rollout plan hashes use plan version 2 and bind both publication IDs. Recovery
-retains the version-1 hash algorithm for old plans while adding their captured
-associations. Old request and receipt hashes remain unchanged. Replaying a
-successful operation returns its historical result; it does not restore a grant.
+Rollout plan hashes use version 2 and bind both publication IDs. Recovery requires
+that version and validates the captured associations. Replaying a successful
+current operation returns its historical result; it does not restore a grant.
 Rollback creates a new route generation pointing at the original base publication,
 even when another package containing those bytes has since appeared.
 
@@ -99,9 +94,10 @@ native-image charges until their real owners are released.
 
 Tests use small real directory catalogs and tiny components. They cover independent
 tenant/package selection, held routes, wrong-publication substitution, revocation,
-retirement, warm invocation, native output/receipt rejection, legacy deployment
-and rollout migration, byte-exact operation replay, exact rollback after restart,
-and interruption of the deployment migration write. Cryptographic policy tests
+retirement, warm invocation, native output/receipt rejection, obsolete catalog,
+operation-table and rollout-plan rejection, byte-exact operation replay, exact
+rollback after restart, and preservation of rejected state and staging files.
+Cryptographic policy tests
 remain separate from runtime tests that inject a trusted host verifier.
 
 These checks establish the selected authority and ownership behavior. They are
