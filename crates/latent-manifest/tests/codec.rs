@@ -295,7 +295,13 @@ fn optional_schema_fields_are_preserved_by_the_domain_model() {
     let policy = codec.decode_policy(LOG_POLICY).expect("policy");
     assert_eq!(policy.language, "latent-policy/v1");
     let trigger = codec.decode_trigger(ECHO_TRIGGER).expect("trigger");
-    assert_eq!(trigger.target.route.as_deref(), Some("production"));
+    assert_eq!(
+        trigger
+            .target
+            .application()
+            .and_then(|target| target.route.as_deref()),
+        Some("production")
+    );
 }
 
 fn assert_violation<T: std::fmt::Debug>(
