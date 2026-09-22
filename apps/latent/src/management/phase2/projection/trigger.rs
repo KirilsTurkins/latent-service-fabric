@@ -61,7 +61,7 @@ impl Project for proto::TriggerOperationReceipt {
         tree.text(&self.revision, 128)?;
         if publication.tenant != self.tenant
             || self.expected_state_version.checked_add(1) != Some(self.state_version)
-            || self.route_generation == 0
+            || (application.is_some() && self.route_generation == 0)
             || self.route_generation > self.state_version
         {
             return Err(invalid_response());

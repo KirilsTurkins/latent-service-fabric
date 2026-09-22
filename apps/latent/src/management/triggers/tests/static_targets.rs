@@ -27,6 +27,9 @@ fn current(application: bool) -> proto::TriggerOperationReceipt {
             ..Default::default()
         }
     });
+    if !application {
+        value.route_generation = 0;
+    }
     value.format_version = 2;
     value
 }
