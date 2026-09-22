@@ -51,8 +51,8 @@ its original scope. Phase 2 features are listed below.
 ## Repository map
 
 ```text
-apps/                 Standalone latentd node, operator CLI, explicit Phase 0 spike, and control-plane placeholder
-crates/               Rust interfaces, Phase 1/2 subsystems, and isolated Phase 0 regression paths
+apps/                 Standalone latentd node, operator CLI, and control-plane placeholder
+crates/               Rust interfaces and maintained runtime/control-plane subsystems
 wit/                  WIT packages for platform capabilities
 api/proto/            Protobuf service definitions
 schemas/              JSON Schemas for declarative resources
@@ -64,7 +64,7 @@ research/              Experimental tracks kept outside the production core
 docs/                  Architecture, protocol, operations, and security documentation
 tests/                 Cross-phase test specifications; executable tests also live with crates/apps/tools
 benchmarks/            Benchmark definitions, historical measurements and compact Phase 2 gate evidence
-tools/                 Pinned validation, generation, spike, benchmark, and gate tooling
+tools/                 Pinned validation, generation, benchmark, and retained-evidence tooling
 ```
 
 ## Binaries
@@ -75,7 +75,7 @@ offline bundles, rootless local evaluation and persistent systemd servers from
 application development and contributor builds. The page explicitly records
 pending release/VM gates; the historical `0.1.0-alpha.3` release remains source-only.
 
-- `latentd`: standalone Linux node through `serve --config PATH`, plus the finite local `phase0-spike invoke-once` harness and `verify-recovery` containment proof.
+- `latentd`: standalone Linux node through `check-config`, `serve --config PATH`, and offline catalog migration.
 - `latent-control`: clustered control-plane application placeholder.
 - `latent`: bounded local package build/inspect/verification and OCI transfer; authenticated release lifecycle, managed deployment receipts, rollout/canary/rollback, audit, invocation/cancellation/status, routing and node commands.
 
@@ -87,7 +87,6 @@ local invocation workflow. The [Phase 2 operator workflows](docs/phase-2-operato
 cover package evidence, separate registry credentials, managed preconditions and
 finite operation recovery. The client never silently retries a mutation or replaces
 a stale precondition.
-The explicit Phase 0 spike retains its separate measured scope.
 
 ## Delivered Phase 1 features
 
@@ -156,6 +155,8 @@ later phases; the current node is a standalone stateless execution profile.
 
 ## Historical Phase 0 result
 
+The live Phase 0 spike, baseline, soak runners, and dedicated workflows have been retired from the current development tree. The checked-in receipts and measurement archives remain immutable historical evidence and keep their original source identities.
+
 The Phase 0 spike proves a deliberately narrow local feasibility slice:
 
 1. build one Rust echo Component Model guest through generated WIT bindings;
@@ -205,29 +206,7 @@ validation; code and mixed changes retain full validation. Full jobs can reuse
 [dependency caches](docs/development/ci-caching.md) while still running all
 selected checks.
 
-Run the complete local Phase 0 executable demonstration with:
-
-```bash
-make phase0-spike-demo
-```
-
-The command validates contracts, builds the real guest and runtime, exercises success and containment failures only through the `latentd` executable path, includes a single-process trap-to-success recovery proof, and finishes with one successful echo result. See [`docs/phase-0-spike.md`](docs/phase-0-spike.md) for the CLI, JSON schema, exit codes, cleanup proof, and limitations.
-
-Run the full Phase 0 completion gate with:
-
-```bash
-make phase0-gate
-```
-
-It runs the complete clean-checkout validation, executable spike, and fresh
-baseline sequence, then writes a machine-readable receipt under
-`target/phase0-gate/`. The retained [August 30 receipt](benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
-records the original `pass` / `authorized` result and its checked execution
-identity. The [August 29 receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-remains immutable historical evidence.
-Use `make phase0-gate-smoke` for the deterministic CI-sized sequence; it
-records the same receipt format without presenting smoke coverage as
-authorization.
+Phase 0 collection commands are intentionally no longer part of current validation. Historical receipts, archives, validators, and aggregation logic remain available for integrity/replay checks; reproducing the original workloads requires checking out the source revision recorded by that evidence.
 
 Generated bindings, parsed WIT output, Protobuf descriptors, and SDK compiler artifacts are isolated under Cargo `OUT_DIR` or `target/contracts/`; handwritten contract sources are never overwritten. See [`VALIDATION.md`](VALIDATION.md) for the checks performed.
 

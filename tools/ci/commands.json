@@ -460,16 +460,6 @@
       "shell": "default",
       "run": "unset CARGO_INCREMENTAL\ntools/validate_contracts.sh"
     },
-    ".github/workflows/ci.yml:contracts:Run executable outcome and recovery matrix": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "contracts",
-      "name": "Run executable outcome and recovery matrix",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "bash tools/run_phase0_outcome_matrix.sh"
-    },
     ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": {
       "workflow": ".github/workflows/ci.yml",
       "job": "contracts",
@@ -880,86 +870,6 @@
       "shell": "default",
       "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/run_native_vm.py --release-directory \"$PWD/target/native-candidate\" \\\n  --trusted-root \"$NATIVE_TRUST/trusted_root.jsonl\" --verifier \"$(readlink -f \"$(command -v gh)\")\" \\\n  --version \"$NATIVE_VERSION\" --commit \"$NATIVE_ARTIFACT_COMMIT\" --source-ref \"$NATIVE_ARTIFACT_REF\" \\\n  --purpose candidate --profile \"$NATIVE_PROFILE\" --fixture-helper \"$PWD/target/native-test-tools/fixture-helper\" \\\n  --output \"$PWD/target/native-vm/$NATIVE_PROFILE.json\""
     },
-    ".github/workflows/phase0-full-validation.yml:phase0-validation:Install repository validator dependencies": {
-      "workflow": ".github/workflows/phase0-full-validation.yml",
-      "job": "phase0-validation",
-      "name": "Install repository validator dependencies",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python -m pip install --requirement tools/requirements.lock"
-    },
-    ".github/workflows/phase0-full-validation.yml:phase0-validation:Install retained-evidence archive verifier": {
-      "workflow": ".github/workflows/phase0-full-validation.yml",
-      "job": "phase0-validation",
-      "name": "Install retained-evidence archive verifier",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "sudo apt-get update && sudo apt-get install --yes zstd"
-    },
-    ".github/workflows/phase0-full-validation.yml:phase0-validation:Run the clean-checkout Phase 0 gate": {
-      "workflow": ".github/workflows/phase0-full-validation.yml",
-      "job": "phase0-validation",
-      "name": "Run the clean-checkout Phase 0 gate",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "unset CARGO_INCREMENTAL\ntools/run_phase0_gate.sh \"${PHASE0_MODE}\""
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Install Python validator dependencies": {
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "job": "runtime-smoke",
-      "name": "Install Python validator dependencies",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python -m pip install --requirement tools/requirements.lock"
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Install retained-evidence archive verifier": {
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "job": "runtime-smoke",
-      "name": "Install retained-evidence archive verifier",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "sudo apt-get update && sudo apt-get install --yes zstd"
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Check Phase 0 runner syntax": {
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "job": "runtime-smoke",
-      "name": "Check Phase 0 runner syntax",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "bash -n tools/run_phase0_baselines.sh tools/run_phase0_gate.sh tools/run_phase0_outcome_matrix.sh tools/run_phase0_spike.sh"
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Run deterministic runtime baseline": {
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "job": "runtime-smoke",
-      "name": "Run deterministic runtime baseline",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "unset CARGO_INCREMENTAL\ntools/run_phase0_baselines.sh smoke \"${RUNNER_TEMP}/phase0-regression/baseline\""
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Run executable outcome and recovery matrix": {
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "job": "runtime-smoke",
-      "name": "Run executable outcome and recovery matrix",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "bash tools/run_phase0_outcome_matrix.sh"
-    },
     ".github/workflows/phase1-controlled-comparison.yml:comparison:Install validator dependencies": {
       "workflow": ".github/workflows/phase1-controlled-comparison.yml",
       "job": "comparison",
@@ -1248,16 +1158,6 @@
       "jobIf": "needs.profile.outputs.profile == 'full'",
       "name": "Record echo capsule build evidence",
       "run": "cat target/capsules/echo/build.json\ncat target/capsules/echo/sha256.txt",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/ci.yml:contracts:Run executable outcome and recovery matrix": {
-      "job": "contracts",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Run executable outcome and recovery matrix",
-      "run": "bash tools/run_phase0_outcome_matrix.sh",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
@@ -1883,86 +1783,6 @@
       "workflow": ".github/workflows/native-runtime.yml",
       "workingDirectory": "."
     },
-    ".github/workflows/phase0-full-validation.yml:phase0-validation:Install repository validator dependencies": {
-      "job": "phase0-validation",
-      "jobIf": "success()",
-      "name": "Install repository validator dependencies",
-      "run": "python -m pip install --requirement tools/requirements.lock",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/phase0-full-validation.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase0-full-validation.yml:phase0-validation:Install retained-evidence archive verifier": {
-      "job": "phase0-validation",
-      "jobIf": "success()",
-      "name": "Install retained-evidence archive verifier",
-      "run": "sudo apt-get update && sudo apt-get install --yes zstd",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/phase0-full-validation.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase0-full-validation.yml:phase0-validation:Run the clean-checkout Phase 0 gate": {
-      "job": "phase0-validation",
-      "jobIf": "success()",
-      "name": "Run the clean-checkout Phase 0 gate",
-      "run": "unset CARGO_INCREMENTAL\ntools/run_phase0_gate.sh \"${PHASE0_MODE}\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/phase0-full-validation.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Check Phase 0 runner syntax": {
-      "job": "runtime-smoke",
-      "jobIf": "success()",
-      "name": "Check Phase 0 runner syntax",
-      "run": "bash -n tools/run_phase0_baselines.sh tools/run_phase0_gate.sh tools/run_phase0_outcome_matrix.sh tools/run_phase0_spike.sh",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Install Python validator dependencies": {
-      "job": "runtime-smoke",
-      "jobIf": "success()",
-      "name": "Install Python validator dependencies",
-      "run": "python -m pip install --requirement tools/requirements.lock",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Install retained-evidence archive verifier": {
-      "job": "runtime-smoke",
-      "jobIf": "success()",
-      "name": "Install retained-evidence archive verifier",
-      "run": "sudo apt-get update && sudo apt-get install --yes zstd",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Run deterministic runtime baseline": {
-      "job": "runtime-smoke",
-      "jobIf": "success()",
-      "name": "Run deterministic runtime baseline",
-      "run": "unset CARGO_INCREMENTAL\ntools/run_phase0_baselines.sh smoke \"${RUNNER_TEMP}/phase0-regression/baseline\"",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "workingDirectory": "."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Run executable outcome and recovery matrix": {
-      "job": "runtime-smoke",
-      "jobIf": "success()",
-      "name": "Run executable outcome and recovery matrix",
-      "run": "bash tools/run_phase0_outcome_matrix.sh",
-      "shell": "default",
-      "stepIf": "success()",
-      "workflow": ".github/workflows/phase0-regression.yml",
-      "workingDirectory": "."
-    },
     ".github/workflows/phase1-controlled-comparison.yml:comparison:Build the unchanged historical control": {
       "job": "comparison",
       "jobIf": "success()",
@@ -2192,11 +2012,6 @@
     },
     ".github/workflows/ci.yml:contracts:Record echo capsule build evidence": {
       "after": ".github/workflows/ci.yml:contracts:Record echo capsule build evidence",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
-    },
-    ".github/workflows/ci.yml:contracts:Run executable outcome and recovery matrix": {
-      "after": ".github/workflows/ci.yml:contracts:Run executable outcome and recovery matrix",
       "disposition": "unchanged",
       "reason": "The exact command and its triggering conditions are retained."
     },
@@ -2510,46 +2325,6 @@
       "disposition": "unchanged",
       "reason": "The exact command and its triggering conditions are retained."
     },
-    ".github/workflows/phase0-full-validation.yml:phase0-validation:Install repository validator dependencies": {
-      "after": ".github/workflows/phase0-full-validation.yml:phase0-validation:Install repository validator dependencies",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
-    },
-    ".github/workflows/phase0-full-validation.yml:phase0-validation:Install retained-evidence archive verifier": {
-      "after": ".github/workflows/phase0-full-validation.yml:phase0-validation:Install retained-evidence archive verifier",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
-    },
-    ".github/workflows/phase0-full-validation.yml:phase0-validation:Run the clean-checkout Phase 0 gate": {
-      "after": ".github/workflows/phase0-full-validation.yml:phase0-validation:Run the clean-checkout Phase 0 gate",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Check Phase 0 runner syntax": {
-      "after": ".github/workflows/phase0-regression.yml:runtime-smoke:Check Phase 0 runner syntax",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Install Python validator dependencies": {
-      "after": ".github/workflows/phase0-regression.yml:runtime-smoke:Install Python validator dependencies",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Install retained-evidence archive verifier": {
-      "after": ".github/workflows/phase0-regression.yml:runtime-smoke:Install retained-evidence archive verifier",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Run deterministic runtime baseline": {
-      "after": ".github/workflows/phase0-regression.yml:runtime-smoke:Run deterministic runtime baseline",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
-    },
-    ".github/workflows/phase0-regression.yml:runtime-smoke:Run executable outcome and recovery matrix": {
-      "after": ".github/workflows/phase0-regression.yml:runtime-smoke:Run executable outcome and recovery matrix",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
-    },
     ".github/workflows/phase1-controlled-comparison.yml:comparison:Build the unchanged historical control": {
       "after": ".github/workflows/phase1-controlled-comparison.yml:comparison:Build the unchanged historical control",
       "disposition": "unchanged",
@@ -2781,18 +2556,6 @@
     "tools/run_optimization_benchmarks.py": {
       "sha256": "617aa5c92161bd86fbdc24d791421d7b9db53059e622608ff3ce03b27cb7a716"
     },
-    "tools/run_phase0_baselines.sh": {
-      "sha256": "0b77be61eddf84fccc6ae2f2ecf6a9b1c84f2014536fc99ad2c54cacedf3cfb5"
-    },
-    "tools/run_phase0_gate.sh": {
-      "sha256": "e31b534be420149df48682e0a973561cfd55c362be7af9840d00e6e05241e375"
-    },
-    "tools/run_phase0_outcome_matrix.sh": {
-      "sha256": "c69cc537b1ead73c49b8360e12a1b3686c47dd95d533a2b11a8020f9ab043484"
-    },
-    "tools/run_phase0_spike.sh": {
-      "sha256": "725ed8373c24578e65b94aaf10104a9a1ac74133b52652f008d2d322b7f68c84"
-    },
     "tools/run_phase1_conformance.py": {
       "sha256": "aa2f0f830208a05781d771d721d4f43208bd9125c5214952c3760bece9bae8aa"
     },
@@ -2859,9 +2622,6 @@
     "tools/validate_package_smoke.py": {
       "sha256": "185d8800860c35016b7f3d878a215f4e5a12628320c4dabff8a7c970539c919b"
     },
-    "tools/validate_phase0_gate.py": {
-      "sha256": "d5b0cf261f7aa56ac9680a35c0abb1b031285cbe749139f247c72af384f00c32"
-    },
     "tools/validate_phase1_descriptor.py": {
       "sha256": "86090f52c2264d8fa6a9f0800c8917bc4319f3540ebd8bdd2502811ac7154393"
     },
@@ -2884,11 +2644,7 @@
   "pythonCases": {
     "tools/tests/test_aggregate_phase0_calibration.py": [
       "Phase0CalibrationAggregateTests.test_aggregates_seven_full_profiles_without_dropping_samples",
-      "Phase0CalibrationAggregateTests.test_calibration_runner_rejects_a_local_tag_when_origin_fetch_fails",
-      "Phase0CalibrationAggregateTests.test_calibration_runner_requires_durable_ref_and_external_output",
       "Phase0CalibrationAggregateTests.test_current_verifier_refuses_a_legacy_calibration_schema",
-      "Phase0CalibrationAggregateTests.test_hot_profile_runner_rejects_a_missing_calibration_path_before_tool_checks",
-      "Phase0CalibrationAggregateTests.test_hot_profile_runner_requires_a_fresh_calibration_path",
       "Phase0CalibrationAggregateTests.test_rejects_a_failed_invariant_instead_of_dropping_the_run",
       "Phase0CalibrationAggregateTests.test_rejects_a_non_meaningful_cpu_model_identity",
       "Phase0CalibrationAggregateTests.test_rejects_a_run_that_omits_a_hard_invariant",
@@ -2961,11 +2717,7 @@
       "Phase0ResourceSoakAggregateTests.test_rejects_unbound_legacy_retained_state_fallback",
       "Phase0ResourceSoakAggregateTests.test_rejects_unreconciled_saturation_observations",
       "Phase0ResourceSoakAggregateTests.test_retains_failure_report_for_unexplained_fd_growth",
-      "Phase0ResourceSoakAggregateTests.test_retains_without_failing_a_stable_within_band_peak_outlier",
-      "Phase0ResourceSoakAggregateTests.test_runner_rejects_a_local_commit_not_reachable_from_origin_ref",
-      "Phase0ResourceSoakAggregateTests.test_runner_requires_explicit_calibration_and_durable_ref_before_outputs",
-      "Phase0ResourceSoakAggregateTests.test_runner_requires_fresh_external_nonoverlapping_output_and_build_paths",
-      "Phase0ResourceSoakAggregateTests.test_runner_validates_fixtures_in_the_isolated_soak_target_root"
+      "Phase0ResourceSoakAggregateTests.test_retains_without_failing_a_stable_within_band_peak_outlier"
     ],
     "tools/tests/test_angular_backend_bridge.py": [
       "AngularBackendBridgeTests.test_production_bridge_permits_one_prepare_and_render_or_one_pure_render"
@@ -5150,16 +4902,6 @@
       "ExecutionTests.test_real_path_sentinels_fail_and_record_every_forbidden_tool",
       "ExecutionTests.test_unsupported_platform_never_creates_success_report"
     ],
-    "tools/tests/test_run_phase0_hot_path_profiles.py": [
-      "HotPathProfileRunnerTests.test_canonicalizes_a_branch_ref_before_validating_it",
-      "HotPathProfileRunnerTests.test_derives_a_fresh_external_target_instead_of_reusing_checkout_target",
-      "HotPathProfileRunnerTests.test_fake_host_inputs_preserve_wsl_and_container_rejection",
-      "HotPathProfileRunnerTests.test_rejects_a_local_tag_when_origin_fetch_fails",
-      "HotPathProfileRunnerTests.test_rejects_a_same_tree_but_different_execution_head_before_collection",
-      "HotPathProfileRunnerTests.test_rejects_an_in_tree_or_reused_output_path_before_tool_checks",
-      "HotPathProfileRunnerTests.test_requires_a_fresh_external_target_directory",
-      "HotPathProfileRunnerTests.test_requires_an_explicit_absolute_external_output_path"
-    ],
     "tools/tests/test_s3_blob_runner.py": [
       "S3RunnerTests.test_cleanup_verifies_label_and_immutable_id",
       "S3RunnerTests.test_daemon_failure_cannot_report_successful_cleanup",
@@ -5772,7 +5514,6 @@
     "tools/tests/test_reset_validation_echo.py",
     "tools/tests/test_rollout_canary_policy_schema.py",
     "tools/tests/test_run_aot_tests.py",
-    "tools/tests/test_run_phase0_hot_path_profiles.py",
     "tools/tests/test_s3_blob_runner.py",
     "tools/tests/test_sbom_policy_schema.py",
     "tools/tests/test_sbom_schemas.py",
@@ -5805,13 +5546,11 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "ce35df03096d3771b40cbff2ec8df855baaa4267eb9d4b6abeb4abac6715f0fa",
+    ".github/workflows/ci.yml": "b33652e6d75a0ebae87bd806138a28996b2cb082128064c5f92a99e855ba51d5",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "0fbc7b6f9d6018a444d7bef1c098e95c30b177ec2204d8ad91aa7258c02f587d",
-    ".github/workflows/phase0-full-validation.yml": "f81f34042bd746b93dd2443a15a4cbbb22b8054a0b8212c5b9064e149aa75825",
-    ".github/workflows/phase0-regression.yml": "615f39a20d24e9b5ba6479edb8bbb8cd803da2d5115bc1cf2a231c2a2dc7be84",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",

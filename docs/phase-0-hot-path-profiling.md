@@ -1,5 +1,7 @@
 # Phase 0 execution hot-path profiling and Phase 1 handoff
 
+> Historical evidence documentation: the live Phase 0 executable and collection runners were retired from the current development tree on 2026-09-22. Commands below describe the original authorizing/reproduction environment and require the source revision recorded by the evidence; they are not current `development` commands.
+
 This document records the method and decisions for issue 40. It turns the
 finite Phase 0 baseline into an optimization handoff without treating a local
 microbenchmark as a production SLO, cross-platform conclusion, or capacity
