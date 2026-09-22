@@ -2665,7 +2665,7 @@
       "sha256": "3262f4be99e860716c4cda7e4e9182ea68991ecd5643c14e0b25f8c3da8ab5fe"
     },
     "sdk/java-client/tools/build.py": {
-      "sha256": "5f0ab1e76c5da6b7426bb26c318039a408cc4f5228801984b5c4cbdd83ec2cc6"
+      "sha256": "09e590e3c6d79b397db1c3b4e23489b03f818e1555a9e7f91d95a05e251cfef8"
     },
     "sdk/java-client/tools/java_toolchain.py": {
       "sha256": "3cc265b8f13f24ce08da3cf079d3e66ca072515b0741f8594b43d412a3b9cd9d"
@@ -3391,6 +3391,9 @@
       "BuildWiringTests.test_compiler_receives_release25_and_result_is_verified",
       "BuildWiringTests.test_gradle_and_shell_targets_cannot_drift_to_java21",
       "BuildWiringTests.test_gradle_test_requires_both_main_suites_without_ignoring_failures",
+      "BuildWiringTests.test_locked_download_does_not_retry_integrity_auth_or_unbounded_backoff",
+      "BuildWiringTests.test_locked_download_retries_bounded_throttle_then_checks_actual_bytes",
+      "BuildWiringTests.test_locked_download_stops_after_three_server_responses",
       "BuildWiringTests.test_selected_java_home_never_falls_back_to_path",
       "BuildWiringTests.test_wrong_jdk_fails_before_dependency_download_or_generation",
       "BytecodeTests.test_accepts_java25_and_rejects_old_new_preview_truncated_and_bad_magic",
