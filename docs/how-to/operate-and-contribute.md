@@ -104,6 +104,8 @@ Follow [CONTRIBUTING](../../CONTRIBUTING.md) and the
 Select an open issue, read its owning subsystem/acceptance criteria and create a
 focused branch from development. Do not use article counts or one passing test
 as a replacement for the requested behavior.
+The [contract and evidence guide](../learn/read-contracts-and-evidence.md) shows
+how to validate retained receipts and find the exact authority for a proposed change.
 
 For these guide sources and their first-node runner:
 

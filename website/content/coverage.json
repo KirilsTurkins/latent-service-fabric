@@ -42,6 +42,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
@@ -157,6 +164,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
@@ -1600,6 +1614,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/read-contracts-and-evidence.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/reference/operator-cli.md",
           "role": "reference-only"
         },
@@ -1616,7 +1634,8 @@
         "api",
         "wit",
         "schemas",
-        "sdk/README.md"
+        "sdk/README.md",
+        "tools/verify_sdk_provider_matrix.py"
       ],
       "implementationPrerequisites": [
         227,
@@ -1630,6 +1649,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
@@ -1653,6 +1679,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/read-contracts-and-evidence.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/architecture/overview.md",
           "role": "reference-only"
         },
@@ -1667,7 +1697,8 @@
       ],
       "sourceRefs": [
         "adr",
-        "crates/latent-core/src"
+        "crates/latent-core/src",
+        "tools/verify_sdk_provider_matrix.py"
       ],
       "implementationPrerequisites": [
         267,
@@ -1683,6 +1714,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
@@ -1706,6 +1744,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/read-contracts-and-evidence.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/testing/benchmark-retention.md",
           "role": "reference-only"
         },
@@ -1719,7 +1761,8 @@
         }
       ],
       "sourceRefs": [
-        "benchmarks/README.md"
+        "benchmarks/README.md",
+        "tools/verify_sdk_provider_matrix.py"
       ],
       "implementationPrerequisites": [
         239
@@ -1730,6 +1773,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {
@@ -1753,6 +1803,10 @@
       ],
       "pages": [
         {
+          "path": "docs/learn/read-contracts-and-evidence.md",
+          "role": "guide"
+        },
+        {
           "path": "docs/roadmap.md",
           "role": "reference-only"
         },
@@ -1766,7 +1820,8 @@
         }
       ],
       "sourceRefs": [
-        "adr/0030-bound-disconnected-authorization-validity.md"
+        "adr/0030-bound-disconnected-authorization-validity.md",
+        "tools/verify_sdk_provider_matrix.py"
       ],
       "implementationPrerequisites": [
         271,
@@ -1778,6 +1833,13 @@
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Owning validation source is linked, not executed or certified by the website."
+        },
+        {
+          "path": "docs/evidence/reference-guides-2026-09-21.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
+          "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
         }
       ],
       "review": {

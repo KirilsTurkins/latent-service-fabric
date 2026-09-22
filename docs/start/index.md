@@ -58,6 +58,9 @@ readiness, overload, deadlines, cancellation or choosing a focused contribution.
 Each path links its complete source, expected results, failure cases, cleanup and
 validation limits. The [coverage inventory](../../website/content/coverage.json)
 tracks these outcomes without treating page existence as acceptance.
+Use [read contracts and evidence](../learn/read-contracts-and-evidence.md) to
+trace authoritative interfaces, check retained results and separate measurements
+from configured limits or later-phase decisions.
 
 ## Failure, cleanup and next step
 
