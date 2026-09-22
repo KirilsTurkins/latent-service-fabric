@@ -28,7 +28,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory\npython3 tools/ci_coverage.py\nLSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner\npython3 tools/validate_docs.py"
+      "run": "python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests\npython3 tools/ci_coverage.py\nLSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner\npython3 tools/validate_docs.py"
     },
     ".github/workflows/ci.yml:docs:Preserve repository source contracts in the host-only profile": {
       "workflow": ".github/workflows/ci.yml",
@@ -218,7 +218,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "bash",
-      "run": "set -o pipefail\npython3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite metadata-working-set 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\""
+      "run": "set -o pipefail\npython3 tools/test.py check --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py prepare --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py run --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\""
     },
     ".github/workflows/ci.yml:rust:Validate small Phase 3 resource regressions": {
       "workflow": ".github/workflows/ci.yml",
@@ -2743,7 +2743,7 @@
       "sha256": "46f01052e597827d1366b1b934b0d9e56903b499555155de60ba02a75a26f3b0"
     },
     "tools/phase3_resource_campaign.py": {
-      "sha256": "6d4f990fd2fa02b9c0b3c4c133161516d36bd60e01da3dd2549258ce3cb841cf"
+      "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
     },
     "tools/phase3_security.py": {
       "sha256": "5f904fc5c0ee5da777645fbc6b86215592a6bfe4fb98faf16bf147b3da7f7e41"
@@ -2876,6 +2876,9 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
+    },
+    "tools/test.py": {
+      "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
     }
   },
   "pythonCases": {
@@ -5011,6 +5014,8 @@
       "EvidenceTests.test_partial_provider_and_cell_observations_are_rejected",
       "EvidenceTests.test_refused_density_is_not_a_proven_capacity_ceiling_or_campaign_pass",
       "EvidenceTests.test_retained_active_owner_is_not_quiet",
+      "EvidenceTests.test_retained_checksum_accepts_collector_and_exact_sha256sum_records",
+      "EvidenceTests.test_retained_checksum_rejects_wrong_file_digest_extra_records_and_oversize",
       "EvidenceTests.test_unobserved_counters_are_not_treated_as_zero",
       "ProcTests.test_network_namespace_rows_must_match_owned_descriptor_inodes",
       "ProcTests.test_real_owned_process_is_measured_then_reaped_not_adopted",
@@ -5534,6 +5539,28 @@
       "InventoryTests.test_unknown_schema_is_rejected",
       "InventoryTests.test_worker_choice_is_explicitly_one_or_two",
       "RepositoryInventoryTests.test_current_workflow_has_the_bounded_lane_contract"
+    ],
+    "tools/tests/test_local_tests.py": [
+      "CommandTests.test_check_missing_inventory_is_not_success",
+      "CommandTests.test_optional_interfaces_do_not_fallback",
+      "CommandTests.test_prepare_reuses_existing_inventory_without_build",
+      "CommandTests.test_prepare_uses_only_the_registered_build_recipe",
+      "CommandTests.test_run_requires_explicit_suite_and_prepared_inventory",
+      "CommandTests.test_unscoped_version_checker_is_not_executed",
+      "DriftTests.test_ci_routes_a_real_prepared_selection_through_the_same_entrypoint",
+      "DriftTests.test_contributor_guide_links_the_local_entrypoint",
+      "DriftTests.test_documented_commands_parse_and_cover_three_workflows",
+      "FailureRecordTests.test_bounded_failure_record_accepts_only_sanitized_selection",
+      "FailureRecordTests.test_changed_checkout_requires_explicit_label_even_with_same_artifact",
+      "FailureRecordTests.test_passing_unknown_duplicate_and_oversized_records_are_rejected",
+      "FailureRecordTests.test_reproduction_does_not_accept_a_different_artifact_identity",
+      "PlanningTests.test_custom_harness_is_never_treated_as_libtest",
+      "PlanningTests.test_exact_host_case_never_becomes_a_substring_filter",
+      "PlanningTests.test_ignored_runtime_suite_requires_an_exact_case",
+      "PlanningTests.test_planning_reads_only_the_shared_inventory",
+      "PlanningTests.test_prepare_and_run_commands_keep_exact_suite_and_case",
+      "PlanningTests.test_provider_selection_keeps_its_existing_fixture_owner",
+      "PlanningTests.test_registered_selection_reuses_same_owner_and_cases"
     ]
   },
   "pythonTestModules": [
@@ -5582,6 +5609,7 @@
     "tools/tests/test_illustration_palette.py",
     "tools/tests/test_java_provider_launch.py",
     "tools/tests/test_java_toolchain.py",
+    "tools/tests/test_local_tests.py",
     "tools/tests/test_manifest_codec_contract.py",
     "tools/tests/test_manifest_integer_dialect.py",
     "tools/tests/test_metadata_working_set.py",
@@ -5773,7 +5801,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "1d79e2cf17b71476824f029939c8ec9844b9a1ae00a3cafb179ee5c392c00298",
+    ".github/workflows/ci.yml": "67c04dd0e9012fe4ae7d8f3acd8198b8f6b8e59a278de92eceb45c3275fd3f99",
     ".github/workflows/docs-pages.yml": "87ca4f1d44d6de1e14960abb0f1d7a883d40ae52ffcaba8d4cfdcf0a888c7a3e",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0e84b07e365798040f2ff4c360d8fa4b959dfc46fdab8867662381508f1ef15d",
