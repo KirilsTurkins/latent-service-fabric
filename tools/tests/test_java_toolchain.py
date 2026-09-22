@@ -119,7 +119,7 @@ class BuildWiringTests(unittest.TestCase):
                 java_workflows.append(path.name)
                 self.assertEqual(set(selectors), {expected}, str(path))
         self.assertIn("ci.yml", java_workflows)
-        self.assertIn("phase0-full-validation.yml", java_workflows)
+        self.assertEqual(java_workflows, ["ci.yml"])
         self.assertIn(sdk["java"], (ROOT / ".github/workflows/ci.yml").read_text())
 
     def test_gradle_test_requires_both_main_suites_without_ignoring_failures(self):

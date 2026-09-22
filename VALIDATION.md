@@ -36,6 +36,8 @@ make validate
 
 The command is intentionally non-mutating for authoritative sources. Formatting is checked with `cargo fmt --all --check`; generated bindings, descriptors, and capsule artifacts are written below `target/` or Cargo `OUT_DIR`.
 
+For the smallest registered local check, use [`python3 tools/test.py`](docs/development/local-tests.md) to plan the exact suite/case, inspect prerequisites, explicitly prepare inputs, and then execute without an implicit build. It consumes the same reviewed suite/recipe inventory as CI and does not turn a focused local pass into release or phase qualification.
+
 Normal validation runs unit/integration regressions and contract/SDK checks.
 It does not select the ignored 100,000-entry metadata index probe or the
 durable 100,000-release catalog probe, or run native profiling, calibration,

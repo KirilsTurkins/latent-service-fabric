@@ -58,6 +58,21 @@ def write_receipt(path, value):
         output.write(file_identity(path)["sha256"] + "\n")
 
 
+def verify_receipt_checksum(path):
+    identity = file_identity(path, LIMITS["maximumReceiptBytes"])["sha256"]
+    sidecar = path.with_suffix(path.suffix + ".sha256")
+    require(sidecar.is_file() and not sidecar.is_symlink(), "resource-receipt-checksum")
+    with sidecar.open("rb") as source:
+        encoded = source.read(4097)
+    require(len(encoded) <= 4096, "resource-receipt-checksum")
+    # The collector writes its typed digest. Repository retention uses the
+    # standard sha256sum record, which must name this exact adjacent receipt.
+    digest = identity.removeprefix("sha256:")
+    accepted = (identity, digest + "  " + path.name, digest + " *" + path.name)
+    require(encoded.rstrip(b"\r\n") in tuple(value.encode("utf-8") for value in accepted),
+            "resource-receipt-checksum")
+
+
 def build(args):
     require(re.fullmatch(r"[0-9a-f]{40}", args.revision or ""), "resource-build-revision")
     require(args.record_build.is_absolute() and not args.record_build.exists()
@@ -289,8 +304,7 @@ def main():
                           "isolatedCargoTargetRequired": True, "heavyCampaign": False}, sort_keys=True))
         return 0
     if args.validate:
-        require(file_identity(args.validate)["sha256"] == args.validate.with_suffix(args.validate.suffix + ".sha256")
-                .read_text(encoding="ascii").strip(), "resource-receipt-checksum")
+        verify_receipt_checksum(args.validate)
         validate_receipt(read_json(args.validate, LIMITS["maximumReceiptBytes"]))
         print(json.dumps({"valid": True, "ticketAcceptance": "pending"}))
         return 0

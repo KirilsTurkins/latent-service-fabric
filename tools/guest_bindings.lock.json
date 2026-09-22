@@ -1,11 +1,11 @@
 {
   "formatVersion": 1,
-  "generator": "wit-bindgen 0.60.0",
+  "generator": "wit-bindgen 0.62.0",
   "world": "latent:platform/capsule@0.4.0",
   "outputs": {
-    "rust/capsule.rs": "sha256:04e439ef45c1eea61c51abf6078ef12841cb41a51cc70228ffbad6533835417a",
-    "c/capsule.c": "sha256:415e3ff76d12d5ad4c633938e8f632cacfdf96e32e3975d23dd4b1653d2f62b7",
-    "c/capsule.h": "sha256:c290146538b2148a84ced71f538050f9dde2ad1079f0432ced27347a75632ec7",
-    "c/capsule_component_type.o": "sha256:a6f8ad3ff347f6739dd2088fb107d92163853c426bd5dfd75fa4734a3e096b23"
+    "rust/capsule.rs": "sha256:2198a5c6afe4491d3fccb75648afaa7cbdc0ec6cd53f231c6d1167ccab973592",
+    "c/capsule.c": "sha256:00ce090f3b001175347daace59516bff8753afba28de79e3e221f131315e88b5",
+    "c/capsule.h": "sha256:561c386800e077d2c3ef93d1f1bcb063cb0dbac3940d95c60e1f49d028411e34",
+    "c/capsule_component_type.o": "sha256:81ded5391d1fc6dd0d9ae502c131d4dc62f2b6ed8b774a7c26f5be2618293409"
   }
 }

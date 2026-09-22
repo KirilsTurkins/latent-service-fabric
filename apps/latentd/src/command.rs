@@ -104,7 +104,6 @@ pub fn main_entry() -> ExitCode {
     }
 }
 
-
 #[cfg(target_os = "linux")]
 fn run_check_config(path: &std::path::Path) -> Result<(), Failure> {
     let settings = crate::config::NodeConfig::load(path)
