@@ -1,4 +1,54 @@
-# Security baseline evidence: 2026-09-19
+# Security baseline evidence
+
+## Verified activation: 22 September 2026
+
+The owner separately approved the limited default-branch workflow activation.
+[PR #461](https://github.com/KirilsTurkins/latent-service-fabric/pull/461) was
+squash-merged as `5890a1d165aea3b713ed5da59f6d71cdfbde95d6` on `release`.
+The coordinator and reusable worker use reviewed scanner controls at
+`e852442ab2801388e06d420ca6c389031c8bdd14`, with clean, separate source checkouts.
+
+| Hosted run | Event | Scanned development commit | Scanned release commit | Result |
+| --- | --- | --- | --- | --- |
+| [35586505063](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35586505063), 2026-09-21 10:01 UTC | Scheduled | `99f1b1a2dcfdc03e3d90d17555f64e4b37d4a61c` | `5890a1d165aea3b713ed5da59f6d71cdfbde95d6` | All 11 jobs passed |
+| [35752339515](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35752339515), 2026-09-22 16:10 UTC | Manual | `9bff2ce3a41d0da413dd5fa77909a959db1b860a` | `5890a1d165aea3b713ed5da59f6d71cdfbde95d6` | All 11 jobs passed |
+
+Each run selected RustSec, SDK/ecosystem advisories, redacted full-snapshot secrets
+and source/workflow rules for **both** refs, plus the real-scanner failure canaries
+and required aggregate. Both RustSec and SDK advisory results reported zero
+findings and zero advisory exceptions. Scanner observations bind exact lockfiles,
+tool/rule digests and OSV response identities; no package build or install is
+substituted for advisory evidence.
+
+The scheduled RustSec database commit was
+`fd3051c5d26d1fad531e8cd7dc3cc6c7a90986af`; the manual run independently fetched
+`eac8bd26b6593aafeb228d0f7adeb12c373e9f84`. Both passed the database freshness
+check. The release lock remained
+`14f6fa9e9a8a069695c2f2292ccb24ee028c3b80c3c99645c990613630419418` across these
+different database observations. This demonstrates scanning an unchanged lock
+against updated advisory data, without manufacturing a dependency change.
+
+An operator API refresh at **2026-09-22 16:15:24 UTC** verified:
+
+- Vulnerability alerts, unpaused Dependabot security updates, private reporting,
+  secret scanning and push protection are enabled.
+- The scheduled coordinator exists on default `release`.
+- `development` requires both `CI result` and `Security baseline result`, each
+  bound to GitHub Actions application ID `15368`; existing `strict:false` was
+  preserved.
+- The default workflow token remains read-only and cannot approve PR reviews.
+- CodeQL default setup remains unconfigured; the explicitly scoped custom
+  source/workflow checks provide the documented static coverage. Non-provider
+  secret patterns and live credential-validity probes remain disabled.
+
+This completes the deployment and monitoring evidence for #282. It does not
+certify runtime isolation or close the wider Phase 3 gate. A live fork execution
+and an actual server-side rejected secret push were not performed; the retained
+permission fixtures, scanner canaries and enabled-service API observations have
+those explicit limits. The earlier implementation and failure records follow
+unchanged as historical evidence.
+
+## Initial implementation record: 19 September 2026
 
 This is compact, redacted milestone evidence for
 [#282](https://github.com/KirilsTurkins/latent-service-fabric/issues/282) and
