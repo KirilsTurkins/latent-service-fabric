@@ -7816,6 +7816,37 @@
       "timeoutSeconds": 300
     },
     {
+      "boundary": "product",
+      "expectedCases": [
+        "export_actual_static_site_fixtures"
+      ],
+      "expectedIgnored": [
+        "export_actual_static_site_fixtures"
+      ],
+      "id": "latentd.test.phase3-static-fixture",
+      "ignoredLeaves": [
+        "export_actual_static_site_fixtures"
+      ],
+      "kind": "test",
+      "manifest": "apps/latentd/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latentd",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "actual static-site reference builds and a fresh private fixture root"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase3_static_fixture.rs",
+      "target": "phase3_static_fixture",
+      "timeoutSeconds": 300
+    },
+    {
       "boundary": "runtime",
       "expectedCases": [
         "export_signed_provider_workflow_fixtures"
