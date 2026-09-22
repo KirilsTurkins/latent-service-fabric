@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
+from tools import build_guest_capsules as guest_builder
 from tools import install_guest_bindgen as install
 from tools.build_snapshot import validate_workspace
 from tools.tests.test_build_provenance_schemas import samples, DIGEST
@@ -75,6 +76,17 @@ class GuestProfileSchemas(unittest.TestCase):
             changed = copy.deepcopy(value)
             changed["parameters"]["unreviewedOption"] = True
             self.validate(changed, valid=False)
+
+
+class GuestToolContract(unittest.TestCase):
+    def test_guest_bindgen_version_is_owned_by_external_tool_contract(self):
+        config = {
+            "rust": {"toolchain": "1.97.1"},
+            "guest-tools": {"wit-bindgen": {"version": "0.60.0"}},
+        }
+        self.assertEqual(guest_builder.guest_tool_version(config, "wit-bindgen"), "0.60.0")
+        with self.assertRaisesRegex(ValueError, "missing guest tool contract version"):
+            guest_builder.guest_tool_version({"rust": {"toolchain": "1.97.1"}}, "wit-bindgen")
 
 
 class GeneratorArchive(unittest.TestCase):
