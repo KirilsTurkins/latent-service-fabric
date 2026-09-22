@@ -14,9 +14,15 @@ class CoverageTests(unittest.TestCase):
         data = coverage.validate()
         self.assertGreater(len(data['before']), 80)
         self.assertEqual(set(data['before']), set(data['coverage']))
+        from tools.ci_cargo import RECIPES
+        execution = data['after']['.github/workflows/ci.yml:rust:Run tests']['run']
+        expanded = json.dumps(data['after'])
+        for recipe in ('workspace-tests', 'doctests', 'signing-compatibility'):
+            self.assertIn('python3 tools/ci_cargo.py run ' + recipe, execution)
+            expanded += ' '.join(RECIPES[recipe][0].command())
         for token in ('--doc --locked', 'ed25519-dalek/legacy_compatibility', '--profile smoke',
                       'run_catalog_scale', 'tools/validate_contracts.sh'):
-            self.assertIn(token, json.dumps(data['after']))
+            self.assertIn(token, expanded)
 
     def test_new_removed_or_modified_workflow_command_is_rejected(self):
         valid = coverage.commands(registry.ROOT)
