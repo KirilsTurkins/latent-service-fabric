@@ -6,7 +6,7 @@ import time
 
 from tools.phase2_operator_process import Process, require, write_json
 from tools.phase3_web_scenario import (
-    deploy, deployment_manifest, http_response, idle_inventory, invocation_arguments, invoke, prepare,
+    TENANT, deploy, deployment_manifest, http_response, idle_inventory, invocation_arguments, invoke, prepare,
     publication_receipt, publish, selected_client_asset, trigger,
 )
 
@@ -143,11 +143,44 @@ def failure_recovery(client, record, publication):
 
 def renewal(client, fixture, record, publication, deployment):
     operation = "renew-angular"
-    result = client.call("--rpc-timeout-ms", "30000", "web", "renew-evidence", "--publication", publication,
-                         "--package-digest", record["packageDigest"],
-                         "--evidence", fixture / "angular/renewed-evidence/index.json",
-                         "--operation-id", operation, "--expected-generation", "1", timeout=45)
-    receipt = publication_receipt(result, operation)
+    arguments = ("--rpc-timeout-ms", "30000", "web", "renew-evidence", "--publication", publication,
+                 "--package-digest", record["packageDigest"],
+                 "--evidence", fixture / "angular/renewed-evidence/index.json",
+                 "--operation-id", operation, "--expected-generation", "1")
+    deadline = min(client.deadline, time.monotonic() + 45)
+    receipt = None
+    for attempt in range(3):
+        client.cancellation.check()
+        remaining = deadline - time.monotonic()
+        require(remaining > 0, "web-renewal-setup-deadline")
+        result = client.call(*arguments, codes=(0, 4), timeout=remaining)
+        if result["category"] == "success":
+            receipt = publication_receipt(result, operation)
+            break
+        require(result["category"] == "platform-failure"
+                and result.get("error", {}).get("code") == "unavailable",
+                "web-renewal-rejected")
+        # Renewal is keyed by one immutable evidence upload and operation ID.
+        # Reconcile that key before retrying so an unavailable response can never
+        # duplicate or replace a mutation that the node already committed.
+        lookup = client.call("web", "operation", operation,
+                             timeout=max(0.001, deadline - time.monotonic()))
+        if lookup["outcomeKnown"]:
+            retained = lookup["data"]["operation"]
+            require(isinstance(retained, dict)
+                    and retained["operationId"] == operation
+                    and retained["publication"]["id"] == publication
+                    and retained["publication"]["tenant"] == TENANT
+                    and retained["actor"]["subject"] == "workflow-operator",
+                    "web-renewal-recovery-identity")
+            receipt = retained
+            break
+        require(lookup["data"]["operation"] is None,
+                "web-renewal-uncertain-requires-recovery")
+        require(attempt < 2 and time.monotonic() + 0.025 < deadline,
+                "web-renewal-admission-busy")
+        time.sleep(0.025)
+    require(receipt is not None, "web-renewal-receipt")
     require(receipt["resultingGeneration"] == "2", "angular-evidence-generation")
     rejected = prepare(client, publication, 1, wait=5000, codes=(4,))
     require(rejected["category"] == "platform-failure", "stale-preparation-generation")
