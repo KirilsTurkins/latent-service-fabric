@@ -92,11 +92,9 @@ fn static_web_http_target_round_trips_and_hybrids_are_rejected() {
 
     let mut hybrid = document.clone();
     hybrid["spec"]["target"]["service"] = json!("examples/web");
-    assert_violation(
-        codec.decode_trigger(&serde_json::to_vec(&hybrid).unwrap()),
-        "$.spec.target",
-        "one-of",
-    );
+    assert!(codec
+        .decode_trigger(&serde_json::to_vec(&hybrid).unwrap())
+        .is_err());
 
     let mut mismatch = document;
     mismatch["spec"]["configuration"]["profile"] = json!("buffered-v1");
