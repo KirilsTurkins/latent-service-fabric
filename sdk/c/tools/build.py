@@ -139,7 +139,7 @@ def main():
     native = nghttp2 / "lib/.libs/libnghttp2.a"
     shutil.copy2(native, build / "libnghttp2.a")
     programs = {
-        "semantic-tests": SDK / "tests/invocation_identity.c",
+        "semantic-tests": SDK / "tests/profile_semantics.c",
         "transport-tests": SDK / "tests/transport.c",
         "wire-tests": generated / "wire_vectors.c",
         "owner-bounds": SDK / "tests/owner_bounds.c",

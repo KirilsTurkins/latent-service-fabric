@@ -39,15 +39,7 @@ typedef union lsf_result {
     latent_profile_get_policy_operation_result get_policy_operation;
 } lsf_result;
 
-typedef union lsf_legacy_callback {
-    latent_invoke_callback invoke;
-    latent_cancel_callback cancel;
-    latent_get_activation_callback get_activation;
-} lsf_legacy_callback;
-
 struct latent_profile_client { latent_transport *owner; };
-struct latent_client { latent_transport *owner; };
-struct latent_invocation { latent_profile_call *call; };
 
 struct latent_profile_call {
     latent_transport *owner;
@@ -55,9 +47,6 @@ struct latent_profile_call {
     lsf_operation operation;
     lsf_callback callback;
     void *user_data;
-    lsf_legacy_callback legacy_callback;
-    latent_invocation legacy_handle;
-    bool legacy;
     bool completed;
     bool notified;
     bool in_callback;
@@ -99,7 +88,6 @@ struct latent_transport {
     latent_transport_config config;
     latent_transport_allocator allocator;
     latent_profile_client profile;
-    latent_client legacy;
     latent_profile_call *calls;
     latent_transport_usage usage;
     struct sockaddr_storage address;
@@ -125,8 +113,7 @@ struct latent_transport {
 
 latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation,
                               const void *request, const latent_profile_call_options *options,
-                              lsf_callback callback, void *user_data,
-                              const lsf_legacy_callback *legacy_callback);
+                              lsf_callback callback, void *user_data);
 void lsf_notify(latent_transport *owner);
 void lsf_fail(latent_profile_call *call, latent_profile_failure_category category);
 void lsf_complete(latent_profile_call *call);
@@ -138,7 +125,6 @@ bool lsf_channel_submit(latent_profile_call *call);
 bool lsf_request_valid(latent_profile_call *call, const void *request);
 bool lsf_response_valid(latent_profile_call *call);
 void lsf_finish_response(latent_profile_call *call);
-void lsf_legacy_complete(latent_profile_call *call);
 void lsf_unsupported(latent_profile_call *call, const char *field, latent_string value);
 
 #endif

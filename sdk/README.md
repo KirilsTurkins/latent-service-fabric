@@ -105,31 +105,18 @@ distinguishes useful responses, deadline misses and eventual cleanup.
 Its benchmark client results do not add transports, automatic cancellation
 forwarding or retries to these SDK interfaces.
 
-### Legacy C callback contract
+### C callback contract
 
-The C vtable's `cancel` takes an activation ID, reason, callback, and user data.
-Its callback receives exactly one of a cancellation response or transport
-error. The opaque `latent_invocation` returned by `invoke` identifies a local
-operation for callback correlation; it is not a persistent activation ID and
-is no longer accepted by cancellation. Callers never dereference or free the
-handle, and must not use it after its completion callback returns.
-
-Request data, IDs, and reasons are borrowed for the duration of the method call. An asynchronous
-implementation must copy everything it retains. Response/error values and
-their nested pointers are borrowed until the callback returns; callers copy
-anything they retain. Callbacks may run inline. The implementation must deliver
-one completion callback per operation, including transport failure. Client and
-user-data lifetime must cover outstanding callbacks; `destroy` requires those
-operations to have completed.
-
-The additive `<latent/profile.h>` facade has explicitly released local call
-handles and its own [callback lifetime contract](profile/README.md#c-callback-and-response-lifetime).
-Do not mix its handle ownership with the legacy interface described here.
+Use `<latent/profile.h>` for all eight operations. Local handles require explicit
+release after completion; request data is borrowed through the initiating call,
+and response data is borrowed only during the callback. Copy retained values.
+Callbacks may run inline. See the complete
+[callback lifetime contract](profile/README.md#c-callback-and-response-lifetime)
+and [native ownership rules](c/TRANSPORT.md#public-surfaces-and-lifetimes).
 
 ### Alpha API changes
 
-Obsolete invocation facades have been removed from Rust, Go, TypeScript, Java
-and .NET. Recompile integrations against the complete shared profile; no
+Obsolete invocation facades have been removed from all six clients. Recompile integrations against the complete shared profile; no
 compatibility alias or deprecation waiting period is provided. Rebuild C
 producers and consumers together whenever its public layouts change. No stable
 C ABI is claimed, and no Protobuf field numbers or types change in this cleanup.

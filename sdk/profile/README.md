@@ -37,10 +37,8 @@ Python standard library; formatting uses the repository's pinned `rustfmt` and
 | .NET | `Latent.Sdk.Profile.IClientProfile` | Each method takes `CancellationToken`; `ValueTask` results own their memory after completion. |
 | C | `<latent/profile.h>`, `latent_profile_client_vtable` | Explicit local call handles, exactly-once callbacks and borrowed response data; detailed contract below. |
 
-Rust, Go, .NET, Java and TypeScript use this profile exclusively; their obsolete
-invocation facades and compatibility adapters have been removed. The C transport
-still has an older callback interface pending removal. The profile retains every
-v1 fact. The complete facade has its own namespace and protobuf-shaped `InvokeRequest`,
+All six clients use this profile exclusively. Their obsolete invocation facades
+and compatibility adapters have been removed. The profile retains every v1 fact. The complete facade has its own namespace and protobuf-shaped `InvokeRequest`,
 `InvokeResponse`, `CancelResponse` and `ActivationStatus`. In particular, it
 does not silently map an unknown cancellation enum to an old success variant.
 Network clients may expose generated protobuf objects and lossless conversions

@@ -29,10 +29,8 @@ The implementation adds neither a remote node listener nor mTLS/cluster routing.
 `latent_transport_create` returns an owner plus optional structured construction
 failure. It copies retained configuration and does not connect. All eight methods
 in `latent_transport_profile_vtable()` accept their existing DTO, optional local
-call options, completion callback and user data. The same owner implements the
-legacy three-method invocation vtable through `latent_transport_legacy_vtable()`.
-The legacy interface cannot express the complete profile error/metadata model;
-use the profile when recovery, audit or dispatch uncertainty matters.
+call options, completion callback and user data. This is the only public client
+interface; it preserves the complete profile error and recovery/audit metadata.
 
 | Object | Lifetime |
 | --- | --- |
@@ -42,17 +40,16 @@ use the profile when recovery, audit or dispatch uncertainty matters.
 | Profile result/failure and all nested pointers | Borrowed only during the callback; copy what must outlive it |
 | Non-NULL `latent_profile_call*` | Local handle retained through completion and until explicit `release_call` after callback return |
 | NULL profile handle | Failure callback ran inline; nothing to release |
-| Legacy `latent_invocation*` | Opaque correlation handle, valid through its completion callback only; automatically freed afterward |
-| Profile/legacy client views | Borrowed from the owner, valid until owner destruction |
+| Profile client view | Borrowed from the owner, valid until owner destruction |
 
 Callers provide readable buffers consistent with checked lengths and valid,
 non-NULL client/callback pointers. Strings are length-delimited; embedded NUL in
 ordinary protobuf strings/maps is preserved and is not a terminator. Every
 well-formed API call invokes exactly one completion, with response **or** failure,
 including connection/allocation failure. Absent flags govern presence, never
-pointer values or zero-length heuristics. No existing public DTO/vtable layout
-is modified here; the added transport header is additive. The common C ABI remains
-pre-stabilization: rebuild consumers and producers together.
+pointer values or zero-length heuristics. The common C ABI remains in alpha:
+rebuild consumers and producers together when its public layouts change.
+No compatibility alias is provided for the removed invocation-only interface.
 
 All operations on one owner must run on a single externally serialized caller
 thread, including getters, polling and handle release. There are no worker

@@ -50,8 +50,6 @@ bool latent_transport_create(const latent_transport_config *config,
                              latent_profile_client_failure *failure);
 latent_profile_client *latent_transport_profile(latent_transport *transport);
 const latent_profile_client_vtable *latent_transport_profile_vtable(void);
-latent_client *latent_transport_legacy(latent_transport *transport);
-const latent_client_vtable *latent_transport_legacy_vtable(void);
 bool latent_transport_poll(latent_transport *transport, uint32_t maximum_wait_millis);
 void latent_transport_stop(latent_transport *transport);
 bool latent_transport_shutdown(latent_transport *transport, uint32_t timeout_millis);

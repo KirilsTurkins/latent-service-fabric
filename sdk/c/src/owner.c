@@ -135,7 +135,6 @@ bool latent_transport_create(const latent_transport_config *config, latent_trans
     owner->config.endpoint = (latent_string){NULL, 0};
     owner->config.bearer_token = (latent_bytes){NULL, 0};
     owner->profile.owner = owner;
-    owner->legacy.owner = owner;
     owner->usage.owned_bytes = sizeof(*owner);
     owner->usage.peak_owned_bytes = sizeof(*owner);
     *output = owner;
@@ -144,7 +143,6 @@ bool latent_transport_create(const latent_transport_config *config, latent_trans
 }
 
 latent_profile_client *latent_transport_profile(latent_transport *owner) { return owner == NULL ? NULL : &owner->profile; }
-latent_client *latent_transport_legacy(latent_transport *owner) { return owner == NULL ? NULL : &owner->legacy; }
 
 void lsf_complete(latent_profile_call *call) {
     if (call->completed) return;
@@ -178,11 +176,6 @@ void lsf_fail(latent_profile_call *call, latent_profile_failure_category categor
 
 static void dispatch(latent_profile_call *call) {
     ++call->owner->callback_depth;
-    if (call->legacy) {
-        lsf_legacy_complete(call);
-        --call->owner->callback_depth;
-        return;
-    }
     const latent_profile_client_failure *failure = call->failure.category == 0 ? NULL : &call->failure;
     switch (call->operation) {
         case LSF_INVOKE: call->callback.invoke(failure == NULL ? &call->result.invoke : NULL, failure, call->user_data); break;
@@ -216,7 +209,6 @@ void lsf_notify(latent_transport *owner) {
         lsf_deallocate(owner, call->response);
         call->request = NULL;
         call->response = NULL;
-        if (call->legacy) lsf_release(call);
     }
     owner->notifying = false;
 }
@@ -254,10 +246,9 @@ static latent_profile_request_identity identity(lsf_operation operation, const v
 
 latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation, const void *request,
                               const latent_profile_call_options *options, lsf_callback callback,
-                              void *user_data, const lsf_legacy_callback *legacy_callback) {
+                              void *user_data) {
     latent_profile_call temporary = {.owner = owner, .operation = operation, .callback = callback,
-                                    .user_data = user_data, .legacy = legacy_callback != NULL};
-    if (legacy_callback != NULL) temporary.legacy_callback = *legacy_callback;
+                                    .user_data = user_data};
     temporary.metadata.identity = identity(operation, request);
     temporary.failure = simple_failure(LATENT_PROFILE_FAILURE_CATEGORY_INVALID_REQUEST);
     temporary.failure.identity = temporary.metadata.identity;
@@ -297,7 +288,6 @@ latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation,
     call->arena = (lsf_arena){.owner = owner, .maximum = owner->config.maximum_decoded_bytes};
     call->maximum_response = owner->config.maximum_response_bytes;
     if (operation == LSF_LIST_CAPABILITIES && call->maximum_response > 131072) call->maximum_response = 131072;
-    call->legacy_handle.call = call;
     call->next = owner->calls;
     owner->calls = call;
     ++owner->usage.retained_calls;
@@ -345,7 +335,7 @@ latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation,
 static latent_profile_call *method(latent_profile_client *client, const request_type *request, \
         const latent_profile_call_options *options, callback_type callback, void *user_data) { \
     if (client == NULL || callback == NULL) return NULL; \
-    return lsf_start(client->owner, operation_name, request, options, (lsf_callback){.method = callback}, user_data, NULL); \
+    return lsf_start(client->owner, operation_name, request, options, (lsf_callback){.method = callback}, user_data); \
 }
 
 LSF_METHOD(invoke, LSF_INVOKE, latent_profile_invoke_request, latent_profile_invoke_callback)

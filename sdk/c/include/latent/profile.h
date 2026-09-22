@@ -1,7 +1,7 @@
 #ifndef LATENT_CLIENT_PROFILE_H
 #define LATENT_CLIENT_PROFILE_H
 
-#include "latent.h"
+#include "types.h"
 
 #ifdef __cplusplus
 extern "C" {

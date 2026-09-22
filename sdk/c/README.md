@@ -2,16 +2,15 @@
 
 The C11 client implements the eight-operation
 [common profile](../profile/README.md) over one reusable, bounded, numeric-loopback
-HTTP/2/protobuf connection per owner. It also implements the existing
-`latent_client_vtable` for Invoke, Cancel and GetActivation. It is not a JSON
-bridge, subprocess client, CLI adapter, transport test double or guest runtime.
+HTTP/2/protobuf connection per owner. All RPCs use `latent_profile_client_vtable`;
+the obsolete invocation-only vtable and compatibility header have been removed.
 
 ## Support matrix
 
 | Surface | Delivery / qualification |
 | --- | --- |
 | `<latent/profile.h>` | Existing complete eight-operation DTOs and callback interface; unchanged by this transport |
-| `<latent/latent.h>` | Existing legacy invocation interface; implemented by the same native owner |
+| `<latent/types.h>` | Shared length-delimited strings, bytes and key/value pairs |
 | `<latent/transport.h>` | Constructor, explicit configuration, event-loop polling, usage and physical stop/shutdown |
 | Invoke / Cancel / GetActivation | HTTP/2 unary RPCs, three invocation outcomes, three cancellation dispositions and original-ID recovery |
 | GetPolicy / ListPolicies / ListCapabilities | Policy and redacted provider inspection; bounded single-page requests |
@@ -108,9 +107,8 @@ anonymous-authentication or provider-credential fallback.
 
 Callbacks may run inline, including admission/allocation failure and stop. They
 must return promptly. Getters return borrowed views of one owner, not separately
-owned clients. Never destroy both views separately. Legacy invocation handles are
-automatically released after completion; never apply profile `release_call` to
-them. [Transport contracts](TRANSPORT.md) describe reentrancy, exact bounds,
+owned clients. Every returned call handle requires explicit release after its
+callback returns. [Transport contracts](TRANSPORT.md) describe reentrancy, exact bounds,
 deadlines, collateral connection retirement and all lifetime preconditions.
 
 ## Clean-checkout authorized HTTP/blob example
