@@ -18,7 +18,8 @@ fn static_attempt() -> AuditOperationAttempt {
             assets_digest: digest(),
             web_generation: 1,
         }),
-        route_generation: Some(RouteGeneration(1)),
+        // Static-only nodes have no application route generation to advance.
+        route_generation: Some(RouteGeneration(0)),
         state_version: Some(1),
         ..AuditIdentities::default()
     };
@@ -33,6 +34,7 @@ fn static_trigger_commit_and_legacy_application_records_survive_restart() {
     let mut legacy = value.clone();
     legacy.operation_id = "application".into();
     legacy.identities.static_web = None;
+    legacy.identities.route_generation = Some(RouteGeneration(1));
     legacy.identities.component = Some(ReleaseDigest(digest().to_string()));
     legacy.identities.deployment = Some(DeploymentId("app".into()));
     legacy.identities.deployment_generation = Some(1);
@@ -81,7 +83,7 @@ fn static_trigger_commit_and_legacy_application_records_survive_restart() {
 fn static_trigger_audit_rejects_hybrids_missing_scope_and_incomplete_identity() {
     let valid = static_attempt();
     codec::attempt(&valid).unwrap();
-    for case in 0..11 {
+    for case in 0..12 {
         let mut value = valid.clone();
         match case {
             0 => value.identities.component = Some(ReleaseDigest(digest().to_string())),
@@ -94,6 +96,7 @@ fn static_trigger_audit_rejects_hybrids_missing_scope_and_incomplete_identity() 
             7 => value.identities.static_web = None,
             8 => value.expected_deployment_generation = Some(1),
             9 => value.scope = AuditScope::Node,
+            10 => value.identities.route_generation = None,
             _ => value.action = AuditControlAction::Publish,
         }
         assert!(codec::attempt(&value).is_err(), "{case}");
