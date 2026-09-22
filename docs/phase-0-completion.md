@@ -1,5 +1,7 @@
 # Phase 0 completion gate
 
+> Historical evidence documentation: the live Phase 0 executable and collection runners were retired from the current development tree on 2026-09-22. Commands below describe the original authorizing/reproduction environment and require the source revision recorded by the evidence; they are not current `development` commands.
+
 **Historical gate status: AUTHORIZED — Phase 1 was authorized for the recorded August 30 execution identity.**
 
 Phase 1 subsequently completed its [functional gate](phase-1-completion.md) and

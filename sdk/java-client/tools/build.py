@@ -45,6 +45,11 @@ def download_locked(url, artifact):
                     or len(retry_after) > 2 or int(retry_after) > 10):
                 raise
             time.sleep(max(1 << attempt, int(retry_after)))
+        except (urllib.error.URLError, ConnectionResetError, TimeoutError) as error:
+            reason = error.reason if isinstance(error, urllib.error.URLError) else error
+            if attempt == 2 or not isinstance(reason, (ConnectionResetError, TimeoutError)):
+                raise
+            time.sleep(1 << attempt)
     if len(content) != artifact["size"] or hashlib.sha256(content).hexdigest() != artifact["sha256"]:
         raise ValueError("locked dependency download mismatch")
     return content
