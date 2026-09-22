@@ -2,9 +2,9 @@
 
 With the default `transport` feature, `network::RpcClient` implements the
 [common eight-operation `management::ClientProfile`](../profile/README.md).
-The existing `LatentClient` implementation and generated management methods
-remain available. Import only the desired trait, or use fully qualified trait
-calls when both invocation interfaces are in scope.
+This is the only public invocation and management interface. The obsolete
+`LatentClient`, root convenience models and `_until` methods have been removed.
+Use the profile's complete request, response and recovery metadata types.
 
 ```rust
 use latent_sdk::{management, network::RpcClient};
@@ -66,8 +66,8 @@ Response validation/conversion does not restart the clock.
 ## Recovery and audit
 
 The rich common error retains raw RPC status, bounded typed platform details,
-dispatch/outcome knowledge, recovery identity and independent audit facts. Legacy
-message/retryable errors are not a substitute. `ApplyPolicy` requires a supplied
+dispatch/outcome knowledge, recovery identity and independent audit facts.
+`ApplyPolicy` requires a supplied
 `expected_generation`, including explicit zero for create, and a caller-known
 operation ID. Neither this adapter nor the model generates IDs or retries.
 A missing operation receipt, including a NotFound recovery RPC, remains Unknown.
@@ -94,12 +94,12 @@ cargo clippy -p latent-sdk --no-deps --locked --all-targets -- -D warnings
 ```
 
 The conversion generator reads the authoritative shared profile and emits
-typed Rust conversions plus 49 shared cases that encode/decode real protobuf
+typed Rust conversions plus shared cases that encode/decode real protobuf
 messages. It requires the pinned `rustfmt`; `--patch` emits an `apply_patch`
 update. There is no runtime JSON serialization and no independent wire schema.
 
-The controlled TCP tests cover all eight facade calls plus the legacy interface
-on one channel; page defaults/limits; absence and full-width fields; unknown
+The controlled TCP tests cover all eight facade calls on one channel;
+page defaults/limits; absence and full-width fields; unknown
 enums and unsupported strings; pre-dispatch and post-dispatch deadlines; local
 drop/capacity/explicit Cancel; mutation recovery with explicit replay; typed RPC
 errors; and independent known/unknown audit facts. Peer teardown and owner checks
@@ -112,11 +112,12 @@ graphic status tokens of at most 64 bytes, including `future-durable-v2`.
 It retains a separately valid full-width attempt without inventing a known
 acknowledgement for that future status.
 
-On 2026-09-19, Windows/Rust 1.97.1 validation passes all 49 shared protobuf
-cases, eight SDK unit tests, ten parent TCP tests, eleven profile TCP tests,
-the shared model/lifetime and identity tests, regeneration, formatting and
-strict SDK-only Clippy for all targets. The no-default-features model suite
-also passes. No profile transport regression is ignored or weakened.
+The profile-only suite retains seven SDK unit tests, ten transport lifecycle
+tests, eleven profile TCP tests and the shared model/lifetime suites. The ten
+transport scenarios now use the current profile, including its pre-dispatch
+rejection of present-invalid identities. The provider client and workflow
+examples also use this interface. The no-default-features model suite remains
+available independently of the transport.
 
 The adapter is integrated into #228 with its code and documentation commits.
 Provider-backed real-node qualification belongs to the shared runner and the

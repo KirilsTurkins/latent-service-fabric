@@ -221,7 +221,7 @@ class SchemaAndSurfaceTests(unittest.TestCase):
         self.assertIn("record error-detail", invoke)
 
         sdk_files = (
-            ROOT / "sdk/rust/src/lib.rs",
+            ROOT / "sdk/rust/src/management.rs",
             ROOT / "sdk/go/profile/models.go",
             ROOT / "sdk/typescript-client/src/management.ts",
             ROOT / "sdk/dotnet/Latent.Sdk/Management.cs",
@@ -269,21 +269,18 @@ class SchemaAndSurfaceTests(unittest.TestCase):
 
     def test_sdk_invocation_status_and_cancellation_surfaces_are_equivalent(self) -> None:
         expected = {
-            "sdk/rust/src/lib.rs": (
-                "InvocationReceipt",
-                "pub consumption: BudgetConsumption",
-                "DeclaredInvocationError",
-                "PlatformInvocationFailure",
-                "pub enum InvocationOutcome",
-                "Succeeded(InvokeResponse)",
-                "DeclaredError(DeclaredInvocationError)",
-                "PlatformFailure(PlatformInvocationFailure)",
-                "RetainedInvocationOutcome",
-                "ActivationStatus",
-                "get_activation",
-                "pub enum CancelResponse",
-                "AlreadyTerminal(ActivationTerminalState)",
-                "ErrorDetail",
+            "sdk/rust/src/management.rs": (
+                "pub struct InvokeResponse",
+                "pub consumption: Option<BudgetConsumption>",
+                "pub success: Option<Success>",
+                "pub declared_error: Option<DeclaredError>",
+                "pub platform_failure: Option<PlatformError>",
+                "pub struct ActivationStatus",
+                "fn get_activation",
+                "pub struct CancelResponse",
+                "pub const ALREADY_TERMINAL",
+                "pub detail_items: Vec<ErrorDetail>",
+                "pub effect_ids: Vec<String>",
             ),
             "sdk/go/profile/models.go": (
                 "type InvokeResponse struct",
@@ -356,12 +353,6 @@ class SchemaAndSurfaceTests(unittest.TestCase):
             for token in tokens:
                 self.assertIn(token, source, f"{relative}: {token}")
 
-        rust = (ROOT / "sdk/rust/src/lib.rs").read_text(encoding="utf-8")
-        self.assertNotIn(
-            "pub struct CancelResponse {\n    pub disposition: CancelDisposition,",
-            rust,
-            "Rust cancellation must not duplicate the state carried by AlreadyTerminal",
-        )
         core_error = (
             ROOT / "crates/latent-core/src/error.rs"
         ).read_text(encoding="utf-8")

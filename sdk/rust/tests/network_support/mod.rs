@@ -2,14 +2,14 @@ mod invocation;
 mod management;
 mod socket;
 
-use latent_core::{ActivationId, ContractId, FunctionId, ResourceBudget, ServiceId, TenantId};
+use latent_core::TenantId;
 use latent_rpc::{control::v1 as control, invocation::v1 as proto};
 use latent_sdk::{
+    management::{InvocationTarget, InvokeRequest, ResourceBudget},
     network::{ClientConfig, ClientLimits, RpcClient},
-    InvocationTarget, InvokeOptions, InvokeRequest,
 };
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::HashMap,
     net::SocketAddr,
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -138,37 +138,26 @@ fn authenticate<Value>(request: &Request<Value>) -> Result<(), Status> {
 
 pub fn request(identity: &str, mode: &str) -> InvokeRequest {
     InvokeRequest {
-        activation_id: Some(ActivationId(identity.into())),
-        root_activation_id: None,
-        parent_activation_id: None,
-        target: InvocationTarget {
-            tenant: TenantId("tests".into()),
-            service: ServiceId("example".into()),
-            contract: ContractId("example:api@1.0.0".into()),
-            function: FunctionId("run".into()),
+        activation_id: Some(identity.into()),
+        target: Some(InvocationTarget {
+            tenant: "tests".into(),
+            service: "example".into(),
+            contract: "example:api@1.0.0".into(),
+            function: "run".into(),
             route: None,
-        },
+        }),
         payload: mode.as_bytes().into(),
         media_type: "application/octet-stream".into(),
-        options: InvokeOptions {
-            deadline_unix_millis: None,
-            priority: 0,
-            idempotency_key: None,
-            metadata: BTreeMap::new(),
-            budget: ResourceBudget {
-                cpu_fuel: 10000,
-                memory_bytes: 65536,
-                wall_time_limit_millis: Some(1000),
-                child_calls: 0,
-                outbound_requests: 1,
-                state_read_bytes: 0,
-                state_write_bytes: 0,
-                blob_read_bytes: 32,
-                blob_write_bytes: 32,
-                log_bytes: 0,
-                effect_count: 0,
-            },
-        },
+        budget: Some(ResourceBudget {
+            cpu_fuel: 10000,
+            memory_bytes: 65536,
+            wall_time_limit_millis: Some(1000),
+            outbound_requests: 1,
+            blob_read_bytes: 32,
+            blob_write_bytes: 32,
+            ..Default::default()
+        }),
+        ..Default::default()
     }
 }
 

@@ -5,14 +5,24 @@ mod network_support;
 #[path = "network_cases/lifecycle.rs"]
 mod lifecycle;
 
-use latent_core::{ActivationId, TenantId};
-use latent_sdk::{
-    network::{management::*, FailureKind},
-    CancelResponse, InvocationOutcome, LatentClient,
-};
+use latent_core::TenantId;
+use latent_sdk::management::*;
 use network_support::{request, wait_until, Peer};
 use std::{sync::atomic::Ordering, time::Duration};
 use tokio::time::Instant;
+
+fn options_until(deadline: Instant) -> CallOptions {
+    CallOptions {
+        timeout_millis: Some(
+            u64::try_from(
+                deadline
+                    .saturating_duration_since(Instant::now())
+                    .as_millis(),
+            )
+            .unwrap(),
+        ),
+    }
+}
 
 async fn expire_call<T>(call: tokio::task::JoinHandle<T>, deadline: Instant) -> T {
     assert!(!call.is_finished());
@@ -33,18 +43,20 @@ async fn channel_is_reused_outcomes_stay_distinct_and_shutdown_reaps_real_owners
     assert_eq!(client.usage().sockets, 0);
     for (index, mode) in ["success", "declared", "platform"].into_iter().enumerate() {
         let outcome = client
-            .invoke(request(&format!("call-{index}"), mode))
+            .invoke(
+                request(&format!("call-{index}"), mode),
+                CallOptions::default(),
+            )
             .await
             .unwrap();
-        match outcome {
-            InvocationOutcome::Succeeded(value) => assert_eq!(value.payload, b"success"),
-            InvocationOutcome::DeclaredError(value) => {
-                assert_eq!(value.error.code, "domain-failure");
-            }
-            InvocationOutcome::PlatformFailure(value) => assert_eq!(
-                value.error.code,
-                latent_core::PlatformErrorCode::PermissionDenied
+        match mode {
+            "success" => assert_eq!(outcome.value.success.unwrap().payload, b"success"),
+            "declared" => assert_eq!(outcome.value.declared_error.unwrap().code, "domain-failure"),
+            "platform" => assert_eq!(
+                outcome.value.platform_failure.unwrap().code,
+                "permission-denied"
             ),
+            _ => unreachable!(),
         }
     }
     assert_eq!(peer.state.accepted.load(Ordering::Acquire), 1);
@@ -72,26 +84,51 @@ async fn dropped_wait_does_not_send_cancel_and_known_identity_recovers_status() 
     let peer = Peer::start().await;
     let client = peer.client();
     let active = client.clone();
-    let call = tokio::spawn(async move { active.invoke(request("lost-reply", "hold")).await });
+    let call = tokio::spawn(async move {
+        active
+            .invoke(request("lost-reply", "hold"), CallOptions::default())
+            .await
+    });
     wait_until(|| peer.state.invocations.load(Ordering::Acquire) == 1).await;
     call.abort();
     assert!(call.await.unwrap_err().is_cancelled());
     assert_eq!(peer.state.cancellations.load(Ordering::Acquire), 0);
-    let identity = ActivationId("lost-reply".into());
-    let status = client.get_activation(&identity).await.unwrap();
-    assert!(status.terminal_state.is_none());
+    let identity = "lost-reply".to_owned();
+    let status = client
+        .get_activation(
+            GetActivationRequest {
+                activation_id: identity.clone(),
+            },
+            CallOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert!(status.value.terminal_state.is_none());
     assert_eq!(
         client
-            .cancel(&identity, "explicit caller request")
+            .cancel(
+                CancelRequest {
+                    activation_id: identity.clone(),
+                    reason: "explicit caller request".into()
+                },
+                CallOptions::default()
+            )
             .await
-            .unwrap(),
-        CancelResponse::Accepted
+            .unwrap()
+            .value
+            .disposition,
+        CancelDisposition::ACCEPTED
     );
-    let status = client.get_activation(&identity).await.unwrap();
-    assert_eq!(
-        status.terminal_state,
-        Some(latent_core::ActivationTerminalState::Cancelled)
-    );
+    let status = client
+        .get_activation(
+            GetActivationRequest {
+                activation_id: identity.clone(),
+            },
+            CallOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(status.value.terminal_state, Some("cancelled".into()));
     assert_eq!(peer.state.invocations.load(Ordering::Acquire), 1);
     assert_eq!(peer.state.cancellations.load(Ordering::Acquire), 1);
     client
@@ -113,25 +150,25 @@ async fn absolute_deadline_and_capacity_do_not_create_hidden_retries_or_extra_ch
     let deadline = Instant::now() + Duration::from_secs(30);
     let call = tokio::spawn(async move {
         active
-            .invoke_until(request("bounded", "hold"), deadline)
+            .invoke(request("bounded", "hold"), options_until(deadline))
             .await
     });
     wait_until(|| peer.state.invocations.load(Ordering::Acquire) == 1).await;
     let failure = client
-        .invoke_until(
+        .invoke(
             request("excess", "success"),
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap_err();
-    assert_eq!(failure.kind, FailureKind::Capacity);
+    assert_eq!(failure.category, FailureCategory::LIMIT);
     assert!(!failure.dispatched);
     assert!(client.usage().reserved_message_bytes > 0);
     let failure = expire_call(call, deadline).await.unwrap_err();
-    assert_eq!(failure.kind, FailureKind::Deadline);
+    assert_eq!(failure.category, FailureCategory::DEADLINE);
     assert!(failure.dispatched);
-    assert!(!failure.outcome_known);
-    assert_eq!(failure.recovery.activation_id.as_deref(), Some("bounded"));
+    assert_eq!(failure.outcome, OutcomeKnowledge::UNKNOWN);
+    assert_eq!(failure.identity.activation_id.as_deref(), Some("bounded"));
     assert_eq!(peer.state.invocations.load(Ordering::Acquire), 1);
     assert_eq!(peer.state.accepted.load(Ordering::Acquire), 1);
     client
@@ -148,23 +185,23 @@ async fn tenant_denial_and_response_corruption_are_not_guest_failures() {
     config.tenant = TenantId("foreign".into());
     let denied = latent_sdk::network::RpcClient::new(config).unwrap();
     let mut call = request("foreign", "success");
-    call.target.tenant = TenantId("foreign".into());
+    call.target.as_mut().unwrap().tenant = "foreign".into();
     let failure = denied
-        .invoke_until(call, Instant::now() + Duration::from_secs(1))
+        .invoke(call, options_until(Instant::now() + Duration::from_secs(1)))
         .await
         .unwrap_err();
-    assert_eq!(failure.kind, FailureKind::Rejected);
-    assert_eq!(failure.grpc_code, Some(7));
+    assert_eq!(failure.category, FailureCategory::RPC);
+    assert_eq!(failure.grpc_status, Some(7));
     let client = peer.client();
     let failure = client
-        .invoke_until(
+        .invoke(
             request("wrong-id", "wrong-id"),
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap_err();
-    assert_eq!(failure.kind, FailureKind::InvalidResponse);
-    assert!(!failure.outcome_known);
+    assert_eq!(failure.category, FailureCategory::DECODE);
+    assert_eq!(failure.outcome, OutcomeKnowledge::UNKNOWN);
     denied
         .shutdown(Instant::now() + Duration::from_secs(2))
         .await
@@ -180,45 +217,52 @@ async fn tenant_denial_and_response_corruption_are_not_guest_failures() {
 async fn mutation_loss_retains_recovery_audit_and_exact_explicit_replay() {
     let peer = Peer::start().await;
     let client = peer.client();
-    let request = network_support::policy("lost-operation");
+    let request: ApplyPolicyRequest = network_support::policy("lost-operation").into();
     let active = client.clone();
     let submitted = request.clone();
     let deadline = Instant::now() + Duration::from_secs(30);
-    let call = tokio::spawn(async move { active.apply_policy_until(submitted, deadline).await });
+    let call = tokio::spawn(async move {
+        active
+            .apply_policy(submitted, options_until(deadline))
+            .await
+    });
     wait_until(|| peer.state.mutations.load(Ordering::Acquire) == 1).await;
     let failure = expire_call(call, deadline).await.unwrap_err();
-    assert_eq!(failure.kind, FailureKind::Deadline);
-    assert!(!failure.outcome_known);
+    assert_eq!(failure.category, FailureCategory::DEADLINE);
+    assert_eq!(failure.outcome, OutcomeKnowledge::UNKNOWN);
     assert_eq!(
-        failure.recovery.operation_id.as_deref(),
+        failure.identity.operation_id.as_deref(),
         Some("lost-operation")
     );
     let known = client
-        .get_policy_operation_until(
+        .get_policy_operation(
             GetPolicyOperationRequest {
                 operation_id: "lost-operation".into(),
             },
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap();
     assert_eq!(known.value.receipt.as_ref().unwrap().generation, 2);
     let replay = client
-        .apply_policy_until(request, Instant::now() + Duration::from_secs(1))
+        .apply_policy(
+            request,
+            options_until(Instant::now() + Duration::from_secs(1)),
+        )
         .await
         .unwrap();
     assert_eq!(replay.value.receipt, known.value.receipt);
     assert_eq!(
-        replay.audit.as_ref().unwrap().attempt_sequence,
+        replay.metadata.audit_ack.as_ref().unwrap().attempt_sequence,
         Some(u64::MAX)
     );
     assert_eq!(peer.state.mutations.load(Ordering::Acquire), 1);
     let unknown = client
-        .get_policy_operation_until(
+        .get_policy_operation(
             GetPolicyOperationRequest {
                 operation_id: "unknown".into(),
             },
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap();
@@ -235,28 +279,28 @@ async fn pages_provider_inspection_presence_and_reply_sizes_are_bounded() {
     let peer = Peer::start().await;
     let client = peer.client();
     client
-        .apply_policy_until(
-            network_support::policy("create"),
-            Instant::now() + Duration::from_secs(1),
+        .apply_policy(
+            network_support::policy("create").into(),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap();
     let list = client
-        .list_policies_until(
+        .list_policies(
             ListPoliciesRequest {
-                record_kind: 1,
+                record_kind: CapabilityPolicyRecordKind::POLICY,
                 page: Some(PageRequest {
                     page_size: 1,
                     page_token: None,
                 }),
             },
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap();
     assert_eq!(list.value.policies.len(), 1);
     let list = client
-        .list_capabilities_until(
+        .list_capabilities(
             ListCapabilitiesRequest {
                 deployment_id: "deployment".into(),
                 page: Some(PageRequest {
@@ -265,7 +309,7 @@ async fn pages_provider_inspection_presence_and_reply_sizes_are_bounded() {
                 }),
                 ..Default::default()
             },
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap();
@@ -278,15 +322,15 @@ async fn pages_provider_inspection_presence_and_reply_sizes_are_bounded() {
         u64::MAX
     );
     assert!(client
-        .list_policies_until(
+        .list_policies(
             ListPoliciesRequest {
-                record_kind: 1,
+                record_kind: CapabilityPolicyRecordKind::POLICY,
                 page: Some(PageRequest {
                     page_size: 0,
                     page_token: None
                 })
             },
-            Instant::now() + Duration::from_secs(1)
+            options_until(Instant::now() + Duration::from_secs(1))
         )
         .await
         .is_err());
@@ -294,14 +338,14 @@ async fn pages_provider_inspection_presence_and_reply_sizes_are_bounded() {
     config.limits.maximum_response_bytes = 128;
     let small = latent_sdk::network::RpcClient::new(config).unwrap();
     let failure = small
-        .invoke_until(
+        .invoke(
             request("large", "oversize"),
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap_err();
     assert!(failure.dispatched);
-    assert!(!failure.outcome_known);
+    assert_eq!(failure.outcome, OutcomeKnowledge::UNKNOWN);
     small
         .shutdown(Instant::now() + Duration::from_secs(2))
         .await

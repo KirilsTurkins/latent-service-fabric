@@ -20,18 +20,10 @@ fn options() -> CallOptions {
 fn invoke(identity: Option<&str>, payload: &[u8]) -> InvokeRequest {
     InvokeRequest {
         activation_id: identity.map(Into::into),
-        target: Some(InvocationTarget {
-            tenant: "tests".into(),
-            service: "example".into(),
-            contract: "example:api@1.0.0".into(),
-            function: "run".into(),
-            route: None,
-        }),
         priority: u32::MAX,
         payload: payload.into(),
-        media_type: "application/octet-stream".into(),
         budget: None,
-        ..Default::default()
+        ..network_support::request("unused", "")
     }
 }
 
@@ -159,14 +151,6 @@ async fn all_eight_facade_operations_share_one_channel_and_owned_responses() {
         .await
         .unwrap();
     assert_eq!(recovered.value.receipt, applied.value.receipt);
-    let legacy =
-        latent_sdk::LatentClient::invoke(&client, network_support::request("legacy", "success"))
-            .await
-            .unwrap();
-    assert!(matches!(
-        legacy,
-        latent_sdk::InvocationOutcome::Succeeded(_)
-    ));
     assert_eq!(peer.state.accepted.load(Ordering::Acquire), 1);
     shutdown(&client).await;
     assert_eq!(invoked.value.success.unwrap().payload, b"success");
