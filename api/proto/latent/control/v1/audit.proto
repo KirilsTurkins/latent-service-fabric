@@ -106,7 +106,15 @@ message AuditPolicyIdentity {
   string digest = 4;
 }
 
+// Exact admitted static output facts, never a component or deployment grant.
+message AuditStaticWebTarget {
+  string web_manifest_digest = 1;
+  string assets_digest = 2;
+  uint64 web_generation = 3;
+}
+
 message AuditIdentities {
+  AuditStaticWebTarget static_web = 24;
   optional string trigger = 22;
   optional uint64 trigger_generation = 23;
   // Trusted captured facts only. Resource selectors, credentials and payloads

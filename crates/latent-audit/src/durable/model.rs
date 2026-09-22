@@ -143,9 +143,26 @@ pub struct AuditPolicyIdentity {
     #[serde(with = "codec::text")]
     pub digest: ArtifactBlobDigest,
 }
+/// Exact static publication facts; this is not executable component authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AuditStaticWebTarget {
+    #[serde(with = "codec::text")]
+    pub web_manifest_digest: ArtifactBlobDigest,
+    #[serde(with = "codec::text")]
+    pub assets_digest: ArtifactBlobDigest,
+    pub web_generation: u64,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditIdentities {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub static_web: Option<AuditStaticWebTarget>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",

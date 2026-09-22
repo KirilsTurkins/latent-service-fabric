@@ -12,6 +12,34 @@ use crate::{
     operation::Operation,
 };
 
+#[test]
+fn static_audit_projection_retains_exact_web_identity_and_rejects_hybrids() {
+    let mut value = proto::AuditIdentities {
+        trigger: Some("site".into()),
+        trigger_generation: Some(1),
+        publication_id: Some(format!("publication:sha256:{}", "a".repeat(64))),
+        static_web: Some(proto::AuditStaticWebTarget {
+            web_manifest_digest: format!("sha256:{}", "b".repeat(64)),
+            assets_digest: format!("sha256:{}", "c".repeat(64)),
+            web_generation: u64::MAX,
+        }),
+        ..Default::default()
+    };
+    projection::checked(&value, 4096).unwrap();
+    let output = value.clone().project();
+    assert_eq!(output["trigger"], "site");
+    assert_eq!(output["staticWeb"]["webGeneration"], u64::MAX.to_string());
+    assert!(output["componentDigest"].is_null());
+    value.component_digest = Some(format!("sha256:{}", "d".repeat(64)));
+    assert!(projection::checked(&value, 4096).is_err());
+    value.component_digest = None;
+    value.static_web.as_mut().unwrap().web_generation = 0;
+    assert!(projection::checked(&value, 4096).is_err());
+    value.static_web.as_mut().unwrap().web_generation = 1;
+    value.static_web.as_mut().unwrap().assets_digest = "wrong".into();
+    assert!(projection::checked(&value, 4096).is_err());
+}
+
 fn publication(digit: &str) -> proto::PublicationRef {
     proto::PublicationRef {
         id: format!("publication:sha256:{}", digit.repeat(64)),
