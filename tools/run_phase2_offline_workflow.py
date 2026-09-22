@@ -81,6 +81,7 @@ def run(args, origin, ca, stop_registry):
                                         "--evidence", outputs / "blue-evidence/index.json",
                                         "--operation-id", "offline-publish", "--expected-generation", "0")["data"]
                 digest = summaries["blue"]["componentDigest"]
+                selected = published["release"]["publication"]["id"]
                 require(published["release"]["digest"] == digest, "publication-identity")
                 snapshot = client.call("deployment", "get", "blue", "--operation-snapshot", codes=(6,))["data"]
                 applied = receipt(client.call("deployment", "apply", args.fixture_root / "blue/deployment.json",
@@ -106,8 +107,8 @@ def run(args, origin, ca, stop_registry):
                 after = invoke(client, metadata, input_path, "offline-during-outage")
                 require(after == before and route(client) == routes, "outage-changed-local-authority")
 
-                lifecycle = client.call("release", "lifecycle", digest)["data"]["status"]["record"]
-                revoked = client.call("release", "revoke", digest, "--operation-id", "offline-revoke",
+                lifecycle = client.call("release", "lifecycle", "--publication", selected)["data"]["status"]["record"]
+                revoked = client.call("release", "revoke", "--publication", selected, "--operation-id", "offline-revoke",
                                       "--expected-generation", lifecycle["generation"])["data"]["operation"]
                 # The same route is still pinned in catalog history. Current
                 # local lifecycle must deny a new call without a registry event.
@@ -118,7 +119,7 @@ def run(args, origin, ca, stop_registry):
                                      "--memory-bytes", "4194304", "--log-bytes", "1024", codes=(4,))
                 require(denied["outcomeKnown"] and denied["category"] == "platform-failure"
                         and denied["error"]["code"] == "permission-denied", "local-revocation-denial")
-                current = client.call("release", "lifecycle", digest)["data"]["status"]["record"]
+                current = client.call("release", "lifecycle", "--publication", selected)["data"]["status"]["record"]
                 require(current["state"].endswith("REVOKED") and current["operationId"] == "offline-revoke",
                         "revocation-identity")
                 stop(client, node)

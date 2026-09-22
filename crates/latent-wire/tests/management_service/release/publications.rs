@@ -52,7 +52,6 @@ async fn explicit_publications_preserve_shared_components_and_operation_recovery
     );
 
     let exact = proto::GetReleaseRequest {
-        digest: String::new(),
         publication: Some(selected.clone()),
     };
     assert_eq!(
@@ -73,27 +72,20 @@ async fn explicit_publications_preserve_shared_components_and_operation_recovery
         .windows(2)
         .all(|pair| pair[0].publication.as_ref().unwrap().id
             < pair[1].publication.as_ref().unwrap().id));
-    let legacy = proto::GetReleaseRequest {
-        digest: first.digest.clone(),
-        publication: None,
-    };
+    // Old wire field 1 can still be decoded as an unknown field, but it never
+    // selects a publication, even when a component has only one association.
+    let mut old_wire = vec![0x0a, u8::try_from(first.digest.len()).unwrap()];
+    old_wire.extend_from_slice(first.digest.as_bytes());
+    let obsolete = proto::GetReleaseRequest::decode(old_wire.as_slice()).unwrap();
+    assert!(obsolete.publication.is_none());
     let failure = harness
         .releases_client()
-        .get_release(request("alice", legacy.clone()))
+        .get_release(request("alice", obsolete.clone()))
         .await
         .unwrap_err();
-    assert_eq!(failure.code(), Code::Aborted);
-    let detail = proto::PlatformError::decode(failure.details()).unwrap();
-    assert!(!detail.retryable);
-    assert_eq!(detail.code, "state-conflict");
-    assert_eq!(
-        detail.detail_items[0].fields["reason"],
-        "publication-selector-ambiguous"
-    );
-    assert_eq!(detail.detail_items[0].fields.len(), 1); // No candidate enumeration.
+    assert_eq!(failure.code(), Code::InvalidArgument);
 
     let mutation = proto::ChangeReleaseLifecycleRequest {
-        digest: String::new(),
         publication: Some(selected.clone()),
         action: proto::ReleaseLifecycleAction::Revoke as i32,
         operation: Some(proto::ReleaseOperationPrecondition {
@@ -133,18 +125,17 @@ async fn explicit_publications_preserve_shared_components_and_operation_recovery
     assert_eq!(
         harness
             .releases_client()
-            .get_release(request("alice", legacy))
+            .get_release(request("alice", obsolete))
             .await
             .unwrap_err()
             .code(),
-        Code::Aborted
+        Code::InvalidArgument
     );
     let status = harness
         .releases_client()
         .get_release_lifecycle(request(
             "alice",
             proto::GetReleaseLifecycleRequest {
-                digest: String::new(),
                 publication: second.publication.clone(),
             },
         ))
@@ -182,23 +173,17 @@ async fn explicit_selectors_reject_invalid_presence_and_keep_foreign_existence_p
     let release = publication.release.unwrap();
     let selected = release.publication.unwrap();
     for input in [
+        proto::GetReleaseRequest { publication: None },
         proto::GetReleaseRequest {
-            digest: release.digest.clone(),
-            publication: Some(selected.clone()),
-        },
-        proto::GetReleaseRequest {
-            digest: String::new(),
             publication: Some(proto::PublicationRef::default()),
         },
         proto::GetReleaseRequest {
-            digest: String::new(),
             publication: Some(proto::PublicationRef {
                 id: selected.id.to_uppercase(),
                 tenant: "acme".into(),
             }),
         },
         proto::GetReleaseRequest {
-            digest: String::new(),
             publication: Some(proto::PublicationRef {
                 id: selected.id.clone(),
                 tenant: "other".into(),
@@ -224,7 +209,6 @@ async fn explicit_selectors_reject_invalid_presence_and_keep_foreign_existence_p
             .get_release(request(
                 "bob",
                 proto::GetReleaseRequest {
-                    digest: String::new(),
                     publication: Some(proto::PublicationRef {
                         id,
                         tenant: "other".into(),

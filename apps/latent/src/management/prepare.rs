@@ -38,10 +38,9 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
         ) => super::phase2::prepare::release(command, config),
         Command::Release(ReleaseCommand::Publish(args)) => publish(args, config),
         Command::Release(ReleaseCommand::Get(args)) => {
-            let (digest, publication) = publication_selector(args, config)?;
+            let publication = publication_selector(args, config)?;
             Ok(Operation::GetRelease(proto::GetReleaseRequest {
-                publication,
-                digest,
+                publication: Some(publication),
             }))
         }
         Command::Release(ReleaseCommand::List(args)) => {
@@ -284,38 +283,26 @@ pub(super) fn page(page_size: u32, token: Option<&str>) -> Result<proto::PageReq
 }
 
 pub(super) fn publication_selector(
-    args: &crate::args::DigestArgs,
+    args: &crate::args::PublicationArgs,
     config: &ResolvedConfig,
-) -> Result<(String, Option<proto::PublicationRef>), Failure> {
+) -> Result<proto::PublicationRef, Failure> {
     let invalid = || {
         Failure::local(
             "invalid-publication-selector",
-            "Choose one component digest or exact publication ID.",
+            "An exact publication ID is required.",
         )
     };
-    match (&args.digest, &args.publication) {
-        (Some(value), None) => {
-            digest(value)?;
-            Ok((value.clone(), None))
-        }
-        (None, Some(value)) => {
-            value
-                .parse::<latent_core::PublicationId>()
-                .map_err(|_| invalid())?;
-            identifier(&config.tenant)?;
-            if config.tenant.chars().any(char::is_whitespace) {
-                return Err(invalid());
-            }
-            Ok((
-                String::new(),
-                Some(proto::PublicationRef {
-                    id: value.clone(),
-                    tenant: config.tenant.clone(),
-                }),
-            ))
-        }
-        _ => Err(invalid()),
+    args.publication
+        .parse::<latent_core::PublicationId>()
+        .map_err(|_| invalid())?;
+    identifier(&config.tenant)?;
+    if config.tenant.chars().any(char::is_whitespace) {
+        return Err(invalid());
     }
+    Ok(proto::PublicationRef {
+        id: args.publication.clone(),
+        tenant: config.tenant.clone(),
+    })
 }
 
 fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Operation, Failure> {

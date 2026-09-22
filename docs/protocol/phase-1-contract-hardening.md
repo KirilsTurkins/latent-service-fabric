@@ -498,3 +498,18 @@ state, not a capsule admission grant or activation permission. Web management
 does not by itself enable Angular T1, additional renderer imports or providers.
 The [management reference](../reference/management-services.md#web-publication-and-preparation)
 defines the trust fence, finite ownership and uncertainty boundary.
+
+## Alpha removal of component-only release selectors
+
+Release get, lifecycle inspection, revoke/retire and evidence renewal now require
+an exact authenticated-tenant `PublicationRef`. Their obsolete request `digest`
+field 1 is removed and reserved by number and name. The CLI requires
+`--publication ID`; positional component digests fail before dispatch. An old
+wire message containing only field 1 decodes without a publication and is
+rejected rather than resolved through a unique-component fallback.
+
+Output component digests remain checksums. Publication/operation identities,
+mutation preconditions, tenant isolation and current authority checks remain
+explicit. See the [current publication API](../reference/publication-api.md).
+This alpha change supersedes the earlier release-selector compatibility record;
+no deprecation interval or obsolete client compatibility is promised.

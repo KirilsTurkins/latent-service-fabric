@@ -11,9 +11,9 @@ pub enum ValidateCommand {
 #[derive(Subcommand)]
 pub enum ReleaseCommand {
     Publish(PublishArgs),
-    Get(DigestArgs),
+    Get(PublicationArgs),
     List(ServicePageArgs),
-    Lifecycle(DigestArgs),
+    Lifecycle(PublicationArgs),
     Operation(OperationIdArgs),
     PublishPackage(super::release::PublishPackageArgs),
     Revoke(super::release::ChangeReleaseArgs),
@@ -59,16 +59,10 @@ pub struct IdArgs {
 }
 
 #[derive(Args)]
-pub struct DigestArgs {
-    /// Legacy component digest. Ambiguous component selection fails closed.
-    #[arg(
-        required_unless_present = "publication",
-        conflicts_with = "publication"
-    )]
-    pub digest: Option<String>,
+pub struct PublicationArgs {
     /// Exact publication ID in the configured authenticated tenant.
-    #[arg(long, required_unless_present = "digest", conflicts_with = "digest")]
-    pub publication: Option<String>,
+    #[arg(long)]
+    pub publication: String,
 }
 
 #[derive(Args)]

@@ -9,11 +9,10 @@ None of these identifiers is an execution grant.
 ## Release requests and results
 
 `PublicationRef` contains an exact `publication:sha256:` ID and its tenant.
-Public requests require that tenant to match the authenticated scope before
-lookup. Use either the existing nonempty component `digest` or `publication`.
-With an explicit publication, leave `digest` absent or empty. Two selectors,
-an empty/invalid reference, or a mismatched reference tenant are invalid; the
-server never falls back to the component field.
+Public release-management requests require an exact publication whose tenant
+matches the authenticated scope before lookup. Missing or invalid references
+are rejected. The obsolete component-only `digest` input is removed; field 1
+and its name are reserved in the four release query/mutation request messages.
 
 Get, lifecycle inspection, revoke, retire and evidence renewal accept the exact
 reference. Release descriptors, lifecycle records and operation receipts report
@@ -23,16 +22,16 @@ Operation lookup and replay retain the original association after coexistence.
 
 The CLI accepts `latent release get --publication PUBLICATION_ID`, and the same
 selector on `lifecycle`, `revoke`, `retire` and `renew-evidence`. Tenant comes from
-the selected client profile. The existing positional component digest remains
-available. Mutation operation IDs and generation comparisons remain explicit.
+the selected client profile. Positional component digests are rejected before
+network dispatch. Mutation operation IDs and generation comparisons remain explicit.
 JSON output keeps publication, package and component identities separate and
 preserves counters as decimal strings.
 
-Fresh component-only requests require exactly one association in the authorized
-scope, including revoked/retired associations when counting ambiguity. Multiple
-associations return `state-conflict`, reason `publication-selector-ambiguous`,
-with `retryable: false`. Foreign and missing IDs both return `NotFound` within the
-authorized scope; errors do not enumerate candidates.
+Retain the publication ID returned by admission or choose an exact entry from
+the authenticated release list. A component checksum cannot identify an
+association, even when the current catalog happens to contain only one match.
+Foreign and missing publication IDs both return `NotFound` within the authorized
+scope; errors do not enumerate candidates.
 
 ## Deployment requests and results
 

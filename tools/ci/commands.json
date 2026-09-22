@@ -2576,7 +2576,7 @@
       "sha256": "4070912d23d0699f864e8d4e8570f7cc7a3480ecccb326ddf818ff6d18f42a1b"
     },
     "tools/run_phase2_offline_workflow.py": {
-      "sha256": "a0c27823634ab7ec17f80a60c32b43c005236ddae91c60ee18a1aa9953b8778c"
+      "sha256": "73e3f912eb5370bedf409a4f00cb9ca0622ac3434d2b7e7f1a9c2ac39975d7cd"
     },
     "tools/run_phase2_operator_workflow.py": {
       "sha256": "4419751f1167d74edb740ee3a849433f4ac05758d2e8a65dcd550fbdb7b121ff"
@@ -2588,7 +2588,7 @@
       "sha256": "1c59a51493d89074474527ce496123b0078e968013a8a35a78ad907e56ede3e7"
     },
     "tools/run_publication_workflow.py": {
-      "sha256": "dfd90f3469a21b130d6f1640fc72409c61d571770f04731dd978a676c09a0ac9"
+      "sha256": "8db908658b41757e598285dd0c0a1bdf288dd706e56de5463ce9facc23d5fd42"
     },
     "tools/run_s3_blob_tests.py": {
       "sha256": "44e5356b966b50f6788461b1bbb8b270b002609f232a8e240c55c23725bc2fc6"
@@ -4891,7 +4891,7 @@
       "ReleaseLifecycleSchemaTests.test_deployment_fields_keep_legacy_meaning_and_explicit_assertion_presence",
       "ReleaseLifecycleSchemaTests.test_explicit_selector_presence_does_not_fall_back_to_component_digest",
       "ReleaseLifecycleSchemaTests.test_protobuf_generation_presence_and_exact_uint64_strings",
-      "ReleaseLifecycleSchemaTests.test_publication_fields_are_additive_and_preserve_component_field_numbers",
+      "ReleaseLifecycleSchemaTests.test_release_queries_require_publication_and_reserve_removed_digest",
       "ReleaseLifecycleSchemaTests.test_rollout_and_invocation_receipts_add_captured_ids_without_new_authority",
       "ReleaseLifecycleSchemaTests.test_rpc_reasons_and_actor_authority_are_closed",
       "ReleaseLifecycleSchemaTests.test_shared_rust_serializer_fixture_matches_both_schemas",

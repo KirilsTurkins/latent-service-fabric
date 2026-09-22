@@ -69,7 +69,6 @@ impl ManagementServiceAdapter {
             .expect("authenticated tenant");
         let mut budget = RequestBudget::new::<proto::GetReleaseLifecycleRequest>(&self.limits)?;
         let selection = selector::request(
-            &request.get_ref().digest,
             request.get_ref().publication.as_ref(),
             &tenant,
             &mut budget,
@@ -80,25 +79,19 @@ impl ManagementServiceAdapter {
         let value = self
             .services
             .artifacts
-            .get_selected_lifecycle(&LifecycleScope::Tenant(tenant.clone()), &selection)
+            .get_selected_lifecycle(
+                &LifecycleScope::Tenant(tenant.clone()),
+                &latent_artifacts::PublicationSelector::Publication(selection.clone()),
+            )
             .await
             .map_err(|error| platform_status(error, &self.limits))?;
-        if value.is_none()
-            && matches!(
-                selection,
-                latent_artifacts::PublicationSelector::Publication(_)
-            )
-        {
+        if value.is_none() {
             return Err(Status::not_found("publication not found"));
         }
         let status = value
             .as_ref()
             .map(|value| {
-                if !selector::matches(
-                    &selection,
-                    &value.record.release,
-                    value.publication.as_ref(),
-                ) {
+                if !selector::matches(&selection, value.publication.as_ref()) {
                     return Err(Status::internal("lifecycle query returned another release"));
                 }
                 response::status(value, &tenant, &self.limits)
@@ -167,7 +160,6 @@ impl ManagementServiceAdapter {
         let tenant = principal.tenant.as_ref().expect("authenticated tenant");
         let mut budget = RequestBudget::new::<proto::ChangeReleaseLifecycleRequest>(&self.limits)?;
         let selection = selector::request(
-            &request.get_ref().digest,
             request.get_ref().publication.as_ref(),
             &tenant,
             &mut budget,
@@ -189,17 +181,8 @@ impl ManagementServiceAdapter {
             .tenant()
             .expect("authenticated tenant")
             .clone();
-        let release = match &selection {
-            latent_artifacts::PublicationSelector::LegacyComponent(release) => Some(release),
-            latent_artifacts::PublicationSelector::Publication(_) => None,
-        };
-        let mut preflight = Preflight::new(&tenant, &self.limits, &context, release, action);
-        preflight.selected = match &selection {
-            latent_artifacts::PublicationSelector::Publication(reference) => {
-                Some(reference.id.clone())
-            }
-            latent_artifacts::PublicationSelector::LegacyComponent(_) => None,
-        };
+        let mut preflight = Preflight::new(&tenant, &self.limits, &context, None, action);
+        preflight.selected = Some(selection.id.clone());
         preflight.audit_enabled = self.services.audit.is_some();
         let mut audit = ReleaseAuditGuard::new(self.services.audit.as_ref(), action);
         preflight.reason = Some(reason);
@@ -210,7 +193,13 @@ impl ManagementServiceAdapter {
             };
             self.services
                 .artifacts
-                .change_selected_lifecycle(context, &selection, action, reason, &mut callback)
+                .change_selected_lifecycle(
+                    context,
+                    &latent_artifacts::PublicationSelector::Publication(selection),
+                    action,
+                    reason,
+                    &mut callback,
+                )
                 .await
         };
         let ack = audit
@@ -241,7 +230,6 @@ impl ManagementServiceAdapter {
         let tenant = principal.tenant.as_ref().expect("authenticated tenant");
         let mut budget = RequestBudget::new::<proto::RenewReleaseEvidenceRequest>(&self.limits)?;
         let selection = selector::request(
-            &request.get_ref().digest,
             request.get_ref().publication.as_ref(),
             &tenant,
             &mut budget,
@@ -275,10 +263,6 @@ impl ManagementServiceAdapter {
             .tenant()
             .expect("authenticated tenant")
             .clone();
-        let release = match &selection {
-            latent_artifacts::PublicationSelector::LegacyComponent(release) => Some(release),
-            latent_artifacts::PublicationSelector::Publication(_) => None,
-        };
         let package = request
             .package_digest
             .parse::<PackageDigest>()
@@ -289,16 +273,11 @@ impl ManagementServiceAdapter {
             &tenant,
             &self.limits,
             &context,
-            release,
+            None,
             ReleaseLifecycleAction::RenewEvidence,
         );
         preflight.package = Some(package.clone());
-        preflight.selected = match &selection {
-            latent_artifacts::PublicationSelector::Publication(reference) => {
-                Some(reference.id.clone())
-            }
-            latent_artifacts::PublicationSelector::LegacyComponent(_) => None,
-        };
+        preflight.selected = Some(selection.id.clone());
         preflight.audit_enabled = self.services.audit.is_some();
         let mut audit = ReleaseAuditGuard::new(
             self.services.audit.as_ref(),
@@ -311,7 +290,13 @@ impl ManagementServiceAdapter {
             };
             self.services
                 .artifacts
-                .renew_selected_evidence(context, &selection, &package, evidence, &mut callback)
+                .renew_selected_evidence(
+                    context,
+                    &latent_artifacts::PublicationSelector::Publication(selection),
+                    &package,
+                    evidence,
+                    &mut callback,
+                )
                 .await
         };
         let ack = audit

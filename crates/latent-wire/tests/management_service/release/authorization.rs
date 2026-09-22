@@ -75,15 +75,19 @@ async fn rejected_publications_leave_no_visible_release() {
             expected
         );
     }
-    assert!(get(&harness, "alice", &capsule.descriptor.release_digest.0)
-        .await
-        .is_none());
+    assert!(get(
+        &harness,
+        "alice",
+        &format!("publication:sha256:{}", "0".repeat(64))
+    )
+    .await
+    .is_none());
     assert!(list(&harness, "alice", None, None)
         .await
         .unwrap()
         .releases
         .is_empty());
-    publish(&harness, "alice", valid).await.unwrap();
+    let alice = publish(&harness, "alice", valid).await.unwrap();
     // Identical executable bytes have independent authenticated tenant publications.
     // Neither publication overwrites the other's immutable metadata.
     let other = artifact("other", "echo", "rejected-publication");
@@ -93,7 +97,7 @@ async fn rejected_publications_leave_no_visible_release() {
     assert_eq!(bob[0].tenant.as_deref(), Some("other"));
     assert_eq!(bob[0].digest, capsule.descriptor.release_digest.0);
     assert_eq!(
-        get(&harness, "alice", &capsule.descriptor.release_digest.0)
+        get(&harness, "alice", &alice.publication.as_ref().unwrap().id)
             .await
             .unwrap()
             .tenant
@@ -101,7 +105,7 @@ async fn rejected_publications_leave_no_visible_release() {
         Some("acme")
     );
     assert_eq!(
-        get(&harness, "bob", &capsule.descriptor.release_digest.0)
+        get(&harness, "bob", &bob[0].publication.as_ref().unwrap().id)
             .await
             .unwrap()
             .tenant

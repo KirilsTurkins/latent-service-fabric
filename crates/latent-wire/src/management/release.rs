@@ -123,7 +123,6 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
             .expect("authenticated tenant");
         let mut budget = RequestBudget::new::<proto::GetReleaseRequest>(&self.limits)?;
         let selector = selector::request(
-            &request.get_ref().digest,
             request.get_ref().publication.as_ref(),
             &tenant,
             &mut budget,
@@ -134,26 +133,20 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
         let entry = self
             .services
             .artifacts
-            .get_selected_catalog_entry(&LifecycleScope::Tenant(tenant.clone()), &selector)
+            .get_selected_catalog_entry(
+                &LifecycleScope::Tenant(tenant.clone()),
+                &latent_artifacts::PublicationSelector::Publication(selector.clone()),
+            )
             .await
             .map_err(|error| platform_status(error, &self.limits))?;
-        if entry.is_none()
-            && matches!(
-                selector,
-                latent_artifacts::PublicationSelector::Publication(_)
-            )
-        {
+        if entry.is_none() {
             return Err(Status::not_found("publication not found"));
         }
         let mut budget = RequestBudget::for_response::<proto::GetReleaseResponse>(&self.limits)?;
         let release = entry
             .map(|entry| {
                 validation::entry(&entry, &tenant, &mut budget, &self.limits)?;
-                if !selector::matches(
-                    &selector,
-                    &entry.descriptor.release_digest,
-                    entry.publication.as_ref(),
-                ) {
+                if !selector::matches(&selector, entry.publication.as_ref()) {
                     return Err(Status::internal(
                         "artifact repository returned a different release",
                     ));

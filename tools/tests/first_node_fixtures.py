@@ -57,9 +57,10 @@ elif args[:2] == ['node', 'get']:
         else: data = {'inventory':{'health':{'ready':True}}}
 elif args[:2] == ['release', 'publish']:
     path = Path(args[args.index('--manifest') + 1]); digest = json.loads(path.read_text())['component']['digest']
-    data = {'release':{'digest':digest}}
+    data = {'release':{'digest':digest, 'publication':{'id':'publication:sha256:' + 'a' * 64, 'tenant':'examples'}}}
     (root / 'release').write_text(json.dumps(data['release']))
 elif args[:2] == ['release', 'get']:
+    assert args[2:] == ['--publication', 'publication:sha256:' + 'a' * 64]
     data = {'release': json.loads((root / 'release').read_text())}
 elif args[:2] == ['deployment', 'apply']:
     (root / 'deployment').write_text('1'); data = {'deployment':{'generation':'1'}}

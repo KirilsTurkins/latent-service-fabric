@@ -7,10 +7,10 @@ from [package admission](package-admission.md) and
 [release compatibility](release-compatibility.md).
 
 The format-2 [publication catalog](publication-catalog.md) keys storage and
-generations by tenant-scoped publication. Component-only management requests keep
-their legacy wire meaning and require a unique publication in the authorized
-scope. Exact public selector integration is tracked by #267; migration never
-reinterprets component fields as package or publication IDs.
+generations by tenant-scoped publication. Management reads and mutations require
+an exact publication reference in the authenticated tenant. Component-only
+selectors are removed; component checksums remain output identities rather than
+publication authority. See [publication selection](publication-api.md).
 
 `ReleaseDescriptor.admitted` remains historical publication metadata. It does
 not authorize an invocation or describe current lifecycle eligibility. A revoked
@@ -39,10 +39,10 @@ The generated `latent.control.v1.ReleaseService` adds four unary calls:
 
 | Call | Input and result |
 | --- | --- |
-| `GetReleaseLifecycle` | A component digest selects a tenant-scoped historical record and live eligibility observation. Missing and foreign releases both have no optional status. |
+| `GetReleaseLifecycle` | An exact publication selects its scoped historical record and live eligibility observation. Missing and foreign publications both return `NotFound`. |
 | `GetReleaseOperation` | An operation ID returns `FOUND` with its immutable receipt, `UNKNOWN`, or `UNCERTAIN`. |
 | `ChangeReleaseLifecycle` | Revoke or retire an existing release using an operation ID, exact positive expected generation and a permitted reason. |
-| `RenewReleaseEvidence` | Supply the exact component/package identities, positive generation precondition and new detached evidence. |
+| `RenewReleaseEvidence` | Supply the exact publication and package identities, positive generation precondition and new detached evidence. |
 
 `PublishReleaseRequest.operation` is optional field 4. Existing callers can omit
 it; callers needing reconciliation retain their own ID before sending. Explicit
@@ -76,10 +76,10 @@ unauthenticated requests create no durable rejected record. A rejected
 `packageManifestDigest` hashes received bytes without asserting a valid package.
 
 The corresponding Rust host methods are `ArtifactRepository::publish_managed`,
-`get_release_lifecycle`, `get_release_operation`, `change_release_lifecycle`
-and `renew_release_evidence`. Generic repositories return explicit unsupported
-errors until implemented. Rust clients are generated from Protobuf; the other
-language SDKs remain invocation interfaces. The delivered
+`get_selected_lifecycle`, `get_selected_operation`, `change_selected_lifecycle`
+and `renew_selected_evidence`. Generic repositories return explicit unsupported
+errors until implemented. Release-service RPC clients are generated from
+Protobuf; the shared eight-operation SDK profile has its separately declared scope. The delivered
 [operator CLI](operator-cli.md) exposes publication, lifecycle/status and
 operation lookup, revoke/retire and evidence renewal. Its
 [workflow contract](../phase-2-operator-workflows.md) preserves caller-selected

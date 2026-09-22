@@ -110,18 +110,12 @@ fn release(command: &ReleaseCommand) -> Result<(), Failure> {
     }
 }
 
-fn release_selector(args: &super::management::DigestArgs) -> Result<(), Failure> {
-    match (&args.digest, &args.publication) {
-        (Some(digest), None) => identifier(digest, 71),
-        (None, Some(publication)) => {
-            identifier(publication, latent_core::PublicationId::TEXT_BYTES)?;
-            publication
-                .parse::<latent_core::PublicationId>()
-                .map_err(|_| invalid())?;
-            Ok(())
-        }
-        _ => Err(invalid()),
-    }
+fn release_selector(args: &super::management::PublicationArgs) -> Result<(), Failure> {
+    identifier(&args.publication, latent_core::PublicationId::TEXT_BYTES)?;
+    args.publication
+        .parse::<latent_core::PublicationId>()
+        .map_err(|_| invalid())?;
+    Ok(())
 }
 
 fn deployment(command: &DeploymentCommand) -> Result<(), Failure> {

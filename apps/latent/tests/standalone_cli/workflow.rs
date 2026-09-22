@@ -66,7 +66,14 @@ fn cli_publishes_deploys_pages_invokes_and_recovers_without_client_artifact_file
     harness.restart();
     let recovered = harness.call(
         "operator",
-        &["release", "get", &package.digest],
+        &[
+            "release",
+            "get",
+            "--publication",
+            release["data"]["release"]["publication"]["id"]
+                .as_str()
+                .unwrap(),
+        ],
         0,
         "success",
     );
@@ -114,7 +121,14 @@ fn publish(harness: &Harness, package: &Package) -> Value {
     assert_eq!(duplicate["data"]["release"], release["data"]["release"]);
     let got = harness.call(
         "operator",
-        &["release", "get", &package.digest],
+        &[
+            "release",
+            "get",
+            "--publication",
+            release["data"]["release"]["publication"]["id"]
+                .as_str()
+                .unwrap(),
+        ],
         0,
         "success",
     );
@@ -142,7 +156,14 @@ fn publish(harness: &Harness, package: &Package) -> Value {
     assert!(listed["data"]["nextPageToken"].is_null());
     harness.call(
         "foreign",
-        &["release", "get", &package.digest],
+        &[
+            "release",
+            "get",
+            "--publication",
+            release["data"]["release"]["publication"]["id"]
+                .as_str()
+                .unwrap(),
+        ],
         6,
         "not-found",
     );

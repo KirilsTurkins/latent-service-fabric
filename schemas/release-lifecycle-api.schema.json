@@ -355,22 +355,10 @@
       "required": [
         "action",
         "operation",
-        "reason"
+        "reason",
+        "publication"
       ],
       "properties": {
-        "digest": {
-          "oneOf": [
-            {
-              "type": "string",
-              "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
-              "minLength": 71,
-              "maxLength": 71
-            },
-            {
-              "const": ""
-            }
-          ]
-        },
         "action": {
           "enum": [
             "RELEASE_LIFECYCLE_ACTION_REVOKE",
@@ -434,38 +422,6 @@
               }
             }
           }
-        },
-        {
-          "oneOf": [
-            {
-              "required": [
-                "digest"
-              ],
-              "not": {
-                "required": [
-                  "publication"
-                ]
-              },
-              "properties": {
-                "digest": {
-                  "type": "string",
-                  "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
-                  "minLength": 71,
-                  "maxLength": 71
-                }
-              }
-            },
-            {
-              "required": [
-                "publication"
-              ],
-              "properties": {
-                "digest": {
-                  "const": ""
-                }
-              }
-            }
-          ]
         }
       ]
     },
@@ -475,22 +431,10 @@
       "required": [
         "packageDigest",
         "operation",
-        "evidence"
+        "evidence",
+        "publication"
       ],
       "properties": {
-        "digest": {
-          "oneOf": [
-            {
-              "type": "string",
-              "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
-              "minLength": 71,
-              "maxLength": 71
-            },
-            {
-              "const": ""
-            }
-          ]
-        },
         "packageDigest": {
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
@@ -612,98 +556,19 @@
         "publication": {
           "$ref": "#/$defs/PublicationRef"
         }
-      },
-      "allOf": [
-        {
-          "oneOf": [
-            {
-              "required": [
-                "digest"
-              ],
-              "not": {
-                "required": [
-                  "publication"
-                ]
-              },
-              "properties": {
-                "digest": {
-                  "type": "string",
-                  "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
-                  "minLength": 71,
-                  "maxLength": 71
-                }
-              }
-            },
-            {
-              "required": [
-                "publication"
-              ],
-              "properties": {
-                "digest": {
-                  "const": ""
-                }
-              }
-            }
-          ]
-        }
-      ]
+      }
     },
     "GetReleaseLifecycleRequest": {
       "type": "object",
       "additionalProperties": false,
-      "required": [],
+      "required": [
+        "publication"
+      ],
       "properties": {
-        "digest": {
-          "oneOf": [
-            {
-              "type": "string",
-              "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
-              "minLength": 71,
-              "maxLength": 71
-            },
-            {
-              "const": ""
-            }
-          ]
-        },
         "publication": {
           "$ref": "#/$defs/PublicationRef"
         }
-      },
-      "allOf": [
-        {
-          "oneOf": [
-            {
-              "required": [
-                "digest"
-              ],
-              "not": {
-                "required": [
-                  "publication"
-                ]
-              },
-              "properties": {
-                "digest": {
-                  "type": "string",
-                  "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
-                  "minLength": 71,
-                  "maxLength": 71
-                }
-              }
-            },
-            {
-              "required": [
-                "publication"
-              ],
-              "properties": {
-                "digest": {
-                  "const": ""
-                }
-              }
-            }
-          ]
-        }
-      ]
+      }
     },
     "GetReleaseOperationRequest": {
       "type": "object",
@@ -809,59 +674,14 @@
     "GetReleaseRequest": {
       "type": "object",
       "additionalProperties": false,
-      "required": [],
+      "required": [
+        "publication"
+      ],
       "properties": {
-        "digest": {
-          "oneOf": [
-            {
-              "type": "string",
-              "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
-              "minLength": 71,
-              "maxLength": 71
-            },
-            {
-              "const": ""
-            }
-          ]
-        },
         "publication": {
           "$ref": "#/$defs/PublicationRef"
         }
-      },
-      "allOf": [
-        {
-          "oneOf": [
-            {
-              "required": [
-                "digest"
-              ],
-              "not": {
-                "required": [
-                  "publication"
-                ]
-              },
-              "properties": {
-                "digest": {
-                  "type": "string",
-                  "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
-                  "minLength": 71,
-                  "maxLength": 71
-                }
-              }
-            },
-            {
-              "required": [
-                "publication"
-              ],
-              "properties": {
-                "digest": {
-                  "const": ""
-                }
-              }
-            }
-          ]
-        }
-      ]
+      }
     }
   }
 }

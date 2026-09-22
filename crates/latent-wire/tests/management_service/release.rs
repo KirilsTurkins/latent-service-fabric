@@ -49,20 +49,28 @@ async fn publish(
         .map(|response| response.into_inner().release.unwrap())
 }
 
-async fn get(harness: &Harness, identity: &str, digest: &str) -> Option<proto::ReleaseDescriptor> {
-    harness
+async fn get(
+    harness: &Harness,
+    identity: &str,
+    publication: &str,
+) -> Option<proto::ReleaseDescriptor> {
+    let response = harness
         .releases_client()
         .get_release(request(
             identity,
             proto::GetReleaseRequest {
-                publication: None,
-                digest: digest.to_owned(),
+                publication: Some(proto::PublicationRef {
+                    id: publication.to_owned(),
+                    tenant: if identity == "bob" { "other" } else { "acme" }.into(),
+                }),
             },
         ))
-        .await
-        .unwrap()
-        .into_inner()
-        .release
+        .await;
+    match response {
+        Ok(response) => response.into_inner().release,
+        Err(error) if error.code() == tonic::Code::NotFound => None,
+        Err(error) => panic!("unexpected release query failure: {error}"),
+    }
 }
 
 async fn list(
@@ -110,10 +118,14 @@ async fn published_typed_capsule_can_be_deployed_without_editing_the_data_direct
     assert_eq!(release.annotations["inert.auth.claim"], "operator=true");
     assert_eq!(publish(&harness, "alice", message).await.unwrap(), release);
     assert_eq!(
-        get(&harness, "alice", &release.digest).await,
+        get(&harness, "alice", &release.publication.as_ref().unwrap().id).await,
         Some(release.clone())
     );
-    assert!(get(&harness, "bob", &release.digest).await.is_none());
+    assert!(
+        get(&harness, "bob", &release.publication.as_ref().unwrap().id)
+            .await
+            .is_none()
+    );
     let desired = deployment(
         "published",
         "acme",

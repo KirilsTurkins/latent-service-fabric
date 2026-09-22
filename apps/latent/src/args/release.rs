@@ -20,7 +20,7 @@ pub struct ReleaseMutation {
 #[derive(Args)]
 pub struct ChangeReleaseArgs {
     #[command(flatten)]
-    pub selector: super::management::DigestArgs,
+    pub selector: super::management::PublicationArgs,
     #[command(flatten)]
     pub operation: ReleaseMutation,
 }
@@ -41,7 +41,7 @@ pub struct PublishPackageArgs {
 #[derive(Args)]
 pub struct RenewEvidenceArgs {
     #[command(flatten)]
-    pub selector: super::management::DigestArgs,
+    pub selector: super::management::PublicationArgs,
     #[arg(long)]
     pub package_digest: String,
     #[arg(long, value_hint = clap::ValueHint::FilePath)]

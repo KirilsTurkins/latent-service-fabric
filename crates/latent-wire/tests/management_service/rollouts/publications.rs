@@ -155,7 +155,6 @@ async fn same_component_rollout_exposes_captured_pair_and_rolls_back_after_candi
             "alice",
             proto::ChangeReleaseLifecycleRequest {
                 publication: Some(second.clone()),
-                digest: String::new(),
                 action: proto::ReleaseLifecycleAction::Revoke as i32,
                 reason: proto::ReleaseLifecycleReason::OperatorRevocation as i32,
                 operation: Some(proto::ReleaseOperationPrecondition {
