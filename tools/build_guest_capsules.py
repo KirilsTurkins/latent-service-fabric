@@ -52,6 +52,11 @@ def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
 
+def wit_bindgen_version() -> str:
+    config = tomllib.loads((ROOT / "tools/toolchain.toml").read_text(encoding="utf-8"))
+    return config["rust"]["dependencies"]["wit-bindgen"]
+
+
 def check_tools() -> None:
     config = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
     paths, materials = resolve_tools(config, ROOT, BUILD_ENVIRONMENT)
@@ -137,7 +142,7 @@ def bindings(output: Path, update: bool) -> None:
         for path in sorted(destination.iterdir()):
             if path.is_file():
                 hashes[f"{language}/{path.name}"] = digest(path.read_bytes())
-    value = {"formatVersion": 1, "generator": "wit-bindgen 0.60.0",
+    value = {"formatVersion": 1, "generator": f"wit-bindgen {wit_bindgen_version()}",
              "world": "latent:platform/capsule@0.4.0", "outputs": hashes}
     if update:
         write_json(LOCK, value)

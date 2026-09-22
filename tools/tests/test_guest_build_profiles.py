@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 from tools import install_guest_bindgen as install
+from tools.build_guest_capsules import wit_bindgen_version
 from tools.build_snapshot import validate_workspace
 from tools.tests.test_build_provenance_schemas import samples, DIGEST
 
@@ -78,6 +79,11 @@ class GuestProfileSchemas(unittest.TestCase):
 
 
 class GeneratorArchive(unittest.TestCase):
+    def test_pinned_generator_version_matches_toolchain_and_lock(self):
+        self.assertEqual(install.VERSION, wit_bindgen_version())
+        locked = json.loads((ROOT / "tools/guest_bindings.lock.json").read_text(encoding="utf-8"))
+        self.assertEqual(f"wit-bindgen {install.VERSION}", locked["generator"])
+
     def archive(self, kinds):
         result = io.BytesIO()
         with tarfile.open(fileobj=result, mode="w:gz") as archive:

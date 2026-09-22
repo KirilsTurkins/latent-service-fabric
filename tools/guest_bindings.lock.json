@@ -1,6 +1,6 @@
 {
   "formatVersion": 1,
-  "generator": "wit-bindgen 0.60.0",
+  "generator": "wit-bindgen 0.62.0",
   "world": "latent:platform/capsule@0.4.0",
   "outputs": {
     "rust/capsule.rs": "sha256:04e439ef45c1eea61c51abf6078ef12841cb41a51cc70228ffbad6533835417a",
