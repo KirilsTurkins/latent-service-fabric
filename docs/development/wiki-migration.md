@@ -1,10 +1,15 @@
-# Wiki migration and publication continuity
+# Wiki migration and removal
 
-The source inventory and migration work are ready for review. The documentation
-site has a successful protected publication; public Wiki cutover is still pending
-the reviewed essential guides and publication of the remaining destinations.
-The [cutover review](wiki-cutover-review.md) records the complete entry map and
-actual live route checks. Existing Wiki entries remain available during that transition.
+The documentation site replaces the Wiki. Migrate useful current explanations,
+complete the essential guide reviews and verify the deployed site. Once Phase 3
+is complete and that site is deployed, remove the public Wiki and retire its
+publisher. Old Wiki URLs, anchors, page bodies and archive notices are not a
+compatibility contract. This policy supersedes the original preservation plan
+for #356, following the maintainer decision of September 22, 2026.
+
+The [cutover review](wiki-cutover-review.md) records the content map, historical
+live route checks and remaining execution steps. Wiki removal is still pending;
+the existing inventory does not establish that the final site has been deployed.
 
 ## Preserved source and published identities
 
@@ -40,16 +45,15 @@ pinned. Current runtime diagrams remain owned by the documented product sources;
 a palette change must not silently rewrite historical evidence.
 
 Run `python tools/wiki_migration.py` for the bounded offline map, destination and
-legacy-link check. To compare against the retained actual Wiki Git repository,
+historical source-link check. To compare against the retained actual Wiki Git repository,
 add `--wiki-git PATH`. The optional comparison reads every inventoried blob and
 rejects any added, missing or changed file. It does not fetch or publish anything.
 
-Wiki links and encoded names are resolved case-sensitively. Existing fragments
-continue to address their preserved original pages. A migration notice links to
-the new guide separately, instead of guessing that a renamed guide has the same
-heading. The tests cover aliases, encoded names, asset references, unknown pages,
-case collisions and traversal. Product-site links keep the existing repository
-link policy for root and project base paths.
+The inventory checker resolves old links against pinned source references for
+attribution. It does not provide Wiki redirects or require live legacy pages.
+The tests cover encoded names, asset references, unknown pages, case collisions
+and traversal. Current product-site links use the repository link policy for
+root and project base paths and must resolve to maintained content.
 
 ## Cutover and bounded rollback
 
@@ -58,19 +62,21 @@ link policy for root and project base paths.
 2. Complete essential guide review under #345. Record the approved source and
    execution receipts. Site publication alone is not runtime release or Phase 3
    certification.
-3. Prepare a focused PR against `docs/wiki`: retain page bodies/assets, prepend
-   a prominent archive notice with each mapped replacement, and update Home,
-   `_Sidebar` and `_Footer`. GitHub Wiki URLs cannot be redirected by Pages.
-4. Publish those reviewed notices through the existing Wiki owner, then disable
-   its old active writer in a separate reviewed change. Retain the source,
-   generator and before/after publication receipts. Update repository entry links
-   to the tested Pages URL in the same reviewed cutover.
-5. Re-inventory the actual Wiki and verify each replacement. Record publication
-   identities and live checks; close #356 only after the cutover is demonstrated.
+3. Verify every maintained replacement route and switch repository/public entry
+   links to the tested site. Remove obsolete Wiki-specific navigation and active
+   content. Record the live deployment identity and content dispositions.
+4. Complete the Phase 3 gate. Content migration, guide review and successful
+   site publication are gate prerequisites; the final Wiki removal follows this
+   decision so that the ordering does not make the gate depend on itself.
+5. Retire the old publishing workflow through a reviewed change on its source,
+   disable the repository Wiki, and verify that no active writer can recreate
+   it. Record the settings/workflow result and close #356. No notice-only Wiki
+   publication, redirect layer or indefinitely archived public Wiki is required.
 
-If the new site is unavailable, keep or restore the retained Wiki entry notices
-to their prior reviewed state and roll Pages back through its protected exact
-artifact flow. Do not rewrite runtime tags, release evidence or old benchmark
-reports. Future documentation prose belongs in `docs/`; website presentation and
-publication belong to the website owner. The retired Wiki writer must not resume
-normal content synchronization.
+If a destination check fails before removal, finish the site correction before
+cutover. If the deployed site later needs rollback, use its protected exact
+artifact flow. Do not restore the Wiki as a maintained documentation service or
+rewrite runtime tags, release evidence or old benchmark reports. Existing Git
+history and pinned receipts provide attribution without a second public site.
+Future prose belongs in `docs/`; website presentation and publication belong to
+the website owner. The retired Wiki writer must not resume synchronization.

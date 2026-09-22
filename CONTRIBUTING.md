@@ -31,6 +31,15 @@ For timing and cancellation tests, use the [deterministic testing guide](docs/de
 
 ## Interface rules
 
+LSF is in alpha. Remove obsolete APIs, adapters, formats, command aliases and
+deprecated code when their replacements are adopted; no deprecation waiting
+period or compatibility with superseded Phase 1/2 behavior is required. Update
+callers, generated surfaces, tests and current documentation in the same change.
+Record breaking changes and any required fresh-state setup explicitly. Keep only
+compatibility that serves a current supported contract, such as a specifically
+qualified native upgrade pair. Historical evidence records what was tested at
+its original revision; it does not require the old implementation to remain.
+
 1. WIT is authoritative for guest-visible component contracts.
 2. Protobuf is authoritative for control-plane and generic management RPCs.
 3. JSON Schema is authoritative for declarative resources.
