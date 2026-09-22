@@ -18,6 +18,8 @@ Create your branch from the current `development` branch and target `development
 
 Install the pinned prerequisites from the [development toolchain guide](docs/development/toolchain.md), then select checks appropriate to the change using [VALIDATION.md](VALIDATION.md). Keep expensive scale probes, profiling, calibration, and resource soaks opt-in unless the issue or acceptance criteria explicitly require them.
 
+For exact local planning, preparation, execution, and failure reproduction, use the [local test entry point](docs/development/local-tests.md). It reads the same registered suite/recipe inventory as CI; `run` never compiles or broadens a selection.
+
 For timing and cancellation tests, use the [deterministic testing guide](docs/development/deterministic-tests.md), shared clock and current-readiness helpers, and executable deadline/cancellation examples. Assert actual resource ownership; do not use sleeps or yield counts as readiness witnesses.
 
 ## Change categories

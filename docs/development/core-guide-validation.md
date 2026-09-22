@@ -173,3 +173,28 @@ paths. Record the reviewer, source, expected/failure observations and cleanup.
 Keep the coverage reviews pending until that evidence exists; do not close #357,
 #237 or #345 merely because the pages and runner are present. A failing,
 interrupted, skipped or unexecuted check remains visible as such.
+
+
+## Reference and contributor commands, 2026-09-21
+
+The [contract and evidence guide](../learn/read-contracts-and-evidence.md),
+[Start route](../start/index.md) and [contributor route](../how-to/operate-and-contribute.md)
+were exercised from clean source `bb2062afeeea8561c1403202a87b6ad4c63ddf83` on Linux with Python 3.13.5.
+The [unaltered command receipt](../evidence/reference-guides-2026-09-21.json)
+has SHA-256 `79cd77d86d1c2d77f69b1fdbb2d82adc9e77f6ffc45c5321fdea782ab99b8881`; it binds the exact guide and validator files,
+commands, expected and actual exits, output hashes and observed output.
+The guide files remain byte-identical to the tested source in this evidence update.
+
+Pinned Python prerequisites, repository/documentation validators, the retained
+six-language SDK matrix, the retained provider resource campaign and contributor
+checks all passed. Selecting the parent evidence directory deliberately exited
+1 with `sdk-provider-matrix-incomplete-or-invalid`. The first-node guide suite
+and all 27 resource collector regressions passed on Linux. The checksum validator
+accepts the collector's typed digest and a standard sha256sum record naming the
+exact retained file; this execution leaves the historical receipt unchanged.
+
+This is execution of static contract and retained-evidence validation commands.
+It does not rerun the historic SDK or resource workloads, build an installed
+bundle, measure performance, or supply a human newcomer review. All six affected
+coverage rows keep their human review pending. The installed-native prerequisite
+and the complete 27-topic maintainer review remain required for gate acceptance.

@@ -1,0 +1,101 @@
+{
+  "schema": "lsf.ci-lane-baseline.v2",
+  "workflow_path": ".github/workflows/ci.yml",
+  "required_jobs": [
+    "profile",
+    "docs",
+    "fast",
+    "rust",
+    "oci-registry",
+    "catalog",
+    "msrv",
+    "contracts",
+    "sdks",
+    "result",
+    "website"
+  ],
+  "result_needs": [
+    "profile",
+    "docs",
+    "website",
+    "fast",
+    "rust",
+    "oci-registry",
+    "catalog",
+    "msrv",
+    "contracts",
+    "sdks"
+  ],
+  "rust": {
+    "needs": [
+      "profile"
+    ],
+    "if": "needs.profile.outputs.profile == 'full'",
+    "lane_step": "Run bounded renderer and provider integration lanes",
+    "lane_id": "integration_lanes",
+    "lane_command_fragments": [
+      "tools/run_ci_lanes.py",
+      "--inventory",
+      "--renderer",
+      "--workers",
+      "--output",
+      "tools/ci_lane_worker.py",
+      "tools/run_s3_blob_tests.py",
+      "tools/run_angular_renderer_tests.py"
+    ],
+    "prepared_step": "Prepare immutable browser lane component",
+    "prepared_command_fragments": [
+      "cargo build --locked -p latent-toolchain-smoke --example web-contract",
+      "wasm-tools component new",
+      "wasm-tools validate"
+    ],
+    "renderer_condition": "needs.profile.outputs.renderer == 'true'",
+    "renderer_actions": [
+      "Set up the qualified Angular build runtime",
+      "Set up the pinned component composer"
+    ],
+    "renderer_run_steps": [
+      "Check selected renderer prerequisites before building",
+      "Prepare immutable browser lane component"
+    ],
+    "physical_after": [
+      "Fetch the pinned operator workflow registry",
+      "Validate bounded Phase 2 delivery and resource workflows",
+      "Build the optimized isolated Angular compiler",
+      "Export actual signed Angular T1 fixtures",
+      "Qualify actual Angular on the protected T1 node"
+    ],
+    "removed_serial_steps": [
+      "Qualify bounded Angular SSR and browser hydration",
+      "Validate browser boundary with live ingress",
+      "Build the public Angular renderer fixture",
+      "Validate Angular in generic cells and the shared HTTP node",
+      "Exercise renderer ownership failure after exact discovery",
+      "Check observed Angular build and source separation boundaries",
+      "Produce the observed Angular application package",
+      "Verify actual Angular package admission, fresh rendering and browser hydration",
+      "Fetch the pinned S3 conformance server",
+      "Validate S3 blobs with the existing test harness",
+      "Fetch the pinned Vault conformance server",
+      "Validate Vault secrets with the existing test harness",
+      "Fetch the pinned NATS conformance server",
+      "Validate NATS events with the existing test harness",
+      "Validate NATS triggers with the existing test harness",
+      "Validate capability policy CLI lifecycle"
+    ]
+  },
+  "catalog": {
+    "manual_step": "Publish and reopen 100,000 dormant releases in isolated processes",
+    "manual_if": "github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale"
+  },
+  "inventory": {
+    "provider_selections": [
+      "s3-blobs",
+      "vault-secrets",
+      "nats-events",
+      "nats-triggers"
+    ],
+    "browser_selection": "browser-boundary",
+    "renderer_process_contract": "angular-renderer"
+  }
+}
