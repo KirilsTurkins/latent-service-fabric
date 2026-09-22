@@ -9,7 +9,7 @@ The review can be completed in batches using the same source identity.
 
 ## Record the version you reviewed
 
-For the public site, record the `sourceCommit` from its
+For the public site, record the `revision` from its
 [site manifest](https://kirilsturkins.github.io/latent-service-fabric/site-manifest.json),
 the page URL and the development version. A local built-site review should
 record the checkout commit and build result instead. If the public site still
