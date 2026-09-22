@@ -25,8 +25,8 @@ pub use lifecycle::{
 };
 pub use model::{
     CheckedWebLayout, StaticDirectoryIndexMode, StaticFallbackMode, StaticWebFallback,
-    StaticWebRouting, StaticWebRoutingProfile, WebApplicationManifest, WebAsset,
-    WebBackendProfile, WebRenderMode, WebRenderer, WebRendererProfile, WebRoute,
+    StaticWebRouting, StaticWebRoutingProfile, WebApplicationManifest, WebAsset, WebBackendProfile,
+    WebRenderMode, WebRenderer, WebRendererProfile, WebRoute,
 };
 pub use read::{WebBlobRead, WebReadLimits, WebReadSnapshot, WebSelection};
 pub(crate) use read::{WebReadBudget, WebReadPermit};

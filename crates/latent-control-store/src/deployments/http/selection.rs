@@ -1,8 +1,7 @@
 use super::super::{DirectoryDeploymentRepository, PinnedRouteResolver, PublicationView};
 use crate::http_routes::{
-    capacity, conflict, corrupt,
-    definition::reserved_node_path,
-    TriggerReadLease, TriggerTargetIdentity, MAX_DEFINITION_BYTES,
+    capacity, conflict, corrupt, definition::reserved_node_path, TriggerReadLease,
+    TriggerTargetIdentity, MAX_DEFINITION_BYTES,
 };
 use latent_artifacts::{web::WebSelection, PublicationRef};
 use latent_core::{DeploymentId, FunctionId, PlatformError, PlatformErrorCode, TriggerId};

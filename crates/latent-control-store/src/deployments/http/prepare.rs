@@ -112,115 +112,114 @@ impl DirectoryDeploymentRepository {
             }
             data.format_version = 2;
         }
-        let (
-            manifest,
-            target_identity,
-            action,
-            object_generation,
-            apply_result,
-            static_selection,
-        ) = match request {
-            TriggerOperationRequest::Apply { manifest, .. } => {
-                let (_, matcher) = definition::normalize(manifest.clone())?;
-                for (i, old) in previous.http.rows.iter().enumerate() {
-                    if Some(i) != index
-                        && old.matcher.authority == matcher.authority
-                        && (old.manifest.metadata.tenant != manifest.metadata.tenant
-                            || old.matcher == matcher)
-                    {
-                        return Err(super::super::error(
-                            PlatformErrorCode::AlreadyExists,
-                            "http-route-conflict",
-                        ));
-                    }
-                }
-                if index.is_none() && data.records.len() == MAX_RECORDS {
-                    return Err(capacity());
-                }
-                let (target_identity, component, static_selection) = match &manifest.target {
-                    TriggerTarget::Application(target) => {
-                        let (publication, resolved, _) = self.http_target(&previous, &manifest)?;
-                        let identity = TriggerTargetIdentity::Application {
-                            publication,
-                            component: resolved.release.clone(),
-                            deployment_id: target.route.clone().ok_or_else(corrupt)?,
-                            deployment_generation: target
-                                .deployment_generation
-                                .ok_or_else(corrupt)?,
-                            revision: target.revision.clone().ok_or_else(corrupt)?,
-                        };
-                        (identity, Some(resolved.release), None)
-                    }
-                    TriggerTarget::StaticWeb(target) => {
-                        let publication = PublicationRef {
-                            id: target.publication.clone(),
-                            scope: LifecycleScope::Tenant(context.tenant.clone()),
-                        };
-                        let selection = self.artifacts.select_web_publication(&publication)?;
-                        if selection.publication() != &publication
-                            || selection.layout().manifest().static_routing.is_none()
+        let (manifest, target_identity, action, object_generation, apply_result, static_selection) =
+            match request {
+                TriggerOperationRequest::Apply { manifest, .. } => {
+                    let (_, matcher) = definition::normalize(manifest.clone())?;
+                    for (i, old) in previous.http.rows.iter().enumerate() {
+                        if Some(i) != index
+                            && old.matcher.authority == matcher.authority
+                            && (old.manifest.metadata.tenant != manifest.metadata.tenant
+                                || old.matcher == matcher)
                         {
-                            return Err(conflict());
+                            return Err(super::super::error(
+                                PlatformErrorCode::AlreadyExists,
+                                "http-route-conflict",
+                            ));
                         }
-                        let identity = TriggerTargetIdentity::StaticWeb {
-                            publication,
-                            web_manifest_digest: selection
-                                .layout()
-                                .manifest_digest()
-                                .as_str()
-                                .to_owned(),
-                            assets_digest: selection.layout().assets_digest().as_str().to_owned(),
-                            web_generation: selection.eligibility().generation(),
-                        };
-                        (identity, None, Some(selection))
                     }
-                };
-                let stored = StoredRecord {
-                    manifest: definition.ok_or_else(corrupt)?,
-                    generation,
-                    component: None,
-                    target: Some(target_identity.clone()),
-                };
-                if let Some(i) = index {
-                    data.records[i] = stored;
-                } else {
-                    let position = previous.http.rows.partition_point(|row| {
-                        (
-                            row.manifest.metadata.tenant.as_ref().unwrap(),
-                            &row.manifest.id,
-                        ) < (manifest.metadata.tenant.as_ref().unwrap(), &manifest.id)
-                    });
-                    data.records.insert(position, stored);
+                    if index.is_none() && data.records.len() == MAX_RECORDS {
+                        return Err(capacity());
+                    }
+                    let (target_identity, component, static_selection) = match &manifest.target {
+                        TriggerTarget::Application(target) => {
+                            let (publication, resolved, _) =
+                                self.http_target(&previous, &manifest)?;
+                            let identity = TriggerTargetIdentity::Application {
+                                publication,
+                                component: resolved.release.clone(),
+                                deployment_id: target.route.clone().ok_or_else(corrupt)?,
+                                deployment_generation: target
+                                    .deployment_generation
+                                    .ok_or_else(corrupt)?,
+                                revision: target.revision.clone().ok_or_else(corrupt)?,
+                            };
+                            (identity, Some(resolved.release), None)
+                        }
+                        TriggerTarget::StaticWeb(target) => {
+                            let publication = PublicationRef {
+                                id: target.publication.clone(),
+                                scope: LifecycleScope::Tenant(context.tenant.clone()),
+                            };
+                            let selection = self.artifacts.select_web_publication(&publication)?;
+                            if selection.publication() != &publication
+                                || selection.layout().manifest().static_routing.is_none()
+                            {
+                                return Err(conflict());
+                            }
+                            let identity = TriggerTargetIdentity::StaticWeb {
+                                publication,
+                                web_manifest_digest: selection
+                                    .layout()
+                                    .manifest_digest()
+                                    .as_str()
+                                    .to_owned(),
+                                assets_digest: selection
+                                    .layout()
+                                    .assets_digest()
+                                    .as_str()
+                                    .to_owned(),
+                                web_generation: selection.eligibility().generation(),
+                            };
+                            (identity, None, Some(selection))
+                        }
+                    };
+                    let stored = StoredRecord {
+                        manifest: definition.ok_or_else(corrupt)?,
+                        generation,
+                        component: None,
+                        target: Some(target_identity.clone()),
+                    };
+                    if let Some(i) = index {
+                        data.records[i] = stored;
+                    } else {
+                        let position = previous.http.rows.partition_point(|row| {
+                            (
+                                row.manifest.metadata.tenant.as_ref().unwrap(),
+                                &row.manifest.id,
+                            ) < (manifest.metadata.tenant.as_ref().unwrap(), &manifest.id)
+                        });
+                        data.records.insert(position, stored);
+                    }
+                    let result = VersionedTrigger {
+                        manifest: manifest.clone(),
+                        generation,
+                        component,
+                    };
+                    (
+                        manifest,
+                        target_identity,
+                        TriggerOperationAction::Apply,
+                        generation,
+                        Some(result),
+                        static_selection,
+                    )
                 }
-                let result = VersionedTrigger {
-                    manifest: manifest.clone(),
-                    generation,
-                    component,
-                };
-                (
-                    manifest,
-                    target_identity,
-                    TriggerOperationAction::Apply,
-                    generation,
-                    Some(result),
-                    static_selection,
-                )
-            }
-            TriggerOperationRequest::Delete { .. } => {
-                let i = index.ok_or_else(super::not_found)?;
-                let manifest = previous.http.rows[i].manifest.clone();
-                let target_identity = previous.http.rows[i].target.clone();
-                let removed = data.records.remove(i);
-                (
-                    manifest,
-                    target_identity,
-                    TriggerOperationAction::Delete,
-                    removed.generation,
-                    None,
-                    None,
-                )
-            }
-        };
+                TriggerOperationRequest::Delete { .. } => {
+                    let i = index.ok_or_else(super::not_found)?;
+                    let manifest = previous.http.rows[i].manifest.clone();
+                    let target_identity = previous.http.rows[i].target.clone();
+                    let removed = data.records.remove(i);
+                    (
+                        manifest,
+                        target_identity,
+                        TriggerOperationAction::Delete,
+                        removed.generation,
+                        None,
+                        None,
+                    )
+                }
+            };
         let mut receipt = TriggerOperationReceipt {
             format_version: 2,
             tenant: context.tenant.0,

@@ -212,7 +212,10 @@ fn static_routing(manifest: &WebApplicationManifest) -> Result<(), PlatformError
     Ok(())
 }
 
-fn document(manifest: &WebApplicationManifest, document_path: &String) -> Result<(), PlatformError> {
+fn document(
+    manifest: &WebApplicationManifest,
+    document_path: &String,
+) -> Result<(), PlatformError> {
     path(document_path)?;
     let asset = manifest
         .assets
