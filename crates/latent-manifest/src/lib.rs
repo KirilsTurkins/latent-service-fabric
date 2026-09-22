@@ -262,19 +262,60 @@ pub enum TriggerKind {
     Direct,
 }
 
-/// Invocation target carried by a trigger resource.
+/// Existing executable trigger target. HTTP application targets retain the
+/// exact deployment/publication pins introduced by the buffered-v1 profile.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TriggerTarget {
+pub struct ApplicationTriggerTarget {
     pub service: ServiceId,
     pub contract: ContractId,
     pub function: String,
     pub route: Option<String>,
     /// Explicit publication in metadata.tenant; never a component identity.
     pub publication: Option<latent_core::PublicationId>,
-    /// Exact immutable deployment content revision, required by the HTTP profile.
+    /// Exact immutable deployment content revision, required by buffered-v1.
     pub revision: Option<String>,
     /// The deployment object's mutation stamp also distinguishes delete/recreate.
     pub deployment_generation: Option<u64>,
+}
+
+/// Componentless browser publication selected directly by a static HTTP route.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StaticWebTriggerTarget {
+    pub publication: latent_core::PublicationId,
+}
+
+/// Closed trigger target variants. Static web targets cannot carry executable
+/// application fields, so partial/hybrid target states are unrepresentable.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TriggerTarget {
+    Application(ApplicationTriggerTarget),
+    StaticWeb(StaticWebTriggerTarget),
+}
+
+impl TriggerTarget {
+    #[must_use]
+    pub fn publication(&self) -> Option<&latent_core::PublicationId> {
+        match self {
+            Self::Application(target) => target.publication.as_ref(),
+            Self::StaticWeb(target) => Some(&target.publication),
+        }
+    }
+
+    #[must_use]
+    pub const fn application(&self) -> Option<&ApplicationTriggerTarget> {
+        match self {
+            Self::Application(target) => Some(target),
+            Self::StaticWeb(_) => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn static_web(&self) -> Option<&StaticWebTriggerTarget> {
+        match self {
+            Self::Application(_) => None,
+            Self::StaticWeb(target) => Some(target),
+        }
+    }
 }
 
 /// Declarative trigger resource. Runtime trigger behavior remains outside this
