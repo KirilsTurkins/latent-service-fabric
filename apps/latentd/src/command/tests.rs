@@ -30,7 +30,7 @@ fn serve_requires_configuration_and_help_advertises_only_product_surfaces() {
     let text = help.to_string();
     assert!(text.contains("check-config"));
     assert!(text.contains("serve"));
-    assert!(text.contains("migrate-catalog"));
+    assert!(!text.contains("migrate-catalog"));
     assert!(!text.contains("phase0-spike"));
 }
 
@@ -49,27 +49,9 @@ fn status_encoding_is_one_bounded_json_line() {
 }
 
 #[test]
-fn offline_migration_has_finite_defaults_and_rejects_unbounded_batches() {
-    let parsed =
+fn obsolete_catalog_migration_command_is_rejected() {
+    assert!(
         CommandLine::try_parse_from(["latentd", "migrate-catalog", "--config", "node.json"])
-            .unwrap();
-    let Command::MigrateCatalog { limits, .. } = parsed.command else {
-        panic!("migration command");
-    };
-    assert_eq!(
-        limits.limits(),
-        latent_artifacts::CatalogMigrationLimits::default()
+            .is_err()
     );
-    for value in ["0", "1025", "65536"] {
-        assert!(CommandLine::try_parse_from([
-            "latentd",
-            "migrate-catalog",
-            "--config",
-            "node.json",
-            "--batch-size",
-            value
-        ])
-        .is_err());
-    }
-    assert!(CommandLine::try_parse_from(["latentd", "migrate-catalog"]).is_err());
 }

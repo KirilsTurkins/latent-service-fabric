@@ -78,8 +78,8 @@ retain their previous meaning; they do not alone authenticate the additive
 publication reference. Protected catalog ownership remains required.
 
 Startup upgrades a format-1 operation table using a matching retained object
-revision or the artifact catalog's retained legacy association. Unique recovery
-is allowed where no historical mapping exists; ambiguous history is rejected.
+revision or a unique current scoped publication. Ambiguous history is rejected;
+archived Phase 2 migration mappings are not read.
 The upgrade is durably committed before routes are exposed and preserves
 request hashes, receipt bytes, CAS versions and object generations. A format-5
 deployment envelope can therefore still need an operation-table upgrade. Older
@@ -100,11 +100,11 @@ this does not announce a new executable SDK client.
 | Explicit selector, old server | Empty legacy selector fails validation when the old server ignores the new field; no silent fallback. |
 | Old binary, upgraded catalog | Unsupported publication/deployment table versions fail closed. Restore only a consistent stopped backup for downgrade. |
 
-Phase 2 release roots first need the explicit [offline catalog migration](publication-catalog.md#offline-upgrade-and-recovery),
-using `latentd migrate-catalog --config /secure/node.json` with the original
-protected configuration. A nonempty legacy root is not implicitly admitted as a
-new publication catalog. Deployment operation-table recovery then follows the
-rules above; it is distinct from that release-root migration.
+Phase 2 release roots are unsupported. The offline migrator has been removed;
+follow the [fresh-state procedure](publication-catalog.md#supported-storage-and-fresh-state)
+instead. A nonempty obsolete root cannot become a newly admitted publication
+catalog. Current deployment operation-table recovery remains separate from
+retired release-root formats.
 
 ## Rollout and invocation receipts
 
