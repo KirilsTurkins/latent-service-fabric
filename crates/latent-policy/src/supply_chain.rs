@@ -15,7 +15,8 @@ mod verification;
 mod verify;
 mod web;
 pub use verification::{
-    verify_package_once, PackageVerificationReport, PackageVerificationRequest,
+    verify_package_once, verify_web_package_once, PackageVerificationReport,
+    PackageVerificationRequest, WebPackageVerificationReport,
 };
 
 pub use clock::{SupplyChainClock, SystemSupplyChainClock};

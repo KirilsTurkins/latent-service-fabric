@@ -1,100 +1,68 @@
 # Operator guide evidence and publication handoff
 
-## Outcome and scope
+## Current acceptance status
 
-Give the documentation and parent integration maintainers one bounded review
-handoff for the native-release and maintained-security guides, without treating
-reference pages, source extraction or passing Markdown checks as completed
-learning paths. This is a partial delivery under
-[#237](https://github.com/KirilsTurkins/latent-service-fabric/issues/237), with
-the child-guide requirements below still independently reviewable.
+This handoff tracks [#237](https://github.com/KirilsTurkins/latent-service-fabric/issues/237)
+and its guide children against the 27 outcomes in the
+[coverage contract](../../website/content/coverage-contract.json).
+The September 22, 2026 review uses development
+`aa87df018c3c2c79069747cd353f146c979501a0`. Executed walkthroughs, human review
+and release publication are separate requirements. Each execution record below
+keeps its original source, binary and collector identities; its presence in a
+later checkout does not establish execution of that checkout.
 
-The authoring worktree starts at native candidate
-`f8d0c51a9a76bf123fa8b397fb3a0e15099cd3f5` and integrates parent source
-`edec84fa` in guide merge `1ed9ef3c`. The parent subsequently squash-merges #360
-as development commit `f4231d0785ca9538878d6c3c72573ed837aaa5cf` at
-2026-09-19 17:16:25 UTC; guide merge `1a04aeb1` includes that development ancestry.
-The reviewed head and squash have identical Git trees, not identical commits.
-The [separate integrated candidate record](../evidence/native-runtime-edec84fa.json)
-keeps the actual native source/harness `edec84fa`, PR CI checkout `05360c50` and
-squash identity distinct. No guide-authored app, SDK, native installer or security-workflow
-change is introduced here. [#370's site foundation](https://github.com/KirilsTurkins/latent-service-fabric/pull/370)
-owns the single-source build/coverage implementation; other guides consume their
-actual subsystem owners, not a new parallel protocol or browser test suite.
+First-node, operator, provider, six-client and Angular walkthroughs have
+retained execution evidence. Security monitoring is activated. Human newcomer
+and maintainer reviews remain pending in the
+[27-outcome review checklist](phase3-guide-review.md). Native delivery still
+requires the final compatible-version qualification and protected publication
+under [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
 
-The bounded handoff also integrates the parent-reviewed foundation squash
-`6ab7192903574afb5b018d1450b0d84c305b3713` in guide merge `8a819509`, including
-the already-merged Rust and Node clients. This makes the current guide pages
-available to the actual site builder. It does not relabel historical CLI/provider
-receipts as execution of the newer runtime or complete six-client qualification.
-No startup/runtime fix, new guide scenario, native version pair or publication
-is part of this handoff.
-
-The resumed documentation review integrates development
-`3c2f3e7d84aca662a71f621ece35c2cdc8be9c30` through guide merge `44ac10db`.
-That base also contains the merged Java client. The three contributor workflows
-pin this full base commit instead of implicitly running a moving branch.
-All eight operator collectors and the policy runner still match the retained
-`05360c50` source. Seventeen of the 18 provider source objects match; `Cargo.lock`
-does not. The historical JSON receipts remain unchanged and do not qualify
-the newer dependency graph or binaries. Source/parser and documentation-site
-checks are separate from actual node/provider/client execution.
-
-## Current guide checkpoint
-
-| Guide | Complete source and intended outcome | Evidence available here | Still required |
-| --- | --- | --- | --- |
-| [Native release promotion](../operations/native-release-promotion.md) | Existing native release workflow/gate, installer and real VM harness; review a genuinely versioned foundation, pin its authenticated TAR, qualify the final version and hand publication to the parent | [Frozen f8d summary](../evidence/native-runtime-f8d0c51a.json) and [separate reviewed edec candidate](../evidence/native-runtime-edec84fa.json), actual CI/security and both VM profiles, distinct boot IDs and lifecycle/rootless receipt hashes; independent candidate attestation/hash recheck | Genuine rc.1/final artifacts and their exact-source CI, actual upgrade/downgrade VM phase, release identity, protected publication, rendered newcomer/maintainer review |
-| [Maintained security monitoring](../operations/maintained-security-monitoring.md) | Existing scoped baseline, settings inventory and all-lock/SDK graph contract; distinguish configuration, registration and actual both-ref execution | [Dated read-only GitHub API receipt](../evidence/operator-release-prerequisites-2026-09-19.json), [actual integrated-source settings execution](../evidence/operator-settings-2026-09-19.json), source-checked coordinator/settings/scan contract at `edec84fa` | Default-release activation, reviewed required checks, actual manual and unchanged-lock scheduled receipts, security owner's outstanding permission/push-protection evidence, rendered review |
-| [Deliver and recover a capsule](../learn/deliver-and-recover-a-capsule.md) | Existing finite CLI/node/registry workflow, actual publication/rollout/recovery identities and failure diagnosis | [Real retained operator, outage, publication and enforced-profile receipts](../evidence/core-operator-walkthrough-35454985599.json); original file hashes and eight collector Git-object matches | Runtime execution at the newly pinned base, human newcomer review and remaining first-node/capsule-authoring paths; source-contributor evidence is not installed-bundle qualification |
-| [Reconcile a policy change](../how-to/reconcile-a-policy-change.md) | Existing real CLI/node control-plane workflow; historical receipts never restore revoked authority | Actual CI log receipt: 15 CLI calls, two starts, zero guest invocations and clean policy-owner shutdown, with explicit runtime checkout identity | Rendered/newcomer review; actual guest/provider allowed/denied/failure/budget/rotation paths remain separate |
-| [Exercise provider failure and recovery](../how-to/exercise-provider-failure-and-recovery.md) | Existing real TLS S3/Vault/NATS services, actual guest calls and local trigger manager; distinguish denial, rotation, possible effects, bounded ownership and recovery | [19 executed real-provider tests](../evidence/provider-walkthrough-35454985599.json), owned-cleanup confirmations and 18 source matches at `22dc2f07`; 17 matches plus changed Cargo lock at the newly pinned base | Runtime execution at the newly pinned base, human newcomer review, standalone management configuration walkthrough and remaining local/HTTP/call/utility guides; contributor embedding tests are not a separate-node client or native installation qualification |
-
-The frozen receipt summary still records artifact source and harness as **f8d**.
-It does not relabel the older diagnostic source `260c3e4e` / harness `3925d416`
-as same-head or inherit results from the later integration. The edec record
-separately records actual all-lock RustSec and security success, both packaged
-VM profiles and the merged source relationship. Both native records retain
-`acceptanceComplete:false` for the missing genuine version pair; neither is a
-release trust policy. The Windows recheck authenticates downloaded data with
-independently provisioned GitHub CLI/roots; it executes no downloaded installer
-and claims no new VM run. Full trust inputs remain separately provisioned.
-
-## Map the existing finite coverage rows, without declaring them complete
-
-The foundation's [coverage contract](../../website/content/coverage-contract.json)
-has 27 required outcomes. Do not add synthetic completed rows or use a future
-phase/release tag as a prerequisite for honest development documentation.
-The table maps the actual issue acceptance, not a substitute checklist.
-
-| Child and existing rows | Authoritative starting points / owning evidence | Acceptance remaining at this guide checkpoint |
+| Guide | Available execution evidence | Remaining acceptance |
 | --- | --- | --- |
-| [#357](https://github.com/KirilsTurkins/latent-service-fabric/issues/357): `evaluate-boundary`, `install-auth-readiness`, `contributor-checks`, `author-capsule`, `package-sign-publish`, `rollout-uncertain-recovery` | [Source quickstart](standalone-quickstart.md), [native installation](../installation.md), [capsule authoring](../component-development/creating-a-capsule.md), [delivery/recovery](../phase-2-operator-workflows.md), existing `tools/run_phase2_operator_workflow.py` and native VM harness | Real newcomer first-node/publish/invoke/error/cleanup walkthrough, capsule/package/sign/verify/publication identities and rollout/lost-response/revocation recovery at the displayed source. Native release coordination supports this work but is not the whole first-node guide. |
-| [#358](https://github.com/KirilsTurkins/latent-service-fabric/issues/358): `client-rust`, `client-typescript`, `client-go`, `client-c`, `client-java`, `client-dotnet` | [SDK boundary/index](../../sdk/README.md), shared #227 and each of #228/#230/#260/#261/#262/#263; each client owner's real-node harness and #351/#352 source-backed examples | All six actual language-native build/link/setup/invoke/identity/status/cancel/deadline/uncertain-response/management-page/receipt/shutdown paths, bad auth/tenant and application failure, exact toolchains and newcomer review. No network-client acceptance from a guest binding, compilation or test double. |
-| [#359](https://github.com/KirilsTurkins/latent-service-fabric/issues/359): `grants-bindings`, `http-streaming`, `local-s3-blobs`, `local-vault-secrets`, `nats-events-triggers`, `local-calls-descendants`, `randomness-metrics`, `operator-security-recovery` | [Capabilities](../runtime/capabilities.md), [provider pools](../runtime/provider-pools.md), [security profiles](../runtime/execution-security-profiles.md), [real external-provider learning path](../how-to/exercise-provider-failure-and-recovery.md), existing policy workflow, provider owners and #238 | The S3/Vault/NATS path now links actual allowed/denied, rotation, lost-acknowledgement, saturation and owned-cleanup cases. Remaining local/HTTP/call/utility paths, configured-node management and rendered newcomer review still need their own evidence; monitoring covers only security activation. |
-| [#361](https://github.com/KirilsTurkins/latent-service-fabric/issues/361): `angular-build-profile`, `angular-publication-routing`, `angular-browser-workflow` | [Restricted Angular build](../component-development/angular-build.md), [renderer profile](../runtime/angular-renderer-profile.md), [runtime](../runtime/angular-renderer-runtime.md), [qualification](../testing/angular-renderer-qualification.md), maintained example and #236's actual shared-ingress/browser workflow | Displayed-source build/sign/admit/publish/deploy, immutable assets, actual browser DOM reuse/navigation, broker dependency/denial/cancellation, update/canary/rollback and failures with the delivered T0/T1 boundary. Route-fulfilled browser fixtures are not end-to-end acceptance. |
-| #237 umbrella: `reference-contracts`, `trust-resource-architecture`, `retained-performance-evidence`, `later-phase-boundary` | Implemented references, accepted ADRs #267/#270/#271/#272/#273 and design-only #274; exact #239 measured evidence | Architecture/support matrix reconciliation, authority and resource/uncertainty boundaries, rendered essential-path review, historical evidence preservation and explicit later-phase limits. The new runbooks do not certify these remaining outcomes. |
+| [Native release promotion](../operations/native-release-promotion.md) | [Authenticated rc.1 foundation](../evidence/native-foundation-35763422270.json), both real VM profiles, reboot, retained invocation, rootless operation and removal/recovery. [PR #503](https://github.com/KirilsTurkins/latent-service-fabric/pull/503) merged the exact predecessor declaration for alpha.4. | Execute the final alpha.4 bundle against that predecessor, retain both VM acceptance receipts and publish through the protected release owner; rendered guide review. |
+| [Maintained security monitoring](../operations/maintained-security-monitoring.md) | [Verified activation](security-baseline-evidence.md): approved default-branch workflow, scheduled run `35586505063`, manual run `35752339515`, both maintained refs and required security aggregate. #282 is closed. | Rendered guide review. Preserve the stated limits of settings observations, permission fixtures and scanner canaries. |
+| [First node](../start/first-node.md) and [capsule delivery/recovery](../learn/deliver-and-recover-a-capsule.md) | [Core guide validation](core-guide-validation.md) links actual first-node/build, operator, publication, offline-transfer and enforced-profile receipts. First-node execution covers 19 CLI commands, success and failure cases, retained deployment after restart and clean reaping. | Human walkthrough review and native-bundle installation under #308; source-based execution does not replace bundle qualification. |
+| [Reconcile a policy change](../how-to/reconcile-a-policy-change.md) | [Capability-policy execution](../evidence/guide-capability-policy-2026-09-21.json): 15 actual CLI calls with persisted revocation. [Management execution](../evidence/guide-management-2026-09-21.json) separately supplies guest and HTTP/blob coverage. | Rendered/newcomer review. The policy collector itself has no guest invocations. |
+| [Exercise provider failure and recovery](../how-to/exercise-provider-failure-and-recovery.md) and the local provider guides | [Provider execution summary](../evidence/provider-guide-2026-09-21.json), [management receipt](../evidence/guide-management-2026-09-21.json), and [embedding receipt](../evidence/provider-libraries-2026-09-21.json). The latter records 79 cases plus one isolated environment child, including local calls, descendant cleanup, randomness and metrics. | Rendered/newcomer review. Embedded tests, separate-node management, external-service execution and native installation retain their own boundaries. |
 
-Some underlying implementation tickets have their own passing evidence or merges.
-That does not automatically complete a guide: select the actual displayed source,
-match the owned test receipt and inspect the rendered scenario. The same rule
-applies when parent integration moves beyond this authoring base.
+## Coverage outcome handoff
 
-At this review, [#366's real-client harness](https://github.com/KirilsTurkins/latent-service-fabric/pull/366)
-has head `07563fdcd5053ac1622567e1b1b01d5a0aec599e` and records earlier actual
-Rust, Node and Java participant runs. Those are not a passing current six-client
-integration; the parent owns the remaining .NET/C/Go/provider CI work.
-[#344's provider startup/browser-resolution integration](https://github.com/KirilsTurkins/latent-service-fabric/pull/344)
-has head `bcd902cdde567745c8783ce995188cc105a12fd9` on
-`feat/226-management-angular-t1` and is not merged into this guide branch.
-[#372's Angular reference workflow](https://github.com/KirilsTurkins/latent-service-fabric/pull/372),
-head `85b5a0db6ab5d5b0f339ac61d50d4fe8b485fd78`, still declares full protected
-published/browser/cancellation/revision qualification pending. These are bounded
-source checkpoints, not claims about a later owner head or permission to merge it.
-The retained native-parent CI run's Angular steps are **skipped**, not passed.
-Do not use its compiling six-language semantic fixtures or the new CLI guides
-as evidence that #358/#361's actual network/browser walkthroughs executed.
-A Node-controlled SSR/browser receipt is not protected Angular T1 qualification.
+The table maps the existing required rows; it adds no synthetic completed rows.
+All human review states remain pending until a named reviewer checks the
+rendered path and records its exact revision and criteria.
+
+| Child and existing rows | Maintained paths and evidence | Remaining acceptance |
+| --- | --- | --- |
+| [#357](https://github.com/KirilsTurkins/latent-service-fabric/issues/357): `evaluate-boundary`, `install-auth-readiness`, `contributor-checks`, `author-capsule`, `package-sign-publish`, `rollout-uncertain-recovery` | [Choose a path](../start/index.md), [first node](../start/first-node.md), [author a capsule](../learn/author-your-first-capsule.md), delivery/recovery and the [core execution handoff](core-guide-validation.md). | Rendered newcomer and maintainer review; final authenticated native bundle and installation evidence under #308. |
+| [#358](https://github.com/KirilsTurkins/latent-service-fabric/issues/358): `client-rust`, `client-typescript`, `client-go`, `client-c`, `client-java`, `client-dotnet` | [SDK index](../../sdk/README.md) and [six-client receipts](../evidence/phase3-sdk-guides-35509915448/README.md): 18 assertions per language, 54 activation identities, six operation receipts, 24 physically closed held requests and six clean shutdowns. | Rendered newcomer and maintainer review of each actual language path. Native client qualification does not imply browser-client or installed-bundle qualification. |
+| [#359](https://github.com/KirilsTurkins/latent-service-fabric/issues/359): `grants-bindings`, `http-streaming`, `local-s3-blobs`, `local-vault-secrets`, `nats-events-triggers`, `local-calls-descendants`, `randomness-metrics`, `operator-security-recovery` | [Core/provider execution handoff](core-guide-validation.md), [external provider path](../how-to/exercise-provider-failure-and-recovery.md), [capability contracts](../runtime/capabilities.md), [provider pools](../runtime/provider-pools.md) and [security profiles](../runtime/execution-security-profiles.md). Local/HTTP/call/utility and configured-node execution records are available. | Rendered newcomer and maintainer review; retain each collector's allowed/denied/failure/cleanup scope instead of treating one receipt as universal provider coverage. |
+| [#361](https://github.com/KirilsTurkins/latent-service-fabric/issues/361): `angular-build-profile`, `angular-publication-routing`, `angular-browser-workflow` | [Restricted Angular build](../component-development/angular-build.md), [renderer profile](../runtime/angular-renderer-profile.md), [runtime](../runtime/angular-renderer-runtime.md), and [actual Angular reference qualification](../testing/angular-reference-workflow.md). #372 merged as `ffa90dc3f76f4bc589be63d313103fdb67fb5f1b`; #236 is closed. | Rendered newcomer and maintainer review. Keep the supported T0/T1 boundary, unchecked reproducibility and declared incomplete dependency coverage explicit. |
+| #237 umbrella: `reference-contracts`, `trust-resource-architecture`, `retained-performance-evidence`, `later-phase-boundary` | [Reference-guide evidence](../evidence/reference-guides-2026-09-21.json), implemented references and accepted architecture decisions; the [Phase 3 gate handoff](../phase-3-gate-review.md) links measured resource profiles and later-phase limits. | Rendered review of the four outcomes and completion of the child guide requirements. |
+
+The former #366 and #344 integration checkpoints are merged. The later
+six-client and Angular records above replace their old pending-work status.
+They do not turn the Angular steps skipped in the historical native-parent CI
+run into passes, or erase the failed Angular attempts retained alongside the
+successful reference run.
+
+## Historical receipt boundaries
+
+The [f8d native summary](../evidence/native-runtime-f8d0c51a.json) and
+[edec integrated candidate](../evidence/native-runtime-edec84fa.json) retain
+their original sources, CI checkouts, VM results and missing-version-pair gaps.
+The later rc.1 foundation is a separate artifact and does not rewrite them.
+
+The [original operator receipt](../evidence/core-operator-walkthrough-35454985599.json)
+and [original provider receipt](../evidence/provider-walkthrough-35454985599.json)
+record execution at `05360c50eb6c40212111ad0d87198db5dead78a5`, for reviewed
+head `edec84fa`. All 18 provider source objects matched guide source `22dc2f07`;
+at `3c2f3e7d` only 17 matched because `Cargo.lock` changed. Those observations
+remain historical. Use the separately dated current handoffs above for later
+execution; a Markdown check or matching source fragment cannot qualify a newer
+dependency graph or binary.
+
+## Preserve runtime and authority boundaries
 
 Do not collapse language lifecycle differences into a website-specific retry
 policy: Rust drop, TypeScript `AbortSignal`, Go contexts, Java futures, .NET tokens
@@ -112,11 +80,10 @@ workflow. Planned distributed state/cluster/freshness semantics remain planned.
 
 The foundation is merged; its builder consumes these current pages directly.
 The existing `learn/` and `how-to/` pages belong in their matching task sidebars,
-not the architecture section. The coverage owner still needs to add these
-runbooks and matching JSON evidence to the applicable existing rows,
-especially `install-auth-readiness`, `operator-security-recovery` and
-`trust-resource-architecture`. Retain reference-only sources as references;
-do not mark an entire row accepted from this partial release/activation slice.
+not the architecture section. The [coverage inventory](../../website/content/coverage.json)
+maps maintained paths and receipts to the existing outcomes. Retain
+reference-only sources as references; execution evidence alone does not
+establish that a reader can complete the rendered learning path.
 Keep `review.status` pending, `reviewedCommit` null and criteria unaccepted until
 the actual rendered review. Evidence availability and execution are distinct.
 
@@ -129,9 +96,8 @@ edited `website/docs` tree beside the authoritative `docs/` sources.
 
 Use the foundation's pinned website toolchain and
 [its complete validation instructions](website.md).
-The bounded [PR #375 handoff](https://github.com/KirilsTurkins/latent-service-fabric/pull/375)
-records which of these checks actually executed, with their source and dirty flag.
-The command list alone is not execution or human acceptance:
+Retain the exact source and results when running these checks. This command
+list is not a claim they ran at the current source or supplied human acceptance:
 
 ```text
 python3 tools/validate_docs.py
@@ -177,7 +143,7 @@ The migration gate #345 consumes this reviewed content and blocks Phase 3
 #201/#240. There is **no reverse dependency** on those gates closing or on a future
 Phase 3 tag. Existing source-only alpha documentation and labelled development
 guides can be published before phase completion, with unavailable native release
-downloads and unfinished client/provider profiles explicitly marked.
+downloads and pending human reviews explicitly marked.
 
 Stop only the owned preview/test processes; remove generated website output or
 private guide-test directories only within that run's verified worktree. Preserve

@@ -35,7 +35,7 @@ runner = "ubuntu-24.04"
 [sdk]
 go = "1.27.1"
 node = "24.19.0"
-typescript = "5.8.3"
+typescript = "7.0.2"
 java = "25.0.4.1+1"
 # Adoptium's SemVer encodes the fourth version component as 100 * patch + build.
 java_setup = "25.0.4+101.0.LTS"

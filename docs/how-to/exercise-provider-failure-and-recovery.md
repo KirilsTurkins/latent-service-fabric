@@ -234,13 +234,14 @@ The retained evidence is actual CI execution at `05360c50eb6c40212111ad0d87198db
 for reviewed PR head `edec84fa`, not execution at the guide commit. The original
 check matches 18 source objects, including the complete relevant crate/WIT trees,
 runner/support files and lock/toolchain inputs, against guide source `22dc2f07`.
-At the newly selected `3c2f3e7d` base, 17 of those objects still match, but
-`Cargo.lock` has changed. Preserve the original record; do not extend its result
-to the newer dependency graph without executing the selected suites again.
-Local Windows checks of the instructions do not claim a new Linux provider run.
-Human newcomer review and the standalone configured-node walkthrough
-remain pending, as do the remaining local/HTTP/call/utility paths in the
-[guide acceptance inventory](../development/operator-guide-acceptance.md).
+At the later historical `3c2f3e7d` base, 17 objects matched, while `Cargo.lock`
+had changed. Preserve that record without extending its result to newer binaries.
+The [core/provider validation handoff](../development/core-guide-validation.md)
+now links separate September 21 receipts for configured-node management,
+HTTP/blob execution, capability policy and the 79-case local/call/utility
+selection plus its isolated environment child. Each receipt keeps its own
+runtime, collector and cleanup identities. Human newcomer review remains
+pending in the [guide acceptance inventory](../development/operator-guide-acceptance.md).
 
 Continue with [policy receipt/revocation recovery](reconcile-a-policy-change.md)
 and the [operator delivery path](../learn/deliver-and-recover-a-capsule.md).

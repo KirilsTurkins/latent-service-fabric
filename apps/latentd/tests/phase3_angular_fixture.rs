@@ -77,7 +77,11 @@ fn export_actual_angular_t1_fixtures() {
     assert!(!observed.hermetic);
     fs::create_dir(root).unwrap();
     fs::set_permissions(root, fs::Permissions::from_mode(0o700)).unwrap();
-    let signers = signing::Signers::new(observed.finished_at, &observed.source.repository);
+    let signers = signing::Signers::new(
+        observed.finished_at,
+        &observed.source.repository,
+        latent_signing::ANGULAR_BUILD_TYPE,
+    );
     write(&root.join("policy.json"), &signers.policy_document);
     write(&root.join("observation.json"), &observation_bytes);
     let mut fixtures = Vec::new();

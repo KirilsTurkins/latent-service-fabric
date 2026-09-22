@@ -11,7 +11,6 @@ use latent_policy::supply_chain::{
 use latent_signing::{
     generate_signing_key, BuilderPolicy, LocalBuilderSigner, LocalSigner, PackageSigningSubject,
     ProvenanceLimits, PublisherPolicy, SignatureLimits, SignatureValidity, WebBuildObservation,
-    ANGULAR_BUILD_TYPE,
 };
 use serde_json::json;
 use std::{
@@ -27,7 +26,7 @@ pub struct Signers {
 }
 
 impl Signers {
-    pub fn new(build_finished: u64, repository: &str) -> Self {
+    pub fn new(build_finished: u64, repository: &str, build_type: &str) -> Self {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -49,7 +48,13 @@ impl Signers {
             builder_public,
         )
         .unwrap();
-        let policy_document = policy(now, &publisher_public, &builder_public, repository);
+        let policy_document = policy(
+            now,
+            &publisher_public,
+            &builder_public,
+            repository,
+            build_type,
+        );
         SupplyChainPolicy::from_json(&policy_document).unwrap();
         Self {
             publisher,
@@ -130,14 +135,20 @@ impl Signers {
     }
 }
 
-fn policy(now: u64, publisher_key: &[u8; 32], builder_key: &[u8; 32], repository: &str) -> Vec<u8> {
+fn policy(
+    now: u64,
+    publisher_key: &[u8; 32],
+    builder_key: &[u8; 32],
+    repository: &str,
+    build_type: &str,
+) -> Vec<u8> {
     let publisher = json!({"formatVersion":1,"scope":"tests","generation":1,"validFrom":now - 60,"validUntil":now + 86400,
         "maxSignatureLifetimeSeconds":7200,"maxProofAgeSeconds":900,
         "keys":[{"publisherId":"angular-publisher","publicKey":STANDARD.encode(publisher_key),"validFrom":now - 60,"validUntil":now + 86400}]});
     let builder = json!({"formatVersion":1,"scope":"tests","generation":1,"validFrom":now - 60,"validUntil":now + 86400,
         "maxSignatureLifetimeSeconds":7200,"maxProofAgeSeconds":900,
         "keys":[{"builderId":"angular-builder","publicKey":STANDARD.encode(builder_key),"validFrom":now - 60,"validUntil":now + 86400}],
-        "requirements":[{"builderId":"angular-builder","buildType":ANGULAR_BUILD_TYPE,"sourceRepository":repository,"requireReproducible":false}]});
+        "requirements":[{"builderId":"angular-builder","buildType":build_type,"sourceRepository":repository,"requireReproducible":false}]});
     let publisher_digest = PublisherPolicy::from_json(
         &serde_json::to_vec(&publisher).unwrap(),
         SignatureLimits::default(),
