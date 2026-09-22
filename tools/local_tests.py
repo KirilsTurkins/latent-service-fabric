@@ -424,13 +424,17 @@ def _validate_angular_assets(repo: Path) -> tuple[Path, Path]:
 
 
 def validate_prepared(repo: Path, plan: dict, inventory: Path) -> None:
-    if plan["suite"] == ANGULAR_PROCESS:
-        _validate_angular_inventory(repo, inventory)
-        _validate_angular_assets(repo)
-        return
-    if not inventory.is_file() or inventory.is_symlink():
-        raise LocalTestError("prepared Cargo inventory is missing; run the reported prepare command")
-    _generic_prepared(repo, plan, inventory)
+    hint = " ".join(str(value) for value in plan["preparation"]["command"])
+    try:
+        if plan["suite"] == ANGULAR_PROCESS:
+            _validate_angular_inventory(repo, inventory)
+            _validate_angular_assets(repo)
+            return
+        if not inventory.is_file() or inventory.is_symlink():
+            raise LocalTestError("prepared Cargo inventory is missing")
+        _generic_prepared(repo, plan, inventory)
+    except LocalTestError as error:
+        raise LocalTestError(f"{error}; prepare with: {hint}") from None
 
 
 def prerequisite_check(repo: Path, plan: dict, inventory: Path | None) -> dict:
@@ -638,17 +642,37 @@ def _execute_suite(run: TestRun, repo: Path, plan: dict, inventory: Path) -> Non
         raise ProcessFailure("assertion-failure", "selected-suite-result-mismatch", result)
 
 
-def _diagnostic_from_output(output: bytes) -> str | None:
+def _test_run_summary(output: bytes) -> dict | None:
     for line in reversed(output.decode("utf-8", errors="replace").splitlines()):
         try:
             value = json.loads(line)
         except json.JSONDecodeError:
             continue
         if isinstance(value, dict) and value.get("suite") == "angular-renderer":
-            diagnostic = value.get("diagnostic")
-            if isinstance(diagnostic, str):
-                return diagnostic
+            return value
     return None
+
+
+def _diagnostic_category(repo: Path, summary: dict | None) -> str | None:
+    if not isinstance(summary, dict):
+        return None
+    name = summary.get("diagnostic")
+    if not isinstance(name, str) or Path(name).name != name or re.fullmatch(
+            r"angular-renderer-[0-9a-f]{32}\\.json", name) is None:
+        return None
+    path = repo / "target/test-diagnostics" / name
+    try:
+        info = path.lstat()
+        if path.is_symlink() or not stat.S_ISREG(info.st_mode) or info.st_size > MAX_REPORT:
+            return None
+        value = json.loads(path.read_bytes())
+    except (OSError, json.JSONDecodeError, UnicodeError, RecursionError):
+        return None
+    if (not isinstance(value, dict) or value.get("schemaVersion") != FAILURE_SCHEMA
+            or value.get("suite") != "angular-renderer"):
+        return None
+    category = value.get("category")
+    return category if isinstance(category, str) else None
 
 
 def _execute_angular_process(repo: Path, plan: dict, inventory: Path,
@@ -682,14 +706,24 @@ def _execute_angular_process(repo: Path, plan: dict, inventory: Path,
             "reason": error.reason,
         }
     print(result.output.decode("utf-8", errors="replace"), end="")
+    summary = _test_run_summary(result.output)
     code = result.returncode if result.returncode is not None and result.returncode >= 0 else (
         128 - result.returncode if result.returncode is not None else 1)
+    category = _diagnostic_category(repo, summary) if code != 0 else None
+    if code != 0:
+        code = {
+            "unavailable-environment": 3,
+            "cancelled": 130,
+            "infrastructure-timeout": 124,
+            "output-overflow": 125,
+        }.get(category, code)
     return code, {
         "schemaVersion": "latent.local-test-result.v1",
         "suite": ANGULAR_PROCESS,
-        "outcome": "passed" if code == 0 else "failed",
+        "outcome": summary.get("outcome") if isinstance(summary, dict) else ("passed" if code == 0 else "failed"),
+        "category": category,
         "fault": fault,
-        "diagnostic": _diagnostic_from_output(result.output),
+        "diagnostic": summary.get("diagnostic") if isinstance(summary, dict) else None,
     }
 
 
@@ -703,6 +737,7 @@ def execute(repo: Path, plan: dict, inventory: Path,
         return _execute_angular_process(repo, plan, inventory, fault)
     if fault is not None:
         raise LocalTestError("--fault is supported only by process.angular-renderer")
+    validate_prepared(repo, plan, inventory)
     reproduction = {
         "suite": plan["suite"], "cases": plan["cases"], "recipe": plan["recipe"],
         "mode": plan["mode"],
