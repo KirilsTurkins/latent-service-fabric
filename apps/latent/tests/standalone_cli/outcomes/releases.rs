@@ -22,9 +22,9 @@ pub(super) fn two_scoped_pages(harness: &Harness, generic: &Package) {
     let second_args = ["release", "list", "--page-size", "1", "--page-token", token];
     let second = harness.call("generic", &second_args, 0, "success");
     let mut expected = [generic.digest.as_str(), dormant.digest.as_str()];
-    expected.sort();
+    expected.sort_unstable();
     let mut observed = [single_digest(&first), single_digest(&second)];
-    observed.sort();
+    observed.sort_unstable();
     assert_eq!(observed, expected);
     // Catalog cursors follow publication identities, which also bind the
     // manifest. Changing a build version can change their component ordering.
