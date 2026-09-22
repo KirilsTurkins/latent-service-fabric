@@ -67,6 +67,13 @@ does it mark the mutation started and enter the catalog operation. Audit waits
 occur outside lifecycle, signing-authority and catalog commit fences; the audit
 worker never calls back into those owners.
 
+Control adapters use `reserve_control_critical` to synchronize with the audit
+worker's short memory-state fence before checking the unchanged finite journal
+and queue limits. Recovery snapshots and reconciliation use the same fence.
+Journal I/O stays outside it. Capability dispatch and diagnostic capture retain
+their nonblocking reservation APIs; a pending critical operation or exhausted
+capacity still rejects a new control reservation before mutation.
+
 The guard accepts a known conclusion only from the actual matching lifecycle
 receipt, or an exact scoped retained operation lookup after an error. The request
 identity and full preview receipt digest must match. Exact retries record the
