@@ -60,7 +60,10 @@ pub async fn dormant(
             )
             .await;
         assert_eq!(release["data"]["release"]["digest"], package.digest);
-        let deployment = package.deployment(id);
+        let publication = release["data"]["release"]["publication"]["id"]
+            .as_str()
+            .expect("exact admitted publication");
+        let deployment = package.deployment(id, publication);
         let applied = harness
             .call(
                 package.profile(),
