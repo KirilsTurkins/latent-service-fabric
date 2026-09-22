@@ -7,14 +7,19 @@ mod cache;
 mod fixture;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod integration;
+mod negotiation;
 mod prerender;
 mod request;
 mod source;
+mod static_site;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod static_tests;
 mod wire;
 
 use cache::{Buffer, Cache, MAX_BYTES};
 use latent_artifacts::{web::WebSelection, DirectoryArtifactRepository};
 use latent_core::{PlatformError, PlatformErrorCode, TenantId};
+use latent_routing::RevisionPolicySource;
 use request::Request;
 use serde::Serialize;
 use std::sync::{
@@ -30,6 +35,8 @@ const MAX_READS: usize = 4;
 pub(super) use prerender::select as prerender;
 pub(super) use wire::exchange;
 pub(super) use wire::exchange_routed;
+pub(super) use wire::exchange_static;
+pub(super) use wire::reject;
 
 #[derive(Clone, Copy, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -141,17 +148,34 @@ impl Store {
         if self.stopped.load(Ordering::Acquire) {
             return Err(503);
         }
-        let selection = self
-            .repository
-            .select_web_publication(&request.reference)
-            .map_err(|error| status(&error))?;
+        let captured = request
+            .route
+            .as_ref()
+            .and_then(|route| route.target().web_selection());
+        let selection = if captured.is_some() {
+            None
+        } else {
+            Some(
+                self.repository
+                    .select_web_publication(&request.reference)
+                    .map_err(|error| status(&error))?,
+            )
+        };
+        let selected = captured.or(selection.as_ref()).ok_or(502u16)?;
+        if selected.publication() != &request.reference {
+            return Err(502);
+        }
         // Never use a supplied digest as a grant or look up an arbitrary layer.
-        let asset = selection.layout().asset(&request.path).ok_or(404u16)?;
+        let asset = selected.layout().asset(&request.path).ok_or(404u16)?;
         let buffer = self
             .cache
             .read(asset, |digest, bytes| self.source.read(digest, bytes))?;
         let etag = identity(&asset.digest, asset.size, &asset.media_type);
-        let code = request.status(&etag)?;
+        let code = if request.redirect.is_some() {
+            308
+        } else {
+            request.status(&etag)?
+        };
         let media = asset.media_type.clone();
         Ok(Prepared {
             buffer,
@@ -167,7 +191,7 @@ impl Store {
 
 struct Prepared {
     buffer: Arc<Buffer>,
-    selection: WebSelection,
+    selection: Option<WebSelection>,
     request: Request,
     etag: String,
     media: String,
@@ -178,7 +202,11 @@ struct Prepared {
 impl Prepared {
     fn accept(&self, tenant: &TenantId) -> Result<(), u16> {
         if let Some(route) = &self.request.route {
-            use latent_routing::RevisionPolicySource;
+            if let Some(selection) = route.target().web_selection() {
+                return selection
+                    .with_current(tenant, &mut |current| current.check())
+                    .map_err(|error| status(&error));
+            }
             let catalog = route.catalog().ok_or(502u16)?;
             let revision = route.revision().ok_or(502u16)?;
             catalog
@@ -188,6 +216,8 @@ impl Prepared {
         // Required even for cache hits, HEAD and 304. Generation/policy changes
         // invalidate this acceptance instead of silently switching publications.
         self.selection
+            .as_ref()
+            .ok_or(502u16)?
             .with_current(tenant, &mut |current| current.check())
             .map_err(|error| status(&error))
     }

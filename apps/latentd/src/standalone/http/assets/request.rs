@@ -10,6 +10,7 @@ pub(in crate::standalone::http) struct Request {
     pub path: String,
     pub head: bool,
     pub route: Option<latent_control_store::http_routes::AcceptedHttpRoute>,
+    pub redirect: Option<String>,
     matching: Option<Tags>,
     none_matching: Option<Tags>,
 }
@@ -66,6 +67,7 @@ impl Request {
             path,
             head,
             route: None,
+            redirect: None,
             matching,
             none_matching,
         })
@@ -113,7 +115,10 @@ fn locator(target: &str, tenant: &TenantId) -> Result<(PublicationRef, String), 
     Ok((PublicationRef { id, scope }, format!("/{path}")))
 }
 
-fn single<'a>(headers: &'a [httparse::Header<'_>], name: &str) -> Result<Option<&'a str>, u16> {
+pub(super) fn single<'a>(
+    headers: &'a [httparse::Header<'_>],
+    name: &str,
+) -> Result<Option<&'a str>, u16> {
     let mut values = headers
         .iter()
         .filter(|header| header.name.eq_ignore_ascii_case(name));
@@ -229,7 +234,7 @@ fn identity_allowed(value: Option<&str>) -> Result<bool, u16> {
     }
     Ok(identity.map_or(wildcard != Some(0), |q| q != 0))
 }
-fn qvalue(value: &str) -> Result<u16, u16> {
+pub(super) fn qvalue(value: &str) -> Result<u16, u16> {
     let (whole, fraction) = value.split_once('.').unwrap_or((value, ""));
     if !matches!(whole, "0" | "1")
         || fraction.len() > 3

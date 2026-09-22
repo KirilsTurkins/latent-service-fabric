@@ -23,6 +23,30 @@ pub(super) fn select(head: &Head, shared: &Shared) -> Result<AcceptedHttpRoute, 
         .select_http(head.collector.target(), head.method())
         .map_err(|e| {
             if e.message == "http-route-not-found" {
+                // Only diagnose an owned static profile after the requested
+                // method genuinely missed. Never route HEAD through a GET
+                // application or replace an explicitly matched application.
+                for method in [http::Method::Get, http::Method::Head] {
+                    if method == head.method() {
+                        continue;
+                    }
+                    if let Ok(route) = shared
+                        .services
+                        .deployments
+                        .select_http(head.collector.target(), method)
+                    {
+                        if let AcceptedHttpTarget::StaticWeb { publication, .. } = route.target() {
+                            if let Some(tenant) = publication.scope.tenant() {
+                                if let Err(error) = LocalPrincipalPolicy
+                                    .authorize_target(&head.principal, &tenant.0)
+                                {
+                                    return status(error);
+                                }
+                                return 405;
+                            }
+                        }
+                    }
+                }
                 404
             } else {
                 status(e)
@@ -68,6 +92,11 @@ pub(super) fn begin(
     if !shared.handle.accepting() {
         return Err(503);
     }
+    // The static branch is consumed by shared asset delivery before this point.
+    // Refuse a misrouted call before reserving cleanup, trace or activation state.
+    if !matches!(accepted.target(), AcceptedHttpTarget::Application { .. }) {
+        return Err(502);
+    }
     let cleanup = shared
         .services
         .cleanup
@@ -85,10 +114,8 @@ pub(super) fn begin(
         .map_err(|e| e.status().unwrap_or(0))?;
     let (target, lease) = accepted.into_parts();
     let AcceptedHttpTarget::Application { revision, catalog } = target else {
-        // Static delivery is intentionally implemented by the dependent runtime
-        // issue; this ticket only installs first-class selection authority.
         drop(lease);
-        return Err(501);
+        return Err(502);
     };
     let request = ActivationRequest {
         activation_id: None,

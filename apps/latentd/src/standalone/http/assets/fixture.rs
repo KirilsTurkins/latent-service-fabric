@@ -142,6 +142,21 @@ fn upload(page: &[u8]) -> PackageAdmissionUpload {
     ])
 }
 pub(super) fn browser_upload(files: &[(&str, &str, &[u8])]) -> PackageAdmissionUpload {
+    configured_upload(
+        files,
+        None,
+        vec![WebRoute {
+            path: "/".into(),
+            mode: WebRenderMode::Client,
+            asset: Some("/index.html".into()),
+        }],
+    )
+}
+pub(super) fn configured_upload(
+    files: &[(&str, &str, &[u8])],
+    static_routing: Option<StaticWebRouting>,
+    routes: Vec<WebRoute>,
+) -> PackageAdmissionUpload {
     let mut assets: Vec<_> = files
         .iter()
         .map(|(path, media, bytes)| WebAsset {
@@ -162,12 +177,8 @@ pub(super) fn browser_upload(files: &[(&str, &str, &[u8])]) -> PackageAdmissionU
         profile: WEB_RELEASE_PROFILE.into(),
         assets_digest: asset_tree_digest(&assets).unwrap().to_string(),
         assets,
-        routes: vec![WebRoute {
-            path: "/".into(),
-            mode: WebRenderMode::Client,
-            asset: Some("/index.html".into()),
-        }],
-        static_routing: None,
+        routes,
+        static_routing,
         renderer: None,
     };
     let mut layers = vec![
