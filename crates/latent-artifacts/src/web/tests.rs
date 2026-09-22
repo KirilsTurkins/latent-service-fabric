@@ -112,30 +112,30 @@ fn static_routing_is_closed_signed_browser_metadata_with_html_documents() {
             document: Some("/index.html".into()),
         },
     });
-    let (package, bytes) = package(&document);
-    let checked = inspect_web_layout(&package, &bytes).unwrap();
+    let (layout, bytes) = package(&document);
+    let checked = inspect_web_layout(&layout, &bytes).unwrap();
     assert!(checked.manifest().static_routing.is_some());
     assert_ne!(checked.package(), &baseline);
 
     let mut missing = document.clone();
     missing.static_routing.as_mut().unwrap().entry_document = "/missing.html".into();
-    let (package, bytes) = package(&missing);
-    assert!(inspect_web_layout(&package, &bytes).is_err());
+    let (layout, bytes) = package(&missing);
+    assert!(inspect_web_layout(&layout, &bytes).is_err());
 
     let mut wrong_type = document.clone();
     wrong_type.assets[0].media_type = "text/plain".into();
-    let (package, bytes) = package(&wrong_type);
-    assert!(inspect_web_layout(&package, &bytes).is_err());
+    let (layout, bytes) = package(&wrong_type);
+    assert!(inspect_web_layout(&layout, &bytes).is_err());
 
     let mut incoherent = document.clone();
     incoherent.static_routing.as_mut().unwrap().fallback.mode = StaticFallbackMode::None;
-    let (package, bytes) = package(&incoherent);
-    assert!(inspect_web_layout(&package, &bytes).is_err());
+    let (layout, bytes) = package(&incoherent);
+    assert!(inspect_web_layout(&layout, &bytes).is_err());
 
     let mut ssr = manifest(true);
     ssr.static_routing = document.static_routing;
-    let (package, bytes) = package(&ssr);
-    assert!(inspect_web_layout(&package, &bytes).is_err());
+    let (layout, bytes) = package(&ssr);
+    assert!(inspect_web_layout(&layout, &bytes).is_err());
 
     let mut value = serde_json::to_value(manifest(false)).unwrap();
     value["staticRouting"] = serde_json::json!({

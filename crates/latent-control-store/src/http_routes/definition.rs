@@ -84,15 +84,18 @@ pub(crate) fn normalize(
             if profile != PROFILE
                 || target.contract.0 != CONTRACT
                 || target.function != FUNCTION
-                || target.route.as_deref().is_none_or(|route| route == "default")
+                || target
+                    .route
+                    .as_deref()
+                    .is_none_or(|route| route == "default")
                 || target.publication.is_none()
                 || target
                     .deployment_generation
                     .is_none_or(|generation| generation == 0)
                 || !target.revision.as_ref().is_some_and(|revision| {
-                    revision
-                        .strip_prefix("revision-v1:")
-                        .is_some_and(|digest| digest.parse::<latent_core::ArtifactBlobDigest>().is_ok())
+                    revision.strip_prefix("revision-v1:").is_some_and(|digest| {
+                        digest.parse::<latent_core::ArtifactBlobDigest>().is_ok()
+                    })
                 })
             {
                 return Err(invalid());
@@ -184,10 +187,7 @@ pub(crate) fn bounded(value: &TriggerManifest) -> Result<(), PlatformError> {
                     .route
                     .as_ref()
                     .is_some_and(|s| !text(s, MAX_IDENTIFIER_BYTES))
-                || target
-                    .revision
-                    .as_ref()
-                    .is_some_and(|s| !text(s, 128))
+                || target.revision.as_ref().is_some_and(|s| !text(s, 128))
             {
                 return Err(invalid());
             }
@@ -227,4 +227,3 @@ pub(crate) fn bounded(value: &TriggerManifest) -> Result<(), PlatformError> {
     }
     Ok(())
 }
-

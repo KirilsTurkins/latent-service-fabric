@@ -1,6 +1,18 @@
 //! Metadata and catalog authority tests; guest execution has its own HTTP suite.
 use super::fixtures::*;
 use crate::{http_routes::*, DeploymentStore};
+use latent_artifacts::package::{
+    artifact_blob_digest, encode_config as encode_package_config,
+    encode_manifest as encode_package_manifest, inspect_package, ArtifactDescriptor, LayerRole,
+    PackageConfig, PackageKind, PackageLayer, PackageLimits, PackageManifest,
+    LAYER_PATH_ANNOTATION, LAYER_ROLE_ANNOTATION, OCI_MANIFEST_MEDIA_TYPE,
+    PACKAGE_CONFIG_MEDIA_TYPE,
+};
+use latent_artifacts::web::{
+    asset_tree_digest, inspect_web_layout, StaticDirectoryIndexMode, StaticFallbackMode,
+    StaticWebFallback, StaticWebRouting, StaticWebRoutingProfile, WebApplicationManifest, WebAsset,
+    WebRenderMode, WebRoute, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
+};
 use latent_artifacts::{
     AdmissionAuthority, AdmissionBinding, AdmissionRecheck, AdmissionStorageLimits,
     ArtifactRepository, DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig,
@@ -16,18 +28,6 @@ use latent_core::{
 use latent_ingress::http::{CanonicalTarget, Method, Scheme};
 use latent_manifest::{__serde_json as json, JsonManifestCodec, ManifestCodec, TriggerManifest};
 use latent_routing::{RevisionPolicySource, RouteResolver};
-use latent_artifacts::package::{
-    artifact_blob_digest, encode_config as encode_package_config,
-    encode_manifest as encode_package_manifest, inspect_package, ArtifactDescriptor, LayerRole,
-    PackageConfig, PackageKind, PackageLayer, PackageLimits, PackageManifest,
-    LAYER_PATH_ANNOTATION, LAYER_ROLE_ANNOTATION, OCI_MANIFEST_MEDIA_TYPE,
-    PACKAGE_CONFIG_MEDIA_TYPE,
-};
-use latent_artifacts::web::{
-    asset_tree_digest, inspect_web_layout, StaticDirectoryIndexMode, StaticFallbackMode,
-    StaticWebFallback, StaticWebRouting, StaticWebRoutingProfile, WebApplicationManifest, WebAsset,
-    WebRoute, WebRenderMode, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
-};
 use std::any::Any;
 use std::collections::BTreeMap;
 use std::sync::{atomic::Ordering, Arc};
@@ -456,7 +456,10 @@ fn http_atomic_routes_exact_replay_delete_recreate_and_restart() {
     let command = request(&store, "create", definition.clone(), 0);
     let receipt = execute(&store, command.clone()).value().receipt.clone();
     let held = selected(&store, "alice", "/anything").unwrap();
-    assert_eq!(held.revision().unwrap().publication.as_ref(), Some(&publication.id));
+    assert_eq!(
+        held.revision().unwrap().publication.as_ref(),
+        Some(&publication.id)
+    );
     assert_eq!(held.state_version(), receipt.state_version);
     let original = std::fs::read(roots[1].0.join("catalog.json")).unwrap();
     assert!(execute(&store, command.clone()).value().replayed);
@@ -476,7 +479,10 @@ fn http_atomic_routes_exact_replay_delete_recreate_and_restart() {
         receipt.object_generation,
     );
     assert!(selected(&store, "alice", "/anything").is_err());
-    held.catalog().unwrap().admission_policy(held.revision().unwrap()).unwrap();
+    held.catalog()
+        .unwrap()
+        .admission_policy(held.revision().unwrap())
+        .unwrap();
     assert!(execute(&store, command.clone()).value().replayed);
     assert!(get(&store, "alice", "browser").value().trigger.is_none());
     let next = execute(&store, request(&store, "recreate", definition, 0))

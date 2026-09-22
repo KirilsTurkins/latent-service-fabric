@@ -93,7 +93,9 @@ impl TriggerTargetIdentity {
     #[must_use]
     pub const fn publication(&self) -> &PublicationRef {
         match self {
-            Self::Application { publication, .. } | Self::StaticWeb { publication, .. } => publication,
+            Self::Application { publication, .. } | Self::StaticWeb { publication, .. } => {
+                publication
+            }
         }
     }
     #[must_use]

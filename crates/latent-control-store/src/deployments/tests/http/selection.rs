@@ -63,7 +63,10 @@ fn http_exact_prefix_precedence_canonical_conflicts_and_no_stale_fallback() {
         selected(&store, "alice", "/other").unwrap().trigger().0,
         "root"
     );
-    held.catalog().unwrap().admission_policy(held.revision().unwrap()).unwrap();
+    held.catalog()
+        .unwrap()
+        .admission_policy(held.revision().unwrap())
+        .unwrap();
     let target = CanonicalTarget::parse(Scheme::Https, "alice.example.test", "/other").unwrap();
     assert!(store.select_http(&target, Method::Head).is_err());
 }
@@ -134,7 +137,11 @@ fn http_publications_sharing_bytes_and_tenants_keep_independent_routes_and_revoc
         &mut |_| Ok(()),
     )
     .unwrap();
-    assert!(held.catalog().unwrap().admission_policy(held.revision().unwrap()).is_err());
+    assert!(held
+        .catalog()
+        .unwrap()
+        .admission_policy(held.revision().unwrap())
+        .is_err());
     assert!(selected(&store, "alice", "/old").is_err());
     assert_eq!(
         selected(&store, "alice", "/new")

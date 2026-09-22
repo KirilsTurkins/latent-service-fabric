@@ -1,14 +1,14 @@
 use super::super::{DirectoryDeploymentRepository, PinnedRouteResolver, PublicationView};
 use crate::http_routes::{
     capacity, conflict, corrupt,
-    definition::{reserved_node_path, Matcher},
+    definition::reserved_node_path,
     TriggerReadLease, TriggerTargetIdentity, MAX_DEFINITION_BYTES,
 };
 use latent_artifacts::{web::WebSelection, PublicationRef};
 use latent_core::{DeploymentId, FunctionId, PlatformError, PlatformErrorCode, TriggerId};
 use latent_ingress::http::{CanonicalTarget, Method};
 use latent_manifest::{TriggerManifest, TriggerTarget};
-use latent_routing::{InvocationTarget, ResolvedRevision};
+use latent_routing::{InvocationTarget, ResolvedRevision, RevisionPolicySource};
 use std::sync::Arc;
 
 /// The selected authority variant is explicit. A static route never fabricates
@@ -195,13 +195,7 @@ impl DirectoryDeploymentRepository {
         let TriggerTarget::Application(manifest_target) = &manifest.target else {
             return Err(conflict());
         };
-        let id = DeploymentId(
-            manifest_target
-                .route
-                .as_ref()
-                .ok_or_else(conflict)?
-                .clone(),
-        );
+        let id = DeploymentId(manifest_target.route.as_ref().ok_or_else(conflict)?.clone());
         let record = view.routes.record_by_id(&id).ok_or_else(conflict)?;
         if record.deployment.metadata.tenant.as_ref() != Some(tenant)
             || record.deployment.service != manifest_target.service
