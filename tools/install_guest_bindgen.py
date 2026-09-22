@@ -11,8 +11,8 @@ import tarfile
 import time
 import urllib.request
 
-VERSION = "0.60.0"
-ARCHIVE_SHA256 = "6dc887e6d66a183d196885ff611e7f0a7db64db189f95c18f2a65fcf65d3651b"
+VERSION = "0.62.0"
+ARCHIVE_SHA256 = "3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe"
 URL = (f"https://github.com/bytecodealliance/wit-bindgen/releases/download/v{VERSION}/"
        f"wit-bindgen-{VERSION}-x86_64-linux.tar.gz")
 MAX_ARCHIVE = 32 * 1024 * 1024

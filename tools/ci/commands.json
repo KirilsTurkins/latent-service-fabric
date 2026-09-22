@@ -28,7 +28,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts\npython3 tools/ci_coverage.py\nLSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner\npython3 tools/validate_docs.py"
+      "run": "python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests\npython3 tools/ci_coverage.py\nLSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner\npython3 tools/validate_docs.py"
     },
     ".github/workflows/ci.yml:docs:Preserve repository source contracts in the host-only profile": {
       "workflow": ".github/workflows/ci.yml",
@@ -218,7 +218,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "bash",
-      "run": "set -o pipefail\npython3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite metadata-working-set 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\""
+      "run": "set -o pipefail\npython3 tools/test.py check --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py prepare --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py run --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\""
     },
     ".github/workflows/ci.yml:rust:Validate small Phase 3 resource regressions": {
       "workflow": ".github/workflows/ci.yml",
@@ -230,86 +230,6 @@
       "shell": "default",
       "run": "python3 -m unittest tools.tests.test_phase3_resource tools.tests.test_phase3_resource_web"
     },
-    ".github/workflows/ci.yml:rust:Qualify bounded Angular SSR and browser hydration": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Qualify bounded Angular SSR and browser hydration",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": "examples/renderer-profile",
-      "shell": "default",
-      "run": "npm ci --ignore-scripts --no-audit --no-fund\nnpm run build\nnode node-candidate.mjs\ntimeout 480 ../../target/debug/latent-renderer-profile dist/renderer.wasm dist/wasmtime-rendered.html\nnode hydrate.mjs \"$(command -v google-chrome)\""
-    },
-    ".github/workflows/ci.yml:rust:browser_boundary": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "browser_boundary",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "node --test tools/tests/browser_hydration.test.mjs tools/tests/browser_application.test.mjs\nnode tools/browser-boundary/build.mjs examples/renderer-profile \"$RUNNER_TEMP/browser-boundary\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-boundary/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-boundary/application.wasm\"\nLSF_WEB_COMPONENT=\"$RUNNER_TEMP/browser-boundary/application.wasm\" LSF_BROWSER_BUILD=\"$RUNNER_TEMP/browser-boundary\" LSF_BROWSER_NODE=\"$(command -v node)\" LSF_BROWSER_CHROME=\"$(command -v google-chrome)\" LSF_BROWSER_TOOLCHAIN=\"$PWD/examples/renderer-profile\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite browser-boundary"
-    },
-    ".github/workflows/ci.yml:rust:Build the public Angular renderer fixture": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Build the public Angular renderer fixture",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 tools/build_angular_renderer.py"
-    },
-    ".github/workflows/ci.yml:rust:Validate Angular in generic cells and the shared HTTP node": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Validate Angular in generic cells and the shared HTTP node",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 tools/run_angular_renderer_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --component examples/renderer-profile/dist/runtime/application.wasm --diagnostic-root \"$RUNNER_TEMP/owned-renderer\""
-    },
-    ".github/workflows/ci.yml:rust:Exercise renderer ownership failure after exact discovery": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Exercise renderer ownership failure after exact discovery",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "status=0\npython3 tools/run_angular_renderer_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --component examples/renderer-profile/dist/runtime/application.wasm --inject-failure after-discovery --diagnostic-root \"$RUNNER_TEMP/owned-renderer-fault\" || status=$?\ntest \"$status\" -eq 1\npython3 tools/check_owned_diagnostics.py \"$RUNNER_TEMP/owned-renderer-fault\" --suite angular-renderer --reason injected-after-discovery"
-    },
-    ".github/workflows/ci.yml:rust:Check observed Angular build and source separation boundaries": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Check observed Angular build and source separation boundaries",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_build_angular_package tools.tests.test_build_inventory tools.tests.test_web_admission_schemas tools.tests.test_angular_build_runner"
-    },
-    ".github/workflows/ci.yml:rust:Produce the observed Angular application package": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Produce the observed Angular application package",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "# Full debug sections can exceed the observed tool's finite byte cap.\n# Observe and execute this exact stripped copy, as for the AOT fixture.\nobjcopy --strip-debug \"$PWD/target/debug/latent\" \"$RUNNER_TEMP/lsf-angular-package-assembler\"\nstat --format='Angular package assembler: %s bytes' \"$RUNNER_TEMP/lsf-angular-package-assembler\"\npython3 tools/build_angular_package.py --input-root examples/angular-application --toolchain-root examples/renderer-profile --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --target-root \"$RUNNER_TEMP/angular-build\" --output \"$RUNNER_TEMP/angular-build/actual\" --cargo-target-dir \"$PWD/target\" --repository https://example.com/source"
-    },
-    ".github/workflows/ci.yml:rust:Verify actual Angular package admission, fresh rendering and browser hydration": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Verify actual Angular package admission, fresh rendering and browser hydration",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 tools/run_angular_build_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --build \"$RUNNER_TEMP/angular-build/actual\" --html \"$RUNNER_TEMP/angular-build/rendered.html\"\nnode tools/check_angular_hydration.mjs examples/renderer-profile \"$RUNNER_TEMP/angular-build/actual\" \"$RUNNER_TEMP/angular-build/rendered.html\" \"$(command -v google-chrome)\""
-    },
     ".github/workflows/ci.yml:rust:Fetch the pinned operator workflow registry": {
       "workflow": ".github/workflows/ci.yml",
       "job": "rust",
@@ -319,86 +239,6 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395"
-    },
-    ".github/workflows/ci.yml:rust:Fetch the pinned S3 conformance server": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Fetch the pinned S3 conformance server",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "docker pull quay.io/minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2"
-    },
-    ".github/workflows/ci.yml:rust:Validate S3 blobs with the existing test harness": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Validate S3 blobs with the existing test harness",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 tools/run_s3_blob_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\""
-    },
-    ".github/workflows/ci.yml:rust:Fetch the pinned Vault conformance server": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Fetch the pinned Vault conformance server",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "docker pull hashicorp/vault@sha256:783103ba38c5e3edcaa9bbbcb0ff80fc93c690361f03fd487e89227da6c3efa9"
-    },
-    ".github/workflows/ci.yml:rust:Validate Vault secrets with the existing test harness": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Validate Vault secrets with the existing test harness",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 tools/run_vault_secret_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\""
-    },
-    ".github/workflows/ci.yml:rust:Fetch the pinned NATS conformance server": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Fetch the pinned NATS conformance server",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "docker pull nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc"
-    },
-    ".github/workflows/ci.yml:rust:Validate NATS events with the existing test harness": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Validate NATS events with the existing test harness",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 tools/run_nats_event_tests.py --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\""
-    },
-    ".github/workflows/ci.yml:rust:Validate NATS triggers with the existing test harness": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Validate NATS triggers with the existing test harness",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 tools/run_nats_event_tests.py --suite nats_triggers --test-manifest \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\""
-    },
-    ".github/workflows/ci.yml:rust:Validate capability policy CLI lifecycle": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Validate capability policy CLI lifecycle",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 tools/run_capability_policy_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\""
     },
     ".github/workflows/ci.yml:rust:Validate bounded Phase 2 delivery and resource workflows": {
       "workflow": ".github/workflows/ci.yml",
@@ -1329,6 +1169,26 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 -m unittest tools.tests.test_phase3_security\nmkdir -p target/phase3-security\npython3 tools/phase3_security.py --profile pr --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --source-commit \"$GITHUB_SHA\" --output target/phase3-security/pr-receipt.json"
+    },
+    ".github/workflows/ci.yml:rust:Prepare immutable browser lane component": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Prepare immutable browser lane component",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "mkdir -p \"$RUNNER_TEMP/browser-component\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-component/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-component/application.wasm\""
+    },
+    ".github/workflows/ci.yml:rust:integration_lanes": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "integration_lanes",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2401,9 +2261,9 @@
       "reason": "Full-profile validation is retained. Inventory/discovery/aggregation checks are added; host-only source contracts and MSRV receive same-change replacements. Runtime, security, release and resource gates remain required when affected."
     },
     ".github/workflows/ci.yml:rust:Build the public Angular renderer fixture": {
-      "after": ".github/workflows/ci.yml:rust:Build the public Angular renderer fixture",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Build workspace binaries and test harnesses": {
       "after": ".github/workflows/ci.yml:rust:Build workspace binaries and test harnesses",
@@ -2426,9 +2286,9 @@
       "reason": "The exact command and its triggering conditions are retained."
     },
     ".github/workflows/ci.yml:rust:Check observed Angular build and source separation boundaries": {
-      "after": ".github/workflows/ci.yml:rust:Check observed Angular build and source separation boundaries",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Check workspace": {
       "after": ".github/workflows/ci.yml:rust:Check workspace",
@@ -2441,19 +2301,19 @@
       "reason": "The exact command and its triggering conditions are retained."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned NATS conformance server": {
-      "after": ".github/workflows/ci.yml:rust:Fetch the pinned NATS conformance server",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned S3 conformance server": {
-      "after": ".github/workflows/ci.yml:rust:Fetch the pinned S3 conformance server",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned Vault conformance server": {
-      "after": ".github/workflows/ci.yml:rust:Fetch the pinned Vault conformance server",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned operator workflow registry": {
       "after": ".github/workflows/ci.yml:rust:Fetch the pinned operator workflow registry",
@@ -2461,14 +2321,14 @@
       "reason": "The exact command and its triggering conditions are retained."
     },
     ".github/workflows/ci.yml:rust:Produce the observed Angular application package": {
-      "after": ".github/workflows/ci.yml:rust:Produce the observed Angular application package",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Qualify bounded Angular SSR and browser hydration": {
-      "after": ".github/workflows/ci.yml:rust:Qualify bounded Angular SSR and browser hydration",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Run tests": {
       "after": ".github/workflows/ci.yml:rust:Run tests",
@@ -2476,29 +2336,29 @@
       "reason": "Full-profile validation is retained. Inventory/discovery/aggregation checks are added; host-only source contracts and MSRV receive same-change replacements. Runtime, security, release and resource gates remain required when affected."
     },
     ".github/workflows/ci.yml:rust:Validate Angular in generic cells and the shared HTTP node": {
-      "after": ".github/workflows/ci.yml:rust:Validate Angular in generic cells and the shared HTTP node",
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Retain the original validation and add the merged owned-process prerequisites and diagnostic handoff."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Validate NATS events with the existing test harness": {
-      "after": ".github/workflows/ci.yml:rust:Validate NATS events with the existing test harness",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Validate NATS triggers with the existing test harness": {
-      "after": ".github/workflows/ci.yml:rust:Validate NATS triggers with the existing test harness",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Validate S3 blobs with the existing test harness": {
-      "after": ".github/workflows/ci.yml:rust:Validate S3 blobs with the existing test harness",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Validate Vault secrets with the existing test harness": {
-      "after": ".github/workflows/ci.yml:rust:Validate Vault secrets with the existing test harness",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Validate bounded Phase 2 delivery and resource workflows": {
       "after": ".github/workflows/ci.yml:rust:Validate bounded Phase 2 delivery and resource workflows",
@@ -2506,19 +2366,19 @@
       "reason": "The exact command and its triggering conditions are retained."
     },
     ".github/workflows/ci.yml:rust:Validate browser boundary with live ingress": {
-      "after": ".github/workflows/ci.yml:rust:browser_boundary",
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Preserve the live ingress browser cases with exact current Cargo artifact selection and authenticated test inputs."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Validate capability policy CLI lifecycle": {
-      "after": ".github/workflows/ci.yml:rust:Validate capability policy CLI lifecycle",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Verify actual Angular package admission, fresh rendering and browser hydration": {
-      "after": ".github/workflows/ci.yml:rust:Verify actual Angular package admission, fresh rendering and browser hydration",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "disposition": "extended",
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:clippy": {
       "after": ".github/workflows/ci.yml:rust:clippy",
@@ -2823,7 +2683,7 @@
       "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
     },
     "tools/build_guest_capsules.py": {
-      "sha256": "ba8763f38cbd11f41a526bcc4a59ac6c09b9c456f137d337598f333174d1eaab"
+      "sha256": "62c3ef3aadb3c9b4ee1d319ef59730292c609de1e01b805ef0ac9613b6550976"
     },
     "tools/build_native_runtime.py": {
       "sha256": "8aa6e2df82afe7f69c4acc7ae4ddddcc339b0ee16681cfa0984df90623aa4732"
@@ -2852,6 +2712,9 @@
     "tools/ci_fast.py": {
       "sha256": "62bbebe6115eb6932a4aaf92d68ab1794457a4c069c1d32a51eba82b7c829a44"
     },
+    "tools/ci_lane_worker.py": {
+      "sha256": "eea815b98d48cc7af4207a3ff10ac94dd2d3ba6c6a88e83e4e826a59fc269537"
+    },
     "tools/ci_profile.py": {
       "sha256": "63949a0f50b4b7e3554383ade3a5f0ab51fed79a182fa301478df31501359fc8"
     },
@@ -2868,7 +2731,7 @@
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
     },
     "tools/install_guest_bindgen.py": {
-      "sha256": "39d851e5fea222e68164c7bfb36dc8d924d2c839b01d6b3af94acc65d5fa21ab"
+      "sha256": "5b44bb8ee33f2d0b2466afa6a38b990fb1358fbd9818061b392ef960b535eca1"
     },
     "tools/native_release_gate.py": {
       "sha256": "422d2f5ed37378b20b001dcbde435ee16e68679becf64582bf062e8722ad4a46"
@@ -2880,7 +2743,7 @@
       "sha256": "46f01052e597827d1366b1b934b0d9e56903b499555155de60ba02a75a26f3b0"
     },
     "tools/phase3_resource_campaign.py": {
-      "sha256": "6d4f990fd2fa02b9c0b3c4c133161516d36bd60e01da3dd2549258ce3cb841cf"
+      "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
     },
     "tools/phase3_security.py": {
       "sha256": "5f904fc5c0ee5da777645fbc6b86215592a6bfe4fb98faf16bf147b3da7f7e41"
@@ -2902,6 +2765,9 @@
     },
     "tools/run_capability_policy_workflow.py": {
       "sha256": "0db72276676bd30bfc1a1ed9bb01c3e0e634c25d02dd6af1f62067a070c27518"
+    },
+    "tools/run_ci_lanes.py": {
+      "sha256": "895017b292b9935a603f399e68fd16be20d491d7946c8345814c72636562fbdf"
     },
     "tools/run_native_vm.py": {
       "sha256": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12"
@@ -3010,6 +2876,9 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
+    },
+    "tools/test.py": {
+      "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
     }
   },
   "pythonCases": {
@@ -3476,6 +3345,7 @@
     ],
     "tools/tests/test_guest_build_profiles.py": [
       "GeneratorArchive.test_links_missing_duplicate_and_oversized_binary_fail",
+      "GeneratorArchive.test_pinned_generator_version_matches_toolchain_and_lock",
       "GeneratorArchive.test_verified_regular_binary_only",
       "GuestProfileSchemas.test_echo_snapshot_can_still_capture_every_workspace_member",
       "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate"
@@ -5144,6 +5014,8 @@
       "EvidenceTests.test_partial_provider_and_cell_observations_are_rejected",
       "EvidenceTests.test_refused_density_is_not_a_proven_capacity_ceiling_or_campaign_pass",
       "EvidenceTests.test_retained_active_owner_is_not_quiet",
+      "EvidenceTests.test_retained_checksum_accepts_collector_and_exact_sha256sum_records",
+      "EvidenceTests.test_retained_checksum_rejects_wrong_file_digest_extra_records_and_oversize",
       "EvidenceTests.test_unobserved_counters_are_not_treated_as_zero",
       "ProcTests.test_network_namespace_rows_must_match_owned_descriptor_inodes",
       "ProcTests.test_real_owned_process_is_measured_then_reaped_not_adopted",
@@ -5612,6 +5484,83 @@
     ],
     "tools/tests/test_zig_cache_boundary.py": [
       "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation"
+    ],
+    "tools/tests/test_ci_lanes.py": [
+      "ExecutionPolicyTests.test_cancel_before_dispatch_never_runs_work",
+      "ExecutionPolicyTests.test_cancel_between_exit_and_cleanup_is_not_success",
+      "ExecutionPolicyTests.test_cancel_during_execution_retains_resources_until_cleanup",
+      "ExecutionPolicyTests.test_cancelled_provider_blocks_consumers",
+      "ExecutionPolicyTests.test_case_order_does_not_change_case_parity",
+      "ExecutionPolicyTests.test_exclusive_probe_drains_then_holds_every_group",
+      "ExecutionPolicyTests.test_failed_preparation_blocks_transitive_consumers_not_diagnostics",
+      "ExecutionPolicyTests.test_failed_renderer_does_not_suppress_independent_provider",
+      "ExecutionPolicyTests.test_fixed_seed_random_dags_preserve_bounds_and_coverage",
+      "ExecutionPolicyTests.test_foreign_run_and_reconstructed_leases_are_rejected",
+      "ExecutionPolicyTests.test_missing_dispatch_receipt_cannot_pass",
+      "ExecutionPolicyTests.test_missing_retirement_cannot_pass_or_unblock_work",
+      "ExecutionPolicyTests.test_missing_wrong_duplicate_and_extra_completion_evidence_fail",
+      "ExecutionPolicyTests.test_ready_exclusive_probe_cannot_starve",
+      "ExecutionPolicyTests.test_requires_prerequisite_retirement_not_only_exit",
+      "ExecutionPolicyTests.test_retirement_and_completion_are_single_use",
+      "ExecutionPolicyTests.test_same_group_capacity_two_is_explicit",
+      "ExecutionPolicyTests.test_serial_policy_has_one_live_stage",
+      "ExecutionPolicyTests.test_worker_and_group_bounds",
+      "GraphTests.test_accepts_non_topological_declaration_order",
+      "GraphTests.test_build_and_preparation_phases_are_distinct",
+      "GraphTests.test_configuration_and_snapshots_do_not_expose_mutable_state",
+      "GraphTests.test_rejects_duplicate_dependencies_cases_and_receipts",
+      "GraphTests.test_rejects_empty_duplicate_and_oversized_graphs",
+      "GraphTests.test_rejects_empty_execution_selection",
+      "GraphTests.test_rejects_invalid_stage_names_and_phases",
+      "GraphTests.test_rejects_missing_self_and_cyclic_dependencies",
+      "GraphTests.test_rejects_undeclared_groups_and_invalid_capacities",
+      "GraphTests.test_requires_explicit_bounded_workers",
+      "GraphTests.test_requires_finite_stage_watchdog_without_activation_override",
+      "IntegrationContractTests.test_current_inventory_supplies_nonempty_exact_lane_cases",
+      "IntegrationContractTests.test_missing_lane_receipt_fails_closed",
+      "IntegrationContractTests.test_real_lane_graph_dispatches_provider_and_renderer_together",
+      "IntegrationContractTests.test_receipt_requires_exact_steps_cases_and_timing",
+      "JobResultTests.test_accepts_only_exact_expected_results",
+      "JobResultTests.test_empty_or_overlapping_required_selection_is_invalid",
+      "JobResultTests.test_intentionally_unselected_is_not_missing_or_successful",
+      "JobResultTests.test_missing_and_unregistered_job_fail",
+      "JobResultTests.test_required_failure_cancellation_skip_and_missing_output_fail"
+    ],
+    "tools/tests/test_ci_lane_inventory.py": [
+      "InventoryTests.test_complete_model_matches",
+      "InventoryTests.test_current_suite_inventory_supplies_exact_lane_contracts",
+      "InventoryTests.test_final_result_and_superseded_cancellation_remain_fail_closed",
+      "InventoryTests.test_inventory_drift_is_rejected",
+      "InventoryTests.test_lane_is_single_bounded_owner_with_reviewed_command",
+      "InventoryTests.test_manual_catalog_scope_is_unchanged",
+      "InventoryTests.test_old_serial_renderer_and_provider_slots_cannot_return",
+      "InventoryTests.test_physical_qualification_stays_after_bounded_lanes",
+      "InventoryTests.test_renderer_preparation_remains_conditionally_selected",
+      "InventoryTests.test_unknown_schema_is_rejected",
+      "InventoryTests.test_worker_choice_is_explicitly_one_or_two",
+      "RepositoryInventoryTests.test_current_workflow_has_the_bounded_lane_contract"
+    ],
+    "tools/tests/test_local_tests.py": [
+      "CommandTests.test_check_missing_inventory_is_not_success",
+      "CommandTests.test_optional_interfaces_do_not_fallback",
+      "CommandTests.test_prepare_reuses_existing_inventory_without_build",
+      "CommandTests.test_prepare_uses_only_the_registered_build_recipe",
+      "CommandTests.test_run_requires_explicit_suite_and_prepared_inventory",
+      "CommandTests.test_unscoped_version_checker_is_not_executed",
+      "DriftTests.test_ci_routes_a_real_prepared_selection_through_the_same_entrypoint",
+      "DriftTests.test_contributor_guide_links_the_local_entrypoint",
+      "DriftTests.test_documented_commands_parse_and_cover_three_workflows",
+      "FailureRecordTests.test_bounded_failure_record_accepts_only_sanitized_selection",
+      "FailureRecordTests.test_changed_checkout_requires_explicit_label_even_with_same_artifact",
+      "FailureRecordTests.test_passing_unknown_duplicate_and_oversized_records_are_rejected",
+      "FailureRecordTests.test_reproduction_does_not_accept_a_different_artifact_identity",
+      "PlanningTests.test_custom_harness_is_never_treated_as_libtest",
+      "PlanningTests.test_exact_host_case_never_becomes_a_substring_filter",
+      "PlanningTests.test_ignored_runtime_suite_requires_an_exact_case",
+      "PlanningTests.test_planning_reads_only_the_shared_inventory",
+      "PlanningTests.test_prepare_and_run_commands_keep_exact_suite_and_case",
+      "PlanningTests.test_provider_selection_keeps_its_existing_fixture_owner",
+      "PlanningTests.test_registered_selection_reuses_same_owner_and_cases"
     ]
   },
   "pythonTestModules": [
@@ -5641,6 +5590,8 @@
     "tools/tests/test_check_tool_versions.py",
     "tools/tests/test_ci_browser_artifacts.py",
     "tools/tests/test_ci_coverage.py",
+    "tools/tests/test_ci_lane_inventory.py",
+    "tools/tests/test_ci_lanes.py",
     "tools/tests/test_ci_profile.py",
     "tools/tests/test_ci_result.py",
     "tools/tests/test_ci_rust_artifacts.py",
@@ -5658,6 +5609,7 @@
     "tools/tests/test_illustration_palette.py",
     "tools/tests/test_java_provider_launch.py",
     "tools/tests/test_java_toolchain.py",
+    "tools/tests/test_local_tests.py",
     "tools/tests/test_manifest_codec_contract.py",
     "tools/tests/test_manifest_integer_dialect.py",
     "tools/tests/test_metadata_working_set.py",
@@ -5849,7 +5801,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "8b1e6e34025714532b981d443ece54bb1722f9c4bbf033719f6ea137fa7c6975",
+    ".github/workflows/ci.yml": "67c04dd0e9012fe4ae7d8f3acd8198b8f6b8e59a278de92eceb45c3275fd3f99",
     ".github/workflows/docs-pages.yml": "87ca4f1d44d6de1e14960abb0f1d7a883d40ae52ffcaba8d4cfdcf0a888c7a3e",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0e84b07e365798040f2ff4c360d8fa4b959dfc46fdab8867662381508f1ef15d",
