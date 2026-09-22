@@ -82,6 +82,7 @@ fn manifest(renderer: bool) -> WebApplicationManifest {
                 Some("/index.html".into())
             },
         }],
+        static_routing: None,
         renderer: renderer.then(|| WebRenderer {
             layer: "server/renderer.wasm".into(),
             digest: artifact_blob_digest(b"\0asm\x0d\0\x01\0").to_string(),
