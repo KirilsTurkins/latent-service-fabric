@@ -520,7 +520,7 @@ jobs:
                 (github.event_name == 'workflow_dispatch' &&
                  (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Receive bounded observed echo inputs
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: phase-2-observed-echo-${{ github.sha }}
           path: target/capsules/echo-provenance
@@ -547,7 +547,7 @@ jobs:
       - name: Validate bounded authenticated OCI distribution
         run: python3 tools/run_oci_registry_tests.py --test-manifest "$RUNNER_TEMP/lsf-oci-tests.jsonl" --state-file "$RUNNER_TEMP/lsf-oci-registry.json" --provenance-input target/capsules/echo-provenance --diagnostic-root "$RUNNER_TEMP/owned-oci"
       - name: Receive bounded public web component
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: phase-3-web-contract-${{ github.sha }}
           path: target/capsules/web-contract
