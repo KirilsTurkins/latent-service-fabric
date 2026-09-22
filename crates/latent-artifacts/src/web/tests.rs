@@ -1,7 +1,8 @@
 use super::{
-    asset_tree_digest, inspect_web_layout, renderer_profile_digest, WebApplicationManifest,
-    WebAsset, WebRenderMode, WebRenderer, WebRendererProfile, WebRoute, MAX_WEB_ASSETS,
-    WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
+    asset_tree_digest, inspect_web_layout, renderer_profile_digest, StaticDirectoryIndexMode,
+    StaticFallbackMode, StaticWebFallback, StaticWebRouting, StaticWebRoutingProfile,
+    WebApplicationManifest, WebAsset, WebRenderMode, WebRenderer, WebRendererProfile, WebRoute,
+    MAX_WEB_ASSETS, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
 };
 use crate::package::{
     artifact_blob_digest, encode_config, encode_manifest, inspect_package, ArtifactDescriptor,
@@ -94,6 +95,58 @@ fn manifest(renderer: bool) -> WebApplicationManifest {
             backend_profile: super::WebBackendProfile::None,
         }),
     }
+}
+
+#[test]
+fn static_routing_is_closed_signed_browser_metadata_with_html_documents() {
+    let mut document = manifest(false);
+    let baseline = package(&document).0.digest().clone();
+    document.routes.clear();
+    document.static_routing = Some(StaticWebRouting {
+        profile: StaticWebRoutingProfile::StaticSiteV1,
+        entry_document: "/index.html".into(),
+        directory_index: StaticDirectoryIndexMode::Redirect,
+        directory_index_document: "/index.html".into(),
+        fallback: StaticWebFallback {
+            mode: StaticFallbackMode::Spa,
+            document: Some("/index.html".into()),
+        },
+    });
+    let (package, bytes) = package(&document);
+    let checked = inspect_web_layout(&package, &bytes).unwrap();
+    assert!(checked.manifest().static_routing.is_some());
+    assert_ne!(checked.package(), &baseline);
+
+    let mut missing = document.clone();
+    missing.static_routing.as_mut().unwrap().entry_document = "/missing.html".into();
+    let (package, bytes) = package(&missing);
+    assert!(inspect_web_layout(&package, &bytes).is_err());
+
+    let mut wrong_type = document.clone();
+    wrong_type.assets[0].media_type = "text/plain".into();
+    let (package, bytes) = package(&wrong_type);
+    assert!(inspect_web_layout(&package, &bytes).is_err());
+
+    let mut incoherent = document.clone();
+    incoherent.static_routing.as_mut().unwrap().fallback.mode = StaticFallbackMode::None;
+    let (package, bytes) = package(&incoherent);
+    assert!(inspect_web_layout(&package, &bytes).is_err());
+
+    let mut ssr = manifest(true);
+    ssr.static_routing = document.static_routing;
+    let (package, bytes) = package(&ssr);
+    assert!(inspect_web_layout(&package, &bytes).is_err());
+
+    let mut value = serde_json::to_value(manifest(false)).unwrap();
+    value["staticRouting"] = serde_json::json!({
+        "profile":"static-site-v1",
+        "entryDocument":"/index.html",
+        "directoryIndex":"disabled",
+        "directoryIndexDocument":"/index.html",
+        "fallback":{"mode":"none"},
+        "host":"forbidden.example"
+    });
+    assert!(serde_json::from_value::<WebApplicationManifest>(value).is_err());
 }
 
 #[test]
