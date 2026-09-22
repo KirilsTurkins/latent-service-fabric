@@ -4,9 +4,10 @@
 
 Planning/implementation baseline: `development` at
 `50f003dd006e0786494936c49e55dc683cf26fd6`, pinned Rust 1.97.1 and MSRV 1.94.1.
-This is the Cargo-invocation and cache-identity portion of
-[issue #432](https://github.com/KirilsTurkins/latent-service-fabric/issues/432),
-not evidence that its performance acceptance criteria have passed.
+The reviewed Cargo recipes and opt-in cache configuration are implemented.
+[Issue #432](https://github.com/KirilsTurkins/latent-service-fabric/issues/432)
+continues to track the measured cache/profile comparison and selection of a
+faster default. Passing recipe CI does not complete those performance criteria.
 
 **The existing dependency cache and ordinary dev/test profiles remain the
 selected defaults. No compile/check invocation has been removed.** There are
@@ -18,6 +19,10 @@ argument lists in shell blocks. Existing job selection, required checks,
 renderer conditionals, qualification steps, artifact consumers, release builds,
 and the unconditional `CI result` remain in place. The opt-in cache changes only
 the Rust correctness job; it does not shard compilation into additional jobs.
+Integration with the current shared suite inventory retains exact workspace
+discovery, separate execution logs for ordinary tests, doctests and signing
+compatibility, and authenticated AOT preparation before execution. All recipe
+commands and delegated owners are registered in `tools/ci/commands.json`.
 
 ## Coverage map
 
@@ -42,6 +47,12 @@ All compilation/test invocations retain `--locked`. Default vectors are tested
 against the pre-change workflow, including positional filters and the Clippy
 `-- -D warnings` boundary. `--timings` may be added explicitly for Cargo's own
 build observations; it does not turn a plan into a successful test result.
+
+CI invokes the `workspace-tests`, `doctests` and `signing-compatibility` leaves
+of `test` separately so the shared discovery validator checks each retained
+execution log. These leaves reference the same command definitions as `test`;
+they do not introduce separate test selections. Shell pipeline failures remain
+fatal through `pipefail`.
 
 The broad build before test preparation remains deliberate. A successful
 `cargo test --no-run` alone is not evidence that it covers all build-mode units,

@@ -5,8 +5,9 @@ The [coordinator](../../.github/workflows/security-baseline.yml) reuses the exis
 [RustSec worker](../../.github/workflows/security-rustsec.yml), rather than adding a
 second advisory schedule. It adds SDK inventory, redacted secret checks, reviewed
 source/workflow rules, expiring exceptions and bounded canaries. Deployment and
-finding triage remain explicit gates; implementation is not a claim that #282 is
-complete. See the [dated evidence and gaps](security-baseline-evidence.md).
+finding triage remain explicit gates. Default-branch activation, both-ref scans
+and required-check enforcement are recorded in the
+[dated evidence ledger](security-baseline-evidence.md#verified-activation-22-september-2026).
 
 ## Events and scope
 
@@ -31,12 +32,13 @@ credentials on its eight checkout steps; four manual workflows receive the same
 fix rather than suppressing existing workflow findings.
 
 GitHub activates schedules from the default branch, currently `release`.
-The security coordinator was **not present on `release`** when settings were
-observed on 2026-09-19. Merging into `development` alone does not activate weekly
-coverage or make default-branch manual dispatch available. Normal centralized
-promotion must carry the controls to `release`; this ticket does not bypass it.
-After promotion, run a manual both-ref scan and retain the first scheduled
-both-ref result with unchanged locks. A green PR is not that evidence.
+The separately approved [activation PR #461](https://github.com/KirilsTurkins/latent-service-fabric/pull/461)
+merged on 2026-09-21. The default-branch coordinator pins scanner controls to
+`e852442ab2801388e06d420ca6c389031c8bdd14`, independently of each scanned source.
+An actual scheduled run and a later manual run passed all checks against both
+maintained refs. Their exact source and advisory-database identities are retained
+in the evidence ledger. Subsequent dependency or control changes still require
+their own selected checks; an earlier green scan does not cover a later commit.
 
 ## Reviewed tools and rules
 
@@ -321,8 +323,10 @@ Before the parent can claim acceptance, it must review exact exceptions and
 findings, audit the final PR head, promote controls normally to default `release`,
 retain both-ref manual and scheduled results without changing locks, and require
 `Security baseline result` alongside the existing `CI result` once deployed.
-The 2026-09-19 snapshot still has only `CI result` required; this implementation
-does not prematurely change protection on other in-flight Phase 3 PRs.
+The 2026-09-22 API verification confirms both contexts are required on
+`development`, bound to the GitHub Actions application. Existing strictness and
+the `CI result` requirement were preserved. The older 2026-09-19 snapshot below
+remains historical evidence of the pre-activation state.
 
 The renderer's initial advisory matches are removed by a reviewed, exact
 `@bytecodealliance/weval` 0.5.0 override, without changing the renderer's AOT-disabled
@@ -334,3 +338,10 @@ delivery; static fork-permission fixtures and enabled-service API state should
 not be described as those tests. Parent review determines the remaining evidence
 needed for acceptance. No scan certifies guest isolation, provider safety,
 capability authorization or production hardening.
+
+
+## Maintained release C surface review, 21 September 2026
+
+The `release` snapshot `af3e8680d4132bd99b3299e300af147e53b7fa80` contains exactly two C SDK files: `sdk/c/include/latent/latent.h` (9,873 bytes) and `sdk/c/tests/invocation_identity.c` (18,088 bytes). The header declares the client interface; the C11 fixture supplies a local semantic test implementation. Their includes are the local header and C standard headers. They have no transport implementation, package-manager graph or external library imports to submit as resolved packages.
+
+The normalized file-list identity is `2e038c2e1fe43415f70cbe2771532c8c07f354faf14a87a202a2d9f6975ed61f`. The file digests are respectively `882e771526895cd9474ba15da800ec700167506be06bb8230799afb84fe53473` and `7d9872e216cab4e093c0bf8c74229291a589fc0e96a817aee283b25a4229fd6e`. This exact historical surface is added to the existing reviewed legacy inventory. Any changed, added or removed file fails that identity check; a present dependency lock must pass the normal resolved-graph validator. This is an inventory classification, not an advisory exception or executable transport qualification.

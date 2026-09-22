@@ -232,7 +232,8 @@ def validate_cargo_workflow(workflow: str) -> None:
                 words = shlex.split(line, comments=True)
                 if len(words) >= 4 and words[:3] == ["python3", "tools/ci_cargo.py", "run"]:
                     selected.add(words[3])
-        required = {"format", "workspace-check", "bindings", "clippy", "test"}
+        required = {"format", "workspace-check", "bindings", "clippy",
+                    "workspace-tests", "doctests", "signing-compatibility"}
         for missing in sorted(required - selected):
             fail(f"CI workflow does not invoke foundation recipe: {missing}")
         commands = {" ".join(("cargo", *entry.args))

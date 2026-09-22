@@ -60,8 +60,8 @@ def listing(raw: bytes, expected: frozenset[str]) -> None:
     artifacts.validate_listing(raw, artifacts.Suite("", "", "", "", expected, False))
 
 
-def result(raw: bytes, suite: str) -> dict:
-    text = raw.decode("utf-8", errors="strict")
+def validate_case_coverage(text: str, suite: str) -> None:
+    """Check actual completed cases independently of optional timing records."""
     summaries = re.findall(r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; "
                            r"(\d+) measured; (\d+) filtered out", text, re.MULTILINE)
     if summaries != [(str(len(CASES[suite])), "0", "0", "0", "0")]:
@@ -69,6 +69,9 @@ def result(raw: bytes, suite: str) -> dict:
     if "NOT RUN" in text:
         raise inputs.InputError("required-linux-cases-not-run")
     if suite == "aot_supervisor":
+        records = [line for line in text.splitlines() if line.startswith("LSF_AOT_CASE ")]
+        if len(records) != 2 * len(CASES[suite]):
+            raise inputs.InputError("supervisor-case-coverage-mismatch")
         for outcome in ("started", "passed"):
             names = re.findall(rf"^LSF_AOT_CASE {outcome} (\S+)$", text, re.MULTILINE)
             if Counter(names) != Counter(CASES[suite]):
@@ -78,6 +81,11 @@ def result(raw: bytes, suite: str) -> dict:
         names = re.findall(r"(?:^|\n)test (\S+) \.\.\. ", text)
         if Counter(names) != Counter(CASES[suite]):
             raise inputs.InputError("libtest-case-coverage-mismatch")
+
+
+def result(raw: bytes, suite: str) -> dict:
+    text = raw.decode("utf-8", errors="strict")
+    validate_case_coverage(text, suite)
     observations = []
     current = "setup"
     stages: dict[str, int] = defaultdict(int)

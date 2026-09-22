@@ -92,7 +92,7 @@ impl ReleaseAuditGuard {
             return Ok(());
         };
         let accepted = audit
-            .try_reserve_critical(&identity)
+            .reserve_control_critical(&identity)
             .and_then(|reservation| reservation.begin().blocking_wait());
         let mut attempt = match accepted {
             Ok(value) => value,

@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "id": "guest/angular-dependency",
+  "title": "Request one scoped HTTP dependency",
+  "audience": "guest-author",
+  "target": "guest",
+  "variants": [
+    {
+      "language": "typescript",
+      "kind": "maintained",
+      "source": "examples/angular-reference-application/server/main.ts",
+      "regions": [
+        "dependency"
+      ],
+      "validation": {
+        "target": "tools/run_angular_reference_workflow.py",
+        "instructions": "docs/learn/build-and-deliver-angular.mdx",
+        "evidence": {
+          "path": "examples/guides/evidence/angular-dependency-typescript.json",
+          "sha256": "fb72fd4abcbf406068b65d94846a450e02eb0262b82323cf7f50b2fc960b6d69"
+        }
+      }
+    }
+  ]
+}

@@ -45,7 +45,21 @@ class AotRecipeHandoffTests(unittest.TestCase):
         consumer = commands[1]
         self.assertEqual(consumer[:3], ["python3", "tools/aot_test_inputs.py", "prepare"])
         self.assertEqual(producer[producer.index("--inventory") + 1], consumer[consumer.index("--inventory") + 1])
-        self.assertEqual(shlex.split(test), ["python3", "tools/ci_cargo.py", "run", "test"])
+        from tools import ci_cargo
+        lines = [shlex.split(line) for line in test.splitlines()]
+        self.assertEqual(lines[0], ['set', '-o', 'pipefail'])
+        recipes = ['workspace-tests', 'doctests', 'signing-compatibility']
+        logs = ['ci-workspace-tests.log', 'ci-doctests.log', 'ci-signing-compatibility.log']
+        coverage = [None, 'explicit-doctests', 'signing-compatibility']
+        for index, (recipe, log, selection) in enumerate(zip(recipes, logs, coverage)):
+            self.assertEqual(lines[1 + index * 2], ['python3', 'tools/ci_cargo.py', 'run', recipe,
+                             '2>&1', '|', 'tee', '$RUNNER_TEMP/' + log])
+            expected = ['python3', 'tools/ci_suite_discovery.py']
+            if selection:
+                expected += ['--recipe', selection]
+            self.assertEqual(lines[2 + index * 2], expected + ['--execution-log', '$RUNNER_TEMP/' + log])
+        self.assertEqual(len(lines), 7)
+        self.assertEqual([ci_cargo.RECIPES[name][0] for name in recipes], list(ci_cargo.RECIPES['test']))
 
     def test_only_aot_selectors_are_exported_from_the_prepared_manifest(self):
         _, aot, _ = handoff(self.workflow)

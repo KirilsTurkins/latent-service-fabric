@@ -7,6 +7,9 @@
     "examples/guides/sdk-management/example.json",
     "examples/guides/ui-syntax/example.json",
     "examples/guides/ui-subset/example.json",
-    "examples/guides/ui-browser/example.json"
+    "examples/guides/ui-browser/example.json",
+    "examples/guides/angular-dependency/example.json",
+    "examples/guides/angular-hydration/example.json",
+    "examples/guides/angular-navigation/example.json"
   ]
 }

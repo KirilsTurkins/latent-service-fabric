@@ -27,6 +27,10 @@ impl HttpOwner {
             tokio::net::TcpSocket::new_v6()
         }
         .map_err(|_| super::failure())?;
+        // Rebind the same endpoint after clean shutdown even when completed
+        // server-closed connections remain in TIME_WAIT. This does not enable
+        // SO_REUSEPORT or allow another active listener to share the endpoint.
+        socket.set_reuseaddr(true).map_err(|_| super::failure())?;
         // Set inherited buffers before listen/TCP window negotiation. Shrinking
         // an accepted socket can stall a body already sent against its previous
         // advertised receive window. Kernel rounding is a separate OS charge.

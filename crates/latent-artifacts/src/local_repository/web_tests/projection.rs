@@ -157,6 +157,34 @@ fn exact_web_projection_keeps_package_authority_separate_from_executable_dedupli
     assert_ne!(new_identity, second_identity);
 }
 
+#[test]
+fn historical_web_layout_retains_its_read_lease_without_reviving_revoked_authority() {
+    let root = TempRoot::new();
+    let repo = open(&root);
+    let publication = renderer(&repo, "historical-layout", b"immutable green assets");
+    let package = repo
+        .select_web_publication(&publication)
+        .unwrap()
+        .eligibility()
+        .layout()
+        .package()
+        .clone();
+    revoke(&repo, &publication).unwrap();
+    assert_eq!(repo.web_read_snapshot().unwrap().active_reads, 0);
+    let historical = repo
+        .selected_historical_snapshot(&component(), Some(&publication.id))
+        .unwrap();
+    assert_eq!(historical.web_layout().unwrap().package(), &package);
+    assert!(matches!(
+        historical.state(),
+        HistoricalExecutionState::Denied(_)
+    ));
+    assert_eq!(repo.web_read_snapshot().unwrap().active_reads, 1);
+    assert!(repo.select_web_publication(&publication).is_err());
+    drop(historical);
+    assert_eq!(repo.web_read_snapshot().unwrap().active_reads, 0);
+}
+
 fn assert_fetch_bounds(
     repo: &DirectoryArtifactRepository,
     source: &OwnedArtifactPreparationSource,

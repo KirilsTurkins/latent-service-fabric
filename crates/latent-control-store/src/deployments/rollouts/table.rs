@@ -551,7 +551,7 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
         ) {
             (RolloutAction::Promote, Some(policy), Some(decision)) => decision.validate(policy)?,
             (RolloutAction::Promote, _, _) | (RolloutAction::Advance, Some(_), _) => {
-                return Err(corrupt())
+                return Err(corrupt());
             }
             (_, _, Some(_)) => return Err(corrupt()),
             (_, _, None) => {}
@@ -623,24 +623,26 @@ pub(in crate::deployments) async fn recover_publications(
                 let snapshot = artifacts
                     .historical_execution_snapshot_selected(&release.component, Some(&selected.id))
                     .await?;
-                let (_, state) = snapshot.into_parts();
-                let package = match state {
+                let package = match snapshot.state() {
                     latent_artifacts::HistoricalExecutionState::Eligible(token) => {
                         token.authorize_tenant(&row.status.tenant)?;
                         token.package().cloned()
                     }
                     latent_artifacts::HistoricalExecutionState::Denied(denied) => {
                         denied.authorize_tenant(&row.status.tenant)?;
-                        // Retained source verification authenticates package identity below.
-                        artifacts
-                            .retained_package_source_selected(
-                                &row.status.tenant,
-                                &release.component,
-                                Some(&selected.id),
-                                32 * 1024 * 1024,
-                            )
-                            .await?
-                            .map(|source| source.package().clone())
+                        if let Some(layout) = snapshot.web_layout() {
+                            Some(layout.package().clone())
+                        } else {
+                            artifacts
+                                .retained_package_source_selected(
+                                    &row.status.tenant,
+                                    &release.component,
+                                    Some(&selected.id),
+                                    32 * 1024 * 1024,
+                                )
+                                .await?
+                                .map(|source| source.package().clone())
+                        }
                     }
                     latent_artifacts::HistoricalExecutionState::Unmanaged => return Err(corrupt()),
                 };

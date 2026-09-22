@@ -137,7 +137,9 @@ class CargoRecipeTests(unittest.TestCase):
     def test_workflow_keeps_required_recipes_and_runtime_inventory_handoff(self):
         workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text()
         rust = workflow.split("\n  rust:\n", 1)[1].split("\n  oci-registry:\n", 1)[0]
-        for recipe in ("format", *cargo.RUST_RECIPES):
+        required = [name for name in cargo.RUST_RECIPES if name != 'test']
+        required += [entry.name for entry in cargo.RECIPES['test']]
+        for recipe in ("format", *required):
             self.assertIn("python3 tools/ci_cargo.py run " + recipe, rust)
         self.assertIn('run prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"', rust)
         self.assertIn('tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"', rust)

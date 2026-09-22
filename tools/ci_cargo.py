@@ -117,6 +117,10 @@ RECIPES: dict[str, tuple[Invocation, ...]] = {
         Invocation("msrv", ("check", *ALL), ("workspace",), "all", "host/all-targets", "dev", "independent minimum supported compiler", toolchain="msrv"),
     ),
 }
+# Named leaves let CI retain and validate each existing execution log without
+# duplicating the Cargo vectors or combining distinct coverage contracts.
+for _invocation in RECIPES["test"]:
+    RECIPES[_invocation.name] = (_invocation,)
 RUST_RECIPES = ("deterministic", "workspace-check", "bindings", "production", "clippy", "prepare", "test")
 
 
