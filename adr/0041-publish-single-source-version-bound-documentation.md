@@ -36,7 +36,10 @@ owns integrated operator/runbook correctness and delegates shared onboarding to
 Markdown paths remain valid in the checkout. No current or historical document,
 benchmark payload or evidence byte is moved or rewritten for compilation.
 `docs/wiki` is inventoried separately, not bulk-published. #356 owns useful
-unique Wiki content, legacy URLs/notices and retirement of the separate writer.
+unique Wiki content and retirement of the separate writer. The September 22,
+2026 maintainer decision supersedes the original legacy-URL/notice requirement:
+after Phase 3 completion and verified site deployment, remove the public Wiki.
+Neither a redirect layer nor an archived public Wiki is required.
 
 The compiler uses Docusaurus's experimental `markdown.format: 'detect'`: `.md`
 is CommonMark/GFM-compatible prose, `.mdx` is executable MDX. The pinned compiler

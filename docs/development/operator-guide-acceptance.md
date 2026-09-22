@@ -167,8 +167,11 @@ inventory rather than adding an article per internal command.
 single protected development Pages publisher. Parent default-`release` promotion
 for native/security workflows must not introduce another site writer.
 [#356](https://github.com/KirilsTurkins/latent-service-fabric/issues/356) owns the
-Wiki inventory, migration links and retirement of duplicate publishing; do not
-merge the historical Wiki branch wholesale or edit both copies of live prose.
+Wiki inventory, migration of useful content and removal of the Wiki after the
+site is deployed and Phase 3 completes. Retire its publisher and direct readers
+to the site; preserving old Wiki links or publishing archive notices is not
+required. Do not merge the historical Wiki branch wholesale or edit two copies
+of live prose.
 
 The migration gate #345 consumes this reviewed content and blocks Phase 3
 #201/#240. There is **no reverse dependency** on those gates closing or on a future

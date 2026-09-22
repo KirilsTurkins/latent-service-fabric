@@ -90,6 +90,7 @@ that review.
 
 The relevant guide issues are #357, #358, #359 and #361, consumed by #237 and
 the finite migration gate #345. Native installation qualification #308,
-verified Pages publication and the [Wiki cutover](wiki-cutover-review.md) keep
-their separate completion evidence. Report limitations directly; accepting a
+verified Pages publication and the [Wiki removal](wiki-cutover-review.md) keep
+their separate completion evidence. Remove the Wiki after Phase 3 completion and
+site deployment; old Wiki links and archive notices are not required. Report limitations directly; accepting a
 guide does not certify an unfinished installer or deployment.

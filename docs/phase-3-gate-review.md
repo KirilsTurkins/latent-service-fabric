@@ -31,7 +31,7 @@ receipts below keep their original execution identities.
 | Static web extension #495/#496/#497 | [Contract PR #498](https://github.com/KirilsTurkins/latent-service-fabric/pull/498), [delivery PR #501](https://github.com/KirilsTurkins/latent-service-fabric/pull/501), and [actual CSR/static-generator workflow PR #502](https://github.com/KirilsTurkins/latent-service-fabric/pull/502). | These children remain open until their full criteria and exact-head CI pass and their implementations merge. This evidence supplements the SSR workflow. |
 | Native distribution #308 | [Nonpublishing foundation run 35763422270](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35763422270) passed both native VM profiles; [final-pair preparation #503](https://github.com/KirilsTurkins/latent-service-fabric/pull/503) binds the authenticated predecessor. | A foundation run without an upgrade pair is incomplete acceptance. Retain the genuine compatible-version pair and publish the authenticated bundle through the protected release owner. |
 | Runbooks and guides #237/#357/#358/#359/#361 | Executed first-node, delivery, provider and six-client receipts are retained. [Guide execution PR #467](https://github.com/KirilsTurkins/latent-service-fabric/pull/467) merged after all 17 checks passed. | Native bundle/upgrade evidence under #308, rendered newcomer walkthroughs and maintainer pedagogy review remain required. |
-| Finite documentation gate #345 | Foundation, theme, diagrams, examples, version binding, discovery and initial protected Pages publication are delivered. The [coverage contract](development/website.md#coverage-is-a-review-contract-not-a-page-counter) retains 27 required outcomes. | Complete their exact-revision human reviews, publish the complete reviewed site, verify live routes, and finish #356's Wiki cutover and writer retirement. |
+| Finite documentation gate #345 | Foundation, theme, diagrams, examples, version binding, discovery and initial protected Pages publication are delivered. The [coverage contract](development/website.md#coverage-is-a-review-contract-not-a-page-counter) retains 27 required outcomes. | Complete their exact-revision human reviews, publish the complete reviewed site, verify live routes, and finish #356's content cutover; remove the Wiki and retire its writer after Phase 3 completion. |
 
 The [continuous Documentation & Learning workstream](development/website.md)
 stays open. Its later tasks do not enlarge the finite #345 gate.
@@ -103,14 +103,17 @@ not rewrite measured bytes or convert an earlier failed attempt into a pass.
    flow. Record source SHA, successful push CI run/attempt, immutable artifact,
    publisher run and live deployment identity. Verify home, nested/versioned
    pages, source-backed code switching, assets, search and accessibility.
-5. Complete the [Wiki migration](development/wiki-migration.md): verify every
-   replacement route, publish reviewed archive notices while retaining old
-   bodies/assets, record the actual Wiki publication, retire its old writer in
-   a separate reviewed change, and verify the bounded rollback path.
-6. Resolve the remaining guide/runbook, documentation and static-site
-   criteria, then publish one final #240 decision with immutable evidence and
-   the accepted residual limits. Only that decision closes #201 and changes
-   the roadmap's phase-completion status.
+5. Complete the [Wiki content migration](development/wiki-migration.md): verify
+   maintained replacement routes and switch entry links to the deployed site.
+   Legacy Wiki URLs, anchors and archive notices are not required.
+6. Resolve the remaining guide/runbook, documentation, static-site and native
+   criteria, including removal of obsolete Phase 1/2 compatibility, then publish
+   the final #240 decision with immutable evidence and accepted residual limits.
+   That decision closes #201 and changes the roadmap's phase-completion status.
+7. After Phase 3 completion and verified site deployment, retire the old Wiki
+   writer through a reviewed change, disable the repository Wiki, verify both
+   actions and close #356. This final administrative removal follows the gate;
+   content migration and live site readiness remain gate prerequisites.
 
 ## Later-phase exclusions
 
