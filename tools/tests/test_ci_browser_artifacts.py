@@ -9,7 +9,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PRODUCER = "Validate browser boundary with live ingress"
+PRODUCER = "Run bounded renderer and provider integration lanes"
 UPLOAD = "Retain bounded browser boundary observations"
 
 
@@ -18,7 +18,7 @@ def retention_enabled(expression: str, renderer: str, outcome: str | None,
     """Evaluate this guard's conjunctions, comparisons and status checks only."""
     context = {"needs.profile.outputs.renderer": renderer}
     if outcome is not None:
-        context["steps.browser_boundary.outcome"] = outcome
+        context["steps.integration_lanes.outcome"] = outcome
     status_checks = {
         "always()": True,
         "success()": job_status == "success",
@@ -54,12 +54,16 @@ class BrowserArtifactTests(unittest.TestCase):
         return matches[0]
 
     def test_guard_references_the_unique_preceding_producer(self) -> None:
-        self.assertEqual(self.producer.get("id"), "browser_boundary")
-        self.assertEqual(sum(step.get("id") == "browser_boundary" for step in self.steps), 1)
+        self.assertEqual(self.producer.get("id"), "integration_lanes")
+        self.assertEqual(sum(step.get("id") == "integration_lanes" for step in self.steps), 1)
         self.assertLess(self.steps.index(self.producer), self.steps.index(self.upload))
-        self.assertIn("steps.browser_boundary.outcome", self.upload["if"])
-        self.assertEqual(self.producer["if"], "needs.profile.outputs.renderer == 'true'")
-        self.assertIn("--suite browser-boundary", self.producer["run"])
+        self.assertIn("steps.integration_lanes.outcome", self.upload["if"])
+        self.assertEqual(
+            self.producer["env"]["CI_LANE_RENDERER"],
+            "${{ needs.profile.outputs.renderer }}",
+        )
+        self.assertIn("tools/run_ci_lanes.py", self.producer["run"])
+        self.assertIn("--renderer \"$CI_LANE_RENDERER\"", self.producer["run"])
         self.assertNotIn("continue-on-error", self.producer)
 
     def test_skipped_or_unreached_producer_never_uploads(self) -> None:
