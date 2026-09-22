@@ -94,17 +94,27 @@ impl Session {
     }
 }
 
-async fn publish(channel: &Channel, work: &WorkCounter, package: fixture::Package, token: &str) {
+async fn publish(
+    channel: &Channel,
+    work: &WorkCounter,
+    mut package: fixture::Package,
+    token: &str,
+) {
     work.before_command(false).unwrap();
-    management::release_service_client::ReleaseServiceClient::new(channel.clone())
+    let published = management::release_service_client::ReleaseServiceClient::new(channel.clone())
         .publish_release(fixture::authenticated(package.upload, token))
         .await
+        .unwrap()
+        .into_inner()
+        .release
         .unwrap();
+    package.deployment.publication = Some(published.publication.unwrap());
+    let component = std::mem::take(&mut package.deployment.release_digest);
     work.before_command(false).unwrap();
     management::deployment_service_client::DeploymentServiceClient::new(channel.clone())
         .apply_deployment(fixture::authenticated(
             management::ApplyDeploymentRequest {
-                expected_component_digest: None,
+                expected_component_digest: Some(component),
                 operation: None,
                 deployment: Some(package.deployment),
                 expected_generation: Some(0),

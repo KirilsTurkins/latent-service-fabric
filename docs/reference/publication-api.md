@@ -35,38 +35,31 @@ scope; errors do not enumerate candidates.
 
 ## Deployment requests and results
 
-On Apply input, `Deployment.publication` selects a publication and
+On Apply input, `Deployment.publication` is required and
 `Deployment.release_digest` must be empty. Optional
 `ApplyDeploymentRequest.expected_component_digest` asserts which executable
-that publication must contain. It is a checksum assertion, not a second
-selector. Without `publication`, the existing component field is the selector
-and the new assertion must be absent. The server resolves the reference before
-mutation; the catalog still rechecks current eligibility at commit.
+that publication must contain. Missing publication references and component-only
+requests fail before lookup or mutation, even when only one publication exists.
+The server resolves the exact reference before mutation; the catalog rechecks
+current eligibility at commit.
 
 On output, `Deployment.publication` reports the captured tenant publication,
-while `release_digest` reports its component. Output-only
-`requested_publication` preserves the caller's original explicit manifest
-selector. It remains absent for a legacy manifest, even after the server captures
-a publication. This keeps canonical manifests and their historical hashes stable.
-Convert a response to an input deliberately: choose one selector and omit
-`requested_publication`. Old generated clients ignore these additive fields.
+while `release_digest` reports its component. Output-only `requested_publication`
+preserves the caller's original manifest selector. To reapply a response, retain
+its publication, clear `release_digest`, omit `requested_publication`, and pass
+the component as `expected_component_digest` when that assertion is wanted.
 
-Deployment JSON continues to use `spec.release` plus optional `spec.publication`
-as described in the [runtime contract](publication-runtime.md). The CLI converts
-the former into a component assertion when the latter is present. Its output
-reports the captured publication separately from the original manifest, and it
-rejects a reply that substitutes another publication with the same component.
+CLI apply and rollout candidate manifests require both `spec.release` and
+`spec.publication`. Select the publication returned by admission; the CLI converts
+`spec.release` into a checksum assertion and rejects a missing publication before
+network dispatch. It also rejects a reply that substitutes another publication
+with the same executable component.
 
 Get, bounded lists, managed Apply replies and operation lookup use the captured
-association. A legacy reapplication of an existing deployment retains its pin;
-a new ambiguous component-only deployment is rejected. Managed replay preserves
-the original manifest, publication, receipt and generations even after deletion
-or revocation. Replay does not install the historical deployment again.
-
-The internal trusted-local, unscoped compatibility path remains distinct from
-tenant admission. Such results retain their component identity and omit the
-public tenant reference; their exact unscoped pin remains inside the catalog and
-operation history. An unscoped ID cannot be submitted as a tenant publication.
+association. Managed replay preserves the original manifest, publication,
+receipt and generations even after deletion or revocation. Replay does not
+install the historical deployment again. An unscoped local publication cannot
+be submitted as a tenant publication or selected through a component fallback.
 
 ## Recovery and compatibility
 
@@ -90,14 +83,12 @@ presence and additive field meanings. Generated Rust bindings are built from
 the authoritative Protobuf files. All six SDKs expose matching interface models;
 this does not announce a new executable SDK client.
 
-| Client/server combination | Supported behavior |
+| Request | Current behavior |
 | --- | --- |
-| Legacy client, legacy server | Existing component fields retain their original meaning. |
-| Legacy client, upgraded server | Unique component selection works; a fresh ambiguous selection fails without listing candidates. |
-| Legacy operation replay, upgraded server | The retained tenant/operation association returns original history; it does not resolve the component again. |
-| Explicit selector, upgraded server | Exact tenant publication is selected; an optional component assertion must match. |
-| Explicit selector, old server | Empty legacy selector fails validation when the old server ignores the new field; no silent fallback. |
-| Old binary, upgraded catalog | Unsupported publication/deployment table versions fail closed. Restore only a consistent stopped backup for downgrade. |
+| Missing publication or component-only selector | Rejected before lookup or mutation. |
+| Exact publication with optional component assertion | Selects the authenticated tenant publication; an assertion must match. |
+| Exact operation replay | Returns captured history without applying it again. |
+| Unsupported stored catalog format | Rejected without implicit catalog admission; use fresh alpha state. |
 
 Phase 2 release roots are unsupported. The offline migrator has been removed;
 follow the [fresh-state procedure](publication-catalog.md#supported-storage-and-fresh-state)
@@ -107,7 +98,7 @@ retired release-root formats.
 
 ## Rollout and invocation receipts
 
-StartRollout uses the same explicit selector in its candidate Deployment. Its
+StartRollout requires the same exact selector in its candidate Deployment. Its
 optional `expected_candidate_component_digest` is a checksum assertion, with
 an empty candidate `release_digest`, just as on Apply. CLI candidate manifests
 retain `spec.release` and `spec.publication`; the CLI constructs that request.

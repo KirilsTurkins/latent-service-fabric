@@ -75,7 +75,7 @@ alone does not prove readiness.
 | Configuration | `latentd check-config` accepts the protected local profile, rejects format version zero, and creates no node storage. |
 | Local validation | Generated capsule/deployment validate; a deliberately invalid capsule is `local-error` before dispatch. |
 | Authentication | A separately generated wrong-token client is rejected. The valid configuration remains unchanged. |
-| Publication and deployment | Raw local publication returns the actual component digest; deployment creation uses expected generation zero and retains the returned generation. |
+| Publication and deployment | Raw local admission returns the component digest and exact publication; a separate client manifest selects that publication. Deployment creation uses expected generation zero and retains the returned generation. |
 | Invocation | `first-node-before` returns the positional WIT result `[{"ok":"hello"}]`; status is `completed`. `first-node-empty` is a separate `declared-error`, not success or a transport failure. |
 | Restart | The same private catalog reopens, retains the release/deployment generation, and `first-node-after` returns hello without republishing or reapplying. |
 | Removal and shutdown | Delete compares the retained generation, subsequent lookup is not found, and both node processes report clean shutdown and are physically reaped. |

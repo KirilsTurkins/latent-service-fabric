@@ -72,6 +72,22 @@ async fn manual_rpc_receipts_replay_exactly_and_queries_never_cross_tenants() {
             .code(),
         Code::PermissionDenied
     );
+    let before = harness.deployments.generation();
+    let mut component_only = input.clone();
+    component_only.candidate.as_mut().unwrap().publication = None;
+    component_only.candidate.as_mut().unwrap().release_digest = component_only
+        .expected_candidate_component_digest
+        .take()
+        .unwrap();
+    assert_eq!(
+        client
+            .start_rollout(request("alice", component_only))
+            .await
+            .unwrap_err()
+            .code(),
+        Code::InvalidArgument
+    );
+    assert_eq!(harness.deployments.generation(), before);
     let started = client
         .start_rollout(request("alice", input.clone()))
         .await
