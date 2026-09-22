@@ -107,6 +107,23 @@ class BuildWiringTests(unittest.TestCase):
         self.assertEqual(open_.call_count, 3)
         self.assertEqual(sleep.call_args_list, [mock.call(1), mock.call(2)])
 
+    def test_locked_download_recovers_reset_but_never_retries_certificate_failure(self):
+        import ssl
+        artifact = {"size": 3, "sha256": hashlib.sha256(b"jar").hexdigest()}
+        for failure in [ConnectionResetError(), TimeoutError(), urllib.error.URLError(ConnectionResetError())]:
+            with mock.patch.object(build.urllib.request, "urlopen", side_effect=[failure, io.BytesIO(b"jar")]) as open_, \
+                    mock.patch.object(build.time, "sleep") as sleep:
+                self.assertEqual(build.download_locked("https://repo.test/jar", artifact), b"jar")
+                self.assertEqual(open_.call_count, 2)
+                sleep.assert_called_once_with(1)
+        with mock.patch.object(build.urllib.request, "urlopen",
+                               side_effect=urllib.error.URLError(ssl.SSLCertVerificationError())) as open_, \
+                mock.patch.object(build.time, "sleep") as sleep:
+            with self.assertRaises(urllib.error.URLError):
+                build.download_locked("https://repo.test/jar", artifact)
+            self.assertEqual(open_.call_count, 1)
+            sleep.assert_not_called()
+
     def test_selected_java_home_never_falls_back_to_path(self):
         with tempfile.TemporaryDirectory() as temporary:
             missing = str(Path(temporary) / "missing")
