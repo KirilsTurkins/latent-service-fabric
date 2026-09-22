@@ -65,7 +65,59 @@ pub enum TriggerOperationAction {
     Delete,
 }
 
+/// Exact authority identity retained by format-v2 HTTP state and receipts.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(
+    crate = "latent_manifest::__serde",
+    tag = "kind",
+    rename_all = "kebab-case",
+    deny_unknown_fields
+)]
+pub enum TriggerTargetIdentity {
+    Application {
+        publication: PublicationRef,
+        #[serde(with = "crate::rollouts::codec::text")]
+        component: ReleaseDigest,
+        deployment_id: String,
+        deployment_generation: u64,
+        revision: String,
+    },
+    StaticWeb {
+        publication: PublicationRef,
+        web_manifest_digest: String,
+        assets_digest: String,
+        web_generation: u64,
+    },
+}
+impl TriggerTargetIdentity {
+    #[must_use]
+    pub const fn publication(&self) -> &PublicationRef {
+        match self {
+            Self::Application { publication, .. } | Self::StaticWeb { publication, .. } => publication,
+        }
+    }
+    #[must_use]
+    pub const fn component(&self) -> Option<&ReleaseDigest> {
+        match self {
+            Self::Application { component, .. } => Some(component),
+            Self::StaticWeb { .. } => None,
+        }
+    }
+    #[must_use]
+    pub const fn deployment_generation(&self) -> Option<u64> {
+        match self {
+            Self::Application {
+                deployment_generation,
+                ..
+            } => Some(*deployment_generation),
+            Self::StaticWeb { .. } => None,
+        }
+    }
+}
+
 /// Immutable history, not current permission to select or execute a target.
+/// Format v1 is application-only and uses the legacy flat optional fields.
+/// Format v2 uses the tagged target exclusively; legacy fields are absent on new writes.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(
     crate = "latent_manifest::__serde",
@@ -86,20 +138,53 @@ pub struct TriggerOperationReceipt {
     pub state_version: u64,
     pub route_generation: u64,
     pub manifest_digest: String,
-    pub publication: PublicationRef,
-    #[serde(with = "crate::rollouts::codec::text")]
-    pub component: ReleaseDigest,
-    pub deployment_id: String,
-    pub deployment_generation: u64,
-    pub revision: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<TriggerTargetIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publication: Option<PublicationRef>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "crate::http_routes::codec::release_option"
+    )]
+    pub component: Option<ReleaseDigest>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deployment_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deployment_generation: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revision: Option<String>,
     pub completed_at_unix_millis: u64,
     pub receipt_digest: String,
+}
+impl TriggerOperationReceipt {
+    #[must_use]
+    pub fn target_identity(&self) -> Option<TriggerTargetIdentity> {
+        if let Some(target) = &self.target {
+            return Some(target.clone());
+        }
+        Some(TriggerTargetIdentity::Application {
+            publication: self.publication.clone()?,
+            component: self.component.clone()?,
+            deployment_id: self.deployment_id.clone()?,
+            deployment_generation: self.deployment_generation?,
+            revision: self.revision.clone()?,
+        })
+    }
+    #[must_use]
+    pub fn publication_ref(&self) -> Option<&PublicationRef> {
+        self.target
+            .as_ref()
+            .map(TriggerTargetIdentity::publication)
+            .or(self.publication.as_ref())
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VersionedTrigger {
     pub manifest: TriggerManifest,
     pub generation: u64,
-    pub component: ReleaseDigest,
+    /// Present only for executable application targets.
+    pub component: Option<ReleaseDigest>,
 }
 #[derive(Debug)]
 pub struct TriggerOperationCommit {
