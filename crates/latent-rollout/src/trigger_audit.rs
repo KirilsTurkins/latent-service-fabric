@@ -38,7 +38,7 @@ impl ManagedTriggerAudit {
         let expected = mapping::attempt(receipt, replayed)?;
         audit.preflight_conclusion(&expected, &mapping::conclusion(&expected, Some(receipt)))?;
         audit.preflight_conclusion(&expected, &mapping::conclusion(&expected, None))?;
-        let reservation = audit.try_reserve_critical(&expected)?;
+        let reservation = audit.reserve_control_critical(&expected)?;
         check_deadline(expires)?;
         let attempt = tokio::time::timeout_at(expires.into(), reservation.begin().wait())
             .await
