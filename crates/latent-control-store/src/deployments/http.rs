@@ -21,6 +21,7 @@ pub struct PreparedTriggerOperation {
     bytes: Vec<u8>,
     replayed: bool,
     reply: TriggerReadLease,
+    static_selection: Option<latent_artifacts::web::WebSelection>,
     _scratch: Charge,
     _work: super::rollouts::WorkReservation,
 }
