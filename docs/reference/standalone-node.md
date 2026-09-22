@@ -30,9 +30,7 @@ audit history; the
 [scriptable echo quickstart](../development/standalone-quickstart.md) starts a node
 with an ephemeral endpoint and private credentials. Generated Tonic clients can
 also use the [management](management-services.md) and
-[invocation](../protocol/invocation-service.md) contracts directly. The Phase 0
-`phase0-spike`/`spike` command family keeps its existing arguments, payload
-convention, output and exit codes.
+[invocation](../protocol/invocation-service.md) contracts directly. The historical Phase 0 `phase0-spike`/`spike` command family is no longer part of the current `latentd` product surface; its recorded receipts and versioned documentation remain available as historical evidence.
 
 ## Execution security profile
 
