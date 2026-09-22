@@ -2665,7 +2665,7 @@
       "sha256": "3262f4be99e860716c4cda7e4e9182ea68991ecd5643c14e0b25f8c3da8ab5fe"
     },
     "sdk/java-client/tools/build.py": {
-      "sha256": "5f0ab1e76c5da6b7426bb26c318039a408cc4f5228801984b5c4cbdd83ec2cc6"
+      "sha256": "09e590e3c6d79b397db1c3b4e23489b03f818e1555a9e7f91d95a05e251cfef8"
     },
     "sdk/java-client/tools/java_toolchain.py": {
       "sha256": "3cc265b8f13f24ce08da3cf079d3e66ca072515b0741f8594b43d412a3b9cd9d"
@@ -3391,6 +3391,9 @@
       "BuildWiringTests.test_compiler_receives_release25_and_result_is_verified",
       "BuildWiringTests.test_gradle_and_shell_targets_cannot_drift_to_java21",
       "BuildWiringTests.test_gradle_test_requires_both_main_suites_without_ignoring_failures",
+      "BuildWiringTests.test_locked_download_does_not_retry_integrity_auth_or_unbounded_backoff",
+      "BuildWiringTests.test_locked_download_retries_bounded_throttle_then_checks_actual_bytes",
+      "BuildWiringTests.test_locked_download_stops_after_three_server_responses",
       "BuildWiringTests.test_selected_java_home_never_falls_back_to_path",
       "BuildWiringTests.test_wrong_jdk_fails_before_dependency_download_or_generation",
       "BytecodeTests.test_accepts_java25_and_rejects_old_new_preview_truncated_and_bad_magic",
@@ -5801,11 +5804,11 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "8af880a4686322a8ee8e10aad03b7c7b4cb8e3d5a5bee4cf47677e0c31899828",
-    ".github/workflows/docs-pages.yml": "080a4bd2189611df16a96a0a2230d9c5e5766f4feb2ee77f5009ba84fb0bdf96",
+    ".github/workflows/ci.yml": "9a04bcfc9c269658408335edcae369f595b045efee3d2cdb320e70845523bd99",
+    ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/native-runtime-release.yml": "0e84b07e365798040f2ff4c360d8fa4b959dfc46fdab8867662381508f1ef15d",
-    ".github/workflows/native-runtime.yml": "9f3bb2c7247c619d43b783122cef85e3d8e1700cd6633c021186aff9f049c02a",
+    ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
+    ".github/workflows/native-runtime.yml": "0fbc7b6f9d6018a444d7bef1c098e95c30b177ec2204d8ad91aa7258c02f587d",
     ".github/workflows/phase0-full-validation.yml": "c003b5b670afe681db81e5a24d6536f2a9eb1d785f1505029f77d545e30df46e",
     ".github/workflows/phase0-regression.yml": "615f39a20d24e9b5ba6479edb8bbb8cd803da2d5115bc1cf2a231c2a2dc7be84",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
