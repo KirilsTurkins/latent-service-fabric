@@ -18,34 +18,6 @@ use crate::{
 };
 
 impl StoredAdmission {
-    /// Offline migration has already checked every retained file against the
-    /// original COMPLETE-bound side record. Check its immutable association
-    /// without materializing a Wasm upload or requiring a current grant.
-    pub(in crate::local_repository) fn verify_original_association(
-        &self,
-        metadata: &crate::VerifiedArtifactMetadata,
-    ) -> Result<(), PlatformError> {
-        let component = self
-            .layers
-            .iter()
-            .find(|layer| layer.blob.file == COMPONENT_FILE)
-            .ok_or_else(|| corrupt("admission-component-association"))?;
-        if self.release != metadata.verified_digest().0
-            || component.blob.digest != self.release
-            || component.blob.size != metadata.descriptor().size_bytes
-            || self.manifest.digest != self.package
-            || metadata
-                .manifest()
-                .metadata
-                .tenant
-                .as_ref()
-                .is_some_and(|tenant| tenant.0 != self.tenant)
-        {
-            return Err(corrupt("admission-original-association"));
-        }
-        Ok(())
-    }
-
     pub(in crate::local_repository) fn read(
         directory: &Path,
         expected: &str,

@@ -1,7 +1,4 @@
-//! Product command dispatch, separate from the historical Phase 0 entry point.
-
-#[cfg(target_os = "linux")]
-mod migrate;
+//! Product command dispatch.
 #[cfg(target_os = "linux")]
 mod serve;
 #[cfg(any(target_os = "linux", test))]
@@ -38,38 +35,6 @@ enum Command {
         #[arg(long, value_name = "PATH")]
         config: PathBuf,
     },
-    /// Migrate an offline catalog to tenant-scoped publication storage.
-    MigrateCatalog {
-        #[arg(long, value_name = "PATH")]
-        config: PathBuf,
-        #[command(flatten)]
-        limits: MigrationOptions,
-    },
-}
-
-#[derive(clap::Args)]
-struct MigrationOptions {
-    #[arg(long, default_value_t = 32, value_parser = clap::value_parser!(u16).range(1..=1024))]
-    batch_size: u16,
-    #[arg(long, default_value_t = 268_435_456)]
-    max_metadata_bytes: usize,
-    #[arg(long, default_value_t = 8_589_934_592)]
-    max_disk_bytes: u64,
-    #[arg(long, default_value_t = 1_000_000)]
-    max_files: usize,
-    #[arg(long, default_value_t = 68_719_476_736)]
-    max_work_bytes: u64,
-}
-impl MigrationOptions {
-    fn limits(self) -> latent_artifacts::CatalogMigrationLimits {
-        latent_artifacts::CatalogMigrationLimits {
-            batch_size: usize::from(self.batch_size),
-            max_metadata_bytes: self.max_metadata_bytes,
-            max_disk_bytes: self.max_disk_bytes,
-            max_files: self.max_files,
-            max_work_bytes: self.max_work_bytes,
-        }
-    }
 }
 
 /// Handles the supported standalone node commands.
@@ -96,7 +61,6 @@ pub fn main_entry() -> ExitCode {
     let result = match command {
         Command::CheckConfig { config } => run_check_config(&config),
         Command::Serve { config } => run_serve(&config),
-        Command::MigrateCatalog { config, limits } => run_migrate(&config, limits.limits()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,
@@ -127,21 +91,6 @@ fn run_serve(path: &std::path::Path) -> Result<(), Failure> {
 
 #[cfg(not(target_os = "linux"))]
 fn run_serve(_path: &std::path::Path) -> Result<(), Failure> {
-    Err(Failure::new("platform", PlatformErrorCode::Unavailable))
-}
-
-#[cfg(target_os = "linux")]
-fn run_migrate(
-    path: &std::path::Path,
-    limits: latent_artifacts::CatalogMigrationLimits,
-) -> Result<(), Failure> {
-    migrate::run(path, limits)
-}
-#[cfg(not(target_os = "linux"))]
-fn run_migrate(
-    _path: &std::path::Path,
-    _limits: latent_artifacts::CatalogMigrationLimits,
-) -> Result<(), Failure> {
     Err(Failure::new("platform", PlatformErrorCode::Unavailable))
 }
 

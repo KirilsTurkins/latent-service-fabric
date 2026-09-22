@@ -67,18 +67,18 @@ The record has a fixed 1 KiB maximum, independent of configurable payload limits
 
 The release identity remains SHA-256 of component bytes. Metadata fingerprints provide accidental-corruption detection under the existing locally trusted filesystem boundary; they do not authenticate a publisher or protect against an administrator who can replace both data and integrity records.
 
-### Compatibility with legacy catalogs
+### Unsupported catalog formats
 
-Earlier catalogs wrote the literal `complete\n` marker without metadata fingerprints. Such markers are unsupported by the verified format-1 reader and the migration path. A mixed legacy/verified completed catalog also fails verification. The reader preserves committed files and never generates a new integrity record from unverified legacy contents.
+Earlier catalogs used component-keyed directories and format-1 lifecycle history.
+Those readers and the offline migration command have been removed. Literal
+`complete\n` markers also remain unsupported: a completion record cannot be
+manufactured from unverified old metadata. Current startup rejects obsolete
+roots before cleanup or indexing and preserves the existing files.
 
-To move a catalog with literal legacy markers forward, stop its owner and retain the entire old root. Re-register the trusted original component, manifest, descriptor and contracts through `ArtifactRepository::publish` into a fresh root, then open the application against that verified root. Do not manufacture completion records from possibly damaged old metadata or overwrite the old root during recovery. This legacy-marker compatibility policy does not change component digests or automatically migrate those stored files.
-
-The format-2 reader requires explicit offline migration of a format-1 catalog
-with its original lifecycle history. It does not invent lifecycle membership
-from completed directories. A valid catalog predating lifecycle support first
-needs the prior compatible release's verified lifecycle bootstrap, preserving
-original component, metadata and completion bytes. Retain a complete backup and
-follow the [upgrade procedure](../reference/publication-catalog.md#offline-upgrade-and-recovery).
+Stop the old owner and retain a complete consistent backup. Provision separate
+fresh state and explicitly publish, admit and deploy the intended packages using
+the current commands. Do not copy old catalog rows or delete format markers to
+force startup. See the [fresh-state procedure](../reference/publication-catalog.md#supported-storage-and-fresh-state).
 
 ### Indeterminate durability and the mutation gate
 
