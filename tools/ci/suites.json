@@ -1984,14 +1984,15 @@
         "limits_bound_payload_nesting_and_strings",
         "model_integer_width_failures_keep_their_wire_paths",
         "optional_schema_fields_are_preserved_by_the_domain_model",
-        "schema_failures_have_stable_paths_and_codes"
+        "schema_failures_have_stable_paths_and_codes",
+        "static_web_http_target_round_trips_and_hybrids_are_rejected"
       ],
       "expectedIgnored": [],
       "id": "latent-manifest.test.codec",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-manifest/Cargo.toml",
-      "minimumCases": 10,
+      "minimumCases": 11,
       "mode": "libtest",
       "package": "latent-manifest",
       "platforms": [
