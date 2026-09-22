@@ -186,7 +186,7 @@ fn http_atomic_routes_exact_replay_delete_recreate_and_restart() {
     let command = request(&store, "create", definition.clone(), 0);
     let receipt = execute(&store, command.clone()).value().receipt.clone();
     let held = selected(&store, "alice", "/anything").unwrap();
-    assert_eq!(held.revision().publication.as_ref(), Some(&publication.id));
+    assert_eq!(held.revision().unwrap().publication.as_ref(), Some(&publication.id));
     assert_eq!(held.state_version(), receipt.state_version);
     let original = std::fs::read(roots[1].0.join("catalog.json")).unwrap();
     assert!(execute(&store, command.clone()).value().replayed);
@@ -206,7 +206,7 @@ fn http_atomic_routes_exact_replay_delete_recreate_and_restart() {
         receipt.object_generation,
     );
     assert!(selected(&store, "alice", "/anything").is_err());
-    held.catalog().admission_policy(held.revision()).unwrap();
+    held.catalog().unwrap().admission_policy(held.revision().unwrap()).unwrap();
     assert!(execute(&store, command.clone()).value().replayed);
     assert!(get(&store, "alice", "browser").value().trigger.is_none());
     let next = execute(&store, request(&store, "recreate", definition, 0))
