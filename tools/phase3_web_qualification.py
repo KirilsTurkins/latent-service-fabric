@@ -6,7 +6,7 @@ import time
 
 from tools.phase2_operator_process import Process, require, write_json
 from tools.phase3_web_scenario import (
-    deploy, deployment_manifest, http_response, idle_inventory, invocation_arguments, invoke, prepare,
+    TENANT, deploy, deployment_manifest, http_response, idle_inventory, invocation_arguments, invoke, prepare,
     publication_receipt, publish, selected_client_asset, trigger,
 )
 
