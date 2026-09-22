@@ -2,6 +2,8 @@
 mod admission;
 #[path = "catalog_query_tests.rs"]
 mod catalog_queries;
+#[path = "format_tests.rs"]
+mod format;
 #[path = "integrity_tests.rs"]
 mod integrity;
 #[path = "integrity_publication_tests.rs"]
@@ -11,9 +13,6 @@ mod lifecycle;
 #[cfg(unix)]
 #[path = "lock_release_tests.rs"]
 mod lock_release;
-#[cfg(unix)]
-#[path = "migration_tests.rs"]
-mod migration;
 #[path = "owned_preparation_tests.rs"]
 mod owned_preparation;
 #[path = "preparation_tests.rs"]

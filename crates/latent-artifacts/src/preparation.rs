@@ -248,7 +248,7 @@ impl ArtifactPreparationSource<'_> {
         release: &ReleaseDigest,
     ) -> Result<crate::PublicationRef, PlatformError> {
         self.repository
-            .recover_execution_publication(tenant, release)
+            .select_execution_publication(tenant, release, None)
     }
 
     pub fn select_execution_publication(

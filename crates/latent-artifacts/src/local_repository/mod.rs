@@ -3,12 +3,12 @@ mod admission_storage;
 mod component_reader;
 pub(crate) mod contract_metadata;
 mod document_reader;
+mod format;
 mod index;
 mod integrity;
 mod lifecycle;
 mod metadata;
 mod metadata_codec;
-mod migration;
 mod paging;
 mod preparation_read;
 mod publication_access;
@@ -16,7 +16,6 @@ mod publication_preparation;
 mod retained_package;
 mod root_durability;
 mod shared_content;
-pub use migration::{CatalogMigrationLimits, CatalogMigrationReceipt};
 pub use shared_content::{PublicationContentReclamation, PublicationStorageSnapshot};
 mod sha256;
 mod web;
@@ -255,7 +254,7 @@ impl DirectoryArtifactRepository {
         lifecycle_limits: crate::LifecycleLimits,
     ) -> Result<Self, PlatformError> {
         let repository = Self::acquire_configured(root, config, admission, lifecycle_limits)?;
-        migration::check_current_format(&repository.root)?;
+        format::check_current_format(&repository.root)?;
         fs::create_dir_all(repository.root.join(RELEASES_DIR)).map_err(io_error)?;
         fs::create_dir_all(repository.root.join(TEMP_DIR)).map_err(io_error)?;
         cleanup_temporary_entries(&repository.root)?;
@@ -458,16 +457,6 @@ impl DirectoryArtifactRepository {
         retention: Retention,
         limits: ArtifactPreparationReadLimits,
     ) -> Result<VerifiedEntry, PlatformError> {
-        self.load_complete_entry_at_format(path, retention, limits, false)
-    }
-
-    fn load_complete_entry_at_format(
-        &self,
-        path: &Path,
-        retention: Retention,
-        limits: ArtifactPreparationReadLimits,
-        legacy: bool,
-    ) -> Result<VerifiedEntry, PlatformError> {
         let completion = CompletionRecord::read(path)?;
         let admission = match (self.admission.as_ref(), completion.admission_digest()) {
             (Some(config), Some(digest)) => Some(admission_storage::StoredAdmission::read(
@@ -545,12 +534,8 @@ impl DirectoryArtifactRepository {
                 &completion.identity()?,
             )?
         };
-        let expected_dir = if legacy {
-            digest_hex(&descriptor.release_digest)?
-        } else {
-            publication.id.hex().to_owned()
-        };
-        if path.file_name().and_then(|value| value.to_str()) != Some(expected_dir.as_str()) {
+        let expected_dir = publication.id.hex();
+        if path.file_name().and_then(|value| value.to_str()) != Some(expected_dir) {
             return Err(corrupt(
                 "publication directory does not match its immutable association",
             ));
