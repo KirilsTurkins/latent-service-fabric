@@ -64,7 +64,7 @@ description = "Single-node stateless execution fabric for WebAssembly components
 
 [workspace.dependencies]
 base64 = "=0.22.1"
-blake3 = "=1.8.5"
+blake3 = "=1.8.7"
 clap = { version = "=4.6.4", features = ["derive"] }
 clap_complete = { version = "=4.6.4", default-features = false }
 prost = "=0.14.4"
@@ -86,7 +86,7 @@ tracing-subscriber = "=0.3.23"
 wasm-encoder = "=0.252.0"
 wasmparser = "=0.252.0"
 wasmtime = { version = "=47.0.4", default-features = false, features = ["component-model", "component-model-async", "cranelift", "pooling-allocator", "runtime", "std", "wit-parser"] }
-wit-bindgen = "=0.60.0"
+wit-bindgen = "=0.62.0"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
