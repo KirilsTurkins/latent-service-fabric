@@ -469,6 +469,14 @@ The normalized descriptor golden deliberately records the new enums, messages,
 and fields. See [ADR-0043](../../adr/0043-select-static-web-publications-as-first-class-http-targets.md)
 and the [HTTP trigger reference](../reference/http-triggers.md).
 
+`AuditIdentities.static_web` at field 24 adds the exact static web manifest,
+asset-layout digest and positive web generation. Static trigger records preserve
+their publication and trigger identities and omit component, deployment and
+revision identities. An untouched application-route generation of zero remains
+valid for static-only nodes. Older application audit records omit the new field
+and retain their bytes; no existing field or enum is renumbered. The descriptor
+golden deliberately includes this additive message and field.
+
 ### Phase 3 componentless web control (#226)
 
 The descriptor baseline adds six `ReleaseService` methods: `PublishWebPackage`,
