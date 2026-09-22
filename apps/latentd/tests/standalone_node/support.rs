@@ -57,7 +57,7 @@ pub fn supervise(name: &str, scenario: fn()) {
             .spawn()
             .expect("isolated standalone scenario"),
     );
-    let deadline = Instant::now() + Duration::from_secs(60);
+    let deadline = Instant::now() + Duration::from_mins(1);
     let status = loop {
         if fs::metadata(&log_path).expect("child log size").len() > MAXIMUM_CHILD_LOG_BYTES {
             child.0.kill().expect("kill oversized-output scenario");
