@@ -21,10 +21,20 @@ pub(super) fn two_scoped_pages(harness: &Harness, generic: &Package) {
         .expect("real release continuation");
     let second_args = ["release", "list", "--page-size", "1", "--page-token", token];
     let second = harness.call("generic", &second_args, 0, "success");
-    let mut expected = [&generic.digest, &dormant.digest];
+    let mut expected = [generic.digest.as_str(), dormant.digest.as_str()];
     expected.sort();
-    assert_eq!(single_digest(&first), expected[0]);
-    assert_eq!(single_digest(&second), expected[1]);
+    let mut observed = [single_digest(&first), single_digest(&second)];
+    observed.sort();
+    assert_eq!(observed, expected);
+    // Catalog cursors follow publication identities, which also bind the
+    // manifest. Changing a build version can change their component ordering.
+    let publication = |page: &Value| {
+        page["data"]["releases"][0]["publication"]["id"]
+            .as_str()
+            .expect("exact publication identity")
+            .to_owned()
+    };
+    assert!(publication(&first) < publication(&second));
     assert!(second["data"]["nextPageToken"].is_null());
 
     let repeated = harness.call(
