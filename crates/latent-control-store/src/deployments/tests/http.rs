@@ -10,8 +10,9 @@ use latent_artifacts::package::{
 };
 use latent_artifacts::web::{
     asset_tree_digest, inspect_web_layout, StaticDirectoryIndexMode, StaticFallbackMode,
-    StaticWebFallback, StaticWebRouting, StaticWebRoutingProfile, WebApplicationManifest, WebAsset,
-    WebRenderMode, WebRoute, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
+    StaticWebFallback, StaticWebRouting, StaticWebRoutingProfile, VerifiedWebAdmission,
+    WebAdmissionBinding, WebAdmissionGrant, WebApplicationManifest, WebAsset, WebRenderMode,
+    WebRoute, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
 };
 use latent_artifacts::{
     AdmissionAuthority, AdmissionBinding, AdmissionRecheck, AdmissionStorageLimits,
@@ -19,7 +20,7 @@ use latent_artifacts::{
     LifecycleScope, ManagedPublicationUpload, PackageAdmissionUpload, PublicationRef,
     PublicationSelector, ReleaseActor, ReleaseActorKind, ReleaseLifecycleAction,
     ReleaseLifecycleReason, ReleaseMutationContext, ReleaseOperationPrecondition,
-    VerifiedAdmission, VerifiedWebAdmission, WebAdmissionBinding, WebAdmissionGrant,
+    VerifiedAdmission,
 };
 use latent_core::{
     ContractId, DeploymentId, FunctionId, InterfaceId, PlatformError, PlatformErrorCode, TenantId,
