@@ -4,7 +4,7 @@
   "world": "latent:platform/capsule@0.3.0",
   "digest": "sha256:a58a356114ad8822aa6f155891afa65bd1ec57e58d7fac3e2ff3a9afcb07cfc7",
   "wasmtimeVersion": "47.0.4",
-  "guestGenerator": "wit-bindgen@0.60.0",
+  "guestGenerator": "wit-bindgen@0.62.0",
   "interfaces": [
     {
       "interface": "latent:context/context@0.1.0",
