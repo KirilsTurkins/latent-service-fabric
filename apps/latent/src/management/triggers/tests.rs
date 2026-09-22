@@ -6,6 +6,7 @@ use crate::{
 };
 use clap::Parser;
 use std::time::Duration;
+mod static_targets;
 
 fn manifest() -> Value {
     json!({"apiVersion":"latent.dev/v1alpha1","kind":"HttpTrigger",

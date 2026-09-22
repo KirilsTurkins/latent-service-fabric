@@ -166,9 +166,7 @@ async fn apply(request: proto::ApplyTriggerRequest, session: &Session) -> Result
         || receipt.action != proto::TriggerOperationAction::Apply as i32
         || Some(receipt.expected_generation) != generation
         || Some(receipt.expected_state_version) != operation.expected_state_version
-        || receipt.publication != target.publication
-        || Some(receipt.deployment_generation) != target.deployment_generation
-        || Some(&receipt.revision) != target.revision.as_ref()
+        || !response::target_matches(receipt, target)
         || !value.warnings.is_empty()
     {
         return Err(invalid_response());
