@@ -122,10 +122,9 @@ make validate
 
 `make validate` executes formatting, locked workspace checks, Clippy, tests, repository/foundation/contract validation, retained echo and containment integration, and all SDK compilation. `make phase1-foundation` runs the Rust and contract subset. A missing or stale `Cargo.lock` fails all locked commands.
 
-Routine PR CI runs the executable Phase 0 outcome/recovery matrix immediately
-after fixture generation in `CI / Repository contracts`. The separate runtime
-regression workflow collects a smoke baseline only on manual dispatch; it is not
-an additional path-filtered PR check. See [CI ownership](../testing/phase0-ci-layout.md).
+Routine PR CI runs maintained runtime contracts, SDK checks and retained evidence
+validators. The Phase 0 executable collectors and their workflows are retired;
+historical receipts remain checked in. See [CI ownership](../testing/ci-lanes.md).
 Fresh Phase 2 evidence uses the bounded commands in
 [offline validation](../testing/phase-2-offline-validation.md) and the
 [operator walkthrough](standalone-quickstart.md#bounded-phase-2-operator-workflow).
@@ -141,10 +140,10 @@ Install the remaining contract tools at their selected versions, for example `ca
 
 ## Linux and evidence boundary
 
-Linux or WSL may run `make validate`, `make phase0-gate-smoke`, and `make phase0-gate`.
-Only a clean native-Linux host or VM may create replacement **Phase 0**
-calibration, profiling or resource-soak evidence; those wrappers reject WSL and
-containers because their measurements establish a native-host reference.
+Linux or WSL may run `make validate`. Historical **Phase 0** calibration,
+profiling and resource-soak commands belong to their recorded source revisions;
+their wrappers required a clean native-Linux host or VM and rejected WSL and
+containers because their measurements established a native-host reference.
 The separate Phase 1 collectors record their actual supported environment.
 The completed [extension comparisons](../phase-1-extension-completion.md),
 including Docker and Kubernetes, ran on the documented Docker Desktop/WSL2

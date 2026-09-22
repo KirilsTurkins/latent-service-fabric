@@ -7,6 +7,8 @@ import re
 import shutil
 import subprocess
 import sys
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -27,6 +29,32 @@ def run(command, timeout=90):
     subprocess.run([str(value) for value in command], cwd=ROOT, check=True, timeout=timeout)
 
 
+def download_locked(url, artifact):
+    # A setup GET can be repeated after a finite Maven throttle/server response.
+    # Never retry an integrity mismatch or put partial/unverified bytes in cache.
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                content = response.read(artifact["size"] + 1)
+            break
+        except urllib.error.HTTPError as error:
+            retry_after = error.headers.get("Retry-After", "0") if error.headers else "0"
+            error.close()
+            if (attempt == 2 or error.code not in (429, 502, 503, 504)
+                    or not retry_after.isascii() or not retry_after.isdigit()
+                    or len(retry_after) > 2 or int(retry_after) > 10):
+                raise
+            time.sleep(max(1 << attempt, int(retry_after)))
+        except (urllib.error.URLError, ConnectionResetError, TimeoutError) as error:
+            reason = error.reason if isinstance(error, urllib.error.URLError) else error
+            if attempt == 2 or not isinstance(reason, (ConnectionResetError, TimeoutError)):
+                raise
+            time.sleep(1 << attempt)
+    if len(content) != artifact["size"] or hashlib.sha256(content).hexdigest() != artifact["sha256"]:
+        raise ValueError("locked dependency download mismatch")
+    return content
+
+
 def prepare():
     selected = {"Windows": "windows-x86_64", "Linux": "linux-x86_64"}.get(platform.system())
     if selected is None or platform.machine().lower() not in ("amd64", "x86_64"):
@@ -41,11 +69,7 @@ def prepare():
         filename = Path(artifact["path"]).name
         destination = dependencies / filename
         if not destination.exists():
-            with urllib.request.urlopen(lock["maven"] + artifact["path"], timeout=30) as response:
-                content = response.read(artifact["size"] + 1)
-            if len(content) != artifact["size"] or hashlib.sha256(content).hexdigest() != artifact["sha256"]:
-                raise ValueError("locked dependency download mismatch")
-            destination.write_bytes(content)
+            destination.write_bytes(download_locked(lock["maven"] + artifact["path"], artifact))
         if destination.stat().st_size != artifact["size"] or hashlib.sha256(destination.read_bytes()).hexdigest() != artifact["sha256"]:
             raise ValueError("locked dependency cache mismatch")
         if artifact["platform"] != "any":

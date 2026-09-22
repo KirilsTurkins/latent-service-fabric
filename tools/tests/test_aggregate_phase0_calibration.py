@@ -3,8 +3,6 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-import os
-import shutil
 import stat
 import subprocess
 import sys
@@ -17,25 +15,14 @@ from tools.phase0_collector_identity import (
     COLLECTOR_SCHEMA,
     EXPECTED_RELEASE_BUILD_CONFIGURATION,
 )
-from tools.tests.phase0_test_environment import (
-    sanitized_phase0_environment,
-    write_native_linux_runner_stubs,
-)
 
 
 ROOT = Path(__file__).resolve().parents[2]
 AGGREGATOR = ROOT / "tools" / "aggregate_phase0_calibration.py"
-HOT_PROFILE_RUNNER = ROOT / "tools" / "run_phase0_hot_path_profiles.sh"
-CALIBRATION_RUNNER = ROOT / "tools" / "run_phase0_calibration.sh"
-BUILD_ENVIRONMENT = ROOT / "tools" / "phase0_build_environment.sh"
 REFERENCE_RAW = ROOT / "benchmarks" / "phase0" / "raw-results.json"
 
 
 class Phase0CalibrationAggregateTests(unittest.TestCase):
-    @staticmethod
-    def write_executable(path: Path, contents: str) -> None:
-        path.write_text(contents, encoding="utf-8")
-        path.chmod(path.stat().st_mode | stat.S_IXUSR)
 
     def make_archive(
         self,
@@ -422,242 +409,6 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
             completed = self.verify(archive, source_commit, source_tree)
             self.assertEqual(completed.returncode, 2)
             self.assertIn("cannot read JSON", completed.stderr)
-
-    def test_hot_profile_runner_requires_a_fresh_calibration_path(self) -> None:
-        environment = sanitized_phase0_environment()
-        completed = subprocess.run(
-            [
-                str(HOT_PROFILE_RUNNER),
-                "--published-source-commit",
-                "a" * 40,
-                "--published-source-tree",
-                "b" * 40,
-                "--published-source-ref",
-                "example-source",
-            ],
-            check=False,
-            text=True,
-            capture_output=True,
-            env=environment,
-        )
-        self.assertEqual(completed.returncode, 2)
-        self.assertIn("--calibration-aggregate is required", completed.stderr)
-
-    def test_hot_profile_runner_rejects_a_missing_calibration_path_before_tool_checks(self) -> None:
-        environment = sanitized_phase0_environment()
-        with tempfile.TemporaryDirectory() as directory:
-            missing = Path(directory) / "missing-aggregate.json"
-            completed = subprocess.run(
-                [
-                    str(HOT_PROFILE_RUNNER),
-                    "--published-source-commit",
-                    "a" * 40,
-                    "--published-source-tree",
-                    "b" * 40,
-                    "--published-source-ref",
-                    "example-source",
-                    "--calibration-aggregate",
-                    str(missing),
-                ],
-                check=False,
-                text=True,
-                capture_output=True,
-                env=environment,
-            )
-        self.assertEqual(completed.returncode, 2)
-        self.assertIn("must be an existing regular file", completed.stderr)
-
-    def test_calibration_runner_requires_durable_ref_and_external_output(self) -> None:
-        environment = sanitized_phase0_environment()
-        missing_ref = subprocess.run(
-            [
-                str(CALIBRATION_RUNNER),
-                "--published-source-commit",
-                "a" * 40,
-                "--published-source-tree",
-                "b" * 40,
-            ],
-            check=False,
-            text=True,
-            capture_output=True,
-            env=environment,
-        )
-        self.assertEqual(missing_ref.returncode, 2)
-        self.assertIn("durable published source commit, tree, and branch or tag ref", missing_ref.stderr)
-
-        relative_output = subprocess.run(
-            [
-                str(CALIBRATION_RUNNER),
-                "--published-source-commit",
-                "a" * 40,
-                "--published-source-tree",
-                "b" * 40,
-                "--published-source-ref",
-                "development",
-                "benchmarks/phase0/calibration/test-output",
-            ],
-            check=False,
-            text=True,
-            capture_output=True,
-            env=environment,
-        )
-        self.assertEqual(relative_output.returncode, 2)
-        self.assertIn("must be an absolute path outside the source tree", relative_output.stderr)
-
-        source_tree_output = subprocess.run(
-            [
-                str(CALIBRATION_RUNNER),
-                "--published-source-commit",
-                "a" * 40,
-                "--published-source-tree",
-                "b" * 40,
-                "--published-source-ref",
-                "development",
-                str(ROOT / "target" / "phase0-calibration-test-output"),
-            ],
-            check=False,
-            text=True,
-            capture_output=True,
-            env=environment,
-        )
-        self.assertEqual(source_tree_output.returncode, 2)
-        self.assertIn("must be outside the source tree", source_tree_output.stderr)
-
-        with tempfile.TemporaryDirectory() as directory:
-            environment = sanitized_phase0_environment()
-            environment["LSF_CALIBRATION_TARGET_DIR"] = str(
-                ROOT / "target" / "phase0-calibration-test-build"
-            )
-            source_tree_build = subprocess.run(
-                [
-                    str(CALIBRATION_RUNNER),
-                    "--published-source-commit",
-                    "a" * 40,
-                    "--published-source-tree",
-                    "b" * 40,
-                    "--published-source-ref",
-                    "development",
-                    str(Path(directory) / "evidence"),
-                ],
-                check=False,
-                text=True,
-                capture_output=True,
-                env=environment,
-            )
-        self.assertEqual(source_tree_build.returncode, 2)
-        self.assertIn("calibration build output must be outside the source tree", source_tree_build.stderr)
-
-        with tempfile.TemporaryDirectory() as directory:
-            environment = sanitized_phase0_environment()
-            environment["LSF_CALIBRATION_TARGET_DIR"] = directory
-            reused_build = subprocess.run(
-                [
-                    str(CALIBRATION_RUNNER),
-                    "--published-source-commit",
-                    "a" * 40,
-                    "--published-source-tree",
-                    "b" * 40,
-                    "--published-source-ref",
-                    "development",
-                    str(Path(directory) / "evidence"),
-                ],
-                check=False,
-                text=True,
-                capture_output=True,
-                env=environment,
-            )
-        self.assertEqual(reused_build.returncode, 2)
-        self.assertIn("build output directory must not already exist", reused_build.stderr)
-
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            environment = sanitized_phase0_environment()
-            environment["LSF_CALIBRATION_TARGET_DIR"] = str(root / "evidence" / "build")
-            overlapping_build = subprocess.run(
-                [
-                    str(CALIBRATION_RUNNER),
-                    "--published-source-commit",
-                    "a" * 40,
-                    "--published-source-tree",
-                    "b" * 40,
-                    "--published-source-ref",
-                    "development",
-                    str(root / "evidence"),
-                ],
-                check=False,
-                text=True,
-                capture_output=True,
-                env=environment,
-            )
-        self.assertEqual(overlapping_build.returncode, 2)
-        self.assertIn("calibration output and build paths must not overlap", overlapping_build.stderr)
-
-    def test_calibration_runner_rejects_a_local_tag_when_origin_fetch_fails(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            source = root / "source"
-            tools = source / "tools"
-            tools.mkdir(parents=True)
-            shutil.copy2(CALIBRATION_RUNNER, tools / CALIBRATION_RUNNER.name)
-            shutil.copy2(BUILD_ENVIRONMENT, tools / BUILD_ENVIRONMENT.name)
-            bin_directory = root / "bin"
-            bin_directory.mkdir()
-            self.write_executable(
-                bin_directory / "git",
-                "#!/usr/bin/env bash\n"
-                "set -eu\n"
-                "case \"${1:-}\" in\n"
-                "  status|check-ref-format|show-ref|cat-file|merge-base) exit 0 ;;\n"
-                "  fetch) exit 1 ;;\n"
-                "  rev-parse)\n"
-                "    case \"${2:-}\" in\n"
-                f"      HEAD) printf '%s\\n' '{'a' * 40}' ;;\n"
-                f"      'HEAD^{{tree}}'|*'^{{tree}}') printf '%s\\n' '{'b' * 40}' ;;\n"
-                f"      *) printf '%s\\n' '{'a' * 40}' ;;\n"
-                "    esac\n"
-                "    ;;\n"
-                "  *) exit 98 ;;\n"
-                "esac\n",
-            )
-            for command in ("cargo",):
-                self.write_executable(
-                    bin_directory / command, "#!/usr/bin/env bash\nexit 99\n"
-                )
-            write_native_linux_runner_stubs(bin_directory)
-            environment = sanitized_phase0_environment()
-            # A real calibration run executes this regression suite from
-            # inside its already-created external build directory.  Keep that
-            # outer runner setting from changing which precondition this
-            # isolated fake-runner test exercises.
-            environment.pop("LSF_CALIBRATION_TARGET_DIR", None)
-            environment["PATH"] = f"{bin_directory}:{environment['PATH']}"
-            environment["PYTHON"] = sys.executable
-            output = root / "evidence"
-
-            completed = subprocess.run(
-                [
-                    str(tools / CALIBRATION_RUNNER.name),
-                    "--published-source-commit",
-                    "a" * 40,
-                    "--published-source-tree",
-                    "b" * 40,
-                    "--published-source-ref",
-                    "refs/tags/local-only",
-                    str(output),
-                ],
-                check=False,
-                text=True,
-                capture_output=True,
-                cwd=source,
-                env=environment,
-            )
-
-            self.assertEqual(completed.returncode, 2)
-            self.assertIn(
-                "cannot fetch durable published source tag from origin",
-                completed.stderr,
-            )
-            self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

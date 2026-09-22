@@ -93,10 +93,14 @@ and JSON/API misses receive 404 even when fallback is enabled; filename
 extensions do not decide navigation eligibility.
 
 Static content negotiation accepts at most 16 media ranges in 2,048 bytes.
-It supports exact media types, type wildcards, `*/*`, and one `q` parameter
-with up to three fractional digits. A more specific range overrides a wildcard,
-including `text/html;q=0`. Duplicate ranges/headers, unknown parameters and
-malformed qualities receive 400; excess ranges/bytes receive 431. A resolved
+It supports exact media types, type wildcards, `*/*`, and at most eight unique
+parameters per range, including one `q` parameter with up to three fractional
+digits. Token and quoted parameter values are bounded and validated. A range
+with media parameters does not match an unparameterized representation; valid
+parameters in browser navigation headers therefore do not make the request
+malformed. A more specific matching range overrides a wildcard, including
+`text/html;q=0`. Duplicate ranges/headers/parameters and malformed qualities
+receive 400; excess ranges/bytes receive 431. A resolved
 representation excluded by `Accept` or identity encoding receives 406.
 
 Create separate GET and HEAD trigger matchers. A missing HEAD application

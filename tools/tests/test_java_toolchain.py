@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
+import io
 import json
 import os
 import re
@@ -9,6 +11,7 @@ import struct
 import sys
 import tempfile
 import unittest
+import urllib.error
 import zipfile
 from pathlib import Path
 from unittest import mock
@@ -72,6 +75,55 @@ class BytecodeTests(unittest.TestCase):
 
 
 class BuildWiringTests(unittest.TestCase):
+    def test_locked_download_retries_bounded_throttle_then_checks_actual_bytes(self):
+        content = b"locked jar bytes"
+        artifact = {"size": len(content), "sha256": hashlib.sha256(content).hexdigest()}
+        throttle = urllib.error.HTTPError("https://repo.test/jar", 429, "rate limit", {"Retry-After": "3"}, None)
+        with mock.patch.object(build.urllib.request, "urlopen", side_effect=[throttle, io.BytesIO(content)]) as open_, \
+                mock.patch.object(build.time, "sleep") as sleep:
+            self.assertEqual(build.download_locked("https://repo.test/jar", artifact), content)
+        self.assertEqual(open_.call_count, 2)
+        sleep.assert_called_once_with(3)
+
+    def test_locked_download_does_not_retry_integrity_auth_or_unbounded_backoff(self):
+        artifact = {"size": 3, "sha256": hashlib.sha256(b"jar").hexdigest()}
+        for reply in [io.BytesIO(b"bad"), io.BytesIO(b"jar-extra"),
+                      urllib.error.HTTPError("https://repo.test/jar", 403, "denied", {}, None),
+                      urllib.error.HTTPError("https://repo.test/jar", 429, "throttle", {"Retry-After": "60"}, None)]:
+            with mock.patch.object(build.urllib.request, "urlopen") as open_, mock.patch.object(build.time, "sleep") as sleep:
+                if isinstance(reply, Exception): open_.side_effect = reply
+                else: open_.return_value = reply
+                with self.assertRaises((ValueError, urllib.error.HTTPError)):
+                    build.download_locked("https://repo.test/jar", artifact)
+                self.assertEqual(open_.call_count, 1)
+                sleep.assert_not_called()
+
+    def test_locked_download_stops_after_three_server_responses(self):
+        errors = [urllib.error.HTTPError("https://repo.test/jar", 503, "busy", {}, None) for _ in range(3)]
+        with mock.patch.object(build.urllib.request, "urlopen", side_effect=errors) as open_, \
+                mock.patch.object(build.time, "sleep") as sleep:
+            with self.assertRaises(urllib.error.HTTPError):
+                build.download_locked("https://repo.test/jar", {"size": 3, "sha256": "unused"})
+        self.assertEqual(open_.call_count, 3)
+        self.assertEqual(sleep.call_args_list, [mock.call(1), mock.call(2)])
+
+    def test_locked_download_recovers_reset_but_never_retries_certificate_failure(self):
+        import ssl
+        artifact = {"size": 3, "sha256": hashlib.sha256(b"jar").hexdigest()}
+        for failure in [ConnectionResetError(), TimeoutError(), urllib.error.URLError(ConnectionResetError())]:
+            with mock.patch.object(build.urllib.request, "urlopen", side_effect=[failure, io.BytesIO(b"jar")]) as open_, \
+                    mock.patch.object(build.time, "sleep") as sleep:
+                self.assertEqual(build.download_locked("https://repo.test/jar", artifact), b"jar")
+                self.assertEqual(open_.call_count, 2)
+                sleep.assert_called_once_with(1)
+        with mock.patch.object(build.urllib.request, "urlopen",
+                               side_effect=urllib.error.URLError(ssl.SSLCertVerificationError())) as open_, \
+                mock.patch.object(build.time, "sleep") as sleep:
+            with self.assertRaises(urllib.error.URLError):
+                build.download_locked("https://repo.test/jar", artifact)
+            self.assertEqual(open_.call_count, 1)
+            sleep.assert_not_called()
+
     def test_selected_java_home_never_falls_back_to_path(self):
         with tempfile.TemporaryDirectory() as temporary:
             missing = str(Path(temporary) / "missing")
@@ -119,7 +171,7 @@ class BuildWiringTests(unittest.TestCase):
                 java_workflows.append(path.name)
                 self.assertEqual(set(selectors), {expected}, str(path))
         self.assertIn("ci.yml", java_workflows)
-        self.assertIn("phase0-full-validation.yml", java_workflows)
+        self.assertEqual(java_workflows, ["ci.yml"])
         self.assertIn(sdk["java"], (ROOT / ".github/workflows/ci.yml").read_text())
 
     def test_gradle_test_requires_both_main_suites_without_ignoring_failures(self):
