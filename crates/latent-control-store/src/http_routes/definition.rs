@@ -107,7 +107,7 @@ pub(crate) fn normalize(
         _ => return Err(invalid()),
     };
     let method = Method::parse(field("method")?).map_err(|_| invalid())?;
-    if matches!(value.target, TriggerTarget::StaticWeb(_))
+    if matches!(&value.target, TriggerTarget::StaticWeb(_))
         && !matches!(method, Method::Get | Method::Head)
     {
         return Err(invalid());
