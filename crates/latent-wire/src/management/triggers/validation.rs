@@ -220,15 +220,34 @@ pub(super) fn wire(
         .as_ref()
         .ok_or_else(|| Status::invalid_argument("trigger target is required"))?;
     budget.allocation::<proto::TriggerTarget>(1)?;
-    for v in [&t.service, &t.function] {
-        field(v, budget, MAX_IDENTIFIER_BYTES.min(limits.max_id_bytes))?;
-    }
-    field(&t.contract, budget, 256.min(limits.max_id_bytes))?;
-    for v in [t.route.as_ref(), t.revision.as_ref()]
-        .into_iter()
-        .flatten()
-    {
-        field(v, budget, MAX_IDENTIFIER_BYTES)?;
+    let target_kind = proto::TriggerTargetKind::try_from(t.kind)
+        .map_err(|_| Status::invalid_argument("invalid trigger target kind"))?;
+    match target_kind {
+        proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application => {
+            for v in [&t.service, &t.function] {
+                field(v, budget, MAX_IDENTIFIER_BYTES.min(limits.max_id_bytes))?;
+            }
+            field(&t.contract, budget, 256.min(limits.max_id_bytes))?;
+            for v in [t.route.as_ref(), t.revision.as_ref()]
+                .into_iter()
+                .flatten()
+            {
+                field(v, budget, MAX_IDENTIFIER_BYTES)?;
+            }
+        }
+        proto::TriggerTargetKind::StaticWeb => {
+            if !t.service.is_empty()
+                || !t.contract.is_empty()
+                || !t.function.is_empty()
+                || t.route.is_some()
+                || t.revision.is_some()
+                || t.deployment_generation.is_some()
+            {
+                return Err(Status::invalid_argument(
+                    "static web target cannot carry application fields",
+                ));
+            }
+        }
     }
     let p = t
         .publication
@@ -245,6 +264,27 @@ pub(super) fn wire(
     if value.configuration.len() != 6 {
         return Err(Status::invalid_argument(
             "closed HTTP trigger configuration is required",
+        ));
+    }
+    let expected_profile = match target_kind {
+        proto::TriggerTargetKind::StaticWeb => "static-site-v1",
+        proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application => {
+            "buffered-v1"
+        }
+    };
+    if value.configuration.get("profile").map(String::as_str) != Some(expected_profile) {
+        return Err(Status::invalid_argument(
+            "HTTP trigger profile does not match target kind",
+        ));
+    }
+    if target_kind == proto::TriggerTargetKind::StaticWeb
+        && value
+            .configuration
+            .get("method")
+            .is_none_or(|method| method != "GET" && method != "HEAD")
+    {
+        return Err(Status::invalid_argument(
+            "static web trigger method must be GET or HEAD",
         ));
     }
     budget.allocation::<u8>(value.configuration.capacity().saturating_mul(128))?;
