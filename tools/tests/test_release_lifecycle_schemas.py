@@ -110,7 +110,8 @@ class ReleaseLifecycleSchemaTests(unittest.TestCase):
 
     def test_rpc_reasons_and_actor_authority_are_closed(self):
         validator = self.api("ChangeReleaseLifecycleRequest")
-        value = {"digest": DIGEST, "action": "RELEASE_LIFECYCLE_ACTION_REVOKE",
+        value = {"publication": {"id": "publication:sha256:" + "b" * 64, "tenant": "acme"},
+                 "action": "RELEASE_LIFECYCLE_ACTION_REVOKE",
                  "reason": "RELEASE_LIFECYCLE_REASON_SECURITY_INCIDENT",
                  "operation": {"operationId": "revoke-1", "expectedGeneration": "1"}}
         validator.validate(value)
@@ -167,10 +168,10 @@ class ReleaseLifecycleSchemaTests(unittest.TestCase):
                               evidence={"signatures": [document], "provenance": [document], "sboms": []})
             validator = self.api(name)
             with self.subTest(message=name):
-                validator.validate(common | {"digest": DIGEST})
                 validator.validate(common | {"publication": selected})
-                validator.validate(common | {"digest": "", "publication": selected})
-                for selector in ({}, {"digest": ""}, {"digest": DIGEST, "publication": selected},
+                for selector in ({}, {"digest": ""}, {"digest": DIGEST},
+                                 {"digest": "", "publication": selected},
+                                 {"digest": DIGEST, "publication": selected},
                                  {"publication": None}, {"publication": {}},
                                  {"publication": selected | {"id": ""}},
                                  {"publication": selected | {"id": selected["id"].upper()}},
@@ -179,22 +180,23 @@ class ReleaseLifecycleSchemaTests(unittest.TestCase):
                                  {"publication": selected | {"tenant": "acme\u00a0"}}):
                     self.assertFalse(validator.is_valid(common | selector), (name, selector))
 
-    def test_publication_fields_are_additive_and_preserve_component_field_numbers(self):
+    def test_release_queries_require_publication_and_reserve_removed_digest(self):
         source = descriptor_file(load_descriptor_golden(), "latent/control/v1/release.proto")
-        for name, old_field, old_number, new_number in (
-            ("GetReleaseRequest", "digest", 1, 2),
-            ("GetReleaseLifecycleRequest", "digest", 1, 2),
-            ("ChangeReleaseLifecycleRequest", "digest", 1, 5),
-            ("RenewReleaseEvidenceRequest", "digest", 1, 5),
-            ("ReleaseDescriptor", "digest", 1, 13),
-            ("ReleaseLifecycleRecord", "component_digest", 2, 12),
-            ("ReleaseOperationReceipt", "component_digest", 8, 14),
-        ):
+        for name, number in (("GetReleaseRequest", 2), ("GetReleaseLifecycleRequest", 2),
+                             ("ChangeReleaseLifecycleRequest", 5), ("RenewReleaseEvidenceRequest", 5)):
             item = message(source, name)
-            self.assertEqual(field(item, old_field)["number"], old_number)
-            added = field(item, "publication")
-            self.assertEqual(added["number"], new_number)
-            self.assertEqual(added["typeName"], ".latent.control.v1.PublicationRef")
+            self.assertNotIn("digest", {entry["name"] for entry in item["field"]})
+            self.assertIn("digest", item["reservedName"])
+            self.assertIn({"start": 1, "end": 2}, item["reservedRange"])
+            self.assertEqual(field(item, "publication")["number"], number)
+            self.assertEqual(field(item, "publication")["typeName"], ".latent.control.v1.PublicationRef")
+        for name, identity, number, publication_number in (
+                ("ReleaseDescriptor", "digest", 1, 13),
+                ("ReleaseLifecycleRecord", "component_digest", 2, 12),
+                ("ReleaseOperationReceipt", "component_digest", 8, 14)):
+            item = message(source, name)
+            self.assertEqual(field(item, identity)["number"], number)
+            self.assertEqual(field(item, "publication")["number"], publication_number)
 
     def test_deployment_fields_keep_legacy_meaning_and_explicit_assertion_presence(self):
         source = descriptor_file(load_descriptor_golden(), "latent/control/v1/deployment.proto")

@@ -48,7 +48,7 @@ fn publication(digit: &str) -> proto::PublicationRef {
 }
 
 #[test]
-fn cli_selects_exact_publication_in_configured_scope_and_preserves_legacy_digest() {
+fn cli_requires_exact_publication_in_configured_scope() {
     let config = ResolvedConfig {
         endpoint: "http://127.0.0.1:1".into(),
         tenant: "examples".into(),
@@ -70,25 +70,19 @@ fn cli_selects_exact_publication_in_configured_scope_and_preserves_legacy_digest
         }
         let parsed = Cli::try_parse_from(args).unwrap();
         parsed.validate().unwrap();
-        let (digest, selected) = match prepare::prepare(&parsed.command, &config).unwrap() {
-            Operation::GetRelease(value) => (value.digest, value.publication),
-            Operation::GetReleaseLifecycle(value) => (value.digest, value.publication),
+        let selected = match prepare::prepare(&parsed.command, &config).unwrap() {
+            Operation::GetRelease(value) => value.publication,
+            Operation::GetReleaseLifecycle(value) => value.publication,
             Operation::ChangeReleaseLifecycle(value) => {
                 assert_eq!(value.operation.unwrap().expected_generation, Some(u64::MAX));
-                (value.digest, value.publication)
+                value.publication
             }
             _ => panic!("wrong operation"),
         };
-        assert!(digest.is_empty());
         assert_eq!(selected, Some(expected.clone()));
     }
     let digest = release().digest;
-    let parsed = Cli::try_parse_from(["latent", "release", "get", &digest]).unwrap();
-    let Operation::GetRelease(value) = prepare::prepare(&parsed.command, &config).unwrap() else {
-        panic!()
-    };
-    assert_eq!(value.digest, digest);
-    assert!(value.publication.is_none());
+    assert!(Cli::try_parse_from(["latent", "release", "get", &digest]).is_err());
     assert!(Cli::try_parse_from([
         "latent",
         "release",
@@ -111,32 +105,13 @@ fn cli_selects_exact_publication_in_configured_scope_and_preserves_legacy_digest
 fn exact_reply_cannot_substitute_another_publication_with_the_same_component() {
     let expected = publication("a");
     let other = publication("b");
-    let component = release().digest;
-    association::selected_publication(Some(&expected), Some(&component), Some(&expected), "")
-        .unwrap();
-    assert!(
-        association::selected_publication(Some(&other), Some(&component), Some(&expected), "")
-            .is_err()
-    );
-    assert!(
-        association::selected_publication(None, Some(&component), Some(&expected), "").is_err()
-    );
-    assert!(association::selected_publication(
-        Some(&expected),
-        Some(&component),
-        Some(&expected),
-        &component
-    )
-    .is_err());
+    association::selected_publication(Some(&expected), Some(&expected)).unwrap();
+    assert!(association::selected_publication(Some(&other), Some(&expected)).is_err());
+    assert!(association::selected_publication(None, Some(&expected)).is_err());
+    assert!(association::selected_publication(Some(&expected), None).is_err());
     let mut foreign = expected.clone();
     foreign.tenant = "foreign".into();
-    assert!(association::selected_publication(
-        Some(&foreign),
-        Some(&component),
-        Some(&expected),
-        ""
-    )
-    .is_err());
+    assert!(association::selected_publication(Some(&foreign), Some(&expected)).is_err());
 }
 
 #[test]

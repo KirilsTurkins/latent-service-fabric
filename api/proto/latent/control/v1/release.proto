@@ -219,8 +219,9 @@ message ReleaseOperationReceipt {
 }
 
 message GetReleaseLifecycleRequest {
-  // Exactly one selector: nonempty legacy digest OR explicit publication.
-  string digest = 1;
+  // An exact publication is required; component-only selection is unsupported.
+  reserved 1;
+  reserved "digest";
   PublicationRef publication = 2;
 }
 
@@ -239,8 +240,9 @@ message GetReleaseOperationResponse {
 }
 
 message ChangeReleaseLifecycleRequest {
-  // Exactly one selector: nonempty legacy digest OR explicit publication.
-  string digest = 1;
+  // An exact publication is required; component-only selection is unsupported.
+  reserved 1;
+  reserved "digest";
   PublicationRef publication = 5;
   // Only REVOKE or RETIRE is accepted; publication/restoration is not implicit.
   ReleaseLifecycleAction action = 2;
@@ -260,8 +262,9 @@ message ReleaseEvidenceUpload {
 }
 
 message RenewReleaseEvidenceRequest {
-  // Exactly one selector: nonempty legacy digest OR explicit publication.
-  string digest = 1;
+  // An exact publication is required; component-only selection is unsupported.
+  reserved 1;
+  reserved "digest";
   PublicationRef publication = 5;
   string package_digest = 2;
   ReleaseOperationPrecondition operation = 3;
@@ -295,8 +298,9 @@ message PublishReleaseResponse {
 }
 
 message GetReleaseRequest {
-  // Exactly one selector: nonempty legacy digest OR explicit publication.
-  string digest = 1;
+  // An exact publication is required; component-only selection is unsupported.
+  reserved 1;
+  reserved "digest";
   PublicationRef publication = 2;
 }
 

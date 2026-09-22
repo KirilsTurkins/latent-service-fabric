@@ -55,8 +55,7 @@ pub fn scenario() {
             .get_release(request(
                 OPERATOR,
                 proto::GetReleaseRequest {
-                    publication: None,
-                    digest: digest.clone(),
+                    publication: release.publication.clone(),
                 },
             ))
             .await
@@ -115,19 +114,21 @@ async fn publish(
     assert_eq!(release.tenant.as_deref(), Some("examples"));
     assert_eq!(release.service, "examples/echo");
     assert!(release.admitted);
-    assert!(releases
-        .get_release(request(
-            FOREIGN,
-            proto::GetReleaseRequest {
-                publication: None,
-                digest: digest.clone(),
-            }
-        ))
-        .await
-        .expect("foreign lookup is hidden")
-        .into_inner()
-        .release
-        .is_none());
+    let mut foreign = release.publication.clone().unwrap();
+    foreign.tenant = "other".into();
+    assert_eq!(
+        releases
+            .get_release(request(
+                FOREIGN,
+                proto::GetReleaseRequest {
+                    publication: Some(foreign)
+                }
+            ))
+            .await
+            .unwrap_err()
+            .code(),
+        tonic::Code::NotFound
+    );
     let applied = DeploymentServiceClient::new(channel)
         .apply_deployment(request(
             OPERATOR,

@@ -28,7 +28,9 @@ durable audit queries and rollout/canary/promotion/rollback operations. See the
 management reference for exact current methods and recovery semantics.
 Phase 3 adds [explicit publication selection](../../docs/reference/publication-api.md)
 to release, deployment and rollout RPCs, and captured source IDs to invocation
-receipts and audit, while retaining component fields and their numbers.
+receipts and audit. Release-management requests require an exact publication;
+the obsolete component-only request field is removed and its wire number/name
+are reserved. Component fields in output receipts keep their checksum meaning.
 The [standalone Linux node](../../docs/reference/standalone-node.md) serves this
 subset through a bounded loopback listener with configured credentials.
 Phase 3 [HTTP trigger management](../../docs/reference/http-triggers.md) now

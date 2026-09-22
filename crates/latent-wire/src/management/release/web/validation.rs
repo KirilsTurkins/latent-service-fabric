@@ -1,5 +1,5 @@
 use crate::management::{identifier, proto, ManagementLimits, RequestBudget};
-use latent_artifacts::{PublicationRef, PublicationSelector};
+use latent_artifacts::PublicationRef;
 use latent_core::TenantId;
 use tonic::Status;
 
@@ -9,16 +9,7 @@ pub(super) fn publication(
     budget: &mut RequestBudget,
     limits: &ManagementLimits,
 ) -> Result<PublicationRef, Status> {
-    let value =
-        value.ok_or_else(|| Status::invalid_argument("exact web publication is required"))?;
-    let PublicationSelector::Publication(reference) =
-        super::super::selector::request(&String::new(), Some(value), tenant, budget, limits)?
-    else {
-        return Err(Status::invalid_argument(
-            "exact web publication is required",
-        ));
-    };
-    Ok(reference)
+    super::super::selector::request(value, tenant, budget, limits)
 }
 
 pub(super) fn operation(

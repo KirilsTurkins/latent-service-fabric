@@ -7178,7 +7178,7 @@
         "management::tests::preparation::one_page_preserves_cursor_and_zero_default_without_followup",
         "management::tests::preparation::publication_rejects_multiple_stdin_inputs_before_attempting_any_read",
         "management::tests::preparation::publish_preparation_checks_metadata_and_exact_component_digest",
-        "management::tests::publications::cli_selects_exact_publication_in_configured_scope_and_preserves_legacy_digest",
+        "management::tests::publications::cli_requires_exact_publication_in_configured_scope",
         "management::tests::publications::exact_reply_cannot_substitute_another_publication_with_the_same_component",
         "management::tests::publications::release_and_audit_output_preserve_distinct_bounded_publication_identity",
         "management::tests::publications::static_audit_projection_retains_exact_web_identity_and_rejects_hybrids",

@@ -180,7 +180,6 @@ async fn lifecycle(
     request: proto::GetReleaseLifecycleRequest,
     session: &Session,
 ) -> Result<Outcome, Failure> {
-    let digest = request.digest.clone();
     let publication = request.publication.clone();
     let value = call!(
         session,
@@ -191,12 +190,7 @@ async fn lifecycle(
     if let Some(status) = &value.status {
         let record = status.record.as_ref().ok_or_else(invalid_response)?;
         bounds::checked(record, session.max_response_bytes())?;
-        association::selected_publication(
-            record.publication.as_ref(),
-            Some(&record.component_digest),
-            publication.as_ref(),
-            &digest,
-        )?;
+        association::selected_publication(record.publication.as_ref(), publication.as_ref())?;
         if record.tenant != session.tenant() {
             return Err(invalid_response());
         }
@@ -246,7 +240,7 @@ async fn change(
         .as_ref()
         .ok_or_else(invalid_input)?
         .clone();
-    let digest = request.digest.clone();
+
     let publication = request.publication.clone();
     let action = request.action;
     let value = call!(
@@ -256,19 +250,8 @@ async fn change(
         request
     );
     let receipt = value.operation.as_ref().ok_or_else(invalid_response)?;
-    association::selected_publication(
-        receipt.publication.as_ref(),
-        receipt.component_digest.as_deref(),
-        publication.as_ref(),
-        &digest,
-    )?;
-    checked_receipt(
-        receipt,
-        session,
-        &op.operation_id,
-        publication.is_none().then_some(digest.as_str()),
-        Some(&op),
-    )?;
+    association::selected_publication(receipt.publication.as_ref(), publication.as_ref())?;
+    checked_receipt(receipt, session, &op.operation_id, None, Some(&op))?;
     if receipt.action != action {
         return Err(invalid_response());
     }
@@ -285,7 +268,7 @@ async fn renew(
         .as_ref()
         .ok_or_else(invalid_input)?
         .clone();
-    let digest = request.digest.clone();
+
     let publication = request.publication.clone();
     let package = request.package_digest.clone();
     let value = call!(
@@ -295,19 +278,8 @@ async fn renew(
         request
     );
     let receipt = value.operation.as_ref().ok_or_else(invalid_response)?;
-    association::selected_publication(
-        receipt.publication.as_ref(),
-        receipt.component_digest.as_deref(),
-        publication.as_ref(),
-        &digest,
-    )?;
-    checked_receipt(
-        receipt,
-        session,
-        &op.operation_id,
-        publication.is_none().then_some(digest.as_str()),
-        Some(&op),
-    )?;
+    association::selected_publication(receipt.publication.as_ref(), publication.as_ref())?;
+    checked_receipt(receipt, session, &op.operation_id, None, Some(&op))?;
     if receipt.action != proto::ReleaseLifecycleAction::RenewEvidence as i32
         || receipt
             .record

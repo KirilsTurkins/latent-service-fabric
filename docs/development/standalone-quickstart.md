@@ -166,7 +166,8 @@ cli release publish --manifest "$PACKAGE/capsule.json" \
     --component "$PACKAGE/echo-capsule.wasm" --contracts "$PACKAGE/contracts.json" \
     >"$RESULTS/published.json"
 DIGEST=$(field "$RESULTS/published.json" data release digest)
-cli release get "$DIGEST" >"$RESULTS/release.json"
+PUBLICATION=$(field "$RESULTS/published.json" data release publication id)
+cli release get --publication "$PUBLICATION" >"$RESULTS/release.json"
 cli release list --service examples/echo --page-size 1 >"$RESULTS/releases.json"
 
 # Use the returned digest, even though the generated deployment already contains it.

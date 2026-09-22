@@ -168,7 +168,7 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
             replay = client.call(*arguments)["data"]
             require(replay["operation"] == operation, "publication-replay")
             publications[name] = operation
-            client.call("release", "lifecycle", summaries[name]["componentDigest"])
+            client.call("release", "lifecycle", "--publication", operation["publication"]["id"])
         first = client.call("release", "list", "--page-size", "1")["data"]
         require(len(first["releases"]) == 1 and first["nextPageToken"], "release-pagination")
         second = client.call("release", "list", "--page-size", "1", "--page-token", first["nextPageToken"])["data"]
@@ -272,11 +272,11 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
         require(deleted["action"].endswith("DELETE"), "delete-receipt-action")
         require(client.call(*deletion)["data"]["operation"]["replayed"], "delete-replay")
         client.call("deployment", "get", "blue", "--operation-snapshot", codes=(6,))
-        green = summaries["green"]["componentDigest"]
-        lifecycle = client.call("release", "lifecycle", green)["data"]["status"]["record"]
-        revoked = client.call("release", "revoke", green, "--operation-id", "revoke-green",
+        green = publications["green"]["publication"]["id"]
+        lifecycle = client.call("release", "lifecycle", "--publication", green)["data"]["status"]["record"]
+        revoked = client.call("release", "revoke", "--publication", green, "--operation-id", "revoke-green",
                               "--expected-generation", lifecycle["generation"])["data"]["operation"]
-        status = client.call("release", "lifecycle", green)["data"]["status"]
+        status = client.call("release", "lifecycle", "--publication", green)["data"]["status"]
         require(status["record"]["state"].endswith("REVOKED")
                 and int(status["record"]["generation"]) == int(lifecycle["generation"]) + 1
                 and status["record"]["operationId"] == "revoke-green", "revoke-status")

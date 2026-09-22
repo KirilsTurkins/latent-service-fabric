@@ -24,7 +24,7 @@ the command.
 | `validate capsule FILE` | Bounded schema and Phase 1 semantic checks, without credentials or a connection. |
 | `validate deployment FILE` | Local manifest checks; release-aware admission remains the node's responsibility. |
 | `release publish --manifest FILE --component FILE --contracts FILE [--operation-id OP --expected-generation 0]` | Publishes raw component inputs once, optionally with a managed publication identity; the configured node admission mode still applies. |
-| `release get DIGEST` | Gets one tenant-scoped release summary. |
+| `release get --publication ID` | Gets one exact tenant-scoped publication summary. |
 | `release list [--service S] [--page-size N] [--page-token TOKEN]` | Returns one release page. |
 | `deployment apply FILE [--expected-generation N] [--operation-id OP --expected-state-version S]` | Applies once. Managed mode requires both operation flags and an explicit object generation. |
 | `deployment get ID [--operation-snapshot]` | Gets the canonical manifest/object version; opt in to one coherent global state/route/durability snapshot, including for an absent object. |
@@ -48,16 +48,18 @@ Package commands use explicitly supplied local files and a separate OCI profile:
 | `package push DIR --registry-profile FILE --reference REF [--evidence-index FILE --evidence-root DIR]` | Publishes exact package and selected referrers. Evidence flags must be supplied together. |
 | `package pull --registry-profile FILE --reference REF --output-dir DIR --evidence-output DIR` | Resolves a tag once, then exports its immutable package and selected evidence into new directories. |
 
-Release lifecycle commands use the node's current policy and catalog:
+Release lifecycle commands use the node's current policy and catalog. Reads and
+mutations require `--publication ID` from an admission receipt or scoped release
+list; positional component digests are unsupported:
 
 | Command | Behavior |
 | --- | --- |
 | `release publish-package DIR [--evidence INDEX] --operation-id OP --expected-generation 0` | Submits a checked package and explicit evidence to node admission. Omitted evidence means no detached evidence. |
-| `release lifecycle DIGEST` | Reads current lifecycle state and generation. |
+| `release lifecycle --publication ID` | Reads current lifecycle state and generation. |
 | `release operation OP` | Reads the tenant's retained publication/lifecycle operation outcome. |
-| `release revoke DIGEST --operation-id OP --expected-generation N` | Explicit operator revocation at an exact positive lifecycle generation. |
-| `release retire DIGEST --operation-id OP --expected-generation N` | Explicit operator retirement at an exact positive lifecycle generation. |
-| `release renew-evidence DIGEST --package-digest SHA --evidence INDEX --operation-id OP --expected-generation N` | Rechecks new evidence against the stored exact package; does not replace component bytes. |
+| `release revoke --publication ID --operation-id OP --expected-generation N` | Explicit operator revocation at an exact positive lifecycle generation. |
+| `release retire --publication ID --operation-id OP --expected-generation N` | Explicit operator retirement at an exact positive lifecycle generation. |
+| `release renew-evidence --publication ID --package-digest SHA --evidence INDEX --operation-id OP --expected-generation N` | Rechecks new evidence against the stored exact package; does not replace component bytes. |
 
 For publication/renewal, evidence paths resolve below the index file's parent.
 The index must be a file, not standard input. Local `package verify` and OCI push

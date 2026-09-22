@@ -80,8 +80,9 @@ def publish(client, fixture, tenant):
     require(rows["blue"]["component"] == rows["green"]["component"], "fixture-wasm-must-match")
     require(rows["blue"]["package"] != rows["green"]["package"], "corrected-sbom-must-change-package")
     require(rows["blue"]["reference"] != rows["green"]["reference"], "publications-must-coexist")
-    denial = client.call("release", "get", rows["blue"]["component"], codes=(4,))
-    require(denial["error"]["code"] == "state-conflict", "legacy-ambiguity")
+    denial = client.call("release", "get", rows["blue"]["component"], codes=(2,))
+    require(denial["category"] == "local-error" and denial["requestDispatched"] is False,
+            "component-only-selector-rejected")
     return rows
 
 

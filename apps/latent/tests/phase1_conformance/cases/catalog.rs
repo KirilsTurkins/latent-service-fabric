@@ -181,10 +181,21 @@ pub async fn tenants(harness: &mut Harness, evidence: &mut Evidence, fixtures: &
         } else {
             &fixtures.generic
         };
+        let own_releases = harness
+            .call(other.profile(), &["release", "list"], 0, "success")
+            .await;
+        let selected = own_releases["data"]["releases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["digest"] == other.digest)
+            .unwrap()["publication"]["id"]
+            .as_str()
+            .unwrap();
         let foreign_release = harness
             .call(
                 package.profile(),
-                &["release", "get", &other.digest],
+                &["release", "get", "--publication", selected],
                 6,
                 "not-found",
             )

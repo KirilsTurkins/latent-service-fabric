@@ -189,7 +189,7 @@ def exercise(client, binary, directory, package):
         # The same protected config/catalog is reused, without another mutation.
         # A newly selected port is read from this owned node's startup message.
         node = connect(client, binary, directory, config, token, 2)
-        recovered = client.call("release", "get", digest)["data"]["release"]
+        recovered = client.call("release", "get", "--publication", published["publication"]["id"])["data"]["release"]
         require(recovered == published, "release-recovery")
         require(client.call("deployment", "get", DEPLOYMENT)["data"]["deployment"]["generation"]
                 == generation, "deployment-recovery")
