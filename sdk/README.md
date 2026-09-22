@@ -36,9 +36,9 @@ profiles, signed admission and runtime validation.
 
 WIT remains authoritative for typed capsule contracts. Language SDKs are convenience surfaces and must preserve deadlines, cancellation, platform errors, domain errors, resource budgets, identity, and idempotency semantics.
 
-Go uses `profile.ClientProfile` and `transport.Client`; .NET uses
-`Latent.Sdk.Profile.IClientProfile` and `BoundedClient`. Their obsolete invocation
-models and compatibility adapters have been removed. The older interfaces described below still apply only to their
+Go, .NET and Java use their complete profile interfaces and native transport
+clients. Their obsolete invocation models, compatibility constructors and
+adapters have been removed. The older interfaces described below still apply only to their
 remaining language-specific implementations.
 
 ## Java SDK runtime compatibility
@@ -131,9 +131,8 @@ Do not mix its handle ownership with the legacy interface described here.
 This is a pre-stabilization source/ABI correction. Rust struct literals need
 the three new `Option<ActivationId>` fields; Go unkeyed struct literals need
 updating, while keyed literals retain nil defaults. TypeScript fields are
-optional. Java retains the old construction form with absent identity,
-but the record shape changes affect generated accessors, equality,
-deconstruction/reflection, and binary consumers; recompile integrations.
+optional. Current Java and .NET profile records require their complete
+constructor shape; recompile integrations against those models.
 
 C request layout and the vtable cancellation signature change. Rebuild every
 producer and consumer together, update cancellation implementations and calls

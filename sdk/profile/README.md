@@ -37,7 +37,7 @@ Python standard library; formatting uses the repository's pinned `rustfmt` and
 | .NET | `Latent.Sdk.Profile.IClientProfile` | Each method takes `CancellationToken`; `ValueTask` results own their memory after completion. |
 | C | `<latent/profile.h>`, `latent_profile_client_vtable` | Explicit local call handles, exactly-once callbacks and borrowed response data; detailed contract below. |
 
-Go and .NET use this profile exclusively; their obsolete invocation facades
+Go, .NET and Java use this profile exclusively; their obsolete invocation facades
 and compatibility adapters have been removed. Other languages still expose
 older convenience interfaces whose error/enum models cannot represent every
 v1 fact. The complete facade has its own namespace and protobuf-shaped `InvokeRequest`,

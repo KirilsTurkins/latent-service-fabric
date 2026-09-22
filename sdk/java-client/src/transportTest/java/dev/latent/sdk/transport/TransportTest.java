@@ -1,7 +1,6 @@
 package dev.latent.sdk.transport;
 
 import dev.latent.sdk.Management;
-import dev.latent.sdk.Models;
 import com.google.protobuf.ByteString;
 import io.grpc.Metadata;
 import io.grpc.Status;
@@ -284,31 +283,28 @@ public final class TransportTest {
         }
     }
 
-    static void legacyAndConfiguration() throws Exception {
+    static void profileIdentityAndConfiguration() throws Exception {
         for (String endpoint : new String[] {"http://localhost:1234", "http://192.0.2.1:1234", "https://127.0.0.1:1234",
                 "http://127.0.0.1:1234/", "http://user:secret@127.0.0.1:1234", "http://127.0.0.1:0"}) {
             try { ClientConfig.loopback(endpoint, "tenant-a", "test-only-java-token"); throw new AssertionError("unsafe endpoint accepted"); }
             catch (IllegalArgumentException expected) { check(!expected.toString().contains("secret"), "configuration redaction"); }
         }
         try (var peer = new TestPeer(); var client = peer.client()) {
-            var budget = new Models.ResourceBudget(-1, -1, Optional.empty(), 0, 0, 0, 0, 0, 0, 0, 0);
-            var request = new Models.InvokeRequest(new Models.InvocationTarget("tenant-a", "echo", "example:echo/api@1.0.0", "echo", Optional.empty()),
-                    ByteBuffer.wrap(new byte[] {0, -1}), "application/octet-stream",
-                    new Models.InvokeOptions(Optional.empty(), (byte) -1, Optional.empty(), budget, Map.of()), Optional.of("legacy"), Optional.empty(), Optional.empty());
-            var response = (Models.InvocationSuccess) get(client.invoke(request).toCompletableFuture());
-            check(response.response().routeGeneration() == -1 && response.response().publicationId().equals(Optional.of(TestPeer.PUBLICATION)), "legacy complete receipt");
-            check(peer.captured.getPriority() == 255 && peer.captured.getBudget().getCpuFuel() == -1, "legacy unsigned fields");
-            check(get(client.getActivation("legacy").toCompletableFuture()).terminalState().equals(Optional.of("completed")), "legacy retained status");
-            check(get(client.cancel("legacy", "finished").toCompletableFuture()).disposition() == Models.CancelDisposition.ALREADY_TERMINAL, "legacy disposition");
-            var unknown = failure(client.cancel("future", "unsupported").toCompletableFuture());
-            check(unknown.unsupportedWireValue().orElseThrow().value().equals("-19"), "legacy cannot coerce future enum");
-            var held = new Models.InvokeRequest(new Models.InvocationTarget("tenant-a", "echo", "example:echo/api@1.0.0", "hold", Optional.empty()),
-                    request.payload(), request.mediaType(), request.options(), Optional.of("legacy-hold"), Optional.empty(), Optional.empty());
-            var pending = client.invoke(held).toCompletableFuture();
-            until(() -> peer.pending.containsKey("legacy-hold"));
+            var original = invoke("identity", "echo");
+            var request = new Management.InvokeRequest(original.activationId(), original.parentActivationId(), original.rootActivationId(),
+                    original.target(), original.payload(), original.mediaType(), original.deadlineUnixMillis(), -1,
+                    original.idempotencyKey(), Optional.of(new Management.ResourceBudget(-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, Optional.empty())), original.metadata());
+            var response = get(client.invoke(request, OPTIONS)).value();
+            check(response.routeGeneration() == -1 && response.publicationId().equals(Optional.of(TestPeer.PUBLICATION)), "complete publication receipt");
+            check(peer.captured.getPriority() == -1 && peer.captured.getBudget().getCpuFuel() == -1, "full-width unsigned fields");
+            check(get(client.getActivation(new Management.GetActivationRequest("identity"), OPTIONS)).value().terminalState().equals(Optional.of("completed")), "retained status");
+            check(get(client.cancel(new Management.CancelRequest("identity", "finished"), OPTIONS)).value().disposition().equals(Management.CancelDisposition.ALREADY_TERMINAL), "terminal disposition");
+            check(get(client.cancel(new Management.CancelRequest("future", "observe"), OPTIONS)).value().disposition().value() == -19, "future cancellation value preserved");
+            var pending = client.invoke(invoke("profile-held", "hold"), OPTIONS);
+            until(() -> peer.pending.containsKey("profile-held"));
             pending.cancel(true);
             until(pending::isCancelled);
-            check(failure(pending).identity().activationId().equals(Optional.of("legacy-hold")), "legacy cancel preserves recovery");
+            check(failure(pending).identity().activationId().equals(Optional.of("profile-held")), "local cancellation preserves recovery");
         }
     }
 
@@ -374,7 +370,7 @@ public final class TransportTest {
         outcomesAuthAndRecovery();
         rawAuditAndTypedDetails();
         malformedAndOversizedWire();
-        legacyAndConfiguration();
+        profileIdentityAndConfiguration();
         blockedCallbackShutdownReportsRealOwners();
         concurrentShutdownAndClose();
         System.out.println("Java transport: eleven bounded TCP/protocol suites passed");

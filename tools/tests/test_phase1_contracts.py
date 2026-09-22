@@ -225,7 +225,7 @@ class SchemaAndSurfaceTests(unittest.TestCase):
             ROOT / "sdk/go/profile/models.go",
             ROOT / "sdk/typescript-client/src/index.ts",
             ROOT / "sdk/dotnet/Latent.Sdk/Management.cs",
-            ROOT / "sdk/java-client/src/main/java/dev/latent/sdk/Models.java",
+            ROOT / "sdk/java-client/src/main/java/dev/latent/sdk/Management.java",
             ROOT / "sdk/c/include/latent/latent.h",
         )
         for path in sdk_files:
@@ -326,21 +326,17 @@ class SchemaAndSurfaceTests(unittest.TestCase):
                 "IReadOnlyList<ErrorDetail> DetailItems",
                 "IReadOnlyList<string> EffectIds",
             ),
-            "sdk/java-client/src/main/java/dev/latent/sdk/Models.java": (
-                "InvocationReceipt",
-                "BudgetConsumption consumption",
-                "InvocationSuccess",
-                "DeclaredInvocationError",
-                "PlatformInvocationFailure",
-                "RetainedInvocationOutcome",
-                "ActivationStatus",
-                "CancelResponse",
-                "ErrorDetail",
-                "List<ErrorDetail> details",
-                "List<String> effectIds",
-            ),
-            "sdk/java-client/src/main/java/dev/latent/sdk/LatentClient.java": (
+            "sdk/java-client/src/main/java/dev/latent/sdk/Management.java": (
+                "record InvokeResponse",
+                "Optional<BudgetConsumption> consumption",
+                "Optional<Success> success",
+                "Optional<DeclaredError> declaredError",
+                "Optional<PlatformError> platformFailure",
+                "record ActivationStatus",
+                "record CancelResponse",
                 "getActivation",
+                "List<ErrorDetail> detailItems",
+                "List<String> effectIds",
             ),
             "sdk/c/include/latent/latent.h": (
                 "latent_invocation_receipt",
