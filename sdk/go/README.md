@@ -2,13 +2,13 @@
 
 This native client implements the eight-operation [shared SDK profile](../profile/README.md).
 It is not a Go guest runtime, a browser client, a provider credential API, or an
-installed-bundle/production qualification. The existing `latent.Client` facade
-remains available through `transport.NewLegacy` or `client.Legacy()`; the full
-`profile.ClientProfile` surface is implemented by `*transport.Client`.
+installed-bundle/production qualification. `*transport.Client` implements
+`profile.ClientProfile`. Use its complete request, response and error models.
+The obsolete root-package client and `NewLegacy`/`Legacy` adapters have been
+removed during alpha; there is no compatibility facade.
 
 | Package | Responsibility |
 | --- | --- |
-| `latent.dev/sdk/go` | Existing three-operation public invocation facade |
 | `latent.dev/sdk/go/profile` | Shared, generated public DTOs and eight-operation interface; owned by #227 |
 | `latent.dev/sdk/go/transport` | Explicit connection ownership, admission, unary wire transport and conversions |
 | `internal/rpc` | Private generated Protobuf/gRPC bindings; reproducible, ignored build output |
@@ -156,9 +156,9 @@ byte slices and maps do not alias a reusable receive buffer or another response.
 Nil, present-empty optional identity and present-zero numeric values remain
 distinct. The server validates invocation lineage/identity claims. A successful
 RPC still distinguishes success, declared application error and platform
-failure, with publication identity and final consumption. The legacy facade
-preserves those three outcomes; use the full profile for management and audit
-metadata. Future management enum values and signed raw gRPC status values stay
+failure, with publication identity and final consumption. Responses retain
+management and audit metadata. Future management enum values and signed raw
+gRPC status values stay
 lossless. Unsupported invocation phase/terminal/error values fail with bounded
 raw evidence, not invented success.
 

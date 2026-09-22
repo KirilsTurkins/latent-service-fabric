@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"google.golang.org/protobuf/proto"
-	latent "latent.dev/sdk/go"
 	"latent.dev/sdk/go/internal/rpc/controlv1"
 	"latent.dev/sdk/go/internal/rpc/invocationv1"
 	"latent.dev/sdk/go/profile"
@@ -137,7 +136,7 @@ func policyRequest() profile.ApplyPolicyRequest {
 			RecordKind: profile.CapabilityPolicyRecordKindPolicy, Language: "lsf-capability-policy-v1", Document: `{"formatVersion":1,"tenant":"tenant-a","rules":[]}`}}
 }
 
-func TestLegacyOutcomeAndRawPlatformStatus(test *testing.T) {
+func TestProfileOutcomesAndRawPlatformStatus(test *testing.T) {
 	peer := newPeer(test, func(writer http.ResponseWriter, request *http.Request) {
 		wire := &invocationv1.InvokeRequest{}
 		decodePeerRequest(test, request, wire)
@@ -160,11 +159,16 @@ func TestLegacyOutcomeAndRawPlatformStatus(test *testing.T) {
 	})
 	client := testClient(test, peer)
 	for _, kind := range []string{"success", "declared", "platform"} {
-		request := latent.InvokeRequest{ActivationID: pointer("legacy-a"), Target: latent.Target{Tenant: "tenant-a", Function: kind}}
-		response, failure := client.Legacy().Invoke(context.Background(), request)
-		if failure != nil || (kind == "success" && response.Success == nil) || (kind == "declared" && response.DeclaredError == nil) ||
-			(kind == "platform" && (response.PlatformFailure == nil || response.PlatformFailure.Error.Details[0].Fields["state"] != "revoked")) {
-			test.Fatalf("legacy outcome %s lost: %v", kind, failure)
+		request := invokeRequest("outcome-a")
+		request.Target.Function = kind
+		response, failure := client.Invoke(context.Background(), request, profile.CallOptions{})
+		if failure != nil {
+			test.Fatalf("outcome %s failed: %v", kind, failure)
+		}
+		value := response.Value
+		if (kind == "success" && value.Success == nil) || (kind == "declared" && value.DeclaredError == nil) ||
+			(kind == "platform" && (value.PlatformFailure == nil || value.PlatformFailure.DetailItems[0].Fields["state"] != "revoked")) {
+			test.Fatalf("outcome %s lost: %#v", kind, value)
 		}
 	}
 	request := invokeRequest("rpc-a")

@@ -36,6 +36,11 @@ profiles, signed admission and runtime validation.
 
 WIT remains authoritative for typed capsule contracts. Language SDKs are convenience surfaces and must preserve deadlines, cancellation, platform errors, domain errors, resource budgets, identity, and idempotency semantics.
 
+Go exposes only the current `profile.ClientProfile` and `transport.Client`. The
+obsolete root-package invocation models and `NewLegacy`/`Legacy` adapters have
+been removed. The older interfaces described below still apply only to their
+remaining language-specific implementations.
+
 ## Java SDK runtime compatibility
 
 | Surface | Build and minimum runtime | Qualification boundary |
