@@ -2,7 +2,9 @@ use super::{
     super::{observation::Work, persistence, DirectoryDeploymentRepository, PublishedCatalog},
     PreparedTriggerOperation,
 };
-use crate::http_routes::{conflict, TriggerOperationAction, TriggerOperationCommit, TriggerRead};
+use crate::http_routes::{
+    conflict, TriggerOperationAction, TriggerOperationCommit, TriggerRead, TriggerTargetIdentity,
+};
 use latent_artifacts::{ReleaseUseEligibility, ReleaseUseRecheck};
 use latent_core::{PlatformError, PlatformErrorCode, TenantId};
 use std::sync::Arc;
@@ -33,30 +35,54 @@ impl DirectoryDeploymentRepository {
             }
             Ok(())
         } else if prepared.receipt.action == TriggerOperationAction::Apply {
-            let eligibility = prepared
-                .previous
-                .routes
-                .eligibility_for(
-                    &prepared.receipt.component,
-                    Some(&prepared.receipt.publication.id),
-                )
-                .ok_or_else(conflict)?;
-            eligibility.authorize_tenant(&TenantId(prepared.receipt.tenant.clone()))?;
-            if let Some(owner) = &self.lifecycle {
-                eligibility.check_for_lifecycle(owner)?;
+            let target = prepared.receipt.target_identity().ok_or_else(conflict)?;
+            match target {
+                TriggerTargetIdentity::Application {
+                    publication,
+                    component,
+                    ..
+                } => {
+                    let eligibility = prepared
+                        .previous
+                        .routes
+                        .eligibility_for(&component, Some(&publication.id))
+                        .ok_or_else(conflict)?;
+                    eligibility.authorize_tenant(&TenantId(prepared.receipt.tenant.clone()))?;
+                    if let Some(owner) = &self.lifecycle {
+                        eligibility.check_for_lifecycle(owner)?;
+                    }
+                    if let Some(authority) = &self.admission {
+                        eligibility.check_for_authority(authority)?;
+                    }
+                    let mut outcome = None;
+                    ReleaseUseEligibility::with_all_current(
+                        std::slice::from_ref(eligibility),
+                        &mut |checker| {
+                            outcome = Some(self.commit_trigger_inner(&prepared, Some(checker))?);
+                            Ok(())
+                        },
+                    )?;
+                    outcome.ok_or_else(super::unavailable)?
+                }
+                TriggerTargetIdentity::StaticWeb { publication, .. } => {
+                    let tenant = TenantId(prepared.receipt.tenant.clone());
+                    if publication.scope.tenant() != Some(&tenant) {
+                        return Err(conflict());
+                    }
+                    let selection = prepared.static_selection.as_ref().ok_or_else(conflict)?;
+                    if selection.publication() != &publication {
+                        return Err(conflict());
+                    }
+                    let mut outcome = None;
+                    selection.with_current(&tenant, &mut |_checker| {
+                        // WebSelection keeps the web lifecycle fence held for this
+                        // synchronous durable acceptance boundary.
+                        outcome = Some(self.commit_trigger_inner(&prepared, None)?);
+                        Ok(())
+                    })?;
+                    outcome.ok_or_else(super::unavailable)?
+                }
             }
-            if let Some(authority) = &self.admission {
-                eligibility.check_for_authority(authority)?;
-            }
-            let mut outcome = None;
-            ReleaseUseEligibility::with_all_current(
-                std::slice::from_ref(eligibility),
-                &mut |checker| {
-                    outcome = Some(self.commit_trigger_inner(&prepared, Some(checker))?);
-                    Ok(())
-                },
-            )?;
-            outcome.ok_or_else(super::unavailable)?
         } else {
             // Removing stale/revoked targets is permitted; no release grant is created.
             self.commit_trigger_inner(&prepared, None)?
