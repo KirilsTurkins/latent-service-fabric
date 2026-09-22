@@ -65,7 +65,7 @@ The extracted exported interface is also checked for `echo`, `empty-message`, an
 
 ## Trust and reproducibility boundary
 
-The artifact is locally trusted because it is produced from the current checkout with the committed `Cargo.lock`, Rust 1.97.1, a self-contained `wasm32-unknown-unknown` core compiled with `wit-bindgen` 0.60.0, and explicit componentization with `wasm-tools` 1.254.0. It is not signed and is not an OCI artifact. `capsule.json` and `build.json` state this explicitly.
+The artifact is locally trusted because it is produced from the current checkout with the committed `Cargo.lock`, Rust 1.97.1, a self-contained `wasm32-unknown-unknown` core compiled with `wit-bindgen` 0.62.0, and explicit componentization with `wasm-tools` 1.254.0. It is not signed and is not an OCI artifact. `capsule.json` and `build.json` state this explicitly.
 
 The verified reproducibility claim is byte identity for two clean builds from the same checkout and source path on the same host platform with the pinned toolchain, target, lockfile, and canonical release settings. Cross-platform byte identity is not claimed by Phase 0.
 

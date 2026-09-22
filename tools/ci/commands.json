@@ -2823,7 +2823,7 @@
       "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
     },
     "tools/build_guest_capsules.py": {
-      "sha256": "ba8763f38cbd11f41a526bcc4a59ac6c09b9c456f137d337598f333174d1eaab"
+      "sha256": "62c3ef3aadb3c9b4ee1d319ef59730292c609de1e01b805ef0ac9613b6550976"
     },
     "tools/build_native_runtime.py": {
       "sha256": "8aa6e2df82afe7f69c4acc7ae4ddddcc339b0ee16681cfa0984df90623aa4732"
@@ -2868,7 +2868,7 @@
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
     },
     "tools/install_guest_bindgen.py": {
-      "sha256": "39d851e5fea222e68164c7bfb36dc8d924d2c839b01d6b3af94acc65d5fa21ab"
+      "sha256": "5b44bb8ee33f2d0b2466afa6a38b990fb1358fbd9818061b392ef960b535eca1"
     },
     "tools/native_release_gate.py": {
       "sha256": "422d2f5ed37378b20b001dcbde435ee16e68679becf64582bf062e8722ad4a46"
@@ -3476,6 +3476,7 @@
     ],
     "tools/tests/test_guest_build_profiles.py": [
       "GeneratorArchive.test_links_missing_duplicate_and_oversized_binary_fail",
+      "GeneratorArchive.test_pinned_generator_version_matches_toolchain_and_lock",
       "GeneratorArchive.test_verified_regular_binary_only",
       "GuestProfileSchemas.test_echo_snapshot_can_still_capture_every_workspace_member",
       "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate"
