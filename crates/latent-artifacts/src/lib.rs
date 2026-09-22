@@ -228,6 +228,16 @@ pub trait ArtifactRepository: Send + Sync {
         })
     }
 
+    /// Select an exact, currently admitted browser publication. The returned
+    /// value owns the bounded read/admission lease and must be retained through
+    /// the response acceptance boundary.
+    fn select_web_publication(
+        &self,
+        _reference: &PublicationRef,
+    ) -> Result<web::WebSelection, PlatformError> {
+        Err(unsupported_catalog_query())
+    }
+
     fn get_web_operation<'a>(
         &'a self,
         _scope: &'a LifecycleScope,
