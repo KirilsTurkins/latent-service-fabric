@@ -3,14 +3,15 @@ use crate::{
     http_routes::{
         codec, corrupt,
         definition::{self, Matcher},
-        TriggerOperationAction, TriggerOperationReceipt, VersionedTrigger, MAX_DEFINITION_BYTES,
-        MAX_IDENTIFIER_BYTES, MAX_RECORDS, MAX_TABLE_BYTES,
+        TriggerOperationAction, TriggerOperationReceipt, TriggerTargetIdentity, VersionedTrigger,
+        MAX_DEFINITION_BYTES, MAX_IDENTIFIER_BYTES, MAX_RECORDS, MAX_TABLE_BYTES,
     },
 };
+use latent_artifacts::{LifecycleScope, PublicationRef};
 use latent_core::{ArtifactBlobDigest, PlatformError, ReleaseDigest};
 use latent_manifest::{
     __serde::{Deserialize, Serialize},
-    JsonManifestCodec, ManifestCodec, TriggerManifest,
+    JsonManifestCodec, ManifestCodec, TriggerManifest, TriggerTarget,
 };
 use std::sync::Arc;
 
@@ -20,8 +21,16 @@ pub(in crate::deployments) const RECEIPTS: usize = 64;
 pub(in crate::deployments) struct StoredRecord {
     pub manifest: String,
     pub generation: u64,
-    #[serde(with = "crate::rollouts::codec::text")]
-    pub component: ReleaseDigest,
+    // Present only in format-v1 application-only state.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "crate::rollouts::codec::optional"
+    )]
+    pub component: Option<ReleaseDigest>,
+    // Present only in format-v2 state.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<TriggerTargetIdentity>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
@@ -34,6 +43,7 @@ pub(in crate::deployments) struct TableData {
 pub(super) struct Row {
     pub manifest: TriggerManifest,
     pub matcher: Matcher,
+    pub target: TriggerTargetIdentity,
 }
 pub(in crate::deployments) struct HttpTable {
     pub data: TableData,
@@ -45,7 +55,7 @@ impl HttpTable {
     pub fn empty(budget: &Arc<Budget>) -> Result<Arc<Self>, PlatformError> {
         Self::new(
             TableData {
-                format_version: 1,
+                format_version: 2,
                 sequence: 0,
                 records: Vec::new(),
                 receipts: Vec::new(),
@@ -74,7 +84,7 @@ impl HttpTable {
         state: u64,
         route: u64,
     ) -> Result<Arc<Self>, PlatformError> {
-        if data.format_version != 1
+        if !matches!(data.format_version, 1 | 2)
             || data.records.len() > MAX_RECORDS
             || data.receipts.len() as u64 != data.sequence.min(RECEIPTS as u64)
             || data.sequence > state
