@@ -44,7 +44,11 @@ fn export_actual_angular_reference_fixtures() {
         assert_eq!(observation.reproducibility, "not-checked");
         assert!(!observation.hermetic);
         let signers = signers.get_or_insert_with(|| {
-            signing::Signers::new(observation.finished_at, &observation.source.repository)
+            signing::Signers::new(
+                observation.finished_at,
+                &observation.source.repository,
+                ANGULAR_BUILD_TYPE,
+            )
         });
         let bundle =
             read_package_directory(&build.join("package"), PackagingLimits::default()).unwrap();

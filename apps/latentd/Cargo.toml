@@ -92,3 +92,7 @@ path = "tests/phase3_angular_fixture.rs"
 [[test]]
 name = "phase3_reference_fixture"
 path = "tests/phase3_reference_fixture.rs"
+
+[[test]]
+name = "phase3_static_fixture"
+path = "tests/phase3_static_fixture.rs"

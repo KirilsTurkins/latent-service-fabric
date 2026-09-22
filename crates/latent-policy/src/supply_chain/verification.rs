@@ -1,4 +1,7 @@
 //! Shared evidence evaluation. Diagnostic reports never construct admission grants.
+mod web;
+pub use web::{verify_web_package_once, WebPackageVerificationReport};
+
 use super::{denied, SupplyChainPolicy};
 use latent_artifacts::package::PackageKind;
 use latent_artifacts::{AdmissionEvidence, ReleaseEvidenceUpload};

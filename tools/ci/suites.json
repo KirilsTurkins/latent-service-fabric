@@ -304,6 +304,19 @@
       "testThreads": "libtest default",
       "timeoutSeconds": 300
     },
+    "static-site-fixture": {
+      "exact": true,
+      "filter": "export_actual_static_site_fixtures",
+      "ignored": true,
+      "names": [
+        "export_actual_static_site_fixtures"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latentd.test.phase3-static-fixture",
+      "testThreads": 1,
+      "timeoutSeconds": 300
+    },
     "trust-currentness": {
       "exact": false,
       "filter": "standalone::start::tests::trust_currentness::",
@@ -3397,6 +3410,9 @@
         "supply_chain::tests::verification::local_check_denies_wrong_tenant_expiry_missing_and_corrupt_evidence",
         "supply_chain::tests::verification::local_check_uses_current_publisher_policy_and_sbom_requirements",
         "supply_chain::tests::verification::local_report_binds_joint_policy_without_grant_or_clock_history",
+        "supply_chain::tests::verification::local_web_check_rejects_foreign_expired_revoked_missing_and_corrupt_evidence",
+        "supply_chain::tests::verification::local_web_check_rejects_signed_inconsistent_assets_and_executable_capsules",
+        "supply_chain::tests::verification::local_web_report_binds_actual_outputs_without_component_authority",
         "supply_chain::tests::web::actual_web_component_passes_signed_ssr_admission_and_restart",
         "supply_chain::tests::web::angular_build::actual_observed_angular_package_authenticates_publisher_builder_sbom_and_restart",
         "supply_chain::tests::web::componentless_web_admission_reverifies_on_restart_and_old_owner_grants_stay_retired",
@@ -3440,7 +3456,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 92,
+      "minimumCases": 95,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -7737,6 +7753,37 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/phase3_reference_fixture.rs",
       "target": "phase3_reference_fixture",
+      "timeoutSeconds": 300
+    },
+    {
+      "boundary": "product",
+      "expectedCases": [
+        "export_actual_static_site_fixtures"
+      ],
+      "expectedIgnored": [
+        "export_actual_static_site_fixtures"
+      ],
+      "id": "latentd.test.phase3-static-fixture",
+      "ignoredLeaves": [
+        "export_actual_static_site_fixtures"
+      ],
+      "kind": "test",
+      "manifest": "apps/latentd/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latentd",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "actual static-site reference builds and a fresh private fixture root"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase3_static_fixture.rs",
+      "target": "phase3_static_fixture",
       "timeoutSeconds": 300
     },
     {
