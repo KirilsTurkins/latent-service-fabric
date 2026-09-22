@@ -2823,7 +2823,7 @@
       "sha256": "64eac2e3b3b3762197072cc42b38cd6bdc2e196db999d89ab0a9be8ee0c42826"
     },
     "tools/build_guest_capsules.py": {
-      "sha256": "ba8763f38cbd11f41a526bcc4a59ac6c09b9c456f137d337598f333174d1eaab"
+      "sha256": "659fc09a3ee9ed112cad1462e24c2845af3215fda7461a2bff7c094c7e101a6f"
     },
     "tools/build_native_runtime.py": {
       "sha256": "8aa6e2df82afe7f69c4acc7ae4ddddcc339b0ee16681cfa0984df90623aa4732"
@@ -3479,7 +3479,8 @@
       "GeneratorArchive.test_links_missing_duplicate_and_oversized_binary_fail",
       "GeneratorArchive.test_verified_regular_binary_only",
       "GuestProfileSchemas.test_echo_snapshot_can_still_capture_every_workspace_member",
-      "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate"
+      "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate",
+      "GuestToolContract.test_guest_bindgen_version_is_owned_by_external_tool_contract"
     ],
     "tools/tests/test_harbor_registry_runner.py": [
       "HarborRunnerTests.test_cleanup_rejects_foreign_or_malformed_ownership_before_removal",
