@@ -6,6 +6,7 @@ struct Range<'a> {
     kind: &'a str,
     subtype: &'a str,
     quality: u16,
+    parameterized: bool,
 }
 
 pub(super) struct Accept<'a> {
@@ -24,14 +25,14 @@ impl<'a> Accept<'a> {
         if value.len() > 2048 {
             return Err(431);
         }
-        for (index, entry) in value.split(',').enumerate() {
+        for (index, entry) in sections(value, b',').enumerate() {
             if index >= result.ranges.len() {
                 return Err(431);
             }
-            let mut parts = entry.trim().split(';');
+            let mut parts = sections(entry?.trim(), b';');
             let (kind, subtype) = parts
                 .next()
-                .ok_or(400u16)?
+                .ok_or(400u16)??
                 .trim()
                 .split_once('/')
                 .ok_or(400u16)?;
@@ -49,19 +50,12 @@ impl<'a> Accept<'a> {
             {
                 return Err(400);
             }
-            let quality = match parts.next() {
-                None => 1000,
-                Some(parameter) => {
-                    let (key, value) = parameter.trim().split_once('=').ok_or(400u16)?;
-                    if !key.eq_ignore_ascii_case("q") {
-                        return Err(400);
-                    }
-                    qvalue(value.trim())?
-                }
-            };
-            if parts.next().is_some()
-                || result.ranges[..index].iter().flatten().any(|r| {
-                    r.kind.eq_ignore_ascii_case(kind) && r.subtype.eq_ignore_ascii_case(subtype)
+            let (quality, parameterized) = parameters(parts)?;
+            if !parameterized
+                && result.ranges[..index].iter().flatten().any(|r| {
+                    !r.parameterized
+                        && r.kind.eq_ignore_ascii_case(kind)
+                        && r.subtype.eq_ignore_ascii_case(subtype)
                 })
             {
                 return Err(400);
@@ -70,6 +64,7 @@ impl<'a> Accept<'a> {
                 kind,
                 subtype,
                 quality,
+                parameterized,
             });
         }
         Ok(result)
@@ -84,6 +79,10 @@ impl<'a> Accept<'a> {
         self.ranges
             .iter()
             .flatten()
+            // Published media types in this profile contain no parameters.
+            // A valid preference for another representation (e.g. Chrome's
+            // signed-exchange;v=b3) must not reject an otherwise eligible HTML.
+            .filter(|r| !r.parameterized)
             .filter_map(|r| {
                 let specificity = if r.kind.eq_ignore_ascii_case(kind)
                     && r.subtype.eq_ignore_ascii_case(subtype)
@@ -103,11 +102,93 @@ impl<'a> Accept<'a> {
     }
     fn explicit_html(&self) -> bool {
         self.ranges.iter().flatten().any(|r| {
-            r.kind.eq_ignore_ascii_case("text")
+            !r.parameterized
+                && r.kind.eq_ignore_ascii_case("text")
                 && r.subtype.eq_ignore_ascii_case("html")
                 && r.quality != 0
         })
     }
+}
+
+fn sections(value: &str, delimiter: u8) -> impl Iterator<Item = Result<&str, u16>> {
+    let mut remaining = Some(value);
+    std::iter::from_fn(move || {
+        let value = remaining.take()?;
+        let (mut quoted, mut escaped) = (false, false);
+        for (index, byte) in value.bytes().enumerate() {
+            if (byte < 0x20 && byte != b'\t') || byte == 0x7f {
+                return Some(Err(400));
+            }
+            if escaped {
+                escaped = false;
+            } else if quoted && byte == b'\\' {
+                escaped = true;
+            } else if byte == b'"' {
+                quoted = !quoted;
+            } else if !quoted && byte == delimiter {
+                remaining = Some(&value[index + 1..]);
+                return Some(Ok(&value[..index]));
+            }
+        }
+        Some(if quoted || escaped {
+            Err(400)
+        } else {
+            Ok(value)
+        })
+    })
+}
+
+fn quoted_parameter(value: &str) -> bool {
+    let Some(inner) = value.strip_prefix('"').and_then(|v| v.strip_suffix('"')) else {
+        return false;
+    };
+    let mut escaped = false;
+    for byte in inner.bytes() {
+        if escaped {
+            escaped = false;
+        } else if byte == b'\\' {
+            escaped = true;
+        } else if byte == b'"' {
+            return false;
+        }
+    }
+    !escaped
+}
+
+fn parameters<'a>(parts: impl Iterator<Item = Result<&'a str, u16>>) -> Result<(u16, bool), u16> {
+    let (mut quality, mut parameterized) = (1000, false);
+    let mut names: [Option<&str>; 8] = [None; 8];
+    let token = |value: &str| {
+        !value.is_empty()
+            && value
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
+    };
+    for (index, part) in parts.enumerate() {
+        if index == names.len() {
+            return Err(431);
+        }
+        let (name, value) = part?.trim().split_once('=').ok_or(400u16)?;
+        let (name, value) = (name.trim(), value.trim());
+        if !token(name)
+            || names[..index]
+                .iter()
+                .flatten()
+                .any(|n| n.eq_ignore_ascii_case(name))
+        {
+            return Err(400);
+        }
+        names[index] = Some(name);
+        if name.eq_ignore_ascii_case("q") {
+            quality = qvalue(value)?;
+        } else {
+            if !token(value) && !quoted_parameter(value) {
+                return Err(400);
+            }
+            parameterized = true;
+        }
+    }
+    Ok((quality, parameterized))
 }
 
 pub(super) fn navigation(
@@ -145,7 +226,7 @@ mod tests {
             "text/html;q=0.1234",
             "text/html;q=0;q=1",
             "text/html,text/HTML",
-            "text/html; charset=utf-8",
+            "text/html; charset",
             "*/html",
             "text/ht*ml",
         ] {
@@ -153,6 +234,23 @@ mod tests {
         }
         assert!(Accept::parse(Some(&"text/html,".repeat(17))).is_err());
         assert!(Accept::parse(Some(&"x".repeat(2049))).is_err());
+        let browser = Accept::parse(Some("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")).unwrap();
+        assert!(browser.allows("text/html") && browser.explicit_html());
+        for range in [
+            "text/html;charset=utf-8",
+            "text/html;version=one;q=1",
+            "text/html;label=\"a,b;c\"",
+        ] {
+            let accepted = Accept::parse(Some(range)).unwrap();
+            assert!(!accepted.allows("text/html") && !accepted.explicit_html());
+        }
+        for range in [
+            "text/html;v=a;V=b",
+            "text/html;v=\"unterminated",
+            "text/html;v=x;q=0;q=1",
+        ] {
+            assert!(Accept::parse(Some(range)).is_err());
+        }
     }
     #[test]
     fn navigation_requires_complete_fetch_metadata_or_explicit_html() {
