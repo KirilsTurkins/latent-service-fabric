@@ -14,13 +14,13 @@ static void publication_models(void) {
     assert(memcmp(original.component_digest.data, other.component_digest.data, original.component_digest.length) == 0);
     assert(memcmp(original.package_digest.data, corrected.package_digest.data, original.package_digest.length) != 0);
     assert(memcmp(other.package_digest.data, corrected.package_digest.data, other.package_digest.length) == 0);
-    latent_release_selector invalid = {.has_publication = true, .publication = {.id = TEXT(""), .tenant = TEXT("b")}};
-    assert(invalid.has_publication && invalid.publication.id.length == 0 && !invalid.has_component_digest);
-    latent_invocation_receipt legacy = {.release_digest = original.component_digest, .route_generation = UINT64_MAX,
+    latent_publication_ref invalid = {.id = TEXT(""), .tenant = TEXT("b")};
+    assert(invalid.id.length == 0 && invalid.tenant.length == 1);
+    latent_invocation_receipt unresolved = {.release_digest = original.component_digest, .route_generation = UINT64_MAX,
         .consumption = {.cpu_fuel = UINT64_MAX}};
-    latent_invocation_receipt current = legacy;
+    latent_invocation_receipt current = unresolved;
     current.has_publication_id = true;
     current.publication_id = corrected.publication.id;
-    assert(!legacy.has_publication_id && current.has_publication_id && current.publication_id.length == 83);
+    assert(!unresolved.has_publication_id && current.has_publication_id && current.publication_id.length == 83);
     assert(current.route_generation == UINT64_MAX && current.consumption.cpu_fuel == UINT64_MAX);
 }

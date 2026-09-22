@@ -1048,28 +1048,17 @@ static void profile_vectors(void) {
         assert((!(value.has_attempt_sequence)) && "audit-disabled-distinct-from-absence.attempt_sequence.presence");
     }
     {
-        latent_profile_release_selector value = (latent_profile_release_selector){0};
-        assert((!(value.has_component_digest)) && "selector-absent-not-fallback.component_digest.presence");
-        assert((!(value.has_publication)) && "selector-absent-not-fallback.publication.presence");
+        latent_profile_publication_ref value = (latent_profile_publication_ref){.id = PROFILE_TEXT(""), .tenant = PROFILE_TEXT("tenant-a")};
+        assert((value.id.length == 0) && "publication-reference-invalid-id.id.length");
+        assert((value.tenant.length == 8) && "publication-reference-invalid-id.tenant.length");
+        assert((memcmp(value.tenant.data, "tenant-a", 8) == 0) && "publication-reference-invalid-id.tenant");
     }
     {
-        latent_profile_release_selector value = (latent_profile_release_selector){.has_publication = true, .publication = (latent_profile_publication_ref){.id = PROFILE_TEXT(""), .tenant = PROFILE_TEXT("tenant-a")}};
-        assert((!(value.has_component_digest)) && "selector-invalid-present-not-absent.component_digest.presence");
-        assert((value.has_publication) && "selector-invalid-present-not-absent.publication.presence");
-        assert((value.publication.id.length == 0) && "selector-invalid-present-not-absent.publication.id.length");
-        assert((value.publication.tenant.length == 8) && "selector-invalid-present-not-absent.publication.tenant.length");
-        assert((memcmp(value.publication.tenant.data, "tenant-a", 8) == 0) && "selector-invalid-present-not-absent.publication.tenant");
-    }
-    {
-        latent_profile_release_selector value = (latent_profile_release_selector){.has_component_digest = true, .component_digest = PROFILE_TEXT("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), .has_publication = true, .publication = (latent_profile_publication_ref){.id = PROFILE_TEXT("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111"), .tenant = PROFILE_TEXT("tenant-a")}};
-        assert((value.has_component_digest) && "selector-ambiguous-not-auto-selected.component_digest.presence");
-        assert((value.component_digest.length == 71) && "selector-ambiguous-not-auto-selected.component_digest.length");
-        assert((memcmp(value.component_digest.data, "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 71) == 0) && "selector-ambiguous-not-auto-selected.component_digest");
-        assert((value.has_publication) && "selector-ambiguous-not-auto-selected.publication.presence");
-        assert((value.publication.id.length == 83) && "selector-ambiguous-not-auto-selected.publication.id.length");
-        assert((memcmp(value.publication.id.data, "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", 83) == 0) && "selector-ambiguous-not-auto-selected.publication.id");
-        assert((value.publication.tenant.length == 8) && "selector-ambiguous-not-auto-selected.publication.tenant.length");
-        assert((memcmp(value.publication.tenant.data, "tenant-a", 8) == 0) && "selector-ambiguous-not-auto-selected.publication.tenant");
+        latent_profile_publication_ref value = (latent_profile_publication_ref){.id = PROFILE_TEXT("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111"), .tenant = PROFILE_TEXT("tenant-b")};
+        assert((value.id.length == 83) && "publication-reference-tenant-scope.id.length");
+        assert((memcmp(value.id.data, "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", 83) == 0) && "publication-reference-tenant-scope.id");
+        assert((value.tenant.length == 8) && "publication-reference-tenant-scope.tenant.length");
+        assert((memcmp(value.tenant.data, "tenant-b", 8) == 0) && "publication-reference-tenant-scope.tenant");
     }
     {
         latent_profile_publication_identity value = (latent_profile_publication_identity){.publication = (latent_profile_publication_ref){.id = PROFILE_TEXT("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111"), .tenant = PROFILE_TEXT("tenant-a")}, .component_digest = PROFILE_TEXT("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), .package_digest = PROFILE_TEXT("sha256:1111111111111111111111111111111111111111111111111111111111111111")};

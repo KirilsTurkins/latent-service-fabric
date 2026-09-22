@@ -12,7 +12,7 @@ use latent_core::{
 pub use latent_core::{ErrorDetail, PlatformError};
 pub mod management;
 mod publication;
-pub use publication::{PublicationIdentity, PublicationRef, ReleaseSelector};
+pub use publication::{PublicationIdentity, PublicationRef};
 
 #[cfg(feature = "transport")]
 pub mod network;

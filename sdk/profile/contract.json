@@ -1018,18 +1018,6 @@
         "number": 2
       }
     ],
-    "ReleaseSelector": [
-      {
-        "name": "component_digest",
-        "type": "string",
-        "optional": true
-      },
-      {
-        "name": "publication",
-        "type": "PublicationRef",
-        "optional": true
-      }
-    ],
     "PublicationIdentity": [
       {
         "name": "publication",

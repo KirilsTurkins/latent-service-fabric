@@ -11,12 +11,12 @@ internal static class PublicationIdentityTests
             component, "sha256:" + (i % 2).ToString("x").PadLeft(64, '0'))).ToArray();
         Check(rows[0].ComponentDigest == rows[3].ComponentDigest && rows[0].PackageDigest == rows[2].PackageDigest);
         Check(rows[0].PackageDigest != rows[1].PackageDigest && rows[0].Publication != rows[2].Publication);
-        var invalid = new ReleaseSelector("", new PublicationRef("", "b"));
-        Check(invalid.ComponentDigest == "" && invalid.Publication?.Id == "" && new ReleaseSelector().Publication is null);
+        var invalid = new PublicationRef("", "b");
+        Check(invalid.Id == "" && invalid.Tenant == "b");
         var used = new BudgetConsumption(ulong.MaxValue, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        var legacy = new InvocationReceipt("known", "revision", component, ulong.MaxValue, used);
-        var current = legacy with { PublicationId = rows[1].Publication.Id };
-        Check(legacy.PublicationId is null && current.PublicationId == rows[1].Publication.Id);
+        var unresolved = new InvocationReceipt("known", "revision", component, ulong.MaxValue, used);
+        var current = unresolved with { PublicationId = rows[1].Publication.Id };
+        Check(unresolved.PublicationId is null && current.PublicationId == rows[1].Publication.Id);
         Check(current.ReleaseDigest == component && current.RouteGeneration == ulong.MaxValue && current.Consumption.CpuFuel == ulong.MaxValue);
     }
 }
