@@ -9,7 +9,7 @@ use crate::{
     deployment_operations::budget::Charge,
     http_routes::{TriggerOperationReceipt, TriggerReadLease, VersionedTrigger},
 };
-pub use selection::AcceptedHttpRoute;
+pub use selection::{AcceptedHttpRoute, AcceptedHttpTarget};
 use std::sync::{atomic::AtomicBool, Arc};
 
 pub struct PreparedTriggerOperation {
