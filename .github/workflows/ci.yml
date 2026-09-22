@@ -875,7 +875,7 @@ jobs:
       - name: Validate SDK surfaces
         shell: bash
         env:
-          EXPECTED_TYPESCRIPT_VERSION: 5.8.3
+          EXPECTED_TYPESCRIPT_VERSION: 7.0.2
         run: |
           set -euo pipefail
           tools/validate_sdks.sh 2>&1 | tee "$RUNNER_TEMP/java-sdk/sdk.log"
