@@ -201,6 +201,11 @@ Canceling a browser connection cannot cancel an already running blocking filesys
 
 Payload reservations live with reference-counted buffers, not cache slots. Eviction or cache clear cannot release bytes still pinned by a writer. Reservation failure happens before allocation/read; pinned-buffer pressure yields bounded 503 rejection. Cached buffers carry no tenant grants, `WebSelection`, renderer state, or long-lived publication workers.
 
+Cache bookkeeping contention bypasses lookup and optional residency. The request
+still reserves its complete payload charge before reading and verifying the
+captured source. It neither waits for the cache lock nor acquires extra capacity;
+read-gate or memory exhaustion still returns 503 before unowned work begins.
+
 ## Regression coverage and validation
 
 Run the targeted checks with the repository's pinned toolchain:
