@@ -1,6 +1,6 @@
 use latent_audit::{
     AuditActorIdentity, AuditControlAction, AuditIdentities, AuditOperationAttempt,
-    AuditOperationConclusion, AuditOperationResult, AuditReason, AuditScope,
+    AuditOperationConclusion, AuditOperationResult, AuditReason, AuditScope, AuditStaticWebTarget,
 };
 use latent_control_store::http_routes::{
     TriggerOperationAction, TriggerOperationReceipt, TriggerTargetIdentity,
@@ -31,6 +31,19 @@ fn identities(r: &TriggerOperationReceipt) -> crate::Result<AuditIdentities> {
         TriggerTargetIdentity::StaticWeb { .. } => (None, None, None, None),
     };
     Ok(AuditIdentities {
+        static_web: match &target {
+            TriggerTargetIdentity::StaticWeb {
+                web_manifest_digest,
+                assets_digest,
+                web_generation,
+                ..
+            } => Some(AuditStaticWebTarget {
+                web_manifest_digest: web_manifest_digest.parse().map_err(|_| super::invalid())?,
+                assets_digest: assets_digest.parse().map_err(|_| super::invalid())?,
+                web_generation: *web_generation,
+            }),
+            TriggerTargetIdentity::Application { .. } => None,
+        },
         trigger: Some(r.trigger_id.clone()),
         trigger_generation: Some(r.object_generation),
         publication: Some(target.publication().id.clone()),
