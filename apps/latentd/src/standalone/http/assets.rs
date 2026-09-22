@@ -179,9 +179,10 @@ impl Prepared {
     fn accept(&self, tenant: &TenantId) -> Result<(), u16> {
         if let Some(route) = &self.request.route {
             use latent_routing::RevisionPolicySource;
-            route
-                .catalog()
-                .admission_policy(route.revision())
+            let catalog = route.catalog().ok_or(502u16)?;
+            let revision = route.revision().ok_or(502u16)?;
+            catalog
+                .admission_policy(revision)
                 .map_err(|error| status(&error))?;
         }
         // Required even for cache hits, HEAD and 304. Generation/policy changes

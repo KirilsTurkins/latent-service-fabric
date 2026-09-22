@@ -47,7 +47,7 @@ async fn actual_angular_http_queue_disconnect_recovery_and_revocation() {
             http::Method::Get,
         )
         .unwrap();
-    let revision = selected.revision().clone();
+    let revision = selected.revision().expect("application route").clone();
     drop(selected);
     let mut key = fixture
         .node

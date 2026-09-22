@@ -167,6 +167,7 @@ pub(super) fn browser_upload(files: &[(&str, &str, &[u8])]) -> PackageAdmissionU
             mode: WebRenderMode::Client,
             asset: Some("/index.html".into()),
         }],
+        static_routing: None,
         renderer: None,
     };
     let mut layers = vec![
