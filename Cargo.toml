@@ -53,7 +53,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0-alpha.4-rc.1"
+version = "0.1.0-alpha.4"
 edition = "2021"
 rust-version = "1.94.1"
 license = "Apache-2.0"
