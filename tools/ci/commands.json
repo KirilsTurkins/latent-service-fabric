@@ -2665,7 +2665,7 @@
       "sha256": "3262f4be99e860716c4cda7e4e9182ea68991ecd5643c14e0b25f8c3da8ab5fe"
     },
     "sdk/java-client/tools/build.py": {
-      "sha256": "09e590e3c6d79b397db1c3b4e23489b03f818e1555a9e7f91d95a05e251cfef8"
+      "sha256": "f99f85ffe549d48a4c79c98aa244376b792b3338226013d899536b8328da1bed"
     },
     "sdk/java-client/tools/java_toolchain.py": {
       "sha256": "3cc265b8f13f24ce08da3cf079d3e66ca072515b0741f8594b43d412a3b9cd9d"
@@ -3392,6 +3392,7 @@
       "BuildWiringTests.test_gradle_and_shell_targets_cannot_drift_to_java21",
       "BuildWiringTests.test_gradle_test_requires_both_main_suites_without_ignoring_failures",
       "BuildWiringTests.test_locked_download_does_not_retry_integrity_auth_or_unbounded_backoff",
+      "BuildWiringTests.test_locked_download_recovers_reset_but_never_retries_certificate_failure",
       "BuildWiringTests.test_locked_download_retries_bounded_throttle_then_checks_actual_bytes",
       "BuildWiringTests.test_locked_download_stops_after_three_server_responses",
       "BuildWiringTests.test_selected_java_home_never_falls_back_to_path",
