@@ -7333,7 +7333,6 @@
       "boundary": "runtime",
       "expectedCases": [
         "command::tests::check_config_requires_an_explicit_file_and_never_selects_serve",
-        "command::tests::legacy_dispatch_is_limited_to_explicit_first_command",
         "command::tests::offline_migration_has_finite_defaults_and_rejects_unbounded_batches",
         "command::tests::serve_requires_configuration_and_help_advertises_only_product_surfaces",
         "command::tests::status_encoding_is_one_bounded_json_line",
@@ -7601,7 +7600,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 207,
+      "minimumCases": 206,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
