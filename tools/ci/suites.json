@@ -7360,59 +7360,10 @@
     },
     {
       "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latentd.bin.phase0-baseline",
-      "ignoredLeaves": [],
-      "kind": "bin",
-      "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latentd",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "src/bin/phase0-baseline.rs",
-      "target": "phase0-baseline",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latentd.bin.phase0-soak",
-      "ignoredLeaves": [],
-      "kind": "bin",
-      "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latentd",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "src/bin/phase0-soak.rs",
-      "target": "phase0-soak",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
       "expectedCases": [
         "command::tests::check_config_requires_an_explicit_file_and_never_selects_serve",
-        "command::tests::legacy_dispatch_is_limited_to_explicit_first_command",
         "command::tests::offline_migration_has_finite_defaults_and_rejects_unbounded_batches",
-        "command::tests::serve_requires_configuration_and_help_advertises_both_surfaces",
+        "command::tests::serve_requires_configuration_and_help_advertises_only_product_surfaces",
         "command::tests::status_encoding_is_one_bounded_json_line",
         "config::aot::tests::input::compiler_digest_spelling_and_bounded_path_copies_are_exact",
         "config::aot::tests::input::duplicate_members_and_oversized_documents_fail_before_derivation",
@@ -7455,7 +7406,6 @@
         "config::tests::security::profile_marker_rejects_links_and_unprotected_directories_and_leaves_targets_untouched",
         "config::tests::security::unavailable_profiles_and_a_forged_file_protection_flag_are_not_configuration",
         "config::tests::zero_log_budget_preserves_exact_denial_across_rpc_and_admission",
-        "phase0_collector::tests::test_binary_retains_its_actual_collector_identity",
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
         "standalone::http::assets::browser::actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress",
         "standalone::http::assets::browser::browser_boundary_reclaims_two_incomplete_peers_and_continues_eligible_asset_admission",
@@ -7527,7 +7477,6 @@
         "standalone::measurements::comparison::engine::call::tests::fresh_sample_avoids_the_stale_origin_maximum_violation",
         "standalone::measurements::comparison::engine::call::tests::fresh_sample_handles_wall_moves_without_restarting_the_budget",
         "standalone::measurements::comparison::engine::call::tests::transport_status_retains_bounded_utf8_and_original_length",
-        "standalone::measurements::comparison::engine::fixture::actual_tenant_fixtures_validate_before_node_start",
         "standalone::measurements::comparison::engine::namespace::tests::nested_export_and_host_import_sections_are_not_rewritten",
         "standalone::measurements::comparison::engine::namespace::tests::only_outer_names_change_with_other_sections_and_export_indices_preserved",
         "standalone::measurements::comparison::engine::namespace::tests::preserves_legacy_name_discriminator_and_noncanonical_index_bytes",
@@ -7644,7 +7593,6 @@
         "standalone::measurements::comparison::catalog::phase1_catalog_collector",
         "standalone::measurements::comparison::catalog_mutations::phase1_catalog_mutation_collector",
         "standalone::measurements::comparison::cold::phase1_cold_preparation_collector",
-        "standalone::measurements::comparison::engine::fixture::actual_tenant_fixtures_validate_before_node_start",
         "standalone::measurements::comparison::engine::phase1_engine_collector",
         "standalone::measurements::comparison::ownership::phase1_ownership_collector",
         "standalone::measurements::comparison::ownership_supervision::transferred_backend_input_retires_before_same_cell_reuse",
@@ -7670,7 +7618,6 @@
         "actual_http_component_pinned_cutover_and_revocation_use_current_authority",
         "actual_http_component_public_origin_deadline_and_forced_shutdown_reclaim_owners",
         "actual_http_component_tls_body_and_slow_output_keep_owners_until_retirement",
-        "actual_tenant_fixtures_validate_before_node_start",
         "adapter_and_rpc_have_equivalent_selected_outcomes",
         "configured_provider_startup_and_shutdown_remain_repeatable",
         "external_profile_preserves_cold_warm_and_restart_requirements",
@@ -7692,7 +7639,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 219,
+      "minimumCases": 216,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
@@ -7744,36 +7691,6 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/catalog_scale.rs",
       "target": "catalog_scale",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [
-        "cases::executable_covers_success_failures_and_same_runtime_post_failure_recovery"
-      ],
-      "expectedIgnored": [
-        "cases::executable_covers_success_failures_and_same_runtime_post_failure_recovery"
-      ],
-      "id": "latentd.test.phase0-spike-e2e",
-      "ignoredLeaves": [
-        "executable_covers_success_failures_and_same_runtime_post_failure_recovery"
-      ],
-      "kind": "test",
-      "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 1,
-      "mode": "libtest",
-      "package": "latentd",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "tests/phase0_spike_e2e_root.rs",
-      "target": "phase0_spike_e2e",
       "timeoutSeconds": 900
     },
     {

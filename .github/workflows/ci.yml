@@ -742,8 +742,6 @@ jobs:
         run: |
           unset CARGO_INCREMENTAL
           tools/validate_contracts.sh
-      - name: Run executable outcome and recovery matrix
-        run: bash tools/run_phase0_outcome_matrix.sh
       - name: Pass bounded observed build inputs to registry verification
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

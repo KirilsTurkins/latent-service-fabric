@@ -1,5 +1,7 @@
 # Phase 0 executable spike
 
+> Historical evidence documentation: the live Phase 0 executable and collection runners were retired from the current development tree on 2026-09-22. Commands below describe the original authorizing/reproduction environment and require the source revision recorded by the evidence; they are not current `development` commands.
+
 `latentd phase0-spike invoke-once` is the finite composition root for the retained Phase 0 vertical slice. It is a local research and CI surface with no daemon listener. The completed Phase 1 product uses the [standalone node](reference/standalone-node.md) and [operator CLI](reference/operator-cli.md); this harness keeps its original payloads and runtime/containment regression contract.
 
 ## One-command demonstration

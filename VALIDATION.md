@@ -5,7 +5,7 @@ from the complete change. Documentation-only PRs run focused Markdown/SVG
 validation; code, build inputs, evidence, workflow changes and manual runs retain
 the full suite described below. `CI result` checks every selected job's outcome.
 
-Updated on **2026-09-20** for the Java 25 SDK baseline, completed Phases 1 and 2 and the Phase 1 performance extension,
+Updated on **2026-09-22** for the Java 25 SDK baseline, completed Phases 1 and 2 and the Phase 1 performance extension,
 the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
@@ -45,12 +45,7 @@ or resource soaks. An eight-entry index fixture checks normal capacity
 accounting without selecting the large probes. Heavy execution and durable scale evidence
 require the explicit commands below.
 
-Routine pull-request CI runs the executable Phase 0 outcome/recovery matrix
-inside `CI / Repository contracts`, immediately after contract validation builds
-its echo and containment fixtures. It does not run a second complete contract
-job or collect a new Phase 0 baseline. The separate runtime-regression workflow
-is manual-only; complete baseline and authorization paths remain available.
-See the [CI layout](docs/testing/phase0-ci-layout.md) for the current division.
+Routine pull-request CI no longer executes the retired Phase 0 spike/outcome matrix or dedicated Phase 0 workflows. Current contract validation still builds maintained fixtures for active runtime, package, Wasmtime and SDK tests. The retained Phase 0 validators continue to verify checked-in historical evidence through repository tests, but they do not regenerate a current-development Phase 0 run.
 
 For a source release, required checks must pass on the reviewed release inputs.
 Package versions must agree across the Rust workspace and versioned SDKs, while
@@ -58,47 +53,11 @@ dependency locks, WIT/schema compatibility versions and historical measured
 identities retain their separate meanings. Phase 3 declarations and planned
 providers do not extend this release's executed capability coverage.
 
-## Phase 0 completion sequence
+## Historical Phase 0 evidence
 
-The clean-checkout Phase 0 sequence is:
+The Phase 0 feasibility gate is closed historical evidence. Its live `latentd phase0-spike` surface, baseline/soak collectors, collection runners and dedicated workflows have been retired from the current development tree. The original receipts and archives under [`benchmarks/phase0`](benchmarks/phase0/) remain unchanged and retain the exact source/build identities recorded when they were collected.
 
-```bash
-make phase0-gate
-```
-
-It runs formatting, workspace build/lint/test, and SDK validation once, then the
-real executable spike and containment suite and a new full executable baseline.
-The outer gate no longer adds a third contract and repository-test pass before
-the standalone spike and baseline runners perform their retained fixture gates.
-It then writes a machine-readable `latent.phase0.gate.v3` receipt below
-`target/phase0-gate/` after independently rebuilding the retained calibration,
-profile, and soak aggregates from their raw artifacts and validating the fresh
-baseline against them. A full command fails if the receipt is not `authorized`;
-it never reports an incomplete or synthetic archive as a pass.
-
-The retained [August 30 native-Linux receipt](benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
-records the fresh clean-checkout result: `pass`, `authorized`, and zero
-blockers. It independently regenerates the current calibration, profile, and
-soak inputs and binds them to the fresh baseline through one canonical
-execution-evidence identity. Phase 1 is authorized to build on those runtime
-invariants. The receipt remains explicitly non-production and non-Phase-1-API
-compatible; the [August 29 receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-is preserved as historical evidence only.
-
-`make phase0-gate-smoke` runs the same code/contract/executable sequence with
-the deterministic smoke baseline. It records the receipt for CI but does not
-turn a smoke run into Phase 1 authorization; its output reports smoke
-validation and authorization as separate states.
-
-| Command | Baseline | Successful exit establishes | Authorizes Phase 1? |
-| --- | --- | --- | --- |
-| `make phase0-gate` | full | A current full receipt is `authorized`. | Yes, and only if the receipt says `authorized`. |
-| `make phase0-gate-smoke` | deterministic smoke | Deterministic validation coverage completed. | No; a `blocked` receipt can accompany a successful smoke run. |
-
-The full gate evaluates clean-worktree status with
-`git status --porcelain --untracked-files=all`. Its own output below the root
-`target/` directory is ignored; other untracked files can block authorization.
-Run it from an isolated clone or worktree when local build output is present.
+Current validation keeps the independent aggregation, archive and gate-verification code needed to detect alteration of that retained evidence. Those checks establish integrity of the historical record only; they do not authorize a new Phase 0 run on current sources. Reproduction of an original workload requires checking out the exact source revision recorded by the corresponding receipt.
 
 ## What is validated
 
@@ -313,160 +272,23 @@ Its [explicit workflow](.github/workflows/phase1-controlled-comparison.yml) defa
 to smoke. Full mode uses seven pairs of 40 warmup and 400 measured calls per arm;
 it does not repeat scale or soak workloads or replace the retained native reference.
 
-## Native-Linux Phase 0 calibration
+## Historical Phase 0 measurement evidence
 
-The deterministic smoke profile and normal validation suite protect correctness.
-The native-Linux calibration is a heavier explicit benchmark command and is not
-part of normal shared CI:
+The native-Linux Phase 0 calibration, hot-path profile and long-running soak collections are retained under [`benchmarks/phase0`](benchmarks/phase0/) with their checksums, raw archives and recorded host/source identities. Their collection shell scripts were retired together with the Phase 0 executable collectors.
 
-~~~bash
-tools/run_phase0_calibration.sh \
-  --published-source-commit <reachable-commit-sha> \
-  --published-source-tree <reachable-tree-sha> \
-  --published-source-ref <durable-branch-or-tag> \
-  /var/tmp/phase0-evidence/calibration
-~~~
-
-It runs the complete Phase 0 full profile at least seven times from one clean,
-pushed source commit/tree and retains raw output outside the source tree,
-invariant results, host provenance, and an aggregate report. The runner
-requires a durable remote ref, verifies commit/tree reachability from that
-ref, and records both the declared ref and resolved ref head. A missing
-fixture, failed hard invariant, missing or unexpected invariant name, or
-duplicate invariant name invalidates the calibration; it is never filtered
-based on timing or resource values.
-
-The checked-in [August 30 aggregate](benchmarks/phase0/calibration/native-linux-2026-08-30-52ac4754/aggregate.json)
-is the seven-run calibration input verified by the authorized receipt. The
-August 29 aggregate remains historical. Hosted CI must not treat either
-package's machine-specific microbenchmark bands as a pass/fail gate. See
-[docs/phase-0-baselines.md](docs/phase-0-baselines.md) for comparison and rerun
-rules.
-
-## Native-Linux Phase 0 hot-path profiling
-
-Issue 40 provides a separate, manual evidence command for symbolized CPU and
-allocation/copy profiling. It is intentionally excluded from shared CI and
-requires a clean native-Linux host or VM plus the open-source `perf`,
-`heaptrack`, and `heaptrack_print` utilities:
-
-~~~bash
-tools/run_phase0_hot_path_profiles.sh \
-  --published-source-commit <reachable-commit-sha> \
-  --published-source-tree <reachable-tree-sha> \
-  --published-source-ref <durable-branch-or-tag> \
-  --calibration-aggregate /var/tmp/phase0-evidence/calibration/aggregate.json \
-  /var/tmp/phase0-evidence/profiling
-~~~
-
-The command refuses WSL, detected containers, unclean source, missing tools,
-source-tree mismatch, a stale or malformed calibration, missing raw profile
-artifacts, and failed Phase 0 hard invariants. The calibration must be a fresh
-seven-or-more-run native-Linux aggregate whose sibling raw runs regenerate the
-same record for the declared published commit/tree; the runner has no fallback
-to the historical checked-in aggregate. It retains the exact commands, `perf.data`, symbolized `perf`
-reports, Heaptrack data/reports, full baseline raw output, host context, and a
-bounded worker/cell, allocator, and COW experiment matrix. Heaptrack allocation
-attribution uses the leaf-nearest non-plumbing owner frame; a category with no
-direct sample is reported as not observed at profiler resolution, not as a
-zero-cost result. The aggregation test is deterministic and may run in CI; the
-host-sensitive profile command may not. See [docs/phase-0-hot-path-profiling.md](docs/phase-0-hot-path-profiling.md)
-for the evidence interpretation, adoption rule, and Phase 1 handoff.
-
-The retained August 30
-[`native-linux-2026-08-30-52ac4754`](benchmarks/phase0/profiling/native-linux-2026-08-30-52ac4754/README.md)
-package is the v5 profile input verified by the authorized receipt. It covers
-all eight required workloads and candidates, retains the complete invariant
-proof, and makes no production or cross-machine performance claim. The August
-29 package remains historical archive-regression evidence.
-
-## Native-Linux long-running resource soak
-
-The issue 39 resource plateau probe is also explicit heavyweight work, not a
-shared CI job. A replacement or revalidation run must use the final Phase 0
-configuration from a clean native Linux host or VM and a durable source
-commit/tree:
-
-```bash
-tools/run_phase0_resource_soak.sh \
-  --published-source-commit <reachable-final-commit> \
-  --published-source-tree <reachable-final-tree> \
-  --published-source-ref <durable-branch-or-tag> \
-  --final-configuration-commit <reachable-final-commit> \
-  --calibration /var/tmp/phase0-evidence/calibration/aggregate.json \
-  /var/tmp/phase0-evidence/soak
-```
-
-It rejects WSL, containers, unavailable process probes, fixture/toolchain
-failure, dirty or mismatched source trees, missing raw batch samples, and a
-pre-final/test-only invocation. It preserves at least three full raw processes,
-each with 1,000 warm-ups excluded from analysis, 100,000 measured fresh-store
-activations, all failure/recovery paths, and frequent real capacity/queue
-saturation. Its aggregate revalidates every hard check and every batch's
-logical-resource baseline, reports rolling ranges/final deltas/Theil-Sen late
-slopes/peaks and explicit release/shutdown state, rejects both measured-window
-and release-to-shutdown FD growth, and for new archives verifies that the final
-measured FD count stays within a post-warm-up baseline while release/shutdown
-return within a pre-runtime baseline. It reconciles raw process environment
-against before/after host observations and applies #38's calibrated RSS band
-for RSS/PSS/private material-growth triage only after CPU, memory, kernel,
-virtualization, toolchain, allocator, fixture, and relevant configuration
-identity—including prepared-cache enablement, Wasmtime allocator mode, and
-initialized-memory COW—are proved matched. A mismatch or missing identity
-blocks the comparison and authorization; it is never a reason to raise an
-allowance.
-
-The authorizing August 30 final-configuration raw result is
-[`native-linux-2026-08-30-52ac4754`](benchmarks/phase0/soak/native-linux-2026-08-30-52ac4754/README.md):
-three complete 100,000-activation processes from durable source commit
-`52ac47542a05c0a1263f78a14c04a5c2e6b761f3` and tree
-`cac3ececdbd0b5734691c30c0283fccff169a5f5`. Its raw hard invariants,
-raw/host identity reconciliation, descriptor lifecycle, release/shutdown
-topology, and matched-calibration late-window analysis pass. The lossless zstd
-archive and its per-file manifest retain all raw process evidence without
-duplicating earlier attempts. The package is evidence input, not an
-authorization decision by itself; the retained full Phase 0 receipt verifies
-it together with every other required input. The August 29 result remains
-historical.
+The corresponding Python aggregators, archive reassembly/package checks and gate verifier remain covered by repository tests so the checked-in evidence can be losslessly replayed and alteration is rejected. They must not be interpreted as measurements of the current development runtime. Re-collecting the historical workloads requires the exact recorded source revision rather than the current branch.
 
 ## CI jobs
 
-Normal pull requests use the `CI` workflow. It runs formatting,
-workspace compilation, generated binding checks, Clippy, tests, the MSRV check,
-repository/contract validation, the reproducible echo component build, and all
-SDK surfaces. Its core Rust job also retains the strict `latentd` Clippy policy
-that previously lived in an issue-specific workflow. Superseded runs for the
-same ref are cancelled.
+Normal pull requests use the `CI` workflow. It runs formatting, workspace compilation, generated binding checks, Clippy, tests, the MSRV check, repository/contract validation, reproducible maintained fixture builds, and all SDK surfaces. Superseded runs for the same ref are cancelled.
 
-The `Durable catalog acceptance` job runs ordinary artifact, deployment/routing,
-and catalog-probe supervision regressions. Its expensive 100,000-release
-publication/reopen step and retained scale logs are enabled only by manual
-dispatch with `run_catalog_scale: true`; the default is `false`.
+The `Durable catalog acceptance` job runs ordinary artifact, deployment/routing and catalog-probe supervision regressions. Its expensive 100,000-release publication/reopen step and retained scale logs are enabled only by manual dispatch with `run_catalog_scale: true`; the default is `false`.
 
-`Repository contracts` runs the ignored `latentd` outcome/recovery matrix
-immediately after building its current echo and containment fixtures. The
-dependent `OCI registry TLS integration` job verifies real bounded transfer and
-the separately captured observed-build inputs. The Rust job also executes the
-bounded Phase 2 operator, native-currentness, offline and resource schedules,
-retaining compact receipts for seven days.
+`Repository contracts` validates the maintained contract and guest fixtures used by current integration tests. The retired Phase 0 executable outcome/recovery matrix is no longer part of this job. The dependent `OCI registry TLS integration` job verifies real bounded transfer and separately captured observed-build inputs. The Rust job also executes bounded Phase 2 operator, native-currentness, offline and resource schedules plus selected Phase 3 checks.
 
-`Phase 0 runtime regression` is manual-only. It runs the complete deterministic
-baseline smoke, including its mandatory contract validation, and then the shared
-outcome/recovery runner. Its owned baseline evidence is retained for 14 days.
-The routine PR path reuses same-job fresh fixtures and does not collect that
-additional baseline. See [the CI layout](docs/testing/phase0-ci-layout.md).
+There are no current `Phase 0 runtime regression` or `Phase 0 full validation` workflows. Their authorizing measurements and receipts remain checked in as immutable historical evidence, with independent validators retained for integrity/replay tests.
 
-`Phase 0 full validation` is manual-only. Its `workflow_dispatch` input selects
-the full authorization gate or the deterministic smoke gate from a clean,
-full-history checkout. The completed Phase 0 reference evidence is no longer
-auto-refreshed or committed by a pull-request workflow.
-
-A completed validation failure is evidence that the executable interface
-baseline needs investigation; a job that fails before its steps run (for
-example, runner or account infrastructure) is not source-validation evidence
-and must be rerun.
-
-After a successful contracts job, the workflow prints `build.json` and `sha256.txt` and uploads the generated component, capsule metadata, extracted interface, build receipt, and digest as `phase-0-echo-capsule-${GITHUB_SHA}` for 14 days. This retained artifact is reproducibility evidence for the locally trusted fixture; it is not a signed or distributable release artifact.
+After a successful contracts job, the current workflow uploads the bounded observed echo build as `phase-2-observed-echo-${GITHUB_SHA}` for downstream registry verification. This artifact is an input to current supply-chain tests; it is distinct from the retired Phase 0 baseline/gate artifacts.
 
 ## Allocation boundary
 

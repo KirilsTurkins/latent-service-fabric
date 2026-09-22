@@ -1,15 +1,16 @@
-# Wiki cutover review
+# Wiki removal review
 
-The public Wiki cutover remains pending. This review document prepares all 26
-entry-page destinations without changing the old Wiki source or its publisher.
-The required essential guide reviews under #345 must be recorded before notices
-are published and repository entry links switch.
+The public Wiki will be removed after the complete documentation site is deployed
+and Phase 3 is complete. The maintainer decision of September 22, 2026 replaces
+the earlier plan to publish 26 archive notices and preserve legacy navigation.
+Migrate useful material and verify current destinations; old Wiki URLs, anchors
+and obsolete pages do not have to remain available.
 
-The [preserved migration inventory](../evidence/wiki-migration-2026-09-20.json)
-identifies source `d1035a50d2fd99b076c74dd958ca4437d909f2ec`, published Wiki
-`e0cc50fe654b783f189b30a8a6f7946d66177180`, all four assets, and the archived history.
-Every original page body, heading anchor, release link, diagram and publication
-receipt is retained by the proposed transition.
+The [migration inventory](../evidence/wiki-migration-2026-09-20.json) records source
+`d1035a50d2fd99b076c74dd958ca4437d909f2ec`, published Wiki
+`e0cc50fe654b783f189b30a8a6f7946d66177180`, all four assets and historical identities.
+These pinned references establish attribution without retaining an active Wiki.
+The observations below are historical checks, not proof of a completed removal.
 
 ## Website and destination observations
 
@@ -26,7 +27,7 @@ Those two distinct routes returned 404 and must be published and checked before
 cutover. Development Workflow and Repository Map use the existing contribution
 learning path; that guide links to the repository contribution contract.
 
-| Preserved Wiki entry | Proposed maintained replacement | HTTP status on September 21 |
+| Inventoried Wiki entry | Content destination | HTTP status on September 21 |
 | --- | --- | --- |
 | [Activation-Lifecycle](https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Activation-Lifecycle.md) | [Local activation lifecycle](../activation-lifecycle.md) | 200 |
 | [Architecture](https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/Architecture.md) | [LSF architecture overview](../architecture/overview.md) | 200 |
@@ -55,55 +56,34 @@ learning path; that guide links to the repository contribution contract.
 | [_Footer](https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/_Footer.md) | [Wiki migration and publication continuity](wiki-migration.md) | 404; publication pending |
 | [_Sidebar](https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/_Sidebar.md) | [Wiki migration and publication continuity](wiki-migration.md) | 404; publication pending |
 
-## Proposed archive notice
-
-After guide approval and successful destination publication, place this notice
-below each retained page title, substituting that row's specific replacement.
-On the sidebar and footer, place it immediately after the managed marker.
-Keep the original title position required by the existing Wiki validator.
-
-> **Archived Wiki content.** Use the linked maintained replacement for this
-> topic. This retained page describes an earlier documentation snapshot; its
-> release and evidence claims remain historical. Start at the documentation
-> website for current development and versioned guidance.
-
-The notice's topic link uses the generated project-base route, and its website
-link uses the actual deployed home. Existing Wiki links and fragments continue
-to address the retained bodies. GitHub Wiki URLs do not receive HTTP redirects
-from GitHub Pages.
-
-## Reviewed execution order
+## Execution order
 
 1. Merge and qualify the remaining essential guides and retain their execution
    receipts. Complete the separate human newcomer reviews required by #345.
-2. Publish the reviewed development site through the existing protected exact
-   artifact flow. Record the source, successful push CI run, attempt, artifact,
-   publisher run and live receipt. Recheck both pending routes and every mapped
-   replacement against that actual deployment.
-3. Review a focused `docs/wiki` PR containing only the 26 notices. Verify removing
-   the inserted notice recovers each original page byte for byte. Validate all
-   26 pages, all four assets and all retained local links with the existing owner.
-4. Publish the approved notices through that owner and record the actual Wiki
-   commit and publication manifest. Verify all notices and destination links
-   against the published Git repository, including Home, sidebar and footer.
-5. Retire the old publishing workflow in a separate reviewed `docs/wiki` change,
-   then switch the repository entry links to the tested site. Retain generator
-   sources, diagrams, page bodies and all historical publication records.
-6. Record the final before/after inventory and publication identities in the
-   [migration guide](wiki-migration.md). Close #356 after these checks pass.
+2. Publish the reviewed development site through the protected exact artifact
+   flow. Record source, successful push CI run, attempt, artifact, publisher run
+   and live receipt. Recheck every maintained destination, including the two
+   routes that were absent at the historical observation above.
+3. Switch repository and public entry links to the tested site and remove active
+   Wiki navigation. Obsolete page content can be retired rather than copied.
+4. Complete the Phase 3 gate using the content migration, guide reviews and live
+   website evidence. Record that the administrative Wiki removal follows this
+   decision; it is not a prerequisite that depends on Phase 3 completing first.
+5. Retire the old publishing workflow through a reviewed change on `docs/wiki`.
+   Disable the repository Wiki after the completed Phase 3 decision and website
+   deployment. Verify the setting, retired workflow and maintained entry links.
+6. Record the resulting site/source identity and Wiki removal receipt in the
+   [migration guide](wiki-migration.md), then close #356. Publishing archive
+   notices, preserving legacy links or maintaining redirect pages is unnecessary.
 
 Future prose belongs in `docs/`. Website presentation, search, version handling
-and publication belong to `website/` and its protected publisher. Historical
-Wiki diagram and generator sources stay attributable; their retired writer
-must not resume routine synchronization.
+and publication belong to `website/` and its protected publisher. Git history
+and original evidence receipts retain attribution. The retired Wiki writer must
+not resume synchronization or recreate a second documentation service.
 
 ## Bounded rollback
 
-Before notices are published, a failed destination check leaves the existing Wiki
-entry points available. After publication, restore the prior reviewed notice
-state through an ordinary reviewed revert, retaining history. If Pages needs
-rollback, use its protected flow with a previously published complete artifact
-and the exact currently live source. Do not move runtime tags, rewrite benchmark
-receipts or promote an unfinished runtime release to perform a documentation
-rollback. The pre-migration Git bundle and pinned source references remain the
-archive authority throughout.
+A failed live destination check delays cutover until the site is corrected.
+After removal, recover the website through its protected flow with a previously
+published complete artifact and the exact currently live source. Do not restore
+Wiki publishing, move runtime tags or rewrite historical benchmark receipts.

@@ -6,22 +6,29 @@ claim that a binary release or its full acceptance evidence already exists.
 The parent integrator chooses the final reviewed commit and new version only
 after exact-head CI. Do not move the historical source-only `0.1.0-alpha.3` tag.
 
-## Unpublished native predecessor
+## Qualified unpublished native predecessor
 
-The reviewed source version `0.1.0-alpha.4-rc.1` is the intended unpublished
-foundation for a real native upgrade pair. Its compatibility inventory deliberately
-has no predecessor: this is not an assertion that source-only alpha.3 installations
-can migrate. The workspace and isolated native-fixture lockfiles carry the same
-new local crate version without updating third-party package selections.
+The immutable `0.1.0-alpha.4-rc.1` tag identifies source
+`010c1c0605533a9f8a51a36e8b45265baa6255bb`. Its maintained CI passed in
+[run 35757424832](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35757424832).
+The nonpublishing [release run 35763422270](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35763422270)
+authenticated its archive and passed both clean-VM profiles, including actual
+reboot, retained deployment, repeat installation, removal and purge. The local
+profile also passed rootless foreground execution. The
+[retained identity receipt](../evidence/native-foundation-35763422270.json)
+records the archive hash and the remaining compatible-pair gap.
 
-After this exact source passes maintained CI and review, the integrator can create
-its immutable annotated tag, commission the release workflow on the maintained
-default branch, and dispatch that tag with `publish=false`. The resulting
-authenticated archive and two-profile VM receipts are prerequisites for recording
-the exact predecessor version and source commit in the later alpha.4 source.
-Only that genuinely distinct version pair can qualify compatible upgrade and
-unsupported downgrade rejection. No tag, archive publication, upgrade receipt or
-Phase 3 completion is implied by this version-preparation commit.
+The alpha.4 source records this exact predecessor in
+[`compatibility.json`](../../packaging/linux/compatibility.json). Installer and
+node configuration formats remain version 1, with no storage migration declared.
+The workspace and isolated native-fixture locks use the alpha.4 local crate version.
+The foundation is unpublished and does not authorize migration from source-only
+alpha.3. Its single-version receipts do not complete the upgrade criterion.
+
+After alpha.4 passes exact-source CI, dispatch its distinct immutable tag with
+`predecessor_run=35763422270` and `publish=false`. Both profiles must pass the
+actual compatible upgrade and unsupported downgrade checks before publication.
+The protected publication environment remains the final approval boundary.
 
 ## Publisher identity and offline verification
 

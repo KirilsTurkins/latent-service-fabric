@@ -19,9 +19,11 @@ flowchart TD
 The main docs plugin reads `../docs` directly from `website/`; decisions use a
 separate `../adr` plugin. There is no edited `website/docs` copy. Existing current
 documents remain in place. `docs/wiki` is excluded and separately counted;
-the initial checkout has no tracked files there. The historical Wiki branch,
-remote Wiki and frozen publication receipt are not merged or rewritten. #356
-owns their full inventory, migration notices and retirement of the second writer.
+the initial checkout has no tracked files there. The historical Wiki branch and
+frozen publication receipt are not merged or rewritten. #356 owns the useful
+content migration and removal of the public Wiki after Phase 3 completion and
+verified site deployment, including retirement of the second writer. Old Wiki
+URLs and archive notices are not required.
 
 ## Toolchain and installation
 
@@ -179,6 +181,8 @@ human review of an exact commit and version-bound execution receipts. A page
 being present or a test file existing cannot satisfy those conditions. #237
 retains the integrated runbook/support matrix, with #357/#358/#359/#361 as its
 delegated authoring owners. No runtime examples are executed by this checker.
+Use the [27-outcome review checklist](phase3-guide-review.md) to collect rendered
+walkthrough results and record the exact source reviewed.
 
 ## Narrow handoffs to the remaining children
 
@@ -189,7 +193,7 @@ delegated authoring owners. No runtime examples are executed by this checker.
 | #349/#350 | Add reviewed shared theme tokens/global brand assets and separately approved maintained illustrations; preserve frozen historical bytes. |
 | #354 | Consume page source/route/hash/channel metadata for version-aware search and complete keyboard/accessibility/browser checks. |
 | #355 | Keep one protected development-branch Pages writer, add scoped website CI and exact generated-directory exclusions, then verify real deployment/rollback. Preserve existing `CI result` and documentation/frozen-evidence profiles. |
-| #356 | Inventory the separate Wiki source/publication, retain useful unique material/legacy links and cut over entry points; no wholesale merge. |
+| #356 | Migrate useful unique Wiki content, verify the deployed site and switch entry points; remove the Wiki after Phase 3 completion and retire its publisher. Old Wiki URLs and obsolete content have no compatibility requirement. |
 
 The current repository CI conservatively selects full validation for unknown
 website source. This foundation does not change `ci.yml`, broadly exempt the
