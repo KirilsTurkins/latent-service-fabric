@@ -1,17 +1,7 @@
-use std::ffi::OsStr;
-
 use clap::{error::ErrorKind, Parser};
 use serde_json::json;
 
-use super::{is_phase0, status, Command, CommandLine};
-
-#[test]
-fn legacy_dispatch_is_limited_to_explicit_first_command() {
-    assert!(is_phase0(OsStr::new("phase0-spike")));
-    assert!(is_phase0(OsStr::new("spike")));
-    assert!(!is_phase0(OsStr::new("serve")));
-    assert!(!is_phase0(OsStr::new("phase0-spike-extra")));
-}
+use super::{status, Command, CommandLine};
 
 #[test]
 fn check_config_requires_an_explicit_file_and_never_selects_serve() {
@@ -22,11 +12,10 @@ fn check_config_requires_an_explicit_file_and_never_selects_serve() {
     };
     assert_eq!(config, std::path::PathBuf::from("node.json"));
     assert!(CommandLine::try_parse_from(["latentd", "check-config"]).is_err());
-    assert!(!is_phase0(OsStr::new("check-config")));
 }
 
 #[test]
-fn serve_requires_configuration_and_help_advertises_both_surfaces() {
+fn serve_requires_configuration_and_help_advertises_only_product_surfaces() {
     let parsed = CommandLine::try_parse_from(["latentd", "serve", "--config", "node.json"])
         .expect("parse product command");
     let Command::Serve { config } = parsed.command else {
@@ -39,8 +28,10 @@ fn serve_requires_configuration_and_help_advertises_both_surfaces() {
         .expect("help is a successful display request");
     assert_eq!(help.kind(), ErrorKind::DisplayHelp);
     let text = help.to_string();
+    assert!(text.contains("check-config"));
     assert!(text.contains("serve"));
-    assert!(text.contains("phase0-spike"));
+    assert!(text.contains("migrate-catalog"));
+    assert!(!text.contains("phase0-spike"));
 }
 
 #[test]

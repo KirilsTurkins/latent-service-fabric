@@ -9,7 +9,6 @@ mod status;
 #[cfg(test)]
 mod tests;
 
-use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -46,9 +45,6 @@ enum Command {
         #[command(flatten)]
         limits: MigrationOptions,
     },
-    /// Run the finite, non-production Phase 0 validation tools.
-    #[command(name = "phase0-spike", visible_alias = "spike")]
-    Phase0Spike,
 }
 
 #[derive(clap::Args)]
@@ -76,12 +72,9 @@ impl MigrationOptions {
     }
 }
 
-/// Dispatches legacy invocations unchanged, then handles the product commands.
+/// Handles the supported standalone node commands.
 #[must_use]
 pub fn main_entry() -> ExitCode {
-    if std::env::args_os().nth(1).as_deref().is_some_and(is_phase0) {
-        return crate::spike::main_entry();
-    }
     let command = match CommandLine::try_parse() {
         Ok(command) => command.command,
         Err(error)
@@ -104,16 +97,11 @@ pub fn main_entry() -> ExitCode {
         Command::CheckConfig { config } => run_check_config(&config),
         Command::Serve { config } => run_serve(&config),
         Command::MigrateCatalog { config, limits } => run_migrate(&config, limits.limits()),
-        Command::Phase0Spike => Err(Failure::new("command", PlatformErrorCode::InvalidArgument)),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(failure) => report_failure(failure),
     }
-}
-
-fn is_phase0(argument: &OsStr) -> bool {
-    argument == "phase0-spike" || argument == "spike"
 }
 
 #[cfg(target_os = "linux")]
