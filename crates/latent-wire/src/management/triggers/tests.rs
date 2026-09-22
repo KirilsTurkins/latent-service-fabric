@@ -32,6 +32,7 @@ fn request() -> proto::ApplyTriggerRequest {
                 }),
                 revision: Some(format!("revision-v1:sha256:{}", "b".repeat(64))),
                 deployment_generation: Some(1),
+                kind: proto::TriggerTargetKind::Application as i32,
             }),
             configuration: [
                 ("profile", "buffered-v1"),
