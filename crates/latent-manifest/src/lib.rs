@@ -310,6 +310,14 @@ impl TriggerTarget {
     }
 
     #[must_use]
+    pub fn application_mut(&mut self) -> Option<&mut ApplicationTriggerTarget> {
+        match self {
+            Self::Application(target) => Some(target),
+            Self::StaticWeb(_) => None,
+        }
+    }
+
+    #[must_use]
     pub const fn static_web(&self) -> Option<&StaticWebTriggerTarget> {
         match self {
             Self::Application(_) => None,
