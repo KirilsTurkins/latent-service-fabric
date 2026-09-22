@@ -1488,7 +1488,7 @@ dependencies = [
 name = "latent"
 version = "0.1.0-alpha.4-rc.1"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "clap",
  "clap_complete",
  "latent-activation",
@@ -1531,7 +1531,7 @@ dependencies = [
 name = "latent-angular-renderer-adapter"
 version = "0.1.0-alpha.4-rc.1"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "serde",
  "serde_json",
  "wit-bindgen",
@@ -1744,7 +1744,7 @@ dependencies = [
 name = "latent-ingress"
 version = "0.1.0-alpha.4-rc.1"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "latent-activation",
  "latent-core",
  "latent-identity",
@@ -1817,7 +1817,7 @@ dependencies = [
 name = "latent-oci"
 version = "0.1.0-alpha.4-rc.1"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "bytes",
  "hickory-proto",
  "http",
@@ -1898,7 +1898,7 @@ dependencies = [
 name = "latent-policy"
 version = "0.1.0-alpha.4-rc.1"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "blake3",
  "latent-artifacts",
  "latent-core",
@@ -2024,7 +2024,7 @@ dependencies = [
 name = "latent-signing"
 version = "0.1.0-alpha.4-rc.1"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "curve25519-dalek",
  "ed25519",
  "ed25519-dalek",
@@ -2105,7 +2105,7 @@ dependencies = [
 name = "latent-vault"
 version = "0.1.0-alpha.4-rc.1"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "latent-capabilities",
  "latent-core",
  "latent-http",
@@ -2122,7 +2122,7 @@ dependencies = [
 name = "latent-wasmtime"
 version = "0.1.0-alpha.4-rc.1"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "blake3",
  "close_fds",
  "landlock",
@@ -2220,7 +2220,7 @@ dependencies = [
 name = "latentd"
 version = "0.1.0-alpha.4-rc.1"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "clap",
  "http-body",
  "httparse",
