@@ -24,7 +24,11 @@ fn http_history_survives_managed_deployments_rollouts_and_snapshot_writers() {
     );
     let receipt = execute(&store, http.clone()).value().receipt.clone();
     let original = retained(&roots[1]);
-    let mut other = deployment("other", "alice", receipt.component.as_ref().unwrap());
+    let mut other = deployment(
+        "other",
+        "alice",
+        receipt.target.as_ref().unwrap().component().unwrap(),
+    );
     other.publication = Some(publication.id);
     let prepared = run(store.prepare_operation(DeploymentOperationRequest::Apply {
         context: DeploymentOperationContext {

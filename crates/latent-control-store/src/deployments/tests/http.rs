@@ -15,8 +15,9 @@ use latent_artifacts::web::{
     WebRoute, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
 };
 use latent_artifacts::{
-    AdmissionAuthority, AdmissionBinding, AdmissionRecheck, AdmissionStorageLimits,
-    ArtifactRepository, DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig,
+    AdmissionAuthority, AdmissionBinding, AdmissionEvidence, AdmissionRecheck,
+    AdmissionStorageLimits, ArtifactRepository, DirectoryArtifactRepository,
+    DirectoryArtifactRepositoryConfig,
     LifecycleScope, ManagedPublicationUpload, PackageAdmissionUpload, PublicationRef,
     PublicationSelector, ReleaseActor, ReleaseActorKind, ReleaseLifecycleAction,
     ReleaseLifecycleReason, ReleaseMutationContext, ReleaseOperationPrecondition,
@@ -226,6 +227,11 @@ fn static_web_upload() -> PackageAdmissionUpload {
         annotations: BTreeMap::new(),
     };
     let manifest = encode_package_manifest(&package, limits).unwrap();
+    let evidence = || AdmissionEvidence {
+        manifest: b"{}".to_vec(),
+        configuration: b"{}".to_vec(),
+        payload: b"static web test evidence".to_vec(),
+    };
     PackageAdmissionUpload {
         manifest,
         configuration,
@@ -233,8 +239,8 @@ fn static_web_upload() -> PackageAdmissionUpload {
             ("public/index.html".into(), html),
             (WEB_MANIFEST_PATH.into(), metadata),
         ],
-        signatures: Vec::new(),
-        provenance: Vec::new(),
+        signatures: vec![evidence()],
+        provenance: vec![evidence()],
         sboms: Vec::new(),
     }
 }

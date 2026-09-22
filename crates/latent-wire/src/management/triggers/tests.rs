@@ -66,8 +66,9 @@ fn trigger_wire_derives_actor_and_preserves_explicit_cas_and_publication() {
     let TriggerOperationRequest::Apply { manifest, .. } = result else {
         panic!("apply")
     };
-    assert_eq!(manifest.target.deployment_generation, Some(1));
-    assert!(manifest.target.publication.is_some());
+    let target = manifest.target.application().expect("application target");
+    assert_eq!(target.deployment_generation, Some(1));
+    assert!(target.publication.is_some());
     let limits = super::super::ManagementLimits::default();
     let mut missing = request();
     missing.operation.as_mut().unwrap().expected_state_version = None;
