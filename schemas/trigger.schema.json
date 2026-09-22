@@ -178,7 +178,7 @@
         "deploymentGeneration": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 18446744073709552000
+          "maximum": 18446744073709551615
         }
       }
     },

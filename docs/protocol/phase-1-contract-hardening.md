@@ -451,6 +451,24 @@ configuration fields and explicit CAS; it never reinterprets a component digest
 as a publication selector. See the [HTTP trigger contract](../reference/http-triggers.md)
 for authorization, finite ownership, replay, recovery and listener boundaries.
 
+### Phase 3 first-class static web targets (#495)
+
+`TriggerTarget` adds the `TriggerTargetKind` discriminator at field 8 while
+preserving application fields 1 through 7 and treating an omitted discriminator
+as the legacy application variant. `STATIC_WEB` carries only the exact
+publication and rejects application-only fields, so older buffered-v1 clients
+retain their wire shape and new static targets cannot synthesize deployment or
+component identity.
+
+Trigger operation receipts add the tagged `TriggerReceiptTarget` at field 21
+and its closed target-kind enum. Existing receipt fields 14 through 18 remain
+reserved for format-v1 application compatibility; format-v2 writes use the
+tagged identity, and static receipts leave the legacy execution fields empty.
+These are additive Protobuf changes with no renumbering or RPC signature change.
+The normalized descriptor golden deliberately records the new enums, messages,
+and fields. See [ADR-0043](../../adr/0043-select-static-web-publications-as-first-class-http-targets.md)
+and the [HTTP trigger reference](../reference/http-triggers.md).
+
 ### Phase 3 componentless web control (#226)
 
 The descriptor baseline adds six `ReleaseService` methods: `PublishWebPackage`,
