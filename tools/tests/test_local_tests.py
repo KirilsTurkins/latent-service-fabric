@@ -33,6 +33,7 @@ def invoke(argv: list[str], repo: Path = ROOT) -> tuple[int, object]:
 class PlanningTests(unittest.TestCase):
     def test_planning_reads_only_the_shared_inventory(self) -> None:
         with patch.object(local.artifacts, "run_owned", side_effect=AssertionError("planning executed a process")), \
+                patch.object(local, "owned_run", side_effect=AssertionError("planning executed an owned process")), \
                 patch.object(local, "run_bounded", side_effect=AssertionError("planning compiled")):
             ids = local.identities(ROOT)
             self.assertIn(CORE, ids)
