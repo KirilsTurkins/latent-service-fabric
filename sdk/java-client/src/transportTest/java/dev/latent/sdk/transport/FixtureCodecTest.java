@@ -81,7 +81,7 @@ final class FixtureCodecTest {
                 rejected++;
             }
         }
-        if (count != 48 || rejected != 1) throw new AssertionError("incomplete shared protobuf cases " + count + "/" + rejected);
+        if (count != 50 || rejected != 1) throw new AssertionError("incomplete shared protobuf cases " + count + "/" + rejected);
         System.out.println("Java shared protobuf cases: " + count + "; contradictory oneof rejected: " + rejected);
     }
 }

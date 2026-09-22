@@ -40,7 +40,7 @@ internal static partial class Program
             catch (Exception failure) { throw new InvalidOperationException("shared fixture failed: " + scenario.GetProperty("name").GetString(), failure); }
             count++;
         }
-        Check(count == 49, "not all shared protobuf fixtures executed");
+        Check(count == 51, "not all shared protobuf fixtures executed");
         Console.WriteLine($"PASS SharedVectors: {count} authoritative protobuf cases");
     }
 
