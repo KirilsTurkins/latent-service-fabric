@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 
 from tools.phase2_operator_process import WorkflowError, read_json, write_json
 from tools.phase3_web_assets import immutable_assets, revoked_assets
-from tools.phase3_web_qualification import trigger_lifecycle
+from tools.phase3_web_qualification import renewal, trigger_lifecycle
 from tools.run_angular_t1_workflow import QualificationClient
 from tools.phase3_web_scenario import (
     MEDIA, MIB, PREPARATION_MILLIS, budget, configure_angular_node, deployment_manifest,
@@ -40,6 +40,44 @@ class AngularT1WorkflowTests(unittest.TestCase):
         self.assertEqual(caller.call.call_args_list[1].args, ("web", "operation", "publish-angular"))
         self.assertLessEqual(caller.call.call_args_list[2].kwargs["timeout"], caller.call.call_args_list[0].kwargs["timeout"])
         self.assertEqual(caller.publication_refusals[0]["outcomeKnown"], False)
+
+        publication = "publication:sha256:" + "a" * 64
+        record = {"packageDigest": "sha256:" + "b" * 64}
+        renewal_receipt = {
+            "operationId": "renew-angular",
+            "publication": {"id": publication, "tenant": "tests"},
+            "actor": {"subject": "workflow-operator"},
+            "resultingGeneration": "2",
+        }
+        unavailable = {"category": "platform-failure", "error": {"code": "unavailable"},
+                       "outcomeKnown": False}
+        absent = {"outcomeKnown": False, "data": {"operation": None}}
+        accepted = {"category": "success", "outcomeKnown": True,
+                    "data": {"operation": renewal_receipt, "auditAck": {}}}
+        caller = client(Path("unused"))
+        caller.call.side_effect = [unavailable, absent, accepted]
+        with patch("tools.phase3_web_qualification.prepare",
+                   side_effect=[{"category": "platform-failure"}, None]), \
+             patch("tools.phase3_web_qualification.invoke"), \
+             patch("tools.phase3_web_qualification.deploy", return_value={"generation": "2"}), \
+             patch("tools.phase3_web_qualification.time.sleep"):
+            _, renewed = renewal(caller, Path("fixture"), record, publication, {"generation": "1"})
+        self.assertEqual(renewed, renewal_receipt)
+        self.assertEqual(caller.call.call_args_list[0].args, caller.call.call_args_list[2].args)
+        self.assertEqual(caller.call.call_args_list[1].args, ("web", "operation", "renew-angular"))
+
+        caller = client(Path("unused"))
+        caller.call.side_effect = [
+            unavailable,
+            {"outcomeKnown": True, "data": {"operation": renewal_receipt}},
+        ]
+        with patch("tools.phase3_web_qualification.prepare",
+                   side_effect=[{"category": "platform-failure"}, None]), \
+             patch("tools.phase3_web_qualification.invoke"), \
+             patch("tools.phase3_web_qualification.deploy", return_value={"generation": "2"}):
+            _, renewed = renewal(caller, Path("fixture"), record, publication, {"generation": "1"})
+        self.assertEqual(renewed, renewal_receipt)
+        self.assertEqual(caller.call.call_count, 2)
 
     def test_publication_refusal_does_not_replay_denial_or_committed_uncertainty(self):
         for rejected, lookup, expected_calls in (
