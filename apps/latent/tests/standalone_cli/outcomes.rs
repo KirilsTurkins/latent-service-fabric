@@ -21,9 +21,14 @@ use super::workflow::assert_payload;
 fn cli_separates_domain_trap_deadline_and_cancel_results_then_recovers() {
     let package = Package::generic();
     let mut harness = Harness::start_with_cells(2);
-    package.publish(&harness, "generic");
+    let published = package.publish(&harness, "generic");
     releases::two_scoped_pages(&harness, &package);
-    let deployment = package.deployment("generic");
+    let deployment = package.deployment(
+        "generic",
+        published["data"]["release"]["publication"]["id"]
+            .as_str()
+            .unwrap(),
+    );
     harness.call(
         "generic",
         &[

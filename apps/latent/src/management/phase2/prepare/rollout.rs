@@ -105,6 +105,12 @@ fn start(
             .map(|tenant| tenant.0.as_str()),
         &config.tenant,
     )?;
+    if manifest.publication.is_none() {
+        return Err(Failure::local(
+            "missing-publication",
+            "Set spec.publication to the exact publication ID returned by admission.",
+        ));
+    }
     let expected_candidate_component_digest = manifest
         .publication
         .as_ref()

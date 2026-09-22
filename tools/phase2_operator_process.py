@@ -120,6 +120,17 @@ def bounded_receipt(value):
     return encoded
 
 
+def write_selected_deployment(source: Path, output: Path, publication: str):
+    """Copy a fixture into owned input and select its actual admission receipt."""
+    require(isinstance(publication, str)
+            and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", publication), "deployment-publication")
+    manifest = read_json(source)
+    require(manifest.get("kind") == "Deployment", "deployment-manifest")
+    manifest["spec"]["publication"] = publication
+    write_json(output, manifest)
+    return output
+
+
 def write_candidate_manifest(source: Path, output: Path, weight: int):
     """Create the operator's explicit candidate without rewriting its fixture."""
     require(weight in (1000, 5000), "candidate-weight")

@@ -5,18 +5,14 @@ mod nodes;
 #[path = "inspection/routes.rs"]
 mod routes;
 
-use latent_artifacts::ArtifactRepository;
 use latent_wire::management::{proto, ManagementLimits};
 use tonic::Code;
 
-use super::support::{artifact, deployment, request, Harness};
+use super::support::{artifact, deployment, publish_artifact, request, Harness};
 
 async fn seed(harness: &Harness, tenant: &str, identity: &str, marker: &str) {
-    let release = harness
-        .artifacts
-        .publish(artifact(tenant, "echo", marker))
-        .await
-        .unwrap();
+    let (publication, _component) =
+        publish_artifact(&harness, artifact(tenant, "echo", marker)).await;
     harness
         .deployments_client()
         .apply_deployment(request(
@@ -24,7 +20,7 @@ async fn seed(harness: &Harness, tenant: &str, identity: &str, marker: &str) {
             proto::ApplyDeploymentRequest {
                 expected_component_digest: None,
                 operation: None,
-                deployment: Some(deployment(marker, tenant, "echo", &release.release_digest)),
+                deployment: Some(deployment(marker, tenant, "echo", &publication)),
                 expected_generation: Some(0),
             },
         ))

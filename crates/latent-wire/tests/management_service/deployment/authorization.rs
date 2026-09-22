@@ -1,20 +1,16 @@
-use latent_artifacts::ArtifactRepository;
 use latent_control_store::CompiledRouteStore;
 use latent_wire::management::{proto, ManagementLimits};
 use tonic::{Code, Request};
 
-use super::super::support::{artifact, deployment, Harness};
+use super::super::support::{artifact, deployment, publish_artifact, Harness};
 use super::{apply, delete, get};
 
 #[tokio::test]
 async fn authenticated_admin_is_tenant_scoped_and_invalid_apply_never_commits() {
     let harness = Harness::new(ManagementLimits::default()).await;
-    let release = harness
-        .artifacts
-        .publish(artifact("acme", "echo", "auth"))
-        .await
-        .unwrap();
-    let desired = deployment("ship", "acme", "echo", &release.release_digest);
+    let (publication, _component) =
+        publish_artifact(&harness, artifact("acme", "echo", "auth")).await;
+    let desired = deployment("ship", "acme", "echo", &publication);
     let message = proto::ApplyDeploymentRequest {
         expected_component_digest: None,
         operation: None,
@@ -66,7 +62,10 @@ async fn authenticated_admin_is_tenant_scoped_and_invalid_apply_never_commits() 
         "absent-release",
         "acme",
         "echo",
-        &latent_artifacts::content_digest(b"unpublished"),
+        &proto::PublicationRef {
+            id: format!("publication:sha256:{}", "0".repeat(64)),
+            tenant: "acme".into(),
+        },
     );
     assert_eq!(
         apply(&harness, "alice", missing, None)
@@ -90,7 +89,7 @@ fn invalid_inputs(desired: &proto::Deployment) -> [(proto::Deployment, Code); 4]
     [
         (wrong_name, Code::InvalidArgument),
         (later_phase, Code::InvalidArgument),
-        (no_tenant, Code::PermissionDenied),
+        (no_tenant, Code::InvalidArgument),
         (oversized, Code::ResourceExhausted),
     ]
 }

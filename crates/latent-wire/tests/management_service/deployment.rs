@@ -20,16 +20,15 @@ async fn apply(
     mut desired: proto::Deployment,
     expected: Option<u64>,
 ) -> Result<proto::Deployment, Status> {
-    // These legacy-client cases resend only fields known before publication
-    // selectors were introduced. New selector tests send their exact DTOs.
-    desired.publication = None;
+    let component = (!desired.release_digest.is_empty()).then(|| desired.release_digest.clone());
+    desired.release_digest.clear();
     desired.requested_publication = None;
     harness
         .deployments_client()
         .apply_deployment(request(
             identity,
             proto::ApplyDeploymentRequest {
-                expected_component_digest: None,
+                expected_component_digest: component,
                 operation: None,
                 deployment: Some(desired),
                 expected_generation: expected,

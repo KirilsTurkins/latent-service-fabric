@@ -6,12 +6,10 @@ use latent_routing::RouteResolver;
 fn exact(
     id: &str,
     publication: &proto::PublicationRef,
-    digest: &ReleaseDigest,
+    _digest: &ReleaseDigest,
     weight: u32,
 ) -> proto::Deployment {
-    let mut value = deployment(id, "acme", "echo", digest);
-    value.release_digest.clear();
-    value.publication = Some(publication.clone());
+    let mut value = deployment(id, "acme", "echo", publication);
     value.route_weight = weight;
     value
 }

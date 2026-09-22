@@ -63,6 +63,8 @@ elif args[:2] == ['release', 'get']:
     assert args[2:] == ['--publication', 'publication:sha256:' + 'a' * 64]
     data = {'release': json.loads((root / 'release').read_text())}
 elif args[:2] == ['deployment', 'apply']:
+    selected = json.loads(Path(args[2]).read_text())['spec']['publication']
+    assert selected == json.loads((root / 'release').read_text())['publication']['id']
     (root / 'deployment').write_text('1'); data = {'deployment':{'generation':'1'}}
 elif args[:2] == ['deployment', 'get']:
     if (root / 'deployment').exists(): data = {'deployment':{'generation':'1'}}
