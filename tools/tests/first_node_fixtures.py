@@ -103,7 +103,7 @@ def echo(directory: Path) -> dict:
     documents = {
         'capsule.json': {'component': {'digest': digest}},
         'contracts.json': {'synthetic': True},
-        'deployment.json': {'metadata': {'name':'echo-production', 'tenant':'examples'},
+        'deployment.json': {'kind': 'Deployment', 'metadata': {'name':'echo-production', 'tenant':'examples'},
                             'spec': {'service':'examples/echo', 'release':digest}},
         'input.json': ['hello'],
     }

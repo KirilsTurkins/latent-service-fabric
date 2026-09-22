@@ -2,6 +2,7 @@ use super::support::{artifact, deployment, publish_artifact, request, Harness};
 use latent_audit::{AuditLimits, DirectoryPhase2AuditJournal};
 use latent_control_store::DeploymentStore;
 use latent_core::TenantId;
+use latent_routing::RouteResolver;
 use latent_wire::management::{deployment_manifest_from_proto, proto, ManagementLimits};
 use std::time::{Duration, Instant};
 use tempfile::TempDir;

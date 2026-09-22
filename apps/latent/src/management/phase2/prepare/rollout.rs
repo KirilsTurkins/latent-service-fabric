@@ -105,34 +105,26 @@ fn start(
             .map(|tenant| tenant.0.as_str()),
         &config.tenant,
     )?;
-    if manifest.publication.is_none() {
-        return Err(Failure::local(
+    let selected = manifest.publication.as_ref().ok_or_else(|| {
+        Failure::local(
             "missing-publication",
             "Set spec.publication to the exact publication ID returned by admission.",
-        ));
-    }
-    let expected_candidate_component_digest = manifest
-        .publication
-        .as_ref()
-        .map(|_| manifest.release.0.clone());
+        )
+    })?;
+    let expected_candidate_component_digest = Some(manifest.release.0.clone());
     let mut candidate = latent_wire::management::deployment_to_proto(&VersionedDeployment {
-        publication: manifest
-            .publication
-            .as_ref()
-            .map(|id| latent_artifacts::PublicationRef {
-                id: id.clone(),
-                scope: latent_artifacts::LifecycleScope::Tenant(
-                    manifest.metadata.tenant.clone().expect("validated tenant"),
-                ),
-            }),
+        publication: Some(latent_artifacts::PublicationRef {
+            id: selected.clone(),
+            scope: latent_artifacts::LifecycleScope::Tenant(
+                manifest.metadata.tenant.clone().expect("validated tenant"),
+            ),
+        }),
         manifest,
         generation: 0,
     })
     .map_err(|_| invalid_input())?;
     candidate.requested_publication = None;
-    if candidate.publication.is_some() {
-        candidate.release_digest.clear();
-    }
+    candidate.release_digest.clear();
     let policy = args
         .canary_policy
         .as_ref()

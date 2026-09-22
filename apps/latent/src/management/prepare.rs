@@ -326,34 +326,26 @@ fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Opera
             .map(|value| value.0.as_str()),
         &config.tenant,
     )?;
-    if manifest.publication.is_none() {
-        return Err(Failure::local(
+    let selected = manifest.publication.as_ref().ok_or_else(|| {
+        Failure::local(
             "missing-publication",
             "Set spec.publication to the exact publication ID returned by admission.",
-        ));
-    }
-    let expected_component_digest = manifest
-        .publication
-        .as_ref()
-        .map(|_| manifest.release.0.clone());
+        )
+    })?;
+    let expected_component_digest = Some(manifest.release.0.clone());
     let mut deployment = deployment_to_proto(&VersionedDeployment {
-        publication: manifest
-            .publication
-            .as_ref()
-            .map(|id| latent_artifacts::PublicationRef {
-                id: id.clone(),
-                scope: latent_artifacts::LifecycleScope::Tenant(
-                    manifest.metadata.tenant.clone().expect("validated tenant"),
-                ),
-            }),
+        publication: Some(latent_artifacts::PublicationRef {
+            id: selected.clone(),
+            scope: latent_artifacts::LifecycleScope::Tenant(
+                manifest.metadata.tenant.clone().expect("validated tenant"),
+            ),
+        }),
         manifest,
         generation: 0,
     })
     .map_err(|_| invalid_manifest())?;
     deployment.requested_publication = None;
-    if deployment.publication.is_some() {
-        deployment.release_digest.clear();
-    }
+    deployment.release_digest.clear();
     Ok(Operation::ApplyDeployment(proto::ApplyDeploymentRequest {
         expected_component_digest,
         deployment: Some(deployment),
