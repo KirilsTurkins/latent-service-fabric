@@ -167,3 +167,117 @@ fn http_publications_sharing_bytes_and_tenants_keep_independent_routes_and_revoc
         .generation;
     delete(&store, "remove-revoked", "alice", "web", generation);
 }
+
+#[test]
+fn static_web_routes_mount_exact_publication_without_application_identity_and_survive_restart() {
+    let roots = [TempRoot::new(), TempRoot::new()];
+    let repo = static_repo(&roots[0]);
+    let publication = publish_static(&repo, "alice");
+    let store = catalog(&roots[1], &repo);
+    let definition = static_definition("alice", "site", &publication, "/docs", "prefix");
+    let command = request(&store, "static-create", definition, 0);
+    let receipt = execute(&store, command.clone()).value().receipt.clone();
+    assert_eq!(receipt.format_version, 2);
+    assert!(receipt.component.is_none());
+    assert!(receipt.deployment_id.is_none());
+    assert!(receipt.deployment_generation.is_none());
+    assert!(receipt.revision.is_none());
+    assert!(matches!(
+        receipt.target,
+        Some(TriggerTargetIdentity::StaticWeb { .. })
+    ));
+
+    let selected = selected(&store, "alice", "/docs/guide/").unwrap();
+    assert!(selected.revision().is_none());
+    let AcceptedHttpTarget::StaticWeb {
+        publication: selected_publication,
+        mount_path,
+        site_path,
+        selection,
+    } = selected.target()
+    else {
+        panic!("static target")
+    };
+    assert_eq!(selected_publication, &publication);
+    assert_eq!(mount_path, "/docs");
+    assert_eq!(site_path, "/guide/");
+    selection
+        .with_current(&TenantId("alice".into()), &mut |_| Ok(()))
+        .unwrap();
+    assert!(selected(&store, "alice", "/_lsf/assets/anything").is_err());
+    drop(selected);
+
+    drop(store);
+    let store = catalog(&roots[1], &repo);
+    let selected = selected(&store, "alice", "/docs").unwrap();
+    let AcceptedHttpTarget::StaticWeb { site_path, .. } = selected.target() else {
+        panic!("static target")
+    };
+    assert_eq!(site_path, "/");
+    drop(selected);
+    assert!(execute(&store, command).value().replayed);
+}
+
+#[test]
+fn static_web_prepare_and_selected_work_fail_closed_on_publication_revocation() {
+    let roots = [TempRoot::new(), TempRoot::new()];
+    let repo = static_repo(&roots[0]);
+    let publication = publish_static(&repo, "alice");
+    let store = catalog(&roots[1], &repo);
+    let definition = static_definition("alice", "site", &publication, "/", "prefix");
+    let prepared = store
+        .prepare_trigger_operation(request(&store, "prepared", definition.clone(), 0))
+        .unwrap();
+    repo.transition_web_publication(
+        publication_context("alice", "revoke-before-commit", 1),
+        &publication,
+        ReleaseLifecycleAction::Revoke,
+        ReleaseLifecycleReason::OperatorRevocation,
+        &mut |_| Ok(()),
+    )
+    .unwrap();
+    assert!(store.commit_trigger_operation(prepared).is_err());
+    assert!(get(&store, "alice", "site").value().trigger.is_none());
+
+    let other_root = TempRoot::new();
+    let other_catalog_root = TempRoot::new();
+    let other_repo = static_repo(&other_root);
+    let other_publication = publish_static(&other_repo, "alice");
+    let other = catalog(&other_catalog_root, &other_repo);
+    let created = execute(
+        &other,
+        request(
+            &other,
+            "create",
+            static_definition("alice", "site", &other_publication, "/", "prefix"),
+            0,
+        ),
+    )
+    .value()
+    .receipt
+    .clone();
+    let held = selected(&other, "alice", "/route").unwrap();
+    other_repo
+        .transition_web_publication(
+            publication_context("alice", "revoke-selected", 1),
+            &other_publication,
+            ReleaseLifecycleAction::Revoke,
+            ReleaseLifecycleReason::OperatorRevocation,
+            &mut |_| Ok(()),
+        )
+        .unwrap();
+    let AcceptedHttpTarget::StaticWeb { selection, .. } = held.target() else {
+        panic!("static target")
+    };
+    assert!(selection
+        .with_current(&TenantId("alice".into()), &mut |_| Ok(()))
+        .is_err());
+    assert!(selected(&other, "alice", "/route").is_err());
+    delete(
+        &other,
+        "delete-revoked-static",
+        "alice",
+        "site",
+        created.object_generation,
+    );
+}
