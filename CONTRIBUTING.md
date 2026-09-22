@@ -1,11 +1,11 @@
 # Contributing
 
 LSF has completed Phase 1, its performance/infrastructure extension, and Phase 2
-packaging and supply-chain delivery. Work is moving into the
-[Phase 3 capability and application-hosting backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
-Those planned interfaces and open pull requests do not establish delivered
-features; use the current `development` implementation and
-[Phase 2 completion review](docs/phase-2-completion.md) as the starting boundary.
+packaging and supply-chain delivery. Phase 3 capability and application hosting
+are in final integration; the [Phase 3 gate review](docs/phase-3-gate-review.md)
+tracks delivered evidence and remaining native, documentation and review work.
+Use the current `development` implementation and its recorded qualification
+boundaries; an open pull request or planned interface does not establish delivery.
 Contributions should distinguish architectural contracts, generated surfaces,
 implemented behavior, and planned phase scope. Consult [the roadmap](docs/roadmap.md)
 for dependencies and the later state, cluster, and workflow phases.

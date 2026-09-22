@@ -107,12 +107,14 @@ Real release acceptance must additionally retain:
 6. Remove/reinstall recovery, separate exact-installation purge, and a real
    unprivileged rootless foreground run.
 
-No compatible cross-version pair is currently approved in
-[`packaging/linux/compatibility.json`](../packaging/linux/compatibility.json).
-Publisher approval, real prebuilt artifact production and the complete VM/reboot
-matrix at the final exact release source are explicit gates. Recorded candidate
-reboot/removal/rootless results do not establish a compatible upgrade or a
-release-tag publisher identity. Documentation can be published with this
-qualified status without waiting circularly for #240 phase acceptance.
+[`packaging/linux/compatibility.json`](../packaging/linux/compatibility.json)
+declares the exact `0.1.0-alpha.4-rc.1` predecessor for the planned alpha.4 bundle,
+including its source commit and archive digest. The
+[foundation receipt](evidence/native-foundation-35763422270.json) records its
+successful nonpublishing two-profile VM qualification. The declaration does
+not establish a completed upgrade: the final alpha.4 artifact still needs its
+own complete VM/reboot and compatible-pair matrix, then protected publisher
+approval. Documentation can be published with this qualified status without
+waiting circularly for #240 phase acceptance.
 Supply exact receipts and these operational boundaries to #237/#238/#240; preserve
 the historical release and benchmark identities when producing operator/Wiki coverage.
