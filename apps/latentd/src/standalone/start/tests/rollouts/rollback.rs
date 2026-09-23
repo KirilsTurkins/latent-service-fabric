@@ -23,7 +23,7 @@ async fn rollback_restores_real_base_invocation_and_retires_canary_observation()
     .unwrap();
     let input = canary::seed(&catalogs, &settings.node.trust_classes[0]).await;
     let deployments = catalogs.deployments.clone();
-    let candidate = input.candidate.as_ref().unwrap().release_digest.clone();
+    let candidate = input.expected_candidate_component_digest.clone().unwrap();
     let node = Box::pin(super::super::super::StandaloneNode::start_with_catalogs(
         settings,
         catalogs,

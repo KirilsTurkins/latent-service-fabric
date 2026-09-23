@@ -1,6 +1,9 @@
 mod component;
 use super::*;
-use latent_artifacts::ArtifactRepository;
+use latent_artifacts::{
+    ArtifactRepository, CapsuleArtifact, LifecycleScope, ManagedPublicationUpload, ReleaseActor,
+    ReleaseActorKind, ReleaseMutationContext,
+};
 use latent_control_store::DeploymentStore;
 use latent_core::{ActivationClock, ClockSample, ContractId, FunctionId, ServiceId, TenantId};
 use latent_routing::{InvocationTarget, RouteResolver};
@@ -68,17 +71,10 @@ pub(super) fn configured(directory: &TempDir) -> NodeSettings {
 }
 
 pub(super) async fn seed(catalogs: &Catalogs, trust_class: &str) -> proto::StartRolloutRequest {
-    let base = catalogs
-        .artifacts
-        .publish(component::artifact(1))
-        .await
-        .unwrap();
-    let candidate = catalogs
-        .artifacts
-        .publish(component::artifact(2))
-        .await
-        .unwrap();
-    let mut base = super::fixtures::deployment("base", "tests", "echo", &base.release_digest);
+    let (base_publication, base_digest) = publish(catalogs, component::artifact(1)).await;
+    let (candidate_publication, candidate_digest) = publish(catalogs, component::artifact(2)).await;
+    let mut base = super::fixtures::deployment("base", "tests", "echo", &base_digest);
+    base.publication = Some(base_publication);
     // The generic catalog fixture uses "local". Actual node admission permits
     // only the trust class derived from this node's operator configuration.
     base.placement.as_mut().unwrap().trust_class = trust_class.to_owned();
@@ -89,11 +85,13 @@ pub(super) async fn seed(catalogs: &Catalogs, trust_class: &str) -> proto::Start
         .await
         .unwrap();
     let mut candidate =
-        super::fixtures::deployment("candidate", "tests", "echo", &candidate.release_digest);
+        super::fixtures::deployment("candidate", "tests", "echo", &candidate_digest);
+    candidate.publication = Some(candidate_publication);
+    candidate.release_digest.clear();
     candidate.placement.as_mut().unwrap().trust_class = trust_class.to_owned();
     candidate.route_weight = 5000;
     proto::StartRolloutRequest {
-        expected_candidate_component_digest: None,
+        expected_candidate_component_digest: Some(candidate_digest.0),
         id: "observed".into(),
         base_deployment_id: "base".into(),
         expected_base_generation: Some(base.deployment.generation),
@@ -116,6 +114,35 @@ pub(super) async fn seed(catalogs: &Catalogs, trust_class: &str) -> proto::Start
     }
 }
 
+async fn publish(
+    catalogs: &Catalogs,
+    artifact: CapsuleArtifact,
+) -> (proto::PublicationRef, latent_core::ReleaseDigest) {
+    let published = catalogs
+        .artifacts
+        .publish_managed(
+            ReleaseMutationContext {
+                scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                actor: ReleaseActor {
+                    subject: "canary-fixture".into(),
+                    kind: ReleaseActorKind::Host,
+                },
+                operation: None,
+            },
+            ManagedPublicationUpload::Local(artifact),
+            &mut |_| Ok(()),
+        )
+        .await
+        .unwrap();
+    (
+        proto::PublicationRef {
+            id: published.publication.id.into_string(),
+            tenant: "tests".into(),
+        },
+        published.release.descriptor.release_digest.clone(),
+    )
+}
+
 #[tokio::test]
 #[allow(
     clippy::too_many_lines,
@@ -134,7 +161,7 @@ async fn actual_candidate_invocation_drives_only_the_matching_canary_promotion()
     .unwrap();
     let input = seed(&catalogs, &settings.node.trust_classes[0]).await;
     let deployments = catalogs.deployments.clone();
-    let candidate = input.candidate.as_ref().unwrap().release_digest.clone();
+    let candidate = input.expected_candidate_component_digest.clone().unwrap();
     let node = Box::pin(
         super::super::super::super::StandaloneNode::start_with_catalogs(
             settings,

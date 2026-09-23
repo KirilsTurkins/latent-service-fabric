@@ -66,13 +66,11 @@ fn rollout_start_requires_matching_candidate_weight_without_rewriting_the_manife
     manifest["spec"]["route"]["weight"] = serde_json::json!(1000);
     let aligned = serde_json::to_vec(&manifest).unwrap();
     std::fs::write(&path, &aligned).unwrap();
-    let Operation::StartRollout(request) =
-        crate::management::prepare(&cli.command, &config()).unwrap()
-    else {
-        panic!("start")
-    };
-    assert_eq!(request.candidate.unwrap().route_weight, 1000);
-    assert_eq!(request.candidate_weights, vec![1000, 10000]);
+    let failure = crate::management::prepare(&cli.command, &config())
+        .err()
+        .unwrap();
+    assert_eq!(failure.error["code"], "missing-publication");
+    assert!(!failure.request_dispatched);
     assert_eq!(std::fs::read(&path).unwrap(), aligned);
     let selected = format!("publication:sha256:{}", "a".repeat(64));
     manifest["spec"]["publication"] = serde_json::json!(selected);

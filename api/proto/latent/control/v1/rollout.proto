@@ -37,7 +37,7 @@ message StartRolloutRequest {
   // Absent preserves the manual profile. Present policies are immutable and
   // require at least two stages plus configured observation capacity.
   RolloutCanaryPolicy canary_policy = 7;
-  // Optional checksum assertion when candidate.publication is the selector.
+  // Optional checksum assertion. candidate.publication is always required.
   optional string expected_candidate_component_digest = 8;
 }
 

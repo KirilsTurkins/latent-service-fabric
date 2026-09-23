@@ -21,6 +21,7 @@ if __package__ in (None, ""):
 from tools.build_process_signals import owned_cancellation
 from tools.phase2_operator_canary import invoke
 from tools.phase2_operator_process import (
+    write_selected_deployment,
     Client, Process, WorkflowError, bounded_receipt, file_digest, read_json, require,
     stopped_record, write_json,
 )
@@ -128,7 +129,10 @@ def publish_and_apply(client, fixture):
                             "--operation-id", "profile-publish", "--expected-generation", "0")
     require(published["outcomeKnown"], "publication-uncertain")
     state = client.call("deployment", "get", "blue", "--operation-snapshot", codes=(6,))["data"]
-    client.call("deployment", "apply", fixture / "blue/deployment.json", "--operation-id", "profile-apply",
+    deployment = write_selected_deployment(fixture / "blue/deployment.json",
+                                           client.directory / "blue-selected.json",
+                                           published["data"]["release"]["publication"]["id"])
+    client.call("deployment", "apply", deployment, "--operation-id", "profile-apply",
                 "--expected-state-version", state["stateVersion"], "--expected-generation", "0")
 
 

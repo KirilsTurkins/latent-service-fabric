@@ -70,11 +70,13 @@ def publish(client, fixture, package):
     record = value["data"]["operation"]["record"]
     require(record["packageDigest"] == package["packageDigest"]
             and record["componentDigest"] == package["componentDigest"], "resource-publication-package")
+    return value["data"]["release"]["publication"]["id"]
 
 
-def manifest(client, fixture, ordinal, package):
+def manifest(client, fixture, ordinal, package, publication):
     value = read_json(fixture / package["name"] / "deployment.json")
     value["metadata"]["name"] = f"resource-{ordinal:02}"
+    value["spec"]["publication"] = publication
     # Positive equal weights are independently valid; they need not sum to 10000
     # across ordinary deployments. The fixture's capsule remains unchanged.
     value["spec"]["route"]["weight"] = 10000
@@ -169,9 +171,10 @@ def run(client, binary, directory, fixture, metadata, result):
         packages = metadata["packages"]
         input_path = client.directory / "invoke.json"
         write_json(input_path, metadata["input"])
+        publications = {}
         for ordinal in range(2):
-            publish(client, fixture, packages[ordinal])
-            applied = apply(client, manifest(client, fixture, 0, packages[ordinal]),
+            publications[ordinal] = publish(client, fixture, packages[ordinal])
+            applied = apply(client, manifest(client, fixture, 0, packages[ordinal], publications[ordinal]),
                             "resource-00", f"resource-warm-{ordinal}")
             observed = invoke(client, metadata, input_path, f"resource-warm-{ordinal}")
             require(observed["releaseDigest"] == packages[ordinal]["componentDigest"]
@@ -182,7 +185,7 @@ def run(client, binary, directory, fixture, metadata, result):
         for package in packages[2:]:
             publish(client, fixture, package)
         for ordinal in range(1, 16):
-            apply(client, manifest(client, fixture, ordinal, packages[ordinal % 2]),
+            apply(client, manifest(client, fixture, ordinal, packages[ordinal % 2], publications[ordinal % 2]),
                   f"resource-{ordinal:02}", f"resource-apply-{ordinal:02}")
         catalogs(client, metadata, 16)
         dormant_route = route(client)

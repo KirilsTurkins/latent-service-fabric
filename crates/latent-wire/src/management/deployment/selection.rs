@@ -53,14 +53,10 @@ pub(in crate::management) async fn input(
     if deployment.requested_publication.is_some() {
         return Err(invalid("requested_publication is output-only"));
     }
-    let Some(selected) = &deployment.publication else {
-        if value.expected_component_digest.is_some() {
-            return Err(invalid(
-                "a component assertion requires an explicit publication",
-            ));
-        }
-        return Ok(value);
-    };
+    let selected = deployment
+        .publication
+        .as_ref()
+        .ok_or_else(|| invalid("an exact deployment publication is required"))?;
     if !deployment.release_digest.is_empty() {
         return Err(invalid("exactly one publication selector is required"));
     }

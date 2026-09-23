@@ -4,22 +4,22 @@ Phase 3 issue #266 carries the [catalog publication identity](publication-catalo
 through deployment, preparation and actual guest start. `ReleaseDigest` continues
 to identify executable bytes; it does not identify a tenant's admission. This
 implements the runtime portion of [ADR-0027](../../adr/0027-separate-publication-authority-from-component-identity.md).
-Public RPC, CLI and SDK selectors are the separate integration in #267.
+The [management API contract](publication-api.md) requires exact tenant publications
+for release queries, deployment apply and rollout candidates.
 
 ## Deployment selection and persistence
 
-The Rust `DeploymentManifest` and deployment JSON accept an optional
-`spec.publication` string containing the exact `publication:sha256:` ID. Its scope
-comes from `metadata.tenant`; `spec.release` remains the unchanged component
-digest. Null, malformed and foreign selectors fail closed. An explicit selector
-must identify that component in the authorized scope.
+For CLI apply and rollout start, deployment JSON requires `spec.publication`
+containing the exact `publication:sha256:` ID returned by admission. Its scope
+comes from `metadata.tenant`; `spec.release` asserts the component digest.
+Missing, null, malformed and foreign selectors fail closed. The selector must
+identify that component in the authorized scope. A checksum alone cannot select
+a publication, even when the catalog currently has only one matching entry.
 
-A new legacy deployment without the field resolves only a unique publication in
-its tenant, including the explicit trusted-local unscoped compatibility path.
-Revoked and retired publications still count toward ambiguity. Existing
-deployments retain their captured selection through unrelated writes, weight
-changes and equivalent reapplication. Selecting another package requires an
-explicit publication. No new selection chooses the latest eligible package.
+Existing compiled deployments retain their captured association. Selecting
+another package requires another explicit publication; selection never chooses
+the latest eligible package. The internal manifest representation still reads
+retained catalog histories; that does not enable component-only network input.
 
 The compiled revision and `ResolvedRevision` carry the exact ID. The reserved
 `lsf.publication` snapshot attribute carries the same value, so existing v1 scoped
@@ -32,10 +32,10 @@ from the original canonical deployment manifests. It also retains combined
 rollout and deployment-operation histories. These are different versions from
 artifact catalog format 2 and the public manifest API version.
 
-Startup accepts deployment formats 1–4 after validating their original checksum,
+Startup accepts deployment formats 1â€“4 after validating their original checksum,
 snapshot, object versions and histories. It resolves old associations through the
-immutable mapping produced by offline artifact catalog migration, or through
-unique scoped resolution when no mapping exists. Ambiguous unmapped history is
+retained scoped catalog association, or through unique scoped resolution when
+no retained mapping exists. Ambiguous unmapped history is
 rejected. The mapping is used only for recovery; it grants no current permission.
 
 Before exposing routes, startup durably writes format 5 through the existing
