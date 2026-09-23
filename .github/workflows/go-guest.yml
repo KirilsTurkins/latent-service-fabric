@@ -100,7 +100,7 @@ jobs:
           cargo run --locked -p latent-wasmtime --example go_runtime_probe -- "$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm" 2>&1 | tee "$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log"
       - name: Check standalone project source boundaries
         run: |
-          python3 -m pip install --require-hashes -r tools/requirements.lock
+          python3 -m pip install -r tools/requirements.lock
           python3 -m unittest tools.tests.test_go_capsule_authoring
       - name: Qualify editable projects, all SDK owners, enforced node and printed guide
         run: python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
