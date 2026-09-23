@@ -8,7 +8,7 @@ const sections = [
   ['How-to', '/docs/phase-2-operator-workflows/', 'Find delivery, rollout and recovery procedures.'],
   ['Reference', '/docs/reference/operator-cli/', 'Consult CLI, API, configuration and protocol references.'],
   ['Understand', '/docs/architecture/overview/', 'Learn how execution, permissions and resources fit together.'],
-  ['Contribute', '/docs/how-to/operate-and-contribute/', 'Diagnose a local node and choose focused contributor validation.'],
+  ['Contribute', '/docs/contribute/', 'Set up a checkout, make a change, run checks and open a pull request.'],
 ];
 
 export default function Home(): React.ReactNode {
