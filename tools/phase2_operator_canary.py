@@ -88,9 +88,9 @@ def validate_window(report, pins, started, summaries):
     return candidate, baseline
 
 
-def positive_canary(client, metadata, input_path, fixture, summaries, receipt, change):
+def positive_canary(client, metadata, input_path, selected_candidate, summaries, receipt, change):
     base = client.call("deployment", "get", "blue")["data"]["deployment"]
-    candidate_manifest = write_candidate_manifest(fixture / "green/deployment.json",
+    candidate_manifest = write_candidate_manifest(selected_candidate,
                                                   client.directory / "candidate-5000.json", 5000)
     policy = client.directory / "healthy-canary.json"
     write_json(policy, {"formatVersion": 1, "observationMillis": 5000, "minimumCandidateSamples": 1,

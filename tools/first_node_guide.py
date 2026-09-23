@@ -13,6 +13,7 @@ import secrets
 import time
 
 from tools.phase2_operator_process import (
+    write_selected_deployment,
     Process, read_json, require, stopped_record, write_json,
 )
 
@@ -173,7 +174,9 @@ def exercise(client, binary, directory, package):
                                 "--contracts", package / "contracts.json")["data"]["release"]
         digest = read_json(package / "capsule.json")["component"]["digest"]
         require(published["digest"] == digest, "published-component-identity")
-        applied = client.call("deployment", "apply", package / "deployment.json",
+        deployment = write_selected_deployment(package / "deployment.json",
+                                               client.directory / "selected-deployment.json", published["publication"]["id"])
+        applied = client.call("deployment", "apply", deployment,
                               "--expected-generation", "0")["data"]["deployment"]
         generation = applied["generation"]
         require(isinstance(generation, str) and re.fullmatch(r"[1-9][0-9]{0,19}", generation),

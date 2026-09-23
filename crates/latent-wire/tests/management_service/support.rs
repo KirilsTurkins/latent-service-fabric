@@ -1,6 +1,6 @@
 #[path = "support/publication.rs"]
 mod publication;
-pub(super) use publication::publish_variant;
+pub(super) use publication::{publish_artifact, publish_variant};
 #[path = "support/capabilities.rs"]
 mod capabilities;
 #[path = "support/inventory.rs"]

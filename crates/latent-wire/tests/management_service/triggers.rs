@@ -59,11 +59,16 @@ async fn setup(h: &Harness) -> proto::ApplyTriggerRequest {
         )
         .await
         .unwrap();
-    let mut d = deployment("web", "acme", "web", &p.release.descriptor.release_digest);
-    d.publication = Some(proto::PublicationRef {
-        id: p.publication.id.as_str().into(),
-        tenant: "acme".into(),
-    });
+    let mut d = deployment(
+        "web",
+        "acme",
+        "web",
+        &proto::PublicationRef {
+            id: p.publication.id.as_str().into(),
+            tenant: "acme".into(),
+        },
+    );
+    d.release_digest = p.release.descriptor.release_digest.0.clone();
     h.deployments
         .apply(deployment_manifest_from_proto(d).unwrap())
         .await
