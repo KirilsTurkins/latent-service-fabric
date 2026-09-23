@@ -1,6 +1,6 @@
 use super::{
     BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, PROVENANCE_BUILD_TYPE,
-    RUST_GUEST_BUILD_TYPE,
+    RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE,
 };
 use crate::{SignatureFailure, SignatureResult};
 use std::collections::BTreeSet;
@@ -153,6 +153,14 @@ pub(crate) fn validate_observation(
         PROVENANCE_BUILD_TYPE => &["dependency-lock", "cargo", "rustc"],
         RUST_GUEST_BUILD_TYPE => &["dependency-lock", "cargo", "rustc", "wit-bindgen"],
         C_GUEST_BUILD_TYPE => &["zig", "wit-bindgen"],
+        RUST_CAPSULE_BUILD_TYPE => &[
+            "dependency-lock",
+            "cargo",
+            "rustc",
+            "wit-bindgen",
+            "binding-lock",
+            "packager",
+        ],
         _ => unreachable!("profile checked above"),
     };
     for required in tool_materials {
@@ -184,6 +192,20 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
             };
             example
                 && p.cargo_package == "latent-toolchain-smoke"
+                && p.target == "wasm32-unknown-unknown"
+                && p.profile == "release"
+                && p.locked
+                && !p.incremental
+        }
+        (RUST_CAPSULE_BUILD_TYPE, BuildRecipe::RustCapsule(p)) => {
+            !p.cargo_package.is_empty()
+                && p.cargo_package.len() <= 64
+                && p.cargo_package.as_bytes()[0].is_ascii_lowercase()
+                && p.cargo_package.as_bytes()[p.cargo_package.len() - 1].is_ascii_alphanumeric()
+                && p.cargo_package
+                    .bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+                && p.crate_type == "cdylib"
                 && p.target == "wasm32-unknown-unknown"
                 && p.profile == "release"
                 && p.locked

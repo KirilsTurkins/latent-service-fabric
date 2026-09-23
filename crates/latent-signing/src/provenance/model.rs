@@ -56,6 +56,19 @@ pub struct BuildParameters {
 pub enum BuildRecipe {
     Rust(BuildParameters),
     C(CBuildParameters),
+    RustCapsule(RustCapsuleBuildParameters),
+}
+
+/// A standalone Cargo library, distinct from the fixed conformance examples.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RustCapsuleBuildParameters {
+    pub cargo_package: String,
+    pub crate_type: String,
+    pub target: String,
+    pub profile: String,
+    pub locked: bool,
+    pub incremental: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

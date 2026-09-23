@@ -122,7 +122,8 @@
               "enum": [
                 "https://latent.dev/build/echo-capsule/v1",
                 "https://latent.dev/build/rust-guest/v1",
-                "https://latent.dev/build/c-guest/v1"
+                "https://latent.dev/build/c-guest/v1",
+                "https://latent.dev/build/rust-capsule/v1"
               ]
             },
             "source": {
@@ -600,6 +601,165 @@
                           "properties": {
                             "name": {
                               "const": "wit-bindgen"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "buildType": {
+                    "const": "https://latent.dev/build/rust-capsule/v1"
+                  }
+                },
+                "required": [
+                  "buildType"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "parameters": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "cargoPackage",
+                      "target",
+                      "profile",
+                      "locked",
+                      "incremental",
+                      "crateType"
+                    ],
+                    "properties": {
+                      "cargoPackage": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-z](?:[a-z0-9-]{0,62}[a-z0-9])?(?![\\s\\S])"
+                      },
+                      "target": {
+                        "const": "wasm32-unknown-unknown"
+                      },
+                      "profile": {
+                        "const": "release"
+                      },
+                      "locked": {
+                        "const": true
+                      },
+                      "incremental": {
+                        "const": false
+                      },
+                      "crateType": {
+                        "const": "cdylib"
+                      }
+                    }
+                  },
+                  "source": {
+                    "properties": {
+                      "capture": {
+                        "const": "explicit-input-files"
+                      },
+                      "revision": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+                      }
+                    }
+                  },
+                  "dependencyCompleteness": {
+                    "const": "declared-inputs-incomplete"
+                  },
+                  "materials": {
+                    "allOf": [
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "dependency-lock"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "cargo"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "rustc"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "wit-bindgen"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "binding-lock"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "packager"
                             }
                           },
                           "required": [

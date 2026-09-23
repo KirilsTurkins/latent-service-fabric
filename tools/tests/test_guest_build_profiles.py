@@ -36,6 +36,16 @@ def guest(language):
     return value
 
 
+def capsule():
+    value = guest("rust")
+    value["buildType"] = "https://latent.dev/build/rust-capsule/v1"
+    value["parameters"].pop("cargoExample")
+    value["parameters"].update(cargoPackage="my-capsule", crateType="cdylib")
+    value["materials"].extend({"name": name, "digest": DIGEST, "size": 1}
+                              for name in ("packager", "binding-lock"))
+    return value
+
+
 class GuestProfileSchemas(unittest.TestCase):
     def test_echo_snapshot_can_still_capture_every_workspace_member(self):
         validate_workspace(ROOT)
@@ -54,8 +64,8 @@ class GuestProfileSchemas(unittest.TestCase):
 
     def test_guest_and_legacy_profiles_are_separate(self):
         self.validate(samples()["build-observation"])
-        for language in ("rust", "c"):
-            value = guest(language)
+        for language in ("rust", "c", "capsule"):
+            value = capsule() if language == "capsule" else guest(language)
             self.validate(value)
             changed = copy.deepcopy(value)
             changed["buildType"] = "https://latent.dev/build/echo-capsule/v1"

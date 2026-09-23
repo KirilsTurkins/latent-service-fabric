@@ -1,4 +1,7 @@
 //! Small reusable-API driver; the integrated operator CLI is delivered by #156.
+#[path = "package/authoring.rs"]
+mod authoring;
+
 use std::io::Read;
 use std::path::Path;
 
@@ -19,6 +22,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     let limits = PackagingLimits::default();
     match args.as_slice() {
+        [command, request] if command == "derive-contracts" => {
+            authoring::derive(request)?;
+        }
         [command, recipe, root, output] if command == "build" => {
             build(recipe, root, output, None, limits)?;
         }
@@ -29,7 +35,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             let bundle = read_package_directory(Path::new(directory), limits).map_err(|error| error.message)?;
             print(&bundle);
         }
-        _ => return Err("usage: package build <recipe.json> <input-root> <new-output-dir> | build-with-sbom <recipe.json> <sbom-inputs.json> <input-root> <new-output-dir> | inspect <package-dir>".into()),
+        _ => return Err("usage: package derive-contracts <request.json> | build <recipe.json> <input-root> <new-output-dir> | build-with-sbom <recipe.json> <sbom-inputs.json> <input-root> <new-output-dir> | inspect <package-dir>".into()),
     }
     Ok(())
 }

@@ -69,6 +69,7 @@ fn parameter_fixture(
 
 #[test]
 fn maintained_echo_metadata_has_identical_digests_and_projection() {
+    super::super::authoring::conformance_checks();
     let original: Value = serde_json::from_str(ECHO_METADATA).unwrap();
     let contract = &original["contracts"][0];
     assert_eq!(

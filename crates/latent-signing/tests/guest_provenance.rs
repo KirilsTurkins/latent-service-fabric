@@ -41,11 +41,31 @@ fn guest(c: bool) -> BuildObservation {
     value
 }
 
+fn capsule() -> BuildObservation {
+    let mut value = guest(false);
+    value.build_type = RUST_CAPSULE_BUILD_TYPE.into();
+    value.parameters = BuildRecipe::RustCapsule(RustCapsuleBuildParameters {
+        cargo_package: "my-capsule".into(),
+        crate_type: "cdylib".into(),
+        target: "wasm32-unknown-unknown".into(),
+        profile: "release".into(),
+        locked: true,
+        incremental: false,
+    });
+    for name in ["packager", "binding-lock"] {
+        value.materials.push(BuildMaterial {
+            name: name.into(),
+            digest: value.source.snapshot_digest.clone(),
+            size: 1,
+        });
+    }
+    value
+}
+
 #[test]
 fn guest_profiles_require_separate_builder_approval_and_preserve_legacy_echo() {
     let (signer, public, _) = signer(BUILDER);
-    for c in [false, true] {
-        let observation = guest(c);
+    for observation in [guest(false), guest(true), capsule()] {
         let evidence = signed(&signer, &observation);
         let mut policy = policy_value(&public);
         assert_eq!(
@@ -68,6 +88,18 @@ fn guest_profiles_require_separate_builder_approval_and_preserve_legacy_echo() {
             SignatureFailure::PredicateDisallowed
         );
     }
+    let evidence = signed(&signer, &capsule());
+    for build_type in [RUST_GUEST_BUILD_TYPE, C_GUEST_BUILD_TYPE] {
+        let mut policy = policy_value(&public);
+        policy["requirements"][0]["buildType"] = build_type.into();
+        assert_eq!(
+            verifier(&policy)
+                .verify_package(&subject(), evidence.as_ref(), NOW)
+                .unwrap_err()
+                .reason(),
+            SignatureFailure::PredicateDisallowed
+        );
+    }
     let value = serde_json::to_value(observation()).unwrap();
     assert_eq!(value["parameters"]["cargoExample"], "echo-capsule");
     assert!(value["parameters"].get("Rust").is_none());
@@ -75,13 +107,13 @@ fn guest_profiles_require_separate_builder_approval_and_preserve_legacy_echo() {
 
 #[test]
 fn mixed_recipes_missing_tools_and_unbounded_claims_are_rejected() {
-    for c in [false, true] {
-        let valid = guest(c);
+    for valid in [guest(false), guest(true), capsule()] {
         for case in 0..7 {
             let mut value = serde_json::to_value(&valid).unwrap();
             match case {
                 0 => {
-                    value["parameters"] = serde_json::to_value(guest(!c).parameters).unwrap();
+                    value["parameters"] =
+                        serde_json::to_value(support::observation().parameters).unwrap();
                 }
                 1 => {
                     value["source"]["capture"] = "git-archive-allowlist".into();
@@ -111,5 +143,30 @@ fn mixed_recipes_missing_tools_and_unbounded_claims_are_rejected() {
                 "case {case}"
             );
         }
+    }
+
+    for name in ["packager", "binding-lock"] {
+        let mut value = capsule();
+        value.materials.retain(|m| m.name != name);
+        assert!(
+            decode_build_observation(&serde_json::to_vec(&value).unwrap(), Default::default())
+                .is_err()
+        );
+    }
+    for (field, replacement) in [
+        ("cargoPackage", serde_json::json!("../other")),
+        ("cargoPackage", serde_json::json!("UPPER")),
+        ("cargoPackage", serde_json::json!("a".repeat(65))),
+        ("crateType", serde_json::json!("bin")),
+        ("target", serde_json::json!("wasm32-wasip2")),
+        ("locked", serde_json::json!(false)),
+        ("incremental", serde_json::json!(true)),
+    ] {
+        let mut value = serde_json::to_value(capsule()).unwrap();
+        value["parameters"][field] = replacement;
+        assert!(
+            decode_build_observation(&serde_json::to_vec(&value).unwrap(), Default::default())
+                .is_err()
+        );
     }
 }

@@ -5,6 +5,7 @@
 //! their existing digests are checked, never repaired or used as semantic proof.
 
 mod digest;
+pub(super) mod generation;
 #[cfg(test)]
 mod tests;
 mod types;
