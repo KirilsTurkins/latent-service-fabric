@@ -38,6 +38,20 @@ class RecordingClient(Client):
         write_json(self.evidence / f"{self.calls:03}.json", value)
         code = {"success": 0, "local-error": 2, "declared-error": 3, "platform-failure": 4,
                 "transport-failure": 5, "not-found": 6, "interrupted": 130}[value["category"]]
+        if code not in expected:
+            # Read-only failure evidence. Never retry an uncertain mutation or
+            # turn a subsequently found receipt into a successful test attempt.
+            diagnostics = {}
+            commands = [("audit", ("audit", "query", "--scope", "tenant", "--page-size", "64"))]
+            if args[:2] in (("deployment", "apply"), ("deployment", "delete")) and "--operation-id" in args:
+                operation = args[args.index("--operation-id") + 1]
+                commands.insert(0, ("operation", ("deployment", "operation", operation)))
+            for name, command in commands:
+                try:
+                    diagnostics[name] = super().call(*command, codes=(0, 2, 3, 4, 5, 6, 130))
+                except Exception as error:
+                    diagnostics[name] = {"diagnosticFailure": type(error).__name__}
+            write_json(self.evidence / "unexpected-control-diagnostics.json", diagnostics)
         require(code in expected, f"authoring-control-{self.calls}-{code}")
         return value
 
