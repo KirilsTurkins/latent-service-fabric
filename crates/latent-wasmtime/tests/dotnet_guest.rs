@@ -118,6 +118,7 @@ async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_h
             serde_json::json!([rejected]),
             serde_json::json!([{"err": "empty\0text 世界"}]),
         ),
+        ("profile", serde_json::json!([]), serde_json::json!([17])),
         ("next", serde_json::json!([]), serde_json::json!([1])),
         ("next", serde_json::json!([]), serde_json::json!([1])),
     ]

@@ -28,7 +28,11 @@ rejected. Async imports use a reviewed synchronous C# binding projection:
 Wasmtime suspends the activation stack while host operations are pending.
 This is not permission to turn asynchronous operations into blocking host I/O.
 
-NativeAOT has no JIT or dynamic assembly loading. Arbitrary reflection,
+NativeAOT has no JIT or dynamic assembly loading. The compiled profile probe
+checks dynamic-code flags, statically rooted method metadata after trimming,
+UTF-8 library round-trips, completed/uncompleted activation-local tasks and
+explicit GC collection. Reflection is limited to statically visible, rooted
+metadata; this is not arbitrary runtime discovery. Arbitrary reflection,
 Reflection.Emit, application threads, timers, task schedulers and a CLR host
 event loop are outside this profile. An unresolved managed task may belong
 to an activation, but cannot preserve an application after its activation

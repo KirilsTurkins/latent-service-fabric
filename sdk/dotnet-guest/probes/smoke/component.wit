@@ -15,6 +15,7 @@ interface operations {
     echo: async func(value: string) -> string;
     wide: func(value: u64) -> u64;
     mirror: async func(value: packet) -> result<packet, string>;
+    profile: func() -> u32;
     next: func() -> u32;
 }
 
