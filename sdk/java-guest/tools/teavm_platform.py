@@ -10,6 +10,7 @@ import hashlib
 from pathlib import Path
 
 PREIMAGES = {
+    'arrayclass.c': '044dc626c36581887874d0f4cda5070be0dfdcdb703c6ef0893616e568dc0058',
     'fiber.c': 'b7f4592776d780165154c69e75b243ad9f32df0a717eb8bd29a11924fc6bc6df',
     'time.c': '9f4d0ea0a14f0786cb76172acd9bdefd4464aebf58a0372cfa66ff92dcacae2e',
     'memory.c': 'd685e2f0f8b3983d5886b48ece7d83298b864893f3c80701ed11cc779a51ada2',
@@ -83,6 +84,28 @@ MEMORY = '''#if defined(LSF_TEAVM_WASM)
 #elif defined(__EMSCRIPTEN__)'''
 
 
+def aligned_array_classes(original: str) -> str:
+    # TeaVM compresses every class pointer by three bits. Its generated static
+    # classes are alignas(8), but the dynamic array-class pool uses native C
+    # pointer alignment and can have a 60-byte stride on wasm32. Aligning only
+    # the pool base is insufficient: every slot must preserve the low bits.
+    replacements = {
+        'static TEAVM_OBJECT_CLASS teavm_dynamicClassPool[TEAVM_DYNAMIC_CLASS_POOL_CAPACITY];':
+            'typedef struct { alignas(8) TEAVM_OBJECT_CLASS value; } LsfArrayClassSlot;\n'
+            '_Static_assert(sizeof(LsfArrayClassSlot) % 8 == 0, "compressed class stride");\n'
+            'static LsfArrayClassSlot teavm_dynamicClassPool[TEAVM_DYNAMIC_CLASS_POOL_CAPACITY];',
+        '&teavm_dynamicClassPool[teavm_dynamicClassPoolSize++]':
+            '&teavm_dynamicClassPool[teavm_dynamicClassPoolSize++].value',
+        '&teavm_dynamicClassPool[index].parent':
+            '&teavm_dynamicClassPool[index].value.parent',
+    }
+    for before, after in replacements.items():
+        if original.count(before) != 1:
+            raise ValueError('unreviewed-array-class-layout')
+        original = original.replace(before, after)
+    return original
+
+
 def adapt(generated: Path) -> dict:
     originals = {}
     for name, expected in PREIMAGES.items():
@@ -95,7 +118,8 @@ def adapt(generated: Path) -> dict:
         originals[name] = value.decode('utf-8')
     memory = originals['memory.c'].replace('#if TEAVM_UNIX\n', '#if TEAVM_UNIX && !defined(LSF_TEAVM_WASM)\n', 1)
     memory = memory.replace('#if defined(__EMSCRIPTEN__)', MEMORY, 1)
-    outputs = {'fiber.c': FIBER, 'time.c': CLOCK, 'memory.c': memory, 'file.c': FILESYSTEM}
+    outputs = {'fiber.c': FIBER, 'time.c': CLOCK, 'memory.c': memory, 'file.c': FILESYSTEM,
+               'arrayclass.c': aligned_array_classes(originals['arrayclass.c'])}
     for name, value in outputs.items():
         (generated / name).write_text(value, encoding='utf-8', newline='\n')
     return {name: {'upstreamSha256': PREIMAGES[name],
