@@ -4,7 +4,7 @@
   "pages": [
     {
       "source": "ARCHITECTURE.md",
-      "words": 138,
+      "words": 193,
       "sha256": "fd09da45e45ae3af3ca1450ef0dc631197e737c6ecd0de4527b0c3e6791a8040",
       "status": "updated-source-reviewed",
       "findings": [
@@ -32,7 +32,7 @@
     {
       "source": "README.md",
       "words": 896,
-      "sha256": "e1a08ce737c54b4334dbf266bfd3c429a96b3fc586a56f1b8eb79c17eb64c52f",
+      "sha256": "197d5d6c26ef523b3ffcecc6beb8bfa53e2b6f4867a256e9c269719b559e6be1",
       "status": "updated-source-reviewed",
       "findings": [
         "Replaced outdated SVG and future-provider claims; remaining README feature inventory and install references need completion review.",
@@ -41,7 +41,7 @@
     },
     {
       "source": "SECURITY.md",
-      "words": 763,
+      "words": 802,
       "sha256": "bec9110e66ceaffa12d787ea624fb9c2fa41623af5e17980fe0737e2b052e2b2",
       "status": "updated-source-reviewed",
       "findings": [
@@ -51,7 +51,7 @@
     {
       "source": "VALIDATION.md",
       "words": 1388,
-      "sha256": "bbf69d089823081d2d6c9193b8d72b431a1a41753e525333176a87e47d8dab92",
+      "sha256": "00b6631d7638a0a55a4151577c7c57a0cf088bf6b93dcd00e8493cd654e85a59",
       "status": "updated-source-reviewed",
       "findings": [
         "Reconciled normal Makefile and native SDK checks; separated explicit large campaigns, historical integrity and human/release acceptance."
@@ -388,7 +388,7 @@
     },
     {
       "source": "docs/architecture/blob-model.md",
-      "words": 283,
+      "words": 287,
       "sha256": "b318b0ace0b6d340a33214745c030041de43b5c8e23e192edd4e94d47bce4418",
       "status": "updated-source-reviewed",
       "findings": [
@@ -404,7 +404,7 @@
     },
     {
       "source": "docs/architecture/cluster-topology.md",
-      "words": 508,
+      "words": 470,
       "sha256": "4c79efaf0dd066e6e3a0a92e349f13594cd084de64146f9fda4c836f883c48dd",
       "status": "updated-source-reviewed",
       "findings": [
@@ -422,7 +422,7 @@
     },
     {
       "source": "docs/architecture/control-plane.md",
-      "words": 1200,
+      "words": 1185,
       "sha256": "3d0331b6fd062e640278d186382a126eea667afd981874b569bacf281ec8ba67",
       "status": "updated-source-reviewed",
       "findings": [
@@ -431,7 +431,7 @@
     },
     {
       "source": "docs/architecture/data-plane.md",
-      "words": 922,
+      "words": 893,
       "sha256": "d1e324adfa6f683238c906f756d3e5658a55ae0178cdf2358cba1bc94a05b8a6",
       "status": "updated-source-reviewed",
       "findings": [
@@ -440,7 +440,7 @@
     },
     {
       "source": "docs/architecture/execution-cells.md",
-      "words": 864,
+      "words": 852,
       "sha256": "2b727a56c0f2bd936ab4dad9adfc0494a611e8df4ae80a152b0d9ab7a9876860",
       "status": "updated-source-reviewed",
       "findings": [
@@ -449,7 +449,7 @@
     },
     {
       "source": "docs/architecture/identity-and-capabilities.md",
-      "words": 430,
+      "words": 406,
       "sha256": "9e0dc94f9588fed09c190e85095f967352b60565a21b26b8f85db308243be13c",
       "status": "updated-source-reviewed",
       "findings": [
@@ -458,7 +458,7 @@
     },
     {
       "source": "docs/architecture/ingress-and-triggers.md",
-      "words": 347,
+      "words": 337,
       "sha256": "d3686234ef39d071e76b55d75b177d32c4c3f282e8095bc8cc6f422b93a050c8",
       "status": "updated-source-reviewed",
       "findings": [
@@ -476,7 +476,7 @@
     },
     {
       "source": "docs/architecture/security.md",
-      "words": 1236,
+      "words": 1221,
       "sha256": "0df87db34ad207686e7db0bd09e355f0c819bff27dd57a2a8b4fdb2fe4890f93",
       "status": "updated-source-reviewed",
       "findings": [
@@ -485,7 +485,7 @@
     },
     {
       "source": "docs/architecture/state-and-effects.md",
-      "words": 660,
+      "words": 615,
       "sha256": "93aa46fe5b16bede8943d65a988bb039870a1e1a68d0aaa778da789241339817",
       "status": "updated-source-reviewed",
       "findings": [
@@ -494,7 +494,7 @@
     },
     {
       "source": "docs/architecture/versioning-and-deployment.md",
-      "words": 1673,
+      "words": 1653,
       "sha256": "3aaa1cfa42940dfb15dda0f3a78ee12d9aa886db96f52b54c82284902030022a",
       "status": "updated-source-reviewed",
       "findings": [
@@ -538,7 +538,7 @@
     {
       "source": "docs/component-development/packaging.md",
       "words": 1472,
-      "sha256": "81fa847387ba280ef458ff1230d241f778cbd4cfa7f78528bd49c7a27cf3dec0",
+      "sha256": "4ef5eeeaed5834db5692184f29cd8579c97b254e3541813581238c0629d984a8",
       "status": "updated-source-reviewed",
       "findings": [
         "Corrected old context/log/clock-only and synchronous-only claims against current semantic host/profile comparison; retained bounds and package identity details."
@@ -721,7 +721,7 @@
     {
       "source": "docs/development/standalone-quickstart.md",
       "words": 1581,
-      "sha256": "f0ea5c1a24740a6126d22572e6107aaa7f307fe9a915c16b024d1015dd0ce522",
+      "sha256": "43b696d6a917124b39a68ca5e8dcd796f2779258884b543fa26bd9112ca648db",
       "status": "pending",
       "findings": []
     },
@@ -896,7 +896,7 @@
     {
       "source": "docs/installation.md",
       "words": 509,
-      "sha256": "514ff6656e3adbfbe634e77b1ecb5b895be92a61917c9c90d12b4098d9bdda12",
+      "sha256": "825d2564ece6b7659fa6292c32586f90e47954181748de9befa614ea5704dbe1",
       "status": "updated-source-reviewed",
       "findings": [
         "Made unavailable native publication and working source path explicit; installation choices and requirements replace internal release handoff narrative."
@@ -905,7 +905,7 @@
     {
       "source": "docs/learn/author-your-first-capsule.md",
       "words": 578,
-      "sha256": "89fde14b1d57bb0f052723de4267586124f3b32347f0a8d0aceeb1cfb6c4be28",
+      "sha256": "15af910a94d1fe15eeccb2977ca3a68d5fa008ae3ae75bf6cd45792c33b2ba2e",
       "status": "updated-source-reviewed",
       "findings": [
         "Replaced source-evidence workflow with contract/implementation explanation linked to runnable first-node and three-function tutorials."
@@ -923,7 +923,7 @@
     {
       "source": "docs/learn/deliver-and-recover-a-capsule.md",
       "words": 687,
-      "sha256": "ddae183187feee7e95f293feddf248d294690f5717725cf1de0ea47e96cf2e30",
+      "sha256": "a2ad3b13db35bbcd41a9145b990ead4c170ab57ca811bb9c915894edb0e6d8b3",
       "status": "updated-source-reviewed",
       "findings": [
         "Replaced stale-source test harness narrative with manual update and restoration of the greeting service. The documented commands returned Welcome then Hello and cleaned up on the retained local Linux node binary; new guest component built from an isolated source copy."
@@ -932,7 +932,7 @@
     {
       "source": "docs/learn/read-contracts-and-evidence.md",
       "words": 624,
-      "sha256": "9a60b0925cdb4a9911761eba00fd947d963bb417015f103b3d45f1bc03af28bb",
+      "sha256": "b601df91b68d2a99ad8e89987cd2d289296d4020e20f554a82d8ca35d5bba680",
       "status": "updated-source-reviewed",
       "findings": [
         "Replaced historical receipt validation with reading actual WIT arguments, results, imports and API source selection."
@@ -941,7 +941,7 @@
     {
       "source": "docs/learn/runtime-identities.md",
       "words": 684,
-      "sha256": "25aafb2b6d702963d35d765730dcc2599921e3e65f2e0fd520dcc9a818d67a72",
+      "sha256": "8aaab10009537d98ba86e930612f0574bf68f8eb10acf8cb59f91f4cb4b99299",
       "status": "updated-source-reviewed",
       "findings": [
         "Replaced dense glossary and Wiki migration prose with one request lifecycle, practical identities, update and recovery behavior."
@@ -950,7 +950,7 @@
     {
       "source": "docs/learn/use-a-client.mdx",
       "words": 1978,
-      "sha256": "eeb674a9ea5c08e0f2c5a5b24f8851ebacfef2422ad182719517de2bb6f0e873",
+      "sha256": "e18aedc3144c8c20ba20a30d10cc9b7f3a894dd3138bf11dc0a7b77397e63a51",
       "status": "read-needs-update",
       "findings": [
         "Read every section and corrected Java 25 toolchain. Still a participant-conformance narrative; needs a simpler user path and runnable all-language application examples."
@@ -1222,7 +1222,7 @@
     {
       "source": "docs/reference/operator-cli.md",
       "words": 3296,
-      "sha256": "3e1d0b40ebcc081d776da348a08c6cd1fa571371563e232cfd7a1e82cdb7c9c4",
+      "sha256": "24c867e03586e36f30b0dfd6d830cb336c1759be3396e57a103b20d80f225819",
       "status": "updated-source-reviewed",
       "findings": [
         "Read full reference and corrected implemented providers/web/SDK support, supported capability budgets and obsolete rollout readability claim against current CLI/storage code."
@@ -1546,7 +1546,7 @@
     {
       "source": "docs/start/first-node.md",
       "words": 1170,
-      "sha256": "b72bc655b1a44b63849f1bff9e531c90c4670628c8a7ce32c9b087d74a9d7916",
+      "sha256": "336a76ba0379b270e71ee2b528d80b6604541dc0634b5282f5c58917e3bf9bba",
       "status": "updated-source-reviewed",
       "findings": [
         "Reviewed complete steps and updated the next guide title. Retained local Linux node run exercised setup, restart, calls and cleanup; it is not a fresh PR binary build."
@@ -1798,8 +1798,9 @@
         "Removed stale transport delivery ticket language and phase headings; preserved current complete-profile ownership contracts."
       ],
       "words": 1556,
-      "sha256": "527706a5338ccf6f3c73bfc4dc18b99007996c1bab0e8132d9cf0dea95d13d85",
+      "sha256": "00612148dbae306dd2ad70146356a153457bcc01600e1ac7b26ec576b359b421",
       "status": "updated-source-reviewed"
     }
-  ]
+  ],
+  "hashEncoding": "UTF-8 source normalized to LF"
 }

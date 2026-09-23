@@ -1,4 +1,4 @@
-﻿# Read a capsule contract
+# Read a capsule contract
 
 A contract tells callers which functions a capsule provides, what values those
 functions accept, and what results they can return. LSF uses **WIT** (WebAssembly
@@ -98,4 +98,3 @@ Contributors checking implementation claims can use the
 [validation guide](../../VALIDATION.md); application authors can continue with
 [creating a capsule](../component-development/creating-a-capsule.md) and
 [calling it from a client](use-a-client.mdx).
-
