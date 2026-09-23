@@ -94,6 +94,7 @@ impl ExecutionCancellation for Control {
     }
 }
 pub struct Fixture {
+    ceiling: latent_core::ResourceBudget,
     _guest_runtime: support::guest_runtime::Runtime,
     _factory: WasmtimeComponentEngineFactory,
     pub backend: WasmtimeBackend,
@@ -148,7 +149,7 @@ impl Fixture {
                 "http://localhost:{port}{path}"
             )))
             .contracts;
-            artifact.manifest.execution.resource_budget_ceiling = ceiling;
+            artifact.manifest.execution.resource_budget_ceiling = ceiling.clone();
             artifact.manifest.imports.push(ContractImport {
                 contract: ContractId(component::CAP.into()),
                 optional: false,
@@ -178,6 +179,15 @@ impl Fixture {
             .execution_eligibility_selected(&release, Some(&receipt.publication.id))
             .unwrap()
             .unwrap();
+        ceiling = ceiling.intersect(
+            &catalog
+                .fetch_verified_metadata_selected(&release, Some(&receipt.publication.id))
+                .await
+                .unwrap()
+                .manifest()
+                .execution
+                .resource_budget_ceiling,
+        );
         let policies = Arc::new(
             PolicyStore::open(
                 &directory.path().join("policies"),
@@ -311,6 +321,7 @@ impl Fixture {
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
+            ceiling,
             _guest_runtime: guest_runtime,
             _factory: factory,
             backend,
@@ -329,7 +340,7 @@ impl Fixture {
     }
     pub fn request(&self, id: &str, method: u32) -> (ExecutionRequest, Control) {
         let id = ActivationId(id.into());
-        let mut grant = support::budget();
+        let mut grant = self.ceiling.clone();
         grant.outbound_requests = 8;
         grant.wall_time_limit_millis = Some(5000);
         let budget = ActivationBudget::with_profile(
