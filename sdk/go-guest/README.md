@@ -82,6 +82,10 @@ consumes the owner; calling it again is misuse. A chunk can be materialized only
 once and retains its own host charge after its reader or body closes. Unclosed
 owners remain charged until the activation is cleaned up. The SDK adds no
 finalizers, goroutines, threads, background drains or retry workers.
+The builder removes the pinned generator's `runtime.AddCleanup` blocks from
+imported capability resource constructors, rejecting any unreviewed shape.
+Explicit generated `Drop` methods stay intact; garbage collection cannot drop
+a host owner behind the SDK's back. Abandonment is reclaimed by Store cleanup.
 
 Secret zeroization covers the SDK-owned byte slice, including its aliases.
 Copies or strings made by application code are outside that guarantee. A borrow

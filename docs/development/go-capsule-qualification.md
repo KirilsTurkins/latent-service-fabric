@@ -35,6 +35,11 @@ fuel, wall-time, memory and cancellation bounds. Dormant deployments retain no
 guest heap or Go process. Read the SDK's
 [supported-language boundary](../../sdk/go-guest/README.md#ownership-concurrency-and-cancellation)
 before choosing dependencies or host APIs.
+The pinned upstream resource constructors install Go cleanup callbacks. The
+SDK build removes those exact generated blocks, retains explicit `Drop`, and
+rejects unknown shapes. Pure regression tests and the real resource ownership
+suite must both pass for this adaptation; upstream GC-driven drops are not a
+substitute for the documented activation cleanup contract.
 
 ## Retained implementation validation
 
@@ -72,6 +77,16 @@ The new node/guide run and measured startup, active memory, cache, dormancy and
 cleanup results remain required. Only `qualification.json` with `status:
 passed`, complete node/guide receipts and successful exact-head CI may approve
 merge. `BUILD-COMPLETE.json` and `SDK-BUILD.json` alone cannot do so.
+
+[Run 35924210302](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35924210302),
+head `d4582fe3681574fb05daca945c79094cf90c8a45`, passed the expanded full-width
+ABI probe and rebuilt every component, but passed only nine SDK cases. Its
+second local-service call trapped while a half-budget child reservation was
+outstanding. The retained snapshot is not evidence of eight calls or 5 billion
+executed guest instructions; reserved child capacity is included in it. The
+next gate includes synchronized clock/native fuel accounting and bounded
+caller/child start and terminal diagnostics. This failed attempt cannot qualify
+the later source changes.
 
 ## Reproduction and delivery boundary
 

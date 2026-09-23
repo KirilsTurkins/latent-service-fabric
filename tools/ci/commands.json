@@ -2715,7 +2715,7 @@
       "sha256": "497409dd0d4c072b12a64c84e9ef1dbc804eb888c62ccae6fb8a27b9e64e97ce"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "9c6aef620938b12b70a90012514d85f75840df6cfa8c37e96c035a90b8e99b5c"
+      "sha256": "a861141247898ec1ff68f9907657ef875befad8710f2358a93b1dee20d0bc212"
     },
     "tools/reset_validation_echo.py": {
       "sha256": "7bfdd62d41f709ccee0de64e0c2b14868d4033444ca4e2b0a959424019108d2e"
@@ -3417,6 +3417,7 @@
       "GoAuthoringTests.test_every_editable_template_has_exact_runtime_imports_and_captured_sdk",
       "GoAuthoringTests.test_every_sdk_fixture_is_an_editable_source_project_with_exact_wit",
       "GoAuthoringTests.test_existing_source_and_overlapping_build_outputs_are_never_overwritten",
+      "GoAuthoringTests.test_generated_resource_owners_have_no_gc_effects_and_reject_shape_drift",
       "GoAuthoringTests.test_guide_and_selectable_examples_cover_the_printed_workflow",
       "GoAuthoringTests.test_module_template_rejects_unreviewed_application_dependencies",
       "GoAuthoringTests.test_sdk_aliases_follow_generated_identity_without_exposing_resource_constructors",

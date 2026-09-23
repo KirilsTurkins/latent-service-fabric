@@ -157,7 +157,7 @@ def qualify(output: Path, *, offline=False, language="rust"):
         if language == "go":
             commands.environment["LSF_GUEST_SDK_LANGUAGE"] = "go"
         commands.run("sdk-runtime-tests", paths["cargo"], *cargo_options, "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
-                     "--", "--ignored", "--test-threads=1")
+                     "--", "--ignored", "--test-threads=1", "--show-output")
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"

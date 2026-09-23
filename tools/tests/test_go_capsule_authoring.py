@@ -7,7 +7,7 @@ import unittest
 from tools.go_capsule_project import create, snapshot, validate, TEMPLATES, RUNTIME_IMPORTS
 from tools.go_capsule_build import build
 from tools.build_go_guest_capsules import project as sdk_project, NAMES
-from tools.go_guest.sdk import install, CAPABILITIES
+from tools.go_guest.sdk import install, CAPABILITIES, explicit_resource_owners
 
 
 class GoAuthoringTests(unittest.TestCase):
@@ -82,6 +82,37 @@ class GoAuthoringTests(unittest.TestCase):
                 for capability in RUNTIME_IMPORTS:
                     self.assertIn(("import " + capability + ";").encode(), files["wit/world.wit"])
                 self.assertNotIn(b"grants", files["capsule-project.json"])
+
+    def test_generated_resource_owners_have_no_gc_effects_and_reject_shape_drift(self):
+        constructor = '''func ChunkFromOwnHandle(handleValue int32) *Chunk {
+\thandle := witRuntime.MakeHandle(handleValue)
+\tvalue := &Chunk{handle}
+\truntime.AddCleanup(value, func(_ int) {
+\t\thandleValue := handle.TakeOrNil()
+\t\tif handleValue != 0 {
+\t\t\tresourceDropChunk(handleValue)
+\t\t}
+\t}, 0)
+\treturn value
+}'''
+        explicit = '''func (self *Chunk) Drop() {
+\thandle := self.handle.TakeOrNil()
+\tif handle != 0 {
+\t\tresourceDropChunk(handle)
+\t}
+}'''
+        source = 'package blob\nimport (\n\t"runtime"\n)\n' + explicit + "\n" + constructor
+        adapted = explicit_resource_owners(source)
+        self.assertNotIn("AddCleanup", adapted)
+        self.assertNotIn('"runtime"', adapted)
+        self.assertIn(explicit, adapted)
+        self.assertIn("value := &Chunk{handle}", adapted)
+        self.assertIn('"runtime"', explicit_resource_owners(source + "\nfunc keep() { runtime.KeepAlive(nil) }"))
+        for changed in (source.replace("func(_ int)", "func(_ uint32)"),
+                        source.replace("resourceDropChunk(handleValue)", "otherDrop(handleValue)"),
+                        source + "\nfunc unexpected() { runtime.SetFinalizer(nil, nil) }"):
+            with self.subTest(changed=changed[-120:]), self.assertRaises(ValueError):
+                explicit_resource_owners(changed)
 
     def test_sdk_mutation_does_not_silently_become_a_reviewed_input(self):
         with tempfile.TemporaryDirectory() as temporary:
