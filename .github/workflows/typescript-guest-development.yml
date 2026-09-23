@@ -13,22 +13,73 @@ concurrency:
 
 jobs:
   source-inputs:
-    name: Retain exact source inputs for guest qualification
+    name: Qualify exact guest toolchain inputs
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: Archive tracked source inputs without credentials or build state
-        run: |
-          mkdir -p "$RUNNER_TEMP/typescript-guest-inputs"
-          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/typescript-guest-inputs/source.tar.gz"
-          git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-inputs/source-revision.txt"
-          sha256sum "$RUNNER_TEMP/typescript-guest-inputs/source.tar.gz" > "$RUNNER_TEMP/typescript-guest-inputs/source.sha256"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
-          name: typescript-guest-source-${{ github.sha }}
-          path: ${{ runner.temp }}/typescript-guest-inputs/
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Prepare pinned public build dependencies
+        run: |
+          npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund
+          cargo fetch --locked
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-bin"
+      - name: Exercise native async componentization and retain the actual result
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/typescript-toolchain/probe/wit"
+          export PROBE="$RUNNER_TEMP/typescript-toolchain/probe"
+          cat > "$PROBE/wit/world.wit" <<'WIT'
+          package probe:async@1.0.0;
+          interface host { echo: async func(text: string) -> string; }
+          world probe { import host; export run: async func(text: string) -> string; }
+          WIT
+          cat > "$PROBE/probe.js" <<'JS'
+          import {echo} from 'probe:async/host@1.0.0';
+          export async function run(text) { return await echo(text); }
+          JS
+          node --input-type=module <<'JS'
+          import {componentize} from './examples/renderer-profile/node_modules/@bytecodealliance/componentize-js/src/componentize.js';
+          import {writeFile} from 'node:fs/promises';
+          const root = process.env.PROBE;
+          try {
+            const result = await componentize({sourcePath: root + '/probe.js', witPath: root + '/wit', worldName: 'probe', env: {}, disableFeatures: ['stdio','random','clocks','http','fetch-event'], enableAot: false});
+            await writeFile(root + '/native-async.wasm', result.component);
+            await writeFile(root + '/result.json', JSON.stringify({success: true, bytes: result.component.length, imports: result.imports}));
+          } catch (error) {
+            await writeFile(root + '/result.json', JSON.stringify({success: false, error: String(error), stack: error.stack}));
+            console.error(error);
+          }
+          JS
+          cat "$PROBE/result.json"
+          python3 tools/stage_runtime_wit.py "$RUNNER_TEMP/guest-wit" --source wit/platform/runtime-phase3-blobs
+          wasm-tools component wit "$RUNNER_TEMP/guest-wit" --json > "$PROBE/platform.json"
+      - name: Retain only public offline toolchain inputs, never credentials
+        run: |
+          root="$RUNNER_TEMP/typescript-toolchain"
+          mkdir -p "$root/bin"
+          cp "$(command -v node)" "$root/bin/node"
+          cp "$(command -v wasm-tools)" "$root/bin/wasm-tools"
+          cp "$RUNNER_TEMP/guest-bin/wit-bindgen" "$root/bin/wit-bindgen"
+          tar -czf "$root/npm.tar.gz" -C examples/renderer-profile node_modules package.json package-lock.json
+          tar --exclude=share/doc -czf "$root/rust.tar.gz" -C "$(rustc --print sysroot)" .
+          tar -czf "$root/cargo-registry.tar.gz" -C "$HOME/.cargo" registry
+          git rev-parse HEAD > "$root/source-revision.txt"
+          sha256sum "$root"/*.tar.gz "$root"/bin/* > "$root/materials.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: typescript-guest-toolchain-${{ github.sha }}
+          path: ${{ runner.temp }}/typescript-toolchain/
           if-no-files-found: error
           retention-days: 1
