@@ -52,6 +52,8 @@ jobs:
           printf '%s  %s\n' "$checksum" "$destination/gradle.zip" | sha256sum --check --strict
           unzip -q "$destination/gradle.zip" -d "$destination"
           echo "$destination/gradle-${version}/bin" >> "$GITHUB_PATH"
+      - name: Verify observation integrity
+        run: python3 -m unittest discover -s research/java-capsules/tests -v
       - name: Capture actual compiler candidates and unresolved boundaries
         id: probe
         run: python3 research/java-capsules/probe.py --capture-dependencies --output "$RUNNER_TEMP/java-guest-attempt"

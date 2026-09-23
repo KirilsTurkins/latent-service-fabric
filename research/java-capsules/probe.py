@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -44,6 +45,14 @@ def snapshot(root: Path = ROOT) -> dict:
         raise ValueError("source-snapshot-limit")
     return {path.relative_to(root).as_posix(): {"sha256": digest(path), "bytes": path.stat().st_size}
             for path in sorted(paths)}
+
+
+def version_matches(output: str, expected: str) -> bool:
+    """Match the version token, not a prefix; allow wasm-tools build identity."""
+    if expected.startswith("wasm-tools "):
+        return re.fullmatch(re.escape(expected) + r"(?: \([0-9a-f]{7,40} \d{4}-\d{2}-\d{2}\))?",
+                            output.strip()) is not None
+    return expected in output.splitlines()
 
 
 def child(arguments: list[str]) -> None:
@@ -156,7 +165,7 @@ def main() -> int:
             phase = attempt.run(name, command)
             if phase["status"] != "passed":
                 raise ValueError("toolchain-check-failed-" + name)
-            if expected and expected not in (output / phase["stdout"]["path"]).read_text().splitlines():
+            if expected and not version_matches((output / phase["stdout"]["path"]).read_text(), expected):
                 raise ValueError("toolchain-version-mismatch-" + name)
         gradle = [tools["gradle"], "--no-daemon", "--console=plain", "--max-workers=2",
                   "-p", str(project), "-PlsfOutput=" + str(output / "build")]
