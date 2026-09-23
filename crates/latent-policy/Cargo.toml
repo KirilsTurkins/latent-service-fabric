@@ -7,6 +7,11 @@ license.workspace = true
 authors.workspace = true
 description = "Bounded supply-chain admission policy and runtime authorization contracts."
 
+[[example]]
+name = "capsule_authoring"
+path = "examples/capsule_authoring.rs"
+test = true
+
 [lints]
 workspace = true
 
