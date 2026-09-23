@@ -3099,6 +3099,7 @@
         "semantics::wasm::tests::operator_vectors_are_bounded_before_owned_operand_allocation",
         "semantics::wasm::tests::small_real_nested_types_and_clock_import_validate_without_execution",
         "semantics::web::tests::backend_world_requests_only_the_exact_async_http_import",
+        "semantics::web::tests::managed_capsule_limits_do_not_expand_existing_web_profiles",
         "semantics::web::tests::public_contract_is_async_and_a_profile_name_never_substitutes_for_a_component",
         "semantics::web::tests::sync_or_modified_public_interface_is_rejected_before_guest_execution"
       ],
@@ -3107,7 +3108,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 70,
+      "minimumCases": 71,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [

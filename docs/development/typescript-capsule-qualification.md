@@ -46,6 +46,14 @@ components without changing the production half-remaining delegation rule.
 Caller/child terminal observations and per-invocation elapsed time are retained
 in subsequent SDK logs. This failed attempt remains distinct from success.
 
+The matching [broad CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35922509604)
+also caught an unintended expansion of ordinary buffered-web parser limits when
+the larger TypeScript capsule envelope was introduced. Web profile selection
+now preserves the original two-million-operator and 65,536-type-node ceilings;
+the separately reviewed Angular binary envelope is unchanged. The existing
+actual Angular rejection regression remains required, in addition to the new
+unit boundary test. No failing assertion was removed or weakened.
+
 [Run 35916800437](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35916800437)
 at `15295c4cd7a1caaca74f904a7cc35b10c77779d4` built all five standalone and
 nine SDK components. Seven of ten actual admitted SDK cases passed: signed

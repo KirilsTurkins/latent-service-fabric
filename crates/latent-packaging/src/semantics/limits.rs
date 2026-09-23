@@ -24,8 +24,9 @@ pub struct SemanticLimits {
     pub max_functions: usize,
     pub max_parameters: usize,
     pub max_summary_bytes: usize,
-    /// Separate closed Angular binary profile. Ordinary capsule and public WIT
-    /// limits above remain unchanged; callers can independently lower these.
+    /// Separate closed Angular binary profile. Its public WIT and ordinary web
+    /// profiles retain their earlier ceilings even for larger managed capsules.
+    /// Callers can independently lower these binary-only limits.
     pub max_renderer_operators: usize,
     pub max_renderer_type_nodes: usize,
 }
