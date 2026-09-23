@@ -1,0 +1,19 @@
+package latent:java-qualification@0.1.0;
+
+// Qualification contract only. It is intentionally not called a generated API.
+interface values {
+    record payload {
+        text: string,
+        unsigned-value: u64,
+        signed-value: s64,
+        bytes: list<u8>,
+    }
+    enum failure {
+        invalid-input,
+    }
+    round-trip: func(input: payload) -> result<payload, failure>;
+}
+
+world probe {
+    export values;
+}

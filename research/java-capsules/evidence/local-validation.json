@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "latent.java-guest.local-validation.v1",
+  "issue": 548,
+  "reviewDate": "2026-09-23",
+  "inspectedDevelopmentRevision": "34f03fad155c1f35efc3b7a1510726dbc04fc3c5",
+  "scope": "local-research-harness-and-unqualified-jvm-corpus-only",
+  "qualification": "not-qualified",
+  "canCloseIssue": false,
+  "completeRepositoryCheckout": false,
+  "teaVMDriverCompiled": false,
+  "teaVMCandidatesExecuted": false,
+  "nodeInvoked": false,
+  "admissionExercised": false,
+  "runtimeMeasurements": null,
+  "requiredCiPassed": false,
+  "pythonVersion": "3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]",
+  "sourceInputs": {
+    "research/java-capsules/build.gradle.kts": {
+      "sha256": "e818695a7654ebd7d9060a42fbe6db44a4d059dfbba76d0b5c5dff6de1a7eff1",
+      "size": 1806
+    },
+    "research/java-capsules/probe.py": {
+      "sha256": "a2cc4194e5d59f859db74023e3ef085962b6504a253c964cb1fe43498cc2db2f",
+      "size": 17920
+    },
+    "research/java-capsules/probe.wit": {
+      "sha256": "154a4ab0fd2c1af8b79015fdd83827175325d6f645548fcf6f3a3ee12f7886eb",
+      "size": 423
+    },
+    "research/java-capsules/settings.gradle.kts": {
+      "sha256": "c160eb6257d69de0aff186d0bf66a6e4a87b4d1f94eff5b3df5fcc19c9ba9c8c",
+      "size": 52
+    },
+    "research/java-capsules/src/main/java/lsf/qualification/CompileProbe.java": {
+      "sha256": "e8c7354e56a7486725c8a582738dd951df75498a5b39bd48cd0096c3355a33d4",
+      "size": 2270
+    },
+    "research/java-capsules/src/main/java/lsf/qualification/FeatureProbe.java": {
+      "sha256": "953ac5304858621e35aa6ed3fed2deb76c712bbec5f67cd0a4f37344ac83d0b9",
+      "size": 3627
+    },
+    "research/java-capsules/test_probe.py": {
+      "sha256": "0492eecbb0675a95deba2cb23bb69c7b403c083b9a91b5df8ef74a2621826ee8",
+      "size": 13257
+    }
+  },
+  "commands": [
+    {
+      "name": "harness-tests",
+      "command": [
+        "/opt/pyvenv/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "research/java-capsules",
+        "-p",
+        "test_probe.py",
+        "-v"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "test_absent_core_artifact_is_not_componentized (test_probe.ProbeTests.test_absent_core_artifact_is_not_componentized) ... ok\ntest_all_passing_subcommands_still_cannot_qualify_an_sdk (test_probe.ProbeTests.test_all_passing_subcommands_still_cannot_qualify_an_sdk) ... ok\ntest_approximate_or_substring_versions_are_rejected (test_probe.ProbeTests.test_approximate_or_substring_versions_are_rejected) ... ok\ntest_boolean_status_is_rejected (test_probe.ProbeTests.test_boolean_status_is_rejected) ... ok\ntest_bounded_runner_error_is_infrastructure_failure (test_probe.ProbeTests.test_bounded_runner_error_is_infrastructure_failure) ... ok\ntest_cancellation_is_recorded_and_propagated (test_probe.ProbeTests.test_cancellation_is_recorded_and_propagated) ... ok\ntest_capture_shim_preserves_nonzero_exit_and_diagnostics (test_probe.ProbeTests.test_capture_shim_preserves_nonzero_exit_and_diagnostics) ... ok\ntest_capture_shim_records_launch_failure_separately (test_probe.ProbeTests.test_capture_shim_records_launch_failure_separately) ... ok\ntest_compiler_pin_drift_is_rejected_before_gradle (test_probe.ProbeTests.test_compiler_pin_drift_is_rejected_before_gradle) ... ok\ntest_content_identity_changes_when_source_changes (test_probe.ProbeTests.test_content_identity_changes_when_source_changes) ... ok\ntest_direct_compiler_pin_matches_probe_metadata (test_probe.ProbeTests.test_direct_compiler_pin_matches_probe_metadata) ... ok\ntest_environment_does_not_inherit_tokens_or_java_options (test_probe.ProbeTests.test_environment_does_not_inherit_tokens_or_java_options) ... ok\ntest_exact_pins_are_accepted (test_probe.ProbeTests.test_exact_pins_are_accepted) ... ok\ntest_existing_attempt_is_preserved (test_probe.ProbeTests.test_existing_attempt_is_preserved) ... ok\ntest_expired_probe_does_not_launch (test_probe.ProbeTests.test_expired_probe_does_not_launch) ... ok\ntest_invalid_deadline_does_not_create_directory (test_probe.ProbeTests.test_invalid_deadline_does_not_create_directory) ... ok\ntest_java_home_tracks_verified_executable (test_probe.ProbeTests.test_java_home_tracks_verified_executable) ... ok\ntest_launch_error_cannot_be_mistaken_for_feature_failure (test_probe.ProbeTests.test_launch_error_cannot_be_mistaken_for_feature_failure) ... ok\ntest_missing_status_is_rejected (test_probe.ProbeTests.test_missing_status_is_rejected) ... ok\ntest_missing_tool_is_not_compiler_feasibility_failure (test_probe.ProbeTests.test_missing_tool_is_not_compiler_feasibility_failure) ... ok\ntest_nonzero_compiler_exit_retains_both_streams (test_probe.ProbeTests.test_nonzero_compiler_exit_retains_both_streams) ... ok\ntest_output_cannot_be_target_itself (test_probe.ProbeTests.test_output_cannot_be_target_itself) ... ok\ntest_output_must_be_below_target (test_probe.ProbeTests.test_output_must_be_below_target) ... ok\ntest_report_survives_missing_configuration (test_probe.ProbeTests.test_report_survives_missing_configuration) ... ok\ntest_signal_exit_is_not_success (test_probe.ProbeTests.test_signal_exit_is_not_success) ... ok\ntest_source_mutation_marks_attempt_infrastructure_error (test_probe.ProbeTests.test_source_mutation_marks_attempt_infrastructure_error) ... ok\ntest_source_snapshot_does_not_capture_generated_target_files (test_probe.ProbeTests.test_source_snapshot_does_not_capture_generated_target_files) ... ok\ntest_source_snapshot_rejects_symlink_sources (test_probe.ProbeTests.test_source_snapshot_rejects_symlink_sources) ... ok\ntest_source_snapshot_reports_missing_authoritative_inputs (test_probe.ProbeTests.test_source_snapshot_reports_missing_authoritative_inputs) ... ok\ntest_symlink_output_cannot_escape_target (test_probe.ProbeTests.test_symlink_output_cannot_escape_target) ... ok\ntest_write_json_refuses_overwrite (test_probe.ProbeTests.test_write_json_refuses_overwrite) ... ok\n\n----------------------------------------------------------------------\nRan 31 tests in 1.476s\n\nOK\n"
+    },
+    {
+      "name": "java-version",
+      "command": [
+        "java",
+        "--version"
+      ],
+      "exitCode": 0,
+      "stdout": "openjdk 21.0.11 2026-04-21\nOpenJDK Runtime Environment (build 21.0.11+10-1-deb13u2-Debian)\nOpenJDK 64-Bit Server VM (build 21.0.11+10-1-deb13u2-Debian, mixed mode, sharing)\n",
+      "stderr": ""
+    },
+    {
+      "name": "javac-version",
+      "command": [
+        "javac",
+        "--version"
+      ],
+      "exitCode": 0,
+      "stdout": "javac 21.0.11\n",
+      "stderr": ""
+    },
+    {
+      "name": "corpus-compile-unqualified-java21",
+      "command": [
+        "javac",
+        "-encoding",
+        "UTF-8",
+        "-d",
+        "target/java-corpus-diagnostic-21",
+        "research/java-capsules/src/main/java/lsf/qualification/FeatureProbe.java"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "corpus-run-unqualified-java21",
+      "command": [
+        "java",
+        "-cp",
+        "target/java-corpus-diagnostic-21",
+        "lsf.qualification.FeatureProbe"
+      ],
+      "exitCode": 0,
+      "stdout": "java-feature-corpus:14-checks-passed\n",
+      "stderr": ""
+    },
+    {
+      "name": "required-release-unavailable",
+      "command": [
+        "javac",
+        "--release",
+        "25",
+        "-d",
+        "target/java-corpus-diagnostic-21",
+        "research/java-capsules/src/main/java/lsf/qualification/FeatureProbe.java"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "error: release version 25 not supported\nUsage: javac <options> <source files>\nuse --help for a list of possible options\n"
+    }
+  ],
+  "unavailableTools": [
+    "gradle",
+    "wasm-tools",
+    "wit-bindgen",
+    "zig",
+    "cargo"
+  ],
+  "limitations": [
+    "Most harness tests inject command outcomes; real child-shim checks do not exercise the repository process owner.",
+    "The corpus was compiled and run using installed Java 21, not pinned Java 25 and not WebAssembly.",
+    "The Java 25 diagnostic is a prerequisite failure, not a failed compiler/component feasibility result.",
+    "Upstream TeaVM driver APIs were source-reviewed; Gradle dependency resolution and both TeaVM target builds remain unexecuted.",
+    "No Java WIT bindings, capability wrappers, packages or deployments were exercised.",
+    "The new research files were executed locally; baseline repository files were read through the repository API.",
+    "Required repository CI and Java guest conformance CI have not been verified."
+  ]
+}
