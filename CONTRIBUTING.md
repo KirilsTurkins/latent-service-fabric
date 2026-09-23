@@ -1,14 +1,15 @@
 # Contributing
 
-LSF has completed Phase 1, its performance/infrastructure extension, and Phase 2
-packaging and supply-chain delivery. Phase 3 capability and application hosting
-are in final integration; the [Phase 3 gate review](docs/phase-3-gate-review.md)
-tracks delivered evidence and remaining native, documentation and review work.
-Use the current `development` implementation and its recorded qualification
-boundaries; an open pull request or planned interface does not establish delivery.
-Contributions should distinguish architectural contracts, generated surfaces,
-implemented behavior, and planned phase scope. Consult [the roadmap](docs/roadmap.md)
-for dependencies and the later state, cluster, and workflow phases.
+Contribute bug fixes, tests, documentation and new capabilities through pull
+requests into `development`. Start with the step-by-step
+[contributor guide](docs/contribute/index.md), then use the rules below for the
+kind of change you are making.
+
+Read the full issue and its existing pull requests before starting. Current
+implementation and documented supported contracts determine behavior; proposed
+interfaces and historical measurements do not establish a delivered feature.
+Maintainer planning and acceptance records are collected separately in
+[engineering records](docs/development/engineering-records.md).
 
 ## First contribution
 

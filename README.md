@@ -7,24 +7,16 @@ sockets, threads, guest heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, deployment metadata, and routing metadata. Execution resources are allocated when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells; bounded catalog metadata remains resident independently of execution.
 
-Phase 1, its performance extension, and Phase 2 are complete.
-The `0.1.0-alpha.3` source prerelease is described in the
-[Phase 2 delivery notes](docs/phase-2-delivery.md).
-The [Phase 2 completion review](docs/phase-2-completion.md) covers deterministic
-packaging, authenticated OCI transfer, publisher/provenance/SBOM verification,
-current admission and lifecycle, isolated compilation and native reuse, durable
-audit, managed deployment receipts, canary promotion, rollback and operator
-workflows. Its compact evidence includes real registry/node execution, offline
-trust checks, native currentness and a predefined 32-release resource profile.
+The development branch includes capability providers, six external client SDKs,
+shared HTTP ingress, static-site delivery and the supported Angular SSR profile.
+Standalone configuration exposes the providers listed in its reference;
+additional provider integrations use the documented trusted Rust embedding.
+See [current delivery](docs/phase-2-delivery.md) for supported workflows.
 
-The [Phase 1 review](docs/phase-1-completion.md) and
-[extension report](docs/phase-1-extension-completion.md) preserve the earlier
-scale, soak, optimization and Docker/Kubernetes comparisons. These are scoped
-engineering results, not production SLOs. Phase 3 capability providers,
-application/web hosting and executable SDKs are being integrated on `development`.
-The [Phase 3 gate review](docs/phase-3-gate-review.md) tracks completed evidence
-and the remaining guide review, native release and static-site acceptance work.
-Phase 3 is not yet declared complete.
+The project is in alpha. The next release remains on hold pending completed
+capsule authoring in all six languages, the maintainer's guide review, and
+explicit publication approval. Contributors track the remaining acceptance in
+[the gate review](docs/phase-3-gate-review.md).
 
 Read the [documentation website](https://kirilsturkins.github.io/latent-service-fabric/)
 for published alpha and development guides. The site identifies the source and
@@ -40,13 +32,11 @@ resident state = fixed node runtime + bounded catalog metadata + active activati
 
 The number of operating-system processes, threads, sockets, and execution cells is node-defined and must not scale with the number of deployed services.
 
-[![Phase 2 delivery: bounded package transfer, current node admission and explicit rollout control.](docs/assets/phase2-delivery-boundary-presentation.svg)](docs/assets/phase2-delivery-boundary-presentation.svg)
+[![Build a package, sign and admit it, then invoke a capsule or serve a website through the node.](docs/assets/package-delivery.svg)](docs/assets/package-delivery.svg)
 
-Restyled presentation of the Phase 2 boundary, not a Phase 3 completion claim.
-Open the image at full size to inspect labels. The [original Phase 2 SVG](docs/assets/phase2-delivery-boundary.svg) remains unchanged.
-
-The [historical Phase 1 boundary](docs/assets/phase1-delivery-boundary.svg) retains
-its original scope. Phase 2 features are listed below.
+Open the diagram at full size to read its labels. Follow
+[Run your first node](docs/start/first-node.md) to try a complete local service,
+then [create your own capsule](docs/component-development/creating-a-capsule.md).
 
 ## Authoritative interface layers
 
@@ -83,7 +73,7 @@ offline bundles, rootless local evaluation and persistent systemd servers from
 application development and contributor builds. The page explicitly records
 pending release/VM gates; the historical `0.1.0-alpha.3` release remains source-only.
 
-- `latentd`: standalone Linux node through `check-config` and `serve --config PATH`. Obsolete Phase 2 catalogs require [fresh state](docs/reference/publication-catalog.md#supported-storage-and-fresh-state).
+- `latentd`: standalone Linux node through `check-config` and `serve --config PATH`. Obsolete catalogs require [fresh state](docs/reference/publication-catalog.md#supported-storage-and-fresh-state).
 - `latent-control`: clustered control-plane application placeholder.
 - `latent`: bounded local package build/inspect/verification and OCI transfer; authenticated release lifecycle, managed deployment receipts, rollout/canary/rollback, audit, invocation/cancellation/status, routing and node commands.
 
@@ -91,12 +81,12 @@ See [standalone node configuration and operation](docs/reference/standalone-node
 for loopback authentication, readiness, durable restart, and bounded shutdown.
 The [operator CLI reference](docs/reference/operator-cli.md) and
 [scriptable echo quickstart](docs/development/standalone-quickstart.md) cover the
-local invocation workflow. The [Phase 2 operator workflows](docs/phase-2-operator-workflows.md)
+local invocation workflow. The [Package and deployment operations](docs/phase-2-operator-workflows.md)
 cover package evidence, separate registry credentials, managed preconditions and
 finite operation recovery. The client never silently retries a mutation or replaces
 a stale precondition.
 
-## Delivered Phase 1 features
+## Runtime and client features
 
 These implementations are usable through Rust APIs, focused tests, and the
 configured standalone node's supported RPC surface.
@@ -105,8 +95,8 @@ configured standalone node's supported RPC surface.
 | --- | --- |
 | Locked build and generated contracts | Protobuf/Tonic and Component Model bindings, SDK checks, deterministic test utilities; [build foundation](docs/development/build-foundation.md) |
 | SDK invocation contracts | Optional caller identity, cancellation/status by known ID, and executable fixtures across six languages; [SDK contract](sdk/README.md) |
-| Phase 3 guest SDK | Typed Rust capability helpers, generated C ownership fixtures and signed-package runtime conformance; [guest workflow](docs/component-development/guest-sdk.md) |
-| Manifest decoding and validation | Bounded schema-backed JSON codecs, canonicalization, and stateless Phase 1 semantic validation; [manifest codec](docs/protocol/manifest-codec.md) |
+| Guest SDK | Typed Rust capability helpers, generated C ownership fixtures and signed-package runtime conformance; [guest workflow](docs/component-development/guest-sdk.md) |
+| Manifest decoding and validation | Bounded schema-backed JSON codecs, canonicalization, and stateless semantic validation; [manifest codec](docs/protocol/manifest-codec.md) |
 | Resource accounting | Effective deadlines, concurrent budget consumption/reservations, terminal reconciliation, and cancellation primitives; [resource budgets](docs/runtime/resource-budgets.md) |
 | Local release storage | Exclusive directory ownership, immutable digest verification, bounded listing/indexes, durable publication and recovery; [release catalog](docs/development/local-release-catalog.md) |
 | Deployment and routing | Atomic caller version preconditions and mutation receipts, bounded tenant/service pages, immutable route generations, deterministic resolution, pinned revisions, and restart recovery; [deployment routing](docs/deployment-routing.md) |
@@ -135,7 +125,7 @@ services had lower warm request latency; LSF used less application memory at
 differences, and the Docker Desktop/WSL2 environment. They do not establish
 production cluster capacity or a universal millisecond request budget.
 
-## Delivered Phase 2 features
+## Package delivery and operations
 
 | Feature | Implemented surface and documentation |
 | --- | --- |
@@ -157,39 +147,19 @@ does not prove a mutation never ran. The [completion report](docs/phase-2-comple
 maps all eighteen delivery tickets and records validation, failed attempts and
 the finite scope of the gate decision.
 
-General capability providers, HTTP/web hosting and expanded SDK transports are
-Phase 3 work. Durable service state, transactional effects and clustering remain
-later phases; the current node is a standalone stateless execution profile.
+HTTP ingress, static websites, the supported Angular renderer and six native
+client transports are implemented on development. See the [current architecture](docs/architecture/overview.md)
+for provider configuration and deployment boundaries. Durable service state,
+transactional effects and clustering are not implemented.
 
-## Historical Phase 0 result
+## Earlier measurements
 
-The live Phase 0 spike, baseline, soak runners, and dedicated workflows have been retired from the current development tree. The checked-in receipts and measurement archives remain immutable historical evidence and keep their original source identities.
-
-The Phase 0 spike proves a deliberately narrow local feasibility slice:
-
-1. build one Rust echo Component Model guest through generated WIT bindings;
-2. load and invoke it through real Wasmtime Component Model bindings;
-3. lease and reclaim one generic execution cell with a bounded queue;
-4. contain declared domain errors, trap, timeout, cancellation, and memory
-   pressure failures; and
-5. record bounded activation-owned state and fixed runtime topology for the
-   measured lifecycle.
-
-![Phase 0 scope boundary: one local component moves through preparation, a fixed cell pool, and fresh activation state; public APIs, routing, durable state, and clustering remain outside the measured evidence.](docs/assets/phase0-scope-boundary.svg)
-
-It does **not** prove routing, admission, deployment management, production
-trust/security, durable state/effects, remote invocation, cluster operation,
-production SLOs, arbitrary-duration leak freedom, or the 100,000 dormant-service
-invariant. The retained matched resource soak is historical, single-host
-observational evidence and participates in the authorized full-gate receipt;
-the authorization does not extend the Phase 0 conclusions beyond this boundary. See
-[`docs/phase-0-completion.md`](docs/phase-0-completion.md) for its evidence
-ledger, original authorization status, and Phase 1 handoff.
-
-See [`docs/architecture/overview.md`](docs/architecture/overview.md) and
-[`docs/testing/invariants.md`](docs/testing/invariants.md) for the proven
-boundary and future invariants. Documentation SVGs follow the shared
-[`SVG convention`](docs/svg-style.md).
+The [initial completion record](docs/phase-0-completion.md),
+[standalone acceptance report](docs/phase-1-completion.md) and
+[delivery acceptance report](docs/phase-2-completion.md) retain their original
+measurements and limitations. They describe their tested sources, rather than
+the current product boundary. Current diagrams and concepts are in the
+[architecture overview](docs/architecture/overview.md).
 
 ## Build and validation
 

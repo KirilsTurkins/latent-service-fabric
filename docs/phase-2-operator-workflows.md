@@ -1,4 +1,4 @@
-# Phase 2 operator workflows
+# Package and deployment operations
 
 The `latent` CLI packages local bytes, transfers immutable packages and detached
 evidence through OCI, checks an explicit local verification policy, and manages

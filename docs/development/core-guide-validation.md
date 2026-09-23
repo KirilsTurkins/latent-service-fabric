@@ -216,3 +216,28 @@ It does not rerun the historic SDK or resource workloads, build an installed
 bundle, measure performance, or supply a human newcomer review. All six affected
 coverage rows keep their human review pending. The installed-native prerequisite
 and the complete 27-topic maintainer review remain required for gate acceptance.
+
+## Check an automated first-node receipt
+
+The user walkthrough now contains manual steps. Maintainers can still inspect
+the automated companion receipt with this bounded reader:
+
+```bash
+python3 - "$RESULTS/receipt.json" <<'PY'
+import json, sys
+with open(sys.argv[1], "rb") as source:
+    raw = source.read(65537)
+if len(raw) > 65536:
+    raise SystemExit("Receipt is too large")
+record = json.loads(raw)
+if record.get("schemaVersion") != "latent.first-node-guide.v1" or record.get("passed") is not True:
+    raise SystemExit("The first-node walkthrough did not pass")
+if (record["successfulInvocations"] != 2 or record["declaredErrors"] != 1
+        or not record["retainedDeploymentInvokedAfterRestart"]
+        or not record["temporaryOutputsRemoved"]
+        or len(record["shutdowns"]) != 2
+        or not all(item["clean"] and item["reaped"] for item in record["shutdowns"])):
+    raise SystemExit("Missing invocation, recovery or cleanup evidence")
+print("Two successful invocations, one declared error, retained restart, two clean stops.")
+PY
+```

@@ -134,5 +134,5 @@ Remove only your owned preview processes, target output or private guide-test
 files after retaining the compact nonsecret evidence. Link validation and human
 review separately in the [core guide handoff](../development/core-guide-validation.md).
 Next, use the shared [delivery/recovery path](../learn/deliver-and-recover-a-capsule.md)
-or the applicable capability/SDK guide; avoid inventing later-phase state,
+or the applicable capability/SDK guide; avoid assuming transactional state,
 workflow or exactly-once semantics from a successful local call.
