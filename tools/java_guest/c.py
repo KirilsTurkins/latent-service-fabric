@@ -44,9 +44,13 @@ class Codec:
         if form == "list":
             lines = []
             if operation == "read":
-                lines.extend([f"{expression}.len = lsf_count({wire});", f"{expression}.ptr = lsf_allocate({expression}.len, sizeof(*{expression}.ptr));"])
+                count = f"(size_t)lsf_get({wire}, 4)" if body == "u8" else f"lsf_count({wire})"
+                bound = "LSF_MAX_BYTES" if body == "u8" else "LSF_MAX_ITEMS"
+                lines.extend([f"{expression}.len = {count}; lsf_require({expression}.len <= {bound});",
+                              f"{expression}.ptr = lsf_allocate({expression}.len, sizeof(*{expression}.ptr));"])
             elif operation == "write":
-                lines.append(f"lsf_require({expression}.len <= LSF_MAX_ITEMS); lsf_put({wire}, {expression}.len, 4);")
+                bound = "LSF_MAX_BYTES" if body == "u8" else "LSF_MAX_ITEMS"
+                lines.append(f"lsf_require({expression}.len <= {bound}); lsf_put({wire}, {expression}.len, 4);")
             lines.append(f"for (size_t {unique} = 0; {unique} < {expression}.len; {unique}++) {{")
             lines.extend(self.emit(body, expression + ".ptr[" + unique + "]", operation, wire))
             lines.append("}")
@@ -61,7 +65,11 @@ class Codec:
                 lines.append("} else {"); lines.extend(self.emit(body["ok"], expression + ".val.ok", operation, wire))
             lines.append("}"); return lines
         if form == "variant":
-            lines = self.emit("u32", expression + ".tag", operation, wire) if operation != "free" else []
+            if operation == "read":
+                lines = [f"uint64_t {unique} = lsf_get({wire}, 4); lsf_require({unique} < {len(body['cases'])});",
+                         f"{expression}.tag = (__typeof__({expression}.tag)){unique};"]
+            else:
+                lines = self.emit("u32", expression + ".tag", operation, wire) if operation != "free" else []
             lines.append(f"switch ({expression}.tag) {{")
             for tag, case in enumerate(body["cases"]):
                 lines.append(f"case {tag}: {{")
@@ -72,7 +80,12 @@ class Codec:
         if form in ("enum", "flags"):
             if operation == "free": return []
             scalar = "u64" if form == "flags" else "u32"
-            lines = self.emit(scalar, expression, operation, wire)
+            if operation == "read":
+                check = (f"{unique} < {len(body['cases'])}" if form == "enum" else
+                         "true" if len(body["flags"]) == 64 else f"({unique} >> {len(body['flags'])}) == 0")
+                lines = [f"uint64_t {unique} = lsf_get({wire}, {8 if form == 'flags' else 4}); lsf_require({check});",
+                         f"{expression} = (__typeof__({expression})){unique};"]
+            else: lines = self.emit(scalar, expression, operation, wire)
             if form == "enum": lines.append(f"lsf_require({expression} < {len(body['cases'])});")
             elif len(body["flags"]) < 64: lines.append(f"lsf_require(((uint64_t){expression} >> {len(body['flags'])}) == 0);")
             return lines

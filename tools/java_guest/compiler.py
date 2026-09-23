@@ -19,11 +19,11 @@ def sdk_snapshot(root: Path) -> dict:
     # Exact production compiler inputs; never capture local feasibility build
     # output, Gradle caches, Python bytecode, or unreferenced diagnostic sources.
     files = {name: read_file(root / name) for name in (
-        "compiler.gradle", "feasibility/settings.gradle", "feasibility/dependencies.lock.json",
+        "compiler.gradle", "bindings.lock.json", "feasibility/settings.gradle", "feasibility/dependencies.lock.json",
         "feasibility/gradle/verification-metadata.xml", "feasibility/platform.c",
         "feasibility/closed-runtime.wat", "tools/feasibility.py", "tools/dependencies.py",
         "tools/teavm_platform.py", "tools/capture.py")}
-    for folder in ("runtime", "templates"):
+    for folder in ("runtime", "templates", "wit"):
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
     return dict(sorted(files.items()))
 
@@ -85,6 +85,8 @@ class Compiler:
         self.tool_roots = {"wasi-sdk": self.wasi_sdk, "jdk": self.paths["java"].parent.parent,
                            "gradle": self.paths["gradle"].parent.parent}
         self.compiler_inputs = tool_inventory(self.tool_roots)
+        from tools.java_guest.lock import verify
+        self.binding_digest = verify(self.run, self.sdk, self.platform, self.directory / "sdk-reference")
 
     def run(self, stage: str, tool: str, *arguments, cwd: Path | None = None) -> str:
         remaining = self.deadline - time.monotonic()
@@ -141,6 +143,7 @@ class Compiler:
                  "-DLSF_TEAVM_WASM=1", "-DTEAVM_CUSTOM_LOG=1", "-mllvm", "-wasm-enable-sjlj", "-lsetjmp",
                  "-mllvm", "-wasm-use-legacy-eh=false", "-mexec-model=reactor", "-Wl,--no-entry",
                  "-Wl,--export-memory", "-Wl,-z,stack-size=65536", "-Wl,--max-memory=67108864",
+                 "-include", self.sdk / "runtime/native.h",
                  "-I", destination / "bindings", "-I", self.sdk / "runtime", "-iquote", generated,
                  generated / "all.c", destination / "bindings/bridge.c", self.sdk / "feasibility/platform.c",
                  destination / "bindings/probe.c", destination / "bindings/probe_component_type.o", "-o", core)

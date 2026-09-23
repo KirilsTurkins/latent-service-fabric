@@ -790,6 +790,26 @@
       "shell": "default",
       "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm\" --typed 2>&1 | tee \"$RUNNER_TEMP/java-guest-bindings/runtime-probe.log\""
     },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Compile nine actual standalone Java SDK packages": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Compile nine actual standalone Java SDK packages",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/build_java_guest_capsules.py --output \"$RUNNER_TEMP/java-sdk\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Execute actual Java capability and ownership fixtures": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Execute actual Java capability and ownership fixtures",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/java-sdk/runtime-tests.log\""
+    },
     ".github/workflows/native-runtime-release.yml:gate:Prepare private exact-source host workspace": {
       "workflow": ".github/workflows/native-runtime-release.yml",
       "job": "gate",
@@ -2633,6 +2653,9 @@
     "tools/build_guest_capsules.py": {
       "sha256": "21e251919f1adf7d6a97f57f0ae4521bcd648a44c3532297387a412ef91eb99e"
     },
+    "tools/build_java_guest_capsules.py": {
+      "sha256": "7c2a8fd2ba3b87c4c9e514c6362c07e4b8fd76abc14aa385cfd25d8d6746bcba"
+    },
     "tools/build_native_runtime.py": {
       "sha256": "8aa6e2df82afe7f69c4acc7ae4ddddcc339b0ee16681cfa0984df90623aa4732"
     },
@@ -3415,7 +3438,8 @@
       "GeneratorArchive.test_pinned_generator_version_matches_toolchain_and_lock",
       "GeneratorArchive.test_verified_regular_binary_only",
       "GuestProfileSchemas.test_echo_snapshot_can_still_capture_every_workspace_member",
-      "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate"
+      "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate",
+      "GuestProfileSchemas.test_java_recipe_requires_its_closed_compiler_inputs_and_separate_type"
     ],
     "tools/tests/test_harbor_registry_runner.py": [
       "HarborRunnerTests.test_cleanup_rejects_foreign_or_malformed_ownership_before_removal",
@@ -5847,7 +5871,7 @@
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/java-guest-feasibility.yml": "eeff4f422cab90aedbd50b915485e809d6adae698903147cbc27c1e07e381101",
+    ".github/workflows/java-guest-feasibility.yml": "2a45c37caccbb0cc7270951664912eb9eba49ad93139990cf921e8ee7c8b3cba",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",

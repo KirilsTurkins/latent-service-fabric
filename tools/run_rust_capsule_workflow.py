@@ -31,7 +31,7 @@ TEMPLATES = {"greeting", "word-count", "shipping", "http-status", "recovery"}
 
 
 def run(cli, node_binary, fixture, evidence, *, language="rust"):
-    require(language in {"rust", "c"}, "authoring-language")
+    require(language in {"rust", "c", "go", "java"}, "authoring-language")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -51,7 +51,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                 and metadata["expiresAtUnixSeconds"] > time.time() + 180, "authoring-demo-trust")
         records = {record["name"].removeprefix("my-"): record for record in metadata["releases"]}
         require(set(records) == TEMPLATES and len(metadata["releases"]) == len(TEMPLATES), "authoring-template-set")
-        build_type = f"https://latent.dev/build/{'rust-capsule' if language == 'rust' else 'c-guest'}/v1"
+        build_type = f"https://latent.dev/build/{'c-guest' if language == 'c' else language + '-capsule'}/v1"
         require(all(record["buildType"] == build_type for record in records.values()), "authoring-guest-language")
         result["releaseSet"] = metadata
         with owned_cancellation() as cancellation:
@@ -62,7 +62,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                 client = RecordingClient(cli, work / "client", cancellation, time.monotonic() + 180,
                                          evidence=evidence / "controls")
                 peer, port = start_provider(client, work / "peer")
-                config, settings = configure(work / "node", fixture, port)
+                config, settings = configure(work / "node", fixture, port,
+                    runtime_grants=language in {"go", "java"}, language=language)
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
                 # stay private and no token is copied into the exported receipt.
@@ -91,6 +92,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                         result["releases"][template] = published["data"]["operation"]
                         targets[template] = deploy(client, source / "deployment.json", publication)
                     names = population(client, fixture, targets, publications, probe, result)
+                    if language in {"go", "java"}:
+                        from tools.guest_runtime_grants import grant
+                        grant(client, node, fixture, targets, publications, result, language=language)
                     tutorials(client, targets, result)
                     result["samples"].append(sample(client, probe, "after-tutorials", len(names)))
                     faults(client, targets["recovery"], probe, result, len(names))

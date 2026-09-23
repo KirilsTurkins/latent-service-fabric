@@ -13,7 +13,7 @@ use fixture::*;
 #[tokio::test]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn secret_owner_typed_denial_cancellation_and_cell_recovery() {
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         let root = tempfile::tempdir().unwrap();
         let publication = package::publish(root.path(), &format!("{language}-secrets")).await;
         let f = Fixture::with_publication(

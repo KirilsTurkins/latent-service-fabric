@@ -12,8 +12,12 @@ mod runtime_fixture;
 
 pub fn budget() -> latent_core::ResourceBudget {
     latent_core::ResourceBudget {
-        cpu_fuel: 100_000_000,
-        memory_bytes: 4 * 1024 * 1024,
+        cpu_fuel: if runtime_fixture::guest_runtime::enabled() {
+            10_000_000_000
+        } else {
+            100_000_000
+        },
+        memory_bytes: runtime_fixture::guest_runtime::memory(4 * 1024 * 1024),
         wall_time_limit_millis: Some(5000),
         child_calls: 16,
         outbound_requests: 0,

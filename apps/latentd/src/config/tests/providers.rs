@@ -18,6 +18,9 @@ fn provider_input_rejects_null_unknown_and_raw_secret_fields() {
         ("/providers", Value::Null),
         ("/providers/blob", Value::Null),
         ("/providers/http", Value::Null),
+        ("/providers/clockMonotonic", Value::Null),
+        ("/providers/clockWall", Value::Null),
+        ("/providers/random", Value::Null),
         ("/providers/blob/profile", json!("future-profile")),
         ("/providers/blob/identity/credential", json!("DO-NOT-ECHO")),
     ] {
@@ -33,6 +36,26 @@ fn provider_input_rejects_null_unknown_and_raw_secret_fields() {
             .err()
             .unwrap();
         assert!(!error.message.contains("DO-NOT-ECHO"));
+    }
+}
+
+#[test]
+fn scalar_provider_definitions_require_the_exact_installed_identity_and_contract() {
+    for (field, capability) in [
+        ("clockMonotonic", "latent:clock/monotonic@0.1.0"),
+        ("clockWall", "latent:clock/wall@0.1.0"),
+        ("random", "latent:random/random@0.1.0"),
+    ] {
+        let mut value = document();
+        value["providers"][field] = json!({"identity": {
+            "id":field,"tenant":"examples","service":"runtime-host","epoch":1}});
+        value["providers"]["bindings"][0]["contract"] = capability.into();
+        value["providers"]["bindings"][0]["providerService"] = "runtime-host".into();
+        let config = super::input::decode(&serde_json::to_vec(&value).unwrap()).unwrap();
+        assert!(config.providers.as_ref().unwrap().definitions().is_ok());
+        value["providers"].as_object_mut().unwrap().remove(field);
+        let config = super::input::decode(&serde_json::to_vec(&value).unwrap()).unwrap();
+        assert!(config.providers.as_ref().unwrap().definitions().is_err());
     }
 }
 

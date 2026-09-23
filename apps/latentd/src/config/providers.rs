@@ -15,7 +15,21 @@ pub struct ConfiguredProviders {
     pub http: Option<HttpInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub blob: Option<BlobInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub clock_monotonic: Option<ScalarInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub clock_wall: Option<ScalarInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub random: Option<ScalarInstallation>,
     pub bindings: Vec<HostBinding>,
+}
+
+/// Explicit node-owned scalar installation. Limits and implementation are fixed
+/// by the maintained profile; configuration cannot inject a test provider.
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ScalarInstallation {
+    pub identity: ProviderIdentity,
 }
 
 #[derive(Clone, Deserialize)]
@@ -85,7 +99,11 @@ pub(super) fn derive(
         || config.audit.is_none()
         || config.budget_profile.profile() != BudgetProfile::Phase3
         || providers.format_version != 1
-        || (providers.http.is_none() && providers.blob.is_none())
+        || (providers.http.is_none()
+            && providers.blob.is_none()
+            && providers.clock_monotonic.is_none()
+            && providers.clock_wall.is_none()
+            && providers.random.is_none())
         || providers.bindings.is_empty()
         || providers.bindings.capacity() > 16
     {
@@ -130,6 +148,16 @@ pub(super) fn derive(
             return Err(invalid("providers.identity"));
         }
     }
+    for scalar in [
+        &providers.clock_monotonic,
+        &providers.clock_wall,
+        &providers.random,
+    ]
+    .into_iter()
+    .flatten()
+    {
+        scalar.identity.validate()?;
+    }
     providers.definitions()?;
     Ok(Some(Box::new(providers.clone())))
 }
@@ -165,6 +193,9 @@ impl ConfiguredProviders {
             let installed = match binding.contract.as_str() {
                 "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
+                "latent:clock/monotonic@0.1.0" => self.clock_monotonic.as_ref().map(|v| &v.identity),
+                "latent:clock/wall@0.1.0" => self.clock_wall.as_ref().map(|v| &v.identity),
+                "latent:random/random@0.1.0" => self.random.as_ref().map(|v| &v.identity),
                 _ => None,
             }.ok_or_else(|| invalid("providers.bindings.contract"))?;
             if installed.tenant != binding.tenant || installed.service != binding.provider_service {

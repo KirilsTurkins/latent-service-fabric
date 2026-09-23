@@ -6,6 +6,8 @@ on:
       - 'sdk/java-guest/**'
       - 'tools/java_guest/**'
       - 'tools/qualify_java_bridge.py'
+      - 'tools/java_capsule*.py'
+      - 'tools/build_java_guest_capsules.py'
       - '.github/workflows/java-guest-feasibility.yml'
       - 'tools/toolchain.toml'
       - 'wit/platform/**'
@@ -24,7 +26,7 @@ jobs:
   compiler-component:
     name: Actual Java compiler and component probe (not language qualification)
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 55
     env:
       CARGO_BUILD_JOBS: 2
       CARGO_INCREMENTAL: 0
@@ -85,6 +87,15 @@ jobs:
         run: |
           set -o pipefail
           cargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm" --typed 2>&1 | tee "$RUNNER_TEMP/java-guest-bindings/runtime-probe.log"
+      - name: Compile nine actual standalone Java SDK packages
+        run: python3 tools/build_java_guest_capsules.py --output "$RUNNER_TEMP/java-sdk" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Execute actual Java capability and ownership fixtures
+        env:
+          LSF_GUEST_CAPSULES: ${{ runner.temp }}/java-sdk
+          LSF_GUEST_SDK_LANGUAGE: java
+        run: |
+          set -o pipefail
+          cargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee "$RUNNER_TEMP/java-sdk/runtime-tests.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -107,5 +118,17 @@ jobs:
             ${{ runner.temp }}/java-guest-bindings/runtime-probe.log
             ${{ runner.temp }}/java-guest-bindings/compiled/bindings/
             ${{ runner.temp }}/java-guest-bindings/compiled/component.wasm
+            ${{ runner.temp }}/java-sdk/SDK-BUILD.json
+            ${{ runner.temp }}/java-sdk/runtime-tests.log
+            ${{ runner.temp }}/java-sdk/logs/
+            ${{ runner.temp }}/java-sdk/java-*/BUILD-*.json
+            ${{ runner.temp }}/java-sdk/java-*/build-observation.json
+            ${{ runner.temp }}/java-sdk/java-*/source-inputs.json
+            ${{ runner.temp }}/java-sdk/java-*/recipe-inputs.json
+            ${{ runner.temp }}/java-sdk/java-*/compiler-inputs.json
+            ${{ runner.temp }}/java-sdk/java-*/component.wasm
+            ${{ runner.temp }}/java-sdk/java-*/bindings.json
+            ${{ runner.temp }}/java-sdk/java-*/compiler-logs/
+            ${{ runner.temp }}/java-sdk/java-*/logs/
           if-no-files-found: warn
           retention-days: 14

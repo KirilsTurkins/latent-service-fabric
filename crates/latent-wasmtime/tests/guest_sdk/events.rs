@@ -51,7 +51,7 @@ fn mapping(tenant: &str, topic: &str, subject: &str, stream: &str) -> TopicMappi
 #[tokio::test]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn typed_event_receipt_denial_and_uncertainty_do_not_retry() {
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         for mode in [stub::Mode::Healthy, stub::Mode::Malformed] {
             let root = tempfile::tempdir().unwrap();
             let publication = package::publish(root.path(), &format!("{language}-events")).await;

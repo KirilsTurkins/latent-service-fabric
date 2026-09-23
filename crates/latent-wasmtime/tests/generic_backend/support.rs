@@ -32,6 +32,9 @@ pub const MAX_FUEL: u64 = 1_000_000_000_000;
 pub const MEMORY: u64 = 16 * 1024 * 1024;
 pub const WATCHDOG: Duration = Duration::from_secs(5);
 
+#[path = "../guest_sdk/runtime.rs"]
+pub mod guest_runtime;
+
 #[derive(Default)]
 pub struct CancellationState(AtomicBool);
 
@@ -87,7 +90,8 @@ impl ExecutionCancellation for Cancellation {
 
 pub fn config() -> WasmtimeConfig {
     WasmtimeConfig {
-        maximum_memory_bytes: MEMORY,
+        java_guest: guest_runtime::java(),
+        maximum_memory_bytes: guest_runtime::memory(MEMORY),
         maximum_fuel: MAX_FUEL,
         epoch_tick_interval_millis: 1,
         prepared_cache_maximum_entries: 2,
@@ -98,7 +102,7 @@ pub fn config() -> WasmtimeConfig {
 pub fn budget() -> ResourceBudget {
     ResourceBudget {
         cpu_fuel: MAX_FUEL,
-        memory_bytes: MEMORY,
+        memory_bytes: guest_runtime::memory(MEMORY),
         wall_time_limit_millis: None,
         child_calls: 0,
         outbound_requests: 0,

@@ -38,13 +38,23 @@ pub fn input(name: &str) -> PathBuf {
 
 pub fn observation(name: &str) -> BuildObservation {
     let directory = input(name);
-    let root = directory.parent().unwrap();
+    let root = if name.starts_with("go-") || name.starts_with("java-") {
+        &directory
+    } else {
+        directory.parent().unwrap()
+    };
     let marker: serde_json::Value =
         serde_json::from_slice(&read(&root.join("BUILD-COMPLETE.json"), 65536)).unwrap();
     assert_eq!(marker["formatVersion"], 1);
     let bytes = read(&directory.join("build-observation.json"), 65536);
     assert_eq!(
-        marker["observations"][name],
+        (if name.starts_with("go-") || name.starts_with("java-") {
+            &marker["observationDigest"]
+        } else {
+            &marker["observations"][name]
+        })
+        .as_str()
+        .expect("completed build observation digest"),
         format!("sha256:{:x}", Sha256::digest(&bytes))
     );
     let observation = decode_build_observation(&bytes, ProvenanceLimits::default()).unwrap();
@@ -188,7 +198,16 @@ pub async fn publish(root: &Path, name: &str) -> Publication {
     let receipt = catalog
         .publish_managed(
             ReleaseMutationContext {
-                scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                scope: LifecycleScope::Tenant(TenantId(
+                    if (name.starts_with("go-") || name.starts_with("java-"))
+                        && (name.ends_with("-service") || name.ends_with("-callee"))
+                    {
+                        "tenant-a"
+                    } else {
+                        "tests"
+                    }
+                    .into(),
+                )),
                 actor: ReleaseActor {
                     subject: "guest-sdk-contract-gate".into(),
                     kind: ReleaseActorKind::Host,
