@@ -3369,14 +3369,17 @@
     },
     {
       "boundary": "runtime",
-      "expectedCases": [],
+      "expectedCases": [
+        "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
+        "authoring::policy::tests::demo_publisher_and_builder_proof_age_ceilings_remain_independent"
+      ],
       "expectedIgnored": [],
       "id": "latent-policy.example.capsule-authoring",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
+      "minimumCases": 2,
+      "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
         "linux-x86_64"
