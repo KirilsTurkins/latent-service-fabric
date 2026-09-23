@@ -1,0 +1,10 @@
+package tests:java-feasibility@1.0.0;
+
+interface probe {
+    identity: func(value: s64) -> s64;
+    smoke: func() -> u32;
+}
+
+world capsule {
+    export probe;
+}

@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+    id 'org.teavm' version '0.15.0'
+}
+
+repositories { mavenCentral() }
+java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+configurations.configureEach {
+    resolutionStrategy.failOnDynamicVersions()
+    resolutionStrategy.failOnChangingVersions()
+}
+dependencies { implementation teavm.libs.interop }
+teavm {
+    c {
+        mainClass = 'dev.latent.guest.Probe'
+        outputDir = layout.buildDirectory.dir('teavm-c').get().asFile
+        minHeapSize = 1
+        maxHeapSize = 4
+        obfuscated = false
+    }
+}
+tasks.register('probeJvm', JavaExec) {
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.latent.guest.Probe'
+}
