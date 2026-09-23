@@ -20,15 +20,18 @@ CAPABILITIES = ("blob", "callee", "events", "http", "metrics", "random", "secret
 class Compiler:
     """One caller-owned finite build. No shell, guest execution or download."""
 
-    def __init__(self, temporary: Path, timeout: int = 300):
+    def __init__(self, temporary: Path, timeout: int = 300, *, sdk: Path = SDK,
+                 platform: Path | None = ROOT / "wit/platform", config: dict | None = None,
+                 commands=None):
         if not 1 <= timeout <= 900:
             raise ValueError("C build deadline must be between 1 and 900 seconds")
         temporary.mkdir(parents=True, exist_ok=True)
         self.environment = build_environment(temporary)
         self.deadline = time.monotonic() + timeout
+        self.sdk, self.platform, self.commands = sdk, platform, commands
         self.paths: dict[str, Path] = {}
         self.materials: dict[str, dict] = {}
-        config = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
+        config = config or tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
         versions = {"zig": config["sdk"]["zig"],
                     "wit-bindgen": config["rust"]["dependencies"]["wit-bindgen"],
                     "wasm-tools": config["contracts"]["wasm-tools"]}
@@ -47,6 +50,8 @@ class Compiler:
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
             raise ValueError("C build deadline exceeded")
+        if self.commands is not None:
+            return self.commands.run(tool, self.paths[tool], *arguments).decode("utf-8")
         result = run_bounded((str(self.paths[tool]), *map(str, arguments)), ROOT,
                              self.environment, timeout_seconds=min(remaining, 300),
                              max_output_bytes=4 * 1024 * 1024)
@@ -66,15 +71,15 @@ class Compiler:
             raise ValueError("invalid or oversized C source")
         if isinstance(memory_bytes, bool) or memory_bytes < 2 * 1024 * 1024 or memory_bytes > 64 * 1024 * 1024 or memory_bytes % 65536:
             raise ValueError("C memory ceiling must be page-aligned and between 2 and 64 MiB")
-        generated, lock = generate(self.run, wit_source, world, destination)
+        generated, lock = generate(self.run, wit_source, world, destination, self.platform)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=c11", "-target", "wasm32-wasi", "-O2",
                    "-Wall", "-Wextra", "-Werror", "-mexec-model=reactor",
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
-                   "-I", str(SDK / "include"), *map(str, sources)]
+                   "-I", str(self.sdk / "include"), *map(str, sources)]
         if trap:
-            command.append(str(SDK / "src/trap.c"))
+            command.append(str(self.sdk / "src/trap.c"))
         command.extend([str(generated / "probe.c"), str(generated / "probe_component_type.o"),
                         "-o", str(core)])
         self.run("zig", *command)

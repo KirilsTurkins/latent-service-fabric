@@ -17,6 +17,19 @@
         "instructions": "docs/component-development/creating-a-capsule.md",
         "evidence": null
       }
+    },
+    {
+      "language": "c",
+      "kind": "maintained",
+      "source": "sdk/c-guest/templates/shipping.c",
+      "regions": [
+        "capsule"
+      ],
+      "validation": {
+        "target": "tools/qualify_c_capsules.py",
+        "instructions": "docs/component-development/c-authoring.md",
+        "evidence": null
+      }
     }
   ]
 }

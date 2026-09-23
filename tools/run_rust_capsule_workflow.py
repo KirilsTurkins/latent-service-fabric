@@ -30,10 +30,11 @@ ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = {"greeting", "word-count", "shipping", "http-status", "recovery"}
 
 
-def run(cli, node_binary, fixture, evidence):
+def run(cli, node_binary, fixture, evidence, *, language="rust"):
+    require(language in {"rust", "c"}, "authoring-language")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
-    result = {"schemaVersion": "latent.rust-capsule.workflow.v1", "status": "in-progress",
+    result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
         "scope": "isolated-local-experimental-node-with-enforced-package-admission",
         "releasePublication": "not-performed", "newcomerReview345": "pending-human-review",
         "invocations": [], "samples": [], "providerIdle": [], "releases": {},
@@ -45,14 +46,16 @@ def run(cli, node_binary, fixture, evidence):
         identities = {"cli": file_identity(cli), "node": file_identity(node_binary)}
         result["binaries"] = identities
         metadata = read_json(fixture / "release-set.json")
-        require(metadata["schemaVersion"] == "latent.rust-capsule.demo.v1" and metadata["tenant"] == "examples"
+        require(metadata["schemaVersion"] == "latent.capsule.demo.v1" and metadata["tenant"] == "examples"
                 and metadata["trust"] == "isolated-short-lived-demo-only"
                 and metadata["expiresAtUnixSeconds"] > time.time() + 180, "authoring-demo-trust")
         records = {record["name"].removeprefix("my-"): record for record in metadata["releases"]}
         require(set(records) == TEMPLATES and len(metadata["releases"]) == len(TEMPLATES), "authoring-template-set")
+        build_type = f"https://latent.dev/build/{'rust-capsule' if language == 'rust' else 'c-guest'}/v1"
+        require(all(record["buildType"] == build_type for record in records.values()), "authoring-guest-language")
         result["releaseSet"] = metadata
         with owned_cancellation() as cancellation:
-            with tempfile.TemporaryDirectory(prefix="lsf-rust-authoring-node-") as temporary:
+            with tempfile.TemporaryDirectory(prefix=f"lsf-{language}-authoring-node-") as temporary:
                 work = Path(temporary)
                 for name in ("client", "node", "peer"):
                     (work / name).mkdir(mode=0o700)

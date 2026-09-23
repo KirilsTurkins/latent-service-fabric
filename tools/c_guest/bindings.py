@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 from typing import Callable
 
-from tools.stage_runtime_wit import stage
+from tools.stage_runtime_wit import copy_wit_tree, dependencies, PLATFORM_WIT
 
 
 def digest(data: bytes) -> str:
@@ -52,11 +52,16 @@ def aliases(header: str) -> str:
             "".join(f"#define {name} {value}\n" for name, value in sorted(mapping.items())) + "#endif\n")
 
 
-def generate(run: Callable[..., str], source: Path, world: str, destination: Path) -> tuple[Path, dict]:
+def generate(run: Callable[..., str], source: Path, world: str, destination: Path,
+             platform: Path | None = PLATFORM_WIT) -> tuple[Path, dict]:
     regular_tree(source, ".wit")
     destination.mkdir(parents=True, exist_ok=False)
     staged, generated = destination / "wit", destination / "bindings"
-    stage(staged, source)
+    copy_wit_tree(source, staged)
+    if platform is not None:
+        regular_tree(platform, ".wit")
+        for package in dependencies(source, platform):
+            copy_wit_tree(package, staged / "deps" / package.name)
     generated.mkdir()
     run("wit-bindgen", "c", str(staged), "--world", world,
         "--rename-world", "probe", "--out-dir", str(generated))

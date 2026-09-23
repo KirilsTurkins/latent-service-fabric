@@ -144,12 +144,13 @@ pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
             &serde_json::to_vec(&build.observation)?,
         )?;
         releases.push(json!({"name": name, "world": build.world, "service": build.service,
+            "buildType": build.observation.build_type,
             "packageDigest": digest.to_string(), "componentDigest": build.observation.component_digest,
             "sourceSnapshotDigest": build.observation.source.snapshot_digest,
             "observationDigest": artifact_blob_digest(&serde_json::to_vec(&build.observation)?).to_string()}));
     }
     // Written last; failed/partial signing attempts have no success marker.
-    let record = json!({"schemaVersion":"latent.rust-capsule.demo.v1", "tenant":TENANT,
+    let record = json!({"schemaVersion":"latent.capsule.demo.v1", "tenant":TENANT,
         "trust":"isolated-short-lived-demo-only", "expiresAtUnixSeconds": validity.expires_at,
         "policyDigest": artifact_blob_digest(&policy_document).to_string(), "releases": releases});
     write(

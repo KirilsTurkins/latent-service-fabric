@@ -10,6 +10,7 @@ on:
       - 'wit/**'
       - 'schemas/**'
       - 'Cargo.*'
+      - 'docs/component-development/c-authoring.md'
       - '.github/workflows/c-guest-authoring.yml'
   push:
     branches: [development]
@@ -20,6 +21,7 @@ on:
       - 'wit/**'
       - 'schemas/**'
       - 'Cargo.*'
+      - 'docs/component-development/c-authoring.md'
       - '.github/workflows/c-guest-authoring.yml'
 
 permissions:
@@ -68,6 +70,10 @@ jobs:
           python3 tools/build_guest_capsules.py --output "$LSF_GUEST_CAPSULES" 2>&1 | tee "$RUNNER_TEMP/c-guest-build.log"
           cargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee "$RUNNER_TEMP/c-guest-runtime.log"
           cargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee "$RUNNER_TEMP/c-guest-provenance.log"
+      - name: Qualify standalone C projects and the printed guide
+        run: |
+          python3 -m unittest tools.tests.test_c_capsule_authoring
+          python3 tools/qualify_c_capsules.py --output "$RUNNER_TEMP/c-capsule-authoring"
       - name: Retain compiler and ownership results including failures
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -77,5 +83,14 @@ jobs:
             ${{ runner.temp }}/c-guest-*.log
             ${{ runner.temp }}/c-guest-capsules/BUILD-COMPLETE.json
             ${{ runner.temp }}/c-guest-capsules/c-*/*.json
+            ${{ runner.temp }}/c-capsule-authoring/*.json
+            ${{ runner.temp }}/c-capsule-authoring/logs/**
+            ${{ runner.temp }}/c-capsule-authoring/builds/**
+            ${{ runner.temp }}/c-capsule-authoring/node/**
+            ${{ runner.temp }}/c-capsule-authoring/releases/**
+            ${{ runner.temp }}/c-capsule-authoring/guide/guide.json
+            ${{ runner.temp }}/c-capsule-authoring/guide/guide.sh
+            ${{ runner.temp }}/c-capsule-authoring/guide/logs/**
+            ${{ runner.temp }}/c-capsule-authoring/guide/projects/results/**
           if-no-files-found: warn
           retention-days: 7
