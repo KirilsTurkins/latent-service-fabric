@@ -1,0 +1,31 @@
+name: Rust authoring source check
+
+on:
+  push:
+    branches: [feat/rust-capsule-authoring-544]
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Capture tracked source for authoring validation
+        run: |
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/authoring-source.tar.gz"
+          git rev-parse HEAD > "$RUNNER_TEMP/authoring-source-revision.txt"
+          sha256sum "$RUNNER_TEMP/authoring-source.tar.gz" > "$RUNNER_TEMP/authoring-source.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: authoring-source-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/authoring-source.tar.gz
+            ${{ runner.temp }}/authoring-source-revision.txt
+            ${{ runner.temp }}/authoring-source.sha256
+          if-no-files-found: error
+          retention-days: 1
