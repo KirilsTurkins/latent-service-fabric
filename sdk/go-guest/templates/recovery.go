@@ -17,18 +17,24 @@ func Run(which uint32) uint32 {
 			runtime.KeepAlive(retained)
 		}
 	case 3:
-		// Fixed guest goroutines exercise scheduler and channel ownership.
-		// The host's fuel/deadline/cancellation bounds reclaim this whole Store.
+		// Rendezvous with four real workers, then retain their blocked channels
+		// while the main goroutine exhausts fuel. An endless scheduling loop
+		// would also hammer the explicitly authorized host clock capability.
+		// Whole-Store cleanup must reclaim every blocked worker and its stack.
 		work := make(chan uint32, 4)
+		parked := make(chan struct{})
 		for worker := uint32(0); worker < 4; worker++ {
 			go func(value uint32) {
-				for {
-					work <- value
-				}
+				work <- value
+				<-parked
 			}(worker)
 		}
-		for value := range work {
-			calls += value
+		for worker := 0; worker < 4; worker++ {
+			calls += <-work
+		}
+		runtime.Gosched()
+		for {
+			calls++
 		}
 	}
 	return calls
