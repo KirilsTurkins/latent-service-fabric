@@ -1,11 +1,11 @@
 # Activation commit protocol
 
-This is the planned Phase 4 contract for guest state and effects. The current
+This is the planned contract for guest state and effects. The current
 [stateless lifecycle](../activation-lifecycle.md) performs execution, cleanup and
-terminal publication without a durable state/effect commit coordinator. Phase 2
-catalog operation receipts and the audit journal do not implement the guest
+terminal publication without a durable state/effect commit coordinator.
+Catalog operation receipts and the audit journal do not implement the guest
 transaction or recovery protocol below. Durable workflow continuation remains
-Phase 6 work in the [roadmap](../roadmap.md).
+planned work in the [roadmap](../roadmap.md).
 
 The commit coordinator is the semantic boundary between guest completion and externally durable success.
 

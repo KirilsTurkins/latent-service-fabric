@@ -886,10 +886,12 @@
     },
     {
       "source": "docs/development/website-publication-evidence.md",
-      "words": 322,
-      "sha256": "05cc2be232a1269a598423d4e3ae233de41a9eb1588c5363b7164c90a75a2d0b",
-      "status": "pending",
-      "findings": []
+      "words": 324,
+      "sha256": "5d2ed3d061082445a979c2d5d15bc2b2b406c97ae1abeda03734944af1b86a9a",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete initial publication and recovery record. Scoped environment configuration to the publication date and preserved artifact identities, approval boundary and separation from runtime publication."
+      ]
     },
     {
       "source": "docs/development/website-publication.md",
@@ -944,8 +946,10 @@
       "source": "docs/evidence/native-upgrade-35821200294/README.md",
       "words": 356,
       "sha256": "4b99c18a1b7582851ab30e875ff4fcffbd0119e968ad4877b501b3fd819b0af0",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read the complete historical VM acceptance and publication-hold record; preserved tested artifact identity and the explicit absence of authorized alpha.4 publication."
+      ]
     },
     {
       "source": "docs/evidence/phase3-integration-35818046307/README.md",
@@ -958,22 +962,28 @@
       "source": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
       "words": 189,
       "sha256": "4ed169146934ac999cf7b173eb25da53d4ff440ab438192bec71623614fe76a3",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read the complete historical six-client guide execution record. Retained original source, Java 21 toolchain, exact run identities and explicit human-review limitations."
+      ]
     },
     {
       "source": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
       "words": 275,
       "sha256": "de248dcf3366e1ba400c092588e0371710008c777bb1337024990859d416899f",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read the complete retained matrix record; preserved historical toolchain/source identities and explicit limits rather than describing this older evidence as current qualification."
+      ]
     },
     {
       "source": "docs/evidence/phase3-sdk-matrix-e07abf72/README.md",
       "words": 321,
       "sha256": "629a7aaf7d1dd1be3a49a5efc648db8a7bd9de007778dfbed8130b2aac355425",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read the complete retained six-client matrix record, result scope and raw receipt references; preserved historical identities and qualification boundaries."
+      ]
     },
     {
       "source": "docs/how-to/diagnose-angular-delivery.md",
@@ -1264,10 +1274,12 @@
     },
     {
       "source": "docs/protocol/commit-protocol.md",
-      "words": 225,
-      "sha256": "8003880f4fbf24afeb6fa30acd4c2f1b1182a28ff9110965bde367c2555fae14",
-      "status": "pending",
-      "findings": []
+      "words": 220,
+      "sha256": "0a7f47787f463053b687c2f60edb313c9ba1bf91f9a6755ab46476afff4b8541",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the full planned durable commit contract and clearly separated it from current stateless execution and catalog receipts without implementation phase chronology."
+      ]
     },
     {
       "source": "docs/protocol/http-applications.md",
@@ -1308,8 +1320,10 @@
       "source": "docs/protocol/platform-errors.md",
       "words": 349,
       "sha256": "6e7cfeffdcb689faa7314484b419c7ec62b34074606e51ebb00360ac57011cb7",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read the complete platform failure model and checked all 17 code names against latent-core PlatformErrorCode; preserved explicit safe retry and unknown-code behavior."
+      ]
     },
     {
       "source": "docs/protocol/wit-values.md",
@@ -1774,8 +1788,10 @@
       "source": "docs/testing/angular-guide-workflow.md",
       "words": 201,
       "sha256": "e7752fbbe2aa7438bf451c60811aff1787386dd880d3b4d78e36bff00bfafaa6",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read the complete maintained Angular workflow and inspectable browser/result contract; retained executable workflow boundaries and separate human learning review."
+      ]
     },
     {
       "source": "docs/testing/angular-reference-workflow.md",
@@ -1921,10 +1937,12 @@
     },
     {
       "source": "docs/testing/phase3-resource-events.md",
-      "words": 299,
-      "sha256": "f4681d16dd3da8d197e938838db4711852355a2ee3963e960772c100a114988c",
-      "status": "pending",
-      "findings": []
+      "words": 320,
+      "sha256": "32aecbc33a9f7a0e8ac50e5f9eb9277992a34fa7645a99d91cc860a937a53804",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the full bounded event resource checkpoint and its exclusions. Corrected obsolete open-work wording to its historical date after checking issue 239 is closed; raw measurements remain unchanged."
+      ]
     },
     {
       "source": "docs/testing/phase3-resource-evidence/README.md",
@@ -1949,10 +1967,12 @@
     },
     {
       "source": "docs/testing/phase3-resource-recovery.md",
-      "words": 372,
-      "sha256": "22daf6814a6db64817499174746b10e93124b9cf5c4e81d5fc8b57f1ab200818",
-      "status": "pending",
-      "findings": []
+      "words": 397,
+      "sha256": "ce3b04f639e7a95c47851f6eb3a90c143a66b3ddefd8598c9316bd7647c70f8c",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the full four-profile resource recovery record including original failed attempt. Corrected issue 239 status to historical scope; did not replace missing allocator values or broaden measured results."
+      ]
     },
     {
       "source": "docs/testing/phase3-resource-renderer.md",
