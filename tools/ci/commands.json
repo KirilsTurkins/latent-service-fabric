@@ -3585,6 +3585,7 @@
       "DotnetAuthoringTests.test_compiler_configuration_is_closed",
       "DotnetAuthoringTests.test_names_and_existing_directories_are_rejected",
       "DotnetAuthoringTests.test_nuget_uses_verified_content_identity_not_raw_signed_zip_hash",
+      "DotnetAuthoringTests.test_public_contract_rejection_precedes_compiler_work",
       "DotnetAuthoringTests.test_sdk_capture_cannot_drift"
     ],
     "tools/tests/test_echo_cli_package.py": [

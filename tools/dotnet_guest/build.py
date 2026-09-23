@@ -45,17 +45,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
-            stage = "compiler-inputs"
-            compiler = Compiler(tools, commands, work / "vendor/lsf")
-            write_json(output / "compiler-inputs.json", compiler.before)
             paths = {"contracts-tool": checked_path(contracts_tool), "packager": checked_path(packager)}
-            materials = [*compiler.materials, *(file_identity(path, name) for name, path in paths.items())]
-            stage = "compile"
-            component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
-            component = read_file(component_path, 64 * 1024 * 1024)
-            (output / "component.wasm").write_bytes(component)
-            write_json(output / "bindings.json", generated)
+            materials = [file_identity(path, name) for name, path in paths.items()]
             stage = "contracts"
+            # Public RPC resources and other unsupported contracts fail before
+            # compiler work. Imported capability resources remain authoritative.
             wit_input = temporary / "wit-inputs.json"
             write_json(wit_input, {"world": project["world"], "sources": [
                 {"path": name, "content": data.decode()} for name, data in files.items() if name.startswith("wit/") and name.endswith(".wit")]})
@@ -63,6 +57,15 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands.run("contracts", paths["contracts-tool"], wit_input, derived)
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
+            stage = "compiler-inputs"
+            compiler = Compiler(tools, commands, work / "vendor/lsf")
+            write_json(output / "compiler-inputs.json", compiler.before)
+            materials.extend(compiler.materials)
+            stage = "compile"
+            component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
+            component = read_file(component_path, 64 * 1024 * 1024)
+            (output / "component.wasm").write_bytes(component)
+            write_json(output / "bindings.json", generated)
             package_inputs(output, project, read_json(derived / "surface.json"), files, component)
             stage = "package"
             commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")

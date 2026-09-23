@@ -24,8 +24,9 @@ and derives package contracts from that WIT. Full-width integers use C#
 Canonical strings preserve UTF-8 and embedded NUL; lists, records, variants,
 options, typed results and resources use the generated canonical ABI.
 Resource ownership belongs to imported capabilities; public RPC parameters and
-results cannot transfer component resources and package contract validation
-rejects those shapes.
+results cannot transfer component resources. Authoritative contract derivation
+rejects those shapes before compilation, and package validation checks the
+actual compiled surface again before signing.
 First-class WIT future/stream, map and fixed-size-list forms are explicitly
 rejected. Async imports use a reviewed synchronous C# binding projection:
 Wasmtime suspends the activation stack while host operations are pending.

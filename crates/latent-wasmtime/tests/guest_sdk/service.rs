@@ -26,7 +26,7 @@ async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fix
         let observation = package::observation(name);
         uploads.push(signers.upload(bundle, &observation));
     }
-    let catalog = package::catalog(root, signers.policy);
+    let catalog = package::catalog(root, signers.policy, true);
     for upload in uploads {
         catalog
             .admit_package(&TenantId("tenant-a".into()), upload, &mut |_| Ok(()))

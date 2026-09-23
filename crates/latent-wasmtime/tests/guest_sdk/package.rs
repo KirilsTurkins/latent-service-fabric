@@ -196,7 +196,7 @@ pub async fn publish(root: &Path, name: &str) -> Publication {
     let signers = Signers::new(&observation.build_type);
     let upload = signers.upload(&bundle, &observation);
     let release = bundle.layout().component_release().unwrap();
-    let catalog = catalog(root, signers.policy);
+    let catalog = catalog(root, signers.policy, name.ends_with("-service"));
     let receipt = catalog
         .publish_managed(
             ReleaseMutationContext {
@@ -279,15 +279,27 @@ impl SupplyChainClock for FixtureClock {
     }
 }
 
-pub fn catalog(root: &Path, policy: SupplyChainPolicy) -> Arc<DirectoryArtifactRepository> {
+pub fn catalog(
+    root: &Path,
+    policy: SupplyChainPolicy,
+    nested_service: bool,
+) -> Arc<DirectoryArtifactRepository> {
     let clock = Arc::new(FixtureClock(SystemSupplyChainClock.now().unwrap()));
+    let mut runtime = super::support::config();
+    if nested_service {
+        // Match the separately configured service fixture's explicit ceiling.
+        // In particular, a NativeAOT caller reserves 256 MiB to fund a child;
+        // ordinary SDK packages retain their original 128 MiB profile.
+        runtime.maximum_memory_bytes =
+            super::support::guest_runtime::service_memory(runtime.maximum_memory_bytes);
+    }
     let authority = Arc::new(
         SupplyChainAuthority::open_with_runtime(
             &root.join("trust"),
             policy,
             clock,
             5,
-            Arc::new(super::support::config().detected_runtime_profile().unwrap()),
+            Arc::new(runtime.detected_runtime_profile().unwrap()),
         )
         .unwrap(),
     );

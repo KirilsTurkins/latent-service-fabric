@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+from tools.dotnet_guest.build import build
 from tools.dotnet_guest.project import create, validate
 from tools.dotnet_guest.compiler import packages
 from tools.build_dotnet_guest_capsules import NAMES, project
@@ -89,6 +91,26 @@ class DotnetAuthoringTests(unittest.TestCase):
         self.assertEqual(seen, [archive])
         with self.assertRaisesRegex(ValueError, "content hash differs"):
             packages(lock, self.root / "packages", lambda _: "different")
+
+    def test_public_contract_rejection_precedes_compiler_work(self):
+        source = create(self.root / "unsupported", "greeting")
+        output = self.root / "output"
+        tool = self.root / "contracts-tool"
+        tool.write_bytes(b"synthetic tool identity; never executed")
+        with patch("tools.dotnet_guest.build.Commands") as commands, \
+                patch("tools.dotnet_guest.build.Compiler") as compiler:
+            commands.return_value.records = []
+            commands.return_value.run.side_effect = ValueError("unsupported-public-resource")
+            with self.assertRaisesRegex(ValueError, "unsupported-public-resource"):
+                build(source, output, tool, tool,
+                      "https://github.com/KirilsTurkins/latent-service-fabric",
+                      tools=self.root / "compiler")
+            compiler.assert_not_called()
+            self.assertEqual(commands.return_value.run.call_args.args[0], "contracts")
+        receipt = json.loads((output / "BUILD-FAILED.json").read_text())
+        self.assertEqual(receipt["stage"], "contracts")
+        self.assertFalse((output / "component.wasm").exists())
+        self.assertFalse((output / "BUILD-COMPLETE.json").exists())
 
 
 if __name__ == "__main__":

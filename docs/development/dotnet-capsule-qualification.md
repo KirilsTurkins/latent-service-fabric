@@ -61,6 +61,18 @@ the final source; this local inspection is not node execution evidence.
 
 ## Required final evidence
 
+[Run 35928271057](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35928271057)
+at `79ef782ab9f3440baa10123a3581ed727c875c87` passed the expanded actual
+NativeAOT probe, all five standalone and nine SDK builds, seven ownership
+checks and eight of ten SDK runtime tests. The secret success/typed-error
+diagnostic and actual secret/streaming cases passed. Artifact `10780656604`
+retains two admission failures: the nested caller declared its required
+256 MiB ceiling, but the signing fixture still advertised a 128 MiB runtime.
+The fixture now uses the same explicit nested-service ceiling as the node
+composition; ordinary package profiles remain at 128 MiB. No production
+delegation rule or authority is widened. The next run must execute both
+the nested service and complete signed-node/printed-guide stages.
+
 [Run 35926712630](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35926712630)
 at `2a2e131d1a51971cfc24eb792fea5323240114f1` executed the actual full-width
 and aggregate value cases successfully. Its declared-error probe returned the
