@@ -45,52 +45,28 @@ pub(super) fn assert_committed_error(
 }
 
 #[test]
-fn legacy_state_upgrades_publication_pins_without_advancing_object_versions() {
+fn obsolete_state_is_rejected_without_reassigning_object_versions() {
     let root = TempRoot::new();
     let releases = Arc::new(Releases::default());
     let one = releases.add("one");
     let store = open(&root, &releases);
-    let blue = deployment("blue", "alice", &one);
-    run(store.apply(blue.clone())).unwrap();
+    run(store.apply(deployment("blue", "alice", &one))).unwrap();
     run(store.apply(deployment("green", "alice", &one))).unwrap();
     drop(store);
-    let mut legacy = state(&root.0);
-    legacy["format_version"] = json::json!(1);
-    legacy["payload"]
+    let mut obsolete = state(&root.0);
+    obsolete["format_version"] = json::json!(1);
+    obsolete["payload"]
         .as_object_mut()
         .unwrap()
         .remove("publication_pins");
-    legacy["payload"]
+    obsolete["payload"]
         .as_object_mut()
         .unwrap()
         .remove("object_generations");
-    let legacy_bytes = rechecksum(legacy);
-    fs::write(root.0.join("catalog.json"), &legacy_bytes).unwrap();
-
-    let store = open(&root, &releases);
-    assert_eq!(store.generation(), RouteGeneration(2));
-    assert_eq!(record(&store, "blue").generation, 2);
-    assert_eq!(record(&store, "green").generation, 2);
-    assert_eq!(state(&root.0)["format_version"], 5);
-    assert_eq!(
-        state(&root.0)["payload"]["publication_pins"],
-        json::json!([])
-    );
-    let committed = run(store.apply_versioned(&alice(), blue, Some(2))).unwrap();
-    assert_eq!(committed.deployment.generation, 3);
-    assert_eq!(record(&store, "green").generation, 2);
-    let upgraded = state(&root.0);
-    assert_eq!(upgraded["format_version"], 5);
-    assert_eq!(
-        upgraded["payload"]["object_generations"],
-        json::json!([
-            {"id":"blue", "generation":3}, {"id":"green", "generation":2}
-        ])
-    );
-    drop(store);
-    let restarted = open(&root, &releases);
-    assert_eq!(record(&restarted, "blue"), committed.deployment);
-    assert_eq!(record(&restarted, "green").generation, 2);
+    let bytes = rechecksum(obsolete);
+    fs::write(root.0.join("catalog.json"), &bytes).unwrap();
+    assert!(run(Store::open(&root.0, releases, Limits::default())).is_err());
+    assert_eq!(fs::read(root.0.join("catalog.json")).unwrap(), bytes);
 }
 
 #[derive(Clone, Copy)]

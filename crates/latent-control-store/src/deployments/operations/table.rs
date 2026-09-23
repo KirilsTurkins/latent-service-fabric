@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 #[path = "publications.rs"]
 mod publications;
-pub(in crate::deployments) use publications::recover_publications;
+pub(in crate::deployments) use publications::validate_publications;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
@@ -40,7 +40,7 @@ pub(in crate::deployments) struct OperationTable {
 impl OperationTable {
     pub fn empty(budget: &Arc<Budget>) -> Result<Arc<Self>> {
         let data = TableData {
-            format_version: 1,
+            format_version: 2,
             receipt_slots: budget.limits.maximum_receipts,
             operation_sequence: 0,
             receipts: Vec::new(),
@@ -131,7 +131,7 @@ fn retained(data: &TableData) -> Result<usize> {
     Ok(n)
 }
 fn validate(data: &TableData, enabled: bool, limits: DeploymentOperationLimits) -> Result<()> {
-    if !matches!(data.format_version, 1 | 2)
+    if data.format_version != 2
         || data.receipt_slots == 0
         || data.receipt_slots > limits.maximum_receipts
         || data.receipts.len() as u64 != data.operation_sequence.min(data.receipt_slots as u64)
@@ -150,7 +150,6 @@ fn validate(data: &TableData, enabled: bool, limits: DeploymentOperationLimits) 
     for (i, stored) in data.receipts.iter().enumerate() {
         let r = &stored.receipt;
         if stored.sequence != floor + i as u64
-            || (data.format_version == 1 && stored.publication.is_some())
             || stored.publication != r.publication
             || r.format_version != 1
             || r.state_version <= previous_state
