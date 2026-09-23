@@ -57,20 +57,6 @@ def select(event_name: str, event: dict, repo: Path, revision: str) -> dict:
     return {"refs": [revision], "changed_paths": len(paths), **classify(paths)}
 
 
-def validate_results(results: dict) -> bool:
-    if results.get("scope", {}).get("result") != "success" or results.get("secrets", {}).get("result") != "success":
-        return False
-    outputs = results["scope"].get("outputs", {})
-    for job, output in (("rustsec", "rustsec"), ("dependencies", "dependencies"),
-                        ("static", "static"), ("self-test", "selftest")):
-        if outputs.get(output) not in {"true", "false"}:
-            return False
-        expected = "success" if outputs[output] == "true" else "skipped"
-        if results.get(job, {}).get("result") != expected:
-            return False
-    return True
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path.cwd())

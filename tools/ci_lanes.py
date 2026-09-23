@@ -276,24 +276,3 @@ class Scheduler:
                 self._outcomes[name] = State.CANCELLED
                 self._reasons[name] = "run-cancelled"
         return tuple(self._live.values())
-
-
-def require_job_results(results: Mapping[str, object], *, required: frozenset[str],
-                        unselected: frozenset[str]) -> tuple[str, ...]:
-    """Fail-closed aggregate policy over an upstream-selected exact job set.
-
-    No inference from a missing output, false-ish value, or absent job is allowed.
-    This does not replace the existing profile classifier or CI result job.
-    """
-    if not required or required & unselected:
-        raise LaneError("invalid-required-job-set")
-    errors = []
-    expected = required | unselected
-    if set(results) != expected:
-        errors.append("job-inventory-mismatch")
-    for name in sorted(expected):
-        value = results.get(name)
-        expected_result = "success" if name in required else "skipped"
-        if not isinstance(value, Mapping) or value.get("result") != expected_result:
-            errors.append(name)
-    return tuple(errors)

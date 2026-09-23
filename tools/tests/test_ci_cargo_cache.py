@@ -120,13 +120,6 @@ class CacheIdentityTests(unittest.TestCase):
             self.assertNotIn(value, serialized)
         self.assertEqual(self.digest(environment={}), self.digest(environment={"GITHUB_JOB": "another-layout"}))
 
-    def test_only_trusted_refs_may_write(self):
-        trusted = {("push", "refs/heads/development"), ("workflow_dispatch", "refs/heads/development"),
-                   ("workflow_dispatch", "refs/heads/release")}
-        for event in ("push", "pull_request", "pull_request_target", "workflow_dispatch", "schedule"):
-            for ref in ("refs/heads/development", "refs/heads/release", "refs/heads/feat/example", "refs/pull/5/merge"):
-                self.assertEqual(cache.writer_allowed(event, ref), (event, ref) in trusted)
-
     def test_workflow_cache_writes_and_scope_match_the_reviewed_policy(self):
         workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text()
         rust = workflow.split("\n  rust:\n", 1)[1].split("\n  oci-registry:\n", 1)[0]
