@@ -27,7 +27,10 @@ evidence and any unsupported behavior.
 For the six-client rows, select each language in the rendered example controls
 and inspect its specific build, ownership, cancellation and shutdown guidance.
 For provider and Angular rows, follow the representative documented workflow
-and compare its observable outcomes with the linked receipt. Record commands
+and compare its observable outcomes with the linked receipt. Include both the
+SSR/hydration path and the [Angular CSR/static-generator walkthrough](../component-development/static-sites.md)
+for the three Angular/browser rows: public-file selection, signed routing,
+cutover, rollback, revocation and zero execution ownership. Record commands
 you actually ran separately from receipts you only inspected. Report broken
 links, inaccessible controls or unexplained output alongside content issues.
 
@@ -59,9 +62,9 @@ review metadata. An unchecked box means no review result has been recorded.
 | [ ] | `local-calls-descendants` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
 | [ ] | `randomness-metrics` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
 | [ ] | `operator-security-recovery` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
-| [ ] | `angular-build-profile` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md) |
-| [ ] | `angular-publication-routing` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md) |
-| [ ] | `angular-browser-workflow` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md) |
+| [ ] | `angular-build-profile` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md), [Package an observed static site](../component-development/static-sites.md) |
+| [ ] | `angular-publication-routing` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md), [Package an observed static site](../component-development/static-sites.md) |
+| [ ] | `angular-browser-workflow` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md), [Package an observed static site](../component-development/static-sites.md) |
 | [ ] | `reference-contracts` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
 | [ ] | `trust-resource-architecture` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
 | [ ] | `retained-performance-evidence` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
