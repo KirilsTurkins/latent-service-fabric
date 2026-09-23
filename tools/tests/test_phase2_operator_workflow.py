@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 from tools.phase2_operator_process import (
     WorkflowError, bounded_receipt, diagnostic_code, diagnostic_grpc, file_digest,
-    stopped_record, write_candidate_manifest, write_json,
+    stopped_record, write_candidate_manifest, write_json, write_selected_deployment,
 )
 from tools.phase2_operator_scenario import DENIED_TOKEN, TOKEN, configure_node, route_identity
 from tools.run_phase2_operator_workflow import build_identity, inventory, registry_profile
@@ -111,16 +111,26 @@ class OperatorWorkflowTests(unittest.TestCase):
                                  "resources": {"memoryBytes": 4194304, "wallTimeLimitMillis": None}}}
             write_json(source, original)
             original_bytes = source.read_bytes()
+            selected = root / "selected.json"
+            publication = "publication:sha256:" + "a" * 64
+            self.assertEqual(write_selected_deployment(source, selected, publication), selected)
+            self.assertEqual(source.read_bytes(), original_bytes)
+            original["spec"]["publication"] = publication
+            self.assertEqual(json.loads(selected.read_text()), original)
+            for invalid in (None, "", "sha256:" + "a" * 64):
+                with self.assertRaisesRegex(WorkflowError, "deployment-publication"):
+                    write_selected_deployment(source, root / "invalid.json", invalid)
+            self.assertFalse((root / "invalid.json").exists())
             for weight in (1000, 5000):
                 destination = root / f"candidate-{weight}.json"
-                self.assertEqual(write_candidate_manifest(source, destination, weight), destination)
+                self.assertEqual(write_candidate_manifest(selected, destination, weight), destination)
                 candidate = json.loads(destination.read_text())
                 self.assertEqual(candidate["spec"]["route"]["weight"], weight)
                 candidate["spec"]["route"]["weight"] = 10000
                 self.assertEqual(candidate, original)
                 self.assertEqual(source.read_bytes(), original_bytes)
                 with self.assertRaises(FileExistsError):
-                    write_candidate_manifest(source, destination, weight)
+                    write_candidate_manifest(selected, destination, weight)
 
     def test_both_auth_tokens_pass_local_profile_grammar(self):
         self.assertNotEqual(TOKEN, DENIED_TOKEN)

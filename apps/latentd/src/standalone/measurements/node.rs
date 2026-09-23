@@ -227,31 +227,39 @@ impl MeasurementNode {
         };
         let started = Instant::now();
         self.before_command(false)?;
-        management::release_service_client::ReleaseServiceClient::new(self.channel.clone())
-            .publish_release(authenticated(
-                &fixture.target.tenant,
-                management::PublishReleaseRequest {
-                    package: None,
-                    operation: None,
-                    release: None,
-                    artifact: Some(upload),
-                },
-            )?)
-            .await?;
+        let publication =
+            management::release_service_client::ReleaseServiceClient::new(self.channel.clone())
+                .publish_release(authenticated(
+                    &fixture.target.tenant,
+                    management::PublishReleaseRequest {
+                        package: None,
+                        operation: None,
+                        release: None,
+                        artifact: Some(upload),
+                    },
+                )?)
+                .await?
+                .into_inner()
+                .release
+                .ok_or("measurement publication receipt missing")?
+                .publication
+                .ok_or("measurement publication identity missing")?;
         let published = started.elapsed().as_nanos().to_string();
-        let deployment = deployment_to_proto(&VersionedDeployment {
+        let mut deployment = deployment_to_proto(&VersionedDeployment {
             publication: None,
             manifest: fixture.deployment.clone(),
             generation: 0,
         })
         .map_err(|_| std::io::Error::other("fixture deployment conversion"))?;
+        deployment.publication = Some(publication);
+        deployment.release_digest.clear();
         self.before_command(false)?;
         let started = Instant::now();
         management::deployment_service_client::DeploymentServiceClient::new(self.channel.clone())
             .apply_deployment(authenticated(
                 &fixture.target.tenant,
                 management::ApplyDeploymentRequest {
-                    expected_component_digest: None,
+                    expected_component_digest: Some(fixture.release_digest.clone()),
                     operation: None,
                     deployment: Some(deployment),
                     expected_generation: None,

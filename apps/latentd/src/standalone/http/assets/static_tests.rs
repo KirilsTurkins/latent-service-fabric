@@ -342,15 +342,43 @@ async fn static_concurrency_corruption_and_read_saturation_never_enter_renderer_
     let reference = publish(&h, "first", b"root");
     apply(&h, "root", &reference, "/", "prefix", "GET", 0);
     for _ in 0..4 {
+        // Receiving EOF can precede the server's final owner retirement. Each
+        // round deliberately uses exactly the two available ingress exchanges.
+        node::wait(|| {
+            let snapshot = h.owner.handle().snapshot();
+            snapshot.connections == 0 && snapshot.exchanges == 0
+        })
+        .await;
         let (left, right) = tokio::join!(get(&h, "/index.html", ""), get(&h, "/orders/42", HTML));
-        assert_eq!((left.0, right.0), (200, 200));
+        // Mandatory catalog read admission is nonqueueing and can report busy
+        // before asset dispatch. Every admitted response must remain coherent;
+        // a bounded rejection must never turn into HTML or renderer fallback.
+        for (status, headers, bytes) in [left, right] {
+            match status {
+                200 => assert_eq!(bytes, b"root"),
+                503 => {
+                    assert!(bytes.is_empty());
+                    assert!(headers.contains("Cache-Control: no-store"));
+                }
+                other => panic!("unexpected concurrent status: {other}"),
+            }
+        }
+        let recovered = get(&h, "/orders/42", HTML).await;
+        assert_eq!(
+            (recovered.0, recovered.2.as_slice()),
+            (200, b"root".as_slice())
+        );
     }
     let store = h.store();
+    let rejected_before_saturation = store.snapshot().capacity_rejections;
     let held = Arc::clone(&store.work).try_acquire_many_owned(4).unwrap();
     for path in ["/index.html", "/guide/", "/orders/42"] {
         assert_eq!(get(&h, path, HTML).await.0, 503);
     }
-    assert_eq!(store.snapshot().capacity_rejections, 3);
+    assert_eq!(
+        store.snapshot().capacity_rejections,
+        rejected_before_saturation + 3
+    );
     drop(held);
     let digest = latent_artifacts::package::artifact_blob_digest(b"script");
     std::fs::write(

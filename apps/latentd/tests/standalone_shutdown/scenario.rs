@@ -87,15 +87,21 @@ pub fn run() {
 async fn publish(channel: Channel) {
     let upload = fixture::upload();
     let digest = upload.artifact.as_ref().unwrap().component_digest.clone();
-    ReleaseServiceClient::new(channel.clone())
+    let published = ReleaseServiceClient::new(channel.clone())
         .publish_release(support::request(upload))
         .await
+        .unwrap()
+        .into_inner()
+        .release
         .unwrap();
+    let mut deployment = fixture::deployment(&digest);
+    deployment.publication = Some(published.publication.unwrap());
+    deployment.release_digest.clear();
     DeploymentServiceClient::new(channel)
         .apply_deployment(support::request(proto::ApplyDeploymentRequest {
-            expected_component_digest: None,
+            expected_component_digest: Some(digest.clone()),
             operation: None,
-            deployment: Some(fixture::deployment(&digest)),
+            deployment: Some(deployment),
             expected_generation: Some(0),
         }))
         .await

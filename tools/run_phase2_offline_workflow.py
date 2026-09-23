@@ -22,7 +22,7 @@ if __package__ in (None, ""):
 
 from tools.build_process_signals import owned_cancellation
 from tools.phase2_operator_canary import invoke
-from tools.phase2_operator_process import Client, WorkflowError, read_json, require, write_json
+from tools.phase2_operator_process import Client, WorkflowError, read_json, require, write_json, write_selected_deployment
 from tools.phase2_operator_scenario import configure_node, connect, receipt, route, stop
 from tools.run_oci_registry_tests import IMAGE, Registry, certificates, ready
 from tools.run_phase2_operator_workflow import package_workflow, registry_profile
@@ -84,7 +84,9 @@ def run(args, origin, ca, stop_registry):
                 selected = published["release"]["publication"]["id"]
                 require(published["release"]["digest"] == digest, "publication-identity")
                 snapshot = client.call("deployment", "get", "blue", "--operation-snapshot", codes=(6,))["data"]
-                applied = receipt(client.call("deployment", "apply", args.fixture_root / "blue/deployment.json",
+                deployment = write_selected_deployment(args.fixture_root / "blue/deployment.json",
+                                                       client.directory / "blue-selected.json", selected)
+                applied = receipt(client.call("deployment", "apply", deployment,
                                                "--operation-id", "offline-apply", "--expected-generation", "0",
                                                "--expected-state-version", snapshot["stateVersion"]), "offline-apply")
                 input_path = client_dir / "input.json"
