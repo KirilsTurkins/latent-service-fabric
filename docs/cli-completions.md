@@ -141,14 +141,17 @@ cargo test --locked -p latent --lib
 cargo test --locked -p latent --test completions
 cargo fmt --all --check
 cargo check --locked -p latent --all-targets
-cargo clippy --locked -p latent --all-targets -- -D warnings
+cargo clippy --locked -p latent --all-targets --all-features --no-deps -- -D warnings
 ```
 
-Use the repository's `rust-toolchain.toml`. The process suite runs the real Bash
-script under `bash --noprofile --norc` in a temporary home with a controlled
-command path; the script must not call `latent` back. Unit/process tests cover
+Use the repository's `rust-toolchain.toml` and install Bash and Fish for Linux
+testing. The process suite runs real scripts under `bash --noprofile --norc` and
+`fish --no-config` in temporary homes with controlled command paths; neither
+script may call `latent` back. Fish positional enum choices are derived from
+the same Clap tree, including options before or after the subcommand.
+Unit/process tests cover
 all four generators, deterministic bytes, nested/global/static values,
 test-only grammar extension, offline dispatch, argument errors, and writer and
-flush failures. Generation tests alone are not evidence that Zsh, Fish, or
+flush failures. Generation tests alone are not evidence that Zsh or
 PowerShell were executed: record those shell executions separately in validation
 reports. No issue-specific CI workflow is required.
