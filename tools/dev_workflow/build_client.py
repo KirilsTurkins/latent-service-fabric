@@ -54,11 +54,14 @@ def cancel_and_confirm(connection, selected: str) -> None:
         raise DevError("build-cleanup-unconfirmed-inspect-owned-workspace", uncertain=True)
 
 
-def run(workspace: Path, connection, source: Path, tool_root: str, *, editor_diagnostics: bool = False,
+def run(workspace: Path, connection, source: Path, tool_root: str | None, *, editor_diagnostics: bool = False,
         selected: tuple[str, str] | None = None) -> dict:
-    require(source is not None and tool_root is not None, "explicit-project-and-tool-root-required")
+    require(source is not None, "explicit-project-required")
     source = source.absolute()
     descriptor, _raw_identity = project.load(source)
+    if tool_root is None:
+        from .tool_install import selected_root
+        tool_root = selected_root(workspace, descriptor)
     identity = project.trust_identity(descriptor)
     require(state.load(workspace, "trust.json") == {"project": str(source), "recipe": identity}, "workspace-recipe-trust-required")
     record, content = snapshot.observe(source, descriptor["inputRoots"], tuple(descriptor["exclude"]))

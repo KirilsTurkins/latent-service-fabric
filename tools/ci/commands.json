@@ -618,7 +618,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_build_process"
+      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_build_process"
     },
     ".github/workflows/developer-tools.yml:rust-tools:Stage the pinned relocatable Python prefix": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -3513,6 +3513,14 @@
       "Transports.test_ssh_identity_options_and_constant_command",
       "WslOwnership.test_recovery_observes_original_registration_and_user_nonce_without_reimport"
     ],
+    "tools/tests/test_dev_tool_install.py": [
+      "GuestTools.test_changed_completed_payload_is_rejected_and_not_implicitly_repaired",
+      "GuestTools.test_install_reuse_exact_pins_and_purge_preserves_source",
+      "GuestTools.test_interrupted_extraction_requires_explicit_resume_and_reauthentication",
+      "GuestTools.test_rejected_authentication_never_extracts_or_selects_tools",
+      "GuestTools.test_unsafe_partial_payload_cannot_be_followed_or_purged",
+      "GuestTools.test_wrong_version_or_verifier_rejected_before_transfer"
+    ],
     "tools/tests/test_dev_tools.py": [
       "AdapterResults.test_missing_nested_cleanup_receipt_remains_uncertain",
       "AdapterResults.test_readonly_distribution_seeds_a_writable_private_cache",
@@ -5823,6 +5831,7 @@
     "tools/tests/test_deterministic_tests.py",
     "tools/tests/test_dev_build_cache.py",
     "tools/tests/test_dev_contracts.py",
+    "tools/tests/test_dev_tool_install.py",
     "tools/tests/test_dev_tools.py",
     "tools/tests/test_dev_watch.py",
     "tools/tests/test_dev_workflow.py",
@@ -6030,7 +6039,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
-    ".github/workflows/developer-tools.yml": "3e9c9d4d5a119d125797d470a68ddbfc55636520bb4a38c753c5af6891272e08",
+    ".github/workflows/developer-tools.yml": "662c67f3e9310780f9ee457fdd7be3cc07046815addd1bbca20de8f768dfd762",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",

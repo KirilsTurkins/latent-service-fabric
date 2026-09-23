@@ -22,7 +22,9 @@ def configuration(frontend: Path, state_root: Path, workspace: str, tool_root: s
                "pattern": {"regexp": PATTERN, "file": 1, "line": 2, "column": 3, "severity": 4, "code": 5, "message": 6}}
     base = ["--state-root", str(state_root), "--editor-diagnostics", "dev"]
     selected = ["--workspace", workspace]
-    build = ["--project", "${workspaceFolder}", "--tool-root", tool_root or "${input:lsfToolRoot}"]
+    build = ["--project", "${workspaceFolder}"]
+    if tool_root is not None:
+        build.extend(["--tool-root", tool_root])
     commands = {
         "init another project": ["init", "${input:lsfDestination}", "--bundle", "${input:lsfBundle}",
                                  "--template", "${input:lsfTemplate}", "--template-sha256", "${input:lsfTemplateSha}"],
@@ -45,8 +47,6 @@ def configuration(frontend: Path, state_root: Path, workspace: str, tool_root: s
     inputs = [("lsfDestination", "New project directory (must not exist)"), ("lsfBundle", "Already authenticated template bundle ID"),
               ("lsfTemplate", "Language-owned template name"), ("lsfTemplateSha", "Exact template manifest SHA-256"),
               ("lsfTestWorkspace", "Separately provisioned test- workspace name")]
-    if tool_root is None:
-        inputs.append(("lsfToolRoot", "Explicit authenticated guest tool directory on the Linux filesystem"))
     return {"version": "2.0.0", "tasks": tasks,
             "inputs": [{"id": name, "type": "promptString", "description": description} for name, description in inputs]}
 

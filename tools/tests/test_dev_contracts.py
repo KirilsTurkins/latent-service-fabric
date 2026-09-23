@@ -314,6 +314,9 @@ class EditorDiagnostics(unittest.TestCase):
                 self.assertNotIn("dependsOn", task)
             self.assertIn("/home/guest/tools with spaces;literal", next(task for task in value["tasks"] if task["label"] == "LSF: build")["args"])
             editor.generate(root, frontend, root, "test-a", None)
+            configured = json.loads((root / ".vscode/tasks.json").read_bytes())
+            self.assertFalse(any(item["id"] == "lsfToolRoot" for item in configured["inputs"]))
+            self.assertTrue(all("--tool-root" not in task["args"] for task in configured["tasks"]))
             before = (root / ".vscode/tasks.json").read_bytes()
             with self.assertRaisesRegex(common.DevError, "existing-editor-tasks-preserved"):
                 editor.generate(root, frontend, root, "test-a", None)

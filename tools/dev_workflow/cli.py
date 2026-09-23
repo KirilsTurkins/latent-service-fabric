@@ -25,7 +25,7 @@ def parser() -> argparse.ArgumentParser:
     editor.add_argument("--workspace", required=True)
     editor.add_argument("--project", type=Path, required=True)
     editor.add_argument("--frontend", type=Path, required=True, help="absolute path to the authenticated standalone frontend")
-    editor.add_argument("--tool-root", help="explicit Linux guest tool directory, or prompt when a build task is run")
+    editor.add_argument("--tool-root", help="explicit Linux guest tools; defaults to the installed workspace selection")
     configure = dev.add_parser("connect", help="select a separately provisioned owned backend")
     configure.add_argument("--workspace", required=True)
     configure.add_argument("--backend-config", type=Path, required=True)
@@ -54,12 +54,15 @@ def parser() -> argparse.ArgumentParser:
     for name in ("wsl-recover", "wsl-purge"):
         command = dev.add_parser(name)
         command.add_argument("--confirm-distribution", required=True)
-    for name in ("install", "up", "status", "logs", "down", "purge", "build", "build-status", "deploy", "recover", "invoke", "test"):
+    for name in ("install", "install-tools", "up", "status", "logs", "down", "purge", "build", "build-status", "deploy", "recover", "invoke", "test"):
         command = dev.add_parser(name)
         command.add_argument("--workspace", required=True)
         if name == "install":
             command.add_argument("--runtime-inputs", type=Path, required=True,
                                  help="explicit guest-side installer inputs and profile, with consent")
+        if name == "install-tools":
+            command.add_argument("--tool-inputs", type=Path, required=True,
+                                 help="offline compiler bundle and independent publisher/verifier inputs, with consent")
         if name in {"build", "up"}:
             command.add_argument("--project", type=Path)
             command.add_argument("--tool-root", help="verified guest tool inventory directory")
@@ -121,7 +124,10 @@ def foreground_up(args, workspace: Path, connection) -> dict:
     from .foreground import lease
     require(not (workspace / "purged.json").exists(), "workspace-purged-create-new-workspace")
     if args.watch:
-        require(args.project is not None and args.tool_root is not None, "watch-project-and-tools-required")
+        require(args.project is not None, "watch-project-required")
+        if args.tool_root is None:
+            from .tool_install import selected_root
+            selected_root(workspace, project.load(args.project.absolute())[0])
         require(not args.test_select or args.workspace.startswith("test-"), "focused-watch-tests-require-test-workspace")
     else:
         require(not getattr(args, "test_select", []), "test-selection-requires-watch")
@@ -175,10 +181,7 @@ def dispatch(args) -> dict:
         with state.lock(root, "bundle.lock"):
             destination = cache / name
             if destination.exists():
-                require(bundle.cached(destination) == selected, "partial-or-different-bundle-cache")
-                for entry in selected["files"]:
-                    require(paths.digest_file(destination, entry["path"], bundle.MAX_BUNDLE) == (entry["sha256"], entry["size"]),
-                            "verified-bundle-cache-changed")
+                bundle.verify_cache(destination, selected)
             else:
                 require(sum(1 for _ in cache.iterdir()) < 8, "verified-cache-full-explicit-removal-required")
                 bundle.extract(args.bundle_directory.absolute(), selected, destination)
@@ -263,6 +266,9 @@ def dispatch(args) -> dict:
                 from .assets import install_inputs
                 inputs = install_inputs(connection, inputs)
             return connection.call("install", inputs, timeout=180)
+        if args.command == "install-tools":
+            from .tool_install import inputs as tool_inputs
+            return tool_inputs(workspace, connection, decode(paths.read(args.tool_inputs.absolute().parent, args.tool_inputs.name)))
         if args.command == "build":
             return _build(workspace, connection, args.project, args.tool_root, editor_diagnostics=args.editor_diagnostics)
         if args.command == "purge":

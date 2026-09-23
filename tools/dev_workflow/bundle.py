@@ -105,7 +105,14 @@ def authenticate(root: Path, selected_policy: Path, roots: Path, verifier: Path,
     return manifest_value
 
 
-def extract(root: Path, selected: dict, destination: Path) -> None:
+def verify_cache(destination: Path, selected: dict, *, check=None) -> None:
+    require(cached(destination) == selected, "partial-or-different-bundle-cache")
+    for entry in selected["files"]:
+        require(paths.digest_file(destination, entry["path"], MAX_BUNDLE, check=check) == (entry["sha256"], entry["size"]),
+                "verified-bundle-cache-changed")
+
+
+def extract(root: Path, selected: dict, destination: Path, *, check=lambda: None) -> None:
     archive = selected["archive"]
     with paths.opened(root, archive["name"]) as descriptor:
         import os
@@ -113,6 +120,7 @@ def extract(root: Path, selected: dict, destination: Path) -> None:
         hasher = hashlib.sha256()
         size = 0
         while chunk := os.read(descriptor, 1024 * 1024):
+            check()
             size += len(chunk)
             require(size <= archive["size"], "developer-archive-size")
             hasher.update(chunk)
@@ -125,6 +133,7 @@ def extract(root: Path, selected: dict, destination: Path) -> None:
             expected = {entry["path"]: entry for entry in selected["files"]}
             seen = set()
             for entry in entries:
+                check()
                 require(entry.filename in expected and entry.filename not in seen and not entry.is_dir(),
                         "developer-archive-member")
                 require(stat.S_IFMT(entry.external_attr >> 16) in {0, stat.S_IFREG}
@@ -134,6 +143,7 @@ def extract(root: Path, selected: dict, destination: Path) -> None:
                 seen.add(entry.filename)
             paths.new_directory(destination)
             for entry in entries:
+                check()
                 record = expected[entry.filename]
                 path = destination / entry.filename
                 current = destination
@@ -146,6 +156,7 @@ def extract(root: Path, selected: dict, destination: Path) -> None:
                 copied = 0
                 with zipped.open(entry) as source, path.open("xb") as output:
                     while raw := source.read(min(1024 * 1024, record["size"] + 1 - copied)):
+                        check()
                         copied += len(raw)
                         require(copied <= record["size"], "developer-expanded-byte-limit")
                         hasher.update(raw)

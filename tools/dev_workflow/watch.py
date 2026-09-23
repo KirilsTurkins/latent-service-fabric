@@ -9,7 +9,7 @@ from .common import DevError, require
 def run(workspace: Path, connection, source: Path, tool_root: str, *, build, emit,
         editor_diagnostics: bool = False, check_session=lambda: None, test_selection: list[str] | None = None) -> dict:
     from tools.build_process_signals import owned_cancellation
-    require(source is not None and tool_root is not None, "watch-project-and-tools-required")
+    require(source is not None, "watch-project-required")
     selection = test_selection or []
     require(not selection or workspace.name.startswith("test-"), "focused-watch-tests-require-test-workspace")
     require(len(selection) <= 128 and len(set(selection)) == len(selection), "focused-test-selection-limit")

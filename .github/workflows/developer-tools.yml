@@ -65,7 +65,7 @@ jobs:
         with:
           python-version: 3.13.5
       - name: Exercise controller boundaries and actual owned subprocesses
-        run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_build_process
+        run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_build_process
 
   rust-tools:
     name: Rust tool bundle and maintained application builds

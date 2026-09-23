@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import os
 from pathlib import Path
+import time
 
 from . import paths, state
 from .common import decode, digest, encode, members, require, sha
@@ -12,6 +13,7 @@ CHUNK = 1024 * 1024
 MAX_ASSET = 536870912
 MAX_TOTAL = 805306368
 MAX_FILES = 16
+MAX_SETS = 3
 
 
 def manifest(value: dict) -> dict:
@@ -47,7 +49,7 @@ def receive(root: Path, operation: str, arguments: dict) -> dict:
             paths.new_directory(cache)
         destination = directory(root, value["identity"])
         if not destination.exists():
-            require(sum(1 for _ in cache.iterdir()) < 2, "offline-input-cache-full-purge-workspace-explicitly")
+            require(sum(1 for _ in cache.iterdir()) < MAX_SETS, "offline-input-cache-full-purge-workspace-explicitly")
             paths.new_directory(destination)
             state.atomic(destination, "transfer.json", value)
         else:
@@ -101,6 +103,42 @@ def receive(root: Path, operation: str, arguments: dict) -> dict:
     return {"identity": value["identity"], "path": entry["path"], "offset": offset + len(raw)}
 
 
+def transfer(connection, sources: dict[str, Path]) -> dict:
+    require(0 < len(sources) <= MAX_FILES, "offline-input-file-limit")
+    deadline = time.monotonic() + 900
+    def check():
+        require(time.monotonic() < deadline, "offline-input-transfer-deadline")
+    def call(operation, arguments, timeout=30):
+        check()
+        return connection.call(operation, arguments, timeout=min(timeout, deadline - time.monotonic()))
+    entries = []
+    for name, path in sorted(sources.items()):
+        checksum, size = paths.digest_file(path.parent, path.name, MAX_ASSET, check=check)
+        entries.append({"path": name, "sha256": checksum, "size": size, "executable": name == "trust/gh"})
+    record = {"schemaVersion": "latent.dev.inputs.v1", "files": entries}
+    record["identity"] = digest(encode(record))
+    manifest(record)
+    observation = call("asset-begin", record)
+    require(observation["identity"] == record["identity"], "offline-input-response-identity")
+    if not observation["complete"]:
+        for entry in entries:
+            path = sources[entry["path"]]
+            offset = 0
+            with paths.opened(path.parent, path.name) as descriptor:
+                while raw := os.read(descriptor, CHUNK):
+                    response = call("asset-chunk", {"identity": record["identity"], "path": entry["path"],
+                        "offset": offset, "bytes": base64.b64encode(raw).decode()})
+                    offset += len(raw)
+                    require(response == {"identity": record["identity"], "path": entry["path"], "offset": offset},
+                            "offline-input-response-identity")
+                require(offset == entry["size"], "offline-input-changed-during-transfer")
+    completed = call("asset-finish", {"identity": record["identity"]}, timeout=90)
+    require(completed["identity"] == record["identity"] and completed["complete"] is True, "offline-input-transfer-unconfirmed")
+    guest = completed["directory"]
+    require(isinstance(guest, str) and guest.startswith("/") and ".." not in guest.split("/"), "offline-input-backend-path")
+    return completed
+
+
 def install_inputs(connection, value: dict) -> dict:
     from tools.native_runtime.verify import TARGET, version
     members(value, {"schemaVersion", "releaseDirectory", "version", "publisherPolicy", "trustedRoot", "verifier",
@@ -117,31 +155,7 @@ def install_inputs(connection, value: dict) -> dict:
         sources["trust/capsule-policy.json"] = paths.absolute(Path(value["trustPolicy"]))
     require(paths.digest_file(sources["trust/gh"].parent, sources["trust/gh"].name, MAX_ASSET)[0] == sha(value["verifierSha256"]),
             "independent-linux-verifier-digest-mismatch")
-    entries = []
-    for name, path in sorted(sources.items()):
-        checksum, size = paths.digest_file(path.parent, path.name, MAX_ASSET)
-        entries.append({"path": name, "sha256": checksum, "size": size, "executable": name == "trust/gh"})
-    record = {"schemaVersion": "latent.dev.inputs.v1", "files": entries}
-    record["identity"] = digest(encode(record))
-    manifest(record)
-    observation = connection.call("asset-begin", record)
-    require(observation["identity"] == record["identity"], "offline-input-response-identity")
-    if not observation["complete"]:
-        for entry in entries:
-            path = sources[entry["path"]]
-            offset = 0
-            with paths.opened(path.parent, path.name) as descriptor:
-                while raw := os.read(descriptor, CHUNK):
-                    response = connection.call("asset-chunk", {"identity": record["identity"], "path": entry["path"],
-                        "offset": offset, "bytes": base64.b64encode(raw).decode()})
-                    offset += len(raw)
-                    require(response == {"identity": record["identity"], "path": entry["path"], "offset": offset},
-                            "offline-input-response-identity")
-                require(offset == entry["size"], "offline-input-changed-during-transfer")
-    completed = connection.call("asset-finish", {"identity": record["identity"]}, timeout=90)
-    require(completed["identity"] == record["identity"] and completed["complete"] is True, "offline-input-transfer-unconfirmed")
-    guest = completed["directory"]
-    require(isinstance(guest, str) and guest.startswith("/") and ".." not in guest.split("/"), "offline-input-backend-path")
+    guest = transfer(connection, sources)["directory"]
     result = {key: value[key] for key in ("version", "profile", "allowCandidate", "consent", "port")}
     result.update(releaseDirectory=guest + "/release", publisherPolicy=guest + "/trust/publisher-policy.json",
                   trustedRoot=guest + "/trust/trusted_root.jsonl", verifier=guest + "/trust/gh")

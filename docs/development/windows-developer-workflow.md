@@ -44,10 +44,28 @@ compilers remain separate, explicitly selected build inputs.
   Versioned offline input documents transfer only the named release files,
   independent publisher policy, trusted roots and independently pinned Linux
   verifier. Transfers use 1 MiB chunks, at most 16 files/768 MiB per selection,
-  and at most two selections per workspace. Identical byte retransmission is
+  and at most three selections per workspace. Each transfer has a 900-second
+  deadline. Identical byte retransmission is
   allowed; changed bytes and gaps fail. Installer execution follows final hashes
   and its existing publisher verification. Set `resume: true` explicitly to use
   the existing installer's interrupted-install recovery.
+- `dev install-tools --workspace NAME --tool-inputs PATH` transfers a selected
+  compiler bundle and authenticates it inside the workspace before extraction.
+  The JSON input has `schemaVersion: "latent.dev.tool-inputs.v1"`, the explicit
+  `bundleDirectory`, `version`, `language`, `publisherPolicy`, `trustedRoot`,
+  Linux `verifier` and its `verifierSha256`, plus `allowCandidate: true` and
+  `consent: true`. Paths name separately provisioned host files. The policy must
+  independently approve the exact candidate commit; the installer does not
+  manufacture that approval. At most two compiler selections remain in private
+  workspace storage, each within the existing bundle limits. Installation has
+  a 600-second deadline. Interrupted extraction requires `resume: true`, checks
+  the original ownership record and authenticates the same inputs again.
+  A completed but changed cache fails without repair. The returned tool
+  selection records its bundle, source, language, ABI and inventory digest.
+  `build` and `up --watch` use that selection when `--tool-root` is omitted and
+  reject a project whose template or compiler pins differ. Explicit tool roots
+  remain available for reviewed custom/source development recipes. Purge removes
+  the owned compiler cache along with the workspace's other generated data.
 - Build, immutable source transfer, deployment and watch use bounded resources.
   A persisted mutation intent contains the original operation identity and
   observed preconditions. Recovery looks up that identity and does not replay
@@ -191,7 +209,8 @@ groups run in one selection. Shared scenario assertions remain byte-exact.
 
 After separately acquiring the frontend, connecting a workspace and selecting its
 guest tool inventory, run `dev editor --workspace NAME --project PATH --frontend
-ABSOLUTE_FRONTEND_PATH --tool-root ABSOLUTE_LINUX_TOOL_PATH`. This explicitly
+ABSOLUTE_FRONTEND_PATH`. Tasks use the installed workspace compiler selection;
+an explicit `--tool-root ABSOLUTE_LINUX_TOOL_PATH` can override it. This explicitly
 writes a new `.vscode/tasks.json`; it preserves an existing task configuration.
 The generated init, trust, build, up, watch, test, status, recovery, logs and down
 tasks use process arguments and the same frontend as terminal commands. They do
@@ -322,7 +341,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate

@@ -65,6 +65,8 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
     snapshots = root / "snapshots"
     if snapshots.exists():
         files.remove_tree(snapshots, maximum=32768)
+    from .tool_install import purge as purge_tools
+    purge_tools(root)
     assets = root / "assets"
     if assets.exists():
         files.remove_tree(assets, maximum=256)

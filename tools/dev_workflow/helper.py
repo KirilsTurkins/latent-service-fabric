@@ -184,6 +184,9 @@ def dispatch(request: dict) -> dict:
             return receive(root, operation, arguments)
         if operation == "install":
             return install(root, arguments)
+        if operation == "install-tools":
+            from .tool_install import install as install_tools
+            return install_tools(root, arguments)
         if operation == "doctor":
             from tools.native_runtime import checks
             members(arguments, set())
