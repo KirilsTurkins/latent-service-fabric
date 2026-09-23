@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import sys
@@ -25,8 +26,40 @@ class ProbeFailure(ValueError):
 
 
 def identity(path: Path) -> dict:
-    data = path.read_bytes()
-    return {"sha256": hashlib.sha256(data).hexdigest(), "size": len(data)}
+    digest = hashlib.sha256()
+    size = 0
+    with path.open('rb') as stream:
+        while data := stream.read(1024 * 1024):
+            size += len(data)
+            if size > 256 * 1024 * 1024:
+                raise ProbeFailure('input-file-size-limit')
+            digest.update(data)
+    return {"sha256": digest.hexdigest(), "size": size}
+
+
+def verify_version(stage: str, log: str, expected: str) -> None:
+    patterns = {
+        'java-version': r'build ([^\s),]+)',
+        'gradle-version': r'^Gradle (\S+)$',
+        'zig-version': r'^(\S+)$',
+        'wit-bindgen-version': r'^wit-bindgen(?:-cli)? (\S+)$',
+        'wasm-tools-version': r'^wasm-tools (\S+)',
+    }
+    values = re.findall(patterns[stage], log, re.MULTILINE)
+    if stage == 'java-version':
+        values = [v.removesuffix('-LTS') for v in values]
+    if not values or set(values) != {expected}:
+        raise ProbeFailure(f'{stage}: expected exact version {expected}; observed {values}')
+
+
+def failure_kind(stage: str, entry: dict) -> str:
+    if stage.endswith('-version') or 'spawnError' in entry.get('exit', {}):
+        return 'toolchain-preflight'
+    if entry.get('exit', {}).get('returncode') in (None, 0):
+        return 'probe-infrastructure'
+    if stage == 'java-source-test':
+        return 'source-self-test'
+    return 'candidate-stage-failure'
 
 
 def source_inputs(root: Path) -> dict:
@@ -110,11 +143,16 @@ def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str) ->
             ('wasm-tools-version', [wasm_tools, '--version'], config['contracts']['wasm-tools']),
         ):
             run(stage, command)
-            if expected not in (output / (stage + '.log')).read_text():
-                raise ProbeFailure(f'{stage}: pinned version {expected} not present')
+            try:
+                verify_version(stage, (output / (stage + '.log')).read_text(), expected)
+            except ProbeFailure as error:
+                report['stages'][-1].update(status='failed', error=str(error))
+                raise
         run('java-source-test', [gradle, '--no-daemon', 'probeJvm'])
         run('java-to-c', [gradle, '--no-daemon', 'generateC'])
-        generated = project / 'build/teavm-c'
+        generated = project / 'build/teavm-c/c'
+        if not (generated / 'all.c').is_file():
+            raise ProbeFailure('missing-generated-c-entrypoint')
         report['generatedC'] = {str(p.relative_to(generated)): identity(p)
                                 for p in sorted(generated.rglob('*')) if p.is_file()}
         run('wit-bindings', [bindgen, 'c', str(project / 'wit'), '--world', 'capsule',
@@ -132,7 +170,9 @@ def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str) ->
         run('component-wit', [wasm_tools, 'component', 'wit', str(component)])
         report.update(status='component-built-unqualified', component=identity(component))
     except ProbeFailure as error:
-        report.update(status='blocked', blocker=str(error))
+        last = report['stages'][-1] if report['stages'] else {}
+        kind = failure_kind(last.get('name', ''), last)
+        report.update(status='blocked', blocker=str(error), blockerKind=kind)
     finally:
         if sources != source_inputs(ROOT):
             report.update(status='invalid-evidence', blocker='source-inputs-changed')

@@ -18,13 +18,14 @@ def main() -> None:
     if len(sys.argv) < 3:
         raise SystemExit('usage: capture.py STATUS_FILE COMMAND [ARG ...]')
     status_file = Path(sys.argv[1])
-    try:
-        status = {'returncode': subprocess.call(sys.argv[2:])}
-    except OSError as error:
-        print(f'compiler spawn failed: {error}', file=sys.stderr)
-        status = {'spawnError': type(error).__name__}
-    # A separate status keeps arbitrary compiler stdout out of the protocol.
+    # Reserve the receipt before launching a compiler: an existing attempt must
+    # fail without executing another command or overwriting any evidence.
     with status_file.open('x', encoding='utf-8') as stream:
+        try:
+            status = {'returncode': subprocess.call(sys.argv[2:])}
+        except OSError as error:
+            print(f'compiler spawn failed: {error}', file=sys.stderr)
+            status = {'spawnError': type(error).__name__}
         json.dump(status, stream)
         stream.write('\n')
 

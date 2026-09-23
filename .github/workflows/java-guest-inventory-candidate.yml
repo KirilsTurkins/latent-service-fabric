@@ -1,0 +1,71 @@
+# Temporary branch-only transport for a large reviewed inventory candidate.
+# It creates an unreferenced Git blob, never a commit/ref or an applied inventory.
+# Remove this workflow when the independently reviewed candidate is committed.
+name: Java guest inventory candidate
+on:
+  push:
+    branches: ['feat/java-guest-capsules-548']
+permissions:
+  contents: read
+jobs:
+  candidate:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/feat/java-guest-capsules-548'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13.5'
+      - run: python3 -m pip install PyYAML==6.0.3
+      - name: Prepare but do not apply the reviewed Java workflow addition
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, difflib, hashlib, json, os
+          from pathlib import Path
+          import urllib.request
+          from tools import ci_coverage
+          path = Path('tools/ci/commands.json')
+          original = path.read_bytes()
+          git_hash = lambda b: hashlib.sha1(b'blob ' + str(len(b)).encode() + b'\0' + b).hexdigest()
+          assert git_hash(original) == '5cf5fa5aa23b343f57ce134700524509e87e0bc7', 'base inventory changed'
+          data = json.loads(original)
+          workflow = '.github/workflows/java-guest-feasibility.yml'
+          additions = ci_coverage.workflow_commands(workflow, Path(workflow).read_text())
+          assert not (data['after'].keys() & additions.keys()), 'not additive'
+          data['after'].update(additions)
+          assert workflow not in data['workflowIdentities']
+          data['workflowIdentities'][workflow] = hashlib.sha256(Path(workflow).read_bytes()).hexdigest()
+          owners = ci_coverage.delegated_owners(Path.cwd(), data['after'])
+          assert all(owners[k] == v for k, v in data['delegatedOwners'].items()), 'existing owner changed'
+          assert set(owners) - set(data['delegatedOwners']) == {'sdk/java-guest/tools/feasibility.py'}
+          data['delegatedOwners'] = owners
+          candidate = (json.dumps(data, indent=2, sort_keys=True) + '\n').encode()
+          out = Path(os.environ['RUNNER_TEMP']) / 'java-inventory-review'
+          out.mkdir()
+          (out / 'commands.json').write_bytes(candidate)
+          diff = ''.join(difflib.unified_diff(original.decode().splitlines(True), candidate.decode().splitlines(True), fromfile='before/commands.json', tofile='after/commands.json'))
+          (out / 'commands.diff').write_text(diff)
+          print(diff)
+          payload = json.dumps({'content': base64.b64encode(candidate).decode(), 'encoding': 'base64'}).encode()
+          request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs', data=payload, method='POST', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'})
+          with urllib.request.urlopen(request, timeout=30) as response:
+              blob = json.load(response)
+          assert blob['sha'] == git_hash(candidate)
+          result = {'path': str(path), 'sha': blob['sha'], 'baseBlob': git_hash(original), 'sha256': hashlib.sha256(candidate).hexdigest(), 'checkout': os.environ['GITHUB_SHA'], 'applied': False, 'requiredRemoval': '.github/workflows/java-guest-inventory-candidate.yml'}
+          (out / 'candidate.json').write_text(json.dumps(result, indent=2) + '\n')
+          print(json.dumps(result))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: java-inventory-review-${{ github.sha }}
+          path: ${{ runner.temp }}/java-inventory-review/
+          if-no-files-found: error
+          retention-days: 7
