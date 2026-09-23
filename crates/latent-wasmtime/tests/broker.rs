@@ -12,6 +12,50 @@ use fixture::*;
 mod async_io;
 
 #[tokio::test]
+async fn clock_charges_bound_native_fuel_and_preserve_exhaustion_classification() {
+    use latent_core::{ActivationBudget, EffectiveActivationBudget};
+    use latent_executor::GuestInterruptionKind;
+    for yielding in [None, Some(10_000)] {
+        let mut ceiling = support::budget();
+        ceiling.cpu_fuel = 20_000;
+        let f = Fixture::with_component(ceiling.clone(), component::spin_after_clocks(), yielding)
+            .await;
+        for _ in 0..2 {
+            let (mut request, mut control) = f.request("clock-fuel-exhaustion");
+            request.budget = ceiling.clone();
+            request.activation.budget = ceiling.clone();
+            control.budget = ActivationBudget::new(
+                EffectiveActivationBudget::admit_at(
+                    &ceiling,
+                    &ceiling,
+                    &ceiling,
+                    None,
+                    ClockSample::system_now(),
+                )
+                .unwrap(),
+            );
+            let report = f.backend.invoke_contained(request, &control).await;
+            let GuestOutcome::Interrupted {
+                kind, consumption, ..
+            } = report.outcome.unwrap()
+            else {
+                panic!("real guest must exhaust the remaining native fuel");
+            };
+            assert_eq!(kind, GuestInterruptionKind::FuelExhausted);
+            assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+            let finalization = control
+                .budget
+                .finalize_at(Some(&consumption), Instant::now());
+            assert!(finalization.violation().is_none());
+            assert_eq!(consumption.cpu_fuel, 19_800);
+            assert_eq!(finalization.consumption().cpu_fuel, 20_000);
+            f.idle();
+        }
+        assert_eq!(f.clock.calls.load(Ordering::Acquire), 4);
+    }
+}
+
+#[tokio::test]
 async fn real_guest_runs_with_the_original_phase3_ledger_and_unused_counters_stay_zero() {
     use latent_core::{ActivationBudget, BudgetProfile, EffectiveActivationBudget};
     let mut ceiling = support::budget();
