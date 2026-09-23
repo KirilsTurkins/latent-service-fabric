@@ -3,7 +3,7 @@
 
 Linux with readable pressure metrics, Python 3.13; one node, one bounded HTTP
 peer, at most 384 controls, 48 activations, 17 deployments. Native guests use a
-180-second overall deadline; TypeScript's cold engine compilation allows 900.
+180-second overall deadline; Go, TypeScript and .NET cold compilation allow 900.
 Credentials are public test-only values confined to private temporary files.
 """
 from __future__ import annotations
@@ -60,8 +60,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                 work = Path(temporary)
                 for name in ("client", "node", "peer"):
                     (work / name).mkdir(mode=0o700)
-                seconds = 900 if language in {"typescript", "dotnet"} else 180
-                invocation_millis = 120000 if language in {"typescript", "dotnet"} else 5000
+                seconds = 900 if language in {"go", "typescript", "dotnet"} else 180
+                invocation_millis = 120000 if language in {"go", "typescript", "dotnet"} else 5000
                 result["limits"] = {"overallSeconds": seconds, "invocationMillis": invocation_millis}
                 client = RecordingClient(cli, work / "client", cancellation, time.monotonic() + seconds,
                                          evidence=evidence / "controls", invocation_timeout_millis=invocation_millis)

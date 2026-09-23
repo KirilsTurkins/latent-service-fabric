@@ -43,7 +43,7 @@ def inputs(language="rust"):
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py",
-                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py")
+                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml")
     elif language == "typescript":
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
                     "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
@@ -136,14 +136,14 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
             environment["CARGO_NET_OFFLINE"] = "true"
         paths, materials = resolve_tools(pins, ROOT, environment)
         environment["RUSTC"] = str(paths["rustc"])
-        cargo_options = ["--config", ROOT / ".cargo/managed-guest.toml"] if language in {"typescript", "dotnet"} else []
+        cargo_options = ["--config", ROOT / ".cargo/managed-guest.toml"] if language in {"go", "typescript", "dotnet"} else []
         if language == "typescript":
             environment["LSF_TYPESCRIPT_TOOLS"] = str(typescript_tools)
         if language == "dotnet":
             environment["LSF_DOTNET_TOOLS"] = str(dotnet_tools)
         commands = Commands(ROOT, output, environment, **(
-            {"deadline_seconds": 3600, "command_seconds": 1800} if language in {"typescript", "dotnet"} else {}))
-        result["commandLimits"] = {"overallSeconds": 3600 if language in {"typescript", "dotnet"} else 900,
+            {"deadline_seconds": 3600, "command_seconds": 1800} if language in {"go", "typescript", "dotnet"} else {}))
+        result["commandLimits"] = {"overallSeconds": 3600 if language in {"go", "typescript", "dotnet"} else 900,
                                    "perCommandSeconds": commands.command_seconds}
         result["tools"] = materials
         stage = "host-build"

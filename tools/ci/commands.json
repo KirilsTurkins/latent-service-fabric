@@ -858,7 +858,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --example go_runtime_probe -- \"$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm\" 2>&1 | tee \"$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log\""
+      "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example go_runtime_probe -- \"$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm\" 2>&1 | tee \"$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log\""
     },
     ".github/workflows/go-guest.yml:upstream-probe:Check standalone project source boundaries": {
       "workflow": ".github/workflows/go-guest.yml",

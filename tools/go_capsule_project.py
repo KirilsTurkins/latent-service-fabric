@@ -39,7 +39,7 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
         files.update({"wit/deps/" + package + "/" + path: data
                       for path, data in snapshot(ROOT / "wit/platform" / package).items()})
     limits = json.loads(read_file(ROOT / "examples/echo-contract/capsule.json"))["execution"]["limits"]
-    limits.update(cpuFuel=1_000_000_000, memoryBytes=67_108_864, wallTimeLimitMillis=5000, logBytes=0)
+    limits.update(cpuFuel=1_000_000_000, memoryBytes=67_108_864, wallTimeLimitMillis=120000, logBytes=0)
     if template == "http-status":
         limits.update(outboundRequests=1)
     project = {"formatVersion": 1, "name": name, "version": "1.0.0", "tenant": "examples",
