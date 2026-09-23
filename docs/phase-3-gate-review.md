@@ -13,15 +13,65 @@ This review starts from development
 `6c63b68064ae44284d931e80d76d1e9012189b2b`, after the integrated security and
 guide-execution changes were merged. It does not certify a later integration
 commit merely because that commit contains the same documentation.
-The current runtime integration is development
+The preceding runtime integration is development
 `532364d697b1b93f2b3187e0df367f878023e91a`, reviewed on September 23, 2026.
 [Full CI 35818046307](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35818046307)
 passed at selected source `193d52c37635026de416feffd4a2dfd57d082451`; its actual
 PR checkout and the development squash have identical Git trees. The
-[current integration receipt set](evidence/phase3-integration-35818046307/README.md)
+[preceding integration receipt set](evidence/phase3-integration-35818046307/README.md)
 retains the original security, six-client, browser, provider, publication,
 protected Angular, static-site and bounded resource results. Earlier receipts
 below keep their original execution identities and measurement scopes.
+
+## Repository execution review, September 23
+
+Development `8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21` passed
+[full CI 35879906121](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35879906121).
+The [execution review](evidence/feature-validation-2026-09-23/review.json)
+records the source tree, successful jobs, intentionally skipped steps, original
+artifact identities and hashes of 36 unmodified receipts and local outputs.
+Every registered active libtest name was found in the successful workspace log.
+Both custom compiler harness markers and the complete supervisor case coverage
+were independently checked with the maintained discovery validator.
+
+| Implemented boundary | Result at this source | Evidence |
+| --- | --- | --- |
+| Core contracts, admission, scheduling, routing, durable storage, CLI and node | All 166 registered targets discovered, with 2,718 active cases. The workspace log records 2,742 passing results, including custom/subprocess results; these are not an additional population of unique cases. Separate doctest and signing-compatibility recipes pass. | [Execution index](evidence/feature-validation-2026-09-23/review.json) |
+| Actual component execution and separate-node behavior | The bounded conformance workflow passes its 19 cases, covering isolation, fresh stores, budgets, cancellation, failure recovery, routing and shutdown. | [Conformance](evidence/feature-validation-2026-09-23/bounded-conformance.json) |
+| Capability authority, networking and protected startup | The PR security matrix passes 27 entries in 13 groups. Compiler sandbox and supervisor harnesses also pass. The fresh local build passes all 14 protected-file tests, including the privileged foreign-owner case omitted from ordinary CI. | [Security](evidence/feature-validation-2026-09-23/security-pr.json), [local execution](evidence/feature-validation-2026-09-23/local/receipt.json) |
+| HTTP, local blobs and durable policies | Separate CLI/node/provider operations pass with revocation and retained deployment selection across restart. A fresh local build passes 28 blob storage/recovery cases and 15 policy CLI calls across two node starts, including exact replay and persisted revocation. | [Provider management](evidence/feature-validation-2026-09-23/provider-management.json), [local execution](evidence/feature-validation-2026-09-23/local/receipt.json) |
+| External providers and event triggers | All 19 selected S3, Vault, NATS publication and NATS trigger cases pass against their pinned real services; runner cleanup is acknowledged. This preserves each provider's declared subset and immediate-operation uncertainty. | [Provider lane](evidence/feature-validation-2026-09-23/lanes/provider.json) |
+| Packaging, OCI, publication authority, rollout and recovery | Verified-TLS Zot tests and the operator, publication, offline and security-profile workflows pass. Independent publications, revoked admission and retained offline invocation are exercised. | [Operator](evidence/feature-validation-2026-09-23/operator/operator-receipt.json), [publication](evidence/feature-validation-2026-09-23/operator/publication-receipt.json), [offline](evidence/feature-validation-2026-09-23/operator/offline-receipt.json), [profile](evidence/feature-validation-2026-09-23/operator/security-profile-receipt.json) |
+| Angular rendering and browser boundaries | Eight renderer selections pass. The actual Angular component passes protected T1 admission, browser hydration, staged rollout, CAS rollback and restart with retained native cache. The separate controlled-Node browser receipts retain their narrower rendering claim. | [Renderer lane](evidence/feature-validation-2026-09-23/lanes/renderer.json), [Angular T1](evidence/feature-validation-2026-09-23/operator/angular-t1-receipt.json) |
+| Static/CSR hosting | Signed exact-digest OCI transfer, two-version browser navigation, deep-link reloads, missing-file behavior, mounted redirects, cutover, rollback and revoked/foreign authority checks pass. Static snapshots retain zero active reservations and zero granted execution-cell leases. | [Static workflow](evidence/feature-validation-2026-09-23/operator/static-site-receipt.json) |
+| Existing six-language network clients | All six existing client workflows pass their shared real-node matrix. The separate new capsule-authoring tickets remain with their implementation owner. | [Client matrix](evidence/feature-validation-2026-09-23/clients/matrix.json) |
+| Bounded dormant-resource regression | The small retained resource workflow passes. Large scale and performance campaigns were not rerun. | [Resource receipt](evidence/feature-validation-2026-09-23/operator/resource-receipt.json) |
+| Printed first-node workflow | Eight Bash blocks from the current guide execute against a freshly built CLI, node and echo component: create/start, publish, deploy, success, declared error, durable restart, delete and stop. Preparation uses provisioned tools and a dependency cache. | [Local execution](evidence/feature-validation-2026-09-23/local/receipt.json) |
+
+The [ignored-case execution trace](evidence/feature-validation-2026-09-23/ignored-execution-review.json)
+accounts for all 150 registered ignored cases: 124 are traced to current CI
+logs or successful owned integration lanes, and one additional ownership case
+passes locally. The remaining 25 entries are classified individually. They
+include manual 100,000-item/resource/performance collectors, Harbor and full
+Angular-reference qualification, a supplied-configuration diagnostic, and child
+entry points whose parent workflows retain the outcome. An absent individual
+libtest line is not treated as either an executed pass or a feature failure.
+
+The local source copy verified 4,361 Git blobs against the selected commit and
+excluded only retained benchmark evidence. CLI and node builds used the locked
+dependency graph offline with fresh target outputs. No SDK authoring source or
+ticket was changed by this review.
+
+Earlier [Harbor/network qualification](reference/oci-network-profile.md),
+[full authenticated Angular reference](testing/angular-reference-workflow.md),
+[resource campaigns](testing/phase3-resource-recovery.md) and
+[installed-bundle VM qualification](development/native-release-gate.md) keep
+their original identities. They were not rerun or relabelled here. Angular
+compilation still reports unchecked reproducibility and incomplete declared
+dependency coverage. This review covers the declared Linux x86_64 T0/T1
+profiles; T2 guest-process containment and production certification remain
+outside it. Human guide review, complete-site deployment, six-language authoring
+and the final phase decision remain pending. Runtime publication is on hold.
 
 ## Dependency and evidence closure
 
