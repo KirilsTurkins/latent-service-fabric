@@ -155,3 +155,11 @@ crate-type = ["cdylib"]
 test = false
 bench = false
 doc = false
+
+[[example]]
+name = "dotnet-closed-runtime"
+path = "../../sdk/dotnet-guest/runtime/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
