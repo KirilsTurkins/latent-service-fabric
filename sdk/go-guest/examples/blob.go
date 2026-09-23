@@ -2,11 +2,18 @@ package export_tests_local_blobs_api
 
 import (
 	wit "go.bytecodealliance.org/pkg/wit/types"
+	"runtime"
 	raw "wit_component/latent_blob_blob"
 	blob "wit_component/lsf/blob"
 )
 
+var invocations uint32
+
 func Run(which uint32, _ string, handle uint64) uint64 {
+	invocations++
+	if invocations != 1 {
+		panic("blob fixture must start with fresh guest state")
+	}
 	// Raw generated access is used only by the stale-host-handle negative cases.
 	if which == 2 || which == 4 {
 		if which == 2 {
@@ -26,6 +33,24 @@ func Run(which uint32, _ string, handle uint64) uint64 {
 	}
 	if which == 5 {
 		return raw.Create("text/plain", wit.Some[uint64](0)).Ok()
+	}
+	if which == 1 {
+		// The real SDK cancellation case holds Create pending in the provider.
+		// Rendezvous with four bounded application goroutines before that wait;
+		// cancellation must reclaim their stacks without running Go defers.
+		started := make(chan struct{}, 4)
+		parked := make(chan struct{})
+		for worker := 0; worker < 4; worker++ {
+			go func() {
+				started <- struct{}{}
+				<-parked
+			}()
+		}
+		for worker := 0; worker < 4; worker++ {
+			<-started
+		}
+		runtime.Gosched()
+		defer close(parked)
 	}
 	writer := blob.Create("text/plain", wit.Some[uint64](4)).Ok()
 	if which == 1 {
