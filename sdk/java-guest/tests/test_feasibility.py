@@ -58,6 +58,7 @@ class EvidenceTests(unittest.TestCase):
         cases = [('java-version', 'OpenJDK Runtime Environment (build 25.0.4.1+1-LTS)', '25.0.4.1+1'),
                  ('gradle-version', 'Gradle 9.1.0\n', '9.1.0'),
                  ('zig-version', '0.16.0\n', '0.16.0'),
+                 ('clang-version', 'clang version 21.1.4 (https://github.com/llvm/llvm-project)\n', '21.1.4'),
                  ('wit-bindgen-version', 'wit-bindgen-cli 0.62.0\n', '0.62.0'),
                  ('wasm-tools-version', 'wasm-tools 1.254.0\n', '1.254.0')]
         for stage, log, expected in cases:

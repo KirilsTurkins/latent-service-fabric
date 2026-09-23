@@ -42,6 +42,7 @@ def verify_version(stage: str, log: str, expected: str) -> None:
         'java-version': r'build ([^\s),]+)',
         'gradle-version': r'^Gradle (\S+)$',
         'zig-version': r'^(\S+)$',
+        'clang-version': r'^clang version (\S+)',
         'wit-bindgen-version': r'^wit-bindgen(?:-cli)? (\S+)$',
         'wasm-tools-version': r'^wasm-tools (\S+)',
     }
@@ -84,9 +85,15 @@ def new_output(path: Path, root: Path = ROOT) -> Path:
     return output
 
 
-def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str,
+def probe(output: Path, gradle: str, wasi_sdk: str, bindgen: str, wasm_tools: str,
           bootstrap_dependencies: bool = False) -> dict:
     config = tomllib.loads((ROOT / 'tools/toolchain.toml').read_text())
+    wasi_sdk = Path(wasi_sdk).resolve()
+    version = (wasi_sdk / 'VERSION').read_text().splitlines()
+    if version != ['29.0', 'wasi-libc: ac020b86fd44', 'llvm: 222fc11f2b8f',
+                   'llvm-version: 21.1.4', 'config: f992bcc08219']:
+        raise ProbeFailure('unreviewed-wasi-sdk-version')
+    clang = str(wasi_sdk / 'bin/clang')
     sources = source_inputs(ROOT)
     report = {'formatVersion': 1, 'candidate': 'teavm-0.15.0-c',
               'status': 'running', 'qualified': False, 'lsfExecution': 'not-run',
@@ -139,7 +146,7 @@ def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str,
         for stage, command, expected in (
             ('java-version', ['java', '-version'], config['sdk']['java']),
             ('gradle-version', [gradle, '--version'], config['sdk']['gradle']),
-            ('zig-version', [zig, 'version'], config['sdk']['zig']),
+            ('clang-version', [clang, '--version'], '21.1.4'),
             ('wit-bindgen-version', [bindgen, '--version'], config['rust']['dependencies']['wit-bindgen']),
             ('wasm-tools-version', [wasm_tools, '--version'], config['contracts']['wasm-tools']),
         ):
@@ -177,8 +184,12 @@ def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str,
         run('wit-bindings', [bindgen, 'c', str(output / 'wit'), '--world', 'capsule',
                             '--rename-world', 'probe', '--out-dir', str(output / 'bindings')])
         core = output / 'probe.core.wasm'
-        run('c-to-wasm', [zig, 'cc', '-target', 'wasm32-wasi', '-std=c11', '-O2',
-                         '-DLSF_TEAVM_WASM=1', '-DTEAVM_USE_SETJMP=0', '-DTEAVM_CUSTOM_LOG=1',
+        # Use WASI-SDK's supported exception lowering, not disabled Java
+        # exceptions or fabricated setjmp success. Standard EH, not legacy EH.
+        run('c-to-wasm', [clang, '-target', 'wasm32-wasip1', '-std=c11', '-O2',
+                         '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
+                         '-mllvm', '-wasm-enable-sjlj', '-lsetjmp',
+                         '-mllvm', '-wasm-use-legacy-eh=false',
                          '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory',
                          '-Wl,-z,stack-size=65536', '-I', str(output / 'bindings'),
                          '-iquote', str(generated), str(generated / 'all.c'),
@@ -207,12 +218,12 @@ def main() -> int:
     parser.add_argument('--bootstrap-dependencies', action='store_true',
                         help='write unreviewed candidates only inside the fresh output directory')
     parser.add_argument('--gradle', default='gradle')
-    parser.add_argument('--zig', default='zig')
+    parser.add_argument('--wasi-sdk', required=True)
     parser.add_argument('--wit-bindgen', default='wit-bindgen')
     parser.add_argument('--wasm-tools', default='wasm-tools')
     args = parser.parse_args()
     try:
-        report = probe(new_output(args.output), args.gradle, args.zig, args.wit_bindgen, args.wasm_tools,
+        report = probe(new_output(args.output), args.gradle, args.wasi_sdk, args.wit_bindgen, args.wasm_tools,
                        args.bootstrap_dependencies)
     except (OSError, ValueError) as error:
         print(f'Java feasibility preflight failed: {error}', file=sys.stderr)
