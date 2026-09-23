@@ -6,6 +6,9 @@
 wit_bindgen::generate!({
     path: "../../sdk/dotnet-guest/runtime/wit",
     world: "closed",
+    with: {
+        "latent:clock/monotonic@0.1.0": generate,
+    },
 });
 
 use exports::wasi::{cli, clocks, filesystem, io, random};
