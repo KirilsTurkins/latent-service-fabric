@@ -1,6 +1,6 @@
 # Exact capability bindings
 
-`latent_control_store::bindings` implements [#207](https://github.com/KirilsTurkins/latent-service-fabric/issues/207).
+`latent_control_store::bindings` compiles checked capability bindings.
 A trusted node composition supplies its catalog, sealed capability broker,
 installed provider references and binding definitions. The compiler checks the
 retained package WIT and publishes immutable plans with the existing deployment
@@ -75,18 +75,21 @@ eligibility and prompt rejection under fixed-cell saturation.
 The generic `RouteSnapshot.bindings` projection and legacy `resolve_binding`
 interface remain descriptive/unavailable: they cannot express this operation's
 sealed authority. Live plans reside in the same internal immutable catalog as
-routes. Standalone provider configuration/management and other guest adapters
-remain their separate Phase 3 work; enabling policy CRUD alone does not install
-these plans or enable external capabilities.
+routes. [Standalone provider configuration](../reference/standalone-providers.md)
+installs the selected HTTP/local-blob providers and their host bindings. Other
+provider installations and isolated-local target bindings use trusted Rust
+composition. Enabling policy CRUD alone does not install plans or capabilities.
 
 ## Recovery and bounds
 
 Desired definitions use optional `capability_bindings` inside the existing
-checksummed `catalog.json` envelope. Nonempty definitions select format 6;
-formats 1 through 5 remain readable, and catalogs without definitions retain
-format 5. Older binaries cannot read format 6. Recovery validates the retained definitions but restores no live
-provider references or grants. The trusted node must explicitly recompile and
-commit them against its current policy owner and installations before use.
+checksummed `catalog.json` envelope. Nonempty definitions select format 6 unless
+HTTP route state selects format 7; catalogs with neither use format 5. The current
+node accepts these three formats and rejects obsolete formats 1 through 4 with
+`unsupported-catalog-format-use-fresh-state`. Recovery validates the retained
+definitions but restores no live provider references or grants. The trusted node
+must explicitly recompile and commit them against its current policy owner and
+installations before use.
 
 Defaults cap definitions at 256, deployed binding plans at 128, installed
 provider facts at 128, graph depth at 16, retained generations at 16, each

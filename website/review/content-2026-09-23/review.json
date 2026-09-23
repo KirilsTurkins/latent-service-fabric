@@ -1539,10 +1539,12 @@
     },
     {
       "source": "docs/runtime/capability-bindings.md",
-      "words": 942,
-      "sha256": "aa58c87fb881bd6497bf58213c153f160f2eddeba488d9cdef22b44eb898abd0",
-      "status": "pending",
-      "findings": []
+      "words": 961,
+      "sha256": "6f66fd1a46e5a35cdf765811d2bacd74dcda6efff4bde2356f5dd5a2956e8059",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete selection, live authority, persistence and bounds contract. Checked current persistence encoding/decoding: formats 5/6/7 remain active; obsolete 1-4 are rejected. Corrected the old format and standalone configuration claims."
+      ]
     },
     {
       "source": "docs/runtime/capability-broker.md",
@@ -1599,38 +1601,48 @@
     },
     {
       "source": "docs/runtime/local-secrets.md",
-      "words": 1418,
-      "sha256": "7506d78dcffb17e3be096c0aa6e33d77c057c93d990cfa2ddf66bef4103bf5cd",
-      "status": "pending",
-      "findings": []
+      "words": 1415,
+      "sha256": "91da4837bfc06fa80c2df9ca28bf971f563e2f7cc2fe18b0d0462223301807af",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete protected source, rotation, plaintext, ownership and validation contract. Distinguished standalone protected HTTP credential files from the Rust-installed guest secret store; removed the completed-ticket future claim."
+      ]
     },
     {
       "source": "docs/runtime/local-service-invocation.md",
-      "words": 1075,
-      "sha256": "f3e3751d973d35ae400b3df2a5e08ba15cac54b739b62a07ec317bbc80633ba5",
-      "status": "pending",
-      "findings": []
+      "words": 1093,
+      "sha256": "530a88d716c44e206f1e5f95af56cbbaf496988a80661f9053190d0a8598c097",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete target, identity, deadline, descendant budget and cleanup contract. Verified conditional adapter installation in standalone/start.rs and host-only JSON binding construction; documented the trusted local binding composition."
+      ]
     },
     {
       "source": "docs/runtime/nats-events.md",
-      "words": 1377,
-      "sha256": "174d8e435c215df0aefcf5e10b8e9c207a5de924a5c0f0105cb346908646992d",
-      "status": "pending",
-      "findings": []
+      "words": 1371,
+      "sha256": "4075b879e16ea1416a31f81b56cc083e364f274bacba6f2c18d6c9125c5d68bb",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete transport, receipt, duplicate-window, budget, ownership and credential contract alongside the current real-broker qualification. Corrected the embedding-only installation boundary."
+      ]
     },
     {
       "source": "docs/runtime/nats-triggers.md",
-      "words": 1225,
-      "sha256": "79e6b95024a1da64a4bd904de545d25b815162261139166f3013e7f0acb788b5",
-      "status": "pending",
-      "findings": []
+      "words": 1243,
+      "sha256": "ca815eb218a92b5da607ab979da6821a9575998749988adcb8cbbfe83c75fe26",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete authority, pull ownership, ACK/NAK/TERM, configuration and shutdown contract alongside the real-broker qualification. Corrected the embedding-only installation boundary."
+      ]
     },
     {
       "source": "docs/runtime/outbound-http.md",
-      "words": 1241,
-      "sha256": "3aa3f35720031412e13b5b996b33be0b0aa7e6ab96d35d3786efc3b2c9bc458d",
-      "status": "pending",
-      "findings": []
+      "words": 1239,
+      "sha256": "f0f44440b3f42901b866d311c3f8f1cea2db079dd4a5ed7576a3f8793b56d222",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete destination, DNS/TLS, credential, redirect, uncertainty, storage and ownership contract. Linked the implemented standalone HTTP configuration instead of describing it as a future ticket."
+      ]
     },
     {
       "source": "docs/runtime/protected-configuration.md",
@@ -1664,17 +1676,21 @@
     },
     {
       "source": "docs/runtime/s3-blobs.md",
-      "words": 1408,
-      "sha256": "7189c023ccfc5fd043afe0acae400c4f2e5ba55ec55e052a002259f8e8708a92",
-      "status": "pending",
-      "findings": []
+      "words": 1414,
+      "sha256": "4c554db6132fb8236379e1837bf68e440bc6041ff62c5dac47d2c2407b8c0ed2",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete signed transport, staging, immutable versioned reads, retained uncertainty and operator reconciliation contract alongside current MinIO qualification. Corrected the embedding-only installation boundary."
+      ]
     },
     {
       "source": "docs/runtime/streaming-http.md",
-      "words": 1414,
-      "sha256": "3d207abb3dfaeb1c8bac131bde642e6765524f61e629dc8636b866bacfdc0e22",
-      "status": "pending",
-      "findings": []
+      "words": 1429,
+      "sha256": "c3a4c1245bfab4cb734d5842b15aa46db8845728142b061997c167afbed83c9d",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete owned resource, transfer/backpressure, framing, cancellation and authority contract. Corrected the standalone installation claim; retained the documented versioned ABI and bounded conformance scope."
+      ]
     },
     {
       "source": "docs/runtime/transport-connection-deadlines.md",
@@ -1692,10 +1708,12 @@
     },
     {
       "source": "docs/runtime/vault-secrets.md",
-      "words": 1262,
-      "sha256": "dba45f44580f00a2120d1a9e3007c0dc7b3f75fdd5dfc0e48c1a226964a52b1d",
-      "status": "pending",
-      "findings": []
+      "words": 1255,
+      "sha256": "e5c51bc20033e60d7c3a3d69e485cfb55e031c1bb1a02a06f20311c3dffb2d0f",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete endpoint, rotation, TTL, cache ownership, disclosure and failure contract alongside current real-Vault qualification. Corrected the embedding-only installation boundary."
+      ]
     },
     {
       "source": "docs/runtime/wasmtime.md",

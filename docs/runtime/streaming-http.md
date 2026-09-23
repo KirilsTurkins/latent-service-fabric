@@ -8,8 +8,9 @@ GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS are supported. A 4xx/5xx status 
 a response. No ambient network authority, WebSocket, CONNECT, protocol upgrade,
 automatic replay or automatic redirect is provided.
 
-This is an explicit trusted embedding API. Standalone provider composition remains
-[#226](https://github.com/KirilsTurkins/latent-service-fabric/issues/226).
+Install this provider through the trusted Rust embedding API. The current
+[standalone provider configuration](../reference/standalone-providers.md)
+exposes buffered HTTP and local blobs; it has no streaming HTTP installation field.
 
 ```rust,ignore
 let provider = StreamingHttpProvider::install(pools.clone(), "streaming", 1, 0,
