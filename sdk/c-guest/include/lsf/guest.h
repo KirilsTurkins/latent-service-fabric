@@ -2,6 +2,11 @@
 #ifndef LSF_GUEST_H
 #define LSF_GUEST_H
 #include "probe.h"
+#if defined(__has_include)
+#if __has_include("probe_aliases.h")
+#include "probe_aliases.h"
+#endif
+#endif
 #include "ownership.h"
 
 /* Borrowed literals are valid only while the generated call borrows them.

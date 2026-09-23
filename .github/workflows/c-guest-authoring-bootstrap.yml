@@ -14,6 +14,9 @@ jobs:
         with:
           persist-credentials: false
           show-progress: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: 3.13.5
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613
         with:
           version: 1.254.0
@@ -23,10 +26,14 @@ jobs:
       - name: Install verified guest binding generator
         run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
       - name: Compile real C guests
-        run: python3 sdk/c-guest/tools/compile.py --output "$RUNNER_TEMP/c-guests"
-      - name: Inspect integration registration and source profiles
-        if: always()
+        run: python3 -m tools.c_guest.compiler --output "$RUNNER_TEMP/c-guests"
+      - name: Diagnose repository-source compilation only
+        if: failure()
         run: |
-          git grep -n 'fixture.*blob\|C_GUEST_BUILD_TYPE\|c-guest/v1' -- crates/latent-signing schemas tools/tests/test_build_provenance.py | head -100
-          sed -n '1,180p' tools/ci_coverage.py
-          git grep -n 'guest_sdk\|test_guest\|build_guest_capsules' -- .github/workflows/ci.yml tools/ci* | head -80
+          for d in "$RUNNER_TEMP"/c-guests/*; do
+            test -f "$d/bindings/probe.h" || continue
+            name=$(basename "$d")
+            source="sdk/c-guest/examples/$name.c"
+            if test "$name" = blob; then source=sdk/c-guest/blob.c; fi
+            timeout 120s zig cc -std=c11 -target wasm32-wasi -Wall -Wextra -Werror -fsyntax-only -I "$d/bindings" -I sdk/c-guest/include "$source" "$d/bindings/probe.c" || true
+          done

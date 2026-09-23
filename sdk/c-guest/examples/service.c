@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-#include "lsf/guest.h"
+#include "lsf/service.h"
 #include "lsf/async.h"
 
 struct frame {
@@ -35,8 +35,7 @@ static probe_callback_code_t finish(struct frame *frame, lsf_async_result_t resu
         default: __builtin_trap();
         }
     }
-    if (result != LSF_ASYNC_CANCELLED)
-        latent_service_invoke_invocation_outcome_free(&frame->result);
+    if (result != LSF_ASYNC_CANCELLED) lsf_service_outcome_close(&frame->result);
     lsf_async_close(&frame->async);
     lsf_frame_leave(frame);
     free(frame);

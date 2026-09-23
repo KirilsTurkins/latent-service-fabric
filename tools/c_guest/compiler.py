@@ -1,26 +1,20 @@
-#!/usr/bin/env python3
 """Pinned, bounded C-to-component compilation; never executes a guest."""
 from __future__ import annotations
 
-import hashlib
+import argparse
 import json
 from pathlib import Path
 import shutil
-import sys
 import time
 import tomllib
 
-ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT))
 from tools.build_process import run_bounded
 from tools.build_observation import build_environment, file_identity
-from tools.stage_runtime_wit import stage
+from tools.c_guest.bindings import digest, generate
 
+ROOT = Path(__file__).resolve().parents[2]
 SDK = ROOT / "sdk/c-guest"
-
-
-def digest(data: bytes) -> str:
-    return "sha256:" + hashlib.sha256(data).hexdigest()
+CAPABILITIES = ("blob", "callee", "events", "http", "metrics", "random", "secrets", "service", "streaming")
 
 
 class Compiler:
@@ -68,19 +62,11 @@ class Compiler:
                 trap: bool = True) -> tuple[Path, dict]:
         if not sources or len(sources) > 64:
             raise ValueError("C source count must be between 1 and 64")
-        if memory_bytes < 2 * 1024 * 1024 or memory_bytes > 64 * 1024 * 1024 or memory_bytes % 65536:
+        if any(path.is_symlink() or not path.is_file() or path.stat().st_size > 262144 for path in sources):
+            raise ValueError("invalid or oversized C source")
+        if isinstance(memory_bytes, bool) or memory_bytes < 2 * 1024 * 1024 or memory_bytes > 64 * 1024 * 1024 or memory_bytes % 65536:
             raise ValueError("C memory ceiling must be page-aligned and between 2 and 64 MiB")
-        destination.mkdir(parents=True, exist_ok=False)
-        staged = destination / "wit"
-        stage(staged, wit_source)
-        generated = destination / "bindings"
-        generated.mkdir()
-        self.run("wit-bindgen", "c", str(staged), "--world", world,
-                 "--rename-world", "probe", "--out-dir", str(generated))
-        names = {path.name for path in generated.iterdir()}
-        if names != {"probe.h", "probe.c", "probe_component_type.o"}:
-            raise ValueError("unexpected generated C binding outputs")
-        binding_identity = {name: digest((generated / name).read_bytes()) for name in sorted(names)}
+        generated, lock = generate(self.run, wit_source, world, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=c11", "-target", "wasm32-wasi", "-O2",
                    "-Wall", "-Wextra", "-Werror", "-mexec-model=reactor",
@@ -98,33 +84,47 @@ class Compiler:
         if "wasi:" in actual or "wasi_snapshot_preview1" in actual:
             raise ValueError("ambient WASI is outside the C capsule authoring profile")
         self.check_unchanged()
-        return component, {"formatVersion": 1, "world": world,
-                           "generator": self.run("wit-bindgen", "--version").strip(),
-                           "outputs": binding_identity}
+        return component, lock
+
+
+def safe_output(output: Path) -> Path:
+    original = output.absolute()
+    if any(path.is_symlink() for path in (original, *original.parents)):
+        raise ValueError("C output cannot traverse a symlink")
+    output = original.resolve()
+    if (output.exists() or output == ROOT or output in ROOT.parents or
+            (ROOT in output.parents and ROOT / "target" not in output.parents)):
+        raise ValueError("choose a new output under target or outside the repository")
+    return output
+
+
+def build_capabilities(compiler: Compiler, output: Path) -> dict:
+    profiles = ROOT / "tools/toolchain-smoke/examples"
+    actual = {path.stem for path in (SDK / "examples").glob("*.c")}
+    if actual != set(CAPABILITIES) - {"blob"}:
+        raise ValueError("missing or unregistered C capability example")
+    observations = {}
+    for name in CAPABILITIES:
+        profile_path = profiles / ("guest_" + name) / "profile.json"
+        profile = json.loads(profile_path.read_text())
+        source = SDK / "blob.c" if name == "blob" else SDK / "examples" / (name + ".c")
+        print(f"C guest compile: {name}", flush=True)
+        component, lock = compiler.compile([source], profile_path.parent, profile["world"],
+                                          output / name, trap=name != "blob")
+        observations[name] = {"componentDigest": digest(component.read_bytes()),
+                              "componentBytes": component.stat().st_size, "bindings": lock}
+        print(json.dumps({"name": name, **observations[name]}), flush=True)
+    return observations
 
 
 def main() -> None:
-    import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    output = args.output.resolve()
-    if output.exists() or output == ROOT or (output in ROOT.parents):
-        raise ValueError("choose a new, non-source output directory")
+    output = safe_output(args.output)
     output.mkdir(parents=True)
     compiler = Compiler(output / "tmp", 900)
-    profiles = ROOT / "tools/toolchain-smoke/examples"
-    for source in sorted((SDK / "examples").glob("*.c")):
-        profile_path = profiles / ("guest_" + source.stem) / "profile.json"
-        if not profile_path.is_file():
-            continue
-        profile = json.loads(profile_path.read_text())
-        component, lock = compiler.compile([source], profile_path.parent, profile["world"], output / source.stem)
-        print(json.dumps({"name": source.stem, "componentDigest": digest(component.read_bytes()),
-                          "componentBytes": component.stat().st_size, "bindings": lock}))
-    component, lock = compiler.compile([SDK / "blob.c"], profiles / "guest_blob",
-        "tests:local-blobs/service@1.0.0", output / "blob", trap=False)
-    print(json.dumps({"name": "blob", "componentBytes": component.stat().st_size, "bindings": lock}))
+    build_capabilities(compiler, output)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-#include "lsf/guest.h"
+#include "lsf/http.h"
 #include "lsf/async.h"
 
 struct frame {
@@ -12,8 +12,8 @@ struct frame {
 
 static void cleanup(struct frame *frame) {
     lsf_async_close(&frame->async);
-    if (frame->returned)
-        latent_http_client_result_response_http_error_free(&frame->result);
+    if (frame->returned && !frame->result.is_err)
+        lsf_http_response_close(&frame->result.val.ok);
     lsf_scope_close(&frame->owned);
     lsf_frame_leave(frame);
     free(frame);
