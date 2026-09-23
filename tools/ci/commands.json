@@ -2664,7 +2664,7 @@
       "sha256": "5acd3d499791273271236d0e60077763b6e9dd22ccee58aaac46d2b69733035c"
     },
     "tools/run_static_site_workflow.py": {
-      "sha256": "24c2ae9bec2896dc799e2a977978952189f810a6fdd2ede0caf839b7a4d41264"
+      "sha256": "4660f2e124a5e180fc986e667fc52c9e91ffd8f69ff88ec9686ee610b8c3e995"
     },
     "tools/static_site.py": {
       "sha256": "5e2a5228f9bd06b06534a7b5c5b51b8e3a42ec0d924c82e661f4af44249504ce"
