@@ -153,9 +153,12 @@ silently downgrade to volatile or absent audit on reopen.
 The following crates still contain primarily architectural interfaces for
 future integrations: `latent-triggers`,
 `latent-ingress`, `latent-state`, `latent-commit`, `latent-effects`,
-`latent-workflows` and `latent-wrpc`. Identity/delegation and generic
-`PolicyEngine`/`PolicyRepository` traits likewise do not imply distributed
-identity or general provider policy management is running.
+`latent-workflows` and `latent-wrpc`. Identity/delegation interfaces do not
+imply distributed identity is running. Current capability authority is provided
+by `latent_capabilities::broker`, with bounded policy stores in
+`latent_policy::capability` and supply-chain admission in
+`latent_policy::supply_chain`. The earlier unused generic capability and policy
+interfaces have been removed.
 
 ## Declarative schemas
 

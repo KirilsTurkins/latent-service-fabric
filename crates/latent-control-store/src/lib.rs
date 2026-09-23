@@ -24,12 +24,11 @@ pub use deployments::{
 
 use latent_artifacts::ArtifactDescriptor;
 use latent_core::{
-    BindingId, BoxFuture, DeploymentId, NodeId, PlatformError, PolicyId, ReleaseDigest,
-    RouteGeneration, ServiceId, TenantId, TriggerId,
+    BindingId, BoxFuture, DeploymentId, NodeId, PlatformError, ReleaseDigest, RouteGeneration,
+    ServiceId, TenantId, TriggerId,
 };
-use latent_manifest::{BindingManifest, DeploymentManifest, PolicyManifest, TriggerManifest};
+use latent_manifest::{BindingManifest, DeploymentManifest, TriggerManifest};
 use latent_node::{NodeDescriptor, NodeInventory};
-use latent_policy::PolicyDecision;
 use latent_routing::RouteSnapshot;
 
 pub trait ReleaseCatalog: Send + Sync {
@@ -198,20 +197,6 @@ pub trait TriggerStore: Send + Sync {
     fn list<'a>(&'a self) -> BoxFuture<'a, Result<Vec<TriggerManifest>, PlatformError>>;
 
     fn delete<'a>(&'a self, id: &'a TriggerId) -> BoxFuture<'a, Result<(), PlatformError>>;
-}
-
-pub trait ControlPolicyStore: Send + Sync {
-    fn apply<'a>(&'a self, policy: PolicyManifest) -> BoxFuture<'a, Result<(), PlatformError>>;
-
-    fn get<'a>(
-        &'a self,
-        id: &'a PolicyId,
-    ) -> BoxFuture<'a, Result<Option<PolicyManifest>, PlatformError>>;
-
-    fn record_decision<'a>(
-        &'a self,
-        decision: PolicyDecision,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
 }
 
 pub trait NodeInventoryStore: Send + Sync {
