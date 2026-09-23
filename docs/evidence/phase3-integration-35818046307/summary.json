@@ -1,0 +1,291 @@
+{
+  "sourceCommit": "193d52c37635026de416feffd4a2dfd57d082451",
+  "ciCheckout": "58965f399a116eb713dd4a5fc966f682167204f7",
+  "testedTreeEqualsSelectedSource": true,
+  "ciRun": 35818046307,
+  "overallCiAtReview": "success",
+  "sdk": {
+    "languages": [
+      {
+        "language": "c",
+        "assertions": 18,
+        "activationCount": 9,
+        "closedHolds": 4,
+        "receiptSha256": "64d5cb68010509c9c4bd909dd0159f10324443a0c08fea74029fd1aa94c50b3c",
+        "cleanShutdown": true
+      },
+      {
+        "language": "dotnet",
+        "assertions": 18,
+        "activationCount": 9,
+        "closedHolds": 4,
+        "receiptSha256": "8a8ed219a73db1ac29098efd8c88e1b78016464b748f6736fd46354967c11597",
+        "cleanShutdown": true
+      },
+      {
+        "language": "go",
+        "assertions": 18,
+        "activationCount": 9,
+        "closedHolds": 4,
+        "receiptSha256": "95f7a64a363fde95bdb26a6e69abe9e72d582182cd99523006954710b0460135",
+        "cleanShutdown": true
+      },
+      {
+        "language": "java",
+        "assertions": 18,
+        "activationCount": 9,
+        "closedHolds": 4,
+        "receiptSha256": "105af4dbb153bd0136c1763cb21d1af833aa8b5c6a76f3d0f7946d69b67dc89b",
+        "cleanShutdown": true
+      },
+      {
+        "language": "rust",
+        "assertions": 18,
+        "activationCount": 9,
+        "closedHolds": 4,
+        "receiptSha256": "786fdcb37ef91b82b809c3cfe2782a7020e751c7e0ffe4a8f4ed2f4b9bdd65a9",
+        "cleanShutdown": true
+      },
+      {
+        "language": "typescript",
+        "assertions": 18,
+        "activationCount": 9,
+        "closedHolds": 4,
+        "receiptSha256": "1cf4772c563f76efbbb07a2cfd53a625426e240770fd7363f6cba1fd41d983ed",
+        "cleanShutdown": true
+      }
+    ],
+    "activationIdentities": 54,
+    "operationReceipts": 6,
+    "physicallyClosedHolds": 24,
+    "browserQualified": false,
+    "installedBundleQualified": false
+  },
+  "security": {
+    "profile": "pr",
+    "commands": 57,
+    "testEntriesPassed": 27,
+    "groups": 13,
+    "qualificationExclusions": [
+      "T2-guest-process-containment",
+      "reference-browser-backend-canary-236",
+      "hosted-provider-vendor-campaigns",
+      "SDK-real-node-runner",
+      "load",
+      "non-Linux-x86_64"
+    ],
+    "receiptSha256": "7fa3bb568d615f6daf9c19d27be87847e525e4fef31944f50d200f09f0be91a1"
+  },
+  "nativePublication": "Not qualified by these CI receipts; use the separate native release evidence.",
+  "humanGuideReview": "Not performed by CI.",
+  "browserBoundary": [
+    {
+      "receipt": "browser-receipt.json",
+      "sha256": "96465719fd7a35621b852f9f7187597c6c5a0ecdc1ea76066d20d99208ba595a",
+      "observation": {
+        "browser": "152.0.7977.82",
+        "liveSharedIngress": true,
+        "controlledNodeSsr": true,
+        "componentRenderClaimed": false,
+        "originalDomReused": true,
+        "publicApplicationQualified": false,
+        "applicationComponentInvoked": false,
+        "managementRpcAbsent": false,
+        "browserFetchCredentialsOmitted": false,
+        "cookiesDoNotAuthenticate": false,
+        "navigationHydrated": true,
+        "escapedDataRoundTrip": true,
+        "inlineAndRemoteScriptsBlocked": true,
+        "baseOverrideBlocked": true,
+        "wrongScriptMimeBlocked": true,
+        "sameOriginPostReachedMethodPolicy": true,
+        "errors": 0
+      }
+    },
+    {
+      "receipt": "browser-application-receipt.json",
+      "sha256": "7c67918e31735d33c94d782205f75a108fff900dd2bc8c8e6e58e4f4791f4bc4",
+      "observation": {
+        "browser": "152.0.7977.82",
+        "liveSharedIngress": true,
+        "controlledNodeSsr": true,
+        "componentRenderClaimed": false,
+        "originalDomReused": true,
+        "publicApplicationQualified": true,
+        "applicationComponentInvoked": true,
+        "managementRpcAbsent": true,
+        "browserFetchCredentialsOmitted": true,
+        "cookiesDoNotAuthenticate": true,
+        "navigationHydrated": true,
+        "escapedDataRoundTrip": true,
+        "inlineAndRemoteScriptsBlocked": true,
+        "baseOverrideBlocked": true,
+        "wrongScriptMimeBlocked": true,
+        "sameOriginPostReachedMethodPolicy": true,
+        "errors": 0
+      }
+    }
+  ],
+  "boundedIntegrationLanes": [
+    {
+      "receipt": "renderer.json",
+      "sha256": "f3be5ad07b5f326a4f0abf071ae9aad5c474de5cedca1b6ea92b96b64336b61e",
+      "caseCount": 8
+    },
+    {
+      "receipt": "provider.json",
+      "sha256": "0c66a97fbc4aac253c18cb8890b9d9759237fa30deee44f2001ac9570625e489",
+      "caseCount": 19
+    }
+  ],
+  "operatorAndComponentReceipts": [
+    {
+      "name": "angular-t1-receipt.json",
+      "schemaVersion": "latent.angular.t1.workflow.v1",
+      "sha256": "587bf49e69813f4b145a8bbca60e5ebb9253cf39e249b760a7c3a25398b43905",
+      "passed": true
+    },
+    {
+      "name": "offline-receipt.json",
+      "schemaVersion": "latent.phase2.offline-test.v1",
+      "sha256": "cf82b8d3d9eacee03b642225e6c70a73ba1fc45db38f696a07908a241825ef73",
+      "passed": true
+    },
+    {
+      "name": "operator-receipt.json",
+      "schemaVersion": "latent.operator.workflow-test.v1",
+      "sha256": "cae4a45d481a0c9470f0cf702e5d1432a7858107626437686914937188b5c045",
+      "passed": true
+    },
+    {
+      "name": "publication-receipt.json",
+      "schemaVersion": "latent.publication.workflow.v1",
+      "sha256": "71440746a096e3e8d4e6105fe68440173d87e30c1a5a98b18db5b74bada04e4b",
+      "passed": true
+    },
+    {
+      "name": "resource-receipt.json",
+      "schemaVersion": "latent.phase2.resource-receipt.v1",
+      "sha256": "6ebcc2ae77b3046a6f75c96bb9b4cb17c985e423dd1f983ad6c12e85bf051431",
+      "passed": true
+    },
+    {
+      "name": "security-profile-receipt.json",
+      "schemaVersion": "latent.security-profile.workflow.v1",
+      "sha256": "85e9a316066e24d10dd6f346c6fccd237daf6f874fc60a4418e8274e68ad6afd",
+      "passed": true
+    },
+    {
+      "name": "static-site-receipt.json",
+      "schemaVersion": "latent.static.workflow.v1",
+      "sha256": "616f7c60264ee0e33dfd2c0534961002686a2b266e9e1f783fd59bb44f63cff1",
+      "passed": true
+    }
+  ],
+  "actualComponentAngularT1": {
+    "passed": true,
+    "threatClass": "T1",
+    "profile": {
+      "schemaVersion": "latent.standalone.config-check.v1",
+      "profile": "external-capsule-v1",
+      "threatClass": "T1",
+      "guestBoundary": "in-process-wasmtime",
+      "admission": "enforced",
+      "protectedCredentialFile": true,
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "wasmtimeVersion": "47.0.4",
+      "target": "x86_64-unknown-linux-gnu",
+      "compiler": "isolated-aot-compiler-v1",
+      "compilerSandbox": "lsf-linux-x86_64-landlock3-seccomp-v1",
+      "authenticatedNativeLoading": true
+    },
+    "reproducibility": "not-checked",
+    "cleanShutdowns": 2
+  },
+  "staticWeb": {
+    "passed": true,
+    "versions": [
+      "A",
+      "B"
+    ],
+    "ociExactDigestRoundtrip": true,
+    "deepLinkRefreshAndClientNavigation": true,
+    "revokedConditionalDenied": true,
+    "revokedRollbackDenied": true,
+    "foreignPublicationDenied": true
+  },
+  "boundedResourceProfile": {
+    "id": "phase2-dormant-32-r3",
+    "preparation": "portable",
+    "releases": 32,
+    "deployments": 16,
+    "referencedReleases": 2,
+    "invocations": 32,
+    "maximumControls": 256,
+    "deadlineSeconds": 300,
+    "shutdownSeconds": 10,
+    "osSamples": 12,
+    "samplesPerPhase": 3,
+    "sampleIntervalMillis": 50,
+    "settleAttempts": 10,
+    "settleIntervalMillis": 100,
+    "maximumReceiptBytes": 262144,
+    "maximumFixtureFiles": 2048,
+    "maximumFixtureBytes": 8388608,
+    "maximumBinaryBytes": 536870912,
+    "proc": {
+      "fileBytes": 65536,
+      "fds": 4096,
+      "tasks": 256,
+      "networkBytes": 1048576,
+      "networkRows": 8192,
+      "sampleSeconds": 2,
+      "transientLoadFds": 1,
+      "transientClockFds": 1
+    }
+  },
+  "scope": "Current CI integration. Installed-bundle and human guide acceptance are separate.",
+  "mergeCommit": "532364d697b1b93f2b3187e0df367f878023e91a",
+  "artifactIdentities": [
+    {
+      "id": 10732831653,
+      "name": "phase3-security-pr-58965f399a116eb713dd4a5fc966f682167204f7",
+      "digest": "sha256:b9edb54098e25cd5b175e065d47497c60542903449247dab0a12cbd0dd654cfa"
+    },
+    {
+      "id": 10733101531,
+      "name": "ci-integration-lanes-58965f399a116eb713dd4a5fc966f682167204f7",
+      "digest": "sha256:a70bdce1791745d4c512cd44a196c35650638e4aff7abfc32a96de298e621e6c"
+    },
+    {
+      "id": 10732976725,
+      "name": "browser-boundary-observations",
+      "digest": "sha256:cbf43f21114068dd8b3523c25b0e58816c2940814e5239411780535f9d365309"
+    },
+    {
+      "id": 10732462497,
+      "name": "phase-1-bounded-conformance-58965f399a116eb713dd4a5fc966f682167204f7",
+      "digest": "sha256:11b9b13d6b9cf09277df519333ec9b83ccc1bacba8a86f4a5e72e31ac7919ad0"
+    },
+    {
+      "id": 10734010161,
+      "name": "phase-2-gate-58965f399a116eb713dd4a5fc966f682167204f7",
+      "digest": "sha256:288874b16765e2f12319da5fbf71aa0822d0d6e11671718859406367bd782b07"
+    },
+    {
+      "id": 10733955348,
+      "name": "ci-runtime-discovery-58965f399a116eb713dd4a5fc966f682167204f7",
+      "digest": "sha256:92ed420ff94d02e4595451cadb76724756fe661174d5a5aa204941bc623bd832"
+    },
+    {
+      "id": 10732925633,
+      "name": "owned-oci-58965f399a116eb713dd4a5fc966f682167204f7",
+      "digest": "sha256:e2373b431be296ae4cbe8599b8ddffabdf70913737ef1e45617c28c4e3b8c375"
+    },
+    {
+      "id": 10733735771,
+      "name": "owned-renderer-58965f399a116eb713dd4a5fc966f682167204f7",
+      "digest": "sha256:ab2e4c64c1604aedecefd9514f647b987ce6c841f5ebf8f93f89a07a80fb062e"
+    }
+  ]
+}

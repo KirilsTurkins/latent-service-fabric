@@ -4,7 +4,7 @@
 [#240](https://github.com/KirilsTurkins/latent-service-fabric/issues/240), not a
 Phase 3 completion declaration or runtime release. The implementation receipts
 below retain their original source and measurement identities. Required guide
-reviews, public website deployment, final integration and native delivery
+reviews, public website deployment and native delivery
 remain acceptance work. Security-monitoring activation #282, the actual Angular
 reference workflow #236 and static-site delivery #495/#496/#497 are complete.
 Wiki removal follows Phase 3 completion and verified website deployment.
@@ -13,9 +13,15 @@ This review starts from development
 `6c63b68064ae44284d931e80d76d1e9012189b2b`, after the integrated security and
 guide-execution changes were merged. It does not certify a later integration
 commit merely because that commit contains the same documentation.
-Delivery status was refreshed against development
-`d70abc7e94b445b4e3f54d91ddc52f2980166e01` on September 23, 2026. The retained
-receipts below keep their original execution identities.
+The current runtime integration is development
+`532364d697b1b93f2b3187e0df367f878023e91a`, reviewed on September 23, 2026.
+[Full CI 35818046307](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35818046307)
+passed at selected source `193d52c37635026de416feffd4a2dfd57d082451`; its actual
+PR checkout and the development squash have identical Git trees. The
+[current integration receipt set](evidence/phase3-integration-35818046307/README.md)
+retains the original security, six-client, browser, provider, publication,
+protected Angular, static-site and bounded resource results. Earlier receipts
+below keep their original execution identities and measurement scopes.
 
 ## Dependency and evidence closure
 
@@ -89,10 +95,10 @@ not rewrite measured bytes or convert an earlier failed attempt into a pass.
 
 ## Final integration and publication checks
 
-1. Finish and review the remaining obsolete-alpha API removals and runtime fixes.
-   Run the required checks on each exact head before squash merge.
-   Inspect final development CI and retained six-client, browser, security and
-   cleanup receipts for the resulting integration source.
+1. The obsolete audit, capability and policy API removals and current runtime
+   fixes are merged. Preserve the successful exact-source integration above and
+   its retained six-client, browser, security and cleanup receipts. Any further
+   runtime change needs its own required checks and review.
 2. Preserve #282's activated monitoring and scheduled-ref evidence. Complete
    #308's verified compatible native bundle pair and installer/upgrade evidence
    through its existing protected publisher.
