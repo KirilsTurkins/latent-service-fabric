@@ -17,13 +17,41 @@ type lsfRandomResult struct {
 	value uint64
 }
 
+// cabi_realloc cannot call component imports. Only allocator-internal clock
+// reads use the last real LSF sample during this bounded, synchronous phase.
+// Host fuel, epoch interruption and invocation deadlines are never paused.
+var lsfClockPauseDepth uint32
+var lsfLastMonotonic, lsfLastWall uint64
+var lsfHasMonotonic, lsfHasWall bool
+
+//go:nosplit
+func lsfSetClocksPaused(paused bool) {
+	if paused {
+		if lsfClockPauseDepth == ^uint32(0) { exit(70) }
+		lsfClockPauseDepth++
+	} else {
+		if lsfClockPauseDepth == 0 { exit(70) }
+		lsfClockPauseDepth--
+	}
+}
+
 //go:nosplit
 func clock_time_get(id clockid, _ timestamp, result *timestamp) errno {
 	switch id {
 	case clockMonotonic:
-		*result = lsfMonotonicNanos()
+		if lsfClockPauseDepth == 0 {
+			lsfLastMonotonic = lsfMonotonicNanos()
+			lsfHasMonotonic = true
+		}
+		if !lsfHasMonotonic { return 29 }
+		*result = lsfLastMonotonic
 	case clockRealtime:
-		value := lsfWallMillis()
+		if lsfClockPauseDepth == 0 {
+			lsfLastWall = lsfWallMillis()
+			lsfHasWall = true
+		}
+		if !lsfHasWall { return 29 }
+		value := lsfLastWall
 		if value > ^uint64(0)/1000000 {
 			return 61 // WASI EOVERFLOW; never wrap a wall-clock value.
 		}
@@ -36,6 +64,7 @@ func clock_time_get(id clockid, _ timestamp, result *timestamp) errno {
 
 //go:nosplit
 func random_get(buffer *byte, length size) errno {
+	if lsfClockPauseDepth != 0 { exit(70) }
 	for offset := size(0); offset < length; {
 		var result lsfRandomResult
 		lsfRandomU64(unsafe.Pointer(&result))

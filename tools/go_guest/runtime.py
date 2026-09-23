@@ -25,7 +25,10 @@ def replace_once(text: str, old: str, new: str) -> str:
     return text.replace(old, new, 1)
 
 
-def overlay(goroot: Path, destination: Path) -> Path:
+GO_PACKAGE_RUNTIME_SHA256 = "abff1455a417b51e77e83e01da34fe1048330a9fe0e7d607bb5265f2162eb9b5"
+
+
+def overlay(goroot: Path, destination: Path, go_package: Path | None = None) -> Path:
     goroot, destination = goroot.resolve(), destination.resolve()
     if (destination == goroot or destination in goroot.parents or goroot in destination.parents
             or destination == ROOT or destination in ROOT.parents
@@ -56,8 +59,22 @@ def overlay(goroot: Path, destination: Path) -> Path:
         old = f"//go:wasmimport wasi_snapshot_preview1 {name}\n//go:noescape\n{declaration}"
         new = f"//go:linkname {name} runtime.{name}\n//go:noescape\n{declaration}"
         sources[relative] = replace_once(sources[relative], old, new)
+    dependency_source = None
+    if go_package is not None:
+        dependency_source = go_package.resolve() / "wit/runtime/runtime.go"
+        dependency_bytes = dependency_source.read_bytes()
+        if hashlib.sha256(dependency_bytes).hexdigest() != GO_PACKAGE_RUNTIME_SHA256:
+            raise ValueError("go-package-runtime-source-drift")
+        dependency_text = replace_once(
+            dependency_bytes.decode("utf-8"),
+            "//go:wasmimport wasi_snapshot_preview1 adapter_monotonic_clock_set_paused",
+            "//go:linkname adapterMonotonicClockSetPaused runtime.lsfSetClocksPaused")
     destination.mkdir(parents=True)
     replacements = {}
+    if dependency_source is not None:
+        target = destination / "go_pkg_runtime.go"
+        target.write_text(dependency_text, encoding="utf-8")
+        replacements[str(dependency_source)] = str(target)
     for relative, text in sources.items():
         if relative == "runtime/lock_wasip1.go":
             continue  # The upstream async scheduler patch is verified, not modified.

@@ -60,14 +60,51 @@ jobs:
           go="$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
           GOTOOLCHAIN=local "$go" mod download -json go.bytecodealliance.org/pkg@v0.2.3 > "$out/go-module.json"
           modcache="$(GOTOOLCHAIN=local "$go" env GOMODCACHE)"
-          tar -czf "$out/go-module.tar.gz" -C "$modcache" go.bytecodealliance.org/pkg@v0.2.3
+          tar -czf "$out/go-module.tar.gz" -C "$modcache" go.bytecodealliance.org/pkg@v0.2.3 cache/download/go.bytecodealliance.org/pkg/@v
           sha256sum "$out/"*.tar.gz > "$out/archives.sha256"
+          tar -cf "$RUNNER_TEMP/offline.tar" -C "$out" rust-toolchain.tar.gz cargo-registry.tar.gz
+          split -b 268435456 -d "$RUNNER_TEMP/offline.tar" "$out/offline.part-"
+          test "$(find "$out" -name 'offline.part-*' | wc -l)" -le 4
+          rm "$out/rust-toolchain.tar.gz" "$out/cargo-registry.tar.gz" "$RUNNER_TEMP/offline.tar"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: go-guest-reproduction-${{ github.sha }}
-          path: ${{ runner.temp }}/go-guest-reproduction/
+          path: |
+            ${{ runner.temp }}/go-guest-reproduction/source.tar.gz
+            ${{ runner.temp }}/go-guest-reproduction/go-module.tar.gz
+            ${{ runner.temp }}/go-guest-reproduction/go-module.json
+            ${{ runner.temp }}/go-guest-reproduction/revision.txt
+            ${{ runner.temp }}/go-guest-reproduction/archives.sha256
           if-no-files-found: error
           retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: go-guest-offline-0-${{ github.sha }}
+          path: ${{ runner.temp }}/go-guest-reproduction/offline.part-00
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: go-guest-offline-1-${{ github.sha }}
+          path: ${{ runner.temp }}/go-guest-reproduction/offline.part-01
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: go-guest-offline-2-${{ github.sha }}
+          path: ${{ runner.temp }}/go-guest-reproduction/offline.part-02
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: go-guest-offline-3-${{ github.sha }}
+          path: ${{ runner.temp }}/go-guest-reproduction/offline.part-03
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 1
       - name: Generate and compile upstream and constrained LSF components
         run: python3 tools/go_guest/probe.py --output "$RUNNER_TEMP/go-guest-probe" --go "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
       - name: Retain successful and failed upstream observations
