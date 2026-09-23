@@ -1,0 +1,52 @@
+name: .NET guest development reproduction
+on:
+  push:
+    branches: [feat/549-dotnet-capsule-authoring]
+    paths: ['.github/workflows/dotnet-guest-reproduction.yml']
+permissions:
+  contents: read
+jobs:
+  inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          targets: wasm32-unknown-unknown,wasm32-wasip2
+          components: rustfmt,clippy
+      - name: Capture only versioned sources and pinned compiler dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/dotnet-reproduction"
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/dotnet-reproduction/source.tar.gz"
+          cargo fetch --locked
+          tar -czf "$RUNNER_TEMP/dotnet-reproduction/rust.tar.gz" -C "$HOME/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu" bin lib etc
+          tar -czf "$RUNNER_TEMP/dotnet-reproduction/registry.tar.gz" -C "$HOME/.cargo" registry
+      - name: Retain exact source
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dotnet-reproduction-source-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-reproduction/source.tar.gz
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+      - name: Retain exact Rust compiler
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dotnet-reproduction-rust-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-reproduction/rust.tar.gz
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+      - name: Retain exact dependency inputs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dotnet-reproduction-registry-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-reproduction/registry.tar.gz
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
