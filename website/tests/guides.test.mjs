@@ -6,10 +6,10 @@ test('current learning and operator guides appear in their task sidebars', () =>
   const expected = {
     learn: ['learn/deliver-and-recover-a-capsule'],
     howTo: [
-      'how-to/exercise-provider-failure-and-recovery',
       'how-to/reconcile-a-policy-change',
     ],
     contribute: [
+      'how-to/exercise-provider-failure-and-recovery',
       'operations/maintained-security-monitoring',
       'operations/native-release-promotion',
     ],

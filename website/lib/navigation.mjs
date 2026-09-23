@@ -5,7 +5,8 @@ export function buildSidebars(pages) {
   const references = new Set(['phase-2-operator-workflows', 'phase-2-rollouts', 'phase-2-rollback',
     'phase-2-canary-promotion', 'phase-2-canary-observation', 'phase-2-audit',
     'component-development/guest-sdk', 'component-development/packaging', 'component-development/sbom', 'component-development/static-sites']);
-  const maintenance = new Set(['operations/maintained-security-monitoring', 'operations/native-release-promotion']);
+  const maintenance = new Set(['operations/maintained-security-monitoring', 'operations/native-release-promotion',
+    'how-to/exercise-provider-failure-and-recovery']);
   for (const page of pages.filter(page => page.source.startsWith('docs/'))) {
     let group = 'understand';
     if (page.id === 'roadmap' || /^(phase-[01]-|phase-[23]-.*(?:completion|review)$|phase3-management-integration$|evidence\/|architecture\/cluster-freshness-handoff$|protocol\/phase-1-contract-hardening$)/.test(page.id)) group = 'records';

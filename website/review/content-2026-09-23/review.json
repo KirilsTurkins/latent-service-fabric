@@ -1,6 +1,6 @@
 {
   "baseline": "1c178545c26f32b1798308c7301b340c8693c3eb",
-  "scope": "All current published source pages and root repository documents. Released snapshots retain version labels and original bytes; retained measurements keep their tested identities. Assistant content review does not mark the 27 human guide outcomes accepted.",
+  "scope": "All current published source pages, root repository documents, SDK READMEs and public website navigation/chrome. Released snapshots retain version labels and original bytes; retained measurements keep their tested identities. Assistant content review does not mark the 27 human guide outcomes accepted.",
   "pages": [
     {
       "source": "ARCHITECTURE.md",
@@ -684,10 +684,12 @@
     },
     {
       "source": "docs/development/angular-build-evidence.md",
-      "words": 1484,
-      "sha256": "27e5ef48213a2bd1870a9b0ea0b763fa2ca322cf81100149950d7be8fed11242",
-      "status": "pending",
-      "findings": []
+      "words": 1770,
+      "sha256": "aea9538e89a05ccb4f86e5f4eb5599add795eba0643ac6bbc763544b902c0cb3",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read entire builder contract and conformance description; keep source-bound qualification details in contributor documentation and add source/output boundary exercises."
+      ]
     },
     {
       "source": "docs/development/aot-test-inputs.md",
@@ -829,6 +831,15 @@
       "findings": []
     },
     {
+      "source": "docs/development/standalone-provider-validation.md",
+      "words": 1160,
+      "sha256": "d2941a2b5fd27e7fa180183004e5aef06939b3b72a77d4a85d929031d834762c",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Reviewed preserved provider fixture and startup evidence, linked later integration coverage, and collected contributor failure-test commands."
+      ]
+    },
+    {
       "source": "docs/development/standalone-quickstart.md",
       "words": 1581,
       "sha256": "43b696d6a917124b39a68ca5e8dcd796f2779258884b543fa26bd9112ca648db",
@@ -963,17 +974,21 @@
     },
     {
       "source": "docs/how-to/diagnose-angular-delivery.md",
-      "words": 857,
-      "sha256": "46ccc219f195ae1223ad93fdf00b032e159bfe7c03985699ab5ccf951a61fada",
-      "status": "pending",
-      "findings": []
+      "words": 653,
+      "sha256": "fa7bf161a7802cf7729f9c25698426247f13468704b90767384f835c44500dd3",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read complete guide; explain browser diagnosis and corrected application steps, move deliberately broken-source tests to builder validation."
+      ]
     },
     {
       "source": "docs/how-to/exercise-provider-failure-and-recovery.md",
-      "words": 2013,
-      "sha256": "6a1a027e9741568e4f65a8ffb2bdf1a34a1e7daba1b0e2d88c8b08bc9a4d0f8c",
-      "status": "pending",
-      "findings": []
+      "words": 1954,
+      "sha256": "c998dfb16ab97f5f882f383ea003fab77982c74edc2bb3868713509c8bbe5e2a",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read complete procedure; identify contributor-only Rust-composition tests, remove obsolete required checkout, preserve historical measurement identities, and move navigation to Contribute."
+      ]
     },
     {
       "source": "docs/how-to/operate-and-contribute.md",
@@ -986,11 +1001,12 @@
     },
     {
       "source": "docs/how-to/operate-capability-providers.md",
-      "words": 1259,
-      "sha256": "62267de47fb1b00fdb21c2a39ef88cd2986c940e433135e9be3b654d4851fe6c",
-      "status": "read-needs-update",
+      "words": 1044,
+      "sha256": "4c785d2117823abdaa07466d19abcc9fa7a5ec4fb4c024bb40cd6ff82c303be2",
+      "status": "updated-source-reviewed",
       "findings": [
-        "Full page read: diagnosis tables are useful, but test-harness reproduction and evidence instructions should move to contributor material."
+        "Full page read: diagnosis tables are useful, but test-harness reproduction and evidence instructions should move to contributor material.",
+        "Read complete guide; concentrate on real configuration and recovery, give a complete check-config command, move regression recipes and evidence bookkeeping to contributors."
       ]
     },
     {
@@ -1432,10 +1448,12 @@
     },
     {
       "source": "docs/reference/standalone-providers.md",
-      "words": 1405,
-      "sha256": "9345bc3924933fb164c5916c0266de45bfe04472df24e8ea820b3e40d070246b",
-      "status": "pending",
-      "findings": []
+      "words": 450,
+      "sha256": "07fbe476d69791bd040a2ac2c8d83627eb90cfb68f71c8b08f9f8c1411047f7f",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read complete page; separated current standalone configuration from fixture recipes and historical startup measurements; corrected the ready event name."
+      ]
     },
     {
       "source": "docs/reference/typescript-client.md",
@@ -1488,10 +1506,12 @@
     },
     {
       "source": "docs/runtime/capabilities.md",
-      "words": 1523,
-      "sha256": "3ab0941472095874184b82e1f18fab0cd014f143547b1c950ae32569044ff547",
-      "status": "pending",
-      "findings": []
+      "words": 1476,
+      "sha256": "8cd06c6dcf291ab17bb4482385d343cc8d24137f0de1a12e9733e1222e80aad5",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read complete runtime contract; replaced obsolete phase chronology with current capability support and immediate-operation semantics."
+      ]
     },
     {
       "source": "docs/runtime/capability-audit.md",
@@ -2019,10 +2039,11 @@
       "source": "website/lib/navigation.mjs",
       "status": "updated-source-reviewed",
       "findings": [
-        "Read complete section classifier; separated practical tasks, normative references and maintainer procedures and put local operations first."
+        "Read complete section classifier; separated practical tasks, normative references and maintainer procedures and put local operations first.",
+        "Route external-provider test procedure under Contribute while preserving operator diagnosis under How-to."
       ],
-      "words": 272,
-      "sha256": "719faadffef1bf8f6a2ee1ecc69e3369a961921294bf9374486d03c0e3632d5d"
+      "words": 273,
+      "sha256": "2d4414bf99f7a5e99c8607d30300b603d203863079a6fcdb150b4d25bdfce75c"
     },
     {
       "source": "website/src/pages/index.tsx",
