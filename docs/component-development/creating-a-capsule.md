@@ -9,9 +9,15 @@ Complete steps 1–7 of [Run your first node](../start/first-node.md) first.
 Keep that terminal open: this tutorial uses its running node, `cli`, `field`
 and `answer` helpers. Run commands from the same repository root.
 
-The capsule implementations below use Rust. The small `component` section
-connects each ordinary Rust function to LSF. Your application can call the
-resulting capsule from any of the six [client SDK languages](../learn/use-a-client.mdx).
+This tutorial uses Rust to write the programs that run inside your node. Each
+example below has one Rust implementation. The small `component` section
+connects its ordinary Rust function to LSF.
+
+The [client SDK guide](../learn/use-a-client.mdx) offers Rust, TypeScript, Go,
+C, Java and C# examples for a different task: calling these programs from an
+application outside the node. Those client SDKs do not compile capsules in
+all six languages. For lower-level C capsule examples, see the
+[C guest examples](../../sdk/c-guest/README.md).
 
 ## 1. A greeting capsule
 
