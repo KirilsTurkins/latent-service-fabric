@@ -47,19 +47,28 @@ jobs:
           curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-guest-tools/go.tbz" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz
           echo "4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz" | sha256sum --check --strict
           tar -xjf "$RUNNER_TEMP/go-guest-tools/go.tbz" -C "$RUNNER_TEMP/go-guest-tools"
-      - name: Retain exact tools for local qualification reproduction
+      - name: Retain exact qualification sources and offline prerequisites
         run: |
-          mkdir -p "$RUNNER_TEMP/go-guest-reproduction"
-          cp "$RUNNER_TEMP/go-guest-tools/go.tbz" "$RUNNER_TEMP/go-guest-reproduction/"
-          tar -czf "$RUNNER_TEMP/go-guest-reproduction/tools.tar.gz" -C "$HOME/.cargo/bin" componentize-go wasm-tools
-          sha256sum "$HOME/.cargo/bin/componentize-go" "$HOME/.cargo/bin/wasm-tools" > "$RUNNER_TEMP/go-guest-reproduction/tools.sha256"
+          set -euo pipefail
+          out="$RUNNER_TEMP/go-guest-reproduction"
+          mkdir -p "$out"
+          git rev-parse HEAD > "$out/revision.txt"
+          git archive --format=tar HEAD | gzip -n > "$out/source.tar.gz"
+          cargo fetch --locked
+          tar -czf "$out/rust-toolchain.tar.gz" --exclude='share/doc' -C "$HOME/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu" bin lib
+          tar -czf "$out/cargo-registry.tar.gz" -C "$CARGO_HOME" registry
+          go="$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
+          GOTOOLCHAIN=local "$go" mod download -json go.bytecodealliance.org/pkg@v0.2.3 > "$out/go-module.json"
+          modcache="$(GOTOOLCHAIN=local "$go" env GOMODCACHE)"
+          tar -czf "$out/go-module.tar.gz" -C "$modcache" go.bytecodealliance.org/pkg@v0.2.3
+          sha256sum "$out/"*.tar.gz > "$out/archives.sha256"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: go-guest-tools-${{ github.sha }}
+          name: go-guest-reproduction-${{ github.sha }}
           path: ${{ runner.temp }}/go-guest-reproduction/
           if-no-files-found: error
           retention-days: 7
-      - name: Generate and compile the actual LSF capability surface
+      - name: Generate and compile upstream and constrained LSF components
         run: python3 tools/go_guest/probe.py --output "$RUNNER_TEMP/go-guest-probe" --go "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
       - name: Retain successful and failed upstream observations
         if: always()

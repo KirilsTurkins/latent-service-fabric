@@ -1,0 +1,54 @@
+// Code compiled into the pinned Go runtime by the LSF authoring overlay.
+// All authority is the current invocation's declared LSF capability authority.
+
+//go:wasmimport latent:clock/monotonic@0.1.0 now-nanos
+func lsfMonotonicNanos() uint64
+
+//go:wasmimport latent:clock/wall@0.1.0 now-unix-millis
+func lsfWallMillis() uint64
+
+//go:wasmimport latent:random/random@0.1.0 u64-value
+//go:noescape
+func lsfRandomU64(result unsafe.Pointer)
+
+type lsfRandomResult struct {
+	tag uint32
+	padding uint32
+	value uint64
+}
+
+//go:nosplit
+func clock_time_get(id clockid, _ timestamp, result *timestamp) errno {
+	switch id {
+	case clockMonotonic:
+		*result = lsfMonotonicNanos()
+	case clockRealtime:
+		value := lsfWallMillis()
+		if value > ^uint64(0)/1000000 {
+			return 61 // WASI EOVERFLOW; never wrap a wall-clock value.
+		}
+		*result = value * 1000000
+	default:
+		return 28 // WASI EINVAL: no process or thread CPU clock authority.
+	}
+	return 0
+}
+
+//go:nosplit
+func random_get(buffer *byte, length size) errno {
+	for offset := size(0); offset < length; {
+		var result lsfRandomResult
+		lsfRandomU64(unsafe.Pointer(&result))
+		if result.tag != 0 {
+			// Go's runtime otherwise falls back to clock-derived entropy.
+			// proc_exit is a trapping export of the authority-free adapter.
+			exit(70)
+			return 29
+		}
+		for i := size(0); i < 8 && offset < length; i++ {
+			*(*byte)(unsafe.Add(unsafe.Pointer(buffer), uintptr(offset))) = byte(result.value >> (8 * i))
+			offset++
+		}
+	}
+	return 0
+}

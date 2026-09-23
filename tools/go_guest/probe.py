@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from tools.go_guest.process import run_bounded
+from tools.go_guest.runtime import overlay
 from tools.build_observation import build_environment
 from tools.stage_runtime_wit import stage
 
@@ -99,14 +100,29 @@ def probe(output: Path, go: Path, componentize: Path, wasm_tools: Path) -> None:
         run("bindings", args + ["bindings", "--generate-stubs", "--format", "-o", str(module)])
         report["generatedBindings"] = {str(path.relative_to(module)): digest(path)
                                        for path in sorted(module.rglob("*")) if path.is_file()}
-        run("module-download", [str(go), "mod", "download"], module)
+        run("module-download", [str(go), "mod", "download", "all"], module)
         component = output / "upstream-candidate.wasm"
         run("component-build", args + ["build", "--go", str(go), "-o", str(component)], module)
         run("component-validate", [str(wasm_tools), "validate", "--features", "all", str(component)])
         surface = run("component-wit", [str(wasm_tools), "component", "wit", str(component)])
         (output / "upstream-candidate.wit").write_text(surface)
         report["component"] = {"digest": digest(component), "size": component.stat().st_size}
-        report["status"] = "upstream-build-observed"
+        report["upstreamImportsWasi"] = "import wasi:" in surface
+        # Constrained reactor: same generated Go, no ambient WASI imports.
+        adapter = output / "deny-wasi.wasm"
+        run("adapter-build", [str(wasm_tools), "parse", str(ROOT / "sdk/go-guest/runtime/deny-wasi.wat"), "-o", str(adapter)])
+        overlay_path = overlay(goroot, output / "runtime-overlay")
+        environment["GOFLAGS"] += " -overlay=" + str(overlay_path)
+        constrained = output / "lsf-candidate.wasm"
+        run("constrained-build", args + ["build", "--go", str(go), "--adapt", str(adapter), "-o", str(constrained)], module)
+        run("constrained-validate", [str(wasm_tools), "validate", "--features", "all", str(constrained)])
+        constrained_wit = run("constrained-wit", [str(wasm_tools), "component", "wit", str(constrained)])
+        (output / "lsf-candidate.wit").write_text(constrained_wit)
+        if "import wasi:" in constrained_wit:
+            raise ValueError("ambient-wasi-remains-in-go-component")
+        report["constrainedComponent"] = {"digest": digest(constrained), "size": constrained.stat().st_size}
+        report["resolvedModule"] = (module / "go.sum").read_text()
+        report["status"] = "constrained-build-observed"
     except Exception as error:
         report["error"] = str(error)
         raise
