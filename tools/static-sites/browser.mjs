@@ -1,6 +1,6 @@
 import {createRequire} from 'node:module';
 import path from 'node:path';
-import {readFile, writeFile} from 'node:fs/promises';
+import {readFile, writeFile, rename} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 
 const [toolchain, chrome, origin, generator, version, receipt, mode = 'navigation', ready, resume] = process.argv.slice(2);
@@ -44,7 +44,10 @@ try {
     await page.route('**/assets/main-*.js', async route => {
       if (held) return route.continue();
       held = true;
-      await writeFile(ready, JSON.stringify({stage: 'A-document-selected', script: new URL(route.request().url()).pathname}));
+      // Existence is the parent's readiness signal; publish only complete JSON.
+      const pendingReady = ready + '.pending';
+      await writeFile(pendingReady, JSON.stringify({stage: 'A-document-selected', script: new URL(route.request().url()).pathname}), {flag: 'wx', mode: 0o600});
+      await rename(pendingReady, ready);
       const deadline = Date.now() + 30000;
       while (true) {
         try { assert.equal(JSON.parse(await readFile(resume, 'utf8')).stage, 'B-trigger-committed'); break; }
