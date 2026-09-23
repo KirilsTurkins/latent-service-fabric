@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-#include "lsf/guest.h"
+#include "probe.h"
+#include "lsf/ownership.h"
 
 static uint32_t calls;
 uint32_t exports_examples_recovery_api_run(uint32_t which) {
