@@ -7,6 +7,7 @@ on:
       - tools/go_guest/**
       - tools/go_capsule*.py
       - tools/probe_go_authoring.py
+      - tools/build_go_guest_capsules.py
       - apps/latentd/**
       - crates/latent-signing/**
       - crates/latent-wasmtime/examples/go_runtime_probe.rs
@@ -20,6 +21,7 @@ on:
       - tools/go_guest/**
       - tools/go_capsule*.py
       - tools/probe_go_authoring.py
+      - tools/build_go_guest_capsules.py
       - apps/latentd/**
       - crates/latent-signing/**
       - crates/latent-wasmtime/examples/go_runtime_probe.rs
@@ -86,6 +88,10 @@ jobs:
           cargo run --locked -p latent-wasmtime --example go_runtime_probe -- "$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm" 2>&1 | tee "$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log"
       - name: Check standalone project source boundaries
         run: python3 -m unittest tools.tests.test_go_capsule_authoring
+      - name: Exercise Go owner aliases and compile all typed capability wrappers
+        run: |
+          go test sdk/go-guest/ownership/owner.go sdk/go-guest/ownership/owner_test.go
+          python3 tools/build_go_guest_capsules.py --output "$RUNNER_TEMP/go-sdk-capsules"
       - name: Build and admit five actual editable Go projects
         run: python3 tools/probe_go_authoring.py --output "$RUNNER_TEMP/go-authoring-projects"
       - name: Retain successful and failed upstream observations
@@ -96,5 +102,6 @@ jobs:
           path: |
             ${{ runner.temp }}/go-guest-probe/
             ${{ runner.temp }}/go-authoring-projects/
+            ${{ runner.temp }}/go-sdk-capsules/
           if-no-files-found: warn
           retention-days: 7

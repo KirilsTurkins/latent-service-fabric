@@ -3,7 +3,7 @@ package export_examples_http_status_api
 
 import (
     wit "go.bytecodealliance.org/pkg/wit/types"
-    http "wit_component/latent_http_client"
+    http "wit_component/lsf/http"
 )
 
 func Check(url string) wit.Result[uint16, http.HttpError] {

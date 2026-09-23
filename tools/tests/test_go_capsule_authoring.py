@@ -6,9 +6,41 @@ import unittest
 
 from tools.go_capsule_project import create, snapshot, validate, TEMPLATES, RUNTIME_IMPORTS
 from tools.go_capsule_build import build
+from tools.build_go_guest_capsules import project as sdk_project, NAMES
+from tools.go_guest.sdk import install, CAPABILITIES
 
 
 class GoAuthoringTests(unittest.TestCase):
+    def test_every_sdk_fixture_is_an_editable_source_project_with_exact_wit(self):
+        for name in NAMES:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                directory = sdk_project(Path(temporary) / "fixture", name)
+                files = snapshot(directory)
+                value, _, _ = validate(files)
+                self.assertEqual(value["name"], "guest-" + name)
+                self.assertEqual(value["limits"]["memoryBytes"], 67108864)
+                for identity in RUNTIME_IMPORTS:
+                    self.assertEqual(files["wit/world.wit"].count(("import " + identity + ";").encode()), 1)
+
+    def test_sdk_aliases_follow_generated_identity_without_exposing_resource_constructors(self):
+        from tools.go_capsule_project import ROOT
+        with tempfile.TemporaryDirectory() as temporary:
+            module = Path(temporary)
+            for name, (identity, excluded) in CAPABILITIES.items():
+                directory = module / ("versioned_" + name)
+                directory.mkdir()
+                text = (f"package {directory.name}\n//go:wasmimport {identity} run\n"
+                        "type Error struct {}\n" + "".join(f"type {item} struct {{}}\n" for item in excluded))
+                (directory / "wit_bindings.go").write_text(text)
+            install(ROOT / "sdk/go-guest", module)
+            for name, (_, excluded) in CAPABILITIES.items():
+                aliases = (module / "lsf" / name / "types.go").read_text()
+                self.assertIn(f'wit_component/versioned_{name}', aliases)
+                for item in excluded:
+                    self.assertNotIn(f"type {item} =", aliases)
+            with self.assertRaises(FileExistsError):
+                install(ROOT / "sdk/go-guest", module)
+
     def test_every_editable_template_has_exact_runtime_imports_and_captured_sdk(self):
         for template in TEMPLATES:
             with self.subTest(template=template), tempfile.TemporaryDirectory() as temporary:

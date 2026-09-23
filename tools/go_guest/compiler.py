@@ -9,6 +9,7 @@ import shutil
 
 from tools.build_observation import file_identity
 from tools.go_guest.runtime import overlay
+from tools.go_guest.sdk import install
 from tools.rust_capsule_project import inventory, read_file, snapshot
 
 
@@ -80,6 +81,7 @@ class Compiler:
             target.write_bytes(data)
         if any('panic("not implemented")' in path.read_text() for path in generated.glob("export_*/*.go")):
             raise ValueError("unimplemented-Go-WIT-export")
+        install(self.sdk, generated)
         previous = self.commands.root
         self.commands.root = generated
         try:

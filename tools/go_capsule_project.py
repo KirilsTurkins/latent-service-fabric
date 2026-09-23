@@ -21,7 +21,8 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     source = (ROOT / "tools/toolchain-smoke/examples" / ("tutorial_" + template.replace("-", "_"))
               if template in TUTORIALS else ROOT / "examples/rust-capsules" / template)
     vendor = {}
-    for folder in ("sdk/go-guest/runtime", "sdk/go-guest/runtime-deps", "wit/platform"):
+    for folder in ("sdk/go-guest/runtime", "sdk/go-guest/runtime-deps", "sdk/go-guest/ownership",
+                   "sdk/go-guest/capabilities", "wit/platform"):
         vendor.update({folder + "/" + path: data for path, data in snapshot(ROOT / folder).items()})
     for path in ("Cargo.toml", "tools/toolchain.toml", "LICENSE", "NOTICE",
                  "sdk/go-guest/toolchain.lock.json"):
