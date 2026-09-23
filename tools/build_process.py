@@ -135,17 +135,36 @@ cleanup is reported, never accepted as a successful build.
         return _run_owned(argv, cwd, env, timeout_seconds, max_output_bytes, cancellation)
 
 
-def _run_owned(argv, cwd, env, timeout_seconds, max_output_bytes, cancellation):
+def run_bounded_result(command: Sequence[str], cwd: str | Path, env: Mapping[str, str],
+                       timeout_seconds: float, max_output_bytes: int) -> subprocess.CompletedProcess[bytes]:
+    """Return bounded diagnostics for an exited command, including nonzero exits.
+
+    Explicit opt-in for trusted authoring tools. Deadlines, output overflow and
+    failed descendant cleanup remain errors; they never produce a completed
+    result. The caller owns redaction and private retention of returned bytes.
+    """
+    argv = _validate(command, cwd, env, timeout_seconds, max_output_bytes)
+    if __package__:
+        from .build_process_signals import owned_cancellation
+    else:
+        from build_process_signals import owned_cancellation
+    with owned_cancellation() as cancellation:
+        return _run_owned(argv, cwd, env, timeout_seconds, max_output_bytes, cancellation, check=False)
+
+
+def _run_owned(argv, cwd, env, timeout_seconds, max_output_bytes, cancellation, *, check=True):
     owner = None
     failure = None
     captured = None
+    status = None
     deadline = time.monotonic() + timeout_seconds
     try:
         with cancellation.defer():
             owner = _new_owner()
             owner.spawn(argv, cwd, dict(env), deadline)
         captured = _capture(owner, deadline, max_output_bytes, cancellation)
-        if owner.process.returncode != 0:
+        status = owner.process.returncode
+        if check and status != 0:
             raise BuildProcessError("command-exit")
     except BaseException as error:
         failure = error
@@ -177,4 +196,4 @@ def _run_owned(argv, cwd, env, timeout_seconds, max_output_bytes, cancellation):
         if isinstance(failure, (BuildProcessError, KeyboardInterrupt, SystemExit)):
             raise failure from None
         raise BuildProcessError("command-failed") from None
-    return subprocess.CompletedProcess(argv, 0, *captured)
+    return subprocess.CompletedProcess(argv, status, *captured)
