@@ -52,6 +52,11 @@ The server requests a dependency through this closed adapter hook. The broker
 still checks the installed provider, tenant, publication, binding, grant,
 deadline and remaining budget before dispatch.
 
+This hook is part of the Angular server application and uses TypeScript.
+For applications written in other languages, use the
+[client SDK examples](use-a-client.mdx#invoke-an-admitted-guest), which have
+selectable Rust, TypeScript, Go, C, Java and C# versions.
+
 <CodeExample example="guest/angular-dependency" region="dependency" />
 
 Only the bounded backend `message` field becomes public transferred data.

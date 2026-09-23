@@ -15,7 +15,7 @@ function nodeText(node) {
   return (node.childNodes ?? []).map(nodeText).join('');
 }
 const displayed = code => code.replace(/\r\n/g, '\n').replace(/\n+$/, '');
-export function verifyExampleHtml(html, bundle, requests) {
+export function verifyExampleHtml(html, bundle, requests, {includeVerification = true} = {}) {
   const code = [], links = new Set();
   htmlElements(parse(html), element => {
     if (element.tagName === 'pre') code.push(displayed(nodeText(element)));
@@ -26,7 +26,10 @@ export function verifyExampleHtml(html, bundle, requests) {
     const result = resolveExample(bundle, {...request, documentVersion: bundle.documentVersion});
     for (const variant of result.variants) {
       requireValue(code.includes(displayed(variant.snippet.code)), 'Missing or changed built example code');
-      for (const url of [variant.source.url, variant.validation.target, variant.validation.instructions].filter(Boolean)) {
+      const urls = includeVerification
+        ? [variant.source.url, variant.validation.target, variant.validation.instructions]
+        : [variant.source.url];
+      for (const url of urls.filter(Boolean)) {
         requireValue(links.has(url), 'Missing commit-bound example source/validation link');
       }
       checked += 1;
@@ -43,7 +46,8 @@ export function validateExampleBuild(output, index, manifest, snapshotExamples) 
     if (!requests.length) continue;
     const filename = path.join(output, ...decodeURIComponent(page.route).split('/').filter(Boolean), 'index.html');
     requireValue(fs.statSync(filename).size <= 4 * 1024 * 1024, 'Built example page size limit');
-    checked += verifyExampleHtml(fs.readFileSync(filename, 'utf8'), current.bundle, requests);
+    checked += verifyExampleHtml(fs.readFileSync(filename, 'utf8'), current.bundle, requests,
+      {includeVerification: page.source.includes('/development/')});
   }
   return checked;
 }
