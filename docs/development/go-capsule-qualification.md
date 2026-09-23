@@ -88,6 +88,29 @@ next gate includes synchronized clock/native fuel accounting and bounded
 caller/child start and terminal diagnostics. This failed attempt cannot qualify
 the later source changes.
 
+[Run 35926554561](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35926554561),
+head `64fac09c3306f307416c3d59ce412c83c9917739`, passed the expanded ABI probe
+and all ten real SDK tests, including explicit resource cleanup and the warm
+declared-error child call after synchronized clock charging. Its fifth node
+deployment still failed closed with `admission-clock-lease-uncovered`: the
+binding inheritance pass rereads full packages after metadata compilation,
+and had not received the control-only renewal authority. The next correction
+covers that pass, explicit binding reloads and local-provider reads, without
+changing the finite lease, the compilation deadline or the commit fences.
+Three real-package regressions cover failure at every renewal, unchanged
+durable state, per-compilation package deduplication, cancelled preparation,
+historical replay and policy revocation. Restored bindings do not renew trust.
+This retained failure still does not qualify the complete node or guide path.
+
+Qualification now passes its captured packaging and contract binaries into
+the SDK builder as a required pair; standalone SDK builds retain their normal
+build command. Rebuilding those tools with a different Cargo feature set
+during qualification changes their bytes, even from the same sources, and is
+not permitted. The final integrity stage retains before/after source and
+binary identities and rejects any difference. The local-service fixture also
+publishes a current synthetic load sample before each new request because it
+has no node monitor; production freshness limits are unchanged.
+
 ## Reproduction and delivery boundary
 
 Install the exact Linux tools from the beginner guide, then use a fresh output
