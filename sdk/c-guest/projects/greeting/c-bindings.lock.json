@@ -1,0 +1,11 @@
+{
+  "formatVersion": 1,
+  "generator": "wit-bindgen-cli 0.62.0",
+  "outputs": {
+    "probe.c": "sha256:cdefd87c2c5f08986af3f2cff7de9e540737af324db031c16d4d974a803d42e5",
+    "probe.h": "sha256:9c7fa6fb3fa783176b72855b266dd10aa63ed3c391eb7434caf0c822ebe0e07c",
+    "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+    "probe_component_type.o": "sha256:6f3dceca7e8137522d881ee99ab71e1c2a1894b0f6eb7276c5576df1c70ba212"
+  },
+  "world": "examples:greeting/component@1.0.0"
+}
