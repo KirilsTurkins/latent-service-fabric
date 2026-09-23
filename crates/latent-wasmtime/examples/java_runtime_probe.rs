@@ -14,6 +14,19 @@ async fn main() -> wasmtime::Result<()> {
         .ok_or_else(|| wasmtime::Error::msg("component path required"))?;
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
+    #[cfg(feature = "java-guest-diagnostic")]
+    config
+        .wasm_gc(false)
+        .wasm_exceptions(true)
+        .gc_heap_initial_size(64 * 1024)
+        .gc_heap_reservation(4 * 1024 * 1024)
+        .gc_heap_reservation_for_growth(0)
+        .gc_heap_may_move(false);
+    if !cfg!(feature = "java-guest-diagnostic") {
+        return Err(wasmtime::Error::msg(
+            "enable the explicit java-guest-diagnostic feature; node qualification is separate",
+        ));
+    }
     let engine = Engine::new(&config)?;
     let started = Instant::now();
     let component = Component::from_file(&engine, path)?;

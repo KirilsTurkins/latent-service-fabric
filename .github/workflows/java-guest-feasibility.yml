@@ -36,7 +36,8 @@ jobs:
           git archive --format=tar.gz -o "$RUNNER_TEMP/java-feasibility-source.tar.gz" HEAD \
             sdk/java-guest .github/workflows/java-guest-feasibility.yml \
             tools \
-            wit/platform crates/latent-wasmtime/src/surface.rs
+            wit/platform crates/latent-wasmtime/src/surface.rs \
+            crates/latent-wasmtime/examples/java_runtime_probe.rs crates/latent-wasmtime/Cargo.toml Cargo.toml Cargo.lock
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: java-feasibility-source-${{ github.sha }}
@@ -75,7 +76,7 @@ jobs:
       - name: Execute Java code, exceptions and GC without claiming node admission
         run: |
           set -o pipefail
-          cargo run --locked -p latent-wasmtime --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-feasibility/probe.wasm" 2>&1 | tee "$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log"
+          cargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-feasibility/probe.wasm" 2>&1 | tee "$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

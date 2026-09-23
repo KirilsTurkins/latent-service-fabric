@@ -1,5 +1,12 @@
 # Java guest feasibility — not yet a supported authoring workflow
 
+The actual component from [attempt a4b31059](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35890049528)
+was rejected by the current LSF engine: its Wasm exception proposal is disabled.
+The opt-in `java-guest-diagnostic` experiment enables maintained Wasmtime exception
+handling with a non-moving 4 MiB exception-GC reservation and fresh Stores. It
+does not enable a Java node profile or satisfy signed node qualification. The
+default build is unchanged, and the diagnostic fails explicitly without the flag.
+
 This directory is work toward [#548](https://github.com/KirilsTurkins/latent-service-fabric/issues/548),
 not a Java capsule SDK release. The external RPC client remains separate in
 [`../java-client`](../java-client). No qualification, deployment, signing,

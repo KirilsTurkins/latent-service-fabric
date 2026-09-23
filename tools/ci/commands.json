@@ -1198,7 +1198,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "git archive --format=tar.gz -o \"$RUNNER_TEMP/java-feasibility-source.tar.gz\" HEAD \\\n  sdk/java-guest .github/workflows/java-guest-feasibility.yml \\\n  tools \\\n  wit/platform crates/latent-wasmtime/src/surface.rs"
+      "run": "git archive --format=tar.gz -o \"$RUNNER_TEMP/java-feasibility-source.tar.gz\" HEAD \\\n  sdk/java-guest .github/workflows/java-guest-feasibility.yml \\\n  tools \\\n  wit/platform crates/latent-wasmtime/src/surface.rs \\\n  crates/latent-wasmtime/examples/java_runtime_probe.rs crates/latent-wasmtime/Cargo.toml Cargo.toml Cargo.lock"
     },
     ".github/workflows/java-guest-feasibility.yml:compiler-component:Test evidence and process-capture behavior": {
       "workflow": ".github/workflows/java-guest-feasibility.yml",
@@ -1238,7 +1238,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-feasibility/probe.wasm\" 2>&1 | tee \"$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log\""
+      "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-feasibility/probe.wasm\" 2>&1 | tee \"$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -5826,7 +5826,7 @@
     ".github/workflows/ci.yml": "a7f311e9002c815503ccd24bca8d48df62d4cd6d4211c5acff35db98ddad215f",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/java-guest-feasibility.yml": "6ffe7a12555f2d2f7c3faf7b291451b3afe4f67fd757b3962b3ce555975ad645",
+    ".github/workflows/java-guest-feasibility.yml": "749317f4732ab656a988d7b16e8ed2aeb1c3414a8857e02defe798c834e54362",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
