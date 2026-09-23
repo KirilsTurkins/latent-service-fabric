@@ -58,3 +58,42 @@ builder authorization. These checks do not replace the Linux node matrix.
 The full artifact/source verification, measured result table and exact final
 CI links are pending. Runtime release publication remains on HOLD; issue #345
 still requires human newcomer review independently of automated guide execution.
+
+## Retained failed attempts
+
+The [first full signed-SDK attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35913215300)
+built all five projects and nine actual Java components. It rejected the SDK
+fixture's engine configuration because that fixture omitted cooperative fuel
+yielding; the production node already used a finite yield interval. The fixture
+now matches the production interval of 10000 fuel, without changing defaults.
+
+The [next attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35915999660)
+passed five of ten real SDK tests. It exposed canonical empty strings/lists
+whose non-null sentinel owns no C allocation. A retained actual Java random
+component reproduced an invalid `free` of that sentinel; the corrected bridge
+only clears/frees non-empty owned allocations. Empty string execution is now an
+early regression case. Local service also exposed the difference between cold
+component compilation and an accidental five-second fixture deadline. The
+documented Java profile explicitly allows 120 seconds; caller cancellation and
+100 ms deadline tests remain unchanged.
+
+The [nine-of-ten attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35918990021)
+at `f794609ee71b1c79015eaea5e672e10d5b8216a9` proves the sentinel correction:
+both blob tests, buffered HTTP, randomness, events, metrics, secrets, streaming,
+and exact signed-package admission passed. Its sole failure was local service.
+The fixture's clock policy authorized the original user but not the child
+service principal deliberately derived by production admission. The corrected
+fixture uses distinct exact caller and child identities, services and
+publications within one tenant, and retains bounded child-terminal diagnostics.
+It does not inherit user authority, add a wildcard, or change production policy.
+
+These attempts and their bounded diagnostics remain failed evidence, not
+substitutes for the required complete node/guide qualification.
+
+An additional [contract-boundary probe](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35921295847)
+demonstrated that the WIT parser/C generator accepts an empty-record declaration
+but the component validator rejects it with `record type must have at least one
+field`. Empty records now fail explicitly before Java compilation, and the
+generator validates its real component-type metadata before invoking TeaVM.
+The executable regression uses valid empty and populated lists of a non-empty
+record. This unsupported contract is not silently translated into another type.

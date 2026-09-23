@@ -52,7 +52,7 @@ resource ownership have typed representations. Declared WIT errors are
 `Result.err`, not Java exceptions. Uncaught exceptions trap the activation.
 
 One named exported interface is supported. Future/stream values, exported
-resources, borrowed-resource export parameters, resource constructors/methods,
+resources, empty records, borrowed-resource export parameters, resource constructors/methods,
 inline interfaces, world-owned named types and ambiguous interface versions are
 rejected before compilation. Asynchronous host operations
 suspend the Wasmtime activation while Java code waits synchronously. They do

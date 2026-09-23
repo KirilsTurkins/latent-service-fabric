@@ -115,6 +115,7 @@ jobs:
             ${{ runner.temp }}/java-guest-feasibility/*.wasm
             ${{ runner.temp }}/java-guest-bindings/report.json
             ${{ runner.temp }}/java-guest-bindings/compiler/*.log
+            ${{ runner.temp }}/java-guest-bindings/compiler/*.command.json
             ${{ runner.temp }}/java-guest-bindings/compiler-inputs.json
             ${{ runner.temp }}/java-guest-bindings/runtime-probe.log
             ${{ runner.temp }}/java-guest-bindings/compiled/bindings/

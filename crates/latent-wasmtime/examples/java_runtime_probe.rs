@@ -125,10 +125,14 @@ fn cases(typed: bool, sdk_random: bool) -> Vec<(&'static str, Vec<Val>, Val)> {
     ];
     if typed {
         cases.extend([
+            ("records", vec![Val::List(vec![])], Val::List(vec![])),
             (
-                "empties",
-                vec![Val::List(vec![Val::Record(vec![]); 3])],
-                Val::List(vec![Val::Record(vec![]); 3]),
+                "records",
+                vec![Val::List(vec![Val::Record(vec![(
+                    "value".into(),
+                    Val::U32(42),
+                )])])],
+                Val::List(vec![Val::Record(vec![("value".into(), Val::U32(42))])]),
             ),
             (
                 "text",

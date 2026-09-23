@@ -77,6 +77,12 @@ class Bindings(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "named interface"):
             Graph(data, "service", HEADER)
 
+    def test_empty_records_fail_before_java_compilation(self):
+        data = document()
+        data["types"][0]["kind"] = {"record": {"fields": []}}
+        with self.assertRaisesRegex(ValueError, "component records require a field"):
+            Graph(data, "service", HEADER)
+
     def test_exported_resources_and_resource_methods_fail_closed(self):
         data = document()
         data["types"][0] = {"name": "item", "kind": "resource", "owner": {"interface": 0}}

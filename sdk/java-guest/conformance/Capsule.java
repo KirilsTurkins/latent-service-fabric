@@ -8,8 +8,8 @@ import dev.latent.guest.Wire;
 /** Executed source, not a hand-written Wasm substitute. */
 public final class Capsule implements Bindings.Exports {
     private static long calls;
-    @Override public java.util.List<Bindings.TestsJavaFeasibilityProbeEmpty> empties(
-        java.util.List<Bindings.TestsJavaFeasibilityProbeEmpty> values) { return values; }
+    @Override public java.util.List<Bindings.TestsJavaFeasibilityProbeItem> records(
+        java.util.List<Bindings.TestsJavaFeasibilityProbeItem> values) { return values; }
     @Override public Long identity(Long value) { return value; }
     @Override public Unsigned64 unsigned(Unsigned64 value) { return value; }
     @Override public String text(String value) { return value; }

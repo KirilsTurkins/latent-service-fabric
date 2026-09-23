@@ -1,8 +1,8 @@
 package tests:java-feasibility@1.0.0;
 
 interface probe {
-    record empty {}
-    empties: func(values: list<empty>) -> list<empty>;
+    record item { value: u32 }
+    records: func(values: list<item>) -> list<item>;
     identity: func(value: s64) -> s64;
     unsigned: func(value: u64) -> u64;
     text: func(value: string) -> string;

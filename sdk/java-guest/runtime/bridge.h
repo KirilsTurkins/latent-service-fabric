@@ -17,10 +17,8 @@ static void lsf_zero(void *value, size_t size) {
  * pointers own no allocation and must never be passed to the C allocator. */
 static void lsf_release(void *value, size_t size) { if (value && size) { lsf_zero(value, size); free(value); } }
 static void *lsf_allocate(size_t count, size_t size) {
-    /* Empty WIT records/tuples also have a zero C element stride. Their finite
-     * list count is checked by the codec; no backing allocation is owned. */
-    if (!count || !size) return NULL;
-    lsf_require(count <= LSF_MAX_BYTES / size);
+    if (!count) return NULL;
+    lsf_require(size && count <= LSF_MAX_BYTES / size);
     void *value = calloc(count, size);
     lsf_require(value != NULL); return value;
 }

@@ -132,7 +132,9 @@ class Graph:
         if not isinstance(kind, dict) or len(kind) != 1: raise ValueError("unsupported WIT type")
         form, body = next(iter(kind.items()))
         if form in ("type", "list", "option"): children = [body]
-        elif form == "record": children = [p["type"] for p in body["fields"]]
+        elif form == "record":
+            if not body["fields"]: raise ValueError("Java profile rejects empty WIT records: component records require a field")
+            children = [p["type"] for p in body["fields"]]
         elif form == "tuple": children = body["types"]
         elif form == "result": children = [body["ok"], body["err"]]
         elif form == "variant": children = [p["type"] for p in body["cases"]]
