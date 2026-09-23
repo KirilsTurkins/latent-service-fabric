@@ -23,7 +23,6 @@ pub use deployments::{
 };
 
 use latent_artifacts::ArtifactDescriptor;
-use latent_audit::AuditEvent;
 use latent_core::{
     BindingId, BoxFuture, DeploymentId, NodeId, PlatformError, PolicyId, ReleaseDigest,
     RouteGeneration, ServiceId, TenantId, TriggerId,
@@ -253,8 +252,4 @@ pub trait CompiledRouteStore: Send + Sync {
         &'a self,
         generation: RouteGeneration,
     ) -> BoxFuture<'a, Result<Option<RouteSnapshot>, PlatformError>>;
-}
-
-pub trait ControlAuditStore: Send + Sync {
-    fn append<'a>(&'a self, event: AuditEvent) -> BoxFuture<'a, Result<(), PlatformError>>;
 }
