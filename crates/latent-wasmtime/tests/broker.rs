@@ -42,7 +42,9 @@ async fn real_guest_runs_with_the_original_phase3_ledger_and_unused_counters_sta
         .budget
         .finalize_at(Some(&consumption), Instant::now());
     assert!(finalized.violation().is_none());
-    assert_eq!(finalized.consumption().cpu_fuel, consumption.cpu_fuel);
+    // Guest instruction fuel and two 100-fuel clock-provider charges are
+    // independently owned in the same activation ledger, without double count.
+    assert_eq!(finalized.consumption().cpu_fuel, consumption.cpu_fuel + 200);
     assert!(consumption.cpu_fuel > 0);
     assert_eq!(
         (
