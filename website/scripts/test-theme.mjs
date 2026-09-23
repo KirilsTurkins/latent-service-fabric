@@ -164,7 +164,9 @@ try {
           await screenshot(page, `${variant}-${mode}-home`);
           await visit(page, `${prefix}/docs/architecture/overview/`);
           assertTextContrast(await textSamples(page));
-          assert.equal(await page.locator('article img[src*="activation-lifecycle.svg"], article img[src*="package-delivery.svg"]').count(), 2);
+          const overviewDiagrams = [...inventory.outputs, ...inventory.maintained].filter(entry => entry.consumers.includes('docs/architecture/overview.md'));
+          assert.equal(await page.locator('article img').count(), overviewDiagrams.length);
+          for (const entry of overviewDiagrams) assert.equal(await page.locator(`article img[src$="/${path.basename(entry.path)}"]`).count(), 1);
           await visit(page, `${prefix}/docs/development/website/`);
           await page.locator('.docusaurus-mermaid-container svg').waitFor({state: 'visible'});
           assert.equal(await page.locator('.docusaurus-mermaid-container foreignObject').count(), 0);
@@ -200,7 +202,7 @@ try {
           await context.close();
         }
       }
-      for (const entry of inventory.outputs) {
+      for (const entry of [...inventory.outputs, ...inventory.maintained]) {
         const context = await browser.newContext({viewport: {width: 1440, height: 760}});
         const errors = [];
         await context.route('**/*', route => {
@@ -213,9 +215,10 @@ try {
         try {
           const asset = built.manifest.assets.find(asset => asset.path === entry.path);
           const original = built.manifest.assets.find(asset => asset.path === entry.source);
-          assert.ok(asset && original);
+          assert.ok(asset);
+          if (entry.source) assert.ok(original);
           const beforeAfter = [];
-          for (const [label, selected] of [['before', original], ['after', asset]]) {
+          for (const [label, selected] of [...(original ? [['before', original]] : []), ['after', asset]]) {
             await visit(page, `${prefix}${assetRoute(selected)}`);
             const geometry = await page.evaluate(() => {
               const svg = document.querySelector('svg');
@@ -247,7 +250,7 @@ try {
           }
           for (const mode of ['light', 'dark']) {
             await page.setViewportSize({width: 390, height: 844});
-            await page.setContent(`<html><body style="margin:16px;background:${palette.modes[mode].canvas};color:${palette.modes[mode].text};font:16px system-ui"><h1 style="font-size:22px">Presentation copy</h1><p>${entry.caption}</p><a href="${prefix}${assetRoute(asset)}" style="color:${palette.modes[mode].link}"><img alt="Historical relationship in the maintained palette" src="${prefix}${assetRoute(asset)}" style="max-width:100%;height:auto">Open full-size diagram</a><p>The linked original remains unchanged.</p></body></html>`);
+            await page.setContent(`<html><body style="margin:16px;background:${palette.modes[mode].canvas};color:${palette.modes[mode].text};font:16px system-ui"><h1 style="font-size:22px">Current diagram</h1><p>${entry.caption ?? 'Current runtime behavior in the shared documentation palette.'}</p><a href="${prefix}${assetRoute(asset)}" style="color:${palette.modes[mode].link}"><img alt="Current runtime relationship" src="${prefix}${assetRoute(asset)}" style="max-width:100%;height:auto">Open full-size diagram</a><p>Open at full size to read the diagram labels.</p></body></html>`);
             await waitForImage(page);
             await assertReflow(page);
             assertTextContrast(await textSamples(page));
