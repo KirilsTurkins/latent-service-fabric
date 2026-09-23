@@ -20,7 +20,7 @@ under [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
 
 | Guide | Available execution evidence | Remaining acceptance |
 | --- | --- | --- |
-| [Native release promotion](../operations/native-release-promotion.md) | [Authenticated rc.1 foundation](../evidence/native-foundation-35763422270.json), both real VM profiles, reboot, retained invocation, rootless operation and removal/recovery. [PR #503](https://github.com/KirilsTurkins/latent-service-fabric/pull/503) merged the exact predecessor declaration for alpha.4. | Execute the final alpha.4 bundle against that predecessor, retain both VM acceptance receipts and publish through the protected release owner; rendered guide review. |
+| [Native release promotion](../operations/native-release-promotion.md) | [Authenticated rc.2 foundation](../evidence/native-foundation-35811188306.json), both real VM profiles, reboot, retained invocation, rootless operation and removal/recovery. [PR #533](https://github.com/KirilsTurkins/latent-service-fabric/pull/533) merged the current-format predecessor declaration for alpha.4. The obsolete rc.1 HTTP format is not supported. | Execute the final alpha.4 bundle against rc.2, retain both VM acceptance receipts and publish through the protected release owner; rendered guide review. |
 | [Maintained security monitoring](../operations/maintained-security-monitoring.md) | [Verified activation](security-baseline-evidence.md): approved default-branch workflow, scheduled run `35586505063`, manual run `35752339515`, both maintained refs and required security aggregate. #282 is closed. | Rendered guide review. Preserve the stated limits of settings observations, permission fixtures and scanner canaries. |
 | [First node](../start/first-node.md) and [capsule delivery/recovery](../learn/deliver-and-recover-a-capsule.md) | [Core guide validation](core-guide-validation.md) links actual first-node/build, operator, publication, offline-transfer and enforced-profile receipts. First-node execution covers 19 CLI commands, success and failure cases, retained deployment after restart and clean reaping. | Human walkthrough review and native-bundle installation under #308; source-based execution does not replace bundle qualification. |
 | [Reconcile a policy change](../how-to/reconcile-a-policy-change.md) | [Capability-policy execution](../evidence/guide-capability-policy-2026-09-21.json): 15 actual CLI calls with persisted revocation. [Management execution](../evidence/guide-management-2026-09-21.json) separately supplies guest and HTTP/blob coverage. | Rendered/newcomer review. The policy collector itself has no guest invocations. |
@@ -51,7 +51,7 @@ successful reference run.
 The [f8d native summary](../evidence/native-runtime-f8d0c51a.json) and
 [edec integrated candidate](../evidence/native-runtime-edec84fa.json) retain
 their original sources, CI checkouts, VM results and missing-version-pair gaps.
-The later rc.1 foundation is a separate artifact and does not rewrite them.
+The later rc.1 and rc.2 foundations are separate artifacts and do not rewrite them.
 
 The [original operator receipt](../evidence/core-operator-walkthrough-35454985599.json)
 and [original provider receipt](../evidence/provider-walkthrough-35454985599.json)

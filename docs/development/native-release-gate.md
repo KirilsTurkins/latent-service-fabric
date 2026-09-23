@@ -3,7 +3,7 @@
 This is the maintainer gate for [native standalone installation](../installation.md)
 and [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308), not a
 claim that a binary release or its full acceptance evidence already exists.
-The parent integrator chooses the final reviewed commit and new version only
+The release maintainer chooses the final reviewed commit and new version only
 after exact-head CI. Do not move the historical source-only `0.1.0-alpha.3` tag.
 
 ## Current-format native foundation
@@ -136,9 +136,9 @@ artifacts are refused. Receipts distinguish artifact `sourceCommit` from
 `harnessSourceCommit`. Such cross-revision diagnostics are not exact-head release
 acceptance: the publication gate requires both to equal the final reviewed source.
 
-## Parent-controlled publication
+## Protected publication
 
-Before dispatch, the parent must select and review:
+Before dispatch, the release maintainer must select and review:
 
 1. A new version, its exact clean source commit and a successful maintained
    `.github/workflows/ci.yml` run at that exact commit.
@@ -149,8 +149,8 @@ Before dispatch, the parent must select and review:
    identifies the selected pair; its final VM qualification is still required.
 3. An existing exact release tag and the publisher identity described here.
    Neither workflow creates or moves tags. GitHub must have registered this
-   workflow for dispatch; parent-controlled default-branch promotion is not an
-   installer or sub-agent side effect.
+   workflow for dispatch. Default-branch workflow activation is a separate
+   reviewed repository change.
 4. The `native-runtime-publish` GitHub environment with required reviewers.
    The gate refuses publication if that protection is missing. The workflow
    does not silently create an unprotected environment or new signing policy.
@@ -161,7 +161,7 @@ authenticated artifact is retained for 90 days. The next exact reviewed version
 can select that run only when its predecessor identity is committed. This avoids
 relabeling one binary as two versions or inventing upgrade evidence.
 
-After those decisions, a parent can dispatch the already-reviewed workflow:
+After those decisions, the maintainer can dispatch the reviewed workflow:
 
 ```bash
 gh workflow run native-runtime-release.yml --repo KirilsTurkins/latent-service-fabric \
@@ -184,10 +184,16 @@ Sigstore bundle are also release assets.
 Publication is a single bounded mutating operation. If it fails after starting,
 inspect the selected remote release and `native-publication-result.json` before
 any retry. An uncertain or partially uploaded release is not success and is not
-automatically overwritten, deleted or retried. Parent review/merges/issue closure
+automatically overwritten, deleted or retried. Maintainer review, merges and issue closure
 remain separate from this workflow.
 
-## Current recorded boundary
+## Historical candidate evidence
+
+The following candidate runs predate the current rc.2 foundation described above.
+Their original limitations apply to those exact runs. The release workflow is
+now active on the default branch after [PR #460](https://github.com/KirilsTurkins/latent-service-fabric/pull/460),
+and the publication environment requires maintainer review. Recheck those live
+protections using the [promotion runbook](../operations/native-release-promotion.md).
 
 The [successful diagnostic receipt summary](../evidence/native-runtime-3925d416.json)
 retains exact source/archive identities, original receipt hashes and real boot
@@ -209,7 +215,7 @@ the installer's untracked-file rejection. The complete maintained
 also passed at that harness commit. Neither cross-revision diagnostics nor an
 earlier green CI result qualify a later release commit.
 
-### Acceptance handoff
+### Historical candidate acceptance
 
 | Boundary | Observed result and remaining qualification |
 | --- | --- |
@@ -221,15 +227,16 @@ earlier green CI result qualify a later release commit.
 | Backup, recovery, removal and purge | Both profiles pass stopped consistent backup/full-set restore, default retention/reinstall, exact-installation purge and unsafe-path refusal. |
 | Rootless evaluation | UID 1000 foreground invocation, live-removal `installation-busy` refusal, clean shutdown, removal and purge pass without a user systemd service. |
 | Cross-version compatibility | **Not exercised in a real VM:** no genuine declared predecessor is selected. Compatible upgrade and unsupported binary downgrade are implemented but remain release gates, not covered by same-version reinstall or mocked tests. |
-| Final source, release identity and publication | **Parent-controlled, not performed:** select new versions/commits, register the release workflow, configure required reviewers, obtain exact-head CI and complete same-source release receipts, then publish. |
+| Final source, release identity and publication | **Not performed by these candidate runs.** The later rc.2 foundation and current release procedure above provide the subsequent source and workflow decisions. |
 
 Both successful diagnostic receipts explicitly contain `acceptanceComplete:false`
 and `declared-compatible-native-version-pair-not-yet-selected`. The publication
 gate also refuses their artifact/harness mismatch. As inspected on 2026-09-19,
 the release-workflow and `native-runtime-publish` environment API lookups returned
 404; OAuth workflow scope is available and is **not** a remaining push blocker.
-Do not create a trust policy, move a historical tag, or mark #308 complete to
-work around those parent decisions.
+That September 19 checkpoint is historical; it does not describe the active
+workflow and protected environment. Do not move historical tags or reinterpret
+candidate receipts as complete #308 acceptance.
 
 ### Earlier failures and fixes
 
@@ -255,7 +262,7 @@ work around those parent decisions.
   tests never substitute for packaged-artifact Linux evidence.
 
 Pass these scoped successes and remaining release gates to #237/#238/#240.
-Operator documentation and its default-branch/Wiki promotion can proceed with
-this honest candidate boundary; #240's phase acceptance is not a circular
+Operator documentation and protected Pages publication can proceed with the
+recorded qualification boundary; #240's phase acceptance is not a circular
 prerequisite for publishing documentation. Actual native release/tag publication
-remains separate and parent controlled.
+remains separate and requires the configured maintainer review.
