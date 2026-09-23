@@ -283,6 +283,7 @@ pub(super) async fn compile_catalog_for_bindings(
     work: &mut Work,
     runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
     lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+    control_authority: Option<&dyn latent_artifacts::AdmissionAuthority>,
 ) -> Result<CompiledCatalog, PlatformError> {
     let result = compile_catalog_inner(
         deployments,
@@ -298,7 +299,7 @@ pub(super) async fn compile_catalog_for_bindings(
         lifecycle,
         None,
         false,
-        None,
+        control_authority,
     )
     .await;
     finish_compilation(&result, work);
@@ -852,7 +853,8 @@ async fn compile_catalog_inner(
             reuse: memo.finish(config, &mut metadata_budget),
         };
         if inherit_bindings {
-            catalog.bindings = super::bindings::inherit(&catalog, previous, artifacts).await?;
+            catalog.bindings =
+                super::bindings::inherit(&catalog, previous, artifacts, control_authority).await?;
         }
         charge(&mut metadata_budget, catalog.bindings.retained_bytes())?;
         Ok(catalog)

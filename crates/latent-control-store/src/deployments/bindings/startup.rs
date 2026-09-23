@@ -84,6 +84,7 @@ impl DirectoryDeploymentRepository {
             &mut Work::default(),
             self.runtime_profile.as_deref(),
             self.lifecycle.as_ref(),
+            None,
         )
         .await?;
         next.bindings = compile::compile(
@@ -92,6 +93,7 @@ impl DirectoryDeploymentRepository {
             Some(owner),
             self.artifacts.as_ref(),
             false,
+            None,
         )
         .await?;
         let next = Arc::new(next);
