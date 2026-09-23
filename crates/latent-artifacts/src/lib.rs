@@ -18,7 +18,7 @@ mod retained_package;
 mod verification_statistics;
 mod verified_metadata;
 pub mod web;
-pub use publication::{PublicationRef, PublicationSelector};
+pub use publication::PublicationRef;
 pub use publication_management::PublicationOperationReceipt;
 pub use retained_package::{RetainedPackageParts, RetainedPackageSource};
 
@@ -184,32 +184,22 @@ pub struct DerivedArtifactDescriptor {
 }
 
 pub trait ArtifactRepository: Send + Sync {
-    /// Authenticated scope is checked before resolving either selector. The
-    /// default preserves legacy repositories without pretending they support IDs.
+    /// Authenticated scope is checked before resolving an exact publication.
+    /// Repositories without publication identity do not support this operation.
     fn get_selected_catalog_entry<'a>(
         &'a self,
-        scope: &'a LifecycleScope,
-        selector: &'a PublicationSelector,
+        _scope: &'a LifecycleScope,
+        _selector: &'a PublicationRef,
     ) -> BoxFuture<'a, Result<Option<ArtifactCatalogEntry>, PlatformError>> {
-        match (scope.tenant(), selector) {
-            (Some(tenant), PublicationSelector::LegacyComponent(release)) => {
-                self.get_catalog_entry(tenant, release)
-            }
-            _ => Box::pin(async { Err(unsupported_catalog_query()) }),
-        }
+        Box::pin(async { Err(unsupported_catalog_query()) })
     }
 
     fn get_selected_lifecycle<'a>(
         &'a self,
-        scope: &'a LifecycleScope,
-        selector: &'a PublicationSelector,
+        _scope: &'a LifecycleScope,
+        _selector: &'a PublicationRef,
     ) -> BoxFuture<'a, Result<Option<ReleaseLifecycleStatus>, PlatformError>> {
-        match selector {
-            PublicationSelector::LegacyComponent(release) => {
-                self.get_release_lifecycle(scope, release)
-            }
-            _ => Box::pin(async { Err(unsupported_catalog_query()) }),
-        }
+        Box::pin(async { Err(unsupported_catalog_query()) })
     }
 
     /// Lookup is scope + operation ID. It never resolves a component again.
@@ -248,46 +238,26 @@ pub trait ArtifactRepository: Send + Sync {
 
     fn change_selected_lifecycle<'a>(
         &'a self,
-        context: ReleaseMutationContext,
-        selector: &'a PublicationSelector,
-        action: ReleaseLifecycleAction,
-        reason: ReleaseLifecycleReason,
-        preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+        _context: ReleaseMutationContext,
+        _selector: &'a PublicationRef,
+        _action: ReleaseLifecycleAction,
+        _reason: ReleaseLifecycleReason,
+        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
                      + Send),
     ) -> BoxFuture<'a, Result<PublicationOperationReceipt, PlatformError>> {
-        Box::pin(async move {
-            let PublicationSelector::LegacyComponent(release) = selector else {
-                return Err(unsupported_catalog_query());
-            };
-            self.change_release_lifecycle(context, release, action, reason, preflight)
-                .await
-                .map(|operation| PublicationOperationReceipt {
-                    publication: None,
-                    operation,
-                })
-        })
+        Box::pin(async { Err(unsupported_catalog_query()) })
     }
 
     fn renew_selected_evidence<'a>(
         &'a self,
-        context: ReleaseMutationContext,
-        selector: &'a PublicationSelector,
-        package: &'a latent_core::PackageDigest,
-        evidence: ReleaseEvidenceUpload,
-        preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+        _context: ReleaseMutationContext,
+        _selector: &'a PublicationRef,
+        _package: &'a latent_core::PackageDigest,
+        _evidence: ReleaseEvidenceUpload,
+        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
                      + Send),
     ) -> BoxFuture<'a, Result<PublicationOperationReceipt, PlatformError>> {
-        Box::pin(async move {
-            let PublicationSelector::LegacyComponent(release) = selector else {
-                return Err(unsupported_catalog_query());
-            };
-            self.renew_release_evidence(context, release, package, evidence, preflight)
-                .await
-                .map(|operation| PublicationOperationReceipt {
-                    publication: None,
-                    operation,
-                })
-        })
+        Box::pin(async { Err(unsupported_catalog_query()) })
     }
     /// Recover a stored component selection from a unique current scoped match.
     /// Archived Phase 2 migration mappings are unsupported. This creates no grant.

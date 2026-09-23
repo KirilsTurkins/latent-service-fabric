@@ -4,8 +4,8 @@ Catalog format 2 implements the storage contract in
 [RFC-0002](../../rfcs/0002-tenant-scoped-publication-identity.md) and
 [ADR-0027](../../adr/0027-separate-publication-authority-from-component-identity.md).
 It separates component bytes, complete immutable packages and permission to use
-a package in a particular tenant. The catalog library and offline migration are
-implemented. [Deployment and runtime propagation](publication-runtime.md) carries
+a package in a particular tenant. Obsolete catalog formats are rejected; there
+is no offline migration command. [Deployment and runtime propagation](publication-runtime.md) carries
 exact selections through guest start. [Public selectors](publication-api.md) in
 the RPC, CLI and six SDKs preserve the same publication identity.
 
@@ -17,7 +17,7 @@ readers reject before shared-blob recovery or collection.
 `ReleaseDigest` remains the SHA-256 of executable bytes. `PackageDigest` remains
 the complete immutable package identity. A `PublicationRef` contains an explicit
 scope and a `publication:sha256:` ID computed with the RFC's domain-separated,
-length-prefixed construction. The local trusted compatibility path derives its
+length-prefixed construction. Trusted local publication derives its
 publication from the canonical original COMPLETE record; it invents no package
 digest, publisher signature or observed build.
 
@@ -34,12 +34,12 @@ fetch, lifecycle status, execution eligibility, lifecycle mutation, evidence
 renewal and explicit re-verification. Callers authorize the scope before using
 these internal interfaces. Possession of an ID is not permission.
 
-Fresh legacy component selection within an authorized scope returns no match,
-the sole publication, or `StateConflict` with `publication-selector-ambiguous`
-and `retryable: false`. Revoked and retired publications still count; revocation
-does not silently choose a different package. Non-unique artifact references
-also require explicit selection. Invalid selectors never fall back to legacy
-selection, and a foreign ID in the authorized scope appears absent.
+Publication catalog reads and mutations accept `PublicationRef` directly.
+The obsolete component-or-publication selector and its repository fallback are
+removed. A reference must match the authorized scope; a foreign ID in that
+scope appears absent. Component bytes do not substitute for publication identity.
+Internal content-addressed reads still reject ambiguous component associations;
+revoked and retired publications continue to count toward ambiguity.
 
 Scoped catalog pages use deterministic publication-ID order and version-2 opaque
 cursors. Component digests are not a unique row key or a pagination ordering
@@ -68,7 +68,6 @@ The catalog root contains:
 | `lifecycle/receipts/` | Bounded operation ring with exact publication associations |
 | `lifecycle/evidence/` | Independently selected immutable evidence revisions |
 | `.tmp/` | Owned publication/reclamation staging |
-| `.publication-migration/` | Migration progress, original lifecycle archive and legacy associations |
 
 The node places this catalog root at `<dataDirectory>/releases`. Its publications
 use independent publication identities; obsolete component-keyed roots are rejected.

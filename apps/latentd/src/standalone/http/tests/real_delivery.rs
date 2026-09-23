@@ -1,7 +1,6 @@
 use super::fixture::*;
 use latent_artifacts::{
-    LifecycleScope, PublicationRef, PublicationSelector, ReleaseLifecycleAction,
-    ReleaseLifecycleReason,
+    LifecycleScope, PublicationRef, ReleaseLifecycleAction, ReleaseLifecycleReason,
 };
 use latent_control_store::http_routes::{TriggerOperationContext, TriggerOperationRequest};
 use latent_control_store::DeploymentStore;
@@ -217,10 +216,10 @@ async fn actual_http_component_pinned_cutover_and_revocation_use_current_authori
         .unwrap();
     wait(|| fixture.node.http_snapshot().unwrap().exchanges == 1).await;
     let stores_before_revocation = fixture.node.backend.resource_snapshot().stores_created;
-    let selector = PublicationSelector::Publication(PublicationRef {
+    let selector = PublicationRef {
         id: expected.publication.unwrap(),
         scope: LifecycleScope::Tenant(tenant.clone()),
-    });
+    };
     fixture
         .artifacts
         .change_publication_lifecycle(

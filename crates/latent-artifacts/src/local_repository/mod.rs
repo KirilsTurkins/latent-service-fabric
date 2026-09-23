@@ -683,7 +683,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
     fn get_selected_catalog_entry<'a>(
         &'a self,
         scope: &'a crate::LifecycleScope,
-        selector: &'a crate::PublicationSelector,
+        selector: &'a crate::PublicationRef,
     ) -> BoxFuture<'a, Result<Option<crate::ArtifactCatalogEntry>, PlatformError>> {
         Box::pin(async move {
             self.resolve_publication(scope, selector)?
@@ -696,7 +696,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
     fn get_selected_lifecycle<'a>(
         &'a self,
         scope: &'a crate::LifecycleScope,
-        selector: &'a crate::PublicationSelector,
+        selector: &'a crate::PublicationRef,
     ) -> BoxFuture<'a, Result<Option<crate::ReleaseLifecycleStatus>, PlatformError>> {
         Box::pin(async move {
             self.resolve_publication(scope, selector)?
@@ -739,7 +739,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
     fn change_selected_lifecycle<'a>(
         &'a self,
         context: crate::ReleaseMutationContext,
-        selector: &'a crate::PublicationSelector,
+        selector: &'a crate::PublicationRef,
         action: crate::ReleaseLifecycleAction,
         reason: crate::ReleaseLifecycleReason,
         preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
@@ -767,7 +767,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
     fn renew_selected_evidence<'a>(
         &'a self,
         context: crate::ReleaseMutationContext,
-        selector: &'a crate::PublicationSelector,
+        selector: &'a crate::PublicationRef,
         package: &'a latent_core::PackageDigest,
         evidence: crate::ReleaseEvidenceUpload,
         preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>

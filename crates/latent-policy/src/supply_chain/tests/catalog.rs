@@ -32,14 +32,12 @@ pub(super) fn publication_directory(
     repo: &DirectoryArtifactRepository,
     release: &ReleaseDigest,
 ) -> std::path::PathBuf {
-    let reference = repo
-        .resolve_publication(
-            &latent_artifacts::LifecycleScope::Tenant(tenant()),
-            &latent_artifacts::PublicationSelector::LegacyComponent(release.clone()),
-        )
+    let publication = ready(repo.get_catalog_entry(&tenant(), release))
         .unwrap()
+        .unwrap()
+        .publication
         .unwrap();
-    repo.root().join("publications").join(reference.id.hex())
+    repo.root().join("publications").join(publication.hex())
 }
 fn authority(fixture: &Fixture, root: &std::path::Path) -> Arc<SupplyChainAuthority> {
     Arc::new(

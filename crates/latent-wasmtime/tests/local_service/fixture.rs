@@ -438,10 +438,10 @@ impl Fixture {
                         expected_generation: 1,
                     }),
                 },
-                &PublicationSelector::Publication(PublicationRef {
+                &PublicationRef {
                     id: self.target.publication.clone().unwrap(),
                     scope,
-                }),
+                },
                 ReleaseLifecycleAction::Revoke,
                 ReleaseLifecycleReason::OperatorRevocation,
                 &mut |_| Ok(()),

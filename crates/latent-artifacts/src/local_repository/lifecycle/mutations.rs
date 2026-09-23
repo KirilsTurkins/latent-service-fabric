@@ -1,6 +1,6 @@
 use super::request::{mutation_digest, observed_time, Preflight, Request};
 use super::*;
-use crate::{PublicationRef, PublicationSelector};
+use crate::PublicationRef;
 use crate::{
     ReleaseEligibility, ReleaseEvidenceUpload, ReleaseLifecycleAction, ReleaseLifecycleReason,
     ReleaseMutationContext, ReleaseOperationDisposition, ReleaseOperationPreview,
@@ -22,27 +22,20 @@ impl DirectoryArtifactRepository {
     pub fn change_publication_lifecycle(
         &self,
         context: ReleaseMutationContext,
-        selector: &PublicationSelector,
+        reference: &PublicationRef,
         action: ReleaseLifecycleAction,
         reason: ReleaseLifecycleReason,
         preflight: &mut Preflight<'_>,
     ) -> Result<ReleaseOperationReceipt, PlatformError> {
-        match selector {
-            PublicationSelector::LegacyComponent(release) => {
-                self.change_lifecycle(context, release, action, reason, preflight)
-            }
-            PublicationSelector::Publication(reference) => {
-                let release = self.selected_component(&context, reference)?;
-                self.change_lifecycle_inner(
-                    context,
-                    &release,
-                    Some(reference),
-                    action,
-                    reason,
-                    preflight,
-                )
-            }
-        }
+        let release = self.selected_component(&context, reference)?;
+        self.change_lifecycle_inner(
+            context,
+            &release,
+            Some(reference),
+            action,
+            reason,
+            preflight,
+        )
     }
     #[allow(clippy::too_many_arguments)]
     fn change_lifecycle_inner(
@@ -171,27 +164,20 @@ impl DirectoryArtifactRepository {
     pub fn renew_publication_evidence(
         &self,
         context: ReleaseMutationContext,
-        selector: &PublicationSelector,
+        reference: &PublicationRef,
         package: &PackageDigest,
         evidence: ReleaseEvidenceUpload,
         preflight: &mut Preflight<'_>,
     ) -> Result<ReleaseOperationReceipt, PlatformError> {
-        match selector {
-            PublicationSelector::LegacyComponent(release) => {
-                self.renew_evidence(context, release, package, evidence, preflight)
-            }
-            PublicationSelector::Publication(reference) => {
-                let release = self.selected_component(&context, reference)?;
-                self.renew_evidence_inner(
-                    context,
-                    &release,
-                    Some(reference),
-                    package,
-                    evidence,
-                    preflight,
-                )
-            }
-        }
+        let release = self.selected_component(&context, reference)?;
+        self.renew_evidence_inner(
+            context,
+            &release,
+            Some(reference),
+            package,
+            evidence,
+            preflight,
+        )
     }
     #[allow(clippy::too_many_arguments)]
     fn renew_evidence_inner(

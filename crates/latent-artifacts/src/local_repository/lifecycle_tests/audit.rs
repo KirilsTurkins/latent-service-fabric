@@ -269,7 +269,7 @@ fn audit_publication_binding_survives_coexistence_revocation_and_receipt_recover
         second.release.descriptor.release_digest
     );
     assert_ne!(first.publication, second.publication);
-    let selector = crate::PublicationSelector::Publication(first.publication.clone());
+    let selector = first.publication.clone();
     let mut audit = ReleaseAuditGuard::new(Some(&journal.handle), ReleaseLifecycleAction::Revoke);
     let changed = block_on(repo.change_selected_lifecycle(
         context("exact-revoke", 1),

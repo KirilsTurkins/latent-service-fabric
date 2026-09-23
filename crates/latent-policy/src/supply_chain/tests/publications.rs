@@ -4,12 +4,11 @@ use super::{Fixture, SupplyChainAuthority};
 use latent_artifacts::package::{decode_config, package_digest, PackageLimits};
 use latent_artifacts::{
     AdmissionAuthority, AdmissionStorageLimits, ArtifactRepository, DirectoryArtifactRepository,
-    DirectoryArtifactRepositoryConfig, LifecycleScope, ManagedPublicationUpload,
-    PublicationSelector, ReleaseActor, ReleaseActorKind, ReleaseEvidenceUpload,
-    ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseLifecycleState, ReleaseMutationContext,
-    ReleaseOperationPrecondition,
+    DirectoryArtifactRepositoryConfig, LifecycleScope, ManagedPublicationUpload, ReleaseActor,
+    ReleaseActorKind, ReleaseEvidenceUpload, ReleaseLifecycleAction, ReleaseLifecycleReason,
+    ReleaseLifecycleState, ReleaseMutationContext, ReleaseOperationPrecondition,
 };
-use latent_core::{PlatformErrorCode, TenantId};
+use latent_core::TenantId;
 use std::sync::Arc;
 
 fn scope(tenant: &str) -> LifecycleScope {
@@ -114,19 +113,20 @@ fn corrected_embedded_inventory_and_two_tenants_share_wasm_without_sharing_autho
     assert!(first_token
         .authorize_tenant(&TenantId("other".into()))
         .is_err());
-    let legacy =
-        PublicationSelector::LegacyComponent(first.release.descriptor.release_digest.clone());
     assert_eq!(
-        repo.resolve_publication(&scope("tests"), &legacy)
-            .unwrap_err()
-            .code,
-        PlatformErrorCode::StateConflict
+        repo.resolve_publication(&scope("tests"), &first.publication)
+            .unwrap(),
+        Some(first.publication.clone())
     );
+    assert!(repo
+        .resolve_publication(&scope("other"), &first.publication)
+        .is_err());
     assert_eq!(
-        repo.resolve_publication(&scope("other"), &legacy).unwrap(),
+        repo.resolve_publication(&scope("other"), &other.publication)
+            .unwrap(),
         Some(other.publication.clone())
     );
-    let original_selector = PublicationSelector::Publication(first.publication.clone());
+    let original_selector = first.publication.clone();
     let renewed = repo
         .renew_publication_evidence(
             context("tests", "renew-original", 1),
