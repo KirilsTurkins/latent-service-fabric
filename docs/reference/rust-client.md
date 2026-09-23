@@ -1,9 +1,9 @@
 # Bounded Rust RPC client
 
-`latent-sdk` implements `LatentClient` with `network::RpcClient`, using the
+`latent-sdk` implements `management::ClientProfile` with `network::RpcClient`, using the
 authoritative generated Protobuf messages and gRPC methods. The default
 `transport` feature enables it; `--no-default-features` retains the
-transport-neutral invocation models. This client does not depend on CLI
+transport-neutral profile models. This client does not depend on CLI
 internals, grant provider access or embed a node.
 
 ## Explicit connection and ownership
@@ -33,8 +33,9 @@ permission to replay an uncertain mutation.
 | Owned executor tasks | `2 * maximum_calls + 4` | 68 |
 | HTTP/2 stream / connection windows | 32 / 128 KiB | fixed |
 | HTTP/2 header list / table | 16 / 4 KiB | fixed |
-| Policy/capability page | explicit 1..64 | 64 |
-| Page token | 2 KiB | fixed |
+| Policy page | explicit 1..32 | 32 |
+| Capability page | absent/zero uses server default 128 | 128 |
+| Policy/capability page token | 117 / 160 bytes | fixed |
 | Typed gRPC error details | 8 KiB | fixed |
 
 Admission reserves a call slot and
@@ -55,8 +56,10 @@ shutdown but does not await its physical completion.
 
 ## Deadlines and cancellation
 
-The `_until` methods accept one absolute Tokio `Instant`. The client clamps it
-to its configured RPC ceiling; connection initialization, channel readiness,
+`CallOptions.timeout_millis` starts one absolute local deadline when the method
+creates its future, before polling. Absence uses the configured finite default;
+zero fails without dispatch. The client clamps it to its configured RPC ceiling;
+connection initialization, channel readiness,
 request/response transport and decoding share that original deadline. Connect
 has an additional, shorter ceiling. An invocation's optional Unix deadline
 further restricts the call; present zero is expired, not absent. No stage
@@ -66,7 +69,7 @@ remaining time.
 Dropping/aborting an invocation future cancels its local transport wait. It
 does **not** send the application `Cancel` RPC or prove guest/provider cleanup.
 Choose and retain a caller activation ID before invoking; query
-`get_activation_until` after losing the response, and use `cancel_until`
+`get_activation` after losing the response, and use `cancel`
 explicitly when desired. Cancellation `Accepted` confirms admission of the
 request, not completion of guest cleanup. Retained status can expire;
 `NotFound` never proves that execution did not happen. No implicit polling,
@@ -74,9 +77,10 @@ identity generation or resubmission occurs.
 
 ## Typed management and recovery
 
-The separate `network::management` module exports the generated common
-profile: `GetPolicy`, `ListPolicies`, `ListCapabilities`, `ApplyPolicy`, and
-`GetPolicyOperation`. List calls require a finite explicit page. The caller
+The `management` module exports the complete common profile, including
+`GetPolicy`, `ListPolicies`, `ListCapabilities`, `ApplyPolicy`, and
+`GetPolicyOperation`. Policy lists require a positive bounded page size;
+capability lists also accept the bounded server default. The caller
 decides whether and when to request another page. Binding inspection remains
 redacted server-produced metadata; requesting node usage does not grant an
 operator role.
@@ -90,8 +94,8 @@ precondition, generates a fresh operation ID or automatically replays a
 mutation. Any deliberate exact replay is a separate caller decision using
 the original request and identity.
 
-`RpcResponse<T>` preserves an optional audit acknowledgement independently
-of the application response. `RpcFailure` separates local capacity/configuration
+`ClientResponse<T>` preserves response metadata and optional audit facts
+independently of the application response. `ClientFailure` separates local capacity/configuration
 failures, connection/deadline failures, rejections and invalid replies. It
 retains known activation/operation IDs, dispatch uncertainty, the raw gRPC
 code, bounded typed platform details and audit metadata. An audit
@@ -101,19 +105,18 @@ page metadata. Known audit data survives later semantic validation failures.
 
 Successful invocation results distinguish application success, declared guest
 errors and platform outcomes. Unknown activation/platform classifications fail explicitly
-and retain their bounded raw value in `unsupported`; they are not coerced to
+and retain their bounded raw value in `unsupported_wire_value`; they are not coerced to
 an existing terminal state, retry recommendation or authority. Management
 Protobuf enum numbers remain raw generated integers. Optional presence and
 full-width `u64` fields are not routed through floating point or endpoint JSON.
 An unknown bounded audit status stays opaque; it never becomes a known audit
 acknowledgement or discards an independently observed mutation receipt.
 
-The legacy `LatentClient` trait returns only its pre-existing minimal
-`ClientTransportError`; that compatibility path intentionally cannot expose
-all recovery/audit fields and never recommends automatic retry. Use the rich
-`_until` API for recovery-sensitive applications. Default error formatting
-omits untrusted server text and credentials; inspect typed fields deliberately
-rather than logging entire application replies.
+The obsolete `LatentClient`, minimal transport error and duplicate `_until`
+interfaces have been removed. Import `management::ClientProfile` for all eight
+operations. `network::RpcFailure` remains the bounded configuration/shutdown
+failure type; RPC operations return the complete profile error. Display text
+omits untrusted server text and credentials; inspect typed fields deliberately.
 
 ## Validation and example
 

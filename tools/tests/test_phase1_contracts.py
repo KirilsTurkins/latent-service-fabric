@@ -221,12 +221,12 @@ class SchemaAndSurfaceTests(unittest.TestCase):
         self.assertIn("record error-detail", invoke)
 
         sdk_files = (
-            ROOT / "sdk/rust/src/lib.rs",
-            ROOT / "sdk/go/latent.go",
-            ROOT / "sdk/typescript-client/src/index.ts",
-            ROOT / "sdk/dotnet/Latent.Sdk/Abstractions.cs",
-            ROOT / "sdk/java-client/src/main/java/dev/latent/sdk/Models.java",
-            ROOT / "sdk/c/include/latent/latent.h",
+            ROOT / "sdk/rust/src/management.rs",
+            ROOT / "sdk/go/profile/models.go",
+            ROOT / "sdk/typescript-client/src/management.ts",
+            ROOT / "sdk/dotnet/Latent.Sdk/Management.cs",
+            ROOT / "sdk/java-client/src/main/java/dev/latent/sdk/Management.java",
+            ROOT / "sdk/c/include/latent/profile.h",
         )
         for path in sdk_files:
             source = path.read_text(encoding="utf-8")
@@ -234,17 +234,12 @@ class SchemaAndSurfaceTests(unittest.TestCase):
             self.assertNotIn("wallDeadlineUnixMillis", source, path)
             self.assertNotIn("wall_deadline_unix_millis", source, path)
 
-        dotnet = (ROOT / "sdk/dotnet/Latent.Sdk/Abstractions.cs").read_text(
+        dotnet = (ROOT / "sdk/dotnet/Latent.Sdk/Management.cs").read_text(
             encoding="utf-8"
         )
-        self.assertIn(
-            "Optional relative wall-time limit measured from admission.", dotnet
-        )
-        self.assertIn(
-            '<see langword="null"/> adds no ceiling; zero grants no wall time.',
-            dotnet,
-        )
-        self.assertNotIn("activation start", dotnet)
+        self.assertIn("ulong? WallTimeLimitMillis", dotnet)
+        self.assertIn("uint ChildCalls", dotnet)
+        self.assertIn("ulong MemoryBytes", dotnet)
 
     def test_release_upload_requires_encoded_typed_contract_metadata(self) -> None:
         example = json.loads(
@@ -274,96 +269,82 @@ class SchemaAndSurfaceTests(unittest.TestCase):
 
     def test_sdk_invocation_status_and_cancellation_surfaces_are_equivalent(self) -> None:
         expected = {
-            "sdk/rust/src/lib.rs": (
-                "InvocationReceipt",
-                "pub consumption: BudgetConsumption",
-                "DeclaredInvocationError",
-                "PlatformInvocationFailure",
-                "pub enum InvocationOutcome",
-                "Succeeded(InvokeResponse)",
-                "DeclaredError(DeclaredInvocationError)",
-                "PlatformFailure(PlatformInvocationFailure)",
-                "RetainedInvocationOutcome",
-                "ActivationStatus",
-                "get_activation",
-                "pub enum CancelResponse",
-                "AlreadyTerminal(ActivationTerminalState)",
-                "ErrorDetail",
+            "sdk/rust/src/management.rs": (
+                "pub struct InvokeResponse",
+                "pub consumption: Option<BudgetConsumption>",
+                "pub success: Option<Success>",
+                "pub declared_error: Option<DeclaredError>",
+                "pub platform_failure: Option<PlatformError>",
+                "pub struct ActivationStatus",
+                "fn get_activation",
+                "pub struct CancelResponse",
+                "pub const ALREADY_TERMINAL",
+                "pub detail_items: Vec<ErrorDetail>",
+                "pub effect_ids: Vec<String>",
             ),
-            "sdk/go/latent.go": (
-                "InvocationReceipt",
-                "Consumption     BudgetConsumption",
-                "DeclaredInvocationError",
-                "PlatformInvocationFailure",
-                "Success         *InvokeResponse",
-                "DeclaredError   *DeclaredInvocationError",
-                "PlatformFailure *PlatformInvocationFailure",
-                "RetainedInvocationOutcome",
-                "ActivationStatus",
-                "GetActivation",
-                "CancelResponse",
-                "ErrorDetail",
-                "Details   []ErrorDetail",
+            "sdk/go/profile/models.go": (
+                "type InvokeResponse struct",
+                "Consumption     *BudgetConsumption",
+                "DeclaredError   *DeclaredError",
+                "PlatformFailure *PlatformError",
+                "Success         *Success",
+                "type ActivationStatus struct",
+                "GetActivation(ctx context.Context",
+                "type CancelResponse struct",
+                "CancelDispositionAlreadyTerminal",
+                "DetailItems []ErrorDetail",
                 "CommittedStateVersion *string",
-                "EffectIDs             []string",
+                "EffectIds             []string",
             ),
-            "sdk/typescript-client/src/index.ts": (
-                "InvocationReceipt",
-                "readonly consumption: BudgetConsumption",
-                'kind: "success"',
-                'kind: "declared-error"',
-                'kind: "platform-failure"',
-                "RetainedInvocationOutcome",
-                "ActivationStatus",
+            "sdk/typescript-client/src/management.ts": (
+                "interface InvokeResponse",
+                "readonly consumption?: BudgetConsumption",
+                "readonly success?: Success",
+                "readonly declaredError?: DeclaredError",
+                "readonly platformFailure?: PlatformError",
+                "interface ActivationStatus",
                 "getActivation",
-                "CancelResponse",
-                "ErrorDetail",
-                "readonly details: readonly ErrorDetail[]",
+                "interface CancelResponse",
+                "readonly detailItems: readonly ErrorDetail[]",
                 "readonly effectIds: readonly string[]",
             ),
-            "sdk/dotnet/Latent.Sdk/Abstractions.cs": (
-                "InvocationReceipt",
-                "BudgetConsumption Consumption",
-                "record Succeeded",
-                "record DeclaredFailure",
-                "record PlatformFailure",
-                "RetainedInvocationOutcome",
-                "ActivationStatus",
+            "sdk/dotnet/Latent.Sdk/Management.cs": (
+                "record InvokeResponse",
+                "BudgetConsumption? Consumption",
+                "Success? Success",
+                "DeclaredError? DeclaredError",
+                "PlatformError? PlatformFailure",
+                "record ActivationStatus",
                 "GetActivationAsync",
-                "CancelResponse",
-                "ErrorDetail",
-                "IReadOnlyList<ErrorDetail> Details",
+                "record CancelResponse",
+                "CancelDisposition AlreadyTerminal",
+                "IReadOnlyList<ErrorDetail> DetailItems",
                 "IReadOnlyList<string> EffectIds",
             ),
-            "sdk/java-client/src/main/java/dev/latent/sdk/Models.java": (
-                "InvocationReceipt",
-                "BudgetConsumption consumption",
-                "InvocationSuccess",
-                "DeclaredInvocationError",
-                "PlatformInvocationFailure",
-                "RetainedInvocationOutcome",
-                "ActivationStatus",
-                "CancelResponse",
-                "ErrorDetail",
-                "List<ErrorDetail> details",
+            "sdk/java-client/src/main/java/dev/latent/sdk/Management.java": (
+                "record InvokeResponse",
+                "Optional<BudgetConsumption> consumption",
+                "Optional<Success> success",
+                "Optional<DeclaredError> declaredError",
+                "Optional<PlatformError> platformFailure",
+                "record ActivationStatus",
+                "record CancelResponse",
+                "getActivation",
+                "List<ErrorDetail> detailItems",
                 "List<String> effectIds",
             ),
-            "sdk/java-client/src/main/java/dev/latent/sdk/LatentClient.java": (
-                "getActivation",
-            ),
-            "sdk/c/include/latent/latent.h": (
-                "latent_invocation_receipt",
-                "latent_budget_consumption consumption",
-                "latent_declared_invocation_error",
-                "latent_platform_invocation_failure",
-                "const latent_declared_invocation_error *declared_error",
-                "latent_retained_invocation_outcome",
-                "latent_activation_status",
+            "sdk/c/include/latent/profile.h": (
+                "latent_profile_invoke_response",
+                "latent_profile_budget_consumption consumption",
+                "latent_profile_declared_error declared_error",
+                "latent_profile_platform_error platform_failure",
+                "bool has_success",
+                "latent_profile_activation_status",
                 "get_activation",
-                "latent_cancel_response",
-                "latent_error_detail",
-                "const latent_error_detail *details",
-                "latent_activation_success_summary",
+                "latent_profile_cancel_response",
+                "latent_profile_error_detail",
+                "const latent_profile_error_detail * detail_items",
+                "latent_profile_activation_success_summary",
             ),
         }
         for relative, tokens in expected.items():
@@ -371,12 +352,6 @@ class SchemaAndSurfaceTests(unittest.TestCase):
             for token in tokens:
                 self.assertIn(token, source, f"{relative}: {token}")
 
-        rust = (ROOT / "sdk/rust/src/lib.rs").read_text(encoding="utf-8")
-        self.assertNotIn(
-            "pub struct CancelResponse {\n    pub disposition: CancelDisposition,",
-            rust,
-            "Rust cancellation must not duplicate the state carried by AlreadyTerminal",
-        )
         core_error = (
             ROOT / "crates/latent-core/src/error.rs"
         ).read_text(encoding="utf-8")
@@ -396,13 +371,6 @@ class SchemaAndSurfaceTests(unittest.TestCase):
         self.assertIn("UnknownPlatformErrorCode", rpc_conversion)
         self.assertIn("Message::encode_to_vec", rpc_round_trip)
         self.assertIn("PlatformError::decode", rpc_round_trip)
-
-        c = (ROOT / "sdk/c/include/latent/latent.h").read_text(encoding="utf-8")
-        self.assertIn(
-            "typedef struct latent_declared_invocation_error {\n"
-            "    latent_invocation_receipt receipt;",
-            c,
-        )
 
     def test_execution_seam_has_a_first_class_declared_error_branch(self) -> None:
         executor = (

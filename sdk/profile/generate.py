@@ -317,7 +317,7 @@ def dotnet_models(profile, messages, enums):
 
 
 def c_models(profile, messages, enums):
-    output = ["#ifndef LATENT_CLIENT_PROFILE_H", "#define LATENT_CLIENT_PROFILE_H", "", '#include "latent.h"', "", "#ifdef __cplusplus", 'extern "C" {', "#endif", "",
+    output = ["#ifndef LATENT_CLIENT_PROFILE_H", "#define LATENT_CLIENT_PROFILE_H", "", '#include "types.h"', "", "#ifdef __cplusplus", 'extern "C" {', "#endif", "",
               "typedef struct latent_profile_counter {", "    latent_string key;", "    uint64_t value;", "} latent_profile_counter;", ""]
     for name, values in enums.items():
         prefix = "latent_profile_" + snake(name)

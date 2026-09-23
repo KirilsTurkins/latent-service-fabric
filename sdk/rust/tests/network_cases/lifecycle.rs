@@ -1,4 +1,5 @@
-use super::{request, wait_until, FailureKind, LatentClient, Peer};
+use super::{options_until, request, wait_until, Peer};
+use latent_sdk::management::*;
 use latent_sdk::network::RpcClient;
 use std::{sync::atomic::Ordering, time::Duration};
 use tokio::time::Instant;
@@ -12,9 +13,9 @@ async fn closing_a_clone_interrupts_waiters_reaps_transport_and_denies_new_work(
         let active = client.clone();
         calls.push(tokio::spawn(async move {
             active
-                .invoke_until(
+                .invoke(
                     request(&format!("pending-{index}"), "hold"),
-                    Instant::now() + Duration::from_secs(10),
+                    options_until(Instant::now() + Duration::from_secs(10)),
                 )
                 .await
         }));
@@ -28,9 +29,9 @@ async fn closing_a_clone_interrupts_waiters_reaps_transport_and_denies_new_work(
         .unwrap();
     for call in calls {
         let error = call.await.unwrap().unwrap_err();
-        assert_eq!(error.kind, FailureKind::Closed);
+        assert_eq!(error.category, FailureCategory::LOCAL_CANCELLED);
         assert!(error.dispatched);
-        assert!(!error.outcome_known);
+        assert_eq!(error.outcome, OutcomeKnowledge::UNKNOWN);
     }
     let usage = client.usage();
     assert!(usage.closed);
@@ -45,13 +46,13 @@ async fn closing_a_clone_interrupts_waiters_reaps_transport_and_denies_new_work(
     );
     assert_eq!(peer.state.cancellations.load(Ordering::Acquire), 0);
     let error = client
-        .invoke_until(
+        .invoke(
             request("after-close", "success"),
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap_err();
-    assert_eq!(error.kind, FailureKind::Closed);
+    assert_eq!(error.category, FailureCategory::LOCAL_CANCELLED);
     assert!(!error.dispatched);
     wait_until(|| peer.state.open.load(Ordering::Acquire) == 0).await;
     peer.stop().await;
@@ -64,31 +65,34 @@ async fn local_limits_and_expired_absolute_deadline_never_open_a_socket() {
     config.limits.maximum_reserved_bytes = 1;
     let limited = RpcClient::new(config).unwrap();
     let error = limited
-        .invoke_until(
+        .invoke(
             request("byte-cap", "success"),
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap_err();
-    assert_eq!(error.kind, FailureKind::Capacity);
-    assert_eq!(error.recovery.activation_id.as_deref(), Some("byte-cap"));
+    assert_eq!(error.category, FailureCategory::LIMIT);
+    assert_eq!(error.identity.activation_id.as_deref(), Some("byte-cap"));
     assert!(!error.dispatched);
     assert_eq!(limited.usage().active_calls, 0);
     let client = peer.client();
     let error = client
-        .invoke_until(request("expired", "success"), Instant::now())
+        .invoke(request("expired", "success"), options_until(Instant::now()))
         .await
         .unwrap_err();
-    assert_eq!(error.kind, FailureKind::Deadline);
+    assert_eq!(error.category, FailureCategory::DEADLINE);
     assert!(!error.dispatched);
     let mut oversized = request("input-cap", "success");
     oversized.payload = vec![0; client.limits().maximum_request_bytes + 1];
     let error = client
-        .invoke_until(oversized, Instant::now() + Duration::from_secs(1))
+        .invoke(
+            oversized,
+            options_until(Instant::now() + Duration::from_secs(1)),
+        )
         .await
         .unwrap_err();
-    assert_eq!(error.kind, FailureKind::InvalidRequest);
-    assert_eq!(error.recovery.activation_id.as_deref(), Some("input-cap"));
+    assert_eq!(error.category, FailureCategory::LIMIT);
+    assert_eq!(error.identity.activation_id.as_deref(), Some("input-cap"));
     assert!(!error.dispatched);
     assert_eq!(peer.state.accepted.load(Ordering::Acquire), 0);
     limited
@@ -108,27 +112,30 @@ async fn optional_identity_presence_and_zero_wall_deadline_are_not_normalized() 
     let client = peer.client();
     let mut absent = request("unused", "success");
     absent.activation_id = None;
-    let response = client.invoke(absent).await.unwrap();
-    assert!(
-        matches!(response, latent_sdk::InvocationOutcome::Succeeded(value) if value.activation_id.0 == "assigned")
-    );
+    let response = client.invoke(absent, CallOptions::default()).await.unwrap();
+    assert_eq!(response.value.activation_id, "assigned");
+    assert!(response.value.success.is_some());
     let error = client
-        .invoke_until(
+        .invoke(
             request("", "success"),
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap_err();
-    assert_eq!(error.kind, FailureKind::Rejected);
-    assert_eq!(error.grpc_code, Some(3));
-    assert_eq!(error.recovery.activation_id.as_deref(), Some(""));
+    assert_eq!(error.category, FailureCategory::INVALID_REQUEST);
+    assert_eq!(error.grpc_status, None);
+    assert!(!error.dispatched);
+    assert_eq!(error.identity.activation_id.as_deref(), Some(""));
     let mut expired = request("wall-expired", "success");
-    expired.options.deadline_unix_millis = Some(0);
+    expired.deadline_unix_millis = Some(0);
     let error = client
-        .invoke_until(expired, Instant::now() + Duration::from_secs(1))
+        .invoke(
+            expired,
+            options_until(Instant::now() + Duration::from_secs(1)),
+        )
         .await
         .unwrap_err();
-    assert_eq!(error.kind, FailureKind::Deadline);
+    assert_eq!(error.category, FailureCategory::DEADLINE);
     assert!(!error.dispatched);
     assert_eq!(peer.state.invocations.load(Ordering::Acquire), 1);
     client
@@ -146,23 +153,23 @@ async fn refused_initial_connection_is_not_implicitly_retried() {
     peer.stop().await;
     let client = RpcClient::new(config).unwrap();
     let error = client
-        .invoke_until(
+        .invoke(
             request("refused", "success"),
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap_err();
-    assert_eq!(error.kind, FailureKind::Connection);
+    assert_eq!(error.category, FailureCategory::TRANSPORT);
     assert!(!error.dispatched);
     let listener = tokio::net::TcpListener::bind(address).await.unwrap();
     let error = client
-        .invoke_until(
+        .invoke(
             request("not-retried", "success"),
-            Instant::now() + Duration::from_secs(1),
+            options_until(Instant::now() + Duration::from_secs(1)),
         )
         .await
         .unwrap_err();
-    assert_eq!(error.kind, FailureKind::Connection);
+    assert_eq!(error.category, FailureCategory::TRANSPORT);
     assert!(!error.dispatched);
     assert!(
         tokio::time::timeout(Duration::from_millis(50), listener.accept())

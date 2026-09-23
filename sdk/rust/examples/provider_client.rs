@@ -1,13 +1,14 @@
-use latent_core::{ActivationId, ContractId, FunctionId, ResourceBudget, ServiceId, TenantId};
+use latent_core::TenantId;
 use latent_protected_files::ProtectedFilePolicy;
 use latent_sdk::{
-    network::{ClientConfig, ClientLimits, RpcClient, RpcFailure},
-    InvocationOutcome, InvocationTarget, InvokeOptions, InvokeRequest,
+    management::{
+        CallOptions, CancelRequest, ClientFailure, ClientProfile, GetActivationRequest,
+        InvocationTarget, InvokeRequest, InvokeResponse, OutcomeKnowledge, ResourceBudget,
+    },
+    network::{ClientConfig, ClientLimits, RpcClient},
 };
 use serde_json::{json, Value};
-use std::{
-    collections::BTreeMap, net::SocketAddr, path::PathBuf, process::ExitCode, time::Duration,
-};
+use std::{net::SocketAddr, path::PathBuf, process::ExitCode, time::Duration};
 use tokio::time::Instant;
 use zeroize::Zeroizing;
 
@@ -15,9 +16,9 @@ struct Arguments {
     endpoint: SocketAddr,
     tenant: TenantId,
     credential_file: PathBuf,
-    activation: ActivationId,
+    activation: String,
     mode: String,
-    service: Option<ServiceId>,
+    service: Option<String>,
     route: Option<String>,
     http_url: Option<String>,
 }
@@ -48,10 +49,10 @@ impl Arguments {
             endpoint: text(0)?.parse().map_err(|_| "invalid-endpoint")?,
             tenant: TenantId(text(1)?.into()),
             credential_file: PathBuf::from(&values[2]),
-            activation: ActivationId(text(3)?.into()),
+            activation: text(3)?.into(),
             mode: mode.into(),
             service: (values.len() >= 7)
-                .then(|| text(5).map(|value| ServiceId(value.into())))
+                .then(|| text(5).map(str::to_owned))
                 .transpose()?,
             route: (values.len() >= 7)
                 .then(|| text(6).map(str::to_owned))
@@ -120,15 +121,22 @@ async fn run() -> Result<Value, &'static str> {
 }
 
 async fn execute(client: &RpcClient, arguments: Arguments) -> Result<Value, &'static str> {
-    let deadline = Instant::now() + Duration::from_secs(5);
+    let options = CallOptions {
+        timeout_millis: Some(5000),
+    };
     if arguments.mode == "status" {
         return Ok(
             match client
-                .get_activation_until(&arguments.activation, deadline)
+                .get_activation(
+                    GetActivationRequest {
+                        activation_id: arguments.activation,
+                    },
+                    options,
+                )
                 .await
             {
-                Ok(reply) => json!({"outcome":"status", "phase":format!("{:?}", reply.value.phase),
-                "terminalState":reply.value.terminal_state.map(|state| format!("{state:?}"))}),
+                Ok(reply) => json!({"outcome":"status", "phase":reply.value.phase,
+                "terminalState":reply.value.terminal_state}),
                 Err(error) => failure(&error),
             },
         );
@@ -136,11 +144,18 @@ async fn execute(client: &RpcClient, arguments: Arguments) -> Result<Value, &'st
     if arguments.mode == "cancel" {
         return Ok(
             match client
-                .cancel_until(&arguments.activation, "explicit example request", deadline)
+                .cancel(
+                    CancelRequest {
+                        activation_id: arguments.activation,
+                        reason: "explicit example request".into(),
+                    },
+                    options,
+                )
                 .await
             {
                 Ok(reply) => {
-                    json!({"outcome":"cancel", "disposition":format!("{:?}", reply.value)})
+                    json!({"outcome":"cancel", "disposition":reply.value.disposition.0,
+                        "terminalState":reply.value.terminal_state})
                 }
                 Err(error) => failure(&error),
             },
@@ -163,73 +178,72 @@ async fn execute(client: &RpcClient, arguments: Arguments) -> Result<Value, &'st
         activation_id: Some(arguments.activation),
         root_activation_id: None,
         parent_activation_id: None,
-        target: InvocationTarget {
-            tenant: arguments.tenant,
+        target: Some(InvocationTarget {
+            tenant: arguments.tenant.0,
             service: arguments.service.ok_or("missing-service")?,
-            contract: ContractId(contract.into()),
-            function: FunctionId("run".into()),
+            contract: contract.into(),
+            function: "run".into(),
             route: arguments.route,
-        },
+        }),
         payload,
         media_type: "application/vnd.latent.wit-values.v1+json".into(),
-        options: InvokeOptions {
-            deadline_unix_millis: None,
-            priority: 0,
-            idempotency_key: None,
-            metadata: BTreeMap::new(),
-            budget: ResourceBudget {
-                cpu_fuel: 10_000_000_000,
-                memory_bytes: 16 * 1024 * 1024,
-                wall_time_limit_millis: Some(5000),
-                child_calls: 0,
-                outbound_requests: 8,
-                state_read_bytes: 0,
-                state_write_bytes: 0,
-                blob_read_bytes: if arguments.mode == "blob" { 65536 } else { 0 },
-                blob_write_bytes: if arguments.mode == "blob" { 65536 } else { 0 },
-                log_bytes: 0,
-                effect_count: 0,
-            },
-        },
+        budget: Some(ResourceBudget {
+            cpu_fuel: 10_000_000_000,
+            memory_bytes: 16 * 1024 * 1024,
+            wall_time_limit_millis: Some(5000),
+            child_calls: 0,
+            outbound_requests: 8,
+            state_read_bytes: 0,
+            state_write_bytes: 0,
+            blob_read_bytes: if arguments.mode == "blob" { 65536 } else { 0 },
+            blob_write_bytes: if arguments.mode == "blob" { 65536 } else { 0 },
+            log_bytes: 0,
+            effect_count: 0,
+        }),
+        ..Default::default()
     };
-    let reply = match client.invoke_until(request, deadline).await {
+    let reply = match client.invoke(request, options).await {
         Ok(reply) => reply,
         Err(error) => return Ok(failure(&error)),
     };
     outcome(reply.value)
 }
 
-fn outcome(value: InvocationOutcome) -> Result<Value, &'static str> {
-    Ok(match value {
-        InvocationOutcome::Succeeded(value) => {
-            if value.payload.len() > 256 {
-                return Err("unexpected-guest-result");
+fn outcome(value: InvokeResponse) -> Result<Value, &'static str> {
+    Ok(
+        match (value.success, value.declared_error, value.platform_failure) {
+            (Some(success), None, None) => {
+                if success.payload.len() > 256 {
+                    return Err("unexpected-guest-result");
+                }
+                let result: Value = serde_json::from_slice(&success.payload)
+                    .map_err(|_| "unexpected-guest-result")?;
+                let values = result
+                    .as_array()
+                    .filter(|values| values.len() == 1)
+                    .ok_or("unexpected-guest-result")?;
+                let number = values[0]
+                    .as_str()
+                    .and_then(|value| value.parse::<u64>().ok())
+                    .ok_or("unexpected-guest-result")?;
+                let consumption = value.consumption.ok_or("missing-consumption")?;
+                json!({"outcome":"succeeded", "guestResult":number.to_string(),
+                "activationId":value.activation_id,
+                "outboundRequests":consumption.outbound_requests,
+                "blobReadBytes":consumption.blob_read_bytes.to_string(),
+                "blobWriteBytes":consumption.blob_write_bytes.to_string()})
             }
-            let result: Value =
-                serde_json::from_slice(&value.payload).map_err(|_| "unexpected-guest-result")?;
-            let values = result
-                .as_array()
-                .filter(|values| values.len() == 1)
-                .ok_or("unexpected-guest-result")?;
-            let number = values[0]
-                .as_str()
-                .and_then(|value| value.parse::<u64>().ok())
-                .ok_or("unexpected-guest-result")?;
-            json!({"outcome":"succeeded", "guestResult":number.to_string(),
-                "activationId":value.activation_id.0,
-                "outboundRequests":value.consumption.outbound_requests,
-                "blobReadBytes":value.consumption.blob_read_bytes.to_string(),
-                "blobWriteBytes":value.consumption.blob_write_bytes.to_string()})
-        }
-        InvocationOutcome::DeclaredError(_) => json!({"outcome":"declared-error"}),
-        InvocationOutcome::PlatformFailure(value) => {
-            json!({"outcome":"platform-failure", "code":value.error.code.wire_code()})
-        }
-    })
+            (None, Some(_), None) => json!({"outcome":"declared-error"}),
+            (None, None, Some(error)) => {
+                json!({"outcome":"platform-failure", "code":error.code})
+            }
+            _ => return Err("invalid-invocation-outcome"),
+        },
+    )
 }
 
-fn failure(value: &RpcFailure) -> Value {
-    json!({"outcome":"rpc-failure", "kind":format!("{:?}", value.kind),
-        "dispatched":value.dispatched, "outcomeKnown":value.outcome_known,
-        "activationId":value.recovery.activation_id, "grpcCode":value.grpc_code})
+fn failure(value: &ClientFailure) -> Value {
+    json!({"outcome":"rpc-failure", "category":value.category.0,
+        "dispatched":value.dispatched, "outcomeKnown":value.outcome == OutcomeKnowledge::OBSERVED,
+        "activationId":value.identity.activation_id, "grpcCode":value.grpc_status})
 }

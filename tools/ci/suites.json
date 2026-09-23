@@ -3910,15 +3910,14 @@
         "network::tests::audit_uncertainty_does_not_turn_a_rejection_into_a_known_mutation_outcome",
         "network::tests::capacity_is_refunded_only_after_the_last_physical_body_owner_retires",
         "network::tests::configuration_is_explicit_bounded_redacted_and_does_not_start_io",
-        "network::tests::typed_platform_details_require_canonical_codes_and_never_enable_retries",
-        "tests::cancellation_response_has_one_canonical_terminal_state"
+        "network::tests::typed_platform_details_require_canonical_codes_and_never_enable_retries"
       ],
       "expectedIgnored": [],
       "id": "latent-sdk.lib.latent-sdk",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "sdk/rust/Cargo.toml",
-      "minimumCases": 8,
+      "minimumCases": 7,
       "mode": "libtest",
       "package": "latent-sdk",
       "platforms": [
@@ -3984,38 +3983,6 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/client_profile_vectors.rs",
       "target": "client_profile_vectors",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [
-        "absent_identity_is_preserved_until_the_fixture_server_assigns_it",
-        "cancel_transport_failure_is_not_a_disposition_or_terminal_outcome",
-        "dropping_the_local_future_does_not_prove_the_server_activation_stopped",
-        "explicit_lineage_is_carried_without_replacing_the_caller_identity",
-        "known_id_allows_status_and_all_cancel_dispositions_before_invocation_completes",
-        "lost_response_recovers_status_by_original_id_without_reinvoking",
-        "present_empty_ids_and_parent_without_root_reach_server_validation_unchanged"
-      ],
-      "expectedIgnored": [],
-      "id": "latent-sdk.test.invocation-identity",
-      "ignoredLeaves": [],
-      "kind": "test",
-      "manifest": "sdk/rust/Cargo.toml",
-      "minimumCases": 7,
-      "mode": "libtest",
-      "package": "latent-sdk",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "tests/invocation_identity.rs",
-      "target": "invocation_identity",
       "timeoutSeconds": 900
     },
     {
@@ -4087,32 +4054,6 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/profile_transport.rs",
       "target": "profile_transport",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [
-        "scoped_coexistence_publication_presence_and_full_width_receipts"
-      ],
-      "expectedIgnored": [],
-      "id": "latent-sdk.test.publication-identity",
-      "ignoredLeaves": [],
-      "kind": "test",
-      "manifest": "sdk/rust/Cargo.toml",
-      "minimumCases": 1,
-      "mode": "libtest",
-      "package": "latent-sdk",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "tests/publication_identity.rs",
-      "target": "publication_identity",
       "timeoutSeconds": 900
     },
     {

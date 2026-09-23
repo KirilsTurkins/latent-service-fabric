@@ -891,5 +891,28 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
             "audit-disabled-distinct-from-absence"
         );
     }
-    println!("shared protobuf model vectors: 49");
+    {
+        let value = PublicationRef {
+            id: String::new(),
+            tenant: "tenant-a".into(),
+        };
+        let encoded = control::PublicationRef::from(value.clone()).encode_to_vec();
+        let decoded = control::PublicationRef::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            PublicationRef::from(decoded),
+            value,
+            "publication-reference-invalid-id"
+        );
+    }
+    {
+        let value = PublicationRef{id: "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111".into(), tenant: "tenant-b".into()};
+        let encoded = control::PublicationRef::from(value.clone()).encode_to_vec();
+        let decoded = control::PublicationRef::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            PublicationRef::from(decoded),
+            value,
+            "publication-reference-tenant-scope"
+        );
+    }
+    println!("shared protobuf model vectors: 51");
 }

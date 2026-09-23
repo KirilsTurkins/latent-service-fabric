@@ -188,15 +188,6 @@ fn timeout_source(status: &Status) -> bool {
     false
 }
 
-impl From<RpcFailure> for crate::ClientTransportError {
-    fn from(value: RpcFailure) -> Self {
-        Self {
-            message: value.to_string(),
-            retryable: false,
-        }
-    }
-}
-
 pub(super) fn audit(metadata: &MetadataMap) -> Result<Option<AuditAcknowledgement>, RpcFailure> {
     let invalid = || RpcFailure::local(FailureKind::InvalidResponse);
     if metadata.get_all("latent-audit-status").iter().count() > 1

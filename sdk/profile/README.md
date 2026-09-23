@@ -37,18 +37,17 @@ Python standard library; formatting uses the repository's pinned `rustfmt` and
 | .NET | `Latent.Sdk.Profile.IClientProfile` | Each method takes `CancellationToken`; `ValueTask` results own their memory after completion. |
 | C | `<latent/profile.h>`, `latent_profile_client_vtable` | Explicit local call handles, exactly-once callbacks and borrowed response data; detailed contract below. |
 
-The legacy invocation interfaces remain source-compatible convenience surfaces;
-their older error/enum models cannot represent every v1 fact. The new facade
-therefore has its own namespace, including protobuf-shaped `InvokeRequest`,
+All six clients use this profile exclusively. Their obsolete invocation facades
+and compatibility adapters have been removed. The profile retains every v1 fact. The complete facade has its own namespace and protobuf-shaped `InvokeRequest`,
 `InvokeResponse`, `CancelResponse` and `ActivationStatus`. In particular, it
 does not silently map an unknown cancellation enum to an old success variant.
 Network clients may expose generated protobuf objects and lossless conversions
 instead of duplicating storage. The conversion must retain every profile field.
 
 Rust exports `pub mod management;` from `sdk/rust/src/lib.rs`; ordinary crate
-tests use that public API, not a hidden path include. The transport owner alone
-changes `Cargo.toml`, `network*` and the network export. No wildcard root reexport
-is needed: it would collide with the legacy convenience types.
+tests use that public API. All portable models and the eight-operation trait
+live in this namespace; `network::RpcClient` implements that trait using its
+shared bounded transport.
 
 ## The eight required operations
 
