@@ -1249,6 +1249,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 controls/tools/security_scan.py rustsec --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Exercise Go owner aliases and compile all typed capability wrappers": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Exercise Go owner aliases and compile all typed capability wrappers",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "go test sdk/go-guest/ownership/owner.go sdk/go-guest/ownership/owner_test.go\npython3 tools/build_go_guest_capsules.py --output \"$RUNNER_TEMP/go-sdk-capsules\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2816,6 +2826,9 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
+    },
+    "tools/build_go_guest_capsules.py": {
+      "sha256": "c95cdf155db5888ca17a3d56073ed215e7c61d5cf27b20b9efa6b2ac8d0d6c8c"
     }
   },
   "pythonCases": {
@@ -3398,7 +3411,9 @@
     ],
     "tools/tests/test_go_capsule_authoring.py": [
       "GoAuthoringTests.test_every_editable_template_has_exact_runtime_imports_and_captured_sdk",
+      "GoAuthoringTests.test_every_sdk_fixture_is_an_editable_source_project_with_exact_wit",
       "GoAuthoringTests.test_existing_source_and_overlapping_build_outputs_are_never_overwritten",
+      "GoAuthoringTests.test_sdk_aliases_follow_generated_identity_without_exposing_resource_constructors",
       "GoAuthoringTests.test_sdk_mutation_does_not_silently_become_a_reviewed_input",
       "GoAuthoringTests.test_source_and_wit_remain_editable_but_budget_types_are_closed"
     ],
@@ -5846,7 +5861,7 @@
     ".github/workflows/ci.yml": "a7f311e9002c815503ccd24bca8d48df62d4cd6d4211c5acff35db98ddad215f",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/go-guest.yml": "ed740ca710cd9741c31874a106acfcb23ae678e64735b6d4e56d1f9c82f38e8c",
+    ".github/workflows/go-guest.yml": "732cb21138a2bd61f04581a914521e5a3d8ea4cbb0c96a5900c3938d586d7679",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
