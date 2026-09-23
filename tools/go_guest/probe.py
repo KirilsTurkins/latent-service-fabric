@@ -111,9 +111,12 @@ def probe(output: Path, go: Path, componentize: Path, wasm_tools: Path) -> None:
         # Constrained reactor: same generated Go, no ambient WASI imports.
         adapter = output / "deny-wasi.wasm"
         run("adapter-build", [str(wasm_tools), "parse", str(ROOT / "sdk/go-guest/runtime/deny-wasi.wat"), "-o", str(adapter)])
-        dependency = json.loads(run("go-module", [str(go), "list", "-m", "-json", "go.bytecodealliance.org/pkg"], module))
-        overlay_path = overlay(goroot, output / "runtime-overlay", Path(dependency["Dir"]))
-        environment["GOFLAGS"] += " -overlay=" + str(overlay_path)
+        # Go forbids overlays below GOMODCACHE. Vendor into this fresh build
+        # directory first; never modify the shared module cache or GOROOT.
+        run("module-vendor", [str(go), "mod", "vendor"], module)
+        overlay_path = overlay(goroot, output / "runtime-overlay",
+                               module / "vendor/go.bytecodealliance.org/pkg")
+        environment["GOFLAGS"] = "-mod=vendor -overlay=" + str(overlay_path)
         constrained = output / "lsf-candidate.wasm"
         run("constrained-build", args + ["build", "--go", str(go), "--adapt", str(adapter), "-o", str(constrained)], module)
         run("constrained-validate", [str(wasm_tools), "validate", "--features", "all", str(constrained)])
