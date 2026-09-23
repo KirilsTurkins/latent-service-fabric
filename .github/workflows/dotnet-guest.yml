@@ -31,7 +31,6 @@ jobs:
       - name: Retain the exact qualification source
         run: |
           mkdir -p "$RUNNER_TEMP/dotnet-guest"
-          git archive --format=zip HEAD -o "$RUNNER_TEMP/dotnet-guest/source.zip"
           git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest/revision.txt"
       - name: Compile the actual C# probe
         working-directory: sdk/dotnet-guest
@@ -41,6 +40,15 @@ jobs:
           dotnet --info > "$RUNNER_TEMP/dotnet-guest/dotnet-info.txt"
           dotnet restore probes/smoke/Smoke.csproj --configfile nuget.config 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/restore.log"
           dotnet build probes/smoke/Smoke.csproj -c Release --no-restore 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/build.log"
+      - name: Inspect compiled component imports
+        working-directory: sdk/dotnet-guest
+        shell: bash
+        run: |
+          set -o pipefail
+          tools="$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64"
+          "$tools/wasm-tools" --version
+          find probes/smoke/bin -type f -name '*.wasm' -print
+          "$tools/wasm-tools" component wit probes/smoke/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm | tee "$RUNNER_TEMP/dotnet-guest/imports.wit"
       - name: Retain output and failed attempts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
