@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import signal
 import subprocess
 import tempfile
 import time
@@ -26,8 +27,9 @@ def environment(home: Path | None = None) -> dict[str, str]:
 
 
 def run(command: list[str], cwd: Path, *, timeout: float = 30, maximum: int = MAX_LOG,
-        stdin: bytes = b"", env: dict | None = None, check=None) -> subprocess.CompletedProcess:
+        stdin: bytes = b"", env: dict | None = None, check=None, graceful: float = 0) -> subprocess.CompletedProcess:
     require(len(stdin) <= MAX_SNAPSHOT * 2, "request-byte-limit")
+    require(0 <= graceful <= 15, "process-grace-period-limit")
     selected = environment() if env is None else env
     argv = build_process._validate(command, cwd, selected, timeout, maximum)
     owner, failure, result = None, None, None
@@ -54,6 +56,20 @@ def run(command: list[str], cwd: Path, *, timeout: float = 30, maximum: int = MA
             if owner is not None:
                 with cancellation.defer():
                     try:
+                        if failure is not None and graceful and os.name == "posix" and owner.process is not None:
+                            # Maintained language recipes own nested process groups.
+                            # Give their signal handlers time to reap those children
+                            # before the outer owner performs its final group sweep.
+                            if not owner.exited():
+                                try:
+                                    os.killpg(owner.process.pid, signal.SIGTERM)
+                                except ProcessLookupError:
+                                    pass  # The unreaped leader reservation is still held.
+                            grace_deadline = time.monotonic() + graceful
+                            while not owner.exited() and time.monotonic() < grace_deadline:
+                                time.sleep(0.01)
+                            if not owner.exited():
+                                failure = DevError("owned-process-cleanup-unconfirmed", uncertain=True)
                         owner.finish(time.monotonic() + 5)
                     except BaseException:
                         failure = DevError("owned-process-cleanup-unconfirmed", uncertain=True)

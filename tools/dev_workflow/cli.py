@@ -175,18 +175,19 @@ def dispatch(args) -> dict:
         with state.lock(root, "bundle.lock"):
             destination = cache / name
             if destination.exists():
-                require(decode(paths.read(destination, "verified-bundle.json")) == selected, "partial-or-different-bundle-cache")
+                require(bundle.cached(destination) == selected, "partial-or-different-bundle-cache")
                 for entry in selected["files"]:
                     require(paths.digest_file(destination, entry["path"], bundle.MAX_BUNDLE) == (entry["sha256"], entry["size"]),
                             "verified-bundle-cache-changed")
             else:
-                require(sum(1 for _ in cache.iterdir()) < 2, "verified-cache-full-explicit-removal-required")
+                require(sum(1 for _ in cache.iterdir()) < 8, "verified-cache-full-explicit-removal-required")
                 bundle.extract(args.bundle_directory.absolute(), selected, destination)
         return {"bundle": name, "target": selected["target"], "sourceCommit": selected["sourceCommit"], "purpose": "candidate"}
     if args.command in {"provision", "init"}:
         require(len(args.bundle) == 64 and all(c in "0123456789abcdef" for c in args.bundle), "bundle-id-required")
         cache = root / "bundles" / args.bundle
-        selected = decode(paths.read(cache, "verified-bundle.json"))
+        selected = bundle.cached(cache)
+        require(selected["archive"]["sha256"] == "sha256:" + args.bundle, "verified-bundle-cache-identity")
         if args.command == "provision":
             require(selected["target"] == "linux-x86_64-wsl-rootfs", "verified-wsl-image-required")
             entry = next((item for item in selected["files"] if item["path"] == "rootfs.tar"), None)
@@ -197,9 +198,20 @@ def dispatch(args) -> dict:
             require(digest(raw) == inventory["sha256"], "verified-wsl-inventory-changed")
             return wsl.provision(root, cache / "rootfs.tar", entry["sha256"], decode(raw)["helperSha256"],
                                  consent=args.consent_provision)
-        identifier(args.template)
+        parts = paths.relative(args.template).split("/")
+        require(len(parts) in {1, 2}, "language-template-path")
+        for part in parts:
+            identifier(part)
+        if len(parts) == 2:
+            require(parts[0] in project.LANGUAGES, "language-template-owner")
         template = cache / "templates" / args.template
-        manifest = decode(paths.read(template, "template.json"))
+        name = "templates/" + args.template + "/template.json"
+        entry = next((item for item in selected["files"] if item["path"] == name), None)
+        require(entry is not None, "authenticated-template-manifest-required")
+        raw = paths.read(template, "template.json")
+        require((digest(raw), len(raw)) == (entry["sha256"], entry["size"]), "authenticated-template-manifest-changed")
+        manifest = decode(raw)
+        require(len(parts) == 1 or manifest["project"]["language"] == parts[0], "language-template-owner")
         return project.scaffold(template, args.destination.absolute(), manifest, args.template_sha256)
     if args.command == "wsl-workspace":
         workspace = state.workspace(root, args.workspace, create=True)

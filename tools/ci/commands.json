@@ -1168,7 +1168,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_build_process"
+      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_build_process"
     },
     ".github/workflows/developer-tools.yml:windows:Install exact hashed frontend build inputs": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -1279,6 +1279,46 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent --inputs \"$RUNNER_TEMP/rust-capsule-authoring/builds/greeting\" --output \"$RUNNER_TEMP/dev-build-cache\""
+    },
+    ".github/workflows/developer-tools.yml:rust-tools:Stage the pinned relocatable Python prefix": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "rust-tools",
+      "name": "Stage the pinned relocatable Python prefix",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/rust-tools-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_DEV_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\""
+    },
+    ".github/workflows/developer-tools.yml:rust-tools:Assemble pinned compiler tools and maintained Rust templates": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "rust-tools",
+      "name": "Assemble pinned compiler tools and maintained Rust templates",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/build_dev_rust_tools.py --output target/dev-rust --python-prefix \"$LSF_DEV_PYTHON_PREFIX\""
+    },
+    ".github/workflows/developer-tools.yml:rust-tools:Compile actual projects with isolated tools and separate operator packaging": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "rust-tools",
+      "name": "Compile actual projects with isolated tools and separate operator packaging",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/run_dev_rust_tools_tests.py --payload target/dev-rust/payload --packager target/dev-rust/latent-test --output \"$RUNNER_TEMP/dev-rust-projects\""
+    },
+    ".github/workflows/developer-tools.yml:rust-tools:Retain offline Rust tool attestation": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "rust-tools",
+      "name": "Retain offline Rust tool attestation",
+      "jobIf": "success()",
+      "stepIf": "github.event_name != 'pull_request'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-rust/candidate/attestation.json"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2855,6 +2895,12 @@
     },
     "tools/run_dev_build_cache_tests.py": {
       "sha256": "7664b879113ad53073ba342eea41af3b7d6bb64b38a8443c7a573761162c1a85"
+    },
+    "tools/build_dev_rust_tools.py": {
+      "sha256": "947c9e5d8185fad25428cd53b2e3de572aa36da932cabe278bb07ab31ced9433"
+    },
+    "tools/run_dev_rust_tools_tests.py": {
+      "sha256": "c4930e52c5d33a9342ac691ae176fb2c2b1cf92cff01bfc9a286352cf29233cc"
     }
   },
   "pythonCases": {
@@ -3418,6 +3464,16 @@
       "Transports.test_helper_digest_is_checked_before_hello",
       "Transports.test_ssh_identity_options_and_constant_command",
       "WslOwnership.test_recovery_observes_original_registration_and_user_nonce_without_reimport"
+    ],
+    "tools/tests/test_dev_tools.py": [
+      "AdapterResults.test_missing_nested_cleanup_receipt_remains_uncertain",
+      "AdapterResults.test_readonly_distribution_seeds_a_writable_private_cache",
+      "CompanionInputs.test_adapter_requires_closed_inventory_and_tool_arguments",
+      "CompanionInputs.test_companion_modification_is_not_a_cache_hit",
+      "CompanionInputs.test_unrecorded_importable_file_is_rejected",
+      "CompanionInputs.test_verification_observes_cancellation",
+      "CompanionInputs.test_wrong_owner_host_and_template_revision_fail_before_execution",
+      "LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound"
     ],
     "tools/tests/test_dev_watch.py": [
       "BuildCancellation.test_exact_cancellation_and_workspace_stop_reap_real_compiler_descendants",
@@ -5723,6 +5779,7 @@
     "tools/tests/test_deterministic_tests.py",
     "tools/tests/test_dev_build_cache.py",
     "tools/tests/test_dev_contracts.py",
+    "tools/tests/test_dev_tools.py",
     "tools/tests/test_dev_watch.py",
     "tools/tests/test_dev_workflow.py",
     "tools/tests/test_docs_pages.py",
@@ -5938,6 +5995,6 @@
     ".github/workflows/rust-capsule-authoring.yml": "a69b8d1ac076990c1e197203b807f306005df327bc1b4c6fee87b6b40ba199fb",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/developer-tools.yml": "1f6e24c3853d689525696653da646df1db002e4754cd4d8c0acd54a4d42a8d3d"
+    ".github/workflows/developer-tools.yml": "3e9c9d4d5a119d125797d470a68ddbfc55636520bb4a38c753c5af6891272e08"
   }
 }

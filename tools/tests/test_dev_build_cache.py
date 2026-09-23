@@ -88,7 +88,7 @@ class BuildAttempts(unittest.TestCase):
     def test_reaped_deadline_can_be_cleaned_without_claiming_remote_outcome(self):
         self.inputs(b"import time\ntime.sleep(60)\n")
         self.descriptor["build"]["timeoutSeconds"] = 1
-        with self.assertRaisesRegex(common.DevError, "owned-process-command-deadline") as error:
+        with self.assertRaisesRegex(common.DevError, "(?:owned-process-command-deadline|build-deadline-exceeded)") as error:
             self.execute()
         self.assertFalse(error.exception.uncertain)
         attempt, = (self.root / "builds").iterdir()

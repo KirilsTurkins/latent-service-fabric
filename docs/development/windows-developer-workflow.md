@@ -110,7 +110,10 @@ scanner: authors must deliberately exclude any additional confidential files.
 Initial bounds are eight workspaces, one active command/build per workspace,
 2,048 source files, 16 MiB per source file, 64 MiB per source snapshot, four
 retained snapshots, 256 KiB of supervisor logs, 32 retained operation receipts,
-900 seconds per build and five additional seconds for command cleanup.
+900 seconds per build and bounded command cleanup. Cancellation gives a Linux
+language recipe six seconds to reap its nested process groups, then allows five
+seconds for the outer group sweep. The transport allows twelve seconds for the
+helper to finish that cleanup. Exceeding the grace period remains uncertain.
 Four build attempts are retained, each monitored every 500 ms for a 32,768-entry,
 2 GiB ceiling. This is an observed limit, not a filesystem quota: temporary
 overshoot can occur before cancellation. Known failed or superseded attempts can
@@ -118,7 +121,9 @@ be removed; accepted, deployed and uncertain attempts stay protected. A full
 cache of protected attempts rejects a new build. Package assembly shares the
 original build deadline. Compiler timeout/output overflow is distinguished from
 unconfirmed child cleanup, which requires inspection before purge.
-Two verified bundle directories bound the host cache. These are controller
+Eight verified bundle directories bound the host cache, covering the Windows
+frontend, WSL image and six language tool sets. Developer inventory documents
+have a separate 2 MiB bound; ordinary protocol documents remain at 256 KiB. These are controller
 limits, not a claim of hostile compiler or whole-process memory containment.
 
 `latent.dev.scenarios.v1` keeps application inputs and results as exact bytes
@@ -271,12 +276,37 @@ credential file. Stopping the first node reported a clean, reaped shutdown and
 left the second ready. These are source-integration observations: the image was
 locally built and modified for diagnosis, so they do not qualify a distribution.
 
+The Rust tool candidate reuses the maintained #544 project creator and compiler
+recipe. Its three templates are greeting, word-count and shipping, with the
+existing vendored SDK and locked dependencies. The Linux prefix includes Python
+3.13.5, Rust 1.97.1 and its standard libraries, wasm-tools 1.254.0, wit-bindgen
+0.62.0, and Zig 0.16.0 for the native linker. The linker targets the supported
+glibc 2.39 userspace. Rustup and an ambient system compiler are not required in
+the workspace. The authoring recipe emits validated component and package input
+bytes; the controller then invokes the installed LSF CLI for package assembly.
+
+The compiler inventory covers companion libraries, offline registry data and
+recipe modules as well as executables. Every listed file is checked before and
+after the build; unrecorded files below executable search roots are rejected.
+The private build attempt receives its own writable dependency cache and bounded
+temporary directories. Superseded builds can interrupt inventory verification.
+Compiler output is retained within the same bounded attempt.
+
+A local source-integration run used the Ubuntu rootfs as an unprivileged user,
+with networking disabled and the staged tool prefix mounted read-only. All three
+templates compiled outside the runtime checkout. The greeting checks also
+confirmed cache reuse, mapped diagnostics, retention of the previous accepted
+build after invalid source, a new component after a fix, and reaped cleanup.
+The developer workflow repeats these application builds and emits a separately
+attested compiler candidate on branch runs. This does not yet qualify an
+authenticated Windows installation or the other five language integrations.
+
 | Child | Remaining Windows acceptance |
 | --- | --- |
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #562 | Mac/native ARM64 requirements deferred by maintainer; no ARM64 support claim. |
-| #563 | Integrate and execute all six merged language-owner recipes; authenticated template/tool bundles. |
+| #563 | Authenticate/install the Rust tool bundle through the Windows workflow and integrate the other five language-owner recipes. |
 | #564 | Actual A/B redeploy, compile/admission failure, concurrent generation and lost-response injection on a real node. |
 | #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |
 | #566 | Complete C/provider/clock coverage, verified native distribution and real Linux differential execution; Rust native subset now runs in Windows CI. |
@@ -292,7 +322,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate

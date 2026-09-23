@@ -109,7 +109,8 @@ class Backend:
         request = protocol.request(operation, self.workspace, arguments)
         try:
             completed = process.run(command(self.config), self.cwd, timeout=timeout,
-                                    stdin=encode(request), maximum=4 * 1024 * 1024, check=check)
+                                    stdin=encode(request), maximum=4 * 1024 * 1024, check=check,
+                                    graceful=12 if operation == "build" else 0)
             require(completed.returncode != 126, "helper-identity-mismatch-before-execution")
             require(completed.returncode == 0, "backend-helper-exit")
             return protocol.result(decode(completed.stdout, 4 * 1024 * 1024), request)

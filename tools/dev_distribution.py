@@ -24,7 +24,7 @@ def file_digest(path: Path) -> tuple[str, int]:
 
 
 def assemble(payload: Path, output: Path, *, commit: str, version: str, target: str, epoch: int,
-             executables: set[str]) -> dict:
+             executables: set[str], archive_name: str | None = None) -> dict:
     require(not output.exists(), "new-candidate-directory-required")
     entries = []
     for root, directories, names in os.walk(payload, followlinks=False):
@@ -41,7 +41,8 @@ def assemble(payload: Path, output: Path, *, commit: str, version: str, target: 
     require(executables <= {entry["path"] for entry in entries}, "distribution-executable-missing")
     require(sum(entry["size"] for entry in entries) <= bundle.MAX_BUNDLE * 2, "developer-expanded-byte-limit")
     output.mkdir(parents=True)
-    name = f"latent-dev-{target}.zip"
+    name = paths.relative(archive_name or f"latent-dev-{target}.zip")
+    require("/" not in name, "distribution-archive-basename-required")
     stamp = datetime.fromtimestamp(max(epoch, 315532800), timezone.utc).timetuple()[:6]
     with zipfile.ZipFile(output / name, "x", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         for record in entries:

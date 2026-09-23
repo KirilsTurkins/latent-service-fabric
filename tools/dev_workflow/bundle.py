@@ -15,6 +15,7 @@ from .common import DevError, HOST_ABI, decode, digest, encode, members, require
 
 MAX_BUNDLE = 1024 * 1024 * 1024
 MAX_ENTRIES = 4096
+MAX_MANIFEST = 2 * 1024 * 1024
 WORKFLOW = ".github/workflows/developer-tools.yml"
 TARGETS = {"windows-x86_64", "linux-x86_64", "linux-x86_64-wsl-rootfs"}
 
@@ -65,13 +66,18 @@ def manifest(value: dict, *, target: str, version: str, commit: str) -> dict:
     return value
 
 
+def cached(root: Path) -> dict:
+    value = decode(paths.read(root, "verified-bundle.json", MAX_MANIFEST), MAX_MANIFEST)
+    return manifest(value, target=value.get("target"), version=value.get("version"), commit=value.get("sourceCommit"))
+
+
 def authenticate(root: Path, selected_policy: Path, roots: Path, verifier: Path, verifier_sha256: str,
                  *, target: str, version: str, allow_candidate: bool) -> dict:
     policy_value = policy(decode(paths.read(selected_policy.parent, selected_policy.name)), version,
                           allow_candidate=allow_candidate)
     files = {name: paths.read(root, name, maximum) for name, maximum in
-             (("SHA256SUMS", 8192), ("attestation.json", 1048576), ("developer-bundle.json", 262144))}
-    manifest_value = manifest(decode(files["developer-bundle.json"]), target=target, version=version,
+             (("SHA256SUMS", 8192), ("attestation.json", 1048576), ("developer-bundle.json", MAX_MANIFEST))}
+    manifest_value = manifest(decode(files["developer-bundle.json"], MAX_MANIFEST), target=target, version=version,
                               commit=policy_value["sourceCommit"])
     archive = manifest_value["archive"]
     expected = {"developer-bundle.json": digest(files["developer-bundle.json"])[7:], archive["name"]: archive["sha256"][7:]}

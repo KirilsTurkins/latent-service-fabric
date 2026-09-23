@@ -109,17 +109,23 @@ def read(root: Path, name: str, maximum: int = MAX_FILE) -> bytes:
         raise DevError("source-file-unavailable-or-unsafe") from error
 
 
-def digest_file(root: Path, name: str, maximum: int = MAX_FILE) -> tuple[str, int]:
+def digest_file(root: Path, name: str, maximum: int = MAX_FILE, *, check=None) -> tuple[str, int]:
     import hashlib
+    if check is not None:
+        check()
     with opened(root, name) as descriptor:
         before = os.fstat(descriptor)
         require(before.st_size <= maximum, "file-byte-limit")
         checksum, size = hashlib.sha256(), 0
         while raw := os.read(descriptor, 1024 * 1024):
+            if check is not None:
+                check()
             size += len(raw)
             require(size <= maximum, "file-byte-limit")
             checksum.update(raw)
         after = os.fstat(descriptor)
+        if check is not None:
+            check()
         require((before.st_size, before.st_mtime_ns, before.st_ctime_ns) ==
                 (after.st_size, after.st_mtime_ns, after.st_ctime_ns) and size == before.st_size,
                 "source-changed-during-read")

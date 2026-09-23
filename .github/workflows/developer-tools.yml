@@ -11,6 +11,16 @@ on:
       - tools/build_dev_frontend.py
       - tools/build_dev_bundle.py
       - tools/build_dev_rootfs.py
+      - tools/build_dev_rust_tools.py
+      - tools/dev_rust_distribution.py
+      - tools/dev_guest_recipe.py
+      - tools/dev_guest_tools.py
+      - tools/run_dev_rust_tools_tests.py
+      - tools/rust_capsule*.py
+      - tools/rust_capsule.lock
+      - tools/build_observation.py
+      - tools/toolchain.toml
+      - tools/install_guest_bindgen.py
       - tools/dev_distribution.py
       - tools/dev_rootfs_inventory.py
       - tools/dev_guest_smoke.py
@@ -55,7 +65,69 @@ jobs:
         with:
           python-version: 3.13.5
       - name: Exercise controller boundaries and actual owned subprocesses
-        run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_build_process
+        run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_build_process
+
+  rust-tools:
+    name: Rust tool bundle and maintained application builds
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Stage the pinned relocatable Python prefix
+        run: |
+          image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'
+          container=$(docker create "$image")
+          trap 'docker rm "$container"' EXIT
+          prefix="$RUNNER_TEMP/rust-tools-cpython"
+          mkdir "$prefix"
+          docker cp "$container:/usr/local/." "$prefix"
+          printf 'LSF_DEV_PYTHON_PREFIX=%s\n' "$prefix" >> "$GITHUB_ENV"
+      - name: Assemble pinned compiler tools and maintained Rust templates
+        run: python tools/build_dev_rust_tools.py --output target/dev-rust --python-prefix "$LSF_DEV_PYTHON_PREFIX"
+      - name: Compile actual projects with isolated tools and separate operator packaging
+        run: python tools/run_dev_rust_tools_tests.py --payload target/dev-rust/payload --packager target/dev-rust/latent-test --output "$RUNNER_TEMP/dev-rust-projects"
+      - name: Attest Rust tool candidate without release authority
+        if: github.event_name != 'pull_request'
+        id: attest
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: target/dev-rust/candidate/SHA256SUMS
+      - name: Retain offline Rust tool attestation
+        if: github.event_name != 'pull_request'
+        env:
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+        run: install -m 0644 "$BUNDLE_PATH" target/dev-rust/candidate/attestation.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: developer-rust-tools-candidate-${{ github.sha }}
+          path: target/dev-rust/candidate/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retain compiler and application evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: developer-rust-builds-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/dev-rust-projects/
+            target/dev-rust/logs/
+          if-no-files-found: warn
+          retention-days: 7
 
   windows:
     name: Windows frontend and actual portable capsules

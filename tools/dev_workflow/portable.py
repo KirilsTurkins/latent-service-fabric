@@ -105,7 +105,7 @@ def run(root: Path, args) -> dict:
     name = args.portable_bundle
     require(len(name) == 64 and all(c in "0123456789abcdef" for c in name), "bundle-id-required")
     cache = root / "bundles" / name
-    selected = state.load(cache, "verified-bundle.json")
+    selected = bundle.cached(cache)
     bundle.manifest(selected, target="windows-x86_64", version=selected["version"], commit=selected["sourceCommit"])
     require(selected["archive"]["sha256"] == "sha256:" + name, "portable-bundle-identity")
     executable = "bin/latent-portable-test-host.exe"

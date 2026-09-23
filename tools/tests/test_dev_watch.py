@@ -96,13 +96,20 @@ class BuildCancellation(unittest.TestCase):
                 source = root / "source"
                 paths.new_directory(source)
                 paths.new_directory(source / "src")
-                program = b"import os,subprocess,sys,time\nfrom pathlib import Path\np=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'])\nPath('../live').write_text(str(p.pid))\ntime.sleep(60)\n"
+                program = b"""import sys
+from pathlib import Path
+sys.path.insert(0,sys.argv[1])
+from tools.build_process import run_bounded_result
+from tools.dev_workflow.process import environment
+child="import os,time;from pathlib import Path;Path('../live').write_text(str(os.getpid()));time.sleep(60)"
+run_bounded_result([sys.executable,'-c',child],cwd=Path.cwd(),env=environment(),timeout_seconds=12,max_output_bytes=1024)
+"""
                 paths.write_new(source / "src/slow.py", program)
                 record, _ = snapshot.observe(source, ["src"])
                 paths.write_new(source / "snapshot.json", common.encode(record))
                 selected = descriptor()
                 python = Path(sys.executable).resolve()
-                selected["build"].update(argv=["python", "-I", "slow.py"], timeoutSeconds=12,
+                selected["build"].update(argv=["python", "-I", "slow.py", str(Path.cwd())], timeoutSeconds=12,
                     tools=[{"name": "python", "path": python.name, "version": "3.13.5",
                             "sha256": paths.digest_file(python.parent, python.name, 268435456)[0]}])
                 state.atomic(root, "inputs.json", selected)

@@ -66,6 +66,8 @@ def owned_cancellation():
         return
     cancellation = _Cancellation()
     numbers = [signal.SIGINT, signal.SIGTERM]
+    if hasattr(signal, "SIGHUP"):
+        numbers.append(signal.SIGHUP)
     if hasattr(signal, "SIGBREAK"):
         numbers.append(signal.SIGBREAK)
     try:

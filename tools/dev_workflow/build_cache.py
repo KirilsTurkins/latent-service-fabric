@@ -103,25 +103,29 @@ def usage(directory: Path) -> tuple[int, int]:
         while pending:
             current, depth = pending.pop()
             require(depth <= 64, "build-cache-depth-limit")
-            if not current.exists():
-                continue
-            with paths.directory(current), os.scandir(current) as entries:
-                for entry in entries:
-                    count += 1
-                    require(count <= MAX_ENTRIES, "build-cache-file-limit")
-                    try:
-                        # Windows DirEntry.stat deliberately returns st_dev=0.
-                        metadata = Path(entry.path).lstat() if os.name == "nt" else entry.stat(follow_symlinks=False)
-                    except FileNotFoundError:
-                        continue  # A compiler may remove its own temporary file.
-                    require(not stat.S_ISLNK(metadata.st_mode) and not getattr(metadata, "st_file_attributes", 0) & 0x400
-                            and metadata.st_dev == device, "build-cache-link-or-mount-rejected")
-                    if stat.S_ISDIR(metadata.st_mode):
-                        pending.append((Path(entry.path), depth + 1))
-                    else:
-                        require(stat.S_ISREG(metadata.st_mode), "build-cache-special-file-rejected")
-                        total += metadata.st_size
-                        require(total <= MAX_BYTES, "build-cache-byte-limit")
+            try:
+                with paths.directory(current) as anchor, os.scandir(anchor if os.name == "posix" else current) as entries:
+                    for entry in entries:
+                        count += 1
+                        require(count <= MAX_ENTRIES, "build-cache-file-limit")
+                        try:
+                            # Windows DirEntry.stat deliberately returns st_dev=0.
+                            metadata = Path(entry.path).lstat() if os.name == "nt" else entry.stat(follow_symlinks=False)
+                        except FileNotFoundError:
+                            continue  # A compiler may remove its own temporary file.
+                        require(not stat.S_ISLNK(metadata.st_mode) and not getattr(metadata, "st_file_attributes", 0) & 0x400
+                                and metadata.st_dev == device, "build-cache-link-or-mount-rejected")
+                        if stat.S_ISDIR(metadata.st_mode):
+                            pending.append((current / entry.name, depth + 1))
+                        else:
+                            require(stat.S_ISREG(metadata.st_mode), "build-cache-special-file-rejected")
+                            total += metadata.st_size
+                            require(total <= MAX_BYTES, "build-cache-byte-limit")
+            except FileNotFoundError:
+                # Temporary directories can disappear between enumeration and open.
+                # The attempt itself must remain owned and present.
+                if current == directory:
+                    raise
     return count, total
 
 
