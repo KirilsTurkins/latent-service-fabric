@@ -1,0 +1,23 @@
+name: C guest authoring workspace
+on:
+  push:
+    branches: [feat/545-c-capsule-authoring]
+    paths: [.github/workflows/c-guest-authoring-bootstrap.yml]
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Capture exact tracked implementation inputs
+        run: git archive --format=tar.gz --output="$RUNNER_TEMP/c-guest-source.tar.gz" HEAD
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c-guest-authoring-source
+          path: ${{ runner.temp }}/c-guest-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
