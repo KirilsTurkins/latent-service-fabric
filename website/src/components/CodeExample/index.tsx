@@ -77,7 +77,7 @@ function Panel({variant, group, query, identifier, tabIdentifier, version, devel
 
 export function ExampleView({bundle, ...request}: Props & {bundle: ExampleBundle}): ReactNode {
   const identifier = useId();
-  const developerPage = useLocation().pathname.includes('/docs/development/');
+  const developerPage = /\/docs\/(?:[^/]+\/)?development\//.test(useLocation().pathname);
   const example = resolveExample(bundle, request);
   const group = `lsf-example-${example.target}`;
   const query = `lsf-${example.target}-language`;
