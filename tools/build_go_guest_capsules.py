@@ -37,7 +37,8 @@ def project(directory: Path, name: str) -> Path:
             destination.write_bytes(data)
     path = directory / "capsule-project.json"
     value = json.loads(read_file(path))
-    value.update(world=profile["world"], tenant="tests", service={"service": "caller", "callee": "callee"}.get(name, "generic"))
+    value.update(world=profile["world"], tenant="tenant-a" if name in {"service", "callee"} else "tests",
+                 service={"service": "caller", "callee": "callee"}.get(name, "generic"))
     value["limits"].update(cpuFuel=10_000_000_000, childCalls=16 if name == "service" else 0,
         outboundRequests=8 if name in {"http", "streaming", "blob", "secrets", "events"} else 0,
         blobReadBytes=65536 if name == "blob" else 0, blobWriteBytes=65536 if name == "blob" else 0)

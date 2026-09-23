@@ -1243,6 +1243,7 @@
         "deployments::tests::admission::weighted_selection_preserves_each_exact_revisions_own_policy",
         "deployments::tests::apply_read_list_delete_and_pinned_revision",
         "deployments::tests::bindings::exact_host_plan_is_durable_and_old_pins_keep_original_data",
+        "deployments::tests::bindings::identical_consumers_reuse_one_transient_package_but_never_a_previous_compilation",
         "deployments::tests::bindings::inspection::inspection_preserves_scope_versions_and_stale_unavailable_plans",
         "deployments::tests::bindings::local::local_provider_revision_change_denies_old_plan_and_retains_desired_history",
         "deployments::tests::bindings::local::local_publication_revocation_is_independent_of_consumer_admission",
@@ -1433,7 +1434,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 237,
+      "minimumCases": 238,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [

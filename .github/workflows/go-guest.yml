@@ -7,6 +7,12 @@ on:
       - tools/go_guest/**
       - tools/go_capsule*.py
       - tools/probe_go_authoring.py
+      - tools/qualify_go_capsules.py
+      - tools/qualify_rust_capsules.py
+      - tools/*rust_capsule*.py
+      - tools/guest_runtime_grants.py
+      - docs/component-development/go-authoring.md
+      - crates/latent-wasmtime/tests/**
       - tools/build_go_guest_capsules.py
       - apps/latentd/**
       - crates/latent-signing/**
@@ -21,6 +27,12 @@ on:
       - tools/go_guest/**
       - tools/go_capsule*.py
       - tools/probe_go_authoring.py
+      - tools/qualify_go_capsules.py
+      - tools/qualify_rust_capsules.py
+      - tools/*rust_capsule*.py
+      - tools/guest_runtime_grants.py
+      - docs/component-development/go-authoring.md
+      - crates/latent-wasmtime/tests/**
       - tools/build_go_guest_capsules.py
       - apps/latentd/**
       - crates/latent-signing/**
@@ -39,7 +51,7 @@ concurrency:
 
 jobs:
   upstream-probe:
-    name: Go upstream compatibility probe
+    name: Go runtime and complete capsule qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -88,18 +100,8 @@ jobs:
           cargo run --locked -p latent-wasmtime --example go_runtime_probe -- "$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm" 2>&1 | tee "$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log"
       - name: Check standalone project source boundaries
         run: python3 -m unittest tools.tests.test_go_capsule_authoring
-      - name: Exercise Go owner aliases and compile all typed capability wrappers
-        run: |
-          go test sdk/go-guest/ownership/owner.go sdk/go-guest/ownership/owner_test.go
-          python3 tools/build_go_guest_capsules.py --output "$RUNNER_TEMP/go-sdk-capsules"
-      - name: Execute every typed Go capability through real providers and cleanup
-        run: |
-          set -o pipefail
-          export LSF_GUEST_CAPSULES="$RUNNER_TEMP/go-sdk-capsules"
-          export LSF_GUEST_SDK_LANGUAGE=go
-          cargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee "$RUNNER_TEMP/go-sdk-capsules/runtime-qualification.log"
-      - name: Build and admit five actual editable Go projects
-        run: python3 tools/probe_go_authoring.py --output "$RUNNER_TEMP/go-authoring-projects"
+      - name: Qualify editable projects, all SDK owners, enforced node and printed guide
+        run: python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
       - name: Retain successful and failed upstream observations
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -107,7 +109,6 @@ jobs:
           name: go-guest-upstream-${{ github.sha }}
           path: |
             ${{ runner.temp }}/go-guest-probe/
-            ${{ runner.temp }}/go-authoring-projects/
-            ${{ runner.temp }}/go-sdk-capsules/
+            ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn
           retention-days: 7

@@ -1,13 +1,18 @@
 # Guest SDK: build and run a capsule
 
 For a new independent project, follow [Create your own Rust capsule](rust-authoring.md)
-or [Create your own C capsule](c-authoring.md).
+or [Create your own C capsule](c-authoring.md), or
+[Create your own Go capsule](go-authoring.md).
 That guide covers editable source, generated contracts, packaging, signing,
 enforced node admission and cleanup. This reference describes capability ownership.
 
 The maintained guest SDK is [Rust `latent-guest`](../../sdk/rust-guest/README.md).
 The [C guest SDK](../../sdk/c-guest/README.md) provides explicit allocation and
 async ownership helpers over generated canonical ABI bindings.
+The [Go guest SDK](../../sdk/go-guest/README.md) adds typed capability packages
+with shared owner state, explicit close and no finalizer-driven release. Its
+runtime needs separately granted LSF clocks and entropy, including for pure
+application functions. See its guide for exact compiler and dependency pins.
 External client interfaces in Go, TypeScript, Java, .NET, C and Rust are separate
 from guest execution profiles. They do not establish general Go/JVM/.NET/JS guest
 support or a Node.js/WASI environment inside an LSF activation.

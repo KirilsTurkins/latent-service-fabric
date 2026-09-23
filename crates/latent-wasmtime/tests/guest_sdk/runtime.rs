@@ -75,10 +75,6 @@ impl Runtime {
         )
     }
 
-    #[expect(
-        clippy::too_many_arguments,
-        reason = "explicit finite test-operator authority scope"
-    )]
     pub fn scoped(
         broker: &ActivationCapabilityBroker,
         policies: &PolicyStore,
@@ -112,7 +108,12 @@ impl Runtime {
             owner.clocks.push(registration);
         }
         if !existing_random {
-            let random = RandomProvider::system(broker, 1, Default::default()).unwrap();
+            let random = RandomProvider::system(
+                broker,
+                1,
+                latent_capabilities::broker::random::RandomLimits::default(),
+            )
+            .unwrap();
             owner.add(random.reference(), "u64-value");
             owner.random = Some(random);
         }

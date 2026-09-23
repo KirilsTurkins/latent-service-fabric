@@ -52,17 +52,19 @@ fn linker(engine: &Engine) -> wasmtime::Result<Linker<StoreLimits>> {
     let epoch = Instant::now();
     linker
         .instance("latent:clock/monotonic@0.1.0")?
-        .func_wrap("now-nanos", move |_, (): ()| {
-            Ok((u64::try_from(epoch.elapsed().as_nanos())?,))
+        .func_wrap_async("now-nanos", move |_, (): ()| {
+            Box::new(async move { Ok((u64::try_from(epoch.elapsed().as_nanos())?,)) })
         })?;
     linker
         .instance("latent:clock/wall@0.1.0")?
-        .func_wrap("now-unix-millis", |_, (): ()| {
-            Ok((u64::try_from(
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)?
-                    .as_millis(),
-            )?,))
+        .func_wrap_async("now-unix-millis", |_, (): ()| {
+            Box::new(async move {
+                Ok((u64::try_from(
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)?
+                        .as_millis(),
+                )?,))
+            })
         })?;
     linker
         .instance("latent:random/random@0.1.0")?

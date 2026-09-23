@@ -346,6 +346,7 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
                 gate: gate.clone(),
             }))
             .unwrap();
+        guest_runtime.install(&runtime);
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             support::config(),
             WasmtimeHostServices {
@@ -363,7 +364,6 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
             .prepare_ready_from_repository(catalog.clone(), key)
             .await
             .unwrap();
-        guest_runtime.install(&runtime);
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {

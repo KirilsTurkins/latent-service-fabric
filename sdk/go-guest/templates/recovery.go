@@ -17,8 +17,18 @@ func Run(which uint32) uint32 {
 			runtime.KeepAlive(retained)
 		}
 	case 3:
-		for {
-			calls++
+		// Fixed guest goroutines exercise scheduler and channel ownership.
+		// The host's fuel/deadline/cancellation bounds reclaim this whole Store.
+		work := make(chan uint32, 4)
+		for worker := uint32(0); worker < 4; worker++ {
+			go func(value uint32) {
+				for {
+					work <- value
+				}
+			}(worker)
+		}
+		for value := range work {
+			calls += value
 		}
 	}
 	return calls

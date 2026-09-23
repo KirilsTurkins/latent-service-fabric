@@ -11,6 +11,20 @@ from tools.go_guest.sdk import install, CAPABILITIES
 
 
 class GoAuthoringTests(unittest.TestCase):
+    def test_guide_and_selectable_examples_cover_the_printed_workflow(self):
+        import re
+        from tools.go_capsule_project import ROOT
+        guide = (ROOT / "docs/component-development/go-authoring.md").read_text()
+        self.assertEqual(len(re.findall(r"^```bash$", guide, re.M)), 6)
+        for operation in ("new", "build", "demo-sign", "serve", "release publish-package",
+                          "deployment apply", "invoke", "deployment delete", "stop_go_node"):
+            self.assertIn(operation, guide)
+        for template in ("greeting", "word-count", "shipping"):
+            example = json.loads((ROOT / "examples/guides" / ("tutorial-" + template) / "example.json").read_text())
+            variant, = [item for item in example["variants"] if item["language"] == "go"]
+            self.assertEqual(variant["source"], f"sdk/go-guest/templates/{template}.go")
+            self.assertEqual(variant["validation"]["target"], "tools/qualify_go_capsules.py")
+
     def test_every_sdk_fixture_is_an_editable_source_project_with_exact_wit(self):
         for name in NAMES:
             with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:

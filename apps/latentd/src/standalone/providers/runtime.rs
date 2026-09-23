@@ -43,6 +43,10 @@ pub(in crate::standalone) struct ProviderRuntime {
 }
 
 impl ProviderRuntime {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "bounded provider owners are installed and rolled back in one transaction"
+    )]
     pub async fn open(
         settings: &NodeSettings,
         artifacts: &Arc<DirectoryArtifactRepository>,
@@ -99,7 +103,7 @@ impl ProviderRuntime {
                 let provider = latent_capabilities::broker::random::RandomProvider::system(
                     &broker,
                     installation.identity.epoch,
-                    Default::default(),
+                    latent_capabilities::broker::random::RandomLimits::default(),
                 )?;
                 providers.push(owner.record(&installation.identity, provider.reference()));
                 owner.runtime.install_random(provider)?;

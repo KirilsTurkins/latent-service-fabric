@@ -198,7 +198,16 @@ pub async fn publish(root: &Path, name: &str) -> Publication {
     let receipt = catalog
         .publish_managed(
             ReleaseMutationContext {
-                scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                scope: LifecycleScope::Tenant(TenantId(
+                    if name.starts_with("go-")
+                        && (name.ends_with("-service") || name.ends_with("-callee"))
+                    {
+                        "tenant-a"
+                    } else {
+                        "tests"
+                    }
+                    .into(),
+                )),
                 actor: ReleaseActor {
                     subject: "guest-sdk-contract-gate".into(),
                     kind: ReleaseActorKind::Host,

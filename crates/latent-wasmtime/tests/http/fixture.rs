@@ -280,6 +280,7 @@ impl Fixture {
             Arc::new(Plans(plan)),
         ));
         runtime.install_http(Arc::new(provider.clone())).unwrap();
+        guest_runtime.install(&runtime);
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             support::config(),
             WasmtimeHostServices {
@@ -297,7 +298,6 @@ impl Fixture {
             .prepare_ready_from_repository(catalog.clone(), key)
             .await
             .unwrap();
-        guest_runtime.install(&runtime);
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
