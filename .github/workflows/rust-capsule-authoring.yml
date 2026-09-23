@@ -1,0 +1,35 @@
+name: Rust capsule authoring
+
+on:
+  push:
+    branches: [feat/544-rust-capsule-authoring]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-capsule-authoring-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  authoring:
+    name: Standalone Rust capsule authoring
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Retain the exact tracked qualification source
+        run: |
+          mkdir -p "$RUNNER_TEMP/rust-capsule-evidence"
+          git rev-parse HEAD > "$RUNNER_TEMP/rust-capsule-evidence/revision.txt"
+          git archive --format=tar HEAD | gzip -n > "$RUNNER_TEMP/rust-capsule-evidence/source.tar.gz"
+          sha256sum "$RUNNER_TEMP/rust-capsule-evidence/source.tar.gz" > "$RUNNER_TEMP/rust-capsule-evidence/source.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rust-capsule-source-${{ github.sha }}
+          path: ${{ runner.temp }}/rust-capsule-evidence/
+          if-no-files-found: error
+          retention-days: 1
