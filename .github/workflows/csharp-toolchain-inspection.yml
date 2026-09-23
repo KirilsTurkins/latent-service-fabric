@@ -45,10 +45,34 @@ jobs:
           tar -C "$HOME" -czf "$RUNNER_TEMP/csharp-tools/dependencies.tar.gz" .nuget/packages .wasi-sdk/wasi-sdk-29.0 .cargo/registry .rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu
           git -C target/csharp-upstream archive --format=tar.gz --output="$RUNNER_TEMP/csharp-tools/wit-bindgen.tar.gz" HEAD
           sha256sum "$RUNNER_TEMP/csharp-tools/"*.tar.gz
+          split --bytes=400M --numeric-suffixes "$RUNNER_TEMP/csharp-tools/dependencies.tar.gz" "$RUNNER_TEMP/csharp-tools/dependencies.part"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: csharp-pinned-inspection-inputs
-          path: ${{ runner.temp }}/csharp-tools/
+          name: csharp-tools-dotnet
+          path: |
+            ${{ runner.temp }}/csharp-tools/dotnet.tar.gz
+            ${{ runner.temp }}/csharp-tools/wit-bindgen.tar.gz
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: csharp-tools-deps-00
+          path: ${{ runner.temp }}/csharp-tools/dependencies.part00
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: csharp-tools-deps-01
+          path: ${{ runner.temp }}/csharp-tools/dependencies.part01
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: csharp-tools-deps-02
+          path: ${{ runner.temp }}/csharp-tools/dependencies.part02
           compression-level: 0
           retention-days: 1
           if-no-files-found: error
