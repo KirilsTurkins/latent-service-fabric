@@ -2,12 +2,13 @@
 
 **Delivery status:** native packaging and fail-closed installer delivery for
 [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
-The current-format `0.1.0-alpha.4-rc.2` foundation passed both clean-VM profiles
-under the exact release-workflow identity: real reboot, retained invocation,
-backup/recovery and removal/purge, plus rootless evaluation in the local profile.
-The [authenticated receipt](evidence/native-foundation-35811188306.json) records that unpublished
-foundation. The selected final `0.1.0-alpha.4` still requires its own compatible
-upgrade checks and protected publication; no published binary release is claimed.
+The `0.1.0-alpha.4` bundle passed both clean-VM profiles under the exact
+release-workflow identity: real reboot, retained invocation, backup/recovery,
+removal/purge and an actual upgrade from the current-format rc.2 foundation.
+The local profile additionally passed rootless foreground evaluation. Both
+[authenticated VM receipts](evidence/native-upgrade-35821200294/README.md)
+report complete acceptance with no gaps. Protected publication remains pending;
+the qualified rehearsal archive is not a published binary release.
 The historical
 [`0.1.0-alpha.3` release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3)
 remains source-only. Do not install an unsigned candidate as an authenticated
@@ -23,12 +24,12 @@ release or infer production/hostile-multitenant certification.
 | Develop an application/capsule | [Guest SDK](component-development/guest-sdk.md) and [operator CLI](reference/operator-cli.md); this does not install the node runtime. |
 | Build or contribute to LSF itself | [Pinned toolchain](development/toolchain.md) and [development quickstart](development/standalone-quickstart.md), not a server installer. |
 
-The narrow qualified foundation matrix is Ubuntu Server 24.04/x86_64, kernel 6.8+,
+The narrow qualified native matrix is Ubuntu Server 24.04/x86_64, kernel 6.8+,
 glibc 2.39+, SSE2 and Python 3.12+. Actual pressure observations, local filesystem
 locking/directory synchronization, protected-file semantics, dynamic libraries
 and, for external capsules, the approved Landlock ABI 3/seccomp compiler are
 checked under the intended node identity. This matrix is tested for the exact
-recorded **foundation** archive, not for every newer source or an unselected release.
+recorded **alpha.4 rehearsal** archive, not for every newer source or rebuild.
 There is no container-runtime prerequisite or alternative container installation
 mode. Capsule OCI transport remains independent of native runtime distribution.
 
@@ -109,13 +110,14 @@ Real release acceptance must additionally retain:
    unprivileged rootless foreground run.
 
 [`packaging/linux/compatibility.json`](../packaging/linux/compatibility.json)
-declares the exact `0.1.0-alpha.4-rc.2` predecessor for the planned alpha.4 bundle,
+declares the exact `0.1.0-alpha.4-rc.2` predecessor for the alpha.4 bundle,
 including its source commit and archive digest. The
 [foundation receipt](evidence/native-foundation-35811188306.json) records its
-successful nonpublishing two-profile VM qualification. The declaration does
-not establish a completed upgrade: the final alpha.4 artifact still needs its
-own complete VM/reboot and compatible-pair matrix, then protected publisher
-approval. Documentation can be published with this qualified status without
+successful nonpublishing two-profile VM qualification. The subsequent
+[alpha.4 rehearsal](evidence/native-upgrade-35821200294/README.md) exercised that
+pair in both profiles, preserved retained state and rejected the unsupported
+downgrade. Publication rebuilds and requalifies its own exact bytes before
+protected publisher approval. Documentation can be published with this qualified status without
 waiting circularly for #240 phase acceptance.
 Supply exact receipts and these operational boundaries to #237/#238/#240; preserve
 the historical release and benchmark identities in the maintained operator guides.

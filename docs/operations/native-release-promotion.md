@@ -10,17 +10,19 @@ download announcement or production/hostile-multitenancy certification.
 
 The selected versions are `0.1.0-alpha.4-rc.2` for the recorded foundation and
 `0.1.0-alpha.4` for the final bundle. The foundation's source, tag and archive
-identity are recorded below. Final bundle qualification and protected
-publication remain separate requirements.
+identity are recorded below. The final bundle's nonpublishing rehearsal has
+complete VM acceptance; protected publication remains pending.
 The historical `0.1.0-alpha.3` tag remains unchanged and source-only.
 
 The current rc.2 foundation is now qualified in
 [release run 35811188306](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35811188306), at source
 `a53b7b219a46f6ca91ae7bc7830669f8aa4bbe2e`. Its
 [authenticated receipt](../evidence/native-foundation-35811188306.json) supplies the actual
-archive identity committed for `0.1.0-alpha.4`. Final compatible-pair VM
-acceptance and protected publication remain pending; the steps below retain
-their separate exact-source and artifact checks.
+archive identity committed for `0.1.0-alpha.4`. The
+[final rehearsal receipts](../evidence/native-upgrade-35821200294/README.md)
+record complete compatible-pair acceptance in both profiles at source
+`193d52c37635026de416feffd4a2dfd57d082451`. Publication retains its separate
+exact-source, artifact and required-reviewer checks.
 
 The earlier unpublished `0.1.0-alpha.4-rc.1` foundation and its receipts remain
 historical evidence. Its HTTP table format is now obsolete, so it is no longer
@@ -202,26 +204,28 @@ foundation binaries, move a tag or use same-version reinstall as an upgrade.
 
 ## 4. Qualify the final source against that foundation
 
-The maintainer reviews the final version/compatibility commit, obtains its own exact
-CI/security results and creates its distinct immutable final tag. Independently
-approve the release certificate ending in `@refs/tags/0.1.0-alpha.4`, with both
-source and signer pinned to that final source, not to the foundation or a PR base.
-
-The maintainer's nonpublishing rehearsal selects the actual foundation run:
+The final immutable tag, exact-source CI and nonpublishing rehearsal already
+exist. Inspect their recorded identities below; do not create another tag or
+repeat a completed dispatch. Independently approve the release certificate
+ending in `@refs/tags/0.1.0-alpha.4`, with both source and signer pinned to the
+final source. Future versions need their own reviewed source, tag and qualification.
 
 ```bash
-: "${FINAL_COMMIT:?Set the approved full final source commit}"
-: "${FINAL_CI_RUN:?Set the successful maintained CI run for the exact final source}"
+FINAL_COMMIT=193d52c37635026de416feffd4a2dfd57d082451
+FINAL_CI_RUN=35818046307
 FINAL_VERSION=0.1.0-alpha.4
-timeout --kill-after=5s 30s gh workflow run native-runtime-release.yml \
-  --repo "$REPOSITORY" --ref "$FINAL_VERSION" \
-  -f version="$FINAL_VERSION" -f commit="$FINAL_COMMIT" \
-  -f ci_run="$FINAL_CI_RUN" -f predecessor_run="$FOUNDATION_RUN" -F publish=false
+FINAL_REHEARSAL_RUN=35821200294
+timeout --kill-after=5s 30s gh api \
+  "repos/$REPOSITORY/git/ref/tags/$FINAL_VERSION" --jq '.object'
+timeout --kill-after=5s 30s gh run view "$FINAL_CI_RUN" --repo "$REPOSITORY" \
+  --json databaseId,headSha,headBranch,event,status,conclusion,url
+timeout --kill-after=5s 30s gh run view "$FINAL_REHEARSAL_RUN" --repo "$REPOSITORY" \
+  --json databaseId,headSha,headBranch,event,status,conclusion,jobs,url
 ```
 
-Dispatch is a mutation. If its response is lost or times out, inspect runs for
-the exact tag/source before any retry. Select the actual run ID, not simply the
-newest run, and do not overwrite an existing tag or release.
+Require the expected tag/source and successful CI, build and both VM jobs.
+The rehearsal used `publish=false` and foundation run `35811188306`. Its skipped
+publication job is expected. The retained summary explicitly says `published:false`.
 
 Retain the actual run ID and inspect both
 `native-runtime-release-vm-<profile>-<FINAL_COMMIT>` artifacts. Require all of:
@@ -246,6 +250,12 @@ compiler SHA; it does not regenerate the AOT key or silently discard trust.
 Binary downgrade is not an inverse storage migration.
 
 ## 5. Review publication, then observe its result
+
+Publication run
+[35822633436](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35822633436)
+was dispatched for the same immutable alpha.4 source after the rehearsal passed.
+Inspect that run before taking further action; its dispatch is not publication
+evidence and must not be repeated after an uncertain response.
 
 The maintainer selects `publish=true` after qualification. The existing workflow
 builds/attests again and reruns both VM profiles for those exact new artifact
@@ -284,5 +294,6 @@ authority to consume a candidate through the release verification procedure.
 
 The [guide review handoff](../development/operator-guide-acceptance.md)
 separates retained execution, command/source checks and pending rendered human
-review. The recorded rc.2 foundation is executed evidence; the final source's
-rehearsal and publication must retain their own results before being called complete.
+review. The recorded rc.2 foundation and final alpha.4 rehearsal are executed
+evidence. Publication must retain its own authenticated results before being
+called complete.
