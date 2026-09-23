@@ -5,7 +5,7 @@ Its API is available on `wasm32`, uses the authoritative generated
 `latent-component-bindings` profile, and adds no executor, provider, grant or
 retry policy. The external Rust client interfaces live in `../rust`.
 
-Use Rust 1.97.1, `wit-bindgen` 0.60.0, `wasm32-unknown-unknown`, and
+Use Rust 1.97.1, `wit-bindgen` 0.62.0, `wasm32-unknown-unknown`, and
 `wasm-tools` 1.254.0 as pinned in `tools/toolchain.toml`. The maintained examples
 map each exact application WIT import to `latent_guest::bindings` in their
 `wit_bindgen::generate!` configuration. This keeps imported resource types

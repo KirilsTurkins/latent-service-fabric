@@ -164,7 +164,7 @@ try {
           await screenshot(page, `${variant}-${mode}-home`);
           await visit(page, `${prefix}/docs/architecture/overview/`);
           assertTextContrast(await textSamples(page));
-          assert.equal(await page.locator('article img[src*="-presentation.svg"]').count(), 2);
+          assert.equal(await page.locator('article img[src*="activation-lifecycle.svg"], article img[src*="package-delivery.svg"]').count(), 2);
           await visit(page, `${prefix}/docs/development/website/`);
           await page.locator('.docusaurus-mermaid-container svg').waitFor({state: 'visible'});
           assert.equal(await page.locator('.docusaurus-mermaid-container foreignObject').count(), 0);

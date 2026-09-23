@@ -97,7 +97,7 @@ def grant_http(client, node, fixture, publication, target, port):
         "services": [target["service"]], "publications": [publication], "capability": descriptor["capability"],
         "operations": ["send"], "resources": {"kind": "http", "origins": [{"scheme": "http", "host": "localhost", "port": port}],
             "methods": ["GET"], "paths": ["/allowed"], "pathPrefixes": []},
-        "ceiling": {"operations": 1, "inputBytes": 4096, "outputBytes": 8192, "wallTimeMillis": 1000}}]})
+        "ceiling": {"operations": 1, "inputBytes": 4096, "outputBytes": 8192, "wallTimeMillis": 5000}}]})
     client.call("policy", "apply", "--id", "http-allow", "--file", policy,
                 "--operation-id", "grant-http", "--expected-generation", "0")
     return deploy(client, fixture / "my-http-status/deployment.json", publication, generation=str(target["generation"]),
@@ -157,14 +157,21 @@ def sample(client, probe: Probe, phase, population, *, active=False):
         inventory = client.call("node", "get", NODE_ID)["data"]["inventory"]
         require(inventory["topology"]["available"] and inventory["topology"]["complete"], "authoring-topology-unavailable")
         topology = inventory["topology"]["entries"]
+        cells = inventory["cellCapacity"]
+        require(cells and all(cell["observationAvailable"] for cell in cells), "authoring-cells-unavailable")
+        occupied = sum(int(cell["active"]) + int(cell["quarantined"]) for cell in cells)
         require(all(int(row["activeCount"]) == 0 and int(row["configuredCount"]) == 0
                     for row in topology if row["ownership"] == "service-resident"), "authoring-resident-app-owner")
-        idle = (int(inventory["queueDepth"]) == 0
+        idle = (occupied == 0 and int(inventory["queueDepth"]) == 0
             and all(int(v) == 0 for v in inventory["quotas"]["usage"].values())
             and all(int(row["activeCount"]) == 0 for row in topology if row["ownership"] == "activation-scoped"))
+        if active:
+            require(occupied == 1 and any(int(value) > 0 for value in inventory["quotas"]["usage"].values()),
+                    "authoring-active-owner-missing")
         if active or idle:
             cache = inventory["cacheSummary"]
-            require(int(cache["entries"]) <= 2 and int(cache["preparing"]) <= 1, "authoring-cache-bound")
+            require(cache["available"] and int(cache["entries"]) <= 2 and int(cache["preparing"]) <= 1,
+                    "authoring-cache-bound")
             return {"phase": phase, "dormantDeployments": population, "settlingObservations": attempt + 1,
                     "inventory": inventory, "os": probe.sample()}
         require(time.monotonic() < deadline, "authoring-reclamation-deadline")
@@ -176,7 +183,9 @@ def provider_idle(client):
     value = client.call("capability", "list", "--deployment", "my-http-status", "--include-node-usage")["data"]
     require(value["nextPageToken"] is None, "authoring-provider-page-bound")
     counters = value["nodeUsage"]["counters"]
-    require(all(int(counters[name]) == 0 for name in ACTIVE_COUNTERS if name in counters), "authoring-provider-not-reclaimed")
+    require(not value["nodeUsage"]["unavailable"] and all(name in counters for name in ACTIVE_COUNTERS),
+            "authoring-provider-counters-unavailable")
+    require(all(int(counters[name]) == 0 for name in ACTIVE_COUNTERS), "authoring-provider-not-reclaimed")
     return value["nodeUsage"]
 
 

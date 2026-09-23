@@ -241,7 +241,7 @@ panic = "abort"
     limits = json.loads((ROOT / "examples/echo-contract/capsule.json").read_text())["execution"]["limits"]
     limits.update(cpuFuel=100_000_000, memoryBytes=4_194_304, wallTimeLimitMillis=1000, logBytes=0)
     if template == "http-status":
-        limits.update(outboundRequests=1, memoryBytes=16_777_216, cpuFuel=1_000_000_000)
+        limits.update(outboundRequests=1, memoryBytes=16_777_216, cpuFuel=1_000_000_000, wallTimeLimitMillis=5000)
     project = {"formatVersion": 1, "name": name, "version": "1.0.0", "tenant": "examples",
                "service": "examples/" + name, "world": f"examples:{template}/service@1.0.0",
                "limits": limits}

@@ -85,10 +85,11 @@ jobs:
             ${{ runner.temp }}/rust-capsule-authoring/*.log
             ${{ runner.temp }}/rust-capsule-authoring/*.stdout
             ${{ runner.temp }}/rust-capsule-authoring/*.stderr
+            ${{ runner.temp }}/rust-capsule-authoring/logs/**
             ${{ runner.temp }}/rust-capsule-authoring/builds/**
             ${{ runner.temp }}/rust-capsule-authoring/ownership/*.json
             ${{ runner.temp }}/rust-capsule-authoring/ownership/*.jsonl
-            ${{ runner.temp }}/rust-capsule-authoring/ownership/*.stderr
+            ${{ runner.temp }}/rust-capsule-authoring/ownership/*.stderr.txt
             ${{ runner.temp }}/rust-capsule-authoring/node/**
             ${{ runner.temp }}/rust-capsule-authoring/releases/**
           if-no-files-found: warn

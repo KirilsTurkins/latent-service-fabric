@@ -42,7 +42,10 @@ def faults(client, target, probe, result, population):
             require(row["exitCode"] == 4 and row["response"]["category"] == "platform-failure"
                     and row["response"]["outcomeKnown"], "authoring-fault-not-observed")
             code = row["response"]["error"]["code"]
-            require(code in {"internal", "resource-exhausted", "deadline-exceeded"}, "authoring-fault-classification")
+            expected = "guest-trap" if which == 1 else "resource-exhausted"
+            require(code == expected, "authoring-fault-classification")
+        require(int(row["response"]["data"]["consumption"]["peakMemoryBytes"]) <= target["budget"]["memoryBytes"],
+                "authoring-guest-memory-bound")
         result["samples"].append(sample(client, probe, "after-fault-" + str(which), population))
 
 
@@ -79,6 +82,8 @@ def http_cases(client, node, fixture, target, publication, port, control, probe,
                              wall=100 if kind == "deadline" else None)
         try:
             rendezvous(client, control, "started-" + selected)
+            if kind != "deadline":
+                result["samples"].append(sample(client, probe, "active-" + kind, population, active=True))
             if kind == "cancel":
                 result["cancellation"] = client.call("activation", "cancel", "authoring-cancel", "--reason", "Rust authoring acceptance")
                 require(result["cancellation"]["outcomeKnown"] and result["cancellation"]["data"]["disposition"] == "accepted",

@@ -5731,7 +5731,7 @@
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
-    ".github/workflows/rust-capsule-authoring.yml": "833115cd3a751b1e41bc8028b5a33302b0e6f2e7db75072237c9e4bf95fc79f8",
+    ".github/workflows/rust-capsule-authoring.yml": "fe74de7ca5f3bcb3f99b73c094f5d4625c4cb44bfaca215360fc683593bef2af",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b"
   }
