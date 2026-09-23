@@ -1,0 +1,9 @@
+package latent:java-feasibility@0.1.0;
+
+interface probe {
+    exercise: func(seed: s64) -> s64;
+}
+
+world capsule {
+    export probe;
+}
