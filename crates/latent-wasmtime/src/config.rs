@@ -5,6 +5,8 @@ mod engine;
 pub(crate) use engine::CompilerEngineSettings;
 mod isolation;
 pub use isolation::ExecutionIsolationProfile;
+mod java;
+pub(crate) use java::JAVA_EXCEPTION_HEAP_BYTES;
 mod layout;
 mod pooling;
 mod profile;
@@ -91,6 +93,9 @@ pub struct WasmtimeConfig {
     /// Explicit installation of the closed Angular profile. Ordinary defaults
     /// never imply support for a JavaScript runtime or an ambient host surface.
     pub angular_renderer: bool,
+    /// Explicit TeaVM C profile: standard Wasm exceptions, no Wasm GC values.
+    /// Its fixed exception heap is charged before every activation Store.
+    pub java_guest: bool,
     pub target_triple: String,
     pub cpu_feature_set: String,
     pub maximum_component_bytes: usize,
@@ -153,6 +158,7 @@ impl Default for WasmtimeConfig {
         Self {
             execution_isolation_profile: ExecutionIsolationProfile::LocalExperimental,
             angular_renderer: false,
+            java_guest: false,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),
             maximum_component_bytes: 16 * 1024 * 1024,
@@ -204,6 +210,7 @@ impl WasmtimeConfig {
     pub fn validate(&self) -> Result<(), PlatformError> {
         self.execution_isolation_profile.validate_platform()?;
         self.validate_renderer()?;
+        self.validate_java()?;
         let positive = [
             self.maximum_component_bytes,
             self.maximum_wasm_stack_bytes,

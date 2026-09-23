@@ -16,6 +16,7 @@ pub(crate) struct CompilerEngineSettings {
     async_stack_bytes: usize,
     memory: super::layout::MemoryLayout,
     copy_on_write_images: bool,
+    java_guest: bool,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -35,6 +36,7 @@ impl CompilerEngineSettings {
             async_stack_bytes: config.async_stack_bytes,
             memory: config.memory_layout(),
             copy_on_write_images: config.copy_on_write_images,
+            java_guest: config.java_guest,
         }
     }
     pub(crate) fn validate_compiler(&self) -> Result<(), PlatformError> {
@@ -55,6 +57,20 @@ impl CompilerEngineSettings {
         });
         engine_config.wasm_component_model(true);
         engine_config.wasm_component_model_async(true);
+        // Compiling GC support into the host must not enable arbitrary Wasm GC,
+        // typed references or exceptions for the existing execution profile.
+        engine_config.wasm_gc(false);
+        engine_config.wasm_function_references(false);
+        engine_config.wasm_exceptions(self.java_guest);
+        engine_config.gc_support(self.java_guest);
+        if self.java_guest {
+            engine_config
+                .gc_heap_initial_size(super::java::JAVA_EXCEPTION_HEAP_INITIAL_BYTES)
+                .gc_heap_reservation(super::JAVA_EXCEPTION_HEAP_BYTES as u64)
+                .gc_heap_reservation_for_growth(0)
+                .gc_heap_guard_size(0)
+                .gc_heap_may_move(false);
+        }
         engine_config.consume_fuel(true);
         engine_config.epoch_interruption(true);
         engine_config.max_wasm_stack(self.maximum_wasm_stack_bytes);

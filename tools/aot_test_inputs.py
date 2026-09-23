@@ -27,7 +27,7 @@ from tools import ci_rust_artifacts as artifacts
 SCHEMA = "latent.aot-test-inputs.v1"
 PROFILE = "debug-all-features-v1"
 # Exact --all-features output, including the isolated compiler diagnostic.
-# The production engine still does not enable GC or Wasm exceptions.
+# Production Wasm exceptions remain an explicit, bounded Java profile opt-in.
 FEATURES = ("aot-test-timings", "java-guest-diagnostic")
 MAX_FILE = 512 * 1024 * 1024
 MAX_MANIFEST = 64 * 1024
