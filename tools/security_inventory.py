@@ -36,7 +36,7 @@ class Package:
 def is_manifest(path: str) -> bool:
     name = PurePosixPath(path).name
     return (name in MANIFEST_NAMES or name.endswith((".csproj", ".fsproj", ".vbproj", ".gradle", ".gradle.kts"))
-            or (name == "global.json" and path.startswith("sdk/dotnet/"))
+            or (name == "global.json" and path.startswith(("sdk/dotnet/", "sdk/dotnet-guest/")))
             or (name.lower().startswith("nuget.") and name.lower().endswith(".config"))
             or (name.startswith("requirements") and name.endswith((".txt", ".in", ".lock"))))
 
@@ -172,6 +172,12 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
                     covered.add(entry["sum"])
                 if entry["kind"] == "nuget-locked":
                     covered.update(item["path"] for item in entry.get("configuration", []))
+        elif entry["kind"] == "nuget-aot-locked":
+            from tools.security_native_aot import packages as native_aot_packages
+            current = [Package(ecosystem, name, version, entry["lock"])
+                       for ecosystem, name, version in native_aot_packages(repo, entry)]
+            covered.add(entry["lock"])
+            covered.update(item["path"] for item in entry["configuration"])
         elif entry["kind"] == "c-sources":
             current = [Package(ecosystem, name, version, path) for ecosystem, name, version in c_packages(repo, path)]
         elif entry["kind"] == "no-external-packages":

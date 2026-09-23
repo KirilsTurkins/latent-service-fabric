@@ -3112,6 +3112,15 @@
       "BuildSnapshotTests.test_real_capture_uses_committed_bytes_excludes_evidence_and_is_repeatable",
       "BuildSnapshotTests.test_unsafe_members_cannot_escape_or_introduce_special_files"
     ],
+    "tools/tests/test_c_capsule_authoring.py": [
+      "CAuthoringTests.test_all_templates_capture_editable_source_and_authoritative_contracts",
+      "CAuthoringTests.test_c_namespace_aliases_never_invent_or_hide_ambiguous_bindings",
+      "CAuthoringTests.test_fresh_output_does_not_overwrite_existing_project",
+      "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
+      "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project",
+      "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected",
+      "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs"
+    ],
     "tools/tests/test_capability_policy_schema.py": [
       "CapabilityPolicySchemaTests.test_capability_operation_and_resource_kinds_cannot_be_mixed",
       "CapabilityPolicySchemaTests.test_identifiers_and_paths_reject_trailing_newlines_and_dot_segments",
@@ -5325,6 +5334,13 @@
       "SecurityChangedPathTests.test_missing_base_is_fetched_before_exact_diff",
       "SecurityChangedPathTests.test_present_base_uses_exact_local_diff_without_network"
     ],
+    "tools/tests/test_security_native_aot.py": [
+      "NativeAotInventoryTests.test_every_resolved_compiler_runtime_and_linker_package_is_scanned",
+      "NativeAotInventoryTests.test_missing_transitive_package_is_not_an_empty_success",
+      "NativeAotInventoryTests.test_project_lock_and_both_configuration_changes_fail_closed",
+      "NativeAotInventoryTests.test_unknown_rid_cannot_hide_in_a_reviewed_lock",
+      "NativeAotInventoryTests.test_unresolved_versions_and_missing_checksums_fail"
+    ],
     "tools/tests/test_security_rustsec_workflow.py": [
       "SecurityWorkflowTests.test_actual_aggregate_script_checks_the_same_results",
       "SecurityWorkflowTests.test_docs_and_svg_only_keep_existing_ci_profile_and_only_secret_job",
@@ -5576,15 +5592,6 @@
     ],
     "tools/tests/test_zig_cache_boundary.py": [
       "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation"
-    ],
-    "tools/tests/test_c_capsule_authoring.py": [
-      "CAuthoringTests.test_all_templates_capture_editable_source_and_authoritative_contracts",
-      "CAuthoringTests.test_c_namespace_aliases_never_invent_or_hide_ambiguous_bindings",
-      "CAuthoringTests.test_fresh_output_does_not_overwrite_existing_project",
-      "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
-      "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project",
-      "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected",
-      "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs"
     ]
   },
   "pythonTestModules": [
@@ -5808,6 +5815,7 @@
     "tools/tests/test_sdk_provider_scenario.py",
     "tools/tests/test_security_baseline.py",
     "tools/tests/test_security_changed_paths.py",
+    "tools/tests/test_security_native_aot.py",
     "tools/tests/test_security_rustsec_workflow.py",
     "tools/tests/test_security_sdk_graphs.py",
     "tools/tests/test_security_settings.py",
