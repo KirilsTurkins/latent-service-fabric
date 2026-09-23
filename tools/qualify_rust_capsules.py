@@ -194,7 +194,7 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 "--example", "typescript_runtime_probe", "--", output / "sdk-guests/typescript-blob/component.wasm",
                 "speed", "sdk-blob")
         commands.run("sdk-runtime-tests", paths["cargo"], *cargo_options, "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
-                     "--", "--ignored", "--test-threads=1")
+                     "--", "--ignored", "--test-threads=1", "--show-output")
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"

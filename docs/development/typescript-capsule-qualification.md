@@ -24,12 +24,27 @@ the component exposes the authoritative async contract to Wasmtime.
 
 The supported guest ceiling is 128 MiB, one billion fuel and 120 seconds for
 cold invocation. The deliberate multi-operation SDK cases use ten billion
-fuel. These are bounded experimental limits, not performance guarantees.
+fuel. The nested service SDK caller explicitly reserves 240 seconds; its callee
+and all other SDK components retain 120 seconds. Production still delegates
+only half the parent's remaining wall time and does not extend either deadline.
+These are bounded experimental limits, not performance guarantees.
 Dormant services must own no process, OS thread, event loop, listener, execution
 cell, provider pool or initialized guest heap. Shared compiler/cache ownership
 is measured separately from active guest state.
 
 ## Retained attempts and compiler boundary fixes
+
+[Run 35922509041](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35922509041)
+at `cf6767285352ad8b5508f0675fa612cde175aa87` built all fourteen components and
+passed nine of ten admitted SDK cases, including opaque blob and streaming
+owners. Only the child-service case failed, returning a typed deadline error.
+Its actual random and blob diagnostics measured cold compilation at 42.046 and
+41.809 seconds. A 120-second caller spending about 42 seconds on compilation
+leaves a child share below 39 seconds, insufficient for another cold engine
+compile. The explicit service-caller reservation above covers both cold
+components without changing the production half-remaining delegation rule.
+Caller/child terminal observations and per-invocation elapsed time are retained
+in subsequent SDK logs. This failed attempt remains distinct from success.
 
 [Run 35916800437](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35916800437)
 at `15295c4cd7a1caaca74f904a7cc35b10c77779d4` built all five standalone and

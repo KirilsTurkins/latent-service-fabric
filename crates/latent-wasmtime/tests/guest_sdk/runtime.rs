@@ -56,6 +56,16 @@ pub fn wall_time(default: u64) -> u64 {
     }
 }
 
+pub fn service_wall_time(default: u64) -> u64 {
+    match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
+        // Cold SpiderMonkey compilation measured about 42 s per component.
+        // The child receives half the caller's remaining finite wall budget;
+        // a 120 s caller leaves less than 39 s after its own cold compilation.
+        Ok("typescript") => 240_000,
+        _ => wall_time(default),
+    }
+}
+
 struct Entry {
     reference: ProviderReference,
     operation: Vec<String>,

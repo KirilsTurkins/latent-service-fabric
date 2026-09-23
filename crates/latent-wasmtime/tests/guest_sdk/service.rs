@@ -46,7 +46,13 @@ async fn typed_service_outcomes_use_node_admission_and_reused_cells() {
             for (index, (which, expected)) in [(0, 42), (1, 10), (0, 42)].into_iter().enumerate() {
                 let mut request = f.request(&format!("sdk-service-{index}"), which);
                 request.input = serde_json::to_vec(&serde_json::json!([which, "", "0"])).unwrap();
+                let started = std::time::Instant::now();
                 let receipt = f.manager.start(request).unwrap().await;
+                eprintln!(
+                    "service timing language={language} permit={permit} case={index} elapsed={:?}; caller/child terminals: {:?}",
+                    started.elapsed(),
+                    f.observations.terminals.lock().unwrap()
+                );
                 let ActivationOutcome::Succeeded(success) = receipt.outcome else {
                     panic!(
                         "{:?}; caller/child terminals: {:?}",
@@ -55,7 +61,12 @@ async fn typed_service_outcomes_use_node_admission_and_reused_cells() {
                     )
                 };
                 let result: Vec<String> = serde_json::from_slice(&success.output).unwrap();
-                assert_eq!(result, [if permit { expected } else { 11 }.to_string()]);
+                assert_eq!(
+                    result,
+                    [if permit { expected } else { 11 }.to_string()],
+                    "caller/child terminals: {:?}",
+                    f.observations.terminals.lock().unwrap()
+                );
                 assert_eq!(success.consumption.child_calls, u32::from(permit));
                 f.idle().await;
             }

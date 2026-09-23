@@ -64,6 +64,11 @@ Cancellation cannot prove an external effect did not occur. Charges remain
 until the real owner is reclaimed. The host enforces permissions, input/output
 bounds, deadlines, fuel, memory, pooling and containment after a guest trap.
 
+The service SDK caller reserves a finite 240-second wall budget to cover cold
+compilation of both embedded engines. Its callee and other examples retain
+120 seconds. The host still gives the child only half of the parent's remaining
+budget; the wrapper cannot extend that grant or retry a deadline failure.
+
 ## Qualification
 
 After the guide's prerequisites, run from the checkout:
