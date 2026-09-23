@@ -87,6 +87,16 @@ real-node experiment must validate this change. The old failure's audit-page
 completeness flag was incorrect because its cursor is nested under `data.page`;
 the collector and its tests now use the actual wire shape.
 
+The [next failure at `d8a6451c`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35889722458)
+passed the ownership and failure-before-mutation regressions, but preparation
+still expired its lease. Complete audit pagination shows preparation growing
+from roughly one to two seconds as dormant rows were added, with no prepared
+receipt for the rejected operation. The shared renewal helper had retained the
+sampler's two-second margin even at a mutation boundary. Control renewal now
+persists a full configured five-second window; periodic sampling still uses its
+existing margin. A fake-clock regression proves the distinction and exact
+expiry. This is not a longer lease or a retry, and still requires qualification.
+
 This is a finite, experimental single-node profile, not 100k-scale sizing,
 cluster placement, throughput or transactional-state qualification. Build
 observations are operator assertions, not authenticated source, hermetic
