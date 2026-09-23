@@ -534,6 +534,105 @@
               "if": {
                 "properties": {
                   "buildType": {
+                    "const": "https://latent.dev/build/c-guest/v1"
+                  }
+                },
+                "required": [
+                  "buildType"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "parameters": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "compiler",
+                      "fixture",
+                      "target",
+                      "optimization"
+                    ],
+                    "properties": {
+                      "compiler": {
+                        "const": "zig-cc"
+                      },
+                      "fixture": {
+                        "enum": [
+                          "application",
+                          "blob",
+                          "callee",
+                          "events",
+                          "http",
+                          "metrics",
+                          "random",
+                          "secrets",
+                          "service",
+                          "streaming"
+                        ]
+                      },
+                      "target": {
+                        "const": "wasm32-wasi"
+                      },
+                      "optimization": {
+                        "const": "O2"
+                      }
+                    }
+                  },
+                  "source": {
+                    "properties": {
+                      "capture": {
+                        "const": "explicit-input-files"
+                      },
+                      "revision": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+                      }
+                    }
+                  },
+                  "dependencyCompleteness": {
+                    "const": "declared-inputs-incomplete"
+                  },
+                  "materials": {
+                    "allOf": [
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "zig"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      },
+                      {
+                        "contains": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "const": "wit-bindgen"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "minContains": 1,
+                        "maxContains": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "buildType": {
                     "const": "https://latent.dev/build/rust-capsule/v1"
                   }
                 },
@@ -694,105 +793,6 @@
                           "properties": {
                             "name": {
                               "const": "package-inputs"
-                            }
-                          },
-                          "required": [
-                            "name"
-                          ]
-                        },
-                        "minContains": 1,
-                        "maxContains": 1
-                      }
-                    ]
-                  }
-                }
-              }
-            },
-            {
-              "if": {
-                "properties": {
-                  "buildType": {
-                    "const": "https://latent.dev/build/c-guest/v1"
-                  }
-                },
-                "required": [
-                  "buildType"
-                ]
-              },
-              "then": {
-                "properties": {
-                  "parameters": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                      "compiler",
-                      "fixture",
-                      "target",
-                      "optimization"
-                    ],
-                    "properties": {
-                      "compiler": {
-                        "const": "zig-cc"
-                      },
-                      "fixture": {
-                        "enum": [
-                          "application",
-                          "blob",
-                          "callee",
-                          "events",
-                          "http",
-                          "metrics",
-                          "random",
-                          "secrets",
-                          "service",
-                          "streaming"
-                        ]
-                      },
-                      "target": {
-                        "const": "wasm32-wasi"
-                      },
-                      "optimization": {
-                        "const": "O2"
-                      }
-                    }
-                  },
-                  "source": {
-                    "properties": {
-                      "capture": {
-                        "const": "explicit-input-files"
-                      },
-                      "revision": {
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
-                      }
-                    }
-                  },
-                  "dependencyCompleteness": {
-                    "const": "declared-inputs-incomplete"
-                  },
-                  "materials": {
-                    "allOf": [
-                      {
-                        "contains": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "const": "zig"
-                            }
-                          },
-                          "required": [
-                            "name"
-                          ]
-                        },
-                        "minContains": 1,
-                        "maxContains": 1
-                      },
-                      {
-                        "contains": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "const": "wit-bindgen"
                             }
                           },
                           "required": [

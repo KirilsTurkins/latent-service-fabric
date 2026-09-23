@@ -62,6 +62,15 @@ static class Checks
             Fails(() => scope.Own(new Owner<int, object>(1, _ => count++)));
             Require(count == 1);
         });
+        Case(() => {
+            var bytes = new byte[] { 0, 1, 127, 128, 255 };
+            var alias = bytes;
+            SecretBytes.Zero(bytes);
+            Require(alias.All(value => value == 0));
+            SecretBytes.Zero(bytes);
+            SecretBytes.Zero(Array.Empty<byte>());
+            Require(alias.All(value => value == 0));
+        });
         Console.WriteLine($"C# ownership tests passed: {tests}");
     }
 }

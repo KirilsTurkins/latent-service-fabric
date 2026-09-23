@@ -114,6 +114,7 @@ class TypeScriptAuthoringTests(unittest.TestCase):
                 files = project.snapshot(root)
                 value, _, _ = project.validate(files)
                 self.assertEqual(value["limits"]["memoryBytes"], 134217728)
+                self.assertEqual(value["limits"]["wallTimeLimitMillis"], 240000 if name == "service" else 120000)
                 self.assertEqual(value["tenant"], None if name in {"service", "callee"} else "tests")
                 self.assertIn(b"typeof Contract", files["src/main.ts"])
                 output = Path(temporary) / "packaged"

@@ -61,8 +61,27 @@ the final source; this local inspection is not node execution evidence.
 
 ## Required final evidence
 
+[Run 35922933562](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35922933562)
+at `2dc9ed406cfb0975024b4454e749677d3d4b6f55` built all five standalone and
+nine SDK components, passed six owner checks and seven of ten admitted SDK
+cases. Artifact `10778646686` retains the failures. The streaming example
+did not handle its expected typed denial; the nested service caller's 128 MiB
+reservation could not fund the callee under the node's half-remaining-memory
+delegation rule. Each NativeAOT activation measured about 54 MiB. Only that
+nested caller now explicitly reserves 256 MiB; the callee and standalone
+templates stay at 128 MiB, and production delegation is unchanged.
+
+An actual retained secret component reproduced the third failure under the
+native diagnostic. Its full backtrace identifies unsupported
+`CryptographicOperations.ZeroMemory`; the later ambient-randomness trap came
+from exception reporting, not the secret provider. Local owned bytes now use
+non-elidable volatile zero stores with an additional alias-observation test.
+The compiled SDK diagnostic checks success/disposal and all four typed errors.
+The closed runtime still denies ambient entropy. These changes require a new
+complete Linux run; they are not a claim that the failed run passed.
+
 `tools/qualify_dotnet_capsules.py` must retain five standalone builds, nine
-actual SDK builds, six explicit disposable-owner misuse checks and all ten
+actual SDK builds, seven explicit disposable-owner/zeroization checks and all ten
 admitted provider/ownership cases. The compiled probe also checks full-width
 signed/unsigned values, UTF-8/NUL strings, options, nested record lists, declared
 errors, statically rooted reflection after trimming, dynamic-code flags,

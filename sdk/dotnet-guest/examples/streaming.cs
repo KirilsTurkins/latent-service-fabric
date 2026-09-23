@@ -6,7 +6,10 @@ public class ApiExportsImpl : IApiExports
     public static ulong Run(uint which, string text, ulong handle)
     {
         using var scope = new Scope();
-        var upload = scope.Own(Streaming.Open(new Raw.Request(Raw.Method.POST, text, [], 4, "text/plain", null, 1000)).AsOk);
+        var opened = Streaming.Open(new Raw.Request(Raw.Method.POST, text, [], 4, "text/plain", null, 1000));
+        if (!opened.IsOk) return opened.AsErr.Tag == Raw.HttpError.Tags.PermissionDenied
+            ? 10UL : throw new System.InvalidOperationException("unexpected streaming error");
+        var upload = scope.Own(opened.AsOk);
         if (which == 1) return 1;
         _ = Streaming.Write(upload, [100, 97, 116, 97]).AsOk;
         var response = Streaming.Finish(upload).AsOk;

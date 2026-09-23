@@ -59,6 +59,11 @@ close and concurrent/reentrant borrows, and never uses a finalizer for release.
 closing remaining resources if a drop throws. Use `using`/explicit disposal;
 GC collection is not resource cleanup. Host cancellation revokes activation
 authority and releases host resources even when guest code cannot resume.
+Secret disposal invalidates its owner before zeroing its local byte array with
+non-elidable volatile stores. The pinned WASI library does not implement
+`CryptographicOperations.ZeroMemory`; it is not used as a silent fallback.
+This local wipe is not a guarantee that generated marshalling or runtime
+copies are erased. Ambient entropy remains denied.
 
 ## Runtime and evidence
 
