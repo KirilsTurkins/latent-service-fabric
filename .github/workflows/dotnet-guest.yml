@@ -20,7 +20,7 @@ jobs:
   toolchain:
     name: NativeAOT component qualification
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -28,10 +28,36 @@ jobs:
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
       - name: Retain the exact qualification source
         run: |
           mkdir -p "$RUNNER_TEMP/dotnet-guest"
           git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest/revision.txt"
+      - name: Generate current typed guest bindings
+        run: |
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-guest/tools"
+          cp "$(command -v wasm-tools)" "$RUNNER_TEMP/dotnet-guest/tools/wasm-tools"
+          python3 tools/stage_runtime_wit.py target/dotnet-binding-wit --source wit/platform/runtime-phase3-blobs
+          "$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen" c-sharp target/dotnet-binding-wit --world capsule --runtime native-aot --with-wit-results --out-dir "$RUNNER_TEMP/dotnet-guest/generated"
       - name: Compile the actual C# probe
         working-directory: sdk/dotnet-guest
         shell: bash
@@ -49,6 +75,24 @@ jobs:
           "$tools/wasm-tools" --version
           find probes/smoke/bin -type f -name '*.wasm' -print
           "$tools/wasm-tools" component wit probes/smoke/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm | tee "$RUNNER_TEMP/dotnet-guest/imports.wit"
+      - name: Compose a closed compiler runtime
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo build --locked -p latent-toolchain-smoke --example dotnet-closed-runtime --target wasm32-unknown-unknown --release
+          wasm-tools component new target/wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm -o "$RUNNER_TEMP/dotnet-guest/runtime.wasm"
+          tools="$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64"
+          cp "$tools/wac" "$RUNNER_TEMP/dotnet-guest/tools/wac"
+          cp sdk/dotnet-guest/probes/smoke/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm "$RUNNER_TEMP/dotnet-guest/raw.wasm"
+          "$tools/wac" plug "$RUNNER_TEMP/dotnet-guest/raw.wasm" --plug "$RUNNER_TEMP/dotnet-guest/runtime.wasm" -o "$RUNNER_TEMP/dotnet-guest/component.wasm"
+          wasm-tools component wit "$RUNNER_TEMP/dotnet-guest/component.wasm" | tee "$RUNNER_TEMP/dotnet-guest/closed.wit"
+      - name: Execute through the LSF backend
+        env:
+          LSF_DOTNET_PROBE: ${{ runner.temp }}/dotnet-guest
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test -p latent-wasmtime --test dotnet_guest --locked -- --ignored --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/execution.log"
       - name: Retain output and failed attempts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
