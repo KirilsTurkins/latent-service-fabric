@@ -243,14 +243,6 @@ impl LifecycleStore {
             .find(|entry| entry.receipt.scope == *scope && entry.receipt.operation_id == id)
             .and_then(|entry| entry.publication.clone()))
     }
-    pub(crate) fn operation(
-        &self,
-        scope: &LifecycleScope,
-        id: &str,
-    ) -> Result<ReleaseOperationLookup, PlatformError> {
-        self.selected_operation(scope, id)
-            .map(|(_, operation)| operation)
-    }
     pub(crate) fn selected_operation(
         &self,
         scope: &LifecycleScope,

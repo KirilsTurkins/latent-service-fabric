@@ -9,16 +9,6 @@ use crate::{
 use latent_core::PackageDigest;
 
 impl DirectoryArtifactRepository {
-    pub(in crate::local_repository) fn change_lifecycle(
-        &self,
-        context: ReleaseMutationContext,
-        release: &ReleaseDigest,
-        action: ReleaseLifecycleAction,
-        reason: ReleaseLifecycleReason,
-        preflight: &mut Preflight<'_>,
-    ) -> Result<ReleaseOperationReceipt, PlatformError> {
-        self.change_lifecycle_inner(context, release, None, action, reason, preflight)
-    }
     pub fn change_publication_lifecycle(
         &self,
         context: ReleaseMutationContext,
@@ -28,21 +18,14 @@ impl DirectoryArtifactRepository {
         preflight: &mut Preflight<'_>,
     ) -> Result<ReleaseOperationReceipt, PlatformError> {
         let release = self.selected_component(&context, reference)?;
-        self.change_lifecycle_inner(
-            context,
-            &release,
-            Some(reference),
-            action,
-            reason,
-            preflight,
-        )
+        self.change_lifecycle_inner(context, &release, reference, action, reason, preflight)
     }
     #[allow(clippy::too_many_arguments)]
     fn change_lifecycle_inner(
         &self,
         context: ReleaseMutationContext,
         release: &ReleaseDigest,
-        selected: Option<&PublicationRef>,
+        selected: &PublicationRef,
         action: ReleaseLifecycleAction,
         reason: ReleaseLifecycleReason,
         preflight: &mut Preflight<'_>,
@@ -80,9 +63,7 @@ impl DirectoryArtifactRepository {
             None,
             mutation_digest(release, None, Some(reason), None),
         )?;
-        if let Some(selected) = selected {
-            request.select_publication(selected)?;
-        }
+        request.select_publication(selected)?;
         if let Some(receipt) = self.replay(&request, preflight)? {
             return Ok(receipt);
         }
@@ -151,16 +132,6 @@ impl DirectoryArtifactRepository {
         Ok(prepared.receipt().clone())
     }
 
-    pub(in crate::local_repository) fn renew_evidence(
-        &self,
-        context: ReleaseMutationContext,
-        release: &ReleaseDigest,
-        package: &PackageDigest,
-        evidence: ReleaseEvidenceUpload,
-        preflight: &mut Preflight<'_>,
-    ) -> Result<ReleaseOperationReceipt, PlatformError> {
-        self.renew_evidence_inner(context, release, None, package, evidence, preflight)
-    }
     pub fn renew_publication_evidence(
         &self,
         context: ReleaseMutationContext,
@@ -170,21 +141,14 @@ impl DirectoryArtifactRepository {
         preflight: &mut Preflight<'_>,
     ) -> Result<ReleaseOperationReceipt, PlatformError> {
         let release = self.selected_component(&context, reference)?;
-        self.renew_evidence_inner(
-            context,
-            &release,
-            Some(reference),
-            package,
-            evidence,
-            preflight,
-        )
+        self.renew_evidence_inner(context, &release, reference, package, evidence, preflight)
     }
     #[allow(clippy::too_many_arguments)]
     fn renew_evidence_inner(
         &self,
         context: ReleaseMutationContext,
         release: &ReleaseDigest,
-        selected: Option<&PublicationRef>,
+        selected: &PublicationRef,
         package: &PackageDigest,
         evidence: ReleaseEvidenceUpload,
         preflight: &mut Preflight<'_>,
@@ -209,9 +173,7 @@ impl DirectoryArtifactRepository {
             Some(package.as_str().parse().expect("canonical package digest")),
             mutation_digest(release, Some(package), None, Some(&evidence)),
         )?;
-        if let Some(selected) = selected {
-            request.select_publication(selected)?;
-        }
+        request.select_publication(selected)?;
         if let Some(receipt) = self.replay(&request, preflight)? {
             return Ok(receipt);
         }

@@ -130,24 +130,26 @@ fn full_audit_blocks_regular_mutation_but_emergency_revoke_retains_catalog_recei
     let repo = repository(temp.path());
     let journal = Journal::new(2);
     let value = scoped_artifact("audit-full");
-    let release = value.descriptor.release_digest.clone();
-    publish(&repo, &journal, "create", value).0.unwrap();
+    let publication = publish(&repo, &journal, "create", value)
+        .0
+        .unwrap()
+        .publication;
     let mut retirement =
         ReleaseAuditGuard::new(Some(&journal.handle), ReleaseLifecycleAction::Retire);
-    let result = block_on(repo.change_release_lifecycle(
+    let result = repo.change_publication_lifecycle(
         context("retire", 1),
-        &release,
+        &publication,
         ReleaseLifecycleAction::Retire,
         ReleaseLifecycleReason::OperatorRetirement,
         &mut |preview| retirement.preview(preview),
-    ));
+    );
     assert_eq!(
         result.unwrap_err().code,
         PlatformErrorCode::ResourceExhausted
     );
     drop(retirement);
     assert_eq!(
-        block_on(repo.get_release_lifecycle(&scope(), &release))
+        block_on(repo.get_selected_lifecycle(&scope(), &publication))
             .unwrap()
             .unwrap()
             .record
@@ -156,14 +158,15 @@ fn full_audit_blocks_regular_mutation_but_emergency_revoke_retains_catalog_recei
     );
     let mut revocation =
         ReleaseAuditGuard::new(Some(&journal.handle), ReleaseLifecycleAction::Revoke);
-    let actual = block_on(repo.change_release_lifecycle(
-        context("revoke", 1),
-        &release,
-        ReleaseLifecycleAction::Revoke,
-        ReleaseLifecycleReason::SecurityIncident,
-        &mut |preview| revocation.preview(preview),
-    ))
-    .unwrap();
+    let actual = repo
+        .change_publication_lifecycle(
+            context("revoke", 1),
+            &publication,
+            ReleaseLifecycleAction::Revoke,
+            ReleaseLifecycleReason::SecurityIncident,
+            &mut |preview| revocation.preview(preview),
+        )
+        .unwrap();
     let ack = block_on(Box::pin(revocation.finish(&repo, Some(&actual))));
     assert_eq!(ack.status, ReleaseAuditStatus::AuditUnavailable);
     assert_eq!(actual.record.unwrap().state, ReleaseLifecycleState::Revoked);
@@ -188,7 +191,9 @@ fn response_rejection_occurs_before_either_catalog_or_audit_persistence() {
     assert!(result.is_err());
     assert_eq!(journal.handle.snapshot().retained_records, 0);
     assert!(matches!(
-        block_on(repo.get_release_operation(&scope(), "unreturnable")).unwrap(),
+        block_on(repo.get_selected_operation(&scope(), "unreturnable"))
+            .unwrap()
+            .1,
         ReleaseOperationLookup::Unknown
     ));
 }
@@ -218,7 +223,9 @@ fn failed_terminal_storage_preserves_real_committed_catalog_result_and_reserved_
     assert_eq!(snapshot.reserved_records, 1);
     assert!(snapshot.reserved_bytes > 0);
     let ReleaseOperationLookup::Found(receipt) =
-        block_on(repo.get_release_operation(&scope(), "committed-before-audit-failure")).unwrap()
+        block_on(repo.get_selected_operation(&scope(), "committed-before-audit-failure"))
+            .unwrap()
+            .1
     else {
         panic!("durable actual receipt");
     };

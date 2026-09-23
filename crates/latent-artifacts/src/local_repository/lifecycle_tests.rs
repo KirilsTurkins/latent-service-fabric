@@ -42,6 +42,7 @@ fn managed_publication_exact_replay_and_cas_rejection_have_distinct_outcomes() {
     let temp = TempRoot::new();
     let repo = repository(temp.path());
     let value = scoped_artifact("managed");
+    let publication = repo.local_publication_ref(&value).unwrap();
     let release = value.descriptor.release_digest.clone();
     let first = block_on(repo.publish_managed(
         context("create", 0),
@@ -69,13 +70,15 @@ fn managed_publication_exact_replay_and_cas_rejection_have_distinct_outcomes() {
     .unwrap_err();
     assert_eq!(failure.code, PlatformErrorCode::StateConflict);
     let ReleaseOperationLookup::Found(rejected) =
-        block_on(repo.get_release_operation(&scope(), "wrong-cas")).unwrap()
+        block_on(repo.get_selected_operation(&scope(), "wrong-cas"))
+            .unwrap()
+            .1
     else {
         panic!("rejected CAS receipt")
     };
     assert_eq!(rejected.disposition, ReleaseOperationDisposition::Rejected);
     assert_eq!(rejected.reason, ReleaseLifecycleReason::GenerationConflict);
-    let status = block_on(repo.get_release_lifecycle(&scope(), &release))
+    let status = block_on(repo.get_selected_lifecycle(&scope(), &publication))
         .unwrap()
         .unwrap();
     assert_eq!(status.record.generation, 1);
@@ -89,6 +92,7 @@ fn operation_identity_conflict_does_not_publish_different_content() {
     let first = scoped_artifact("first");
     let second = scoped_artifact("second");
     let second_digest = second.descriptor.release_digest.clone();
+    let second_publication = repo.local_publication_ref(&second).unwrap();
     block_on(repo.publish_managed(
         context("shared-id", 0),
         ManagedPublicationUpload::Local(first),
@@ -106,7 +110,7 @@ fn operation_identity_conflict_does_not_publish_different_content() {
         PlatformErrorCode::StateConflict
     );
     assert!(
-        block_on(repo.get_release_lifecycle(&scope(), &second_digest))
+        block_on(repo.get_selected_lifecycle(&scope(), &second_publication))
             .unwrap()
             .is_none()
     );
@@ -134,7 +138,9 @@ fn new_metadata_cannot_reuse_another_publications_generation() {
     .unwrap_err();
     assert_eq!(failure.code, PlatformErrorCode::StateConflict);
     let ReleaseOperationLookup::Found(receipt) =
-        block_on(repo.get_release_operation(&scope(), "conflict")).unwrap()
+        block_on(repo.get_selected_operation(&scope(), "conflict"))
+            .unwrap()
+            .1
     else {
         panic!("retained rejection")
     };
@@ -146,10 +152,14 @@ fn new_metadata_cannot_reuse_another_publications_generation() {
     assert_eq!(block_on(repo.fetch(&digest)).unwrap(), first);
     let other = LifecycleScope::Tenant(TenantId("other-tenant".to_owned()));
     assert!(matches!(
-        block_on(repo.get_release_operation(&other, "conflict")).unwrap(),
+        block_on(repo.get_selected_operation(&other, "conflict"))
+            .unwrap()
+            .1,
         ReleaseOperationLookup::Unknown
     ));
-    assert!(block_on(repo.get_release_lifecycle(&other, &digest))
+    let mut foreign = repo.local_publication_ref(&first).unwrap();
+    foreign.scope = other.clone();
+    assert!(block_on(repo.get_selected_lifecycle(&other, &foreign))
         .unwrap()
         .is_none());
 }
@@ -158,6 +168,7 @@ fn revoke_then_retire_survives_reopen_and_old_success_receipt_remains_history() 
     let temp = TempRoot::new();
     let repo = repository(temp.path());
     let value = scoped_artifact("retirement");
+    let publication = repo.local_publication_ref(&value).unwrap();
     let release = value.descriptor.release_digest.clone();
     let original = block_on(repo.publish_managed(
         context("create", 0),
@@ -166,28 +177,29 @@ fn revoke_then_retire_survives_reopen_and_old_success_receipt_remains_history() 
     ))
     .unwrap();
     let held = repo.execution_eligibility(&release).unwrap().unwrap();
-    block_on(repo.change_release_lifecycle(
+    repo.change_publication_lifecycle(
         context("revoke", 1),
-        &release,
+        &publication,
         ReleaseLifecycleAction::Revoke,
         ReleaseLifecycleReason::SecurityIncident,
         &mut accept,
-    ))
+    )
     .unwrap();
     assert!(held.check_current().is_err());
     assert!(block_on(repo.fetch(&release)).is_err());
-    let retired = block_on(repo.change_release_lifecycle(
-        context("retire", 2),
-        &release,
-        ReleaseLifecycleAction::Retire,
-        ReleaseLifecycleReason::EndOfSupport,
-        &mut accept,
-    ))
-    .unwrap();
+    let retired = repo
+        .change_publication_lifecycle(
+            context("retire", 2),
+            &publication,
+            ReleaseLifecycleAction::Retire,
+            ReleaseLifecycleReason::EndOfSupport,
+            &mut accept,
+        )
+        .unwrap();
     assert_eq!(retired.record.as_ref().unwrap().generation, 3);
     drop(repo);
     let reopened = repository(temp.path());
-    let status = block_on(reopened.get_release_lifecycle(&scope(), &release))
+    let status = block_on(reopened.get_selected_lifecycle(&scope(), &publication))
         .unwrap()
         .unwrap();
     assert_eq!(status.record.state, ReleaseLifecycleState::Retired);
@@ -214,6 +226,7 @@ fn response_budget_preflight_prevents_success_and_rejection_side_effects() {
             "valid-budget"
         });
         let release = value.descriptor.release_digest.clone();
+        let publication = repo.local_publication_ref(&value).unwrap();
         let id = if invalid {
             "invalid-budget"
         } else {
@@ -233,11 +246,15 @@ fn response_budget_preflight_prevents_success_and_rejection_side_effects() {
             PlatformErrorCode::ResourceExhausted
         );
         assert!(!release_dir(temp.path(), &release).exists());
-        assert!(block_on(repo.get_release_lifecycle(&scope(), &release))
-            .unwrap()
-            .is_none());
+        assert!(
+            block_on(repo.get_selected_lifecycle(&scope(), &publication))
+                .unwrap()
+                .is_none()
+        );
         assert!(matches!(
-            block_on(repo.get_release_operation(&scope(), id)).unwrap(),
+            block_on(repo.get_selected_operation(&scope(), id))
+                .unwrap()
+                .1,
             ReleaseOperationLookup::Unknown
         ));
     }
@@ -248,6 +265,7 @@ fn renamed_complete_without_lifecycle_membership_stays_hidden_on_reopen() {
     let temp = TempRoot::new();
     let repo = repository(temp.path());
     let value = scoped_artifact("orphan");
+    let publication = repo.local_publication_ref(&value).unwrap();
     let release = value.descriptor.release_digest.clone();
     repo.inject_parent_sync_failure_once();
     assert!(block_on(repo.publish_managed(
@@ -263,9 +281,11 @@ fn renamed_complete_without_lifecycle_membership_stays_hidden_on_reopen() {
         .unwrap()
         .entries
         .is_empty());
-    assert!(block_on(reopened.get_release_lifecycle(&scope(), &release))
-        .unwrap()
-        .is_none());
+    assert!(
+        block_on(reopened.get_selected_lifecycle(&scope(), &publication))
+            .unwrap()
+            .is_none()
+    );
     assert!(block_on(reopened.fetch(&release)).is_err());
     let admitted = block_on(reopened.publish_managed(
         context("recoverable", 0),
@@ -331,6 +351,7 @@ fn interrupted_root_marker_temporary_does_not_reset_verified_lifecycle_history()
     let temp = TempRoot::new();
     let repo = repository(temp.path());
     let value = scoped_artifact("marker-history");
+    let publication = repo.local_publication_ref(&value).unwrap();
     let release = value.descriptor.release_digest.clone();
     block_on(repo.publish_managed(
         context("create", 0),
@@ -338,13 +359,13 @@ fn interrupted_root_marker_temporary_does_not_reset_verified_lifecycle_history()
         &mut accept,
     ))
     .unwrap();
-    block_on(repo.change_release_lifecycle(
+    repo.change_publication_lifecycle(
         context("revoke", 1),
-        &release,
+        &publication,
         ReleaseLifecycleAction::Revoke,
         ReleaseLifecycleReason::OperatorRevocation,
         &mut accept,
-    ))
+    )
     .unwrap();
     drop(repo);
     // Model an absent final root marker plus the partial bounded staging file.
@@ -352,7 +373,7 @@ fn interrupted_root_marker_temporary_does_not_reset_verified_lifecycle_history()
     fs::remove_file(temp.path().join("LIFECYCLE_MODE")).unwrap();
     fs::write(temp.path().join("LIFECYCLE_MODE.next"), b"lsf-release").unwrap();
     let reopened = repository(temp.path());
-    let status = block_on(reopened.get_release_lifecycle(&scope(), &release))
+    let status = block_on(reopened.get_selected_lifecycle(&scope(), &publication))
         .unwrap()
         .unwrap();
     assert_eq!(status.record.state, ReleaseLifecycleState::Revoked);

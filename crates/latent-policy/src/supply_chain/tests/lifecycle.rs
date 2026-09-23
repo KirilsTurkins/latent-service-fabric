@@ -50,10 +50,21 @@ fn evidence(fixture: &Fixture) -> ReleaseEvidenceUpload {
         sboms: upload.sboms,
     }
 }
+fn publication(
+    repo: &DirectoryArtifactRepository,
+    release: &ReleaseDigest,
+) -> latent_artifacts::PublicationRef {
+    repo.select_execution_publication(&tenant(), release, None)
+        .unwrap()
+        .unwrap()
+}
 fn status(repo: &DirectoryArtifactRepository, release: &ReleaseDigest) -> ReleaseLifecycleStatus {
-    ready(repo.get_release_lifecycle(&LifecycleScope::Tenant(tenant()), release))
-        .unwrap()
-        .unwrap()
+    ready(repo.get_selected_lifecycle(
+        &LifecycleScope::Tenant(tenant()),
+        &publication(repo, release),
+    ))
+    .unwrap()
+    .unwrap()
 }
 fn renew(
     repo: &DirectoryArtifactRepository,
@@ -63,13 +74,13 @@ fn renew(
     id: &str,
     generation: u64,
 ) -> Result<ReleaseOperationReceipt, PlatformError> {
-    ready(repo.renew_release_evidence(
+    repo.renew_publication_evidence(
         context(id, generation),
-        release,
+        &publication(repo, release),
         package,
         evidence,
         &mut |_| Ok(()),
-    ))
+    )
 }
 fn revoke(
     repo: &DirectoryArtifactRepository,
@@ -77,13 +88,13 @@ fn revoke(
     id: &str,
     generation: u64,
 ) -> ReleaseOperationReceipt {
-    ready(repo.change_release_lifecycle(
+    repo.change_publication_lifecycle(
         context(id, generation),
-        release,
+        &publication(repo, release),
         ReleaseLifecycleAction::Revoke,
         ReleaseLifecycleReason::OperatorRevocation,
         &mut |_| Ok(()),
-    ))
+    )
     .unwrap()
 }
 fn immutable_files(

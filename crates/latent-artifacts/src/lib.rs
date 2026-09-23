@@ -205,17 +205,13 @@ pub trait ArtifactRepository: Send + Sync {
     /// Lookup is scope + operation ID. It never resolves a component again.
     fn get_selected_operation<'a>(
         &'a self,
-        scope: &'a LifecycleScope,
-        operation_id: &'a str,
+        _scope: &'a LifecycleScope,
+        _operation_id: &'a str,
     ) -> BoxFuture<
         'a,
         Result<(Option<latent_core::PublicationId>, ReleaseOperationLookup), PlatformError>,
     > {
-        Box::pin(async move {
-            self.get_release_operation(scope, operation_id)
-                .await
-                .map(|operation| (None, operation))
-        })
+        Box::pin(async { Err(unsupported_catalog_query()) })
     }
 
     /// Select an exact, currently admitted browser publication. The returned
@@ -345,46 +341,6 @@ pub trait ArtifactRepository: Send + Sync {
         _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
                      + Send),
     ) -> BoxFuture<'a, Result<ManagedPublicationReceipt, PlatformError>> {
-        Box::pin(async { Err(unsupported_catalog_query()) })
-    }
-
-    fn get_release_lifecycle<'a>(
-        &'a self,
-        _scope: &'a LifecycleScope,
-        _release: &'a ReleaseDigest,
-    ) -> BoxFuture<'a, Result<Option<ReleaseLifecycleStatus>, PlatformError>> {
-        Box::pin(async { Err(unsupported_catalog_query()) })
-    }
-
-    fn get_release_operation<'a>(
-        &'a self,
-        _scope: &'a LifecycleScope,
-        _operation_id: &'a str,
-    ) -> BoxFuture<'a, Result<ReleaseOperationLookup, PlatformError>> {
-        Box::pin(async { Err(unsupported_catalog_query()) })
-    }
-
-    fn change_release_lifecycle<'a>(
-        &'a self,
-        _context: ReleaseMutationContext,
-        _release: &'a ReleaseDigest,
-        _action: ReleaseLifecycleAction,
-        _reason: ReleaseLifecycleReason,
-        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
-                     + Send),
-    ) -> BoxFuture<'a, Result<ReleaseOperationReceipt, PlatformError>> {
-        Box::pin(async { Err(unsupported_catalog_query()) })
-    }
-
-    fn renew_release_evidence<'a>(
-        &'a self,
-        _context: ReleaseMutationContext,
-        _release: &'a ReleaseDigest,
-        _package: &'a latent_core::PackageDigest,
-        _evidence: ReleaseEvidenceUpload,
-        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
-                     + Send),
-    ) -> BoxFuture<'a, Result<ReleaseOperationReceipt, PlatformError>> {
         Box::pin(async { Err(unsupported_catalog_query()) })
     }
 

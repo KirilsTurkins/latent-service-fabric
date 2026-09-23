@@ -628,7 +628,7 @@
         "local_repository::tests::publications::indeterminate_reclamation_does_not_refund_until_recovery",
         "local_repository::tests::publications::orphan_reclamation_keeps_shared_component_and_committed_history_pins",
         "local_repository::tests::publications::publication_disk_limit_rejects_before_staging_and_incomplete_files_stay_charged",
-        "local_repository::tests::publications::same_component_metadata_revisions_keep_independent_authority_and_legacy_replay",
+        "local_repository::tests::publications::same_component_metadata_revisions_keep_independent_authority_and_exact_replay",
         "local_repository::tests::publications::sealed_preparation_preserves_exact_publication_through_coexistence_and_revocation",
         "local_repository::tests::publications::tenant_selection_never_reveals_or_reuses_foreign_publications",
         "local_repository::tests::publish_duplicate_resolve_fetch_and_restart_round_trip",

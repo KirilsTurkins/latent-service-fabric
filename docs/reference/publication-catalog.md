@@ -38,6 +38,10 @@ Publication catalog reads and mutations accept `PublicationRef` directly.
 The obsolete component-or-publication selector and its repository fallback are
 removed. A reference must match the authorized scope; a foreign ID in that
 scope appears absent. Component bytes do not substitute for publication identity.
+Lifecycle status, revocation/retirement, evidence renewal and operation recovery
+use this exact publication API. The artifact repository no longer exposes a
+parallel component-addressed lifecycle interface. Operation recovery preserves
+the captured publication association.
 Internal content-addressed reads still reject ambiguous component associations;
 revoked and retired publications continue to count toward ambiguity.
 

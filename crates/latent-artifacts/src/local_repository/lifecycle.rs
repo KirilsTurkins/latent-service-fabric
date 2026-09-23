@@ -116,24 +116,6 @@ impl DirectoryArtifactRepository {
         self.selected_historical_snapshot(release, None)
     }
 
-    pub(super) fn lifecycle_status(
-        &self,
-        scope: &LifecycleScope,
-        release: &ReleaseDigest,
-    ) -> Result<Option<ReleaseLifecycleStatus>, PlatformError> {
-        scope.validate()?;
-        let reference = self
-            .index
-            .read()
-            .map_err(lock_error)?
-            .legacy_component(Some(scope), release)?
-            .map(|entry| entry.publication.clone());
-        let Some(reference) = reference else {
-            return Ok(None);
-        };
-        self.publication_lifecycle_status(&reference)
-    }
-
     pub fn publication_lifecycle_status(
         &self,
         reference: &crate::PublicationRef,

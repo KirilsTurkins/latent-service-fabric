@@ -243,7 +243,7 @@ mod durable {
                     assert_eq!(store.identity(&id.release).unwrap(), Some(id.clone()));
                     assert_eq!(store.record(&id.release).unwrap(), Some(record.clone()));
                     assert_eq!(
-                        store.operation(&id.scope, "unknown").unwrap(),
+                        store.selected_operation(&id.scope, "unknown").unwrap().1,
                         ReleaseOperationLookup::Unknown
                     );
                     store
@@ -312,7 +312,10 @@ mod durable {
             )
             .is_err());
             assert!(matches!(
-                store.operation(&identity.scope, "create").unwrap(),
+                store
+                    .selected_operation(&identity.scope, "create")
+                    .unwrap()
+                    .1,
                 ReleaseOperationLookup::Uncertain
             ));
             drop(store);
@@ -330,7 +333,10 @@ mod durable {
                 1
             );
             assert!(matches!(
-                reopened.operation(&identity.scope, "create").unwrap(),
+                reopened
+                    .selected_operation(&identity.scope, "create")
+                    .unwrap()
+                    .1,
                 ReleaseOperationLookup::Found(_)
             ));
         }
@@ -432,14 +438,16 @@ mod durable {
         );
         assert!(matches!(
             store
-                .operation(&LifecycleScope::LocalUnscoped, "create-0")
-                .unwrap(),
+                .selected_operation(&LifecycleScope::LocalUnscoped, "create-0")
+                .unwrap()
+                .1,
             ReleaseOperationLookup::Unknown
         ));
         assert!(matches!(
             store
-                .operation(&LifecycleScope::LocalUnscoped, "create-11")
-                .unwrap(),
+                .selected_operation(&LifecycleScope::LocalUnscoped, "create-11")
+                .unwrap()
+                .1,
             ReleaseOperationLookup::Found(_)
         ));
     }
