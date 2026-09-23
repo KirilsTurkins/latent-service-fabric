@@ -87,6 +87,7 @@ fn export_c_authoring_fixture() {
         deployment["spec"]["grants"] = json!([]);
         deployment["spec"]["resources"]["cpuFuel"] = json!(100_000_000);
         deployment["spec"]["resources"]["memoryBytes"] = json!(4_194_304);
+        deployment["spec"]["resources"]["wallTimeLimitMillis"] = json!(5000);
         deployment["spec"]["resources"]["logBytes"] = json!(0);
         write(&directory.join("deployment.json"), &deployment);
         components.insert(
