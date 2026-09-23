@@ -1,16 +1,14 @@
 # State and effect architecture
 
-The completed Phase 2 node implements the stateless model below. Its durable
-release/deployment receipts and audit journal do not constitute a guest state
-transaction. Guest state, transactional effect outboxes and entity leases belong
-to Phase 4; durable workflows belong to Phase 6. The runtime rejects their
-unavailable imports, and ordinary stateless outcomes contain no committed state
-versions or effect IDs. Phase 3 external providers use immediate capability
-operation semantics: they must report provider acknowledgement and uncertainty
-without claiming future transaction guarantees. See
-[ADR-0025](../../adr/0025-separate-immediate-capability-operations-from-transactional-effect-intents.md),
-the [current activation lifecycle](../activation-lifecycle.md) and
-[roadmap](../roadmap.md).
+Current activations are stateless. Durable management receipts and audit journals
+are operational records, not application state transactions. HTTP, blob and event
+providers perform immediate capability operations and report acknowledgement or
+uncertainty according to their provider contract.
+
+Application transactions, durable effect outboxes, entity leases and durable
+workflow suspension are planned. Their imports are unavailable in the runtime.
+The designs below explain the distinction; use the
+[current activation lifecycle](../activation-lifecycle.md) for supported behavior.
 
 ## State models
 
@@ -18,15 +16,15 @@ the [current activation lifecycle](../activation-lifecycle.md) and
 
 The activation consumes input and returns output. No state transaction is created.
 
-### Transactional keyed state
+### Planned transactional keyed state
 
 The activation receives a namespace-scoped transaction. Reads record observed versions; writes and deletes are staged. Commit uses optimistic concurrency.
 
-### Entity state
+### Planned entity state
 
 Operations are routed by entity key to an ephemeral ownership lane. The lane exists while work is queued or active, then releases its lease and disappears.
 
-### Durable workflow
+### Planned durable workflow
 
 Long-running execution is compiled or authored as an explicit state machine. Suspension persists a continuation and releases the execution cell. Arbitrary native-stack checkpointing is not part of the model.
 
@@ -38,7 +36,7 @@ as evidence from the other.
 
 ### Immediate capability operation
 
-Phase 3 HTTP, blob and event providers perform activation-scoped calls directly
+HTTP, blob and event providers perform activation-scoped calls directly
 through the capability broker after current authority, budgets and provider
 resources are established. They do not atomically commit application state and do
 not create an application outbox.
@@ -62,12 +60,13 @@ bounded multipart-upload cleanup inventory can outlive a cancelled caller while
 actual cleanup finishes, but it is not a guest transaction or durable effect
 outbox.
 
-These semantics are architectural constraints for the planned Phase 3 provider
-work; they are not a claim that those providers are already merged.
+The HTTP, blob and event provider references specify how each implemented
+protocol reports those outcomes. A successful call does not create an application
+transaction or outbox.
 
 ### Transactional durable effect intent
 
-Phase 4 owns atomic application state/effect intent creation:
+The planned transactional model would combine application state and effect intents:
 
 ```text
 begin state transaction
@@ -100,19 +99,16 @@ while [ADR-0025](../../adr/0025-separate-immediate-capability-operations-from-tr
 narrows ADR-0013's blanket statement that all external effects are journaled
 intents.
 
-## Evidence and delivery boundary
+## Current implementation boundary
 
-The Phase 3 provider tickets own their protocol-specific immediate-operation
-semantics: outbound HTTP #211, S3-compatible immutable blobs #214 and JetStream
-events #217. The [shared asynchronous ownership substrate](../runtime/async-host-io.md)
-implements #205's bounded waiting, buffering and cancellation lifetime. The
-integrated failure/uncertainty matrix belongs to #238 and the Phase 3
-completion review to #240.
+[Outbound HTTP](../runtime/outbound-http.md), [S3 blobs](../runtime/s3-blobs.md)
+and [NATS events](../runtime/nats-events.md) define protocol-specific immediate
+operation semantics. The [async ownership substrate](../runtime/async-host-io.md)
+keeps waits, buffers and cancellation cleanup bounded.
 
-Phase 4 remains responsible for the application transaction/outbox records,
-atomic commit, dispatcher, retries, reconciliation and effect-commit receipts.
-Phase 3 provider cleanup journals, invocation status and audit observations do
-not substitute for that future machinery.
+Application transaction records, atomic state/effect commit, durable dispatch
+and effect retries are not implemented. Provider cleanup journals, invocation
+status and audit observations do not substitute for that machinery.
 
 ## Compensation
 

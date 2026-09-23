@@ -1,0 +1,1761 @@
+{
+  "baseline": "1c178545c26f32b1798308c7301b340c8693c3eb",
+  "scope": "All current published source pages and root repository documents. Released snapshots retain version labels and original bytes; retained measurements keep their tested identities. Assistant content review does not mark the 27 human guide outcomes accepted.",
+  "pages": [
+    {
+      "source": "ARCHITECTURE.md",
+      "words": 138,
+      "sha256": "fd09da45e45ae3af3ca1450ef0dc631197e737c6ecd0de4527b0c3e6791a8040",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Still says package delivery is just beginning; rebuild index around current capabilities and label planned state/cluster designs."
+      ]
+    },
+    {
+      "source": "CODE_OF_CONDUCT.md",
+      "words": 37,
+      "sha256": "0e5baaee97b2f17190dd61be4e873d45d77cdf74a48bdf2ec6e0fc382143e0a3",
+      "status": "reviewed-current",
+      "findings": [
+        "Current participation and responsible disclosure rules need no change."
+      ]
+    },
+    {
+      "source": "CONTRIBUTING.md",
+      "words": 659,
+      "sha256": "7b521dfe532df28cbf054fcfa74f4069bc0dfbe5bbd4bf2deea0064053c1292c",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Replaced phase-status lead with contributor starting path; branch, issue, validation and alpha-removal rules reviewed."
+      ]
+    },
+    {
+      "source": "README.md",
+      "words": 1763,
+      "sha256": "4104b501c50f77d6a8a79f497b09854ce84fc3743d339e379a3b64e5249597cd",
+      "status": "read-needs-update",
+      "findings": [
+        "Replaced outdated SVG and future-provider claims; remaining README feature inventory and install references need completion review."
+      ]
+    },
+    {
+      "source": "SECURITY.md",
+      "words": 763,
+      "sha256": "bec9110e66ceaffa12d787ea624fb9c2fa41623af5e17980fe0737e2b052e2b2",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Verified GitHub private vulnerability reporting is enabled; updated capability and provider boundaries and removed obsolete phase chronology."
+      ]
+    },
+    {
+      "source": "VALIDATION.md",
+      "words": 3533,
+      "sha256": "1f07155cb2461749cb8d9bdbe4284406ead657828f02282305a80d6a4688aa35",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0001-use-rust-for-the-runtime.md",
+      "words": 78,
+      "sha256": "b44b7bc0ff079c39ea5f581a1449bbfec3f873ca605b725e698ad13f5d33b68b",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0002-use-the-webassembly-component-model.md",
+      "words": 85,
+      "sha256": "619e4102c444febdddeed466e4e2fe849c831ede645b4ae126f5f624d83ba376",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0003-use-wit-as-the-capsule-contract-authority.md",
+      "words": 56,
+      "sha256": "0a21423ac61d538d6170d139bfe1e2dbfd8420dc4c0e17b4c7d0a50c46d8cb7f",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0004-use-wasmtime-as-the-first-execution-engine.md",
+      "words": 65,
+      "sha256": "79e345bec902568b131fa006a0b22b77ce4179f0b527b4a2c0b836fea91e8e05",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0005-forbid-per-service-idle-execution-allocation.md",
+      "words": 61,
+      "sha256": "7a29b56bbfaefc55c365e8bb263b592e8114614461d7e390d20e198b35642209",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0006-use-reusable-generic-execution-cells.md",
+      "words": 50,
+      "sha256": "47a804c897b1087e794be69c2ce06efea914a742c344c07b13b6bdb150290f77",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0007-distribute-capsules-as-oci-artifacts.md",
+      "words": 126,
+      "sha256": "ec803a2120e9869f6f52cf313461f20c7faaeea2b2abe887236775f201b299a9",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0008-compile-aot-artifacts-only-in-a-trusted-boundary.md",
+      "words": 277,
+      "sha256": "b0c63b28c99cebd1ab08561cc8412bfe6f14d069fd700c969094a0f98269c324",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0009-use-capability-based-host-access.md",
+      "words": 90,
+      "sha256": "b5ff6b453a2aba12d741cfaeb5d3aead6007f9665dfd31630a6ea4d9b19af631",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0010-separate-immutable-capsule-metadata-from-deployment-policy.md",
+      "words": 63,
+      "sha256": "fc0c2d01d5edb071a22f45e627774c2158222694968bba52b7688220c833be9b",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0011-keep-the-control-plane-out-of-the-invocation-hot-path.md",
+      "words": 113,
+      "sha256": "ef766fd7934e0fb25a165776e32ad37ee5c6fbf51c048281ccfcc813e5fe08fe",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0012-place-remote-invocation-behind-a-wit-native-transport-abstraction.md",
+      "words": 96,
+      "sha256": "b11528d6a68211904da2450912a7e1e5108210b5661236281639dd1eba64362f",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0013-use-explicit-state-transactions-and-effect-intents.md",
+      "words": 88,
+      "sha256": "a4320abc1c3a4e738a65df3a9c3bca16c8c5a0eb34560bbe38a28cbd389f6f51",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0014-do-not-promise-universal-exactly-once-external-effects.md",
+      "words": 78,
+      "sha256": "e4e1ee433ac31841ea21810d60abdbebb60ac4cd1dff423de7bb615730803845",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0015-build-a-single-node-stateless-fabric-before-clustering.md",
+      "words": 56,
+      "sha256": "6187df0be298a2acf7478aa1ad5b44c33e49eb6f88c782d6a7c3bf8f17b6f25d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0016-keep-paging-continuation-eviction-and-fusion-optional.md",
+      "words": 56,
+      "sha256": "ce082c5c4bd7cde4d8128e38064ef3137067e61321821addb44b465a3568af6f",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0017-use-fixed-trust-class-execution-hosts-for-stronger-containment.md",
+      "words": 125,
+      "sha256": "7768147521d8342bb71b2cf0a9b930cca8b108b9efa73d9e2da539328fc7296e",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0018-treat-latent-service-fabric-as-a-working-name.md",
+      "words": 66,
+      "sha256": "e7dc0a4eb62f0271876547a7536f4b96966f0b89d81a7c000a28c02c2defcfbf",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0019-separate-package-identity-from-component-identity.md",
+      "words": 453,
+      "sha256": "a46db5b991212beadf64b0832c6f057425735b421efb9b7978666a7d2488e8c3",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0020-validate-supplied-components-without-executing-guests.md",
+      "words": 560,
+      "sha256": "11ea13fda53ae5e44394a534944e673ba35397f8ce244960cbc41e129091546d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0021-bound-registry-authority-and-transfer-ownership.md",
+      "words": 601,
+      "sha256": "092d10ba6a998849f23dc88bfec000eb2ca36b1abc5d48ddc90b17203e5f0979",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0022-bind-publisher-proofs-to-current-explicit-trust.md",
+      "words": 501,
+      "sha256": "0cf7964c1679e79328e0596e6dc2359c69775d342bc7683695fae4f3a44ff8b9",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0023-bind-build-attestations-to-observed-inputs-and-builder-trust.md",
+      "words": 452,
+      "sha256": "b24d50f612e955bcb71999373c556f85486d3e9e94a9282827cfcf3341b52d84",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0024-bind-sbom-inventory-through-package-content.md",
+      "words": 528,
+      "sha256": "4e6d3a2f68ed9fe5ee337961a7fe208b26a947650a65c18217a96ad75d9b1ccf",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0025-separate-immediate-capability-operations-from-transactional-effect-intents.md",
+      "words": 893,
+      "sha256": "a2a797e76b888764e3763eff1fa4d98b7d413776df046b14bba8503f533dad1e",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0026-require-explicit-execution-isolation-profiles.md",
+      "words": 833,
+      "sha256": "d8de7c0a947c21c10c47b7ac26b69968dab314f5bf9dae861863e278e47d698c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0027-separate-publication-authority-from-component-identity.md",
+      "words": 509,
+      "sha256": "a6be05e8c24137b92e22b15b2d1a1ea1ca67320ce6141ba778e9dca34d9bb66b",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0028-retain-activation-ownership-across-asynchronous-waits.md",
+      "words": 1219,
+      "sha256": "33317cdd91cf44402f5f174783f434c433fd317f98db5e03954c1f0deeddfcca",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0029-separate-registry-authority-from-transport-profile.md",
+      "words": 889,
+      "sha256": "66dbea8db5e64c9086e1c49177bc638cf28960d246f6003699c3847c03ee3303",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0030-bound-disconnected-authorization-validity.md",
+      "words": 377,
+      "sha256": "f9dda2ccb3270f94b2997d6fc9a4b7b1f4b99a976e16fc3832c2191d3f36280c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0031-version-host-abi-recognition-independently-of-provider-authority.md",
+      "words": 317,
+      "sha256": "a67d751308d96434e6b4827d30b42a6fc56e1e6f38735130e70236c4938f3438",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0032-use-bounded-owned-resources-for-streaming-http.md",
+      "words": 340,
+      "sha256": "a8eaa92a8ab9a17c3d1605b7bf7b08378013b8b640c6d19eed8f7a8281fe2503",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0033-use-scoped-durable-local-blobs-with-owned-chunks.md",
+      "words": 427,
+      "sha256": "179138d5831a612434d5285ecaf970714392f34ce8144dba58a64d715490c723",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0034-version-maintained-guest-build-provenance-profiles.md",
+      "words": 440,
+      "sha256": "97877b56c188f73d9c8b21fedc0568d1a5b0417a2b64b3536bd911a74a68f334",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0035-bound-http-application-values-and-delivery-ownership.md",
+      "words": 476,
+      "sha256": "cd3412e2c808af1e9edf955bf811a9fd2630f940355ebb0f1e94e2b5723b22db",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0036-publish-http-triggers-with-exact-catalog-target-pins.md",
+      "words": 334,
+      "sha256": "023eb6fe9a23c56506183deee1a45832541c6692a4501b5f7d07ef5a4030acbb",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0037-qualify-a-closed-angular-component-renderer-profile.md",
+      "words": 630,
+      "sha256": "6dd048d6e4753ae9790e62c34bab6c56c7f5b9fda737dcec18eac67b825a0a8f",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0038-admit-web-packages-with-componentless-publication-authority.md",
+      "words": 644,
+      "sha256": "a03431d1c38d71b39477bbdfe103be2d0db49bc833e7d43c2cefed04c8138bca",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0039-bound-the-shared-http-listener-and-preserve-selected-admission.md",
+      "words": 561,
+      "sha256": "f3980a15a4d0e56b220647188bfd871300f1f9068bf99a086963fefd52fce7e1",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0040-run-the-closed-angular-adapter-in-fresh-generic-stores.md",
+      "words": 649,
+      "sha256": "1b28872542b3cb1fbfacba43f1fc6a72d16017499c2fbef25e111ff242b9692f",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0041-publish-single-source-version-bound-documentation.md",
+      "words": 1419,
+      "sha256": "e082f09e65a4a54092a685e90f66f4dc571a62c8a0300f8b84e24907d932213a",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0042-bound-angular-render-data-through-the-capability-broker.md",
+      "words": 510,
+      "sha256": "c0b0bad6280f74507696d5ed77249a3d3e4d7f28436e5648c8d87f362656bef0",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/0043-select-static-web-publications-as-first-class-http-targets.md",
+      "words": 1391,
+      "sha256": "cd72dc043a9256b099d9cacbde83fff047a3e289b91b992219c4e229cc6a9655",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "adr/README.md",
+      "words": 831,
+      "sha256": "c9a6160c30949d95be2f4c62947f14de053e55f4b0b3ee72d95e0aaa7d345fc1",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/activation-lifecycle.md",
+      "words": 2152,
+      "sha256": "7bc5e3912857976aff34a670cd4cd2f869e4f62770fccbf33a3c4188b43985e0",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/admission-control.md",
+      "words": 2043,
+      "sha256": "7d0aace446cd74581de0dd03160769e92f2655156c6e3825f099f2cbf346742c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/api-surface.md",
+      "words": 1894,
+      "sha256": "c4756711e74cbfea22aa91812219a471ca2ff9b477c0862bfe8c6e05eb618d16",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/architecture/blob-model.md",
+      "words": 283,
+      "sha256": "b318b0ace0b6d340a33214745c030041de43b5c8e23e192edd4e94d47bce4418",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Local/S3 description useful; stale standalone #226 pending and phase history need correction."
+      ]
+    },
+    {
+      "source": "docs/architecture/cluster-freshness-handoff.md",
+      "words": 1228,
+      "sha256": "96fb2049769b7f67879a2a90a0ef53c38477f8af22c099257337bd5edac3266d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/architecture/cluster-topology.md",
+      "words": 508,
+      "sha256": "4c79efaf0dd066e6e3a0a92e349f13594cd084de64146f9fda4c836f883c48dd",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Future design correctly unsupported; move developer design out of current conceptual navigation and remove current phase chronology."
+      ]
+    },
+    {
+      "source": "docs/architecture/contracts-and-bindings.md",
+      "words": 401,
+      "sha256": "9b0a7fa3650212646b156e9320dc8fae13440b1edefc086dd59623b1706ff9e5",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Local guest dispatch #209 is implemented; remove future claim and phase framing; keep inline/remote unsupported."
+      ]
+    },
+    {
+      "source": "docs/architecture/control-plane.md",
+      "words": 1200,
+      "sha256": "3d0331b6fd062e640278d186382a126eea667afd981874b569bacf281ec8ba67",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Stale provider/binding future claims and obsolete readable formats 1-4; update publication-aware 5-7 and current providers."
+      ]
+    },
+    {
+      "source": "docs/architecture/data-plane.md",
+      "words": 922,
+      "sha256": "d1e324adfa6f683238c906f756d3e5658a55ae0178cdf2358cba1bc94a05b8a6",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Stale unavailable-provider claims, old context-only path and future application ingress; describe current bounded async ownership."
+      ]
+    },
+    {
+      "source": "docs/architecture/execution-cells.md",
+      "words": 864,
+      "sha256": "2b727a56c0f2bd936ab4dad9adfc0494a611e8df4ae80a152b0d9ab7a9876860",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "External profile, broker handles and local child calls are implemented; update old future labels without claiming process isolation."
+      ]
+    },
+    {
+      "source": "docs/architecture/identity-and-capabilities.md",
+      "words": 430,
+      "sha256": "9e0dc94f9588fed09c190e85095f967352b60565a21b26b8f85db308243be13c",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Wrong context-only capability surface; standalone buffered HTTP/blob installed, delegation and audit implemented. Update current authority path."
+      ]
+    },
+    {
+      "source": "docs/architecture/ingress-and-triggers.md",
+      "words": 347,
+      "sha256": "d3686234ef39d071e76b55d75b177d32c4c3f282e8095bc8cc6f422b93a050c8",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Current HTTP and NATS coverage largely accurate; remove phase chronology and separate unsupported timer/blob triggers."
+      ]
+    },
+    {
+      "source": "docs/architecture/overview.md",
+      "words": 880,
+      "sha256": "b747fb47c202bfdc4fe32c381ffc4fc231afa84df5aced577bb34821d83ba874",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Rewritten for current standalone runtime, actual provider bootstrap limits, browser delivery and activation lifecycle."
+      ]
+    },
+    {
+      "source": "docs/architecture/security.md",
+      "words": 1236,
+      "sha256": "0df87db34ad207686e7db0bd09e355f0c819bff27dd57a2a8b4fdb2fe4890f93",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Guest broker/providers paragraph obsolete; preserve actual isolation/TCB/currentness boundaries and add current provider/browser controls."
+      ]
+    },
+    {
+      "source": "docs/architecture/state-and-effects.md",
+      "words": 660,
+      "sha256": "93aa46fe5b16bede8943d65a988bb039870a1e1a68d0aaa778da789241339817",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Immediate providers now implemented; planned transactions must be clearly labeled. Remove ticket ownership as substitute for explanation."
+      ]
+    },
+    {
+      "source": "docs/architecture/versioning-and-deployment.md",
+      "words": 1673,
+      "sha256": "3aaa1cfa42940dfb15dda0f3a78ee12d9aa886db96f52b54c82284902030022a",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Obsolete formats 1-4 and compatibility claims; rewrite table for supported 5-7 and current publication semantics."
+      ]
+    },
+    {
+      "source": "docs/cli-completions.md",
+      "words": 906,
+      "sha256": "bab151e92bfb0dcf8085919c819d39f2347f0ad70b7df0e68e446416232793af",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/component-development/angular-build.md",
+      "words": 750,
+      "sha256": "d0e929ce96db13365c7c6ce8253b68cf853545af954237fa7bb851c86fa80996",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/component-development/creating-a-capsule.md",
+      "words": 934,
+      "sha256": "23f3be1974963e41a453f12c36c5a72c7c33865da6019538a390fece8285d45d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/component-development/guest-sdk.md",
+      "words": 1083,
+      "sha256": "2ea4653a381b75e2235e6fc3fec5748d90378dcdaa5e37ef83be70d880d0c1ee",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/component-development/packaging.md",
+      "words": 1441,
+      "sha256": "a0ce3bb4f3be0a0c74a1fc3b6ac583cc26292d9525d99bc9cdcf63ca8157ece4",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/component-development/sbom.md",
+      "words": 1433,
+      "sha256": "3b78086e59b452e6d2841015e3f5eb1df26cc203a391f5f93ebe9d4be4f75110",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/component-development/static-sites.md",
+      "words": 1425,
+      "sha256": "7f2a9841d679d50fb847cae27c1494e4a4289eb106f5011d29f2865b5165854b",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/contribute/index.md",
+      "words": 591,
+      "sha256": "ce173be407d7c3d48af0297015957ed9a45167434b9f1b2800a51120789e62fa",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "New end-to-end contribution entry: issue, checkout, branch, checks and PR targeting development."
+      ]
+    },
+    {
+      "source": "docs/deployment-routing.md",
+      "words": 4067,
+      "sha256": "72b27cebec8d5d309a63cd9315b50a1963518f3738539dbf02ee27f8fbf06de2",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/activation-containment.md",
+      "words": 1426,
+      "sha256": "37f5de148df6ae66c85eb7ca4b23aee7d0ba344d8057df55d4adc78275f42cd1",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/angular-build-evidence.md",
+      "words": 1484,
+      "sha256": "27e5ef48213a2bd1870a9b0ea0b763fa2ca322cf81100149950d7be8fed11242",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/aot-test-inputs.md",
+      "words": 1595,
+      "sha256": "47f8f87f371172a1c3cd2ec52863b45cb080564d961fe2a1fcd3bf3907634c0d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/build-foundation.md",
+      "words": 1303,
+      "sha256": "51df4846eed8423b7c54a7b66e75e63ab04984a3d0abac8379d93aeec52b65b6",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/ci-caching.md",
+      "words": 853,
+      "sha256": "4a6714974ca15ac39eecb9ca44354e0f3d5f4a9a00df9c297fd2a0b752f40f34",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/ci-profiles.md",
+      "words": 880,
+      "sha256": "bd1472be1280e276791c4278d54e92423a53c22d90296c7b9863a72c4a047ba0",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/core-guide-validation.md",
+      "words": 1708,
+      "sha256": "4921467e9f08d6b8d475a4aa2c104d8d2d6c1467943daf2de1defe61278e52e4",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/deterministic-tests.md",
+      "words": 1961,
+      "sha256": "4fcc945cea7680a15472feda9a8024848f9693c166c6da898e4393f836e3a2d2",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/engineering-records.md",
+      "words": 133,
+      "sha256": "5ee756e78ca4c54fe7343ed4eb2cc852a4f073a42aa82b55067d619f87dfa8b8",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "New developer-only entry to current maintainer decisions and dated historical reports."
+      ]
+    },
+    {
+      "source": "docs/development/feature-audit-2026-09-07.md",
+      "words": 1353,
+      "sha256": "8a0543768bbb15a2f20c56aa4d0200215d4bc7c47904cce246b6e518a5121c28",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/fixed-cell-pool.md",
+      "words": 727,
+      "sha256": "648a3f560841759d367657d04dd3bed71210f9986aacb545899207ed3f850956",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/local-release-catalog.md",
+      "words": 3596,
+      "sha256": "a621186f357eb1cd6c2fc21f817c2db31b8d1cb7359ebf095d088e6e2eaa6405",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/local-tests.md",
+      "words": 1084,
+      "sha256": "8489b910f22dc1360d09716fe5b2bd44b55dc1ce8b8ba08634fb8a822ca43d77",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/native-release-gate.md",
+      "words": 2368,
+      "sha256": "9919d5be486550460388057b5ed7ca2edcb001e48d90f8fde9a70cbd4ceaa07e",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/operator-guide-acceptance.md",
+      "words": 1530,
+      "sha256": "1f7256f36591bf42ea5619113fe5579dec4aec628cabec916753864a02907d96",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/owned-test-processes.md",
+      "words": 1308,
+      "sha256": "75087a51cd5ac8797b30d63d9a44512b60255fff508fe92d07c42e69c8eb2c09",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/phase-0-wasmtime.md",
+      "words": 1258,
+      "sha256": "836ba6034eebb50575c9b523a37b5da947556603cf5f2d7bff7eb27e28898f4d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/phase3-guide-review.md",
+      "words": 1134,
+      "sha256": "ffb078fc04a822774f6559c10fc1ab0a1ca73d83ccf27a6c46cbd7e01f306db8",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/security-baseline-evidence.md",
+      "words": 2481,
+      "sha256": "3b39e6eea6960d7c6a689b00a8bb43acfc5346fd9745c6712c597eb345e7cbff",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/security-baseline.md",
+      "words": 3172,
+      "sha256": "da2c69013099671e3ac46e852d5366f7dc669a8e94f369a13ff3da71ec4706f1",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/standalone-quickstart.md",
+      "words": 1581,
+      "sha256": "f0ea5c1a24740a6126d22572e6107aaa7f307fe9a915c16b024d1015dd0ce522",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/toolchain.md",
+      "words": 1833,
+      "sha256": "40adf3591c02020427d9b71ca8c65d9590650caf888a95344a9e30c5b4136c36",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/wasmtime-security-update.md",
+      "words": 750,
+      "sha256": "26ae0a0497c56527db70fff4f2e2b7054525de98a5c947d17f70ccaa10655c3a",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/website-code-examples.mdx",
+      "words": 435,
+      "sha256": "4dbf170c64bb4b355e0c056543e009c815c274465a1453c6e48aa14bf7828765",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/website-discovery.md",
+      "words": 605,
+      "sha256": "ba13548511581255066a3f8e3b3434a918b444f239b771d055cff783e513e170",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/website-examples.md",
+      "words": 1519,
+      "sha256": "dd0b061538a42e3863123457160afd911b7520313ce6452cf3e8ab16224a2471",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/website-publication-evidence.md",
+      "words": 322,
+      "sha256": "05cc2be232a1269a598423d4e3ae233de41a9eb1588c5363b7164c90a75a2d0b",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/website-publication.md",
+      "words": 701,
+      "sha256": "178d3855ec2cab9e53f391a1c5de8c305e23e80ebc4d6a544a4c940f2597e7b5",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/website-theme.md",
+      "words": 1316,
+      "sha256": "b1cb46076f49c032b93e0404649fa3ead5c97362c9c845bcf3e23b596dffeddc",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/website-versions.md",
+      "words": 935,
+      "sha256": "638631cc14e67fedb8bcefb84fdb3a3a04c09d74605181237bbf7453e9e7eba8",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/website.md",
+      "words": 1730,
+      "sha256": "908c94091a6a58a004c38c472f97919a4fdb4a37b27f62479b3d249c9d7942bc",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/wiki-cutover-review.md",
+      "words": 781,
+      "sha256": "355f76e51c29c4f669e6f028cc8095e99f936b8a7d945c8929492fd3af4475f0",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/wiki-migration.md",
+      "words": 694,
+      "sha256": "a755db909756976d930e94ed51bc952112620480a2c9c966c36396555b6806b0",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/development/workflow-action-pins.md",
+      "words": 747,
+      "sha256": "22ece1fd13d34e254be352e76b319ad47d9425589d49f4f7837c3f54274eefc9",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/evidence/native-upgrade-35821200294/README.md",
+      "words": 356,
+      "sha256": "4b99c18a1b7582851ab30e875ff4fcffbd0119e968ad4877b501b3fd819b0af0",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/evidence/phase3-integration-35818046307/README.md",
+      "words": 481,
+      "sha256": "2bd7f85cb4f334dda10627d824f814c3db00c53dfccf981d2a36d7c334e4c842",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/evidence/phase3-sdk-guides-35509915448/README.md",
+      "words": 189,
+      "sha256": "4ed169146934ac999cf7b173eb25da53d4ff440ab438192bec71623614fe76a3",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/evidence/phase3-sdk-matrix-0b99cd92/README.md",
+      "words": 275,
+      "sha256": "de248dcf3366e1ba400c092588e0371710008c777bb1337024990859d416899f",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/evidence/phase3-sdk-matrix-e07abf72/README.md",
+      "words": 321,
+      "sha256": "629a7aaf7d1dd1be3a49a5efc648db8a7bd9de007778dfbed8130b2aac355425",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/how-to/diagnose-angular-delivery.md",
+      "words": 857,
+      "sha256": "46ccc219f195ae1223ad93fdf00b032e159bfe7c03985699ab5ccf951a61fada",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/how-to/exercise-provider-failure-and-recovery.md",
+      "words": 2013,
+      "sha256": "6a1a027e9741568e4f65a8ffb2bdf1a34a1e7daba1b0e2d88c8b08bc9a4d0f8c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/how-to/operate-and-contribute.md",
+      "words": 919,
+      "sha256": "d4653835ec93ecf90a42492aab2520305b6223b83caa0be9abd6c31948d930d2",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/how-to/operate-capability-providers.md",
+      "words": 1259,
+      "sha256": "62267de47fb1b00fdb21c2a39ef88cd2986c940e433135e9be3b654d4851fe6c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/how-to/reconcile-a-policy-change.md",
+      "words": 1143,
+      "sha256": "684482b42192cb916d395b8503bafcc7cf2f29e6db2caaab580d7211959cdd80",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/immutable-browser-assets.md",
+      "words": 2741,
+      "sha256": "a911b37fdd5c523cb4eaabba9a1362aafae3f6b4c004287a5bd2bffac6e38909",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/installation.md",
+      "words": 941,
+      "sha256": "e30e46f9e1a5c9629acfb8303c48465c39dc9cc21173af089413b1aacc40cae8",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/learn/author-your-first-capsule.md",
+      "words": 854,
+      "sha256": "1f29978130ac43968b528e4dd7618dd4408dcd0498b783b5bc511bd58c231de8",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/learn/build-and-deliver-angular.mdx",
+      "words": 1309,
+      "sha256": "6781e9be0723242484b639a74cf28f95adb3da2a4f9c2e8b30883b50a0ddff7a",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/learn/deliver-and-recover-a-capsule.md",
+      "words": 1558,
+      "sha256": "55c91c656d5ba8e178700439ffa15787aa6432b2efdaeab30682ce9b95057135",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/learn/read-contracts-and-evidence.md",
+      "words": 1277,
+      "sha256": "6cd56bbdc95672a998c54059a2e912e41cf717bcccdf0a02f846b751d6b8d03d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/learn/runtime-identities.md",
+      "words": 605,
+      "sha256": "f4293b947e875818ff92e9057b3ef943fac64337fb116a27c5a4ad49ca5bc21a",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/learn/use-a-client.mdx",
+      "words": 1978,
+      "sha256": "dd1a137ccae854d4ca55144e56d9ca54a8adb5cdb1088c6426af55186f29a29b",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/learn/use-capabilities.md",
+      "words": 1172,
+      "sha256": "ab3390f08b1ae92f352a75809395aa9e34cc51c2c78a05585854ab94f6e83e9b",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/operations/maintained-security-monitoring.md",
+      "words": 1937,
+      "sha256": "477e2bc4f44c953c1b11b4ec4c48740df52883761786cabae561476d69512327",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/operations/native-release-promotion.md",
+      "words": 1824,
+      "sha256": "43df97c22e68b53de8f8a73e14f6a4896e0f10470ac87adfd40346378598746a",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/operations/topology.md",
+      "words": 703,
+      "sha256": "00728dd72e98aff6f431b1f908892649a5203e389f254359d65e5d337ad20141",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-0-baselines.md",
+      "words": 2190,
+      "sha256": "315f38f40420614f1896f8e91d843a49dc5be3a92cfd75707ac9133e96f20eef",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-0-completion.md",
+      "words": 1925,
+      "sha256": "43652681fd6fd076e7bfe4d77c7a2f94a03b145add2f22e09cdfe03dd7f3002d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-0-hot-path-profiling.md",
+      "words": 1840,
+      "sha256": "82720cc5ce24c710e8490dab473bb28b9611d7d7eb3bfd6b2f8cb10052514dea",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-0-spike.md",
+      "words": 909,
+      "sha256": "f37f8635c2c3365a1390a170297678d4e1f1b6aeb6d8a5e0a1164f9749e0a607",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-1-completion.md",
+      "words": 3079,
+      "sha256": "50485854b89ddf8881da120935b932c5ddfc74b5859639459d8914588f7ff493",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-1-extension-completion.md",
+      "words": 1925,
+      "sha256": "9d76c0aac8a0e9e3957dc5d8536617fab58dcb9092232d28d49a5e56ad7def11",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-2-audit.md",
+      "words": 1939,
+      "sha256": "bf9f5768d8b4ff463b48a096f7a008dd613a550d832194c7a9b6c05b39893414",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-2-canary-observation.md",
+      "words": 1433,
+      "sha256": "9979d2ca2552be6ba986f77592d6ae2b361b28fee744563e147358fef32cd410",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-2-canary-promotion.md",
+      "words": 822,
+      "sha256": "eb04f6708864062f1e7dbcd3c16f94bdb549c3d1d868897a879b008477efe0b3",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-2-completion.md",
+      "words": 2829,
+      "sha256": "37e478db63e07263c4b2156f9ede75d1bc384397fd88e954281df4adb67ea7ab",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-2-delivery.md",
+      "words": 690,
+      "sha256": "b0ba452f80ac962200e085ce7203874dba7d6da18665aa15bcf5d9fcb8ac3fb2",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Rewritten as purpose-led current delivery overview with task choices and current diagram; no legacy storage compatibility claims."
+      ]
+    },
+    {
+      "source": "docs/phase-2-operator-workflows.md",
+      "words": 1355,
+      "sha256": "c436c5bb60ce7536c5cc319af7c720b9ec73c6c06c8f071e2d12b74434b282f9",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-2-rollback.md",
+      "words": 741,
+      "sha256": "81198940ee9be260a9c180ad388124ecb71d55bfecaed88277b152f3f058a30a",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-2-rollouts.md",
+      "words": 1323,
+      "sha256": "f857eb7c8c5ca38816eea15ff8b4285c455a1f4723fb8d8b529e5f46bfb9be4a",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase-3-gate-review.md",
+      "words": 1762,
+      "sha256": "002e7a9b16908ed2b42bc2037484cadf545d5349cf69ff7e1658f298a1e31951",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/phase3-management-integration.md",
+      "words": 1132,
+      "sha256": "811d6d55c059bd8f2a2e5e8472bbf95d09781447335a9782978e448c952898c5",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/protocol/activation-lifecycle.md",
+      "words": 261,
+      "sha256": "57dd0e0492fac91c638bea14bad94fc0f262e7613992534b379b0892623d05af",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/protocol/commit-protocol.md",
+      "words": 225,
+      "sha256": "8003880f4fbf24afeb6fa30acd4c2f1b1182a28ff9110965bde367c2555fae14",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/protocol/http-applications.md",
+      "words": 1615,
+      "sha256": "8799e876804e3cddd4792ab759014c15f7844d1249aa52ead3c97293174b3316",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/protocol/invocation-service.md",
+      "words": 1241,
+      "sha256": "18e367ef69e472159c9b4ebac703b943954577dd943cd015d00b9a65d4dd67d5",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/protocol/manifest-codec.md",
+      "words": 1520,
+      "sha256": "93b93b01754457d51c21ce169fbdd672b1d4146dfff33dc3d2d621551ad821c5",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/protocol/package-format.md",
+      "words": 1579,
+      "sha256": "e8aa80ec49db96f71575f154e6463f4d953009629e49ee192b81793ed057313a",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/protocol/phase-1-contract-hardening.md",
+      "words": 3983,
+      "sha256": "427d63e7ea326a5ad92e729f1440fd1183872ada339a4968bccb10b3900d8087",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/protocol/platform-errors.md",
+      "words": 349,
+      "sha256": "6e7cfeffdcb689faa7314484b419c7ec62b34074606e51ebb00360ac57011cb7",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/protocol/wit-values.md",
+      "words": 1239,
+      "sha256": "13d52ff92d8e888b41aff9a2b0357dd5bdc1bfca474abdc54a946ed263679f6c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/build-provenance.md",
+      "words": 1900,
+      "sha256": "20fb8495b3c4caeac2ad45e6b815f7179056b8ccf63f8b00ff41d9c5e5470d61",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/http-ingress.md",
+      "words": 1499,
+      "sha256": "eb354e5caf867267d589775c0954e0d47221a66d63be330cbc0d7cec136b41dc",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/http-response-cache.md",
+      "words": 1171,
+      "sha256": "b3154259fbf58d05988142c430d4f6a71ff943876074e5bf27827e6124ba08a9",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/http-triggers.md",
+      "words": 1432,
+      "sha256": "abd22487a9a5d871b43410a1192e4c0f873a166955738483f3d6b8e0b51b1946",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/management-services.md",
+      "words": 4700,
+      "sha256": "071e3890e9e030c035bbaa12cf07fc8c178b0257d78541b5e7290805f5bc4875",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/oci-bearer-read-auth.md",
+      "words": 1409,
+      "sha256": "206786e15281e252f6b7ffe9ceda65f3dab5dbd785c35243144e4abee52ecf00",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/oci-network-profile.md",
+      "words": 1254,
+      "sha256": "7bbbbf49cd2dd12c9a3812c9e02ad4c5b33aed57a36abf50a93a5116a10ee2bb",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/oci-registry.md",
+      "words": 2151,
+      "sha256": "f5b0972d251b558778585b3bc078fbdb5053965c4bc48fe76410f4fd355e8141",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/operator-cli.md",
+      "words": 3264,
+      "sha256": "42cca21427e99e39b15e4304686c66a2b18707ccbcc5934010106d82a9ef0fd3",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/package-admission.md",
+      "words": 1959,
+      "sha256": "3451d270da953964ed96cb1abe2079f1f663da34aa15308f9b31c636812d3322",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/publication-api.md",
+      "words": 1317,
+      "sha256": "638256466f310e95fd66a45dd542351d549812cf1fc509615b1f810a1eb05570",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/publication-catalog.md",
+      "words": 963,
+      "sha256": "528f52a848a7de7f1e7dc54b6c83421d03fa458ff6826e6db701ce648ef4909c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/publication-runtime.md",
+      "words": 915,
+      "sha256": "2cd8746566e23619cd028009281015bc42b54c9759778eeaef49720469282782",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/publisher-trust.md",
+      "words": 1581,
+      "sha256": "e855b77f90e9d85dc305995d54d20a20d29ccab87a4e2ebfe7c4fc3c46698c31",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/raw-artifact-cache.md",
+      "words": 1342,
+      "sha256": "009dd71754cf35e901c131a5652224e1a9863dfb1317c4cb74ac18c54df9f4ba",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/release-compatibility.md",
+      "words": 1529,
+      "sha256": "dcbc6e88b7ec0c9e45e3ae004364a53012ceeb30e4a8b6299b145467868292e0",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/release-lifecycle.md",
+      "words": 1614,
+      "sha256": "b0ea4cf4896ec8b48adb12fe84df8a9a65a06c759a08b53a4b4d7212c4963280",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/rust-client.md",
+      "words": 1119,
+      "sha256": "47ab95703d6cbe37c59f7de8a4763088d46ed1040efb11101718b42e59284908",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/standalone-node.md",
+      "words": 5546,
+      "sha256": "d15cc3e887f3b9150746dd09f34e83b95b2477e139562fd719a347891a07ebe7",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/standalone-providers.md",
+      "words": 1405,
+      "sha256": "9345bc3924933fb164c5916c0266de45bfe04472df24e8ea820b3e40d070246b",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/typescript-client.md",
+      "words": 1301,
+      "sha256": "72e3ca3fe9df93e1030fba70fdfcb35c91ba7ebd0a2e2771d00e3b2b5cc80c23",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/reference/web-release-admission.md",
+      "words": 1677,
+      "sha256": "2d9a18748d2d4444746ffb590de2ba3c93d2635287b6da48df4ec83d8ff46061",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/roadmap.md",
+      "words": 1765,
+      "sha256": "5b5976970c06baccc8f3b63cc27775162672e232409877e65b2f0737264734ea",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/angular-backend-profile.md",
+      "words": 683,
+      "sha256": "5a60e14dd642540c8b5b04a0580a9b3edb2995cf455a1e26543784dcaf9b9979",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/angular-renderer-profile.md",
+      "words": 1342,
+      "sha256": "d049ec2eba020b8ada98cdcf3f722fdecd7609391640d76c8b6e772677ccdc93",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/angular-renderer-runtime.md",
+      "words": 608,
+      "sha256": "28e4b85d0a77cf9087c4735d51e480d72a48e7e2e987b54d35e24abaa886f6b1",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/async-host-io.md",
+      "words": 1494,
+      "sha256": "7fc0e0af8a33eb0466b71e4f43eedeb19440f6b9a5ee14d2099cbc5ac3deb006",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/capabilities.md",
+      "words": 1523,
+      "sha256": "3ab0941472095874184b82e1f18fab0cd014f143547b1c950ae32569044ff547",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/capability-audit.md",
+      "words": 991,
+      "sha256": "67abead0dff864a94e4e37522f7e702d831f178b9369bb8615db317d33ccb7a5",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/capability-bindings.md",
+      "words": 942,
+      "sha256": "aa58c87fb881bd6497bf58213c153f160f2eddeba488d9cdef22b44eb898abd0",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/capability-broker.md",
+      "words": 1217,
+      "sha256": "e5d89ebf2dae3ee27c6642c34e1bb2090619cea9d0dae85bd13226da2bc329a3",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/capability-policies.md",
+      "words": 2018,
+      "sha256": "8a8a549d71b9fbc9b298af71d5d8ac69ef5813f9b29dc74a39f40f5b448eb19a",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/custom-metrics.md",
+      "words": 1253,
+      "sha256": "4da17039b4a9a7451d0abe4a8f45c71546502dc5fe5423c1487304ac3561439c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/descendant-budgets.md",
+      "words": 1026,
+      "sha256": "95f63e37cdfebda4505acc485d2d4483be387ddab86c6b4a538ea08270b30d72",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/execution-security-profiles.md",
+      "words": 1081,
+      "sha256": "07e1ee66a92202108848b36aeebdc617bdc095d3d381613c173c18a9c88dccbb",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/host-abi-profile.md",
+      "words": 853,
+      "sha256": "6ba28f35ce73b3a6a4c907c22ccea3ea3125e596ca2ce570440ed8c8d3d5e490",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/local-blobs.md",
+      "words": 1343,
+      "sha256": "4a566ef8650619a3143fafff494baf860abae864f94fdfad7d5338ef439f515d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/local-secrets.md",
+      "words": 1418,
+      "sha256": "7506d78dcffb17e3be096c0aa6e33d77c057c93d990cfa2ddf66bef4103bf5cd",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/local-service-invocation.md",
+      "words": 1075,
+      "sha256": "f3e3751d973d35ae400b3df2a5e08ba15cac54b739b62a07ec317bbc80633ba5",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/nats-events.md",
+      "words": 1377,
+      "sha256": "174d8e435c215df0aefcf5e10b8e9c207a5de924a5c0f0105cb346908646992d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/nats-triggers.md",
+      "words": 1225,
+      "sha256": "79e6b95024a1da64a4bd904de545d25b815162261139166f3013e7f0acb788b5",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/outbound-http.md",
+      "words": 1241,
+      "sha256": "3aa3f35720031412e13b5b996b33be0b0aa7e6ab96d35d3786efc3b2c9bc458d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/protected-configuration.md",
+      "words": 808,
+      "sha256": "53fa6ec28bac0449897d1bac94f15d875c45da52f86ad83825ce74ce2df84267",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/provider-pools.md",
+      "words": 1388,
+      "sha256": "ddde86a44af22eca875882de469f5a327462e47011fa05b788ce56e9782f2efa",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/random.md",
+      "words": 811,
+      "sha256": "2787f63bba553c7a3edae202ca3e3dedd28f2cc2d4d4a8880d11dd319eb9d88d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/resource-budgets.md",
+      "words": 1192,
+      "sha256": "ee28b2beb133bbb4cba662e1c1d2fc6850fd053879180695eee2ec7fdb20b958",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/s3-blobs.md",
+      "words": 1408,
+      "sha256": "7189c023ccfc5fd043afe0acae400c4f2e5ba55ec55e052a002259f8e8708a92",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/streaming-http.md",
+      "words": 1414,
+      "sha256": "3d207abb3dfaeb1c8bac131bde642e6765524f61e629dc8636b866bacfdc0e22",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/transport-connection-deadlines.md",
+      "words": 720,
+      "sha256": "2d19d667d9e7cb8987d95d65537ddf6cb20a0160a9f1d72d590b20d611e2afe2",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/trusted-aot.md",
+      "words": 2475,
+      "sha256": "fc8502d5ae84d17bafe0b5c78081aedc31f4201769bc3e4dc35c35c13f9987dd",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/vault-secrets.md",
+      "words": 1262,
+      "sha256": "dba45f44580f00a2120d1a9e3007c0dc7b3f75fdd5dfc0e48c1a226964a52b1d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/runtime/wasmtime.md",
+      "words": 2953,
+      "sha256": "91833e5d3b3086ad5e8756f7588ea594f46dcded024b044c884643af72eb3f83",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/scheduling.md",
+      "words": 2049,
+      "sha256": "40969b26b54ad81ab21e6ead6ebe3ced3e3d846c2019c58771d45e0e2781c2aa",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/security/browser-boundary.md",
+      "words": 1957,
+      "sha256": "83fd73352a7774c2cfc0de39843a8c561d39eb653287a5cbcef8076d437b9e14",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/start/first-node.md",
+      "words": 1170,
+      "sha256": "68a36302b96ee9aeed44ae0db9b42f2bff18fbc763c885a07870f6116d3070f3",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/start/index.md",
+      "words": 394,
+      "sha256": "81668ac106cf7be79b763df3609b7333874a0bcbef6b9c1dbe4bf676e50b8431",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/svg-style.md",
+      "words": 2061,
+      "sha256": "198f6825c1bea6f025d2b3e86dcf6c210dcd1e029defb1ad92579da1a39d1d48",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/telemetry.md",
+      "words": 1467,
+      "sha256": "4160816487de46a03cde4aa6ae3338204a70b0eafa779f9e95ee03e9376cd656",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/angular-guide-workflow.md",
+      "words": 201,
+      "sha256": "e7752fbbe2aa7438bf451c60811aff1787386dd880d3b4d78e36bff00bfafaa6",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/angular-reference-workflow.md",
+      "words": 473,
+      "sha256": "731628645102d8c226bcb6931987eade2996dd69feacd23e4fa47e0816f92e1c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/angular-renderer-qualification.md",
+      "words": 788,
+      "sha256": "c8667c51a85396edbee00960d9493bdbbc6ed2877b025b1b1d20a99232bd4483",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/angular-t1-workflow.md",
+      "words": 1512,
+      "sha256": "61f9e385e755d1fa0be96a797a0c24a198b2cb0d14a2e07c87a010a4bfae4850",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/benchmark-retention.md",
+      "words": 700,
+      "sha256": "59d71d457dc52111359875bab791ba26b4689bd95136fe048e14f0fc4c37bb61",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/browser-boundary.md",
+      "words": 511,
+      "sha256": "5fb67d12319a167a9a23d5f16304cf3306b516d493cc1173af592fb773d66222",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/ci-cargo-recipes.md",
+      "words": 1943,
+      "sha256": "eccc7b453eceea9890b1dea3caecea6e153abaa15801934a27e671a56def830c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/ci-lanes.md",
+      "words": 1162,
+      "sha256": "5d88451432ccd6a12688f382ecd941eaff8e6041723e8c785b007062b2b6902c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/ci-suite-inventory.md",
+      "words": 1770,
+      "sha256": "2c813e7540ab7096f8976636afa366d2abc27fe9ef92c022f7f6cbaf985d2328",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/docker-comparison.md",
+      "words": 2248,
+      "sha256": "8f46d73d72f428b4a23d890b33a7b9e8ae89d8a8f999b0748b1f766dc2de7a08",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/go-client-qualification.md",
+      "words": 1349,
+      "sha256": "cbe95480dfff5a66e02896eba759ec2fe2be9f72ff94891d02aa54f841a92a0e",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/invariants.md",
+      "words": 1355,
+      "sha256": "810e325177e34a8f195b755b09123e8e28c813b2fe502b693a921b959fd1fedc",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/kubernetes-comparison.md",
+      "words": 3164,
+      "sha256": "0e000f41d2d4a3566803a61b57a2fa5aa3003a71e008b6c9fbcd28644ecf8624",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/metadata-working-set.md",
+      "words": 1589,
+      "sha256": "e0e80a6dd3d2c8517d35c9d1de472d4a65774a1f40519f8acb687c91027632a9",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase-1-conformance.md",
+      "words": 1230,
+      "sha256": "fdf2fe26dab5e668955edb61895d9ec74724f39ec3c63b492a819699a86ab4c4",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase-1-controlled-comparison.md",
+      "words": 977,
+      "sha256": "4aad79c47424567ddb0de77d41eb43b4638ef8d8b5ef4371b4f3bbe13f347c8b",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase-1-measurements.md",
+      "words": 9874,
+      "sha256": "f9793abdafb4ebb9365fc27e9dc2d9e61fca8036772b55e90fdcf61467b28f7d",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase-2-offline-validation.md",
+      "words": 517,
+      "sha256": "bc9820f4e1097516e13246539e1028258e05f7e665de3cc187604639615f52c3",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase-2-resource-profile.md",
+      "words": 1844,
+      "sha256": "e7c46f2945ebcbbdc2b092fc702107659dd3ad0260c01c88342dca38b1d5cedc",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase3-resource-acceptance.md",
+      "words": 1613,
+      "sha256": "1008c31559ea0353a3b75ee984be254508ebad430e06e77d82c397b16dd45109",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase3-resource-checkpoint.md",
+      "words": 1482,
+      "sha256": "bab1e69b1a8ac20b9036a34bd6cb2fca7ceacef5d43c0441eb03882fe3c12b04",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase3-resource-events.md",
+      "words": 299,
+      "sha256": "f4681d16dd3da8d197e938838db4711852355a2ee3963e960772c100a114988c",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase3-resource-evidence/README.md",
+      "words": 1029,
+      "sha256": "0355e223daf909f56f6efa0c360397186a372972bb371fd5d21bab0458f44397",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase3-resource-methodology.md",
+      "words": 1428,
+      "sha256": "a75893d0aa342677013dd122320d18df4e23a79bc114ce3375651a71da62d5d0",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase3-resource-oci.md",
+      "words": 746,
+      "sha256": "a21771c036521db3bdbc2af2bc04e656a0be5a18ed2a254328d6179b8ac84d0f",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase3-resource-recovery.md",
+      "words": 372,
+      "sha256": "22daf6814a6db64817499174746b10e93124b9cf5c4e81d5fc8b57f1ab200818",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase3-resource-renderer.md",
+      "words": 560,
+      "sha256": "df2396e0449fdae9d082e69240d8dc63b9d4f7a682eab6725e4a0fe27c478b22",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/phase3-security.md",
+      "words": 3350,
+      "sha256": "9b56ac350930ac6adde6cd0031edd7d79139208163709b687638521a28ba33f7",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/sdk-browser-application.md",
+      "words": 735,
+      "sha256": "60202beda60233f2ac5c86ebec76faa4541e21effc7bec756417f9594827c7ef",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/sdk-provider-evidence.md",
+      "words": 571,
+      "sha256": "8ce510eee6716799d7043b3da939143a201a441c970a3b6a32657d655329f784",
+      "status": "pending",
+      "findings": []
+    },
+    {
+      "source": "docs/testing/sdk-provider-workflow.md",
+      "words": 2058,
+      "sha256": "cbf0ebb587304ea655add137e600aff2d87dfc3c0f2b60fca3dc3014915f7dcf",
+      "status": "pending",
+      "findings": []
+    }
+  ]
+}

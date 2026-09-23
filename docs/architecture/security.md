@@ -1,11 +1,10 @@
 # Security architecture
 
-The current standalone boundary combines authenticated tenant management,
-stateless Wasmtime containment and exact directory-catalog ownership. Phase 2
-delivers enforced package admission, durable lifecycle, authenticated local
-native reuse and control audit. Its [completion review](../phase-2-completion.md)
-records the accepted evidence and limitations; these features do not establish
-production readiness or a multi-node security boundary.
+The standalone boundary combines authenticated management, publication-aware
+package admission, Wasmtime containment, current capability policy, protected
+configuration, bounded provider I/O, HTTP/browser controls and durable audit.
+The runtime uses fixed in-process guest cells. Separate guest execution processes
+and multi-node security are not implemented.
 
 ## Untrusted inputs and authority
 
@@ -95,19 +94,19 @@ MAC is not publisher provenance and does not replace current catalog authority.
 
 ## Guest capabilities
 
-The current host exposes filtered context, structured logging and monotonic/wall
-clocks. There is no unrestricted guest filesystem, socket, environment, process,
-thread or secret access. General capability WIT declarations remain unavailable
-until a concrete provider and its policy are implemented.
+Context, logging, clocks and installed HTTP, blob, secret, event, local-call,
+randomness and metric capabilities are available through checked host bindings.
+The [standalone provider reference](../reference/standalone-providers.md)
+distinguishes its accepted configuration from providers requiring a trusted
+Rust embedding. There is no unrestricted guest filesystem, socket, environment,
+process or thread access.
 
-Phase 3's [broker and grant work](../roadmap.md#phase-3-capabilities-and-application-hosting)
-will compose exact import requests, durable deployment/policy grants,
-invocation-principal authorization and provider configuration epochs. Opaque
-handles must be activation scoped, operation scoped, quota bound and revocable
-without reviving stale handles. Descendant calls must conserve budgets and
-cancellation ownership. Secret values must remain outside logs, audit fields,
-cache keys, snapshots and derived artifacts. Shared pools and streaming I/O need
-their own finite owners through cancellation and shutdown.
+The [capability broker](../runtime/capability-broker.md) combines exact import
+requests, deployment and policy grants, caller identity and provider epochs.
+Opaque handles are activation scoped, operation scoped, charged and revocable.
+Local descendants conserve budgets and cancellation ownership. Secret values
+stay out of logs, audit fields, cache keys and derived artifacts. Shared provider
+pools and streaming I/O retain finite ownership through cancellation and shutdown.
 
 ## Audit, recovery and storage trust
 
@@ -164,5 +163,5 @@ process-compromise resistance must use a separate fixed/bounded node-owned
 execution host. That profile is currently unsupported. A requested stronger
 profile must fail closed rather than downgrade. Host/kernel compromise and strong
 same-machine side-channel isolation remain outside the current standalone model.
-Phase 3 adds provider and browser isolation tests; Phase 5 adds node identity and
-transport security.
+Provider and browser isolation have dedicated conformance tests. Distributed
+node identity and transport security remain unimplemented.
