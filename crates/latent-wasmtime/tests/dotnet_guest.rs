@@ -78,16 +78,45 @@ async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_h
     assert!(support::run(&backend, request, &denied).await.is_err());
     assert_eq!(backend.resource_snapshot().stores_created, 0);
     support::idle(&backend);
+    let populated = serde_json::json!({
+        "text": "Hello\0世界 🚚", "unsigned": "18446744073709551615", "signed": "-9223372036854775808",
+        "maybe": {"some": "9007199254740993"},
+        "items": [{"text": "", "amount": "0"}, {"text": "nested\0🚚", "amount": "18446744073709551615"}]
+    });
+    let empty = serde_json::json!({
+        "text": "empty-list", "unsigned": "0", "signed": "9223372036854775807",
+        "maybe": {"none": null}, "items": []
+    });
+    let rejected = serde_json::json!({
+        "text": "", "unsigned": "9007199254740993", "signed": "-9007199254740993",
+        "maybe": {"some": "0"}, "items": []
+    });
     for (index, (function, input, expected)) in [
+        ("echo", serde_json::json!([""]), serde_json::json!([""])),
         (
             "echo",
-            serde_json::json!(["Hello, 世界! 🚚"]),
-            serde_json::json!(["Hello, 世界! 🚚"]),
+            serde_json::json!(["Hello, 世界!\0🚚"]),
+            serde_json::json!(["Hello, 世界!\0🚚"]),
         ),
         (
             "wide",
             serde_json::json!(["18446744073709551615"]),
             serde_json::json!(["18446744073709551615"]),
+        ),
+        (
+            "mirror",
+            serde_json::json!([populated.clone()]),
+            serde_json::json!([{"ok": populated}]),
+        ),
+        (
+            "mirror",
+            serde_json::json!([empty.clone()]),
+            serde_json::json!([{"ok": empty}]),
+        ),
+        (
+            "mirror",
+            serde_json::json!([rejected]),
+            serde_json::json!([{"err": "empty\0text 世界"}]),
         ),
         ("next", serde_json::json!([]), serde_json::json!([1])),
         ("next", serde_json::json!([]), serde_json::json!([1])),
