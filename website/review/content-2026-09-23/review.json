@@ -600,12 +600,11 @@
     },
     {
       "source": "docs/cli-completions.md",
-      "words": 906,
-      "sha256": "bab151e92bfb0dcf8085919c819d39f2347f0ad70b7df0e68e446416232793af",
-      "status": "read-needs-update",
+      "words": 931,
+      "sha256": "f31149d58702c7a1b9f068c121d68cfa874c7cceb6b682d21a835f92097da9a5",
+      "status": "updated-source-reviewed",
       "findings": [
-        "Read the complete offline generation, installation, removal and shell validation contracts.",
-        "Actual Fish execution exposed missing positional enum choices; fix and executable regression are tracked in PR #573. Reconcile this page after that implementation lands."
+        "Re-read the full page after integrating the merged Fish correction. Actual Bash/Fish tests pass; independent real Zsh and PowerShell execution is retained separately. Installation and generation semantics remain accurate."
       ]
     },
     {
@@ -628,11 +627,11 @@
     },
     {
       "source": "docs/component-development/guest-sdk.md",
-      "words": 1083,
-      "sha256": "2ea4653a381b75e2235e6fc3fec5748d90378dcdaa5e37ef83be70d880d0c1ee",
+      "words": 1113,
+      "sha256": "4fe3e490196005cd24e63dfd8d82dd57a7b81d34052759e993899befc0ee155e",
       "status": "read-needs-update",
       "findings": [
-        "Full content reviewed. Primarily conformance/build-profile details; align with standalone authoring work while preserving reference ownership contracts."
+        "Read the full capability ownership reference and reviewed the merged Rust authoring entry link. Its title and examples still need alignment as the other independently owned language authoring workflows arrive."
       ]
     },
     {
@@ -642,6 +641,15 @@
       "status": "updated-source-reviewed",
       "findings": [
         "Corrected old context/log/clock-only and synchronous-only claims against current semantic host/profile comparison; retained bounds and package identity details."
+      ]
+    },
+    {
+      "source": "docs/component-development/rust-authoring.md",
+      "words": 1183,
+      "sha256": "8a18a0bf849f98d6f8bd9cc375ea21689a648b251c01c67e1fba0fe38da85662",
+      "status": "pending",
+      "findings": [
+        "Added by the separately owned Rust authoring integration; included in the continuing documentation review."
       ]
     },
     {
@@ -820,6 +828,15 @@
       "findings": []
     },
     {
+      "source": "docs/development/rust-capsule-qualification.md",
+      "words": 606,
+      "sha256": "6088cc14392717644b581a495b3f5082e2b08172412e7abc557d4518ffde3c4f",
+      "status": "pending",
+      "findings": [
+        "Added by the separately owned Rust authoring integration; included in the continuing documentation review."
+      ]
+    },
+    {
       "source": "docs/development/security-baseline-evidence.md",
       "words": 2481,
       "sha256": "3b39e6eea6960d7c6a689b00a8bb43acfc5346fd9745c6712c597eb345e7cbff",
@@ -867,8 +884,10 @@
       "source": "docs/development/website-code-examples.mdx",
       "words": 435,
       "sha256": "4dbf170c64bb4b355e0c056543e009c815c274465a1453c6e48aa14bf7828765",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read the full contributor guide and checked preferences, language labels, fallback, copy behavior and developer-only verification details against CodeExample. Synthetic UI fixtures remain distinct from executable SDK examples."
+      ]
     },
     {
       "source": "docs/development/website-discovery.md",
@@ -1251,10 +1270,12 @@
     },
     {
       "source": "docs/phase-3-gate-review.md",
-      "words": 1762,
-      "sha256": "002e7a9b16908ed2b42bc2037484cadf545d5349cf69ff7e1658f298a1e31951",
-      "status": "pending",
-      "findings": []
+      "words": 2644,
+      "sha256": "14380b4db271faaaa97ccd0d13a073bff9358036ee2d4ffbee8d2b5ca4535b0e",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Reviewed the full evidence handoff and freshly retained execution matrix. Replaced the stale all-six-tickets-open claim with per-language acceptance tracking; human guide outcomes, publication approval and the final gate remain required."
+      ]
     },
     {
       "source": "docs/phase3-management-integration.md",
@@ -1511,10 +1532,12 @@
     },
     {
       "source": "docs/runtime/angular-backend-profile.md",
-      "words": 683,
-      "sha256": "5a60e14dd642540c8b5b04a0580a9b3edb2995cf455a1e26543784dcaf9b9979",
-      "status": "pending",
-      "findings": []
+      "words": 723,
+      "sha256": "70f5231d13edee7513c41aa3a9e449f1f805d0da37f6ce81e6382c9951aa1e93",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete bounded backend contract. Reframed it as the implemented profile, retained earlier package/toolchain observations as historical, and linked complete protected execution rather than falsely leaving closed integration work outstanding."
+      ]
     },
     {
       "source": "docs/runtime/angular-renderer-profile.md",
@@ -1525,10 +1548,12 @@
     },
     {
       "source": "docs/runtime/angular-renderer-runtime.md",
-      "words": 608,
-      "sha256": "28e4b85d0a77cf9087c4735d51e480d72a48e7e2e987b54d35e24abaa886f6b1",
-      "status": "pending",
-      "findings": []
+      "words": 644,
+      "sha256": "7a84e44ccaf5b51d5447bc76ba71fc6a0c8815d12e8b493103ff97522eb5f7ba",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete profile, configuration, identity, ownership and limits. Replaced the obsolete T1 refusal with the implemented protected signed-application path, verified against configuration tests and actual T1/reference workflows."
+      ]
     },
     {
       "source": "docs/runtime/async-host-io.md",
@@ -1825,10 +1850,12 @@
     },
     {
       "source": "docs/testing/browser-boundary.md",
-      "words": 511,
-      "sha256": "5fb67d12319a167a9a23d5f16304cf3306b516d493cc1173af592fb773d66222",
-      "status": "pending",
-      "findings": []
+      "words": 520,
+      "sha256": "089c04ae6a96f02a59681b0fb477b0945c0787266a0a7b60f0964cf1f307644b",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete dated Node-rendered browser record and preserved its failures, limits and artifact identities. Reworded remaining acceptance as historical and linked the later actual protected Angular workflow."
+      ]
     },
     {
       "source": "docs/testing/ci-cargo-recipes.md",
@@ -1978,8 +2005,10 @@
       "source": "docs/testing/phase3-resource-renderer.md",
       "words": 560,
       "sha256": "df2396e0449fdae9d082e69240d8dc63b9d4f7a682eab6725e4a0fe27c478b22",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read both complete renderer/storage profiles, failed collector record and exclusions; verified this is bounded historical measurement rather than an unqualified current performance claim."
+      ]
     },
     {
       "source": "docs/testing/phase3-security.md",
@@ -2064,12 +2093,12 @@
     },
     {
       "source": "sdk/rust-guest/README.md",
-      "status": "reviewed-current",
+      "status": "updated-source-reviewed",
       "findings": [
-        "Read full current Rust wrapper overview, pinned toolchain, owned blobs and cancellation semantics. Standalone authoring changes remain on PR 554."
+        "Read the complete current Rust SDK README, including the separately merged independent-authoring link. The exact toolchain, typed ownership, uncertain-effect behavior and compile-versus-execution distinction remain accurate. No SDK implementation is changed by this documentation review."
       ],
-      "words": 212,
-      "sha256": "30b40c0fa3223bc5edb89f62d2a5d4511ecd5b996e84f641edef94c47a1dc8d5"
+      "words": 229,
+      "sha256": "d47af5c7217775663f17a45716442c86538dae190fd184c030acad82a1df2110"
     },
     {
       "source": "sdk/rust/README.md",

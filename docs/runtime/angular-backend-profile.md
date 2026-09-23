@@ -1,8 +1,9 @@
 # Scoped Angular render data
 
-This is the implementation milestone for the reference application in
-[#236](https://github.com/KirilsTurkins/latent-service-fabric/issues/236), not
-its final browser or resource qualification. The decision is recorded in
+The `scoped-http-get-v1` profile lets an Angular server renderer fetch one
+bounded HTTP response through the activation's capability broker. The
+[reference application](../../examples/angular-reference-application/README.md)
+uses it for allowed and denied backend requests. The decision is recorded in
 [ADR 0042](../../adr/0042-bound-angular-render-data-through-the-capability-broker.md).
 
 ## Signed authority selection
@@ -68,14 +69,14 @@ digest in its capsule. Context-only qualification fixtures without a selected
 publication retain their relative asset URL; they are not evidence of native
 publication-bound browser delivery.
 
-## Validation milestone
+## Earlier validation milestones
 
-The signed-profile admission unit, exact async import structural unit, both
+The initial signed-profile admission unit, exact async import structural unit, both
 Wasm adapter feature builds, closed-input schema cases and executable shipped
-JavaScript ordering cases pass locally. The initial Windows Python run has
+JavaScript ordering cases passed locally. The initial Windows Python run had
 three environment skips. The subsequent Linux run, with the locked tool tree
-and Python requirements installed, passes all 13 tests without skips. The
-Linux native CLI/node build and strict all-feature node Clippy check also pass.
+and Python requirements installed, passed all 13 tests without skips. The
+Linux native CLI/node build and strict all-feature node Clippy check also passed.
 
 The [maintained reference application](../../examples/angular-reference-application/README.md)
 has an earlier observed Linux package build with the scoped backend feature:
@@ -87,13 +88,17 @@ packaging and structural validation, not protected native execution or browser
 delivery. The application includes public and sealed-user views, a declared
 failure, bounded allowed/denied backend plans and hydration navigation.
 
-The subsequent publication-bound asset change passes eight Linux owned-context
+The subsequent publication-bound asset change passed eight Linux owned-context
 tests, two web-binding tests, the Wasm adapter feature check and twelve executable
-build-wrapper/backend-bridge Python tests with no skips. It changes the locked
+build-wrapper/backend-bridge Python tests with no skips. It changed the locked
 renderer profile identity, so the earlier package is historical evidence, not a
 substitute for rebuilding and qualifying the current profile.
 
-Actual signed application delivery, allowed/denied provider calls, authenticated
+The later [complete reference qualification](../testing/angular-reference-workflow.md)
+passed signed application delivery, allowed/denied provider calls, authenticated
 content, cancellation/recovery, real-browser hydration/navigation, canary and
-rollback remain required before #236 closes. The native T1 qualification is
-owned by #226; measured plateaus and retained end-to-end evidence by #239/#240.
+rollback under the protected native profile. A fresh execution is retained in
+the [repository validation review](../phase-3-gate-review.md#repository-execution-review-september-23).
+[Resource measurements](../testing/phase3-resource-renderer.md) retain their own
+host and profile limits. These results do not establish arbitrary Angular or
+Node compatibility, build reproducibility or completion of the human guide review.
