@@ -13,7 +13,7 @@ PREIMAGES = {
     'fiber.c': 'b7f4592776d780165154c69e75b243ad9f32df0a717eb8bd29a11924fc6bc6df',
     'time.c': '9f4d0ea0a14f0786cb76172acd9bdefd4464aebf58a0372cfa66ff92dcacae2e',
     'memory.c': 'd685e2f0f8b3983d5886b48ece7d83298b864893f3c80701ed11cc779a51ada2',
-    'file.c': 'f24a635fda53305cb4c317c7c1518bd072781fd0561da71ff1c3131e36615c08',
+    'file.c': '49c8a5f152eefffbe2832b607fcd40b225936fc593d1a0d53fb81ed700a30538',
 }
 
 FIBER = '''#include "fiber.h"
