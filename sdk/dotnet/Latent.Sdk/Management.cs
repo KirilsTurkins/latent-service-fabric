@@ -517,13 +517,6 @@ public sealed record PublicationRef(
     string Id,
     string Tenant);
 
-/// <summary>Transport-neutral ReleaseSelector; see the shared client profile for authority and lifetime rules.</summary>
-/// <param name="ComponentDigest">The exact component_digest value with preserved presence.</param>
-/// <param name="Publication">The exact publication value with preserved presence.</param>
-public sealed record ReleaseSelector(
-    string? ComponentDigest,
-    PublicationRef? Publication);
-
 /// <summary>Transport-neutral PublicationIdentity; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Publication">The exact publication value with preserved presence.</param>
 /// <param name="ComponentDigest">The exact component_digest value with preserved presence.</param>

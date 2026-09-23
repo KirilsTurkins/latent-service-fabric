@@ -6,13 +6,6 @@ type PublicationRef struct {
 	Tenant string
 }
 
-// ReleaseSelector requires exactly one member. Preserve non-nil empty/invalid
-// values for validation instead of silently choosing the other member.
-type ReleaseSelector struct {
-	ComponentDigest *string
-	Publication     *PublicationRef
-}
-
 type PublicationIdentity struct {
 	Publication     PublicationRef
 	ComponentDigest string

@@ -328,11 +328,6 @@ type PublicationRef struct {
 	Tenant string
 }
 
-type ReleaseSelector struct {
-	ComponentDigest *string
-	Publication     *PublicationRef
-}
-
 type PublicationIdentity struct {
 	Publication     PublicationRef
 	ComponentDigest string

@@ -61,7 +61,7 @@ This changes an external client baseline, not the Rust node or guest runtimes.
 
 Every SDK's invocation request carries optional activation, root activation, and
 parent activation IDs. These map directly to Protobuf `InvokeRequest` fields
-1â€“3. Supplying an activation ID lets a caller retain it before invoking and use
+1Ã¢â‚¬â€œ3. Supplying an activation ID lets a caller retain it before invoking and use
 it for cancellation or status while the invocation response is still pending.
 The ID is a correlation identifier, not an idempotency key or authorization
 credential. A lost response does not establish whether execution happened;
@@ -182,29 +182,28 @@ versions do not change independently versioned WIT and Protobuf contracts.
 
 ## Publication identity (Phase 3)
 
-All six SDKs provide transport-neutral `PublicationRef` (ID and tenant),
-`ReleaseSelector` (optional component digest or scoped publication), and
+All six SDKs provide transport-neutral `PublicationRef` (ID and tenant) and
 `PublicationIdentity` (publication, component and package) models. A corrected
 embedded SBOM changes the package identity while retaining executable bytes;
 the same package in two tenants has separate publications. These identities
 must remain distinct from opaque invocation payloads and authorization grants.
 
-A request boundary requires exactly one selector. The DTOs preserve absent,
-present empty and contradictory values for validation; they never choose a
-fallback, enumerate candidates, infer a tenant or pick the newest publication.
-The legacy Rust convenience surface uses the canonical typed PublicationId
-parser and rejects malformed IDs before constructing that typed reference.
-The common profile, like the other five facades, retains raw strings and
-presence for explicit validation by the adapter; it never normalizes an invalid
-ID. `ReleaseSelector.componentDigest` maps to the
-specific RPC's legacy digest field; it is not an alternative wire schema.
+Management requests select an exact publication in their authenticated tenant.
+The obsolete component-or-publication `ReleaseSelector` has been removed from
+both the handwritten facades and the generated common profile. Component
+checksums identify bytes and cannot replace a publication reference.
+
+The Rust convenience surface uses the canonical typed PublicationId parser and
+rejects malformed IDs before constructing a typed reference. The common profile
+and the other five facades retain raw strings for explicit boundary validation;
+they never normalize an invalid ID or infer authority from it.
 
 Successful responses and common invocation receipts add an optional captured
 publication ID, mapping to InvokeResponse field 10. The existing release digest
-still denotes component bytes. Absence supports old servers and unresolved
+still denotes component bytes. Absence represents unresolved
 failures; a present invalid ID must fail a real client's response validation.
 Route/deployment selection chooses the publication; these models do not add a
-direct Invoke publication selector. See [public API and migration](../docs/reference/publication-api.md)
+direct Invoke publication selector. See [public API and recovery](../docs/reference/publication-api.md)
 for precise selector, recovery, lifecycle and compatibility behavior.
 
 Rust struct literals need the new optional receipt field. Go keyed literals keep

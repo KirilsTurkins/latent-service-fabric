@@ -876,24 +876,14 @@ final class ProfileVectors {
             check(!(value.attemptSequence().isPresent()), "audit-disabled-distinct-from-absence.attempt_sequence.presence");
         }
         {
-            Management.ReleaseSelector value = new Management.ReleaseSelector(Optional.empty(), Optional.empty());
-            check(!(value.componentDigest().isPresent()), "selector-absent-not-fallback.component_digest.presence");
-            check(!(value.publication().isPresent()), "selector-absent-not-fallback.publication.presence");
+            Management.PublicationRef value = new Management.PublicationRef("", "tenant-a");
+            check(value.id().equals(""), "publication-reference-invalid-id.id");
+            check(value.tenant().equals("tenant-a"), "publication-reference-invalid-id.tenant");
         }
         {
-            Management.ReleaseSelector value = new Management.ReleaseSelector(Optional.empty(), Optional.of(new Management.PublicationRef("", "tenant-a")));
-            check(!(value.componentDigest().isPresent()), "selector-invalid-present-not-absent.component_digest.presence");
-            check(value.publication().isPresent(), "selector-invalid-present-not-absent.publication.presence");
-            check(value.publication().get().id().equals(""), "selector-invalid-present-not-absent.publication.id");
-            check(value.publication().get().tenant().equals("tenant-a"), "selector-invalid-present-not-absent.publication.tenant");
-        }
-        {
-            Management.ReleaseSelector value = new Management.ReleaseSelector(Optional.of("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), Optional.of(new Management.PublicationRef("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "tenant-a")));
-            check(value.componentDigest().isPresent(), "selector-ambiguous-not-auto-selected.component_digest.presence");
-            check(value.componentDigest().get().equals("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), "selector-ambiguous-not-auto-selected.component_digest");
-            check(value.publication().isPresent(), "selector-ambiguous-not-auto-selected.publication.presence");
-            check(value.publication().get().id().equals("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111"), "selector-ambiguous-not-auto-selected.publication.id");
-            check(value.publication().get().tenant().equals("tenant-a"), "selector-ambiguous-not-auto-selected.publication.tenant");
+            Management.PublicationRef value = new Management.PublicationRef("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "tenant-b");
+            check(value.id().equals("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111"), "publication-reference-tenant-scope.id");
+            check(value.tenant().equals("tenant-b"), "publication-reference-tenant-scope.tenant");
         }
         {
             Management.PublicationIdentity value = new Management.PublicationIdentity(new Management.PublicationRef("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "tenant-a"), "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "sha256:1111111111111111111111111111111111111111111111111111111111111111");
@@ -932,6 +922,6 @@ final class ProfileVectors {
         try { Management.parseU64Decimal("1\000"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
         try { Management.parseU64Decimal("1\n"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
         try { Management.parseU64Decimal("1\r\n"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
-        System.out.println("shared profile vectors: 68");
+        System.out.println("shared profile vectors: 67");
     }
 }

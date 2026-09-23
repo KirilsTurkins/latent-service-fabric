@@ -130,12 +130,12 @@ without converting 64-bit generations or consumption into floating point.
 
 ## Six-language models and operator verification
 
-The [SDK models](../../sdk/README.md) expose `PublicationRef`, `ReleaseSelector`,
-`PublicationIdentity` and optional invocation publication IDs. ReleaseSelector
-is a transport-neutral choice that an eventual client maps to the method's
-legacy digest/publication fields. It does not add a direct Invoke selector.
-Phase 3 SDK/profile and executable-client work must reuse these identities and
-the authoritative Protobufs instead of defining another release identity.
+The [SDK models](../../sdk/README.md) expose `PublicationRef`,
+`PublicationIdentity` and optional invocation publication IDs. The obsolete
+component-or-publication `ReleaseSelector` has been removed from all six
+facades and generated common profiles. Requests use the method's exact
+publication reference. This does not add a direct Invoke selector.
+Executable clients reuse the authoritative Protobuf identities.
 
 The bounded [publication workflow](../../tools/run_publication_workflow.py) runs
 real CLI and node processes against fresh signed test packages. Its fixture
@@ -143,7 +143,7 @@ exporter corrects an embedded SBOM while retaining identical Wasm and capsule
 metadata. It publishes both packages independently in two tenants, deploys every
 exact publication, invokes it, restarts and inspects/replays original operations,
 revokes one candidate, rolls back to its eligible captured base, renews another
-tenant's evidence, and restarts again. It also checks legacy ambiguity, foreign
+tenant's evidence, and restarts again. It also checks component-only request rejection, foreign
 versus missing references, audit identities and clean process reaping.
 
 CI runs this against its existing built binaries and an explicit fresh fixture:

@@ -3773,69 +3773,26 @@ fn shared_profile_vectors() {
         );
     }
     {
-        let value = ReleaseSelector {
-            ..Default::default()
+        let value = PublicationRef {
+            id: String::new(),
+            tenant: "tenant-a".into(),
         };
-        assert!(
-            value.component_digest.is_none(),
-            "selector-absent-not-fallback.component_digest.presence"
-        );
-        assert!(
-            value.publication.is_none(),
-            "selector-absent-not-fallback.publication.presence"
+        assert_eq!(value.id, "", "publication-reference-invalid-id.id");
+        assert_eq!(
+            value.tenant, "tenant-a",
+            "publication-reference-invalid-id.tenant"
         );
     }
     {
-        let value = ReleaseSelector {
-            publication: Some(PublicationRef {
-                id: String::new(),
-                tenant: "tenant-a".into(),
-            }),
-            ..Default::default()
-        };
-        assert!(
-            value.component_digest.is_none(),
-            "selector-invalid-present-not-absent.component_digest.presence"
-        );
-        assert!(
-            value.publication.is_some(),
-            "selector-invalid-present-not-absent.publication.presence"
-        );
+        let value = PublicationRef{id: "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111".into(), tenant: "tenant-b".into()};
         assert_eq!(
-            value.publication.as_ref().unwrap().id,
-            "",
-            "selector-invalid-present-not-absent.publication.id"
-        );
-        assert_eq!(
-            value.publication.as_ref().unwrap().tenant,
-            "tenant-a",
-            "selector-invalid-present-not-absent.publication.tenant"
-        );
-    }
-    {
-        let value = ReleaseSelector{component_digest: Some("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()), publication: Some(PublicationRef{id: "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111".into(), tenant: "tenant-a".into()})};
-        assert!(
-            value.component_digest.is_some(),
-            "selector-ambiguous-not-auto-selected.component_digest.presence"
-        );
-        assert_eq!(
-            value.component_digest.as_deref().unwrap(),
-            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-            "selector-ambiguous-not-auto-selected.component_digest"
-        );
-        assert!(
-            value.publication.is_some(),
-            "selector-ambiguous-not-auto-selected.publication.presence"
-        );
-        assert_eq!(
-            value.publication.as_ref().unwrap().id,
+            value.id,
             "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111",
-            "selector-ambiguous-not-auto-selected.publication.id"
+            "publication-reference-tenant-scope.id"
         );
         assert_eq!(
-            value.publication.as_ref().unwrap().tenant,
-            "tenant-a",
-            "selector-ambiguous-not-auto-selected.publication.tenant"
+            value.tenant, "tenant-b",
+            "publication-reference-tenant-scope.tenant"
         );
     }
     {

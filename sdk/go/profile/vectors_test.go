@@ -2229,45 +2229,21 @@ func TestSharedProfileVectors(tester *testing.T) {
 		}
 	}
 	{
-		value := ReleaseSelector{}
-		if !(!(value.ComponentDigest != nil)) {
-			tester.Fatal("selector-absent-not-fallback.component_digest.presence")
+		value := PublicationRef{Id: "", Tenant: "tenant-a"}
+		if !(value.Id == "") {
+			tester.Fatal("publication-reference-invalid-id.id")
 		}
-		if !(!(value.Publication != nil)) {
-			tester.Fatal("selector-absent-not-fallback.publication.presence")
-		}
-	}
-	{
-		value := ReleaseSelector{Publication: fixturePointer(PublicationRef{Id: "", Tenant: "tenant-a"})}
-		if !(!(value.ComponentDigest != nil)) {
-			tester.Fatal("selector-invalid-present-not-absent.component_digest.presence")
-		}
-		if !(value.Publication != nil) {
-			tester.Fatal("selector-invalid-present-not-absent.publication.presence")
-		}
-		if !((*value.Publication).Id == "") {
-			tester.Fatal("selector-invalid-present-not-absent.publication.id")
-		}
-		if !((*value.Publication).Tenant == "tenant-a") {
-			tester.Fatal("selector-invalid-present-not-absent.publication.tenant")
+		if !(value.Tenant == "tenant-a") {
+			tester.Fatal("publication-reference-invalid-id.tenant")
 		}
 	}
 	{
-		value := ReleaseSelector{ComponentDigest: fixturePointer("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), Publication: fixturePointer(PublicationRef{Id: "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", Tenant: "tenant-a"})}
-		if !(value.ComponentDigest != nil) {
-			tester.Fatal("selector-ambiguous-not-auto-selected.component_digest.presence")
+		value := PublicationRef{Id: "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", Tenant: "tenant-b"}
+		if !(value.Id == "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111") {
+			tester.Fatal("publication-reference-tenant-scope.id")
 		}
-		if !((*value.ComponentDigest) == "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
-			tester.Fatal("selector-ambiguous-not-auto-selected.component_digest")
-		}
-		if !(value.Publication != nil) {
-			tester.Fatal("selector-ambiguous-not-auto-selected.publication.presence")
-		}
-		if !((*value.Publication).Id == "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111") {
-			tester.Fatal("selector-ambiguous-not-auto-selected.publication.id")
-		}
-		if !((*value.Publication).Tenant == "tenant-a") {
-			tester.Fatal("selector-ambiguous-not-auto-selected.publication.tenant")
+		if !(value.Tenant == "tenant-b") {
+			tester.Fatal("publication-reference-tenant-scope.tenant")
 		}
 	}
 	{

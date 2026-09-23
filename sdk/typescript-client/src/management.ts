@@ -316,11 +316,6 @@ export interface PublicationRef {
   readonly tenant: string;
 }
 
-export interface ReleaseSelector {
-  readonly componentDigest?: string;
-  readonly publication?: PublicationRef;
-}
-
 export interface PublicationIdentity {
   readonly publication: PublicationRef;
   readonly componentDigest: string;

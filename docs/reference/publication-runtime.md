@@ -34,7 +34,7 @@ are current formats, distinct from artifact catalog format 2 and the public
 manifest API version. Current operation tables use format 2; their canonical
 receipts still use format 1.
 
-Startup rejects obsolete deployment envelopes 1?4, operation tables 1 and rollout
+Startup rejects obsolete deployment envelopes 1 through 4, operation tables 1 and rollout
 plans 1. It neither infers publication associations nor rewrites old state. The
 stored catalog and pending staging files remain unchanged on rejection. Use the
 [fresh-state procedure](publication-catalog.md#supported-storage-and-fresh-state)

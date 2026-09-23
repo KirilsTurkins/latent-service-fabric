@@ -877,24 +877,14 @@ function rejects(action: () => unknown): void {
     check(!(value.attemptSequence !== undefined), "audit-disabled-distinct-from-absence.attempt_sequence.presence");
 }
 {
-    const value: Profile.ReleaseSelector = {};
-    check(!(value.componentDigest !== undefined), "selector-absent-not-fallback.component_digest.presence");
-    check(!(value.publication !== undefined), "selector-absent-not-fallback.publication.presence");
+    const value: Profile.PublicationRef = {id: "", tenant: "tenant-a"};
+    check(value.id == "", "publication-reference-invalid-id.id");
+    check(value.tenant == "tenant-a", "publication-reference-invalid-id.tenant");
 }
 {
-    const value: Profile.ReleaseSelector = {publication: {id: "", tenant: "tenant-a"}};
-    check(!(value.componentDigest !== undefined), "selector-invalid-present-not-absent.component_digest.presence");
-    check(value.publication !== undefined, "selector-invalid-present-not-absent.publication.presence");
-    check(value.publication!.id == "", "selector-invalid-present-not-absent.publication.id");
-    check(value.publication!.tenant == "tenant-a", "selector-invalid-present-not-absent.publication.tenant");
-}
-{
-    const value: Profile.ReleaseSelector = {componentDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", publication: {id: "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", tenant: "tenant-a"}};
-    check(value.componentDigest !== undefined, "selector-ambiguous-not-auto-selected.component_digest.presence");
-    check(value.componentDigest! == "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "selector-ambiguous-not-auto-selected.component_digest");
-    check(value.publication !== undefined, "selector-ambiguous-not-auto-selected.publication.presence");
-    check(value.publication!.id == "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "selector-ambiguous-not-auto-selected.publication.id");
-    check(value.publication!.tenant == "tenant-a", "selector-ambiguous-not-auto-selected.publication.tenant");
+    const value: Profile.PublicationRef = {id: "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", tenant: "tenant-b"};
+    check(value.id == "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "publication-reference-tenant-scope.id");
+    check(value.tenant == "tenant-b", "publication-reference-tenant-scope.tenant");
 }
 {
     const value: Profile.PublicationIdentity = {publication: {id: "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", tenant: "tenant-a"}, componentDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", packageDigest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"};
@@ -937,4 +927,4 @@ rejects(() => Profile.formatU64Decimal(9007199254740992 as unknown as bigint));
 rejects(() => Profile.parseU64Decimal(1 as unknown as string));
 rejects(() => Profile.formatU64Decimal(-1n));
 rejects(() => Profile.formatU64Decimal(18446744073709551616n));
-console.log("shared profile vectors: 68");
+console.log("shared profile vectors: 67");

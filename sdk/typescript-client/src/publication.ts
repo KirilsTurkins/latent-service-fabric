@@ -4,12 +4,6 @@ export interface PublicationRef {
   readonly tenant: string;
 }
 
-/** Exactly one selector is valid. Preserve present empty/both for rejection. */
-export interface ReleaseSelector {
-  readonly componentDigest?: string;
-  readonly publication?: PublicationRef;
-}
-
 export interface PublicationIdentity {
   readonly publication: PublicationRef;
   readonly componentDigest: string;

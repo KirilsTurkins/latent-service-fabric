@@ -145,13 +145,13 @@ inspectable; adapters may reject unsupported behavior but retain its raw value
 in failure evidence. Unknown field numbers are a wire-layer concern, not DTO
 members. String states, error codes and detail kinds remain open strings.
 
-`ReleaseSelector` preserves independent optional component/publication members;
-exactly one must be valid at the specific management request boundary. Tenant
-is independent of package/component identity. A corrected package can preserve
+`PublicationRef` carries the exact publication ID and authenticated tenant.
+The obsolete component-or-publication selector model has been removed. Tenant
+is independent of package/component identity: a corrected package can preserve
 component bytes, and identical packages in different tenants have distinct
-publications. Legacy `release_digest` always means the executable component.
+publications. `release_digest` means executable bytes, never a fallback selector.
 Captured `publication_id` in an invocation response is not an Invoke selector.
-No additional catalog migration or ambiguity resolution is implemented here.
+
 
 ## Error and uncertainty profile
 

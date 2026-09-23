@@ -4092,7 +4092,7 @@
     {
       "boundary": "runtime",
       "expectedCases": [
-        "scoped_coexistence_legacy_presence_and_full_width_receipts"
+        "scoped_coexistence_publication_presence_and_full_width_receipts"
       ],
       "expectedIgnored": [],
       "id": "latent-sdk.test.publication-identity",
