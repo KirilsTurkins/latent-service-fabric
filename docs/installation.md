@@ -65,7 +65,7 @@ python3 -m unittest tools.tests.test_native_runtime
 ```
 
 Version must match the committed workspace version. A new binary release needs a
-new parent-reviewed release identity; do not reuse the historical alpha.3 tag.
+new maintainer-reviewed release identity; do not reuse the historical alpha.3 tag.
 The [maintainer release gate](development/native-release-gate.md) describes the
 exact workflow, required review environment, two-profile real-VM matrix and
 compatible-version selection. It distinguishes scoped candidate successes and
@@ -75,7 +75,7 @@ attestations with the exact repository, `native-runtime-release.yml` workflow,
 release tag, source/signing commit and GitHub-hosted runner certificate identity.
 Operators separately provision GitHub CLI, Sigstore roots and the approved
 identity policy before executing any downloaded bootstrap. No project bootstrap
-key, invented fingerprint or bundle-provided trust root is needed. The parent
+key, invented fingerprint or bundle-provided trust root is needed. The maintainer
 chooses the final version/commit only after exact-head CI and acceptance review;
 publication must not precede that gate. Capsule signing/admission is a separate policy.
 
@@ -109,13 +109,13 @@ Real release acceptance must additionally retain:
    unprivileged rootless foreground run.
 
 [`packaging/linux/compatibility.json`](../packaging/linux/compatibility.json)
-declares the exact `0.1.0-alpha.4-rc.1` predecessor for the planned alpha.4 bundle,
+declares the exact `0.1.0-alpha.4-rc.2` predecessor for the planned alpha.4 bundle,
 including its source commit and archive digest. The
-[foundation receipt](evidence/native-foundation-35763422270.json) records its
+[foundation receipt](evidence/native-foundation-35811188306.json) records its
 successful nonpublishing two-profile VM qualification. The declaration does
 not establish a completed upgrade: the final alpha.4 artifact still needs its
 own complete VM/reboot and compatible-pair matrix, then protected publisher
 approval. Documentation can be published with this qualified status without
 waiting circularly for #240 phase acceptance.
 Supply exact receipts and these operational boundaries to #237/#238/#240; preserve
-the historical release and benchmark identities when producing operator/Wiki coverage.
+the historical release and benchmark identities in the maintained operator guides.
