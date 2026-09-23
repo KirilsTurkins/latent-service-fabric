@@ -25,6 +25,9 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 const PUBLISHER: &str = "local-demo-publisher";
 const BUILDER: &str = "local-demo-builder";
 const TENANT: &str = "examples";
+// Only this explicit isolated-demo signer uses the documented 30-minute window.
+// Production proof-age limits, revocation and currentness checks are unchanged.
+const DEMO_VALIDITY_SECONDS: u64 = 1800;
 
 fn write(path: &Path, bytes: &[u8]) -> Result<()> {
     if bytes.len() > 4 * 1024 * 1024 {
@@ -68,7 +71,7 @@ pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
     let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let validity = SignatureValidity {
         issued_at: now,
-        expires_at: now + 1800,
+        expires_at: now + DEMO_VALIDITY_SECONDS,
     };
     // Keys are generated only AFTER every build input is read and checked. No
     // compiler runs in this process; private keys are never written or printed.
@@ -83,8 +86,12 @@ pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
     let builder_public = *builder_key.public_key();
     let builder =
         LocalBuilderSigner::from_pkcs8(builder_key.into_pkcs8(), BUILDER.into(), builder_public)?;
+    let observations = builds
+        .iter()
+        .map(|build| &build.observation)
+        .collect::<Vec<_>>();
     let (policy, policy_document) =
-        policy::create(now, &publisher_public, &builder_public, &builds)?;
+        policy::create(now, &publisher_public, &builder_public, &observations)?;
     directory(output)?;
     write(&output.join("policy.json"), &policy_document)?;
     let mut releases = Vec::new();
