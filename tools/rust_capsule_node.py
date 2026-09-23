@@ -66,7 +66,7 @@ class RecordingClient(Client):
                     diagnostics["audit"].append(page)
                     if page["category"] != "success":
                         break
-                    token = page["data"].get("nextPageToken")
+                    token = page["data"]["page"]["nextPageToken"]
                     if token is None:
                         diagnostics["auditComplete"] = True
                         break
