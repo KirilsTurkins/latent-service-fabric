@@ -3324,6 +3324,9 @@
       "DeterministicMeasurementTests.test_process_deadline_is_not_retried"
     ],
     "tools/tests/test_dev_contracts.py": [
+      "EditorDiagnostics.test_crlf_unicode_locations_match_host_files_and_ignore_outside_inputs",
+      "EditorDiagnostics.test_process_tasks_do_not_start_automatically_or_replace_editor_configuration",
+      "EditorDiagnostics.test_real_failed_compiler_preserves_last_build_and_maps_diagnostics",
       "OfflineInputs.test_manifest_rejects_oversized_aliases_and_paths",
       "OfflineInputs.test_transfer_replays_only_identical_bytes_and_rechecks_completed_cache",
       "Projects.test_descriptor_rejects_unknown_fields_abi_and_output_loops",

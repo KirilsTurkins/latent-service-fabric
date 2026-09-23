@@ -274,6 +274,74 @@ class WslOwnership(unittest.TestCase):
                 external.assert_not_called()
 
 
+class EditorDiagnostics(unittest.TestCase):
+    def test_crlf_unicode_locations_match_host_files_and_ignore_outside_inputs(self):
+        from tools.dev_workflow import diagnostics, editor
+        import re
+        with tempfile.TemporaryDirectory(prefix="lsf spaces-") as temporary:
+            root = Path(temporary)
+            working = root / "src"
+            inputs = {"src/Grüße.rs", "src/business.cs"}
+            rust = {"reason": "compiler-message", "message": {"level": "error", "message": "wrong type\nsecond line",
+                "code": {"code": "E0308"}, "spans": [{"file_name": "Grüße.rs", "line_start": 12, "column_start": 3, "is_primary": True}]}}
+            output = ("\x1b[31mbusiness.cs(7,2): error CS1002: expected semicolon\x1b[0m\r\n"
+                      "../../secret.rs:1:1: error: unrelated\r\n" + json.dumps(rust, ensure_ascii=False) + "\r\n").encode()
+            records = diagnostics.collect(b"", output, root, working, inputs)
+            self.assertEqual([(record["path"], record["line"], record["column"]) for record in records],
+                             [("src/business.cs", 7, 2), ("src/Grüße.rs", 12, 3)])
+            for record, line in zip(records, diagnostics.editor_lines(diagnostics.for_host(records, root))):
+                match = re.fullmatch(editor.PATTERN, line)
+                self.assertIsNotNone(match)
+                self.assertEqual(match[1], str(root / record["path"]))
+                self.assertNotIn("\x1b", line)
+                self.assertNotIn("\r", line)
+
+    def test_process_tasks_do_not_start_automatically_or_replace_editor_configuration(self):
+        from tools.dev_workflow import editor
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            frontend = root / "frontend with spaces.exe"
+            paths.write_new(frontend, b"fixture-never-executed")
+            value = editor.configuration(frontend, root, "test-a", "/home/guest/tools with spaces;literal")
+            for task in value["tasks"]:
+                self.assertEqual(task["type"], "process")
+                self.assertEqual(task["command"], str(frontend))
+                self.assertEqual(task["runOptions"]["runOn"], "default")
+                self.assertNotIn("dependsOn", task)
+            self.assertIn("/home/guest/tools with spaces;literal", next(task for task in value["tasks"] if task["label"] == "LSF: build")["args"])
+            editor.generate(root, frontend, root, "test-a", None)
+            before = (root / ".vscode/tasks.json").read_bytes()
+            with self.assertRaisesRegex(common.DevError, "existing-editor-tasks-preserved"):
+                editor.generate(root, frontend, root, "test-a", None)
+            self.assertEqual((root / ".vscode/tasks.json").read_bytes(), before)
+
+    def test_real_failed_compiler_preserves_last_build_and_maps_diagnostics(self):
+        from tools.dev_workflow import build, snapshot
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            controller, source = directory / "controller", directory / "source"
+            paths.new_directory(controller)
+            paths.new_directory(source)
+            paths.new_directory(source / "src")
+            paths.write_new(source / "src/fail.py", b"import sys\nprint('fail.py:7:2: error E100: controlled failure', file=sys.stderr)\nsys.exit(1)\n")
+            selected = descriptor()
+            executable = Path(sys.executable).resolve()
+            selected["build"].update(argv=["python", "-I", "fail.py"], hostTargets=["windows-x86_64", "linux-x86_64"],
+                tools=[{"name": "python", "path": executable.name, "version": "3.13.5",
+                        "sha256": paths.digest_file(executable.parent, executable.name, 268435456)[0]}])
+            record, _content = snapshot.observe(source, ["src"])
+            paths.write_new(source / "snapshot.json", common.encode(record))
+            accepted = {"sourceDirectory": "previous-accepted", "receipt": {"source": "previous"}}
+            state.atomic(controller, "last-build.json", accepted)
+            with self.assertRaises(common.DevError) as failure:
+                build.execute(controller, source, selected, executable.parent,
+                              trusted=project.trust_identity(selected), cli=directory / "must-not-run")
+            self.assertEqual(failure.exception.code, "guest-build-failed-last-deployment-retained")
+            self.assertEqual(failure.exception.diagnostics[0]["path"], "src/fail.py")
+            self.assertEqual(failure.exception.diagnostics[0]["line"], 7)
+            self.assertEqual(state.load(controller, "last-build.json"), accepted)
+
+
 class ScenarioReports(unittest.TestCase):
     def test_portable_required_linux_checks_fail_without_invoking(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -256,7 +256,8 @@ def main() -> int:
     try:
         result = protocol.response(request, dispatch(request))
     except DevError as error:
-        result = protocol.response(request, {}, code=error.code, uncertain=error.uncertain)
+        result = protocol.response(request, {"diagnostics": error.diagnostics} if error.diagnostics else {},
+                                   code=error.code, uncertain=error.uncertain)
     except InstallError as error:
         code = str(error)
         # The installer owns fixed diagnostics. Never render arbitrary stderr or

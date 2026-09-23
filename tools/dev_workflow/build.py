@@ -6,8 +6,8 @@ import os
 from pathlib import Path
 import platform
 
-from . import paths, process, project, state
-from .common import HOST_ABI, MAX_DOCUMENT, decode, digest, encode, require
+from . import diagnostics, paths, process, project, snapshot, state
+from .common import DevError, HOST_ABI, MAX_DOCUMENT, decode, digest, encode, require
 
 
 def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trusted: str, cli: Path) -> dict:
@@ -40,7 +40,13 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
         command = [str(tools[recipe["argv"][0]]), *recipe["argv"][1:]]
         result = process.run(command, working, env=environment, timeout=recipe["timeoutSeconds"],
                              maximum=recipe["maximumOutputBytes"])
-    require(result.returncode == 0, "guest-build-failed-last-deployment-retained")
+    observed_diagnostics = diagnostics.collect(result.stdout, result.stderr, source, working,
+                                               {item["path"] for item in record["files"]})
+    state.atomic(root, "build-diagnostics.json", {"source": record["identity"], "diagnostics": observed_diagnostics})
+    if result.returncode != 0:
+        raise DevError("guest-build-failed-last-deployment-retained", diagnostics=observed_diagnostics)
+    after, _content = snapshot.observe(source, descriptor["inputRoots"], tuple(descriptor["exclude"]))
+    require(after["identity"] == record["identity"], "source-or-generated-bindings-changed-during-build")
     artifacts = descriptor["artifacts"]
     component = paths.read(source, artifacts["component"], 64 * 1024 * 1024)
     require(component[:8] == b"\0asm\x0d\0\x01\0", "build-output-is-not-component-model")
@@ -52,7 +58,8 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
                   if name not in {"packageRoot"}}
     receipt = {"schemaVersion": "latent.dev.build.v1", "source": record["identity"], "recipe": trusted,
                "host": host, "target": "wasm-component", "hostAbi": HOST_ABI, "artifacts": identities,
-               "tools": recipe["tools"], "template": descriptor["template"], "authority": "observed-local-build"}
+               "tools": recipe["tools"], "template": descriptor["template"], "authority": "observed-local-build",
+               "diagnostics": observed_diagnostics}
     paths.write_new(source / "build-receipt.json", encode(receipt))
     state.atomic(root, "last-build.json", {"sourceDirectory": str(source), "receipt": receipt})
     return receipt

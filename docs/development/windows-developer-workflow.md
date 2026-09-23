@@ -121,6 +121,37 @@ selected component's limits. Required Linux-only checks remain failures.
 The report states actual OS, architecture, Wasmtime version, component digest,
 cleanup, system-clock nondeterminism and omitted node/security behavior.
 
+## Editor tasks and compiler locations
+
+After separately acquiring the frontend, connecting a workspace and selecting its
+guest tool inventory, run `dev editor --workspace NAME --project PATH --frontend
+ABSOLUTE_FRONTEND_PATH --tool-root ABSOLUTE_LINUX_TOOL_PATH`. This explicitly
+writes a new `.vscode/tasks.json`; it preserves an existing task configuration.
+The generated init, trust, build, up, watch, test, status, recovery, logs and down
+tasks use process arguments and the same frontend as terminal commands. They do
+not run on folder opening, provision a VM, acquire a tool or select credentials.
+
+VS Code's [Workspace Trust](https://code.visualstudio.com/docs/editing/workspaces/workspace-trust)
+still applies. Separately review the project recipe before using the explicit
+trust task; editor trust does not satisfy the controller's recorded recipe trust.
+The test task asks for an already provisioned isolated `test-` workspace. Other
+editors can run the identical commands in a terminal; VS Code is optional.
+
+With `--editor-diagnostics`, bounded compiler records also appear on stderr for
+the maintained problem matcher. Rust JSON diagnostics and conventional
+colon/parenthesis locations retain line/column numbers, remove terminal control
+sequences, and map only declared source files back to the host. Paths outside the
+captured project are not made into editor links. Spaces, Unicode names, drive
+letters and CRLF messages are covered by the controller tests. A real failing
+subprocess test confirms that diagnostics do not replace the last accepted build.
+Source bytes and generated bindings are checked again after successful compile.
+
+Interrupt watch to request owned shutdown. After a closed terminal or lost
+connection, run status and, for a pending mutation, recover the original operation
+before continuing. Closing an editor is not proof that the Linux node stopped.
+These task contracts are tested; actual editor/newcomer qualification remains in
+the acceptance table below.
+
 ## Executed evidence and remaining acceptance
 
 The developer-tools workflow builds nonpublishing Windows and WSL candidates.

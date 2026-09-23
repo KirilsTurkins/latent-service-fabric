@@ -17,9 +17,10 @@ HOST_ABI = "lsf-host-abi-phase3-v4"
 
 
 class DevError(ValueError):
-    def __init__(self, code: str, *, uncertain: bool = False):
+    def __init__(self, code: str, *, uncertain: bool = False, diagnostics: list | None = None):
         self.code = code
         self.uncertain = uncertain
+        self.diagnostics = diagnostics or []
         super().__init__(code)
 
 

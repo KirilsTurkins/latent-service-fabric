@@ -16,10 +16,16 @@ from .common import DevError, decode, digest, encode, identifier, members, requi
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(prog="latent-dev", description="Explicit, bounded LSF application development")
     result.add_argument("--state-root", type=Path, help="private controller state outside project sources")
+    result.add_argument("--editor-diagnostics", action="store_true", help="also print mapped compiler locations to stderr")
     commands = result.add_subparsers(dest="group", required=True)
     dev = commands.add_parser("dev").add_subparsers(dest="command", required=True)
     doctor = dev.add_parser("doctor", help="read-only prerequisite observation; executes no project recipe")
     doctor.add_argument("--workspace", help="inspect the selected node identity, filesystem and actual profile")
+    editor = dev.add_parser("editor", help="write explicit VS Code process tasks; existing tasks are preserved")
+    editor.add_argument("--workspace", required=True)
+    editor.add_argument("--project", type=Path, required=True)
+    editor.add_argument("--frontend", type=Path, required=True, help="absolute path to the authenticated standalone frontend")
+    editor.add_argument("--tool-root", help="explicit Linux guest tool directory, or prompt when a build task is run")
     configure = dev.add_parser("connect", help="select a separately provisioned owned backend")
     configure.add_argument("--workspace", required=True)
     configure.add_argument("--backend-config", type=Path, required=True)
@@ -96,7 +102,8 @@ def _backend(root: Path, name: str):
     return workspace, backend.Backend(config, name, workspace)
 
 
-def _build(workspace: Path, connection, source: Path, tool_root: str) -> dict:
+def _build(workspace: Path, connection, source: Path, tool_root: str, *, editor_diagnostics: bool = False) -> dict:
+    from . import diagnostics
     require(source is not None and tool_root is not None, "explicit-project-and-tool-root-required")
     source = source.absolute()
     descriptor, _raw_identity = project.load(source)
@@ -106,10 +113,22 @@ def _build(workspace: Path, connection, source: Path, tool_root: str) -> dict:
     record, content = snapshot.observe(source, descriptor["inputRoots"], tuple(descriptor["exclude"]))
     connection.call("snapshot", {"snapshot": record, "project": descriptor, "trustedRecipe": identity,
                     "content": {name: base64.b64encode(raw).decode() for name, raw in content.items()}}, timeout=120)
-    return connection.call("build", {"toolRoot": tool_root}, timeout=descriptor["build"]["timeoutSeconds"] + 15)
+    try:
+        result = connection.call("build", {"toolRoot": tool_root}, timeout=descriptor["build"]["timeoutSeconds"] + 15)
+    except DevError as error:
+        error.diagnostics = diagnostics.for_host(error.diagnostics, source)
+        if editor_diagnostics:
+            for line in diagnostics.editor_lines(error.diagnostics):
+                print(line, file=sys.stderr)
+        raise
+    result["diagnostics"] = diagnostics.for_host(result.get("diagnostics", []), source)
+    if editor_diagnostics:
+        for line in diagnostics.editor_lines(result["diagnostics"]):
+            print(line, file=sys.stderr)
+    return result
 
 
-def watch(workspace: Path, connection, source: Path, tool_root: str) -> dict:
+def watch(workspace: Path, connection, source: Path, tool_root: str, *, editor_diagnostics: bool = False) -> dict:
     from tools.build_process_signals import owned_cancellation
     require(source is not None and tool_root is not None, "watch-project-and-tools-required")
     source = source.absolute()
@@ -131,12 +150,13 @@ def watch(workspace: Path, connection, source: Path, tool_root: str) -> dict:
                         continue
                     last_observed = current
                     try:
-                        built = _build(workspace, connection, source, tool_root)
+                        built = _build(workspace, connection, source, tool_root, editor_diagnostics=editor_diagnostics)
                         deployed = connection.call("deploy", {})
                         emit({"event": "deployed", "build": built, "deployment": deployed})
                     except DevError as error:
                         emit({"event": "edit-failed", "source": current, "code": error.code,
-                              "uncertain": error.uncertain, "lastGoodRetained": not error.uncertain})
+                              "uncertain": error.uncertain, "lastGoodRetained": not error.uncertain,
+                              "diagnostics": error.diagnostics})
                         if error.uncertain:
                             raise
                 time.sleep(0.25)
@@ -153,6 +173,9 @@ def dispatch(args) -> dict:
             return wsl.doctor()
         return {"host": sys.platform, "architecture": platform.machine(), "nodeReadiness": "not-checked"}
     root = _root(args.state_root)
+    if args.command == "editor":
+        from .editor import generate
+        return generate(args.project.absolute(), args.frontend.absolute(), root, args.workspace, args.tool_root)
     if args.command == "wsl-status":
         return wsl.status(root)
     if args.command == "wsl-recover":
@@ -235,12 +258,12 @@ def dispatch(args) -> dict:
                 inputs = install_inputs(connection, inputs)
             return connection.call("install", inputs, timeout=180)
         if args.command == "build":
-            return _build(workspace, connection, args.project, args.tool_root)
+            return _build(workspace, connection, args.project, args.tool_root, editor_diagnostics=args.editor_diagnostics)
         if args.command == "up":
             result = connection.call("up", {})
             if args.watch:
                 emit(result)
-                return watch(workspace, connection, args.project, args.tool_root)
+                return watch(workspace, connection, args.project, args.tool_root, editor_diagnostics=args.editor_diagnostics)
             return result
         if args.command == "purge":
             require(args.confirm_workspace == args.workspace, "confirm-exact-workspace-required")
@@ -272,7 +295,7 @@ def main() -> int:
         emit({"code": "success", "result": result})
         return 0
     except DevError as error:
-        emit({"code": error.code, "uncertain": error.uncertain})
+        emit({"code": error.code, "uncertain": error.uncertain, "diagnostics": error.diagnostics})
         return 5 if error.uncertain else 2
     except KeyboardInterrupt:
         emit({"code": "interrupted-inspect-workspace-status", "uncertain": True})

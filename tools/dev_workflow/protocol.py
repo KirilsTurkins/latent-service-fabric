@@ -64,5 +64,7 @@ def result(value: dict, sent: dict) -> dict:
         import re
         code = value["code"]
         require(isinstance(code, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,100}", code), "backend-response-code")
-        raise DevError(code, uncertain=value["uncertain"])
+        from .diagnostics import validate
+        diagnostics = validate(value["result"].get("diagnostics", []))
+        raise DevError(code, uncertain=value["uncertain"], diagnostics=diagnostics)
     return value["result"]

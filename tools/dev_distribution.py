@@ -13,6 +13,7 @@ from tools.dev_workflow.common import HOST_ABI, PROTOCOL, encode, require
 
 
 def file_digest(path: Path) -> tuple[str, int]:
+    path = paths.absolute(path.absolute())
     checksum, size = hashlib.sha256(), 0
     with paths.opened(path.parent, path.name) as descriptor:
         while raw := os.read(descriptor, 1024 * 1024):
