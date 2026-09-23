@@ -122,7 +122,9 @@
               "enum": [
                 "https://latent.dev/build/echo-capsule/v1",
                 "https://latent.dev/build/rust-guest/v1",
-                "https://latent.dev/build/c-guest/v1"
+                "https://latent.dev/build/c-guest/v1",
+                "https://latent.dev/build/go-capsule/v1",
+                "https://latent.dev/build/rust-capsule/v1"
               ]
             },
             "source": {

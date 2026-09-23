@@ -28,7 +28,8 @@
         "https://latent.dev/build/echo-capsule/v1",
         "https://latent.dev/build/rust-guest/v1",
         "https://latent.dev/build/c-guest/v1",
-        "https://latent.dev/build/rust-capsule/v1"
+        "https://latent.dev/build/rust-capsule/v1",
+        "https://latent.dev/build/go-capsule/v1"
       ]
     },
     "source": {
@@ -678,6 +679,164 @@
                   "properties": {
                     "name": {
                       "const": "wit-bindgen"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "contracts-tool"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "packager"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "package-inputs"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "buildType": {
+            "const": "https://latent.dev/build/go-capsule/v1"
+          }
+        },
+        "required": [
+          "buildType"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "goPackage",
+              "compiler",
+              "target",
+              "runtime",
+              "locked",
+              "ambientWasi"
+            ],
+            "properties": {
+              "goPackage": {
+                "type": "string",
+                "maxLength": 64,
+                "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$(?![\\s\\S])"
+              },
+              "compiler": {
+                "const": "componentize-go"
+              },
+              "target": {
+                "const": "wasm32-wasip1"
+              },
+              "runtime": {
+                "const": "go-component-async-v1"
+              },
+              "locked": {
+                "const": true
+              },
+              "ambientWasi": {
+                "const": false
+              }
+            }
+          },
+          "source": {
+            "properties": {
+              "capture": {
+                "const": "explicit-input-files"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+              }
+            }
+          },
+          "dependencyCompleteness": {
+            "const": "declared-inputs-incomplete"
+          },
+          "materials": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "go"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "componentize-go"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "dependency-lock"
                     }
                   },
                   "required": [

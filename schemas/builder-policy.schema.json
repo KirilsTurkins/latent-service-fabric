@@ -99,7 +99,8 @@
               "https://latent.dev/build/c-guest/v1",
               "https://latent.dev/build/web-package-assembly/v1",
               "https://latent.dev/build/angular-component/v1",
-              "https://latent.dev/build/rust-capsule/v1"
+              "https://latent.dev/build/rust-capsule/v1",
+              "https://latent.dev/build/go-capsule/v1"
             ]
           },
           "sourceRepository": {
