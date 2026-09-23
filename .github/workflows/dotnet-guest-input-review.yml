@@ -18,6 +18,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Test binding ownership
+        run: python3 -m unittest discover -s sdk/dotnet-guest/tests -v
       - name: Retrieve the already executed generator output
         env:
           GH_TOKEN: ${{ github.token }}
@@ -30,18 +32,10 @@ jobs:
           python3 - <<'PY'
           import json, os, pathlib, re, zipfile
           root = pathlib.Path('.')
-          data = json.loads((root / 'tools/ci/suites.json').read_text())
-          for suite in data['suites']:
-              if suite['id'] in {'latent-wasmtime.test.guest-sdk', 'latent-toolchain-smoke.example.guest-http'}:
-                  print('SUITE', json.dumps(suite, sort_keys=True))
-          for name in ('tools/ci/coverage.json', 'tools/ci_suite_inventory.py'):
-              text = (root / name).read_text()
-              if name.endswith('.json'):
-                  print('COVERAGE-KEYS', json.dumps(list(json.loads(text))))
-              else:
-                  for number, line in enumerate(text.splitlines(), 1):
-                      if any(word in line for word in ('expected', 'ignored', 'source', 'recipe')):
-                          print('INVENTORY', number, line)
+          for name in ('tools/ci_coverage.py', 'tools/ci_suite_inventory.py'):
+              for number, line in enumerate((root / name).read_text().splitlines(), 1):
+                  if any(word in line for word in ('expected', 'ignored', 'source', 'recipe', '.json')):
+                      print('INVENTORY', name, number, line)
           patterns = ('greeting', 'word-count', 'shipping')
           matched = 0
           for path in sorted(root.rglob('*')):
@@ -70,5 +64,5 @@ jobs:
                               print(line[:500])
                               printed += len(line)
                               if printed > 48000:
-                                  raise SystemExit('bounded declaration review complete')
+                                  raise SystemExit(0)
           PY

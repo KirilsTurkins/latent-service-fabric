@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Generate C# stackful canonical bindings without changing the WIT contract.
+"""Generate C# stackful bindings while preserving the authoritative WIT graph.
 
-The Component Model permits the synchronous canonical ABI for async-typed WIT
-functions. The pinned C# generator cannot yet lower indirect async arguments.
-Only its implementation projection is normalized; the linker receives the
-original, parsed WIT, including async function kinds and resource identities.
+Only the implementation calling convention is projected. The component linker
+receives the original async types, identities and owned-resource declarations.
+Generated output is exclusively owned and hash checked; --check never edits it.
 """
 from __future__ import annotations
 
@@ -19,20 +18,28 @@ import shutil
 import subprocess
 import tempfile
 
+SCHEMA = "latent.dotnet.bindings.v1"
+GENERATOR = "wit-bindgen-cli 0.62.0"
+MAX_BYTES = 16 * 1024 * 1024
+MAX_FILES = 1024
+
 
 class BindingError(ValueError):
-    """An unqualified toolchain or unsupported contract is never a fallback."""
+    """An unsupported contract or unowned output is never a fallback."""
 
 
 def run(command: list[str]) -> str:
-    completed = subprocess.run(command, capture_output=True, text=True, timeout=90, check=False)
+    completed = subprocess.run(command, capture_output=True, encoding="utf-8",
+                               timeout=90, check=False)
     if completed.returncode:
-        raise BindingError(f"binding-command-failed:{Path(command[0]).name}:{completed.returncode}:{completed.stderr[-4000:]}")
+        raise BindingError(f"binding-command-failed:{Path(command[0]).name}:{completed.returncode}")
+    if len(completed.stdout.encode("utf-8")) > MAX_BYTES:
+        raise BindingError("binding-command-output-limit")
     return completed.stdout
 
 
 def contract_graph(value):
-    """Documentation is not a component type; preserve every other graph field."""
+    """Documentation is not a component type; preserve every other field."""
     if isinstance(value, dict):
         return {key: contract_graph(item) for key, item in value.items() if key != "docs"}
     if isinstance(value, list):
@@ -41,18 +48,20 @@ def contract_graph(value):
 
 
 def stackful_projection(document: dict) -> dict:
-    """The only permitted graph edit is async implementation calling convention."""
+    """Change only async implementation kinds, never signatures or identities."""
     result = copy.deepcopy(document)
     for item in result.get("types", []):
         kind = item["kind"]
-        if isinstance(kind, dict) and set(kind) & {"future", "stream", "map", "fixed-size-list"}:
-            raise BindingError("unsupported-dotnet-guest-type:" + next(iter(kind)))
+        unsupported = set(kind) & {"future", "stream", "map", "fixed-size-list"} if isinstance(kind, dict) else set()
+        if unsupported:
+            raise BindingError("unsupported-dotnet-guest-type:" + sorted(unsupported)[0])
     functions = []
     for interface in result.get("interfaces", []):
         functions.extend(interface.get("functions", {}).values())
     for world in result.get("worlds", []):
         for direction in ("imports", "exports"):
-            functions.extend(item["function"] for item in world.get(direction, {}).values() if "function" in item)
+            functions.extend(item["function"] for item in world.get(direction, {}).values()
+                             if "function" in item)
     for function in functions:
         kind = function["kind"]
         if kind == "async-freestanding":
@@ -64,14 +73,104 @@ def stackful_projection(document: dict) -> dict:
     return result
 
 
-def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: str) -> dict:
+def read_bytes(path: Path) -> bytes:
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
+        raise BindingError("binding-file-invalid-or-oversized")
+    with path.open("rb") as source:
+        data = source.read(MAX_BYTES + 1)
+    if len(data) > MAX_BYTES:
+        raise BindingError("binding-file-oversized")
+    return data
+
+
+def output_hashes(directory: Path) -> dict[str, str]:
+    paths = sorted(directory.iterdir())
+    if len(paths) > MAX_FILES:
+        raise BindingError("binding-file-count-limit")
+    hashes, total = {}, 0
+    for path in paths:
+        if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]*", path.name):
+            raise BindingError("binding-file-name-invalid")
+        data = read_bytes(path)
+        total += len(data)
+        if total > MAX_BYTES:
+            raise BindingError("binding-output-byte-limit")
+        hashes[path.name] = hashlib.sha256(data).hexdigest()
+    return hashes
+
+
+def require_owned(output: Path) -> None:
+    """Refuse unknown or modified files, including handwritten .cs files."""
+    if output.is_symlink():
+        raise BindingError("unowned-binding-output")
+    if not output.exists():
+        return
+    if not output.is_dir():
+        raise BindingError("unowned-binding-output")
+    actual = output_hashes(output)
+    if not actual:
+        return
+    try:
+        receipt = json.loads(read_bytes(output / "bindings.json"))
+    except (OSError, ValueError) as error:
+        raise BindingError("unowned-binding-output") from error
+    if (not isinstance(receipt, dict) or receipt.get("schemaVersion") != SCHEMA
+            or receipt.get("generator") != GENERATOR
+            or receipt.get("canonicalAbi") != "stackful"
+            or not isinstance(receipt.get("outputs"), dict)):
+        raise BindingError("unowned-binding-output")
+    actual.pop("bindings.json", None)
+    if receipt["outputs"] != actual:
+        raise BindingError("modified-or-unowned-binding-output")
+
+
+def install(generated: Path, output: Path, receipt: dict, *, check: bool = False) -> None:
+    """Replace a verified owned directory as a unit, or compare without writes."""
+    require_owned(output)
+    expected = output_hashes(generated)
+    if receipt.get("outputs") != expected or "bindings.json" in expected:
+        raise BindingError("generated-receipt-disagrees")
+    receipt_bytes = (json.dumps(receipt, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    expected["bindings.json"] = hashlib.sha256(receipt_bytes).hexdigest()
+    if check:
+        if not output.is_dir() or output_hashes(output) != expected:
+            raise BindingError("generated-binding-drift")
+        return
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".lsf-bindings-", dir=output.parent) as temporary:
+        scratch = Path(temporary)
+        new = scratch / "new"
+        new.mkdir()
+        for path in generated.iterdir():
+            shutil.copyfile(path, new / path.name)
+        (new / "bindings.json").write_bytes(receipt_bytes)
+        if output_hashes(new) != expected:
+            raise BindingError("generated-bindings-changed")
+        # Recheck ownership after generation and copying, before any replacement.
+        require_owned(output)
+        old = scratch / "previous"
+        if output.exists():
+            output.rename(old)
+        try:
+            new.rename(output)
+        except BaseException:
+            if old.exists():
+                old.rename(output)
+            raise
+
+
+def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: str,
+             *, check: bool = False) -> dict:
     source = source.resolve(strict=True)
+    if output.is_symlink():
+        raise BindingError("unowned-binding-output")
     output = output.resolve()
     if output == source or output in source.parents or source in output.parents:
         raise BindingError("binding-output-overlaps-source")
-    if run([bindgen, "--version"]).strip() != "wit-bindgen-cli 0.62.0":
+    require_owned(output)
+    if run([bindgen, "--version"]).strip() != GENERATOR:
         raise BindingError("unqualified-wit-bindgen-version")
-    if not run([wasm_tools, "--version"]).startswith("wasm-tools 1.254.0 "):
+    if run([wasm_tools, "--version"]).split()[:2] != ["wasm-tools", "1.254.0"]:
         raise BindingError("unqualified-wasm-tools-version")
     original = run([wasm_tools, "component", "wit", str(source), "--no-docs"])
     graph = contract_graph(json.loads(run([wasm_tools, "component", "wit", str(source), "--json"])))
@@ -79,10 +178,10 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
     with tempfile.TemporaryDirectory(prefix="lsf-dotnet-bindings-") as temporary:
         directory = Path(temporary)
         projection = directory / "stackful-bindings.wit"
-        # Work only on wasm-tools' parsed, comment-free serialization, never on
-        # arbitrary source text. Reparse and compare the entire graph below.
-        projection.write_text(re.sub(r"\basync\s+func\b", "func", original))
-        actual = json.loads(run([wasm_tools, "component", "wit", str(projection), "--json"]))
+        # Rewrite parsed, comment-free serialization, then compare the entire
+        # reparsed graph. Matching text alone is not proof of type preservation.
+        projection.write_text(re.sub(r"\basync\s+func\b", "func", original), encoding="utf-8")
+        actual = contract_graph(json.loads(run([wasm_tools, "component", "wit", str(projection), "--json"])))
         if actual != projected_graph:
             raise BindingError("stackful-projection-changed-contract")
         generated = directory / "generated"
@@ -91,28 +190,17 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
         metadata = list(generated.glob("*_component_type.wit"))
         if len(metadata) != 1:
             raise BindingError("missing-unique-component-type")
-        # This is the authority used by NativeAOT's component linker. Async WIT
-        # remains async; generated managed methods merely use the stackful ABI.
-        metadata[0].write_text(original)
-        linked_graph = json.loads(run([wasm_tools, "component", "wit", str(metadata[0]), "--json"]))
-        if linked_graph != graph:
+        if metadata[0].is_symlink():
+            raise BindingError("binding-file-invalid-or-oversized")
+        metadata[0].write_text(original, encoding="utf-8")
+        linked = contract_graph(json.loads(run([wasm_tools, "component", "wit", str(metadata[0]), "--json"])))
+        if linked != graph:
             raise BindingError("component-type-changed-contract")
-        receipt = {"schemaVersion": "latent.dotnet.bindings.v1", "world": world,
-                   "canonicalAbi": "stackful", "generator": "wit-bindgen-cli 0.62.0",
-                   "authoritativeWitSha256": hashlib.sha256(original.encode()).hexdigest(),
-                   "outputs": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-                               for p in sorted(generated.iterdir()) if p.is_file()}}
-        output.mkdir(parents=True, exist_ok=True)
-        # The SDK supplies a dedicated owned generated directory. Do not delete
-        # other extensions; reject them instead of destroying user sources.
-        if any(p.is_symlink() or not p.is_file() or p.suffix not in {".cs", ".wit", ".json", ".txt"}
-               for p in output.iterdir()):
-            raise BindingError("unowned-binding-output")
-        for path in output.iterdir():
-            path.unlink()
-        for path in generated.iterdir():
-            shutil.copyfile(path, output / path.name)
-        (output / "bindings.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+        receipt = {"schemaVersion": SCHEMA, "world": world, "canonicalAbi": "stackful",
+                   "generator": GENERATOR,
+                   "authoritativeWitSha256": hashlib.sha256(original.encode("utf-8")).hexdigest(),
+                   "outputs": output_hashes(generated)}
+        install(generated, output, receipt, check=check)
         return receipt
 
 
@@ -124,11 +212,12 @@ def main() -> int:
     parser.add_argument("--runtime", choices=["native-aot"], required=True)
     parser.add_argument("--with-wit-results", action="store_true", required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
+    parser.add_argument("--check", action="store_true", help="regenerate and fail on drift without editing output")
     args = parser.parse_args()
     try:
         generate(args.wit, args.out_dir, args.world,
                  os.environ.get("LSF_WIT_BINDGEN", "wit-bindgen"),
-                 os.environ.get("LSF_WASM_TOOLS", "wasm-tools"))
+                 os.environ.get("LSF_WASM_TOOLS", "wasm-tools"), check=args.check)
         return 0
     except (BindingError, OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
         parser.exit(1, f".NET guest bindings failed: {error}\n")
