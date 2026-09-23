@@ -26,7 +26,7 @@ def observed(record: dict):
         user = pwd.getpwnam(value["user"])
     except KeyError:
         return None
-    require(user.pw_uid >= 1000 and user.pw_gecos == "latent-dev:" + value["nonce"]
+    require(user.pw_uid >= 1000 and user.pw_gecos == "latent-dev-" + value["nonce"]
             and user.pw_dir == "/home/" + value["user"] and user.pw_shell == "/usr/sbin/nologin", "owned-linux-user-replaced")
     if "uid" in record:
         require(record["uid"] == user.pw_uid, "owned-linux-uid-replaced")
@@ -79,7 +79,7 @@ def operation(mode: str, value: dict, root: Path) -> dict:
         record = {"owner": value, "state": "creating"}
         state.atomic(root, name, record)
         completed = process.run(["/usr/sbin/useradd", "--create-home", "--user-group", "--shell", "/usr/sbin/nologin",
-            "--comment", "latent-dev:" + value["nonce"], "--home-dir", "/home/" + value["user"], value["user"]], root, timeout=10)
+            "--comment", "latent-dev-" + value["nonce"], "--home-dir", "/home/" + value["user"], value["user"]], root, timeout=10)
         require(completed.returncode == 0, "owned-linux-user-creation-uncertain-use-recovery")
         return mark_ready(root, name, record)
     record = state.load(root, name)
@@ -91,16 +91,24 @@ def operation(mode: str, value: dict, root: Path) -> dict:
         return {"user": value["user"], "state": record["state"], "present": user is not None}
     require(mode == "remove-user", "guest-user-operation")
     home = Path("/home") / value["user"]
+    if record["state"] == "creating" and user is None:
+        require(not os.path.lexists(home), "partial-linux-home-needs-owner-inspection")
+        record["state"] = "removed"
+        state.atomic(root, name, record)
+        return {"user": value["user"], "state": "removed", "accountCreated": False}
     if record["state"] == "removed":
         require(user is None and not home.exists(), "removed-linux-user-reappeared")
         return {"user": value["user"], "state": "removed"}
+    if record["state"] == "creating":
+        mark_ready(root, name, record)
     require(record["state"] in {"ready", "removing"}, "recover-linux-user-before-removal")
     if user is not None:
         no_processes(user.pw_uid)
         workspace = home / ".lsf-dev" / value["workspace"]
         from tools.native_runtime import files
-        lifecycle = decode(files.read(workspace / "lifecycle.json", owners={0, user.pw_uid}, private=True))
-        require(lifecycle["state"] == "purged" and lifecycle.get("reaped") is True, "purge-workspace-before-user-removal")
+        if os.path.lexists(home / ".lsf-dev"):
+            lifecycle = decode(files.read(workspace / "lifecycle.json", owners={0, user.pw_uid}, private=True))
+            require(lifecycle["state"] == "purged" and lifecycle.get("reaped") is True, "purge-workspace-before-user-removal")
         record["state"] = "removing"
         state.atomic(root, name, record)
         completed = process.run(["/usr/sbin/userdel", value["user"]], root, timeout=10)

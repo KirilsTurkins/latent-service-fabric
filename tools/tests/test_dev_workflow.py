@@ -181,5 +181,29 @@ class OwnedCommands(unittest.TestCase):
             child.stderr.close()
 
 
+class ForegroundOwnership(unittest.TestCase):
+    def test_idle_foreground_releases_command_lock_and_obeys_down(self):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from tools.dev_workflow import cli, foreground
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            calls = []
+            class Connection:
+                def call(self, operation, arguments):
+                    calls.append(operation)
+                    if operation == "status":
+                        with state.lock(root):
+                            pass
+                    return {"state": "ready" if operation == "up" else "stopped", "reaped": True}
+            args = SimpleNamespace(workspace="test", watch=False)
+            with patch.object(foreground, "lease", return_value=nullcontext(lambda: None)), patch.object(cli, "emit"):
+                result = cli.foreground_up(args, root, Connection())
+            self.assertEqual(result["state"], "stopped")
+            self.assertEqual(calls, ["up", "status", "down"])
+            with state.lock(root, "foreground.lock"):
+                pass
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -128,7 +128,8 @@ def _build(workspace: Path, connection, source: Path, tool_root: str, *, editor_
     return result
 
 
-def watch(workspace: Path, connection, source: Path, tool_root: str, *, editor_diagnostics: bool = False) -> dict:
+def watch(workspace: Path, connection, source: Path, tool_root: str, *, editor_diagnostics: bool = False,
+          check_session=lambda: None) -> dict:
     from tools.build_process_signals import owned_cancellation
     require(source is not None and tool_root is not None, "watch-project-and-tools-required")
     source = source.absolute()
@@ -139,6 +140,10 @@ def watch(workspace: Path, connection, source: Path, tool_root: str, *, editor_d
         try:
             while True:
                 cancellation.check()
+                check_session()
+                observed = connection.call("status", {})
+                if observed.get("state") != "ready":
+                    return observed
                 descriptor, _identity = project.load(source)
                 record, _content = snapshot.observe(source, descriptor["inputRoots"], tuple(descriptor["exclude"]))
                 current = record["identity"]
@@ -150,8 +155,9 @@ def watch(workspace: Path, connection, source: Path, tool_root: str, *, editor_d
                         continue
                     last_observed = current
                     try:
-                        built = _build(workspace, connection, source, tool_root, editor_diagnostics=editor_diagnostics)
-                        deployed = connection.call("deploy", {})
+                        with state.lock(workspace):
+                            built = _build(workspace, connection, source, tool_root, editor_diagnostics=editor_diagnostics)
+                            deployed = connection.call("deploy", {})
                         emit({"event": "deployed", "build": built, "deployment": deployed})
                     except DevError as error:
                         emit({"event": "edit-failed", "source": current, "code": error.code,
@@ -165,6 +171,33 @@ def watch(workspace: Path, connection, source: Path, tool_root: str, *, editor_d
             with cancellation.defer():
                 stopped = connection.call("down", {})
                 emit({"event": "watch-stopped", "cleanup": stopped})
+
+
+def foreground_up(args, workspace: Path, connection) -> dict:
+    from tools.build_process_signals import owned_cancellation
+    from .foreground import lease
+    require(not (workspace / "purged.json").exists(), "workspace-purged-create-new-workspace")
+    if args.watch:
+        require(args.project is not None and args.tool_root is not None, "watch-project-and-tools-required")
+    with state.lock(workspace, "foreground.lock"), owned_cancellation() as cancellation, lease(connection) as check:
+        try:
+            with state.lock(workspace):
+                ready = connection.call("up", {})
+            emit({"event": "ready", "workspace": args.workspace, "result": ready})
+            if args.watch:
+                return watch(workspace, connection, args.project, args.tool_root,
+                             editor_diagnostics=args.editor_diagnostics, check_session=check)
+            while True:
+                cancellation.check()
+                check()
+                observed = connection.call("status", {})
+                if observed.get("state") != "ready":
+                    return observed
+                time.sleep(2)
+        finally:
+            with cancellation.defer():
+                stopped = connection.call("down", {})
+                emit({"event": "foreground-stopped", "workspace": args.workspace, "cleanup": stopped})
 
 
 def dispatch(args) -> dict:
@@ -240,7 +273,20 @@ def dispatch(args) -> dict:
             protocol.negotiate(connection.call("hello", {}))
             state.atomic(workspace, "backend.json", config)
         return {"workspace": args.workspace, "backend": config["kind"]}
+    if args.command == "purge" and (root / "wsl.json").exists():
+        record = wsl._record(root)
+        pending = record["workspaces"].get(args.workspace)
+        if pending and pending["state"] in {"creating", "removing"}:
+            require(args.confirm_workspace == args.workspace, "confirm-exact-workspace-required")
+            workspace = state.workspace(root, args.workspace)
+            with state.lock(workspace):
+                wsl.remove_workspace(root, args.workspace)
+                result = {"workspace": args.workspace, "state": "purged", "sourceTreeRetained": True}
+                state.atomic(workspace, "purged.json", result)
+            return result
     workspace, connection = _backend(root, args.workspace)
+    if args.command == "up":
+        return foreground_up(args, workspace, connection)
     with state.lock(workspace):
         if (workspace / "purged.json").exists():
             require(args.command in {"purge", "status"}, "workspace-purged-create-new-workspace")
@@ -259,12 +305,6 @@ def dispatch(args) -> dict:
             return connection.call("install", inputs, timeout=180)
         if args.command == "build":
             return _build(workspace, connection, args.project, args.tool_root, editor_diagnostics=args.editor_diagnostics)
-        if args.command == "up":
-            result = connection.call("up", {})
-            if args.watch:
-                emit(result)
-                return watch(workspace, connection, args.project, args.tool_root, editor_diagnostics=args.editor_diagnostics)
-            return result
         if args.command == "purge":
             require(args.confirm_workspace == args.workspace, "confirm-exact-workspace-required")
             result = connection.call("purge", {"confirmWorkspace": args.confirm_workspace})

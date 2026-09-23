@@ -20,7 +20,7 @@ from unittest.mock import patch
 from tools.native_runtime import archive, configuration, files, lifecycle, verify
 from tools.native_runtime.common import InstallError, document, encode, execute
 from tools.native_runtime.layout import Layout
-from tools.native_runtime_build import assemble, bootstrap, shared_license
+from tools.native_runtime_build import assemble, bootstrap, dependency_inventory, shared_license
 
 ROOT = Path(__file__).resolve().parents[2]
 LINUX = sys.platform == "linux"
@@ -75,6 +75,20 @@ def selected(root: Path, version: str = "0.1.0-test.1", previous: dict | None = 
 
 
 class ManifestTests(unittest.TestCase):
+    def test_dependency_inventory_retains_lowercase_published_license_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "license-mit").write_text("Published MIT terms", encoding="utf-8")
+            (root / "license-apache-2.0").write_text("Published Apache terms", encoding="utf-8")
+            (root / "README.md").write_text("Not a license", encoding="utf-8")
+            package = {"id": "registry+example#windows-link@0.2.1", "name": "windows-link", "version": "0.2.1",
+                "source": "registry+example", "license": "MIT OR Apache-2.0", "manifest_path": str(root / "Cargo.toml")}
+            metadata = {"packages": [package], "resolve": {"nodes": [{"id": package["id"], "deps": []}]}}
+            lock = {"package": [{**package, "checksum": "b" * 64}]}
+            sbom, licenses = dependency_inventory(metadata, lock, "a" * 40, 0, {}, root_names=frozenset({"windows-link"}))
+            self.assertEqual({path.name for path in licenses.values()}, {"license-mit", "license-apache-2.0"})
+            self.assertEqual(sbom["packages"][0]["checksums"][0]["checksumValue"], "b" * 64)
+
     def test_elf_loader_is_the_same_glibc_prerequisite_not_an_unbounded_library_allowlist(self):
         metadata, _payload = fixture()
         metadata["engine"]["dynamicDependencies"].append("ld-linux-x86-64.so.2")

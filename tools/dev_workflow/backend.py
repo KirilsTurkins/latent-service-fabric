@@ -12,7 +12,7 @@ from .common import DevError, MAX_SNAPSHOT, decode, digest, encode, members, req
 
 HELPER = "/opt/latent-dev/helper.pyz"
 GUEST_PYTHON = "/usr/local/bin/python3.13"
-EXEC_HELPER = """import hashlib,os,pathlib,stat,sys,zipfile
+EXEC_HELPER = """import hashlib,os,pathlib,stat,sys
 p,expected=sys.argv[1:3]
 try:
     parts=pathlib.PurePosixPath(p).parts
@@ -28,12 +28,11 @@ try:
     with os.fdopen(os.dup(f),'rb') as stream:
         assert 'sha256:'+hashlib.file_digest(stream,'sha256').hexdigest()==expected
     z='/proc/self/fd/'+str(f)
-    with zipfile.ZipFile(z) as archive:
-        entry=archive.read('__main__.py')
-except (AssertionError,OSError,ValueError,KeyError,zipfile.BadZipFile):
+except (AssertionError,OSError,ValueError):
     sys.exit(126)
 sys.path.insert(0,z); sys.argv=[p,*sys.argv[3:]]
-exec(compile(entry,p,'exec'),{'__name__':'__main__','__file__':p})
+from tools.dev_workflow.helper import main
+raise SystemExit(main())
 """
 
 

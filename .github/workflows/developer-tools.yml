@@ -13,6 +13,7 @@ on:
       - tools/build_dev_rootfs.py
       - tools/dev_distribution.py
       - tools/dev_rootfs_inventory.py
+      - tools/dev_guest_smoke.py
       - packaging/dev/**
       - tools/native_runtime_build.py
       - tools/dev-frontend-windows.lock

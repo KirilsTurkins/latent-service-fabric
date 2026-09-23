@@ -72,7 +72,8 @@ def _user_call(root: Path, record: dict, mode: str, value: dict) -> dict:
     completed = process.run([backend.wsl_executable(), "--distribution", record["distribution"], "--user", "root",
         "--exec", *backend.guest_command(backend.GUEST_PYTHON, backend.HELPER, record["helperSha256"], mode)],
         root, stdin=encode(value), timeout=30, maximum=8192)
-    require(completed.returncode == 0, "wsl-workspace-operation-unconfirmed-recover")
+    if completed.returncode != 0:
+        raise DevError("wsl-workspace-operation-unconfirmed-recover", uncertain=mode != "user-status")
     result = decode(completed.stdout)
     require(result.get("user") == value["user"], "wsl-user-response-identity")
     return result
@@ -184,7 +185,7 @@ def remove_workspace(root: Path, name: str) -> dict:
         record = _record(root)
         _owned(record)
         value = record["workspaces"][name]
-        require(value["state"] in {"ready", "removing", "removed"}, "recover-wsl-workspace-before-removal")
+        require(value["state"] in {"creating", "ready", "removing", "removed"}, "recover-wsl-workspace-before-removal")
         value["state"] = "removing"
         state.atomic(root, "wsl.json", record)
         result = _user_call(root, record, "remove-user", value["owner"])

@@ -152,6 +152,13 @@ before continuing. Closing an editor is not proof that the Linux node stopped.
 These task contracts are tested; actual editor/newcomer qualification remains in
 the acceptance table below.
 
+`dev up` stays in the foreground until interruption or an explicit `dev down`
+from another terminal. Its private WSL session remains open while the node is
+running, so ordinary distro idle shutdown does not silently discard the node.
+The session ends when the controller exits; it does not change `.wslconfig` or
+create a Windows service. Status, invocation and down commands remain available
+while the foreground controller waits. Use another terminal for those commands.
+
 ## Executed evidence and remaining acceptance
 
 The developer-tools workflow builds nonpublishing Windows and WSL candidates.
@@ -182,6 +189,26 @@ automatic controller action. The native runtime installer still requires Ubuntu
 24.04 and kernel 6.8 or newer; no kernel version check, pressure observation or
 execution profile was weakened. These observations are not a managed-node
 qualification receipt.
+
+The independently approved WSL candidate from commit
+`64e589f28147f2662aadd9a4833e1eda5644e36d` authenticated and imported on this host.
+Its first account-creation run failed: the ownership comment used a colon, which
+Linux rejects. The account and home were absent. After checking the exact WSL
+registration and those absent paths, the empty owned distribution was removed.
+That candidate failed qualification. The corrected image builder now exercises
+two actual accounts, private-home isolation, original-owner recovery and removal
+in a disposable container before exporting a candidate. Container checks do not
+replace the required repeated Windows/WSL run.
+
+The subsequent local source image exposed a missing Ubuntu system interpreter
+during native installation. The installer retained its original transaction;
+after adding the pinned prerequisite in that disposable distro, explicit resume
+completed installation of the approved runtime. Two unprivileged workspaces
+then reached authenticated readiness on separate guest loopback ports with
+distinct node IDs and credentials. One account was denied access to the other's
+credential file. Stopping the first node reported a clean, reaped shutdown and
+left the second ready. These are source-integration observations: the image was
+locally built and modified for diagnosis, so they do not qualify a distribution.
 
 | Child | Remaining Windows acceptance |
 | --- | --- |

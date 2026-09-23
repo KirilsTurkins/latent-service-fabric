@@ -186,7 +186,10 @@ class Transports(unittest.TestCase):
             root = Path(temporary)
             executable = root / "helper.pyz"
             with zipfile.ZipFile(executable, "w") as archive:
-                archive.writestr("__main__.py", "import proof,sys; print(proof.answer); print(sys.argv[0])")
+                archive.writestr("tools/__init__.py", "")
+                archive.writestr("tools/dev_workflow/__init__.py", "")
+                archive.writestr("tools/dev_workflow/helper.py",
+                                 "def main():\n import proof,sys; print(proof.answer); print(sys.argv[0])\n return 0\n")
                 archive.writestr("proof.py", "answer='executed-verified-bytes'")
             identity = common.digest(executable.read_bytes())
             argv = backend.guest_command(sys.executable, str(executable), identity, "rpc")

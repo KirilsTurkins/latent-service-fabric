@@ -111,8 +111,9 @@ def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,
         if checksum:
             entry["checksums"] = [{"algorithm": "SHA256", "checksumValue": checksum}]
             directory = Path(package["manifest_path"]).parent
-            candidates = {path for pattern in ("LICENSE*", "LICENCE*", "COPYING*", "NOTICE*")
-                          for path in directory.glob(pattern) if path.is_file() and not path.is_symlink()}
+            candidates = {path for path in directory.iterdir()
+                          if path.name.upper().startswith(("LICENSE", "LICENCE", "COPYING", "NOTICE"))
+                          and path.is_file() and not path.is_symlink()}
             if package.get("license_file"):
                 declared = Path(package["license_file"])
                 declared = declared if declared.is_absolute() else directory / declared

@@ -46,6 +46,7 @@ def install(root: Path, arguments: dict) -> dict:
     require(arguments["consent"] is True, "explicit-runtime-install-consent-required")
     require(arguments["profile"] in {"local-experimental-v1", "external-capsule-v1"}, "explicit-node-profile-required")
     require(type(arguments.get("resume", False)) is bool, "explicit-installer-resume-required")
+    require(Path("/usr/bin/python3").is_file(), "native-installer-system-python-required")
     trust = verify.PublisherTrust(Path(arguments["publisherPolicy"]), Path(arguments["trustedRoot"]),
                                   Path(arguments["verifier"]), arguments["allowCandidate"])
     with verify.release(Path(arguments["releaseDirectory"]), arguments["version"], trust) as release:

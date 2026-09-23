@@ -2795,7 +2795,7 @@
       "sha256": "aa9f74f6d3c48e5b748163a56747b46208405f2c3c34ffb42d134d1a7b347d13"
     },
     "tools/build_dev_rootfs.py": {
-      "sha256": "dc8fc789bc52f5aecc1e50d030566dde0a8a995526822a041db6e022c1b0ebad"
+      "sha256": "b0a0df997fc39bd4447f1afe825ce58c7ce6ae16a851fa7e3a8ad70bafe479c0"
     }
   },
   "pythonCases": {
@@ -3350,6 +3350,7 @@
       "Documents.test_duplicate_and_unknown_fields_are_rejected",
       "Documents.test_protocol_target_abi_and_response_association",
       "Documents.test_unknown_remote_outcome_is_not_success",
+      "ForegroundOwnership.test_idle_foreground_releases_command_lock_and_obeys_down",
       "OwnedCommands.test_live_node_output_drains_flood_redacts_before_retention_and_requires_complete_status",
       "OwnedCommands.test_no_ambient_credentials",
       "OwnedCommands.test_output_flood_and_deadline_are_finite",
@@ -3549,6 +3550,7 @@
       "LifecycleTests.test_substituted_root_and_modified_binary_are_not_removed",
       "LifecycleTests.test_unsupported_upgrade_is_refused_before_mutation_and_allowed_pair_is_exact",
       "ManifestTests.test_complete_fixture_inventory_and_exact_version",
+      "ManifestTests.test_dependency_inventory_retains_lowercase_published_license_files",
       "ManifestTests.test_duplicate_documents_and_oversized_inputs",
       "ManifestTests.test_elf_loader_is_the_same_glibc_prerequisite_not_an_unbounded_library_allowlist",
       "ManifestTests.test_exact_publisher_policy_and_no_implicit_candidate_trust",
@@ -5828,6 +5830,6 @@
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/developer-tools.yml": "da5a274e9843c7cdfb1226ef2eacbf68b8bf263d2b8f0a2711f00fb78b19ee99"
+    ".github/workflows/developer-tools.yml": "668e99c45c9a03fab3d73764d70831442d33405b4762f549bfd1f7034dd7d902"
   }
 }

@@ -7,6 +7,10 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     libexpat1=2.6.1-2ubuntu0.5 libgdbm6t64=1.23-5.1build1 \
     libgdbm-compat4t64=1.23-5.1build1 libreadline8t64=8.2-4build1 \
     readline-common=8.2-4build1 libsqlite3-0=3.45.1-1ubuntu2.8 \
+    python3=3.12.3-0ubuntu2.1 python3-minimal=3.12.3-0ubuntu2.1 \
+    libpython3-stdlib=3.12.3-0ubuntu2.1 python3.12=3.12.3-1ubuntu0.17 \
+    python3.12-minimal=3.12.3-1ubuntu0.17 libpython3.12-stdlib=3.12.3-1ubuntu0.17 \
+    libpython3.12-minimal=3.12.3-1ubuntu0.17 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=python /usr/local/ /usr/local/
 RUN rm -rf /usr/local/lib/python3.13/site-packages /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.13
@@ -17,6 +21,7 @@ COPY LSF-LICENSE /opt/latent-dev/LSF-LICENSE
 COPY source.json /opt/latent-dev/source.json
 RUN ldconfig && chmod 0755 /opt/latent-dev && chmod 0644 /opt/latent-dev/* /etc/wsl.conf \
     && /usr/local/bin/python3.13 -I /opt/latent-dev/rootfs_inventory.py \
+    && /usr/bin/python3 -I -c 'import ctypes, fcntl, hashlib, json, ssl, subprocess, tarfile, zipfile' \
     && /usr/local/bin/python3.13 -I -c 'import bz2, ctypes, dbm.gnu, fcntl, hashlib, lzma, readline, sqlite3, ssl, zipfile; import sys; assert sys.version_info[:3] == (3, 13, 5)'
 # No listener, system service, compiler, kernel or caller credentials in this image.
 CMD ["/usr/sbin/nologin"]

@@ -52,15 +52,22 @@ def main() -> int:
         shutil.copyfile(ROOT / source, context / destination)
     name = "lsf-dev-rootfs-" + secrets.token_hex(8)
     run("docker", "build", "--platform", "linux/amd64", "--tag", name, str(context))
-    run("docker", "create", "--name", name, name)
     payload = output / "payload"
     payload.mkdir()
+    created = False
     try:
+        smoke = run("docker", "run", "--rm", "--name", name + "-accounts", "--user", "0", "--network", "none",
+            "--mount", "type=bind,source=" + str(ROOT / "tools/dev_guest_smoke.py") + ",target=/guest-smoke.py,readonly",
+            name, "/usr/local/bin/python3.13", "-I", "/guest-smoke.py", "--image-build-test", capture_output=True)
+        (output / "guest-account-test.json").write_bytes(smoke.stdout)
+        run("docker", "create", "--name", name, name)
+        created = True
         run("docker", "export", "--output", str(payload / "rootfs.tar"), name)
         run("docker", "cp", name + ":/opt/latent-dev/distribution/.", str(payload))
     finally:
         # Exact unpredictable name created above, never another container or image.
-        run("docker", "rm", name)
+        if created:
+            run("docker", "rm", name)
         run("docker", "image", "rm", name)
     record = json.loads((payload / "rootfs-inventory.json").read_bytes())
     packages = []
