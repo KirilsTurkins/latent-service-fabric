@@ -36,10 +36,10 @@ profiles, signed admission and runtime validation.
 
 WIT remains authoritative for typed capsule contracts. Language SDKs are convenience surfaces and must preserve deadlines, cancellation, platform errors, domain errors, resource budgets, identity, and idempotency semantics.
 
-Go, .NET, Java and TypeScript use their complete profile interfaces and native transport
-clients. Their obsolete invocation models, compatibility constructors and
-adapters have been removed. The older interfaces described below still apply only to their
-remaining language-specific implementations.
+All six clients use the complete profile interfaces and native transports.
+Obsolete invocation models, compatibility constructors and adapters are removed;
+applications use their language's current profile types and explicit ownership
+contracts described below.
 
 ## Java SDK runtime compatibility
 
@@ -66,7 +66,7 @@ This changes an external client baseline, not the Rust node or guest runtimes.
 
 Every SDK's invocation request carries optional activation, root activation, and
 parent activation IDs. These map directly to Protobuf `InvokeRequest` fields
-1Ã¢â‚¬â€œ3. Supplying an activation ID lets a caller retain it before invoking and use
+1 through 3. Supplying an activation ID lets a caller retain it before invoking and use
 it for cancellation or status while the invocation response is still pending.
 The ID is a correlation identifier, not an idempotency key or authorization
 credential. A lost response does not establish whether execution happened;
@@ -81,7 +81,7 @@ activation never ran.
 | Any ID present but empty | Present-invalid, never equivalent to absence. The SDK model preserves presence; the server rejects the malformed request. |
 | Parent and root absent | A new root invocation uses its effective activation ID as its root. |
 | Root and parent present | Preserve both lineage claims exactly. The server validates them against trusted context; they grant no authority. |
-| Parent present without root | Phase 1 rejects this incomplete lineage; adapters must not guess a root from caller metadata. |
+| Parent present without root | The server rejects this incomplete lineage; adapters must not guess a root from caller metadata. |
 | Root present without parent | Preserve it for server validation; this does not authorize joining another invocation tree. |
 
 The delivered [activation manager](../docs/activation-lifecycle.md) and
