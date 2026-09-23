@@ -66,7 +66,7 @@ fn linker(engine: &Engine) -> wasmtime::Result<Linker<StoreLimits>> {
         })?;
     linker
         .instance("latent:random/random@0.1.0")?
-        .func_new("u64-value", |_, _, output| {
+        .func_new("u64-value", |_, _, _, output| {
             let mut bytes = [0; 8];
             std::fs::File::open("/dev/urandom")?.read_exact(&mut bytes)?;
             output[0] = Val::Result(Ok(Some(Box::new(Val::U64(u64::from_le_bytes(bytes))))));
