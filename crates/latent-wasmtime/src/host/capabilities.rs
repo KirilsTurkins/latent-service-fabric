@@ -212,7 +212,18 @@ impl HostCapabilities {
                 }
             }
         }
-        self.begin(capability, operation, resource, &[], output_bytes)
+        let mut cost = CapabilityCallCost::new(output_bytes);
+        if matches!(
+            capability,
+            "latent:clock/monotonic@0.1.0" | "latent:clock/wall@0.1.0"
+        ) {
+            // Match the installed clock profile's mandatory charge. A clock
+            // grant never implies unmetered runtime initialization or GC work.
+            cost = cost
+                .with_charge(latent_core::BudgetDimension::CpuFuel, 100)
+                .map_err(host_error)?;
+        }
+        self.begin_typed(capability, operation, resource, &[], cost)
             .map_err(host_error)
     }
 }
