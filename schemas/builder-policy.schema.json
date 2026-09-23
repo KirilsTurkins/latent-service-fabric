@@ -102,7 +102,8 @@
               "https://latent.dev/build/go-capsule/v1",
               "https://latent.dev/build/dotnet-capsule/v1",
               "https://latent.dev/build/web-package-assembly/v1",
-              "https://latent.dev/build/angular-component/v1"
+              "https://latent.dev/build/angular-component/v1",
+              "https://latent.dev/build/java-capsule/v1"
             ]
           },
           "sourceRepository": {

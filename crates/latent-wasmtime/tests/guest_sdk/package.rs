@@ -38,8 +38,10 @@ pub fn input(name: &str) -> PathBuf {
 
 pub fn observation(name: &str) -> BuildObservation {
     let directory = input(name);
-    let standalone =
-        name.starts_with("go-") || name.starts_with("typescript-") || name.starts_with("dotnet-");
+    let standalone = name.starts_with("go-")
+        || name.starts_with("typescript-")
+        || name.starts_with("dotnet-")
+        || name.starts_with("java-");
     let root = if standalone {
         &directory
     } else {
@@ -204,7 +206,8 @@ pub async fn publish(root: &Path, name: &str) -> Publication {
                 scope: LifecycleScope::Tenant(TenantId(
                     if (name.starts_with("go-")
                         || name.starts_with("typescript-")
-                        || name.starts_with("dotnet-"))
+                        || name.starts_with("dotnet-")
+                        || name.starts_with("java-"))
                         && (name.ends_with("-service") || name.ends_with("-callee"))
                     {
                         "tenant-a"

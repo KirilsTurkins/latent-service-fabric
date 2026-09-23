@@ -9,6 +9,7 @@ fn languages() -> Vec<&'static str> {
         Ok("go") => vec!["go"],
         Ok("typescript") => vec!["typescript"],
         Ok("dotnet") => vec!["dotnet"],
+        Ok("java") => vec!["java"],
         Err(std::env::VarError::NotPresent) => vec!["rust", "c"],
         _ => panic!("unknown guest SDK language selection"),
     }

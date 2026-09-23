@@ -233,6 +233,120 @@ fn mixed_recipes_missing_tools_and_unbounded_claims_are_rejected() {
     }
 }
 
+fn java() -> BuildObservation {
+    let mut value = observation();
+    value.build_type = JAVA_CAPSULE_BUILD_TYPE.into();
+    value.source.capture = "explicit-input-files".into();
+    value.source.revision = value.source.snapshot_digest[7..].into();
+    value.dependency_completeness = "declared-inputs-incomplete".into();
+    value
+        .materials
+        .retain(|item| !matches!(item.name.as_str(), "cargo" | "rustc"));
+    for name in [
+        "java",
+        "gradle",
+        "clang",
+        "wit-bindgen",
+        "compiler-closure",
+        "generated-bindings",
+        "contracts-tool",
+        "packager",
+        "package-inputs",
+    ] {
+        value.materials.push(BuildMaterial {
+            name: name.into(),
+            digest: value.source.snapshot_digest.clone(),
+            size: 1,
+        });
+    }
+    value.parameters = BuildRecipe::JavaCapsule(JavaCapsuleBuildParameters {
+        compiler: "teavm-c".into(),
+        entry_point: "dev.latent.app.Capsule".into(),
+        target: "wasm32-wasip1".into(),
+        bindings: "lsf-java-wit-v1".into(),
+        optimization: "O2".into(),
+        java_heap_bytes: 4_194_304,
+    });
+    value
+}
+
+#[test]
+fn java_requires_separate_source_bound_builder_approval() {
+    let (signer, public, _) = signer(BUILDER);
+    let value = java();
+    let evidence = signed(&signer, &value);
+    let mut policy = policy_value(&public);
+    for old in [
+        PROVENANCE_BUILD_TYPE,
+        C_GUEST_BUILD_TYPE,
+        RUST_GUEST_BUILD_TYPE,
+        RUST_CAPSULE_BUILD_TYPE,
+    ] {
+        policy["requirements"][0]["buildType"] = old.into();
+        assert_eq!(
+            verifier(&policy)
+                .verify_package(&subject(), evidence.as_ref(), NOW)
+                .unwrap_err()
+                .reason(),
+            SignatureFailure::PredicateDisallowed
+        );
+    }
+    policy["requirements"][0]["buildType"] = JAVA_CAPSULE_BUILD_TYPE.into();
+    policy["requirements"][0]["sourceSnapshotDigest"] = value.source.snapshot_digest.clone().into();
+    verifier(&policy)
+        .verify_package(&subject(), evidence.as_ref(), NOW)
+        .unwrap();
+    policy["requirements"][0]["sourceSnapshotDigest"] = format!("sha256:{}", "0".repeat(64)).into();
+    assert_eq!(
+        verifier(&policy)
+            .verify_package(&subject(), evidence.as_ref(), NOW)
+            .unwrap_err()
+            .reason(),
+        SignatureFailure::SourceDisallowed
+    );
+}
+
+#[test]
+fn java_recipe_and_every_observed_compiler_input_are_closed() {
+    let original = serde_json::to_value(java()).unwrap();
+    decode_build_observation(&serde_json::to_vec(&original).unwrap(), Default::default()).unwrap();
+    for material in original["materials"].as_array().unwrap() {
+        let mut changed = original.clone();
+        changed["materials"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|item| item["name"] != material["name"]);
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&changed).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+    for key in [
+        "compiler",
+        "entryPoint",
+        "target",
+        "bindings",
+        "optimization",
+        "javaHeapBytes",
+        "unreviewedOption",
+    ] {
+        let mut changed = original.clone();
+        changed["parameters"][key] = "unreviewed".into();
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&changed).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+    let mut changed = original;
+    changed["parameters"]["javaHeapBytes"] = 8_388_608.into();
+    assert!(
+        decode_build_observation(&serde_json::to_vec(&changed).unwrap(), Default::default())
+            .is_err()
+    );
+}
+
 fn standalone() -> BuildObservation {
     let mut value = guest(false);
     value.build_type = RUST_CAPSULE_BUILD_TYPE.into();

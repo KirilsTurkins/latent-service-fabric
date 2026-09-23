@@ -13,8 +13,8 @@ pub use evidence::{ProvenanceEvidence, ProvenanceEvidenceRef};
 pub use limits::ProvenanceLimits;
 pub use model::{
     BuildMaterial, BuildObservation, BuildParameters, BuildRecipe, BuildSource, CBuildParameters,
-    DotnetCapsuleBuildParameters, GoCapsuleBuildParameters, RustCapsuleBuildParameters,
-    TypeScriptCapsuleBuildParameters,
+    DotnetCapsuleBuildParameters, GoCapsuleBuildParameters, JavaCapsuleBuildParameters,
+    RustCapsuleBuildParameters, TypeScriptCapsuleBuildParameters,
 };
 pub use signer::LocalBuilderSigner;
 pub(crate) use validate::{
@@ -32,6 +32,7 @@ pub const C_GUEST_BUILD_TYPE: &str = "https://latent.dev/build/c-guest/v1";
 pub const TYPESCRIPT_CAPSULE_BUILD_TYPE: &str = "https://latent.dev/build/typescript-capsule/v1";
 pub const GO_CAPSULE_BUILD_TYPE: &str = "https://latent.dev/build/go-capsule/v1";
 pub const DOTNET_CAPSULE_BUILD_TYPE: &str = "https://latent.dev/build/dotnet-capsule/v1";
+pub const JAVA_CAPSULE_BUILD_TYPE: &str = "https://latent.dev/build/java-capsule/v1";
 pub(crate) fn supported_build_type(value: &str) -> bool {
     matches!(
         value,
@@ -42,6 +43,7 @@ pub(crate) fn supported_build_type(value: &str) -> bool {
             | TYPESCRIPT_CAPSULE_BUILD_TYPE
             | GO_CAPSULE_BUILD_TYPE
             | DOTNET_CAPSULE_BUILD_TYPE
+            | JAVA_CAPSULE_BUILD_TYPE
     )
 }
 pub(crate) const STATEMENT_TYPE: &str = "https://in-toto.io/Statement/v1";

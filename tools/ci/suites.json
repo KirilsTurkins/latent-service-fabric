@@ -4268,6 +4268,8 @@
         "dotnet_capsules_require_the_closed_native_aot_recipe_and_separate_approval",
         "go_capsules_require_source_bound_go_builder_approval_and_closed_runtime_claims",
         "guest_profiles_require_separate_builder_approval_and_preserve_legacy_echo",
+        "java_recipe_and_every_observed_compiler_input_are_closed",
+        "java_requires_separate_source_bound_builder_approval",
         "mixed_recipes_missing_tools_and_unbounded_claims_are_rejected",
         "standalone_capsules_require_their_own_source_bound_builder_approval",
         "standalone_recipes_cannot_lie_about_target_identity_or_observed_tools",
@@ -4278,7 +4280,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-signing/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 9,
       "mode": "libtest",
       "package": "latent-signing",
       "platforms": [
@@ -5373,6 +5375,7 @@
         "config::isolation::tests::a_required_execution_profile_changes_the_prepared_and_native_policy_identity",
         "config::isolation::tests::only_exact_node_profiles_decode_and_round_trip",
         "config::isolation::tests::requested_external_profile_cannot_construct_an_unmanaged_or_phase_zero_backend",
+        "config::java::tests::java_exception_profile_is_explicit_fixed_and_cache_distinct",
         "config::renderer::tests::external_renderer_keeps_enforced_admission_and_isolated_compiler_requirements",
         "config::renderer::tests::renderer_installation_preserves_operator_budgets_and_checks_the_selected_engine",
         "config::runtime_compatibility::tests::native_facts_ignore_the_callers_cpu_label",
@@ -5447,6 +5450,7 @@
         "host::streaming_http::table::tests::foreign_wrong_kind_stale_and_busy_handles_fail_closed",
         "host::tests::aggregate_memory_budget_counts_all_linear_memories",
         "host::tests::configured_store_counts_and_table_growth_override_legacy_defaults",
+        "host::tests::java_exception_reservation_and_linear_memories_share_one_budget",
         "invocation_input_observer::tests::disabled_begin_does_not_lock_clone_identity_or_record",
         "invocation_input_observer::tests::invalid_stage_order_marks_coverage_and_retirement_still_refunds",
         "invocation_input_observer::tests::raw_counts_preserve_capacity_and_zero_length_owner_until_its_drop",
@@ -5528,7 +5532,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 285,
+      "minimumCases": 287,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -7517,6 +7521,7 @@
         "config::tests::document_size_and_nesting_are_bounded_before_deserialization",
         "config::tests::engine::engine_json_has_closed_choices_and_preserves_omitted_defaults",
         "config::tests::engine::finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage",
+        "config::tests::engine::java_guest_engine_is_explicit_and_does_not_raise_operator_limits",
         "config::tests::invalid_capacity_and_retention_combinations_fail_before_startup",
         "config::tests::malformed_json_never_echoes_secret_values",
         "config::tests::nonlocal_bind_duplicate_tokens_and_unusable_manifest_tenants_are_rejected",
@@ -7765,7 +7770,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 218,
+      "minimumCases": 219,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
@@ -8134,6 +8139,30 @@
       "resourceClass": "runtime-bounded",
       "source": "examples/component_work.rs",
       "target": "component_work",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.example.java-runtime-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/java_runtime_probe.rs",
+      "target": "java_runtime_probe",
       "timeoutSeconds": 900
     }
   ],

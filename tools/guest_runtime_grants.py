@@ -10,7 +10,9 @@ RUNTIME = {
 
 
 def profiles(language):
-    require(language in {"go", "dotnet"}, "runtime-grant-language")
+    require(language in {"go", "dotnet", "java"}, "runtime-grant-language")
+    if language == "java":
+        return {name: value for name, value in RUNTIME.items() if name != "random"}
     return RUNTIME if language == "go" else {"clockMonotonic": RUNTIME["clockMonotonic"]}
 
 

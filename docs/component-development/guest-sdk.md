@@ -5,6 +5,9 @@ or [Create your own C capsule](c-authoring.md), or
 [Create your own Go capsule](go-authoring.md), or
 [Create your own TypeScript capsule](typescript-authoring.md), or
 [Create your own C# capsule](dotnet-authoring.md).
+The bounded [Java authoring profile](java-authoring.md) uses maintained TeaVM and
+typed WIT bindings; its [SDK reference](../../sdk/java-guest/README.md) documents
+the exact language, heap, clock-grant and ownership boundaries.
 That guide covers editable source, generated contracts, packaging, signing,
 enforced node admission and cleanup. This reference describes capability ownership.
 

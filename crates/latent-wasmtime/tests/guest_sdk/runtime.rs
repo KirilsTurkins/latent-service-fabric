@@ -33,13 +33,17 @@ const RANDOM: &str = "latent:random/random@0.1.0";
 pub fn enabled() -> bool {
     matches!(
         std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
-        Ok("go" | "dotnet")
+        Ok("go" | "dotnet" | "java")
     )
+}
+
+pub fn java() -> bool {
+    std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() == Ok("java")
 }
 
 pub fn memory(default: u64) -> u64 {
     match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
-        Ok("go") => 64 * 1024 * 1024,
+        Ok("go" | "java") => 64 * 1024 * 1024,
         Ok("typescript" | "dotnet") => 128 * 1024 * 1024,
         _ => default,
     }
@@ -58,14 +62,14 @@ pub fn service_memory(default: u64) -> u64 {
 
 pub fn fuel(default: u64) -> u64 {
     match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
-        Ok("go" | "typescript" | "dotnet") => 10_000_000_000,
+        Ok("go" | "typescript" | "dotnet" | "java") => 10_000_000_000,
         _ => default,
     }
 }
 
 pub fn wall_time(default: u64) -> u64 {
     match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
-        Ok("go" | "typescript" | "dotnet") => 120_000,
+        Ok("go" | "typescript" | "dotnet" | "java") => 120_000,
         _ => default,
     }
 }
@@ -73,6 +77,8 @@ pub fn wall_time(default: u64) -> u64 {
 fn runtime_capabilities() -> Vec<&'static str> {
     if std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() == Ok("dotnet") {
         vec![CLOCKS[0].0]
+    } else if java() {
+        vec![CLOCKS[0].0, CLOCKS[1].0]
     } else {
         vec![CLOCKS[0].0, CLOCKS[1].0, RANDOM]
     }
