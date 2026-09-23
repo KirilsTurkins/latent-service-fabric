@@ -22,8 +22,10 @@ MAX_CALLS = 384
 
 class RecordingClient(Client):
     """Keep bounded results from this public-input experiment, never credentials."""
-    def __init__(self, *args, evidence: Path):
+    def __init__(self, *args, evidence: Path, invocation_timeout_millis=5000):
+        require(invocation_timeout_millis in (5000, 120000), "authoring-invocation-watchdog")
         super().__init__(*args)
+        self.invocation_timeout_millis = invocation_timeout_millis
         self.evidence = evidence
         self.retained = 0
         evidence.mkdir(mode=0o700)
@@ -80,7 +82,7 @@ class RecordingClient(Client):
         return value
 
 
-def configure(directory, fixture, port):
+def configure(directory, fixture, port, *, runtime_grants=False, language="rust"):
     initial = configure_provider_node(directory, fixture, port)
     settings = read_json(initial)
     settings["credentials"][0]["tenant"] = "examples"
@@ -92,9 +94,18 @@ def configure(directory, fixture, port):
     settings["cache"].update(entries=2, preparations=1)
     settings["catalogs"].update(releaseEntries=8, deployments=24)
     settings["audit"].update(records=1024, diskBytes=16777216)
+    if language == "java":
+        settings.setdefault("engine", {})["javaGuest"] = True
+        settings["execution"]["maximumWallTimeMillis"] = 120000
+        for cell in settings["cells"]:
+            cell["maximumMemoryBytes"] = 67_108_864
     settings["capabilityPolicies"]["store"] = {
         "maximumRecords": 64, "maximumOutcomes": 128, "maximumCatalogBytes": 4194304,
         "maximumReadOwners": 64, "maximumPageRecords": 16}
+    if runtime_grants:
+        from tools.guest_runtime_grants import configure as configure_runtime
+        configure_runtime(settings, ("greeting", "word-count", "shipping", "http-status", "recovery"),
+                          language="java" if language == "java" else "go")
     path = directory / "authoring-node.json"
     write_json(path, settings)
     return path, settings
@@ -114,11 +125,12 @@ def deploy(client, source, publication, *, name=None, grants=None, generation="0
                         "--expected-generation", generation, "--expected-state-version", state["stateVersion"])
     require(result["outcomeKnown"], "authoring-deployment-uncertain")
     return {"name": name, "service": value["spec"]["service"], "budget": value["spec"]["resources"],
+            "grants": value["spec"]["grants"],
             "generation": result["data"]["receipt"]["objectGeneration"], "publication": publication}
 
 
 def grant_http(client, node, fixture, publication, target, port):
-    descriptors = node.startup_record["providers"]
+    descriptors = [row for row in node.startup_record["providers"] if row["capability"] == "latent:http/client@0.2.0"]
     require(len(descriptors) == 1, "authoring-provider-count")
     descriptor = descriptors[0]
     require(descriptor["capability"] == "latent:http/client@0.2.0" and descriptor["tenant"] == "examples"
@@ -142,19 +154,22 @@ def grant_http(client, node, fixture, publication, target, port):
     client.call("policy", "apply", "--id", "http-allow", "--file", policy,
                 "--operation-id", "grant-http", "--expected-generation", "0")
     return deploy(client, fixture / "my-http-status/deployment.json", publication, generation=str(target["generation"]),
-                  grants=[{"capability": descriptor["capability"], "policy": "http-allow"}])
+                  grants=target["grants"] + [{"capability": descriptor["capability"], "policy": "http-allow"}])
 
 
-def start_call(client, target, template, function, arguments, activation, *, wall=None):
+def start_call(client, target, template, function, arguments, activation, *, wall=None, memory=None):
     path = client.directory / f"{activation}-input.json"
     budget_path = client.directory / f"{activation}-budget.json"
     write_json(path, arguments)
     budget = dict(target["budget"])
+    if memory is not None:
+        require(type(memory) is int and 0 < memory <= budget["memoryBytes"], "authoring-memory-budget")
+        budget["memoryBytes"] = memory
     if wall is not None:
         budget["wallTimeLimitMillis"] = wall
     write_json(budget_path, budget)
     argv = [client.executable, "--output", "json", "--config", str(client.config), "--profile", "operator",
-        "--rpc-timeout-ms", "5000", "invoke", "--service", target["service"], "--route", target["name"],
+        "--rpc-timeout-ms", str(client.invocation_timeout_millis), "invoke", "--service", target["service"], "--route", target["name"],
         "--contract", f"examples:{template}/api@1.0.0", "--function", function, "--activation-id", activation,
         "--input", str(path), "--budget", str(budget_path), "--budget-profile", "phase3"]
     process = Process(argv, client.directory, client.environment, client.cancellation, maximum=32768)
@@ -165,7 +180,7 @@ def start_call(client, target, template, function, arguments, activation, *, wal
 
 def finish_call(client, process):
     try:
-        completed = process.complete(min(client.deadline, time.monotonic() + 8))
+        completed = process.complete(min(client.deadline, time.monotonic() + client.invocation_timeout_millis / 1000 + 3))
     finally:
         process.close()
     value = json.loads(completed.stdout)

@@ -1,0 +1,19 @@
+package latent:java-guest@1.0.0;
+
+interface check { identity: func(value: u64) -> u64; }
+
+// Binding drift reference only. Applications declare their own capability set;
+// this world does not supply an operator grant or ambient provider.
+world sdk {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    import latent:random/random@0.1.0;
+    import latent:blob/blob@0.2.0;
+    import latent:secrets/reader@0.1.0;
+    import latent:events/publisher@0.2.0;
+    import latent:http/client@0.2.0;
+    import latent:http/streaming@0.3.0;
+    import latent:telemetry/custom@0.1.0;
+    import latent:service/invoke@0.1.0;
+    export check;
+}

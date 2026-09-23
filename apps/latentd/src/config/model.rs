@@ -107,6 +107,7 @@ pub struct ExecutionConfig {
 pub struct EngineConfig {
     pub allocator: EngineAllocator,
     pub optimization: EngineOptimization,
+    pub java_guest: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]

@@ -1,6 +1,6 @@
 use super::{
-    BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, PROVENANCE_BUILD_TYPE,
-    RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE,
+    BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE,
+    PROVENANCE_BUILD_TYPE, RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE,
 };
 use crate::{SignatureFailure, SignatureResult};
 use std::collections::BTreeSet;
@@ -162,6 +162,18 @@ pub(crate) fn validate_observation(
             "package-inputs",
         ],
         C_GUEST_BUILD_TYPE => &["zig", "wit-bindgen"],
+        JAVA_CAPSULE_BUILD_TYPE => &[
+            "java",
+            "gradle",
+            "clang",
+            "wit-bindgen",
+            "compiler-closure",
+            "dependency-lock",
+            "generated-bindings",
+            "contracts-tool",
+            "packager",
+            "package-inputs",
+        ],
         _ => unreachable!("profile checked above"),
     };
     for required in tool_materials {
@@ -232,6 +244,14 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
                 )
                 && p.target == "wasm32-wasi"
                 && p.optimization == "O2"
+        }
+        (JAVA_CAPSULE_BUILD_TYPE, BuildRecipe::JavaCapsule(p)) => {
+            p.compiler == "teavm-c"
+                && p.entry_point == "dev.latent.app.Capsule"
+                && p.target == "wasm32-wasip1"
+                && p.bindings == "lsf-java-wit-v1"
+                && p.optimization == "O2"
+                && p.java_heap_bytes == 4_194_304
         }
         _ => false,
     };

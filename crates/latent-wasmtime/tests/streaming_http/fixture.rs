@@ -94,6 +94,8 @@ impl ExecutionCancellation for Control {
     }
 }
 pub struct Fixture {
+    ceiling: latent_core::ResourceBudget,
+    _guest_runtime: support::guest_runtime::Runtime,
     _factory: WasmtimeComponentEngineFactory,
     pub backend: WasmtimeBackend,
     pub prepared: PreparedComponent,
@@ -147,7 +149,7 @@ impl Fixture {
                 "http://localhost:{port}{path}"
             )))
             .contracts;
-            artifact.manifest.execution.resource_budget_ceiling = ceiling;
+            artifact.manifest.execution.resource_budget_ceiling = ceiling.clone();
             artifact.manifest.imports.push(ContractImport {
                 contract: ContractId(component::CAP.into()),
                 optional: false,
@@ -177,6 +179,15 @@ impl Fixture {
             .execution_eligibility_selected(&release, Some(&receipt.publication.id))
             .unwrap()
             .unwrap();
+        ceiling = ceiling.intersect(
+            &catalog
+                .fetch_verified_metadata_selected(&release, Some(&receipt.publication.id))
+                .await
+                .unwrap()
+                .manifest()
+                .execution
+                .resource_budget_ceiling,
+        );
         let policies = Arc::new(
             PolicyStore::open(
                 &directory.path().join("policies"),
@@ -265,17 +276,19 @@ impl Fixture {
             route_generation: RouteGeneration(1),
             attributes: Metadata::new(),
         };
+        let guest_runtime =
+            support::guest_runtime::Runtime::new(&broker, &policies, &publication, component::CAP);
         let plan = broker
             .compile_plan(
                 &revision,
-                &[CapabilityBindingSpec {
+                &guest_runtime.bindings(&[CapabilityBindingSpec {
                     definition_digest: None,
                     provider: &provider.reference(),
                     imported_operations: &["open".into()],
                     policy_ids: &["p".into()],
                     provider_binding_id: "binding",
                     deployment_restriction_json: br#"{"operations":[]}"#,
-                }],
+                }]),
                 &publication,
                 Instant::now() + Duration::from_secs(10),
             )
@@ -287,6 +300,7 @@ impl Fixture {
         runtime
             .install_streaming_http(Arc::new(provider.clone()))
             .unwrap();
+        guest_runtime.install(&runtime);
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             support::config(),
             WasmtimeHostServices {
@@ -307,6 +321,8 @@ impl Fixture {
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
+            ceiling,
+            _guest_runtime: guest_runtime,
             _factory: factory,
             backend,
             prepared,
@@ -324,7 +340,7 @@ impl Fixture {
     }
     pub fn request(&self, id: &str, method: u32) -> (ExecutionRequest, Control) {
         let id = ActivationId(id.into());
-        let mut grant = support::budget();
+        let mut grant = self.ceiling.clone();
         grant.outbound_requests = 8;
         grant.wall_time_limit_millis = Some(5000);
         let budget = ActivationBudget::with_profile(

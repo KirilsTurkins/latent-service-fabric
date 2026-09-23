@@ -32,7 +32,7 @@ def tutorials(client, targets, result):
         assert_value(row, first[1])
 
 
-def faults(client, target, probe, result, population):
+def faults(client, target, probe, result, population, *, language="rust"):
     for ordinal, which in enumerate((0, 1, 0, 2, 0, 3, 0)):
         row = call(client, target, "recovery", "run", [which], f"authoring-fault-{ordinal}")
         result["invocations"].append(row)
@@ -42,11 +42,26 @@ def faults(client, target, probe, result, population):
             require(row["exitCode"] == 4 and row["response"]["category"] == "platform-failure"
                     and row["response"]["outcomeKnown"], "authoring-fault-not-observed")
             code = row["response"]["error"]["code"]
-            expected = "guest-trap" if which == 1 else "resource-exhausted"
+            # A Java managed-heap OutOfMemoryError is an uncaught language
+            # exception, not a host ResourceLimiter rejection. Test both.
+            expected = "guest-trap" if which == 1 or language == "java" and which == 2 else "resource-exhausted"
             require(code == expected, "authoring-fault-classification")
         require(int(row["response"]["data"]["consumption"]["peakMemoryBytes"]) <= target["budget"]["memoryBytes"],
                 "authoring-guest-memory-bound")
         result["samples"].append(sample(client, probe, "after-fault-" + str(which), population))
+    if language == "java":
+        row = call(client, target, "recovery", "run", [0], "authoring-host-memory", memory=4 * 1024 * 1024)
+        result["invocations"].append(row)
+        require(row["exitCode"] == 4 and row["response"]["category"] == "platform-failure"
+                and row["response"]["outcomeKnown"] and row["response"]["error"]["code"] == "resource-exhausted",
+                "authoring-aggregate-memory-exhaustion")
+        require(int(row["response"]["data"]["consumption"]["peakMemoryBytes"]) <= 4 * 1024 * 1024,
+                "authoring-aggregate-memory-bound")
+        result["samples"].append(sample(client, probe, "after-host-memory", population))
+        row = call(client, target, "recovery", "run", [0], "authoring-after-host-memory")
+        result["invocations"].append(row)
+        assert_value(row, [1])
+        result["samples"].append(sample(client, probe, "after-host-memory-fresh", population))
 
 
 def mode(control, selected):

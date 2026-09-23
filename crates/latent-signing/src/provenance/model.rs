@@ -57,6 +57,7 @@ pub enum BuildRecipe {
     Rust(BuildParameters),
     C(CBuildParameters),
     RustCapsule(RustCapsuleBuildParameters),
+    JavaCapsule(JavaCapsuleBuildParameters),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -66,6 +67,18 @@ pub struct CBuildParameters {
     pub fixture: String,
     pub target: String,
     pub optimization: String,
+}
+
+/// Closed maintained TeaVM C recipe, never interpreted as a Cargo or C fixture.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct JavaCapsuleBuildParameters {
+    pub compiler: String,
+    pub entry_point: String,
+    pub target: String,
+    pub bindings: String,
+    pub optimization: String,
+    pub java_heap_bytes: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

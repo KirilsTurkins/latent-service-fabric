@@ -3,9 +3,37 @@
 use std::time::Instant;
 
 use latent_core::ActivationClock;
+use wasmtime::component::Linker;
 
 use super::HostState;
 use crate::bindings::latent::clock::{monotonic, wall};
+
+/// Clock-provider charges share the activation ledger with guest instructions.
+/// Checkpoint before dispatch and synchronize the native counter afterwards,
+/// including a failed dispatch, so the guest cannot spend host-charged fuel.
+pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
+    linker
+        .instance("latent:clock/monotonic@0.1.0")?
+        .func_wrap_async("now-nanos", |mut store, (): ()| {
+            Box::new(async move {
+                super::service::checkpoint(&mut store)?;
+                let result = monotonic::Host::now_nanos(store.data_mut()).await;
+                super::service::synchronize(&mut store)?;
+                result.map(|value| (value,))
+            })
+        })?;
+    linker.instance("latent:clock/wall@0.1.0")?.func_wrap_async(
+        "now-unix-millis",
+        |mut store, (): ()| {
+            Box::new(async move {
+                super::service::checkpoint(&mut store)?;
+                let result = wall::Host::now_unix_millis(store.data_mut()).await;
+                super::service::synchronize(&mut store)?;
+                result.map(|value| (value,))
+            })
+        },
+    )
+}
 
 impl monotonic::Host for HostState {
     async fn now_nanos(&mut self) -> wasmtime::Result<u64> {

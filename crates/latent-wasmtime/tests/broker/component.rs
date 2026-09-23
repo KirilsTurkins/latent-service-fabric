@@ -3,6 +3,12 @@ use wasm_encoder::*;
 pub const CAP: &str = "latent:clock/wall@0.1.0";
 pub const CONTRACT: &str = "tests:broker/api@0.1.0";
 pub fn bytes() -> Vec<u8> {
+    build(false)
+}
+pub fn spin_after_clocks() -> Vec<u8> {
+    build(true)
+}
+fn build(spin: bool) -> Vec<u8> {
     let mut component = Component::new();
     let mut wall = InstanceType::new();
     wall.ty()
@@ -47,6 +53,13 @@ pub fn bytes() -> Vec<u8> {
     body.instruction(&Instruction::Call(0));
     body.instruction(&Instruction::Drop);
     body.instruction(&Instruction::Call(0));
+    if spin {
+        body.instruction(&Instruction::Drop);
+        body.instruction(&Instruction::Loop(BlockType::Empty));
+        body.instruction(&Instruction::Br(0));
+        body.instruction(&Instruction::End);
+        body.instruction(&Instruction::Unreachable);
+    }
     body.instruction(&Instruction::End);
     let mut code = CodeSection::new();
     code.function(&body);

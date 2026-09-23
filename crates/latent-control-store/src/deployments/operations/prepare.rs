@@ -161,6 +161,7 @@ impl DirectoryDeploymentRepository {
                 &mut Work::default(),
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
+                self.admission.as_deref(),
             )
             .await?,
         );

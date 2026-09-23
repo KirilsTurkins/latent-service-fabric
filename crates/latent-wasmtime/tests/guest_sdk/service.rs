@@ -17,11 +17,7 @@ async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fix
     let callee_name = format!("{language}-callee");
     let caller = package::bundle(&package::input(&caller_name));
     let callee = package::bundle(&package::input(&callee_name));
-    let signers = package::Signers::new(if language == "c" {
-        latent_signing::C_GUEST_BUILD_TYPE
-    } else {
-        latent_signing::RUST_GUEST_BUILD_TYPE
-    });
+    let signers = package::Signers::new(&package::observation(&caller_name).build_type);
     let mut uploads = vec![];
     for (name, bundle) in [
         (caller_name.as_str(), &caller),
@@ -43,7 +39,7 @@ async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fix
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn typed_service_outcomes_use_node_admission_and_reused_cells() {
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         for permit in [true, false] {
             let root = tempfile::tempdir().unwrap();
             let f = configured(root.path(), permit, language).await;
@@ -52,7 +48,11 @@ async fn typed_service_outcomes_use_node_admission_and_reused_cells() {
                 request.input = serde_json::to_vec(&serde_json::json!([which, "", "0"])).unwrap();
                 let receipt = f.manager.start(request).unwrap().await;
                 let ActivationOutcome::Succeeded(success) = receipt.outcome else {
-                    panic!("{:?}", receipt.outcome)
+                    panic!(
+                        "{:?}; caller/child terminals: {:?}",
+                        receipt.outcome,
+                        f.observations.terminals.lock().unwrap()
+                    )
                 };
                 let result: Vec<String> = serde_json::from_slice(&success.output).unwrap();
                 assert_eq!(result, [if permit { expected } else { 11 }.to_string()]);

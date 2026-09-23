@@ -10,6 +10,8 @@ description = "Bounded Wasmtime Component Model runtime with a retained Phase 0 
 [features]
 # Off by default; timing observations cannot authorize compilation or loading.
 aot-test-timings = []
+# Retains the standalone compiler diagnostic; node installation is separately explicit.
+java-guest-diagnostic = []
 
 [lints.rust]
 # Only the private authenticated copying loader may locally allow unsafe.
@@ -49,7 +51,7 @@ latent-telemetry = { path = "../latent-telemetry" }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
-wasmtime.workspace = true
+wasmtime = { workspace = true, features = ["gc", "gc-drc"] }
 zeroize = { version = "=1.9.0", features = ["alloc"] }
 
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]

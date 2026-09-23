@@ -97,6 +97,7 @@ impl ExecutionCancellation for Control {
     }
 }
 pub struct Fixture<P = LocalSecretProvider> {
+    _guest_runtime: support::guest_runtime::Runtime,
     pub ceiling: latent_core::ResourceBudget,
     _factory: WasmtimeComponentEngineFactory,
     pub backend: WasmtimeBackend,
@@ -310,11 +311,13 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
             route_generation: RouteGeneration(1),
             attributes: Metadata::new(),
         };
+        let guest_runtime =
+            support::guest_runtime::Runtime::new(&broker, &policies, &publication, component::CAP);
         let plan = broker
             .compile_invocation_plan(
                 &revision,
                 Some(&latent_core::DeploymentId("secret-deployment".into())),
-                &[CapabilityBindingSpec {
+                &guest_runtime.bindings(&[CapabilityBindingSpec {
                     definition_digest: Some(&latent_artifacts::package::artifact_blob_digest(
                         b"secret-fixture-binding-v1",
                     )),
@@ -323,7 +326,7 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
                     policy_ids: &["p".into()],
                     provider_binding_id: "binding",
                     deployment_restriction_json: br#"{"operations":[]}"#,
-                }],
+                }]),
                 &publication,
                 &[],
                 &[],
@@ -343,6 +346,7 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
                 gate: gate.clone(),
             }))
             .unwrap();
+        guest_runtime.install(&runtime);
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             support::config(),
             WasmtimeHostServices {
@@ -363,6 +367,7 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
+            _guest_runtime: guest_runtime,
             ceiling,
             _factory: factory,
             backend,
@@ -514,6 +519,10 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
         );
         self.idle();
     }
+    pub fn runtime_entropy_calls(&self) -> u64 {
+        self._guest_runtime.entropy_calls()
+    }
+
     pub fn idle(&self) {
         let resources = self.backend.resource_snapshot();
         assert_eq!(resources.live_stores, 0);

@@ -20,6 +20,16 @@
       "shell": "default",
       "run": "set -o pipefail\npython3 tools/build_guest_capsules.py --output \"$LSF_GUEST_CAPSULES\" 2>&1 | tee \"$RUNNER_TEMP/c-guest-build.log\"\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/c-guest-runtime.log\"\ncargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee \"$RUNNER_TEMP/c-guest-provenance.log\"\ncargo test --locked -p latent-control-store --lib managed_lease_failure_never_mutates_or_renews_a_historical_replay 2>&1 | tee \"$RUNNER_TEMP/c-guest-control-lease.log\"\ncargo test --locked -p latent-policy --lib mutation_renewal_persists_a_full_window_even_before_the_sampler_margin 2>&1 | tee \"$RUNNER_TEMP/c-guest-clock-window.log\""
     },
+    ".github/workflows/c-guest-authoring.yml:runtime:Qualify standalone C projects and the printed guide": {
+      "workflow": ".github/workflows/c-guest-authoring.yml",
+      "job": "runtime",
+      "name": "Qualify standalone C projects and the printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_c_capsule_authoring\npython3 tools/qualify_c_capsules.py --output \"$RUNNER_TEMP/c-capsule-authoring\""
+    },
     ".github/workflows/ci.yml:profile:select": {
       "workflow": ".github/workflows/ci.yml",
       "job": "profile",
@@ -710,6 +720,86 @@
       "shell": "default",
       "run": "npm run test:build\nnpm run test:theme\nnpm run test:examples\nnpm run test:versions\nnpm run test:discovery"
     },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Retain the exact checked-out source revision": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Retain the exact checked-out source revision",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "git archive --format=tar.gz -o \"$RUNNER_TEMP/java-feasibility-source.tar.gz\" HEAD \\\n  apps crates sdk/java-guest sdk/rust tools wit/platform schemas examples \\\n  docs/component-development .cargo Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE \\\n  .github/workflows/java-guest-feasibility.yml"
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Test evidence and process-capture behavior": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Test evidence and process-capture behavior",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest discover -s sdk/java-guest/tests -v"
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Install pinned compiler tools": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Install pinned compiler tools",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Compile real Java sources and retain the first incompatible stage": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Compile real Java sources and retain the first incompatible stage",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 sdk/java-guest/tools/feasibility.py --output \"$RUNNER_TEMP/java-guest-feasibility\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Execute Java code, exceptions and GC without claiming node admission": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Execute Java code, exceptions and GC without claiming node admission",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-feasibility/probe.wasm\" 2>&1 | tee \"$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Compile generated typed Java bindings against async capability WIT": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Compile generated typed Java bindings against async capability WIT",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/qualify_java_bridge.py --output \"$RUNNER_TEMP/java-guest-bindings\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Execute typed Java values and async host suspension": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Execute typed Java values and async host suspension",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm\" --typed 2>&1 | tee \"$RUNNER_TEMP/java-guest-bindings/runtime-probe.log\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Qualify standalone Java projects, nine SDK components, signed node and printed guide": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Qualify standalone Java projects, nine SDK components, signed node and printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\npython3 tools/qualify_java_capsules.py --output \"$RUNNER_TEMP/java-capsule-authoring\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" 2>&1 | tee \"$RUNNER_TEMP/java-capsule-authoring.log\""
+    },
     ".github/workflows/native-runtime-release.yml:gate:Prepare private exact-source host workspace": {
       "workflow": ".github/workflows/native-runtime-release.yml",
       "job": "gate",
@@ -1189,16 +1279,6 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 controls/tools/security_scan.py rustsec --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
-    },
-    ".github/workflows/c-guest-authoring.yml:runtime:Qualify standalone C projects and the printed guide": {
-      "workflow": ".github/workflows/c-guest-authoring.yml",
-      "job": "runtime",
-      "name": "Qualify standalone C projects and the printed guide",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 -m unittest tools.tests.test_c_capsule_authoring\npython3 tools/qualify_c_capsules.py --output \"$RUNNER_TEMP/c-capsule-authoring\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2545,8 +2625,11 @@
     "sdk/java-client/tools/java_toolchain.py": {
       "sha256": "3cc265b8f13f24ce08da3cf079d3e66ca072515b0741f8594b43d412a3b9cd9d"
     },
+    "sdk/java-guest/tools/feasibility.py": {
+      "sha256": "429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c"
+    },
     "tools/aot_test_inputs.py": {
-      "sha256": "01b7951763092dbf4c8a677122b90e841241feacdbfa5bb7d5913a4302a0ddbf"
+      "sha256": "6ecd32d5179423d76a4e675902fb33e821f56a23708e3a929ef7697d662dd214"
     },
     "tools/build_angular_package.py": {
       "sha256": "6355b56981461912e5aeea8c9cc69424b512d5d55a6d805516af6eae523a02a0"
@@ -2634,6 +2717,15 @@
     },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
+    },
+    "tools/qualify_c_capsules.py": {
+      "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
+    },
+    "tools/qualify_java_bridge.py": {
+      "sha256": "f9f02c440195578fac1e1ccd297a6ba1824b5952b4c74f021475df2acac106ce"
+    },
+    "tools/qualify_java_capsules.py": {
+      "sha256": "54a371d38d626291fd1415e2ddda6841054c5ad34334869408459461d9788792"
     },
     "tools/qualify_rust_capsules.py": {
       "sha256": "8be1a3ed2d29898f66fefd9b7a8f801d4c15fb3fe994b0d2490eb9de555627c3"
@@ -2757,9 +2849,6 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
-    },
-    "tools/qualify_c_capsules.py": {
-      "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
     }
   },
   "pythonCases": {
@@ -3044,8 +3133,10 @@
     ],
     "tools/tests/test_build_provenance_schemas.py": [
       "BuildProvenanceSchemaTests.test_all_closed_fields_required_recursively",
+      "BuildProvenanceSchemaTests.test_builder_policy_and_observation_recipes_stay_in_sync",
       "BuildProvenanceSchemaTests.test_envelope_canonical_base64_and_exact_decoded_ceiling",
       "BuildProvenanceSchemaTests.test_explicit_builder_requirements_and_revocations",
+      "BuildProvenanceSchemaTests.test_java_recipe_is_closed_and_each_compiler_input_is_required",
       "BuildProvenanceSchemaTests.test_observation_profile_and_material_constraints",
       "BuildProvenanceSchemaTests.test_repository_grammar_matches_observation_and_policy",
       "BuildProvenanceSchemaTests.test_statement_subject_and_signed_shape"
@@ -3058,6 +3149,17 @@
       "BuildSnapshotTests.test_executable_mode_changes_inventory",
       "BuildSnapshotTests.test_real_capture_uses_committed_bytes_excludes_evidence_and_is_repeatable",
       "BuildSnapshotTests.test_unsafe_members_cannot_escape_or_introduce_special_files"
+    ],
+    "tools/tests/test_c_capsule_authoring.py": [
+      "CAuthoringTests.test_all_templates_capture_editable_source_and_authoritative_contracts",
+      "CAuthoringTests.test_c_namespace_aliases_never_invent_or_hide_ambiguous_bindings",
+      "CAuthoringTests.test_fresh_output_does_not_overwrite_existing_project",
+      "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
+      "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project",
+      "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected",
+      "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs",
+      "ControlDiagnosticsTests.test_cyclic_audit_cursor_stops_without_hiding_the_original_failure",
+      "ControlDiagnosticsTests.test_paginated_evidence_never_retries_or_changes_the_failed_mutation"
     ],
     "tools/tests/test_capability_policy_schema.py": [
       "CapabilityPolicySchemaTests.test_capability_operation_and_resource_kinds_cannot_be_mixed",
@@ -3328,7 +3430,8 @@
       "GeneratorArchive.test_pinned_generator_version_matches_toolchain_and_lock",
       "GeneratorArchive.test_verified_regular_binary_only",
       "GuestProfileSchemas.test_echo_snapshot_can_still_capture_every_workspace_member",
-      "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate"
+      "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate",
+      "GuestProfileSchemas.test_java_recipe_requires_its_closed_compiler_inputs_and_separate_type"
     ],
     "tools/tests/test_harbor_registry_runner.py": [
       "HarborRunnerTests.test_cleanup_rejects_foreign_or_malformed_ownership_before_removal",
@@ -5512,17 +5615,6 @@
     ],
     "tools/tests/test_zig_cache_boundary.py": [
       "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation"
-    ],
-    "tools/tests/test_c_capsule_authoring.py": [
-      "CAuthoringTests.test_all_templates_capture_editable_source_and_authoritative_contracts",
-      "CAuthoringTests.test_c_namespace_aliases_never_invent_or_hide_ambiguous_bindings",
-      "CAuthoringTests.test_fresh_output_does_not_overwrite_existing_project",
-      "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
-      "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project",
-      "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected",
-      "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs",
-      "ControlDiagnosticsTests.test_cyclic_audit_cursor_stops_without_hiding_the_original_failure",
-      "ControlDiagnosticsTests.test_paginated_evidence_never_retries_or_changes_the_failed_mutation"
     ]
   },
   "pythonTestModules": [
@@ -5771,6 +5863,7 @@
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
+    ".github/workflows/java-guest-feasibility.yml": "6c1814b442abf741dc4dceb6ab707cf87b3cc161090a3b5b7a62c9334dc3f872",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
