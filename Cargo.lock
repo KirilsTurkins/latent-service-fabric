@@ -1878,14 +1878,14 @@ dependencies = [
 name = "latent-packaging"
 version = "0.1.0-alpha.4"
 dependencies = [
- "base64",
- "latent-signing",
+ "base64 0.23.1",
  "cap-fs-ext",
  "cap-std",
  "latent-artifacts",
  "latent-contracts",
  "latent-core",
  "latent-manifest",
+ "latent-signing",
  "serde",
  "serde_json",
  "sha2 0.10.9",
