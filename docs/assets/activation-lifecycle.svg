@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="activation-title activation-description">
+  <title id="activation-title">An invocation owns temporary execution resources</title>
+  <desc id="activation-description">The node retains a fixed cell pool and bounded shared caches, policy and provider infrastructure. An admitted request leases a cell and creates fresh activation state. Capability calls require current grants and share the activation's limits. Completion, failure, cancellation or timeout all enter cleanup. Proven cleanup releases the cell for reuse. Uncertain cleanup quarantines the cell and retains ownership. A dormant service owns no executing guest.</desc>
+  <defs>
+    <marker id="activation-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#F2CA68"/>
+    </marker>
+    <style>
+      .heading { font: 700 34px system-ui, sans-serif; fill: #F3EBDD; }
+      .subtitle { font: 400 18px system-ui, sans-serif; fill: #C7BA9C; }
+      .title { font: 700 21px system-ui, sans-serif; fill: #F3EBDD; }
+      .copy { font: 400 18px system-ui, sans-serif; fill: #F3EBDD; }
+      .label { font: 600 14px system-ui, sans-serif; fill: #F2CA68; }
+      .success { font: 400 18px system-ui, sans-serif; fill: #B9E8BD; }
+      .warning { font: 400 18px system-ui, sans-serif; fill: #F8D586; }
+    </style>
+  </defs>
+  <rect width="1440" height="760" rx="28" fill="#0D0D0B"/>
+  <text x="72" y="98" class="heading">Execution begins with a request and ends with cleanup</text>
+  <text x="72" y="138" class="subtitle">The node shares bounded infrastructure. Each invocation gets fresh execution state.</text>
+  <rect x="72" y="185" width="1296" height="65" rx="20" fill="#242017" stroke="#9F8C62" stroke-width="2"/>
+  <text x="104" y="225" class="copy">NODE OWNED: fixed cell pool, bounded caches, policy, provider connections and telemetry</text>
+  <g fill="#191812" stroke="#9F8C62" stroke-width="2">
+    <rect x="72" y="304" width="384" height="202" rx="24"/>
+    <rect x="528" y="304" width="384" height="202" rx="24"/>
+    <rect x="984" y="304" width="384" height="202" rx="24"/>
+  </g>
+  <text x="104" y="350" class="title">Admit the request</text>
+  <text x="104" y="394" class="copy">Select a revision and check authority.</text>
+  <text x="104" y="426" class="copy">Reserve capacity and lease a cell.</text>
+  <text x="104" y="474" class="label">BOUNDED QUEUE AND DEADLINE</text>
+  <text x="560" y="350" class="title">Run a fresh activation</text>
+  <text x="560" y="394" class="copy">New guest instance, heap and handles.</text>
+  <text x="560" y="426" class="copy">Provider calls need grants and budget.</text>
+  <text x="560" y="474" class="label">NO GUEST STATE SHARED BETWEEN CALLS</text>
+  <text x="1016" y="350" class="title">Finish and reclaim</text>
+  <text x="1016" y="394" class="copy">Success, failure, cancel or timeout.</text>
+  <text x="1016" y="426" class="copy">Close handles and prove cleanup.</text>
+  <text x="1016" y="474" class="label">OWNERSHIP CONTINUES UNTIL CLEANUP</text>
+  <g fill="none" stroke="#F2CA68" stroke-width="3" marker-end="url(#activation-arrow)">
+    <path d="M 468 400 H 514"/>
+    <path d="M 924 400 H 970"/>
+    <path d="M 1176 518 V 546 H 384 V 570"/>
+    <path d="M 1176 546 V 570"/>
+  </g>
+  <rect x="72" y="584" width="624" height="104" rx="24" fill="#15331F" stroke="#88BF8E" stroke-width="2"/>
+  <text x="104" y="624" class="title">Cleanup proved</text>
+  <text x="104" y="658" class="success">Release the cell and quota for the next invocation.</text>
+  <rect x="744" y="584" width="624" height="104" rx="24" fill="#35260B" stroke="#CFA546" stroke-width="2"/>
+  <text x="776" y="624" class="title">Cleanup uncertain</text>
+  <text x="776" y="658" class="warning">Quarantine the cell; keep its resources accounted for.</text>
+</svg>

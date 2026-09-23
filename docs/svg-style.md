@@ -149,8 +149,8 @@ color alone.
 maintained presentation. Its amber, gold and warm charcoal are original LSF
 styling; no game artwork, logo, character, font or layout is imported.
 The website generates CSS and Prism colors from this file. The narrow
-[Python helper](../tools/illustration_palette.py) uses its **dark** tokens to
-produce self-contained presentation SVGs; ordinary SVG checks do not need Node.
+[Python helper](../tools/illustration_palette.py) checks current diagrams against its **dark** tokens; ordinary SVG checks do not
+need Node. Current diagrams are self-contained, hand-authored SVGs.
 
 | Meaning | Surface / outline token | Foreground token | Use |
 |---|---|---|---|
@@ -163,9 +163,7 @@ produce self-contained presentation SVGs; ordinary SVG checks do not need Node.
 
 Parent-page CSS does **not** theme an external SVG image. These SVGs keep the
 same opaque dark representation on light and dark GitHub/website pages, rather
-than relying on inherited CSS variables, external fonts or filters. Preserve
-their IDs and use external images: inlining an original and its copy in one DOM
-would duplicate those deliberately retained IDs.
+than relying on inherited CSS variables, external fonts or filters. Use external images and file-specific IDs to avoid fragment collisions.
 
 Text pairings must reach 4.5:1; applicable boundaries, arrowheads and controls
 must reach 3:1. Large text may use the WCAG 3:1 threshold, but the maintained
@@ -185,12 +183,12 @@ An unclassified new SVG fails the scoped check. Current dispositions are:
 | Source / output | Disposition | Maintained owner |
 |---|---|---|
 | `phase0-gate-decision.svg` | Immutable dated gate; historical completion page keeps original | Exact SHA-256 in inventory |
-| `phase0-scope-boundary.svg` | Immutable measured scope; README historical section keeps original | Exact SHA-256 in inventory |
-| `phase0-resource-lifecycle.svg` | Immutable retained Phase 0 composition | Exact SHA-256 in inventory |
+| `phase0-scope-boundary.svg` | Immutable historical measured scope | Exact SHA-256 in inventory |
+| `phase0-resource-lifecycle.svg` | Immutable historical composition | Exact SHA-256 in inventory |
 | `phase1-delivery-boundary.svg` | Immutable historical handoff and measurement statements | Exact SHA-256 in inventory |
-| `phase2-delivery-boundary.svg` | Immutable released-alpha boundary; delivery/completion pages keep original | Exact SHA-256 in inventory |
-| `phase0-resource-lifecycle-presentation.svg` | Maintained, labelled color-only copy in current architecture overview | `tools/illustration_palette.py` |
-| `phase2-delivery-boundary-presentation.svg` | Maintained, labelled color-only copy in README/current overview | `tools/illustration_palette.py` |
+| `phase2-delivery-boundary.svg` | Immutable historical boundary; dated completion review keeps original | Exact SHA-256 in inventory |
+| `activation-lifecycle.svg` | Maintained current activation and cleanup behavior | Hand-authored; palette checked by `tools/illustration_palette.py` |
+| `package-delivery.svg` | Maintained current capsule, static-site and SSR delivery | Hand-authored; palette checked by `tools/illustration_palette.py` |
 
 There are no tracked vendor/brand SVGs or migrated Wiki SVGs in this initial
 inventory. The two legacy Wiki SVGs (`architecture-at-a-glance.svg` and
@@ -206,8 +204,10 @@ that the live Wiki is already retired or completely audited.
 The five originals are exact, individually documented historical palette
 exceptions, not a wildcard waiver for new purple/blue presentation. Benchmark,
 measurement, signed/digest-bound, release-snapshot and upstream/vendor bytes are
-not recolored. A current guide may use a **new named presentation copy**, with a
-nearby original link and explicit historical scope, never pass it off as evidence.
+not recolored. Current guides and the README use current diagrams with current claims. Historical
+illustrations belong only with dated developer evidence. Recoloring an old
+diagram does not make its feature claims current; the obsolete presentation
+copies have been removed.
 
 ## Regeneration and focused checks
 
@@ -218,22 +218,17 @@ python tools/illustration_palette.py
 python -m unittest tools.tests.test_illustration_palette -v
 ```
 
-After reviewing a semantic token change, regenerate **only** the two named
-presentation outputs and inspect the diff:
+After reviewing a semantic token change, update the two current SVGs and inspect
+their rendered labels and geometry. Their explicit `maintained` inventory entries
+name their owners and current consumers. The helper checks every literal color
+against the shared palette and rejects unknown assets or missing consumers.
 
-```sh
-python tools/illustration_palette.py --write
-git diff -- docs/assets/
-```
-
-The helper rejects changed historical hashes, unknown colors/tokens, linked or
-escaping paths, missing consumers, unclassified SVGs and stale output bytes.
-It preserves every non-color byte, including labels, geometry, IDs, fragment
-references, roles, titles/descriptions and technical statements. Generation is
-deterministic, with no remote inputs or font/rasterizer dependency.
-`--check-legacy` additionally checks the recorded Wiki blob identities when that
-snapshot is present in the local Git object database; it never fetches or runs
-the old generator. Missing objects fail that optional verification explicitly.
+Historical and released-snapshot SVG hashes remain checked independently.
+The optional color-only copier can regenerate explicitly inventoried copies;
+there are currently none. It cannot update technical claims and must not be used
+to present an earlier product boundary as current. `--check-legacy` checks the
+recorded Wiki blob identities if that snapshot exists locally; it never fetches
+or runs the old generator.
 
 Run the existing `tools/validate_repository.py` SVG contract as well; this helper
 does not replace its security/accessibility/resource-reference ownership.
@@ -265,5 +260,5 @@ in the repository source tree: XML parsing, the accessibility contract,
 title/description labels, local-only references, and the absence of active
 content. The layout and color rules above remain a deliberate review standard.
 
-The maintained presentation copies are the current palette references. The
-five originals remain historical references, with their prior palette intact.
+The current delivery and activation diagrams are the palette references.
+The five archived originals retain their historical scope and bytes.

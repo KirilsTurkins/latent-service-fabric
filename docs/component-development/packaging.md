@@ -2,7 +2,7 @@
 
 `latent-packaging` implements the bounded build/inspect workflow from
 [#141](https://github.com/KirilsTurkins/latent-service-fabric/issues/141), using
-the [Phase 2 artifact format](../protocol/package-format.md). It packages supplied
+the [artifact format](../protocol/package-format.md). It packages supplied
 bytes without compiling a component or invoking a guest. The separate
 [registry adapter](../reference/oci-registry.md) transfers its bytes, and the
 [publisher signing library](../reference/publisher-trust.md) signs and verifies
@@ -182,7 +182,7 @@ encoder, with nested types and a clock import. They check build/inspect identity
 input receipts, metadata/WIT/binary mismatches, unused invalid bodies, parser
 limits, path handling, directory inventories and failed/partial output. Symlink
 tests run on Linux CI. No guest invocation, large compiled fixtures or load
-campaign is needed. Existing Phase 0 echo receipts remain unsigned and separate
+campaign is needed. Historical echo receipts remain unsigned and separate
 from the new observed-build provenance workflow.
 After the existing echo build, CI also runs `python tools/validate_package_smoke.py`
 to package and inspect that real Rust component and the browser/SSR fixtures

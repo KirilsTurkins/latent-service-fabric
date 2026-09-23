@@ -1,4 +1,4 @@
-# Phase 1 WIT value payloads
+# WIT value payloads
 
 The generic Wasmtime backend uses
 `application/vnd.latent.wit-values.v1+json` for invocation input and output. The

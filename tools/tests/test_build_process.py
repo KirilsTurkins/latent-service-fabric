@@ -64,6 +64,20 @@ class BuildProcessTests(unittest.TestCase):
         return run_bounded([sys.executable, "-c", source], self.root, dict(os.environ),
                            timeout_seconds=timeout, max_output_bytes=maximum)
 
+    def test_opt_in_nonzero_diagnostics_preserve_status_and_both_streams(self):
+        result = build_process.run_bounded_result(
+            [sys.executable, "-c", "import sys; print('out'); print('error',file=sys.stderr); sys.exit(7)"],
+            self.root, dict(os.environ), timeout_seconds=3, max_output_bytes=4096)
+        self.assertEqual(result.returncode, 7)
+        self.assertEqual(result.stdout, b"out" + os.linesep.encode())
+        self.assertEqual(result.stderr, b"error" + os.linesep.encode())
+
+    def test_opt_in_diagnostics_do_not_disable_process_output_limits(self):
+        with self.assertRaises(BuildProcessError):
+            build_process.run_bounded_result(
+                [sys.executable, "-c", "print('x' * 8192)"], self.root, dict(os.environ),
+                timeout_seconds=3, max_output_bytes=1024)
+
     def assert_gone(self, pid):
         deadline = time.monotonic() + 1
         while _alive(pid) and time.monotonic() < deadline:
