@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { basename, dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { coreIntegerLowering } from './signed64.mjs';
+import { explicitResourceOwners } from './resources.mjs';
 
 const [compiler, witPath, sourcePath, output, world = 'capsule'] = process.argv.slice(2);
 const bytes = await readFile(compiler);
@@ -31,7 +32,10 @@ let generatedBindings;
 const result = await componentize({
   sourcePath, sourceName: basename(sourcePath),
   witPath, worldName: world, enableAot: false, env: {},
-  lsfBindings(source) { generatedBindings = coreIntegerLowering(source); return generatedBindings; },
+  lsfBindings(source) {
+    generatedBindings = explicitResourceOwners(coreIntegerLowering(source));
+    return generatedBindings;
+  },
   disableFeatures: ['stdio', 'random', 'clocks', 'http', 'fetch-event'],
 });
 await writeFile(join(output, 'generated-bindings.js'), generatedBindings, { flag: 'wx' });

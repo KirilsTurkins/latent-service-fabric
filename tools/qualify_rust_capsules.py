@@ -48,7 +48,7 @@ def inputs(language="rust"):
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
                     "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
                     "typescript_guest/probe.py", "typescript_guest/componentize.mjs", "typescript_guest/bundle.mjs",
-                    "typescript_guest/signed64.mjs", "../.cargo/managed-guest.toml")
+                    "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "../.cargo/managed-guest.toml")
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
                     "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/sdk.py",
@@ -208,6 +208,9 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
             commands.run("typescript-real-sdk-error-boundary", paths["cargo"], *cargo_options,
                 "run", "--locked", "-p", "latent-wasmtime", "--example", "typescript_runtime_probe", "--",
                 output / "sdk-guests/typescript-random/component.wasm", "speed", "sdk-random")
+            commands.run("typescript-sdk-resources", paths["cargo"], *cargo_options, "run", "--locked", "-p", "latent-wasmtime",
+                "--example", "typescript_runtime_probe", "--", output / "sdk-guests/typescript-blob/component.wasm",
+                "speed", "sdk-blob")
         commands.run("sdk-runtime-tests", paths["cargo"], *cargo_options, "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
                      "--", "--ignored", "--test-threads=1")
         stage = "sign-demo"

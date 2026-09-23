@@ -15,7 +15,7 @@ from tools.typescript_guest.project import validate
 BUILD_TYPE = "https://latent.dev/build/typescript-capsule/v1"
 RECIPE = ("tools/typescript_capsule.py", "tools/typescript_guest/project.py", "tools/typescript_guest/build.py",
     "tools/typescript_guest/compiler.py", "tools/typescript_guest/probe.py", "tools/typescript_guest/bundle.mjs",
-    "tools/typescript_guest/componentize.mjs", "tools/typescript_guest/signed64.mjs",
+    "tools/typescript_guest/componentize.mjs", "tools/typescript_guest/signed64.mjs", "tools/typescript_guest/resources.mjs",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
     "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
     "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
@@ -58,6 +58,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
+            (output / "generated-bindings.js").write_bytes(read_file(temporary / "compiled/generated-bindings.js", 8 * 1024 * 1024))
             write_json(output / "bindings.json", generated)
             stage = "contracts"
             wit_input = temporary / "wit-inputs.json"

@@ -1,6 +1,34 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { coreI64Lowering, coreIntegerLowering } from '../../../tools/typescript_guest/signed64.mjs';
+import { explicitResourceOwners } from '../../../tools/typescript_guest/resources.mjs';
+
+test('pinned opaque resource lifts have explicit one-shot drops and no GC effects', () => {
+  const source = `const finalizationRegistry_import$blob_0_2_0$chunk = new FinalizationRegistry((handle) => {
+  $resource_import$blob_0_2_0$drop$chunk(handle);
+});
+const symbolDispose = Symbol.dispose || Symbol.for('dispose');
+const symbolRscHandle = Symbol('handle');`;
+  const adapted = explicitResourceOwners(source);
+  assert(!adapted.includes('new FinalizationRegistry'));
+  const dropped = [];
+  const create = new Function('$resource_import$blob_0_2_0$drop$chunk', adapted + `;
+    return handle => {
+      const owner = Object.create(import_blob_0_2_0$Chunk.prototype);
+      owner[symbolRscHandle] = handle;
+      return { close() { owner[symbolDispose](); }, forge() { return new import_blob_0_2_0$Chunk(); } };
+    };`)(handle => { dropped.push(handle); if (handle === 7) throw new Error('drop'); });
+  for (const handle of [0, 7, -1]) {
+    const owner = create(handle);
+    assert.throws(() => owner.forge(), /cannot-be-constructed/);
+    if (handle === 7) assert.throws(() => owner.close(), /drop/);
+    else owner.close();
+    owner.close();
+  }
+  assert.deepEqual(dropped, [0, 7, -1]);
+  assert.throws(() => explicitResourceOwners(source.replace("Symbol('handle')", 'Symbol()')), /symbol-drift/);
+  assert.throws(() => explicitResourceOwners(source + '\nnew FinalizationRegistry(() => {})'), /finalizer/);
+});
 
 const intrinsic = `function toInt64(val) {
   const converted = BigInt(val)
