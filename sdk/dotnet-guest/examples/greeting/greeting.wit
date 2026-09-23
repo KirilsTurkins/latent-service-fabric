@@ -1,0 +1,9 @@
+package latent:greeting@1.0.0;
+
+interface greeting {
+    greet: func(name: string) -> string;
+}
+
+world capsule {
+    export greeting;
+}

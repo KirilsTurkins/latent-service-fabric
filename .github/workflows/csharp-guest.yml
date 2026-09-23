@@ -1,0 +1,69 @@
+name: C# guest qualification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/csharp-guest.yml'
+      - 'sdk/dotnet-guest/**'
+      - 'wit/platform/**'
+      - 'tools/stage_runtime_wit.py'
+  push:
+    branches: ['feat/csharp-guest-sdk']
+    paths:
+      - '.github/workflows/csharp-guest.yml'
+      - 'sdk/dotnet-guest/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: csharp-guest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    name: C# component compiler and admission qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '10.0.100'
+      - name: Compile the pinned NativeAOT component candidate
+        working-directory: sdk/dotnet-guest
+        run: dotnet publish examples/greeting/Greeting.csproj --configuration Release --nologo
+      - name: Inspect actual compiler output
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/csharp-guest"
+          find sdk/dotnet-guest/examples/greeting -type f \( -name '*.wasm' -o -name 'packages.lock.json' \) -print
+          if test -f sdk/dotnet-guest/examples/greeting/packages.lock.json; then
+            cat sdk/dotnet-guest/examples/greeting/packages.lock.json
+          fi
+          tool="$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64/wasm-tools"
+          if test -x "$tool"; then
+            "$tool" --version
+            while IFS= read -r component; do
+              "$tool" component wit "$component" || exit 1
+            done < <(find sdk/dotnet-guest/examples/greeting/bin -type f -name '*.wasm' 2>/dev/null)
+          fi
+      - name: Retain compilation attempts, bindings and lock candidates
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: csharp-guest-qualification-${{ github.sha }}
+          path: |
+            sdk/dotnet-guest/examples/greeting/packages.lock.json
+            sdk/dotnet-guest/examples/greeting/obj/**/wit_bindgen/**
+            sdk/dotnet-guest/examples/greeting/bin/**/*.wasm
+          if-no-files-found: warn
+          retention-days: 7

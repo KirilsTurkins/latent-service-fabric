@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetName>greeting</TargetName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Wit Update="greeting.wit" World="capsule" />
+  </ItemGroup>
+</Project>
