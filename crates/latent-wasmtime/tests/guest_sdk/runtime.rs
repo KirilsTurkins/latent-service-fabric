@@ -42,6 +42,20 @@ pub fn memory(default: u64) -> u64 {
     }
 }
 
+pub fn fuel(default: u64) -> u64 {
+    match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
+        Ok("go" | "typescript") => 10_000_000_000,
+        _ => default,
+    }
+}
+
+pub fn wall_time(default: u64) -> u64 {
+    match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
+        Ok("go" | "typescript") => 120_000,
+        _ => default,
+    }
+}
+
 struct Entry {
     reference: ProviderReference,
     operation: Vec<String>,

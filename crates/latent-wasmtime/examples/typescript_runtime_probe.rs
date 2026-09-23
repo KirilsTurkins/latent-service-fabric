@@ -38,6 +38,9 @@ async fn main() -> wasmtime::Result<()> {
         "diagnostic compile millis: {}",
         started.elapsed().as_millis()
     );
+    if std::env::args().nth(3).as_deref() == Some("sdk-random") {
+        return sdk_random(&engine, &component).await;
+    }
     let pending = Arc::new(AtomicUsize::new(0));
     let count = pending.clone();
     let mut linker = Linker::new(&engine);
@@ -101,6 +104,72 @@ async fn main() -> wasmtime::Result<()> {
         );
     }
     println!("TypeScript async and signed scalar boundaries passed; signed admission and SDK qualification remain required");
+    Ok(())
+}
+
+async fn sdk_random(engine: &Engine, component: &Component) -> wasmtime::Result<()> {
+    let mut linker = Linker::new(engine);
+    let mut random = linker.instance("latent:random/random@0.1.0")?;
+    random.func_new_async("bytes", |_, _, input, output| {
+        Box::new(async move {
+            let Val::U32(length) = input[0] else {
+                panic!("length type")
+            };
+            println!("diagnostic random bytes host called: {length}");
+            assert!(
+                length == 32 || length == u32::MAX,
+                "u32 must preserve all 32 bits"
+            );
+            output[0] = if length > 4096 {
+                Val::Result(Err(Some(Box::new(Val::Variant(
+                    "invalid-length".into(),
+                    None,
+                )))))
+            } else {
+                Val::Result(Ok(Some(Box::new(Val::List(vec![
+                    Val::U8(1);
+                    length as usize
+                ])))))
+            };
+            Ok(())
+        })
+    })?;
+    random.func_new_async("u64-value", |_, _, _, output| {
+        Box::new(async move {
+            println!("diagnostic scalar random host called");
+            output[0] = Val::Result(Ok(Some(Box::new(Val::U64(u64::MAX)))));
+            Ok(())
+        })
+    })?;
+    for (which, expected) in [(0, 32), (1, 8), (2, 10), (0, 32)] {
+        let mut store = Store::new(
+            engine,
+            StoreLimitsBuilder::new()
+                .memory_size(128 * 1024 * 1024)
+                .build(),
+        );
+        store.limiter(|limits| limits);
+        store.set_fuel(1_000_000_000)?;
+        let instance = linker.instantiate_async(&mut store, component).await?;
+        let (_, interface) = instance
+            .get_export(&mut store, None, "tests:random/api@1.0.0")
+            .expect("random API");
+        let (_, index) = instance
+            .get_export(&mut store, Some(&interface), "run")
+            .expect("run");
+        let function = instance.get_func(&mut store, index).expect("function");
+        let mut output = [Val::Bool(false)];
+        let result = function
+            .call_async(
+                &mut store,
+                &[Val::U32(which), Val::String(String::new()), Val::U64(0)],
+                &mut output,
+            )
+            .await;
+        println!("diagnostic random case {which}: {result:?}, output {output:?}");
+        result?;
+        assert_eq!(output, [Val::U64(expected)]);
+    }
     Ok(())
 }
 

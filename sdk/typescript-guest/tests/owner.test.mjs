@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
+import { runInNewContext } from 'node:vm';
 const base = process.env.LSF_TYPESCRIPT_OWNERS;
 assert.ok(base, 'compile the exact capability owner and result modules');
 const { Owner, Scope, drop } = await import(pathToFileURL(resolve(base, 'owner.js')));
@@ -65,6 +66,9 @@ test('only closed declared error payloads become typed errors; traps remain trap
   const declared = Object.assign(new Error('component'), { payload: { tag: 'uncertain' } });
   const result = call(() => { throw declared; }, ['uncertain']);
   assert.deepEqual(result, { tag: 'err', val: { tag: 'uncertain' } });
+  const foreign = runInNewContext("Object.assign(new Error('component'), { payload: { tag: 'uncertain' } })");
+  assert.equal(foreign instanceof Error, false);
+  assert.equal(call(() => { throw foreign; }, ['uncertain']).val.tag, 'uncertain');
   assert.throws(() => unwrap(result), value => value.tag === 'uncertain');
   for (const value of [new Error('trap'), { tag: 'uncertain' },
     Object.assign(new Error(), { payload: { tag: 'unreviewed' } }),

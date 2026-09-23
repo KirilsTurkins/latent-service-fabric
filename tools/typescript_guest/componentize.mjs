@@ -4,7 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { basename, dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { coreI64Lowering } from './signed64.mjs';
+import { coreIntegerLowering } from './signed64.mjs';
 
 const [compiler, witPath, sourcePath, output, world = 'capsule'] = process.argv.slice(2);
 const bytes = await readFile(compiler);
@@ -27,12 +27,14 @@ try {
 }
 const { componentize } = await import(pathToFileURL(path));
 if (!witPath) process.exit(0); // Prepare and hash the reviewed adapter before the build.
+let generatedBindings;
 const result = await componentize({
   sourcePath, sourceName: basename(sourcePath),
   witPath, worldName: world, enableAot: false, env: {},
-  lsfBindings: coreI64Lowering,
+  lsfBindings(source) { generatedBindings = coreIntegerLowering(source); return generatedBindings; },
   disableFeatures: ['stdio', 'random', 'clocks', 'http', 'fetch-event'],
 });
+await writeFile(join(output, 'generated-bindings.js'), generatedBindings, { flag: 'wx' });
 if (!result.core || result.core.byteLength > 64 * 1024 * 1024) throw new Error('core-output-bound');
 await writeFile(join(output, 'core.wasm'), result.core, { flag: 'wx' });
 await writeFile(join(output, 'compiler.json'), JSON.stringify({

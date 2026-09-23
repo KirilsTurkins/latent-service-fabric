@@ -186,6 +186,10 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         commands.environment["LSF_GUEST_CAPSULES"] = str(output / "sdk-guests")
         if language in {"go", "typescript"}:
             commands.environment["LSF_GUEST_SDK_LANGUAGE"] = language
+        if language == "typescript":
+            commands.run("typescript-real-sdk-error-boundary", paths["cargo"], *cargo_options,
+                "run", "--locked", "-p", "latent-wasmtime", "--example", "typescript_runtime_probe", "--",
+                output / "sdk-guests/typescript-random/component.wasm", "speed", "sdk-random")
         commands.run("sdk-runtime-tests", paths["cargo"], *cargo_options, "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
                      "--", "--ignored", "--test-threads=1")
         stage = "sign-demo"

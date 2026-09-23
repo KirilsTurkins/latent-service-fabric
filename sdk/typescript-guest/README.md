@@ -23,10 +23,12 @@ unresolved promises until Store destruction, then requires fresh module state.
 
 WIT `u64`/`s64` use `bigint`, UTF-8 strings preserve embedded NUL, byte lists
 use `Uint8Array`, and records/results preserve generated types. The guarded
-compiler adapter normalizes signed i64 lowering bit patterns for ComponentizeJS
-0.22's unsigned internal embedding ABI. WIT types and signed lifting do not
-change. CI tests both signed extremes and unsigned maximum through the real
-compiled boundary, including scalar returns.
+compiler adapter preserves signed i64 and unsigned i32 lowering bit patterns
+at ComponentizeJS 0.22's internal embedding boundary. WIT types and canonical
+lifting do not change. CI checks both signed extremes and unsigned maxima
+through actual compiled components, including scalar returns and a declared
+error raised across the generator's separate JavaScript realm. The exact
+generated glue is retained with compiler diagnostics.
 
 WIT future/stream/map/fixed-size-list values, named/free-standing imports and
 colliding generated import filenames fail explicitly. There is no ambient
