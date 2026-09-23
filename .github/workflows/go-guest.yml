@@ -5,6 +5,7 @@ on:
     paths:
       - sdk/go-guest/**
       - tools/go_guest/**
+      - crates/latent-wasmtime/examples/go_runtime_probe.rs
       - wit/**
       - tools/toolchain.toml
       - .github/workflows/go-guest.yml
@@ -13,6 +14,7 @@ on:
     paths:
       - sdk/go-guest/**
       - tools/go_guest/**
+      - crates/latent-wasmtime/examples/go_runtime_probe.rs
       - wit/**
       - tools/toolchain.toml
       - .github/workflows/go-guest.yml
@@ -30,6 +32,10 @@ jobs:
     name: Go upstream compatibility probe
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -65,6 +71,10 @@ jobs:
           retention-days: 1
       - name: Generate and compile upstream and constrained LSF components
         run: python3 tools/go_guest/probe.py --output "$RUNNER_TEMP/go-guest-probe" --go "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
+      - name: Execute the compiled runtime diagnostic without claiming admission
+        run: |
+          set -o pipefail
+          cargo run --locked -p latent-wasmtime --example go_runtime_probe -- "$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm" 2>&1 | tee "$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log"
       - name: Retain successful and failed upstream observations
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

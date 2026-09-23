@@ -1189,6 +1189,46 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 -m unittest tools.tests.test_c_capsule_authoring\npython3 tools/qualify_c_capsules.py --output \"$RUNNER_TEMP/c-capsule-authoring\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Install the locked compiler and generator",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ncargo install --locked wasm-tools --version 1.254.0\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Retain pinned reproduction tools": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Retain pinned reproduction tools",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-guest-tools\"\ncp \"$HOME/.cargo/bin/componentize-go\" \"$HOME/.cargo/bin/wasm-tools\" \"$out/\"\nsha256sum \"$out/componentize-go\" \"$out/wasm-tools\" > \"$out/tools.sha256\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Generate and compile upstream and constrained LSF components": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Generate and compile upstream and constrained LSF components",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/go_guest/probe.py --output \"$RUNNER_TEMP/go-guest-probe\" --go \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Execute the compiled runtime diagnostic without claiming admission": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Execute the compiled runtime diagnostic without claiming admission",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --example go_runtime_probe -- \"$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm\" 2>&1 | tee \"$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2750,6 +2790,9 @@
     },
     "tools/qualify_c_capsules.py": {
       "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
+    },
+    "tools/go_guest/probe.py": {
+      "sha256": "6a662ae08917327c27279bc9128231004683c27e8f4c539468e6c4637c886be2"
     }
   },
   "pythonCases": {
@@ -5777,6 +5820,7 @@
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
-    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b"
+    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
+    ".github/workflows/go-guest.yml": "9b84473834bb3d90bbd6c75a55c6498eba84f2fcc2ec240624898a783dc36514"
   }
 }

@@ -100,6 +100,12 @@ def probe(output: Path, go: Path, componentize: Path, wasm_tools: Path) -> None:
         run("bindings", args + ["bindings", "--generate-stubs", "--format", "-o", str(module)])
         report["generatedBindings"] = {str(path.relative_to(module)): digest(path)
                                        for path in sorted(module.rglob("*")) if path.is_file()}
+        implementation = ROOT / "sdk/go-guest/probes/roundtrip.go"
+        stub = module / "export_lsf_go_probe_probe/wit_bindings.go"
+        if stub.read_text().count('panic("not implemented")') != 1:
+            raise ValueError("Go generated export stub drift")
+        stub.write_bytes(implementation.read_bytes())
+        report["sourceInputs"]["sdk/go-guest/probes/roundtrip.go"] = digest(implementation)
         run("module-download", [str(go), "mod", "download", "all"], module)
         component = output / "upstream-candidate.wasm"
         run("component-build", args + ["build", "--go", str(go), "-o", str(component)], module)
