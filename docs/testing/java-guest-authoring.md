@@ -183,6 +183,15 @@ results; resources on imported capabilities remain supported and exercised.
 This early rejection matches production signature validation, rather than
 changing resource semantics or promising an uncallable export.
 
+The isolated demo's publisher and builder proof ages now match its existing
+finite 1800-second signature window. The earlier fast passing runs did not
+expose a one-minute proof-age limit that contradicted the guide's 30-minute
+interactive session. Real cryptographic regressions check both roles after
+61, 900 and 1799 seconds, reject currentness and re-verification at signature
+expiry, and independently preserve a deliberately lowered one-minute ceiling.
+Production defaults, revocation checks and admission-currentness fences are
+unchanged. The corrected policy and printed guide require a new exact-head run.
+
 Runtime release publication remains on HOLD; issue #345 still requires human
 newcomer review independently of automated guide execution. Exact final-head
 CI and artifact verification are mandatory before squash-admin merge into

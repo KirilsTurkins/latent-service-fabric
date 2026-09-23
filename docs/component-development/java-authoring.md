@@ -115,6 +115,9 @@ a complete transitive dependency inventory. The keys never enter the compiler.
 This policy lasts for this experiment and accepts only the captured source and
 builder recipe. For a maintained deployment, use your organization's publisher,
 builder and revocation policies through the [package workflow](packaging.md).
+The isolated demo gives both publisher and builder proofs the same finite
+1800-second window as their signatures. Re-verification cannot extend an
+expired signature; production proof-age limits are not changed by this demo.
 Finish the steps below within 30 minutes of signing; otherwise sign into a new
 directory and start a new experiment.
 
