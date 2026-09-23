@@ -108,7 +108,7 @@ impl Runtime {
             "tests",
             &[Scope {
                 services: &["generic"],
-                publications: &[publication.publication().clone()],
+                publications: std::slice::from_ref(publication.publication()),
                 principal: ("service", "generic-test"),
             }],
             main_capability == RANDOM,
