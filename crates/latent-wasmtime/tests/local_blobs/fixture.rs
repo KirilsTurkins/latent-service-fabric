@@ -373,7 +373,8 @@ impl<P: blob::BlobInvoker + Clone + 'static> Fixture<P> {
         )
     }
     pub fn session(&self, id: &str) -> (CapabilitySession, Control) {
-        let (request, control) = self.request(id, 0, 0);
+        let (mut request, control) = self.request(id, 0, 0);
+        support::guest_runtime::imports(&mut request);
         let session = self
             .broker
             .open_session(self.plan.clone(), &request, &control, &self.publication)
