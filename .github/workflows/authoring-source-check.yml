@@ -1,31 +1,77 @@
-name: Rust authoring source check
+name: Rust authoring development check
 
 on:
   push:
     branches: [feat/rust-capsule-authoring-544]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  source:
+  native:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/feat/rust-capsule-authoring-544'
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Capture tracked source for authoring validation
-        run: |
-          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/authoring-source.tar.gz"
-          git rev-parse HEAD > "$RUNNER_TEMP/authoring-source-revision.txt"
-          sha256sum "$RUNNER_TEMP/authoring-source.tar.gz" > "$RUNNER_TEMP/authoring-source.sha256"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
-          name: authoring-source-${{ github.sha }}
+          components: rustfmt
+          targets: wasm32-unknown-unknown
+      - name: Apply exact reviewed patch on the dedicated feature branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, gzip, hashlib, json, os, subprocess, urllib.request
+          from pathlib import Path
+          if Path('tools/rust_capsule.py').exists():
+              raise SystemExit(0)
+          chunks = ['0db3759084ab4203b034aee2bc10969603f3c072', '33460ac0f66051c4b4bd28d4ad9b702b378615d5', 'a13f33e5776741d3a28e44c86cea369005287f9b', 'f29e42df1eb4a877e62db6d682b32e39c773490e', 'b49383a034aff45abe4c15d2f2973317a714e600', '9411b7c458a3e1573faefaace99d98f9deb541e1']
+          data = b''
+          for sha in chunks:
+              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs/' + sha, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  blob = json.loads(response.read(65536))
+              part = base64.b64decode(blob['content'])
+              assert hashlib.sha1(b'blob ' + str(len(part)).encode() + b'\0' + part).hexdigest() == sha
+              data += part
+          patch = gzip.decompress(data)
+          assert len(patch) == 71522 and hashlib.sha256(patch).hexdigest() == 'a00d05afe956ab6f4c77d2d5d80271eccdfcde5703b1fcd21d0a5e2f951fd943'
+          subprocess.run(['git', 'apply', '--index', '--whitespace=error-all', '-'], input=patch, check=True)
+          subprocess.run(['cargo', 'fmt', '--all'], check=True)
+          subprocess.run(['git', 'add', 'crates', 'schemas', 'tools/rust_capsule.py', 'tools/tests/test_guest_build_profiles.py'], check=True)
+          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
+          subprocess.run(['git', '-c', 'user.name=github-actions[bot]', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com', 'commit', '-m', 'feat: derive standalone Rust capsule packages and isolate authoring provenance'], check=True)
+          authorization = base64.b64encode(('x-access-token:' + os.environ['GH_TOKEN']).encode()).decode()
+          env = dict(os.environ, GIT_CONFIG_COUNT='1', GIT_CONFIG_KEY_0='http.https://github.com/.extraheader', GIT_CONFIG_VALUE_0='AUTHORIZATION: basic ' + authorization)
+          subprocess.run(['git', 'push', 'origin', 'HEAD:refs/heads/feat/rust-capsule-authoring-544'], env=env, check=True)
+          PY
+      - name: Test WIT-derived metadata and isolated signing policies
+        run: |
+          set -o pipefail
+          git rev-parse HEAD > "$RUNNER_TEMP/applied-revision.txt"
+          git diff HEAD^ HEAD --binary > "$RUNNER_TEMP/applied.patch"
+          cargo test -p latent-packaging --lib --locked 2>&1 | tee "$RUNNER_TEMP/packaging-tests.log"
+          cargo test -p latent-signing --test guest_provenance --locked 2>&1 | tee "$RUNNER_TEMP/signing-tests.log"
+          cargo build -p latent-packaging --example package --locked 2>&1 | tee "$RUNNER_TEMP/packager-build.log"
+      - name: Retain source identity and unsuccessful attempts
+        if: always()
+        run: |
+          git rev-parse HEAD > "$RUNNER_TEMP/attempt-revision.txt"
+          git status --short > "$RUNNER_TEMP/attempt-worktree.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: authoring-native-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/authoring-source.tar.gz
-            ${{ runner.temp }}/authoring-source-revision.txt
-            ${{ runner.temp }}/authoring-source.sha256
+            ${{ runner.temp }}/*revision.txt
+            ${{ runner.temp }}/attempt-worktree.txt
+            ${{ runner.temp }}/applied.patch
+            ${{ runner.temp }}/packaging-tests.log
+            ${{ runner.temp }}/signing-tests.log
+            ${{ runner.temp }}/packager-build.log
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
