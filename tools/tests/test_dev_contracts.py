@@ -21,7 +21,8 @@ def descriptor():
                       "tools": [{"name": "cargo", "path": "bin/cargo", "version": "1.97.1", "sha256": "sha256:" + "c" * 64}],
                       "target": "wasm-component", "hostTargets": ["linux-x86_64"], "timeoutSeconds": 300, "maximumOutputBytes": 4096},
             "artifacts": {"component": "output/capsule.wasm", "capsule": "output/capsule.json", "contracts": "output/contracts.json",
-                          "deployment": "output/deployment.json"}, "scenarios": ["src/tests.json"]}
+                          "deployment": "output/deployment.json", "packageSource": "output/package-source.json",
+                          "packageRoot": "output/package"}, "scenarios": ["src/tests.json"]}
 
 
 class Projects(unittest.TestCase):
@@ -338,7 +339,7 @@ class EditorDiagnostics(unittest.TestCase):
             state.atomic(controller, "last-build.json", accepted)
             with self.assertRaises(common.DevError) as failure:
                 build.execute(controller, source, selected, executable.parent,
-                              trusted=project.trust_identity(selected), cli=directory / "must-not-run")
+                              trusted=project.trust_identity(selected), cli=executable)
             self.assertEqual(failure.exception.code, "guest-build-failed-last-deployment-retained")
             self.assertEqual(failure.exception.diagnostics[0]["path"], "src/fail.py")
             self.assertEqual(failure.exception.diagnostics[0]["line"], 7)

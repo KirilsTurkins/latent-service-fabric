@@ -55,6 +55,13 @@ compilers remain separate, explicitly selected build inputs.
   Confirmed publication/deployment metadata is persisted before clearing the
   intent; interruption between those writes repeats only local settlement.
   Invocation history retains result digests rather than unbounded payloads.
+- Each build uses a fresh private attempt directory. Cache keys include source,
+  trusted recipe, template, tools, host, ABI, target and installed packager bytes.
+  A hit rechecks the tools, source, artifacts and actual package inspection.
+  The compiler emits package inputs; the existing operator assembles the package
+  afterward. Recipes cannot silently supply an already assembled package.
+  Failed builds preserve the accepted build and deployment. Recovery retains the
+  exact attempt alongside the original publication/deployment operation identity.
 - `down` addresses the workspace supervisor and retains data. `purge` requires
   the exact workspace name and delegates runtime removal to the existing
   installation owner before removing owned snapshots.
@@ -94,6 +101,13 @@ Initial bounds are eight workspaces, one active command/build per workspace,
 2,048 source files, 16 MiB per source file, 64 MiB per source snapshot, four
 retained snapshots, 256 KiB of supervisor logs, 32 retained operation receipts,
 900 seconds per build and five additional seconds for command cleanup.
+Four build attempts are retained, each monitored every 500 ms for a 32,768-entry,
+2 GiB ceiling. This is an observed limit, not a filesystem quota: temporary
+overshoot can occur before cancellation. Known failed or superseded attempts can
+be removed; accepted, deployed and uncertain attempts stay protected. A full
+cache of protected attempts rejects a new build. Package assembly shares the
+original build deadline. Compiler timeout/output overflow is distinguished from
+unconfirmed child cleanup, which requires inspection before purge.
 Two verified bundle directories bound the host cache. These are controller
 limits, not a claim of hostile compiler or whole-process memory containment.
 

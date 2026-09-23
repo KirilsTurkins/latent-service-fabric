@@ -1168,7 +1168,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_build_process"
+      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_build_process"
     },
     ".github/workflows/developer-tools.yml:windows:Install exact hashed frontend build inputs": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -1269,6 +1269,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-windows/candidate/attestation.json"
+    },
+    ".github/workflows/rust-capsule-authoring.yml:authoring:Exercise developer cache with the actual operator and compiled Rust package inputs": {
+      "workflow": ".github/workflows/rust-capsule-authoring.yml",
+      "job": "authoring",
+      "name": "Exercise developer cache with the actual operator and compiled Rust package inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent --inputs \"$RUNNER_TEMP/rust-capsule-authoring/builds/greeting\" --output \"$RUNNER_TEMP/dev-build-cache\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2842,6 +2852,9 @@
     },
     "tools/build_portable_dev_guests.py": {
       "sha256": "75deb7b113291d81a5cb1d2422df02964bdad8371178d99ec239c3dd1b2fb23f"
+    },
+    "tools/run_dev_build_cache_tests.py": {
+      "sha256": "7664b879113ad53073ba342eea41af3b7d6bb64b38a8443c7a573761162c1a85"
     }
   },
   "pythonCases": {
@@ -3370,6 +3383,15 @@
       "DeterministicMeasurementTests.test_exact_nonempty_count_is_required",
       "DeterministicMeasurementTests.test_failed_process_is_not_retried_or_accepted",
       "DeterministicMeasurementTests.test_process_deadline_is_not_retried"
+    ],
+    "tools/tests/test_dev_build_cache.py": [
+      "BuildAttempts.test_actual_packager_cache_hit_tampering_and_separate_source_tree",
+      "BuildAttempts.test_build_key_separates_source_recipe_tools_abi_host_target_and_packager",
+      "BuildAttempts.test_changed_tool_is_rejected_before_allocating_or_running",
+      "BuildAttempts.test_failed_attempts_are_fresh_and_preserve_accepted_build",
+      "BuildAttempts.test_observed_cache_overflow_reaps_compiler_and_retains_no_success",
+      "BuildAttempts.test_reaped_deadline_can_be_cleaned_without_claiming_remote_outcome",
+      "BuildAttempts.test_uncertain_attempts_are_retained_at_capacity"
     ],
     "tools/tests/test_dev_contracts.py": [
       "EditorDiagnostics.test_crlf_unicode_locations_match_host_files_and_ignore_outside_inputs",
@@ -5690,6 +5712,7 @@
     "tools/tests/test_ci_suite_inventory.py",
     "tools/tests/test_core_guides.py",
     "tools/tests/test_deterministic_tests.py",
+    "tools/tests/test_dev_build_cache.py",
     "tools/tests/test_dev_contracts.py",
     "tools/tests/test_dev_workflow.py",
     "tools/tests/test_docs_pages.py",
@@ -5902,9 +5925,9 @@
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
-    ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
+    ".github/workflows/rust-capsule-authoring.yml": "a69b8d1ac076990c1e197203b807f306005df327bc1b4c6fee87b6b40ba199fb",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/developer-tools.yml": "098c3e3556007708aa6adf09d9a7bf18cd1760653946a467b9187e67c5ee6253"
+    ".github/workflows/developer-tools.yml": "66d0a78493ab9927715fea515f80dcf52ef5f51a1f4592bb3c78a2ec0bf88bac"
   }
 }

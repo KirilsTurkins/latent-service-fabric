@@ -90,21 +90,26 @@ def sync(root: Path, arguments: dict) -> dict:
 
 def deploy(root: Path) -> dict:
     saved = state.load(root, "project.json")
-    source, descriptor = Path(saved["source"]), saved["descriptor"]
-    receipt = decode(paths.read(source, "build-receipt.json"))
-    require(receipt["source"] == saved["snapshot"] and receipt["recipe"] == saved["trust"], "stale-build-receipt")
+    source, receipt = build.accepted(root, saved)
+    descriptor = saved["descriptor"]
     cli, journal = client(root)
     artifacts = descriptor["artifacts"]
-    for name in ("component", "capsule", "contracts", "deployment"):
-        require(digest(paths.read(source, artifacts[name], 64 * 1024 * 1024)) == receipt["artifacts"][name],
-                "built-artifact-modified-before-deploy")
+    from . import build_artifacts, build_cache
+    import time
+    require(paths.digest_file(cli.binary.parent, cli.binary.name, 268435456)[0] == receipt["packager"],
+            "runtime-packager-changed-rebuild-required")
+    require(build_artifacts.package(cli.binary, source, artifacts, time.monotonic() + 30,
+            build_cache.monitor(source.parent), cached=True) == receipt["package"], "built-package-modified-before-deploy")
     node = decode(paths.read(root / "runtime/config", "node.json"))
     require(descriptor["tenant"] == "examples", "project-tenant-does-not-match-workspace-credential")
     if journal.read()["pending"] is not None:
         raise DevError("recover-original-operation-before-new-mutation", uncertain=True)
     prior = state.load(root, "last-publication.json") if (root / "last-publication.json").exists() else None
-    release_intent = {"source": saved["snapshot"], "componentDigest": receipt["artifacts"]["component"], "expectedGeneration": "0"}
-    if prior and prior["source"] == saved["snapshot"] and prior["componentDigest"] == receipt["artifacts"]["component"]:
+    publication_input = digest(encode({"mode": node["supplyChain"]["mode"], "package": receipt["package"]["packageDigest"],
+        **{name: receipt["artifacts"][name] for name in ("component", "capsule", "contracts")}}))
+    release_intent = {"source": saved["snapshot"], "componentDigest": receipt["artifacts"]["component"],
+        "expectedGeneration": "0", "attempt": receipt["attempt"], "buildKey": receipt["buildKey"], "publicationInput": publication_input}
+    if prior and prior.get("publicationInput") == publication_input:
         publication = prior["publication"]
     elif node["supplyChain"]["mode"] == "trusted-local":
         published = journal.execute("release", release_intent,
@@ -133,6 +138,7 @@ def deploy(root: Path) -> dict:
     require(generation == (last["generation"] if last else "0"), "concurrent-deployment-change-no-overwrite")
     state.atomic(root, "selected-deployment.json", deployment)
     applied = journal.execute("deployment", {"publication": publication, "source": saved["snapshot"],
+        "attempt": receipt["attempt"], "buildKey": receipt["buildKey"], "publicationInput": publication_input,
         "componentDigest": receipt["artifacts"]["component"], "deployment": name,
         "expectedGeneration": generation, "expectedStateVersion": version}, lambda operation:
         cli.call("deployment", "apply", root / "selected-deployment.json", "--expected-generation", generation,

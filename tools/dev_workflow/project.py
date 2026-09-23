@@ -54,11 +54,14 @@ def validate(value: dict) -> dict:
     require(build["argv"][0] in tool_names, "recipe-executable-must-be-pinned-tool")
     integer(build["timeoutSeconds"], 1, 900)
     integer(build["maximumOutputBytes"], 1, 4 * 1024 * 1024)
-    artifacts = members(value["artifacts"], {"component", "capsule", "contracts", "deployment"},
-                        {"packageSource", "packageRoot", "evidence"})
+    artifacts = members(value["artifacts"], {"component", "capsule", "contracts", "deployment", "packageSource", "packageRoot"},
+                        {"evidence"})
     for name in artifacts.values():
         paths.relative(name)
         require(name.startswith(build["outputRoot"] + "/"), "artifact-outside-output-root")
+    require(len(set(map(paths.alias, artifacts.values()))) == len(artifacts), "duplicate-artifact-path")
+    require(all(not paths.alias(name).startswith(paths.alias(artifacts["packageRoot"]) + "/")
+                for key, name in artifacts.items() if key != "packageRoot"), "package-output-overlaps-input")
     require(isinstance(value["scenarios"], list) and 0 < len(value["scenarios"]) <= 16, "scenario-file-limit")
     for name in value["scenarios"]:
         paths.relative(name)

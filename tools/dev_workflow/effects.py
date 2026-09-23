@@ -20,6 +20,7 @@ def settle(root: Path, operation: dict, result: dict) -> None:
             and isinstance(publication.get("id"), str), "confirmed-publication-scope-required")
     retained = {"source": intent["source"], "componentDigest": intent["componentDigest"],
                 "publication": publication["id"], "operation": operation["id"]}
+    retained.update({name: intent[name] for name in ("attempt", "buildKey", "publicationInput") if name in intent})
     if operation["kind"] == "release":
         require(receipt.get("disposition") == "RELEASE_OPERATION_DISPOSITION_COMMITTED",
                 "committed-publication-required")

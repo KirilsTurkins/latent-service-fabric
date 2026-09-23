@@ -114,7 +114,8 @@ class Backend:
             require(completed.returncode == 0, "backend-helper-exit")
             return protocol.result(decode(completed.stdout, 4 * 1024 * 1024), request)
         except (DevError, OSError) as error:
-            if isinstance(error, DevError) and error.code not in {"backend-helper-exit", "owned-process-failed"}:
+            if isinstance(error, DevError) and error.code not in {"backend-helper-exit", "owned-process-failed",
+                    "owned-process-command-deadline", "owned-process-command-output-limit"}:
                 raise
             raise DevError("backend-transport-lost-status-required", uncertain=operation not in
                            {"hello", "doctor", "status", "logs", "recover"}) from None

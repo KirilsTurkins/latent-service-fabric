@@ -44,6 +44,15 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
     except (FileNotFoundError, ConnectionRefusedError):
         status = state.load(root, "lifecycle.json") if (root / "lifecycle.json").exists() else {"state": "stopped"}
     require(status["state"] in {"stopped", "purged"}, "stop-and-confirm-cleanup-before-purge")
+    builds = root / "builds"
+    if builds.exists():
+        from . import build_cache
+        attempts = list(builds.iterdir())
+        require(len(attempts) <= build_cache.MAX_ATTEMPTS, "build-cache-entry-limit")
+        for attempt in attempts:
+            require(build_cache.owner(attempt)["state"] not in {"running", "uncertain"},
+                    "build-cleanup-unconfirmed-inspect-owned-workspace")
+        files.remove_tree(builds, maximum=(build_cache.MAX_ENTRIES + 8) * build_cache.MAX_ATTEMPTS)
     layout = Layout.local(root / "runtime")
     installed = lifecycle.read_state(layout)
     if installed is None:

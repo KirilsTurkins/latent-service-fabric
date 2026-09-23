@@ -26,7 +26,7 @@ def environment(home: Path | None = None) -> dict[str, str]:
 
 
 def run(command: list[str], cwd: Path, *, timeout: float = 30, maximum: int = MAX_LOG,
-        stdin: bytes = b"", env: dict | None = None) -> subprocess.CompletedProcess:
+        stdin: bytes = b"", env: dict | None = None, check=None) -> subprocess.CompletedProcess:
     require(len(stdin) <= MAX_SNAPSHOT * 2, "request-byte-limit")
     selected = environment() if env is None else env
     argv = build_process._validate(command, cwd, selected, timeout, maximum)
@@ -39,7 +39,14 @@ def run(command: list[str], cwd: Path, *, timeout: float = 30, maximum: int = MA
             with cancellation.defer():
                 owner = build_process._new_owner()
                 owner.spawn(argv, cwd, selected, deadline, stdin=source)
-            output, errors = build_process._capture(owner, deadline, maximum, cancellation)
+            class Observation:
+                def check(self):
+                    cancellation.check()
+                    if check is not None:
+                        check()
+                def defer(self):
+                    return cancellation.defer()
+            output, errors = build_process._capture(owner, deadline, maximum, Observation())
             result = subprocess.CompletedProcess(argv, owner.process.returncode, output, errors)
         except BaseException as error:
             failure = error
@@ -55,5 +62,9 @@ def run(command: list[str], cwd: Path, *, timeout: float = 30, maximum: int = MA
         if failure is not None:
             if isinstance(failure, (KeyboardInterrupt, SystemExit, DevError)):
                 raise failure from None
+            if isinstance(failure, build_process.BuildProcessError) and failure.reason in {"command-deadline", "command-output-limit"}:
+                # The finally block has confirmed reaping; remote mutation outcome
+                # still belongs to Backend/Journal and must not be inferred here.
+                raise DevError("owned-process-" + failure.reason) from None
             raise DevError("owned-process-failed", uncertain=True) from None
         return result
