@@ -350,6 +350,21 @@ class EditorDiagnostics(unittest.TestCase):
 
 
 class ScenarioReports(unittest.TestCase):
+    def test_platform_error_codes_survive_reports_and_unexpected_success_is_a_failure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            paths.write_new(root / "input.json", b"[]")
+            case = {"id": "denied", "service": "examples/echo", "contract": "examples:echo/api@0.1.0",
+                "function": "echo", "input": "input.json", "mediaType": "application/vnd.latent.wit-values.v1+json",
+                "expect": {"category": "platform-failure", "platformCode": "permission-denied"}, "requires": [],
+                "timeoutMillis": 1000, "required": True, "fixtures": []}
+            document = {"schemaVersion": "latent.dev.scenarios.v1", "scenarios": [case]}
+            for result, passed, code in (({"category": "platform-failure", "error": {"code": "permission-denied"}}, True, "permission-denied"),
+                                         ({"category": "success", "error": None}, False, None)):
+                report = scenarios.run(document, root, "node", [], lambda *_: {**result, "outcomeKnown": True}, {}, supported=set())
+                self.assertEqual(report["passed"], passed)
+                self.assertEqual(report["results"][0]["platformCode"], code)
+
     def test_node_declared_error_payload_is_asserted_as_exact_bytes(self):
         import base64
         with tempfile.TemporaryDirectory() as temporary:

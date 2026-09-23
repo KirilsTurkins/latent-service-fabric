@@ -22,11 +22,15 @@ class Compiler:
 
     def __init__(self, temporary: Path, timeout: int = 300, *, sdk: Path = SDK,
                  platform: Path | None = ROOT / "wit/platform", config: dict | None = None,
-                 commands=None):
+                 commands=None, installed: dict[str, Path] | None = None):
         if not 1 <= timeout <= 900:
             raise ValueError("C build deadline must be between 1 and 900 seconds")
         temporary.mkdir(parents=True, exist_ok=True)
         self.environment = build_environment(temporary)
+        caches = {"ZIG_GLOBAL_CACHE_DIR": str(temporary / "zig-global"), "ZIG_LOCAL_CACHE_DIR": str(temporary / "zig-local")}
+        self.environment.update(caches)
+        if commands is not None:
+            commands.environment.update(caches)
         self.deadline = time.monotonic() + timeout
         self.sdk, self.platform, self.commands = sdk, platform, commands
         self.paths: dict[str, Path] = {}
@@ -35,11 +39,15 @@ class Compiler:
         versions = {"zig": config["sdk"]["zig"],
                     "wit-bindgen": config["rust"]["dependencies"]["wit-bindgen"],
                     "wasm-tools": config["contracts"]["wasm-tools"]}
+        if installed is not None and set(installed) != set(versions):
+            raise ValueError("explicit C compiler selection must name exactly the required tools")
         for tool, version in versions.items():
-            located = shutil.which(tool, path=self.environment.get("PATH"))
+            located = shutil.which(tool, path=self.environment.get("PATH")) if installed is None else installed[tool]
             if not located:
                 raise ValueError(f"missing pinned C guest tool: {tool} {version}")
             path = Path(located).resolve(strict=True)
+            if installed is not None and (not Path(located).is_absolute() or Path(located).is_symlink()):
+                raise ValueError("explicit C compiler paths must be absolute ordinary files")
             self.paths[tool] = path
             self.materials[tool] = file_identity(path, tool)
             actual = self.run(tool, "version" if tool == "zig" else "--version").strip()

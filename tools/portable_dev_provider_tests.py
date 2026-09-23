@@ -14,7 +14,8 @@ from tools.run_portable_dev_tests import call, payload, run
 def verify(host: Path, cwd: Path, guests: Path) -> dict:
     builtin_grants = ["latent:context/context@0.1.0", "latent:log/log@0.1.0",
         "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0"]
-    calls = [call("context", "snapshot", grants=builtin_grants), call("clocks", "clocks", grants=builtin_grants)]
+    calls = [call("context", "snapshot", grants=builtin_grants), call("clocks", "clocks", grants=builtin_grants),
+             call("logs", "log-probe", b'["portable-log",[]]', grants=builtin_grants)]
     for value in calls:
         value["contract"] = "tests:capabilities/api@0.1.0"
     directory = guests / "capabilities"
@@ -27,6 +28,9 @@ def verify(host: Path, cwd: Path, guests: Path) -> dict:
     require(len(readings) == 3 and all(int(item["wall"]) > 0 for item in readings)
         and [int(item["monotonic"]) for item in readings] == sorted(int(item["monotonic"]) for item in readings),
         "production-monotonic-and-wall-clock")
+    logged = json.loads(payload(builtins["results"][2]))[0]
+    require(logged["outcome"] == {"ok": True} and int(logged["after"]) < int(logged["before"])
+            and len(builtins["results"][2]["logs"]) == 1, "production-log-and-budget-observation")
     def probe(name, which, text="", *, granted=True, cancel=False, denied=False):
         capability = {"random": "latent:random/random@0.1.0", "metrics": "latent:telemetry/custom@0.1.0",
                       "http": "latent:http/client@0.2.0"}[name]

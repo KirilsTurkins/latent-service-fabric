@@ -1,4 +1,4 @@
-"""Stage the existing Rust SDK recipe, pinned tools and maintained templates."""
+"""Stage language-owned SDK recipes, pinned tools and maintained templates."""
 from __future__ import annotations
 
 import json
@@ -8,7 +8,7 @@ import shutil
 import tarfile
 import tomllib
 
-from tools import rust_capsule_build, rust_capsule_project
+from tools import c_capsule_build, c_capsule_project, rust_capsule_build, rust_capsule_project
 from tools.dev_distribution import file_digest
 from tools.dev_workflow import paths, project, scenarios, snapshot, tool_inventory
 from tools.dev_workflow.common import HOST_ABI, digest, encode, require
@@ -107,8 +107,9 @@ def registry(payload: Path, cargo_home: Path) -> None:
             recorded.add(name)
 
 
-def recipe(payload: Path) -> None:
-    names = {*rust_capsule_build.RECIPE, "tools/dev_guest_recipe.py", "tools/dev_guest_tools.py",
+def recipe(payload: Path, language: str) -> None:
+    owner = {"rust": rust_capsule_build, "c": c_capsule_build}[language]
+    names = {*owner.RECIPE, "tools/dev_guest_recipe.py", "tools/dev_guest_tools.py",
              "tools/dev_workflow/__init__.py", "tools/dev_workflow/common.py", "tools/dev_workflow/paths.py",
              "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"}
     for name in sorted(names):
@@ -116,34 +117,36 @@ def recipe(payload: Path) -> None:
     (payload / "recipe/tools/__init__.py").write_bytes(b"")
 
 
-def compiler_inventory(payload: Path, commit: str) -> dict:
+def compiler_inventory(payload: Path, commit: str, language: str) -> dict:
     files = []
     for directory in (payload / "sdk", payload / "recipe"):
         for path in sorted(directory.rglob("*")):
             if path.is_file():
                 sha, size = file_digest(path)
                 files.append({"path": path.relative_to(payload).as_posix(), "sha256": sha, "size": size})
-    value = {"schemaVersion": "latent.dev.guest-tools.v1", "language": "rust", "ownerIssue": 544,
+    value = {"schemaVersion": "latent.dev.guest-tools.v1", "language": language, "ownerIssue": project.LANGUAGES[language],
         "sourceCommit": commit, "hostAbi": HOST_ABI, "host": "linux-x86_64", "files": files}
     value["identity"] = digest(encode(value))
-    tool_inventory.validate(value, "rust", 544, "linux-x86_64")
+    tool_inventory.validate(value, language, project.LANGUAGES[language], "linux-x86_64")
     (payload / "guest-tools.json").write_bytes(encode(value))
     return value
 
 
-def templates(payload: Path, commit: str) -> dict:
+def templates(payload: Path, commit: str, language: str) -> dict:
+    creator = {"rust": rust_capsule_project, "c": c_capsule_project}[language]
     tools = [("python", "sdk/bin/python", "3.13.5"), ("recipe", "recipe/tools/dev_guest_recipe.py", "1"),
-             ("contracts", "sdk/bin/capsule-contracts", commit), ("cargo", "sdk/rust/bin/cargo", RUST_VERSION),
-             ("rustc", "sdk/rust/bin/rustc", RUST_VERSION),
+             ("contracts", "sdk/bin/capsule-contracts", commit),
              ("wasm-tools", "sdk/bin/wasm-tools", WASM_VERSION), ("wit-bindgen", "sdk/bin/wit-bindgen", BINDGEN_VERSION)]
+    if language == "rust":
+        tools.extend([("cargo", "sdk/rust/bin/cargo", RUST_VERSION), ("rustc", "sdk/rust/bin/rustc", RUST_VERSION)])
     pins = [{"name": name, "path": path, "version": version, "sha256": file_digest(payload / path)[0]}
             for name, path, version in tools]
     selected = {"path": "guest-tools.json", "sha256": file_digest(payload / "guest-tools.json")[0]}
     result = {}
     for name, (function, cases) in TUTORIAL_CASES.items():
-        directory = payload / "templates/rust" / name
+        directory = payload / "templates" / language / name
         directory.mkdir(mode=0o700, parents=True)
-        app = rust_capsule_project.create(directory / "app", name)
+        app = creator.create(directory / "app", name)
         owner = json.loads((app / "capsule-project.json").read_bytes())
         (directory / "tests").mkdir(mode=0o700)
         entries = []
@@ -161,13 +164,13 @@ def templates(payload: Path, commit: str) -> dict:
         (directory / "tests/scenarios.json").write_bytes(encode(document))
         record, _ = snapshot.observe(directory, ["app", "tests"])
         descriptor = {"schemaVersion": "latent.dev.project.v1", "name": owner["name"], "tenant": owner["tenant"],
-            "service": owner["service"], "language": "rust", "hostAbi": HOST_ABI,
-            "template": {"ownerIssue": 544, "revision": commit, "sha256": record["identity"]},
+            "service": owner["service"], "language": language, "hostAbi": HOST_ABI,
+            "template": {"ownerIssue": project.LANGUAGES[language], "revision": commit, "sha256": record["identity"]},
             "inputRoots": ["app", "tests"], "exclude": [],
-            "build": {"argv": ["python", "-I", "-B", "@tool:recipe", "--project", ".", "--output", "../output"],
+            "build": {"argv": ["python", "-I", "-B", "@tool:recipe", "--language", language, "--project", ".", "--output", "../output"],
                 "workingDirectory": "app", "outputRoot": "output", "target": "wasm-component",
                 "hostTargets": ["linux-x86_64"], "timeoutSeconds": 900, "maximumOutputBytes": 262144,
-                "tools": pins, "inventory": selected, "adapter": {"language": "rust", "ownerIssue": 544, "version": "1"}},
+                "tools": pins, "inventory": selected, "adapter": {"language": language, "ownerIssue": project.LANGUAGES[language], "version": "1"}},
             "artifacts": {"component": "output/component.wasm", "capsule": "output/capsule.json",
                 "contracts": "output/contracts.json", "deployment": "output/deployment.json",
                 "packageSource": "output/package-source.json", "packageRoot": "output/package",

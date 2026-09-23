@@ -17,6 +17,20 @@ from tools.build_observation import build_environment, file_identity, resolve_to
 from tools.build_process import run_bounded
 
 
+def builtin_inputs(directory: Path) -> None:
+    """Shared manifest for both bindings of the actual capabilities fixture."""
+    component = directory / "component.wasm"
+    manifest = json.loads((owner.ROOT / "examples/echo-contract/capsule.json").read_bytes())
+    manifest["metadata"] = {"name": "generic", "annotations": {"latent.dev/purpose": "portable-conformance-fixture"}}
+    manifest["compatibility"]["minimumFabricVersion"] = tomllib.loads((owner.ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"]
+    manifest["component"].update(digest=owner.digest(component.read_bytes()), world="tests:capabilities/service@0.1.0")
+    manifest["exports"] = ["tests:capabilities/api@0.1.0"]
+    manifest["imports"] = [{"contract": name, "optional": False} for name in (
+        "latent:context/context@0.1.0", "latent:log/log@0.1.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0")]
+    owner.write_json(directory / "capsule.json", manifest)
+    owner.write_json(directory / "contracts.json", {"format_version": 1, "contracts": []})
+
+
 def build(output: Path) -> None:
     deadline = time.monotonic() + 900
     output = output.absolute()
@@ -59,15 +73,7 @@ def build(output: Path) -> None:
     run("wasm-tools", "component", "new", str(Path(environment["CARGO_TARGET_DIR"]) /
         "wasm32-unknown-unknown/release/examples/capabilities_capsule.wasm"), "-o", str(component))
     run("wasm-tools", "validate", str(component))
-    manifest = json.loads((owner.ROOT / "examples/echo-contract/capsule.json").read_bytes())
-    manifest["metadata"] = {"name": "generic", "annotations": {"latent.dev/purpose": "portable-conformance-fixture"}}
-    manifest["compatibility"]["minimumFabricVersion"] = tomllib.loads((owner.ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"]
-    manifest["component"].update(digest=owner.digest(component.read_bytes()), world="tests:capabilities/service@0.1.0")
-    manifest["exports"] = ["tests:capabilities/api@0.1.0"]
-    manifest["imports"] = [{"contract": name, "optional": False} for name in (
-        "latent:context/context@0.1.0", "latent:log/log@0.1.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0")]
-    owner.write_json(directory / "capsule.json", manifest)
-    owner.write_json(directory / "contracts.json", {"format_version": 1, "contracts": []})
+    builtin_inputs(directory)
     if sources != owner.source_inputs() or materials != [file_identity(path, name) for name, path in sorted(tools.items())]:
         raise ValueError("fixture inputs changed during build")
     if recipe != file_identity(Path(__file__), "portable-fixture-recipe", 1024 * 1024):

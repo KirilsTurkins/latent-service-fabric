@@ -112,14 +112,17 @@ def run(document: dict, root: Path, environment: str, selection: list[str], adap
             matched &= (payload.get("encoding") == "base64" and actual == expected_payload
                         and payload.get("byteLength") == str(len(expected_payload))
                         and payload.get("mediaType") == case["mediaType"])
+        error = result.get("error")
+        code = error.get("code") if isinstance(error, dict) else None
+        code = code if isinstance(code, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,100}", code) else None
         if "platformCode" in case["expect"]:
-            matched &= result.get("error", {}).get("code") == case["expect"]["platformCode"]
+            matched &= code == case["expect"]["platformCode"]
         status = "passed" if matched else "failed"
         required_failed |= not matched
         results.append({"id": case["id"], "status": status, "required": case["required"],
                         "category": result.get("category"), "outcomeKnown": result.get("outcomeKnown"),
                         "activationId": result.get("data", {}).get("activationId"), "inputSha256": digest(raw),
-                        "fixtures": case["fixtures"]})
+                        "fixtures": case["fixtures"], "platformCode": code})
     return {"schemaVersion": "latent.dev.test-report.v1", "environment": environment,
             "identity": identity, "selection": [case["id"] for case in selected], "results": results,
             "passed": not required_failed, "cleanup": "adapter-must-confirm",

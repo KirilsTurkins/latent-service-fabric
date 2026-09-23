@@ -57,6 +57,10 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
         initialized.update(item["id"] for item in case["fixtures"])
         execution = case.get("execution", {"grants": []})
         require(case["timeoutMillis"] <= 5000, "portable-timeout-limit")
+        # A scenario deadline bounds the test. Its default invocation budget
+        # must also honor a capsule declaring a smaller wall-time ceiling.
+        wall = ceiling.get("wallTimeLimitMillis")
+        timeout = case["timeoutMillis"] if wall is None else min(case["timeoutMillis"], wall)
         if not groups or groups[-1][0] != fixtures:
             groups.append((fixtures, []))
             require(len(groups) <= 8, "portable-fixture-group-limit")
@@ -65,7 +69,7 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
             "grants": execution["grants"], "deniedCapabilities": execution.get("deniedCapabilities", []),
             "fuel": execution.get("fuel", str(ceiling["cpuFuel"])),
             "memoryBytes": execution.get("memoryBytes", str(ceiling["memoryBytes"])),
-            "timeoutMillis": case["timeoutMillis"], "cancelBeforeStart": execution.get("cancelBeforeStart", False)})
+            "timeoutMillis": timeout, "cancelBeforeStart": execution.get("cancelBeforeStart", False)})
     results, runs = {}, []
     for fixtures, calls in groups:
         request = {"schemaVersion": "latent.dev.portable-request.v1", "environment": "portable",

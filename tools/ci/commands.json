@@ -620,45 +620,55 @@
       "shell": "default",
       "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_build_process"
     },
-    ".github/workflows/developer-tools.yml:rust-tools:Stage the pinned relocatable Python prefix": {
+    ".github/workflows/developer-tools.yml:guest-tools:Stage the pinned relocatable Python prefix": {
       "workflow": ".github/workflows/developer-tools.yml",
-      "job": "rust-tools",
+      "job": "guest-tools",
       "name": "Stage the pinned relocatable Python prefix",
       "jobIf": "success()",
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/rust-tools-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_DEV_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\""
+      "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/guest-tools-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_DEV_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\""
     },
-    ".github/workflows/developer-tools.yml:rust-tools:Assemble pinned compiler tools and maintained Rust templates": {
+    ".github/workflows/developer-tools.yml:guest-tools:Assemble pinned compiler tools and maintained templates": {
       "workflow": ".github/workflows/developer-tools.yml",
-      "job": "rust-tools",
-      "name": "Assemble pinned compiler tools and maintained Rust templates",
+      "job": "guest-tools",
+      "name": "Assemble pinned compiler tools and maintained templates",
       "jobIf": "success()",
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python tools/build_dev_rust_tools.py --output target/dev-rust --python-prefix \"$LSF_DEV_PYTHON_PREFIX\""
+      "run": "python tools/build_dev_guest_tools.py --language \"$LSF_DEV_LANGUAGE\" --output target/dev-tools --python-prefix \"$LSF_DEV_PYTHON_PREFIX\""
     },
-    ".github/workflows/developer-tools.yml:rust-tools:Compile actual projects with isolated tools and separate operator packaging": {
+    ".github/workflows/developer-tools.yml:guest-tools:Compile actual projects with isolated tools and separate operator packaging": {
       "workflow": ".github/workflows/developer-tools.yml",
-      "job": "rust-tools",
+      "job": "guest-tools",
       "name": "Compile actual projects with isolated tools and separate operator packaging",
       "jobIf": "success()",
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python tools/run_dev_rust_tools_tests.py --payload target/dev-rust/payload --packager target/dev-rust/latent-test --output \"$RUNNER_TEMP/dev-rust-projects\""
+      "run": "python tools/run_dev_guest_tools_tests.py --language \"$LSF_DEV_LANGUAGE\" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --output \"$RUNNER_TEMP/dev-projects\""
     },
-    ".github/workflows/developer-tools.yml:rust-tools:Retain offline Rust tool attestation": {
+    ".github/workflows/developer-tools.yml:guest-tools:Compile maintained C provider fixtures for native execution": {
       "workflow": ".github/workflows/developer-tools.yml",
-      "job": "rust-tools",
-      "name": "Retain offline Rust tool attestation",
+      "job": "guest-tools",
+      "name": "Compile maintained C provider fixtures for native execution",
+      "jobIf": "success()",
+      "stepIf": "matrix.language == 'c'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/build_portable_c_guests.py --tool-root target/dev-tools/payload --output target/dev-c-portable/providers\npython -c \"from pathlib import Path; import os,shutil; shutil.copytree(Path(os.environ['RUNNER_TEMP'])/'dev-projects', 'target/dev-c-portable/applications')\""
+    },
+    ".github/workflows/developer-tools.yml:guest-tools:Retain offline guest tool attestation": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "guest-tools",
+      "name": "Retain offline guest tool attestation",
       "jobIf": "success()",
       "stepIf": "github.event_name != 'pull_request'",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-rust/candidate/attestation.json"
+      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-tools/candidate/attestation.json"
     },
     ".github/workflows/developer-tools.yml:windows:Install exact hashed frontend build inputs": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -709,6 +719,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --providers target/dev-providers --output target/dev-portable-smoke.json"
+    },
+    ".github/workflows/developer-tools.yml:windows:Execute actual C applications and SDK providers natively": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Execute actual C applications and SDK providers natively",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/run_portable_c_tests.py --host target/release/latent-portable-test-host.exe --providers target/dev-c-portable/providers --applications target/dev-c-portable/applications --output target/dev-portable-c-smoke.json"
     },
     ".github/workflows/developer-tools.yml:windows:Record exact portable output for candidate assembly": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -2720,11 +2740,11 @@
     "tools/build_dev_frontend.py": {
       "sha256": "c8e8959a795e1d207cbead426acb255cb23839cd7424fd1e5633bd69046a6888"
     },
+    "tools/build_dev_guest_tools.py": {
+      "sha256": "56c5ebd3418715a9ed72e5b8b3c97b60f92becd7c0e695d24b9e9ab7c9b64f7d"
+    },
     "tools/build_dev_rootfs.py": {
       "sha256": "b0a0df997fc39bd4447f1afe825ce58c7ce6ae16a851fa7e3a8ad70bafe479c0"
-    },
-    "tools/build_dev_rust_tools.py": {
-      "sha256": "947c9e5d8185fad25428cd53b2e3de572aa36da932cabe278bb07ab31ced9433"
     },
     "tools/build_echo_capsule.py": {
       "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
@@ -2741,8 +2761,11 @@
     "tools/build_phase1_measurement_fixtures.sh": {
       "sha256": "7931eda35e8c31a35bddf111dda1be447455129895d61324530fd85469475de3"
     },
+    "tools/build_portable_c_guests.py": {
+      "sha256": "cce6de10103d0656bfdcd748e9d18311199101fd12b3749f34d2488345d65297"
+    },
     "tools/build_portable_dev_guests.py": {
-      "sha256": "75deb7b113291d81a5cb1d2422df02964bdad8371178d99ec239c3dd1b2fb23f"
+      "sha256": "32d0e8645bdb4341be99ebcd32af85150518b0f4a9a12b505cbc4a7f6c0ae2b3"
     },
     "tools/build_provenance.py": {
       "sha256": "03c1c677cb530fc6b762440dd3a7f762f945892909ad9034af7a115a17fbdb97"
@@ -2837,8 +2860,8 @@
     "tools/run_dev_build_cache_tests.py": {
       "sha256": "7664b879113ad53073ba342eea41af3b7d6bb64b38a8443c7a573761162c1a85"
     },
-    "tools/run_dev_rust_tools_tests.py": {
-      "sha256": "c4930e52c5d33a9342ac691ae176fb2c2b1cf92cff01bfc9a286352cf29233cc"
+    "tools/run_dev_guest_tools_tests.py": {
+      "sha256": "a146f2eb6f1d26af018076e56ab0e022ce2c7f7e9f384eaa2bd2483557543a75"
     },
     "tools/run_native_vm.py": {
       "sha256": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12"
@@ -2872,6 +2895,9 @@
     },
     "tools/run_phase3_resource_acceptance.py": {
       "sha256": "1c59a51493d89074474527ce496123b0078e968013a8a35a78ad907e56ede3e7"
+    },
+    "tools/run_portable_c_tests.py": {
+      "sha256": "b414676fd0ca60de27f7df9006965ac45309c45b47d5bf899b38209efa64120d"
     },
     "tools/run_portable_dev_tests.py": {
       "sha256": "090f2ef288e611d9ea52809c9d83fb6ad9ad43ffecc75e5b9a2fafd7daf453ad"
@@ -3506,6 +3532,7 @@
       "ScenarioReports.test_arbitrary_candidate_policy_is_not_runtime_release_approval",
       "ScenarioReports.test_missing_qualification_never_passes",
       "ScenarioReports.test_node_declared_error_payload_is_asserted_as_exact_bytes",
+      "ScenarioReports.test_platform_error_codes_survive_reports_and_unexpected_success_is_a_failure",
       "ScenarioReports.test_portable_fixture_identity_and_kind_are_checked_before_execution",
       "ScenarioReports.test_portable_required_linux_checks_fail_without_invoking",
       "Transports.test_actual_helper_digest_and_parent_checks_precede_execution",
@@ -6039,7 +6066,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
-    ".github/workflows/developer-tools.yml": "662c67f3e9310780f9ee457fdd7be3cc07046815addd1bbca20de8f768dfd762",
+    ".github/workflows/developer-tools.yml": "e3c2cb6134675e6a5439f934114f210344ea6580c9512ecbdbc676574f23c9a8",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",

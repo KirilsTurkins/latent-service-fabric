@@ -295,13 +295,15 @@ credential file. Stopping the first node reported a clean, reaped shutdown and
 left the second ready. These are source-integration observations: the image was
 locally built and modified for diagnosis, so they do not qualify a distribution.
 
-The Rust tool candidate reuses the maintained #544 project creator and compiler
-recipe. Its three templates are greeting, word-count and shipping, with the
-existing vendored SDK and locked dependencies. The Linux prefix includes Python
+The Rust and C tool candidates reuse the maintained #544/#545 project creators
+and compiler recipes. Each supplies greeting, word-count and shipping templates
+with the existing vendored SDK. The Rust Linux prefix includes Python
 3.13.5, Rust 1.97.1 and its standard libraries, wasm-tools 1.254.0, wit-bindgen
 0.62.0, and Zig 0.16.0 for the native linker. The linker targets the supported
 glibc 2.39 userspace. Rustup and an ambient system compiler are not required in
-the workspace. The authoring recipe emits validated component and package input
+the workspace. The C prefix supplies Python, Zig, the same binding/component
+tools and the native contract helper, without a Rust compiler or registry.
+Both authoring recipes emit validated component and package input
 bytes; the controller then invokes the installed LSF CLI for package assembly.
 
 The compiler inventory covers companion libraries, offline registry data and
@@ -313,22 +315,39 @@ Compiler output is retained within the same bounded attempt.
 
 A local source-integration run used the Ubuntu rootfs as an unprivileged user,
 with networking disabled and the staged tool prefix mounted read-only. All three
-templates compiled outside the runtime checkout. The greeting checks also
+templates in each language compiled outside the runtime checkout. The greeting checks also
 confirmed cache reuse, mapped diagnostics, retention of the previous accepted
 build after invalid source, a new component after a fix, and reaped cleanup.
-The developer workflow repeats these application builds and emits a separately
-attested compiler candidate on branch runs. This does not yet qualify an
-authenticated Windows installation or the other five language integrations.
+The developer workflow repeats these application builds and emits separately
+attested compiler candidates on branch runs. This does not yet qualify an
+authenticated Windows installation or the other four language integrations.
+
+The actual native Windows C run executes the three compiled applications through
+the common byte-exact success/declared-error scenarios. It also runs C probes for
+context, log, clocks, random, metrics and buffered HTTP using the same assertions
+as Rust. The C provider fixtures use the maintained SDK/compiler and generated
+bindings from authoritative WIT. Fixed entropy covers the maximum unsigned
+64-bit value; denied grants and the owned HTTP peer exercise production providers.
+The host reports system clocks as nondeterministic. It reclaims all invocation
+resources and the peer port, and keeps fixture selections separate between cases.
+
+The first application run exposed a scenario deadline above its manifest's
+wall-time ceiling. The adapter now limits invocation time to that ceiling while
+retaining the scenario deadline. The first shared C random run exposed missing
+probe cases for unsigned bytes and explicit denial; these now match the existing
+Rust cases. Those failed attempts remain distinct from subsequent passing runs.
+Native source execution does not qualify publisher identity or replace real-node
+differential tests.
 
 | Child | Remaining Windows acceptance |
 | --- | --- |
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #562 | Mac/native ARM64 requirements deferred by maintainer; no ARM64 support claim. |
-| #563 | Authenticate/install the Rust tool bundle through the Windows workflow and integrate the other five language-owner recipes. |
+| #563 | Authenticate/install Rust and C tools through the Windows workflow and integrate the other four language-owner recipes. |
 | #564 | Actual A/B redeploy, compile/admission failure, concurrent generation and lost-response injection on a real node. |
 | #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |
-| #566 | Complete C/provider/clock coverage, verified native distribution and real Linux differential execution; Rust native subset now runs in Windows CI. |
+| #566 | Complete explicit clock fixtures, verified native distribution and real Linux differential execution; Windows CI includes the locally exercised Rust/C subsets. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
 | #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
 

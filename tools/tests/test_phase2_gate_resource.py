@@ -337,6 +337,8 @@ class ResourceReceiptPublicationTests(unittest.TestCase):
                                     fixture_root=fixture, build_identity=self.root / "build.json",
                                     output=self.root / "receipt.json")
         numbers = [signal.SIGINT, signal.SIGTERM]
+        if hasattr(signal, "SIGHUP"):
+            numbers.append(signal.SIGHUP)
         if hasattr(signal, "SIGBREAK"):
             numbers.append(signal.SIGBREAK)
         self.original_handlers = dict.fromkeys(numbers, signal.SIG_DFL)

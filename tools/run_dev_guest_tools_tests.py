@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile real maintained Rust applications outside checkout using only staged tools."""
+"""Compile maintained applications outside checkout using only staged tools."""
 from __future__ import annotations
 
 import argparse
@@ -19,13 +19,14 @@ from tools.dev_workflow import build, build_cache, paths, project, snapshot, sta
 from tools.dev_workflow.common import DevError, decode, encode, require
 
 
-def exercise(payload: Path, packager: Path, output: Path) -> dict:
+def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict:
+    require(language in {"rust", "c"}, "unsupported-application-build-test-language")
     require(sys.platform == "linux" and os.geteuid() != 0 and not output.exists(), "unprivileged-linux-and-new-test-output-required")
     output.mkdir(mode=0o700, parents=True)
-    temporary = Path(tempfile.mkdtemp(prefix="lsf-rust-dev-tests-"))
+    temporary = Path(tempfile.mkdtemp(prefix="lsf-" + language + "-dev-tests-"))
     require(not temporary.is_relative_to(Path(__file__).resolve().parents[1]), "application-test-must-be-outside-checkout")
     require(not temporary.is_relative_to(payload), "application-test-must-be-outside-tool-prefix")
-    receipt = {"schemaVersion": "latent.dev.rust-tools-test.v1", "passed": False, "cleanup": "unconfirmed",
+    receipt = {"schemaVersion": "latent.dev." + language + "-tools-test.v1", "language": language, "passed": False, "cleanup": "unconfirmed",
                "publisherAuthenticated": False, "wslQualified": False, "templates": {},
                "host": {"os": sys.platform, "architecture": platform.machine(), "kernel": platform.release(),
                         "effectiveUser": os.geteuid(), "libc": list(platform.libc_ver())}}
@@ -36,7 +37,7 @@ def exercise(payload: Path, packager: Path, output: Path) -> dict:
         cli.chmod(0o700)
         receipt["packager"] = paths.digest_file(temporary, "latent", 256 * 1024 * 1024)[0]
         index = decode(paths.read(payload, "templates.json"))
-        require(set(index["templates"]) == {"greeting", "word-count", "shipping"}, "maintained-rust-tutorials-required")
+        require(set(index["templates"]) == {"greeting", "word-count", "shipping"}, "maintained-language-tutorials-required")
         for name, entry in index["templates"].items():
             case = temporary / (name + " spaces-\u00fc")
             case.mkdir(mode=0o700)
@@ -47,6 +48,7 @@ def exercise(payload: Path, packager: Path, output: Path) -> dict:
             manifest = decode(paths.read(template, "template.json"))
             project.scaffold(template, author, manifest, entry["identity"])
             descriptor = manifest["project"]
+            require(descriptor["language"] == language, "maintained-language-template-required")
             trusted = project.trust_identity(descriptor)
             def compile_current():
                 record, content = snapshot.observe(author, descriptor["inputRoots"], tuple(descriptor["exclude"]))
@@ -55,7 +57,7 @@ def exercise(payload: Path, packager: Path, output: Path) -> dict:
                     snapshot.materialize(source, record, content)
                 return build.execute(root, source, descriptor, payload, trusted=trusted, cli=cli)
             compiled = compile_current()
-            require(compile_current() == compiled, "unchanged-rust-build-must-reuse-verified-attempt")
+            require(compile_current() == compiled, "unchanged-build-must-reuse-verified-attempt")
             source = root / "builds" / compiled["attempt"] / "source"
             complete = decode(paths.read(source, "output/BUILD-COMPLETE.json"))
             require(complete["packageAssembled"] is False and not any(item["stage"] == "package" for item in complete["commands"]),
@@ -70,19 +72,21 @@ def exercise(payload: Path, packager: Path, output: Path) -> dict:
             shutil.copytree(source / "output", retained / "output")
             receipt["templates"][name] = {"build": compiled, "cacheHit": True, "outsideCheckout": True}
             if name == "greeting":
-                original = (author / "app/src/lib.rs").read_bytes()
-                (author / "app/src/lib.rs").write_bytes(original + b"\nthis is not valid Rust;\n")
+                source_name = "app/src/" + {"rust": "lib.rs", "c": "main.c"}[language]
+                original = (author / source_name).read_bytes()
+                (author / source_name).write_bytes(original + b"\nthis is not valid source;\n")
                 try:
                     compile_current()
                 except DevError as error:
                     require(not error.uncertain and error.code == "guest-build-failed-last-deployment-retained",
-                            "rust-compiler-failure-must-be-known-and-reaped")
-                    require(any(item["path"] == "app/src/lib.rs" for item in error.diagnostics), "rust-source-diagnostic-required")
+                            "compiler-failure-must-be-known-and-reaped")
+                    require(any(item["path"] == source_name for item in error.diagnostics), "source-diagnostic-required")
                 else:
-                    raise DevError("invalid-rust-source-was-accepted")
+                    raise DevError("invalid-source-was-accepted")
                 require(state.load(root, "last-build.json")["receipt"] == compiled, "failed-compile-replaced-last-accepted-build")
                 require(b"Hello, " in original, "maintained-greeting-change-needs-review")
-                (author / "app/src/lib.rs").write_bytes(original.replace(b"Hello, ", b"Welcome, "))
+                # The C template uses fixed buffer offsets; preserve that length.
+                (author / source_name).write_bytes(original.replace(b"Hello, ", b"Howdy, "))
                 changed = compile_current()
                 require(changed["artifacts"]["component"] != compiled["artifacts"]["component"]
                         and changed["attempt"] != compiled["attempt"], "changed-source-must-build-a-new-component")
@@ -121,8 +125,9 @@ def main() -> int:
     parser.add_argument("--payload", type=Path, required=True)
     parser.add_argument("--packager", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--language", choices=("rust", "c"), required=True)
     args = parser.parse_args()
-    receipt = exercise(args.payload.resolve(strict=True), args.packager.resolve(strict=True), args.output.absolute())
+    receipt = exercise(args.payload.resolve(strict=True), args.packager.resolve(strict=True), args.output.absolute(), args.language)
     print(json.dumps({"passed": receipt["passed"], "cleanup": receipt["cleanup"], "templates": list(receipt["templates"]),
                       "publisherAuthenticated": False, "wslQualified": False}))
     return 0 if receipt["passed"] else 1

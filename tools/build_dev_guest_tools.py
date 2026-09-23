@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a nonpublishing Linux Rust tool candidate from the maintained #544 recipe."""
+"""Build nonpublishing Linux tool candidates from maintained language recipes."""
 from __future__ import annotations
 
 import argparse
@@ -16,12 +16,13 @@ import urllib.request
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools import dev_rust_distribution as distribution, native_runtime_build, rust_capsule_project
+from tools import dev_tool_distribution as distribution, native_runtime_build, rust_capsule_project
 from tools.build_observation import build_environment, resolve_tools
 from tools.build_process import run_bounded
 from tools.dev_distribution import assemble, file_digest
 from tools.dev_guest_tools import ZIG_BYTES, ZIG_SHA256, ZIG_VERSION
 from tools.dev_workflow.common import HOST_ABI, PROTOCOL, encode, require
+from tools.dev_workflow.project import LANGUAGES
 from tools.install_guest_bindgen import URL as BINDGEN_URL
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,8 +53,9 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--python-prefix", type=Path, required=True, help="/usr/local copied from the pinned Python OCI image")
     parser.add_argument("--allow-dirty", action="store_true", help="Unsigned local assembly testing only")
+    parser.add_argument("--language", choices=("rust", "c"), required=True)
     args = parser.parse_args()
-    require(sys.platform == "linux", "rust-candidate-linux-builder-required")
+    require(sys.platform == "linux", "guest-candidate-linux-builder-required")
     output = args.output.absolute()
     require(output.is_relative_to(ROOT / "target") and not output.exists(), "new-owned-build-directory-required")
     dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT).strip())
@@ -81,12 +83,14 @@ def main() -> int:
     run("host-tools", tools["cargo"], "build", "--locked", "-p", "latent-packaging", "--example", "capsule_contracts",
         "-p", "latent", "--bin", "latent")
     run("strip-operator", "strip", "-o", output / "latent-test", target / "debug/latent")
-    fetch = rust_capsule_project.create(output / "dependency-inputs", "greeting")
-    run("guest-dependencies", tools["cargo"], "fetch", "--locked", "--manifest-path", fetch / "Cargo.toml")
+    if args.language == "rust":
+        fetch = rust_capsule_project.create(output / "dependency-inputs", "greeting")
+        run("guest-dependencies", tools["cargo"], "fetch", "--locked", "--manifest-path", fetch / "Cargo.toml")
     payload = output / "payload"
     payload.mkdir(mode=0o700)
     executables = distribution.python(payload, args.python_prefix.resolve(strict=True))
-    executables.update(distribution.rust(payload, tools["rustc"].parents[3]))
+    if args.language == "rust":
+        executables.update(distribution.rust(payload, tools["rustc"].parents[3]))
     for name, source in SOURCES.items():
         archive = output / (name + ".archive")
         download(archive, source)
@@ -102,13 +106,14 @@ def main() -> int:
             executables.update(distribution.binary_archive(archive, payload, name, source["sha256"][7:]))
     run("strip-contracts", "strip", "-o", payload / "sdk/bin/capsule-contracts", target / "debug/examples/capsule_contracts")
     executables.add("sdk/bin/capsule-contracts")
-    distribution.registry(payload, Path(environment["CARGO_HOME"]))
-    distribution.recipe(payload)
+    if args.language == "rust":
+        distribution.registry(payload, Path(environment["CARGO_HOME"]))
+    distribution.recipe(payload, args.language)
     for name in executables:
         (payload / name).chmod(0o700)
     run("python-version", payload / "sdk/bin/python", "-I", "-B", "-c", "import sys; assert sys.version_info[:3] == (3, 13, 5)")
-    inventory = distribution.compiler_inventory(payload, commit)
-    distribution.templates(payload, commit)
+    inventory = distribution.compiler_inventory(payload, commit, args.language)
+    distribution.templates(payload, commit, args.language)
     metadata = json.loads(run("metadata", tools["cargo"], "metadata", "--locked", "--format-version", "1",
                               "--filter-platform", "x86_64-unknown-linux-gnu"))
     sbom, licenses = native_runtime_build.dependency_inventory(metadata,
@@ -116,22 +121,23 @@ def main() -> int:
         json.loads((ROOT / "packaging/linux/license-sources.json").read_bytes()), root_names=frozenset({"latent-packaging"}))
     # Every retained .crate is redistributed, including inactive target entries
     # in the locked offline cache. Account for that complete source inventory.
-    guest_metadata = json.loads(run("guest-metadata", tools["cargo"], "metadata", "--locked", "--format-version", "1",
-                                    "--manifest-path", fetch / "Cargo.toml"))
-    guest_sbom, guest_licenses = native_runtime_build.dependency_inventory(guest_metadata,
-        tomllib.loads((fetch / "Cargo.lock").read_text()), commit, epoch,
-        json.loads((ROOT / "packaging/linux/license-sources.json").read_bytes()),
-        root_names=frozenset(package["name"] for package in guest_metadata["packages"]))
-    for name, source in guest_licenses.items():
-        require(name not in licenses or file_digest(source) == file_digest(licenses[name]), "conflicting-distribution-license")
-        licenses[name] = source
-    known = {item["SPDXID"]: item for item in sbom["packages"]}
-    for package in guest_sbom["packages"]:
-        require(package["SPDXID"] not in known or known[package["SPDXID"]] == package, "conflicting-distribution-package")
-        known[package["SPDXID"]] = package
-    sbom["packages"] = list(known.values())
-    relations = {encode(item): item for item in [*sbom["relationships"], *guest_sbom["relationships"]]}
-    sbom["relationships"] = list(relations.values())
+    if args.language == "rust":
+        guest_metadata = json.loads(run("guest-metadata", tools["cargo"], "metadata", "--locked", "--format-version", "1",
+                                        "--manifest-path", fetch / "Cargo.toml"))
+        guest_sbom, guest_licenses = native_runtime_build.dependency_inventory(guest_metadata,
+            tomllib.loads((fetch / "Cargo.lock").read_text()), commit, epoch,
+            json.loads((ROOT / "packaging/linux/license-sources.json").read_bytes()),
+            root_names=frozenset(package["name"] for package in guest_metadata["packages"]))
+        for name, source in guest_licenses.items():
+            require(name not in licenses or file_digest(source) == file_digest(licenses[name]), "conflicting-distribution-license")
+            licenses[name] = source
+        known = {item["SPDXID"]: item for item in sbom["packages"]}
+        for package in guest_sbom["packages"]:
+            require(package["SPDXID"] not in known or known[package["SPDXID"]] == package, "conflicting-distribution-package")
+            known[package["SPDXID"]] = package
+        sbom["packages"] = list(known.values())
+        relations = {encode(item): item for item in [*sbom["relationships"], *guest_sbom["relationships"]]}
+        sbom["relationships"] = list(relations.values())
     for name, source in licenses.items():
         distribution.copy(source, payload / name)
     distribution.copy(ROOT / "LICENSE", payload / "licenses/LSF.txt")
@@ -145,11 +151,15 @@ def main() -> int:
         ("rust", distribution.RUST_VERSION, "https://static.rust-lang.org/dist/channel-rust-" + distribution.RUST_VERSION + ".toml",
          "Official installed compiler and stdlib; copyright manifests and license texts in licenses/rust."),
         ("cpython", "3.13.5", "https://www.python.org/ftp/python/3.13.5/Python-3.13.5.tar.xz", "Binary prefix from " + PYTHON_IMAGE)):
+        if name == "rust" and args.language != "rust":
+            continue
         extra.append({"SPDXID": "SPDXRef-tool-" + name, "name": name, "versionInfo": version, "downloadLocation": location,
             "filesAnalyzed": False, "licenseDeclared": "NOASSERTION", "licenseConcluded": "NOASSERTION",
             "copyrightText": "NOASSERTION", "comment": comment})
-    sbom.update(name="LSF Rust developer tools", documentNamespace="https://github.com/KirilsTurkins/latent-service-fabric/dev-rust-sbom/" + commit)
-    sbom["documentComment"] = "Native contract tool dependencies, the complete redistributed locked Cargo source cache, and upstream compiler distributions. System libraries remain OS prerequisites."
+    sbom.update(name="LSF " + args.language + " developer tools", documentNamespace=
+                "https://github.com/KirilsTurkins/latent-service-fabric/dev-" + args.language + "-sbom/" + commit)
+    sbom["documentComment"] = ("Native contract tool dependencies and upstream compiler distributions. "
+        "Rust bundles include the complete redistributed locked Cargo source cache. System libraries remain OS prerequisites.")
     sbom["packages"].extend(extra)
     sbom["relationships"].extend({"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES",
                                   "relatedSpdxElement": item["SPDXID"]} for item in extra)
@@ -157,10 +167,10 @@ def main() -> int:
     (payload / "build-provenance.json").write_bytes(encode({"schemaVersion": "latent.dev.build-provenance.v1",
         "sourceCommit": commit, "sourceDirty": dirty, "target": "linux-x86_64", "hostAbi": HOST_ABI, "protocol": PROTOCOL,
         "toolInventory": inventory["identity"], "pythonImage": PYTHON_IMAGE, "upstreamArchives": SOURCES,
-        "language": "rust", "ownerIssue": 544, "qualification": "assembly-only", "publicRelease": False}))
+        "language": args.language, "ownerIssue": LANGUAGES[args.language], "qualification": "assembly-only", "publicRelease": False}))
     version = tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"]
     value = assemble(payload, output / "candidate", commit=commit, version=version, target="linux-x86_64", epoch=epoch,
-                     executables=executables, archive_name="latent-dev-linux-x86_64-rust-tools.zip")
+                     executables=executables, archive_name="latent-dev-linux-x86_64-" + args.language + "-tools.zip")
     print(encode({"archive": value["archive"], "sourceCommit": commit, "publisherAuthenticated": False}).decode(), end="")
     return 0
 
