@@ -3,21 +3,21 @@
   "maven": "https://repo.maven.apache.org/maven2/",
   "artifacts": [
     {
-      "path": "com/fasterxml/jackson/core/jackson-annotations/2.18.2/jackson-annotations-2.18.2.jar",
-      "sha256": "581bd61000ef7648943f781ca05689e56d03f6052748365a8e2b3a9b5d3fa32f",
-      "size": 78494,
+      "path": "com/fasterxml/jackson/core/jackson-annotations/2.18.9/jackson-annotations-2.18.9.jar",
+      "sha256": "798c85b86e7420d0b4eb91e7b3e37d4bee673c61de37a616ba51a7539631e6b7",
+      "size": 78411,
       "platform": "any"
     },
     {
-      "path": "com/fasterxml/jackson/core/jackson-core/2.18.2/jackson-core-2.18.2.jar",
-      "sha256": "d8054ae7c0d1c2d2f55d28e46026ebe5892881f3fab5f439233184381c3b4a1f",
-      "size": 597807,
+      "path": "com/fasterxml/jackson/core/jackson-core/2.18.9/jackson-core-2.18.9.jar",
+      "sha256": "e03144f48c8d5307da2894570b4972aab8c72f22440f8dcdb745be2485ce2024",
+      "size": 588002,
       "platform": "any"
     },
     {
-      "path": "com/fasterxml/jackson/core/jackson-databind/2.18.2/jackson-databind-2.18.2.jar",
-      "sha256": "4b364e6850dc89172fcf1d4dd26b8ff5488eda44ff4657e22dd265203dd5ab3c",
-      "size": 1658755,
+      "path": "com/fasterxml/jackson/core/jackson-databind/2.18.9/jackson-databind-2.18.9.jar",
+      "sha256": "71595a3f7ff58344ec0496a9f9ec9f623ef7b85b45402d88f1ca261f1bc4b42c",
+      "size": 1662872,
       "platform": "any"
     },
     {
@@ -75,189 +75,189 @@
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/compression/jetty-compression-common/12.1.9/jetty-compression-common-12.1.9.jar",
-      "sha256": "0c54ab8f546235088ef8cd6552f7ed876b1d204f75d6de3ae614142338b4c934",
-      "size": 12598,
+      "path": "org/eclipse/jetty/compression/jetty-compression-common/12.1.10/jetty-compression-common-12.1.10.jar",
+      "sha256": "7c02e58d5589549a5e9b19a903134a0e868fdb9ee38459b2c4495a6a3b342ba0",
+      "size": 12600,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/compression/jetty-compression-gzip/12.1.9/jetty-compression-gzip-12.1.9.jar",
-      "sha256": "ce9754ca916c696d26d750ae6702a8d22ec1a03b8053e5c5502d409142da87f3",
-      "size": 20377,
+      "path": "org/eclipse/jetty/compression/jetty-compression-gzip/12.1.10/jetty-compression-gzip-12.1.10.jar",
+      "sha256": "8c112b9ebb3413626026ba6782afde5e22575eb6fb071c98ae3541cb8d2dc79e",
+      "size": 20381,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/ee/jetty-ee-webapp/12.1.9/jetty-ee-webapp-12.1.9.jar",
-      "sha256": "0759e0b80735df2afc16c4ef4aa1fa899c81697d5107d5a7d741ba4deeb31b8c",
-      "size": 16219,
+      "path": "org/eclipse/jetty/ee/jetty-ee-webapp/12.1.10/jetty-ee-webapp-12.1.10.jar",
+      "sha256": "a75c0f3ec4aff18295e8ebeba5de07e67c22892f511e7637e6e51ba7b01f35e1",
+      "size": 16222,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/ee10/jetty-ee10-annotations/12.1.9/jetty-ee10-annotations-12.1.9.jar",
-      "sha256": "dae15afae058acb984a3033696d97b5ef8ded73a00bc2183ef06768ee1740f84",
-      "size": 66836,
+      "path": "org/eclipse/jetty/ee10/jetty-ee10-annotations/12.1.10/jetty-ee10-annotations-12.1.10.jar",
+      "sha256": "922564cbc5058a16e8de21bc902f5692f74fd2635a2d7558a5b0a995b4769f6e",
+      "size": 66838,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/ee10/jetty-ee10-plus/12.1.9/jetty-ee10-plus-12.1.9.jar",
-      "sha256": "f9c4e08efe22c2e499922571b74aa38ef7a4830884bbb0efe4610d60ee3da231",
-      "size": 22772,
+      "path": "org/eclipse/jetty/ee10/jetty-ee10-plus/12.1.10/jetty-ee10-plus-12.1.10.jar",
+      "sha256": "c0812685728707f9d48ea9046adf5308c16184e1f4ae92241ad9cd926a68bced",
+      "size": 22773,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/ee10/jetty-ee10-servlet/12.1.9/jetty-ee10-servlet-12.1.9.jar",
-      "sha256": "7275d4bde7b0e790929bfba30efb2c13cf4eb3624bf03014f4d123366a1168e7",
+      "path": "org/eclipse/jetty/ee10/jetty-ee10-servlet/12.1.10/jetty-ee10-servlet-12.1.10.jar",
+      "sha256": "05cccc74bbe1478ceb765e967b1cb1a3c8d9b51e99acf586190887e467ffd87d",
       "size": 449258,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/ee10/jetty-ee10-webapp/12.1.9/jetty-ee10-webapp-12.1.9.jar",
-      "sha256": "d64e703ff21478911983f6d715f9c8fea1e2c4c52f1cd8634beb53bcbb135786",
-      "size": 122353,
+      "path": "org/eclipse/jetty/ee10/jetty-ee10-webapp/12.1.10/jetty-ee10-webapp-12.1.10.jar",
+      "sha256": "b0a9622aec43a34f7b5554a6496a68c1e224a4b080b983ef2136376d8c74df4a",
+      "size": 122355,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/ee10/websocket/jetty-ee10-websocket-jetty-server/12.1.9/jetty-ee10-websocket-jetty-server-12.1.9.jar",
-      "sha256": "2e01430c473b6f393be628cffbd1d79b9967f5e1838429e7151fdd97acb0a02b",
-      "size": 32949,
+      "path": "org/eclipse/jetty/ee10/websocket/jetty-ee10-websocket-jetty-server/12.1.10/jetty-ee10-websocket-jetty-server-12.1.10.jar",
+      "sha256": "e48ec73463ab925215a49ec2bf547203a7fafd43461b377a175d92b2eb2cf129",
+      "size": 32951,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/ee10/websocket/jetty-ee10-websocket-servlet/12.1.9/jetty-ee10-websocket-servlet-12.1.9.jar",
-      "sha256": "480a96df3cd1eca2d3f53cc239c0454c1e8f73d864e36581c7ac8862fcddbba4",
-      "size": 8742,
+      "path": "org/eclipse/jetty/ee10/websocket/jetty-ee10-websocket-servlet/12.1.10/jetty-ee10-websocket-servlet-12.1.10.jar",
+      "sha256": "9c670f946e976b469550495374f029090119610eb02ad49c71c95a4f8c802496",
+      "size": 8748,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-alpn-client/12.1.9/jetty-alpn-client-12.1.9.jar",
-      "sha256": "7e832795b8ee8b4fdc49dd5547bbcc035fbff3a6587ff70ac5a08d88fb4e44fb",
-      "size": 7620,
+      "path": "org/eclipse/jetty/jetty-alpn-client/12.1.10/jetty-alpn-client-12.1.10.jar",
+      "sha256": "4eed96763ac18fe310ad162d3266cf64ec718d86f5ac87b19a91f3f62a2c4520",
+      "size": 7622,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-annotations/12.1.9/jetty-annotations-12.1.9.jar",
-      "sha256": "a6484317d97486af11226c68003e4cfca948dd2be38ff9bddc6baf9b21f64d71",
-      "size": 18436,
+      "path": "org/eclipse/jetty/jetty-annotations/12.1.10/jetty-annotations-12.1.10.jar",
+      "sha256": "b10d017a3ee94fa446c4d1756daf9571adc9e510a6dd4c97c96c952d748a06da",
+      "size": 18434,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-client/12.1.9/jetty-client-12.1.9.jar",
-      "sha256": "83ef4b2554c12d9cbf0b50fe071d06a5d4f14ffbee94029db10b3198187a877c",
-      "size": 369472,
+      "path": "org/eclipse/jetty/jetty-client/12.1.10/jetty-client-12.1.10.jar",
+      "sha256": "6e72623ef6ef1ed39a77934452e9d0340d7977882f3d8e9184ed8a2176330c68",
+      "size": 372437,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-http/12.1.9/jetty-http-12.1.9.jar",
-      "sha256": "857eaf5e7823f9ee91099db5bedd179b7d3e93653ac288e27321544231014df0",
-      "size": 479584,
+      "path": "org/eclipse/jetty/jetty-http/12.1.10/jetty-http-12.1.10.jar",
+      "sha256": "090f276739fd9bf8c30511007caec669ea3804b1df1061c37f44467474bee71d",
+      "size": 479593,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-io/12.1.9/jetty-io-12.1.9.jar",
-      "sha256": "904c1680e74705794c15f9df2a9ccfb155152bdd3067521fd6522df009bfa9d9",
-      "size": 382884,
+      "path": "org/eclipse/jetty/jetty-io/12.1.10/jetty-io-12.1.10.jar",
+      "sha256": "448fc0f8f6f5f7251fc46de8e3aae7da14bd7c571a8043dac3dc381d08228fa0",
+      "size": 382910,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-jndi/12.1.9/jetty-jndi-12.1.9.jar",
-      "sha256": "4104012766ff8a5294b14befb911c89bf311522a0dbfc7402e700bba3beec5f8",
-      "size": 31117,
+      "path": "org/eclipse/jetty/jetty-jndi/12.1.10/jetty-jndi-12.1.10.jar",
+      "sha256": "d80daed161e97b94e8dcfe105c19e668f464f95b5522db99b1f36ce5110f84b4",
+      "size": 31125,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-plus/12.1.9/jetty-plus-12.1.9.jar",
-      "sha256": "5d73b08d4b683afc2084acb5163e8648a535dd6c680bdd919737344b3cee2c24",
-      "size": 34825,
+      "path": "org/eclipse/jetty/jetty-plus/12.1.10/jetty-plus-12.1.10.jar",
+      "sha256": "d2cbf417d2f196ecc041e13cae0b801fc71fddf39ebab320c61e5919de05cdb5",
+      "size": 34833,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-security/12.1.9/jetty-security-12.1.9.jar",
-      "sha256": "00dcd3f9258d7eb41fc1c1cbcbaa33a1a47710783e30ad512816f0c051423142",
-      "size": 163438,
+      "path": "org/eclipse/jetty/jetty-security/12.1.10/jetty-security-12.1.10.jar",
+      "sha256": "2f34b7895cec4e3547a1b52e12e7e92b3f3a110bf3c17637f8743ca3f4e42f0c",
+      "size": 166551,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-server/12.1.9/jetty-server-12.1.9.jar",
-      "sha256": "5dfc3736056cd941a783b21e50c983c235c1b0a593d4b0d2954966173a3f6a3e",
-      "size": 702637,
+      "path": "org/eclipse/jetty/jetty-server/12.1.10/jetty-server-12.1.10.jar",
+      "sha256": "4b0108e87abada7027123deca17186249413232dad0a2bd58a4e70a987b5354a",
+      "size": 703082,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-session/12.1.9/jetty-session-12.1.9.jar",
-      "sha256": "121a9c2c9ba7274d751fe3e0d5408612c95b46df2ed20910cfecced5ae7b1659",
+      "path": "org/eclipse/jetty/jetty-session/12.1.10/jetty-session-12.1.10.jar",
+      "sha256": "164649123d15a3f2be5c196e82aa652dff05c75362db71b0f4ab6bb35165020a",
       "size": 118625,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-util/12.1.9/jetty-util-12.1.9.jar",
-      "sha256": "bb228358d4ae45c004d949edc397de1eb8aabc7adc5f9b9cbc833336e70a23bd",
-      "size": 728205,
+      "path": "org/eclipse/jetty/jetty-util/12.1.10/jetty-util-12.1.10.jar",
+      "sha256": "c52b4ff62cdacca8a399c611231129e6bd1074db7e3892e78cd106725cdd0ef1",
+      "size": 728712,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/jetty-xml/12.1.9/jetty-xml-12.1.9.jar",
-      "sha256": "0438654393985f036b17e7c16a6de785aae695d9f321a57168f150dac502d97f",
-      "size": 87996,
+      "path": "org/eclipse/jetty/jetty-xml/12.1.10/jetty-xml-12.1.10.jar",
+      "sha256": "d4660c9fa82eabfa9e5996eff5b36ae22e5e14430c3dcc485920aef889149a89",
+      "size": 87998,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/websocket/jetty-websocket-core-client/12.1.9/jetty-websocket-core-client-12.1.9.jar",
-      "sha256": "b8803d4c32d8282fff3d07eac5b999f1241dabbd8c2d7a3093821cc913c79a85",
-      "size": 25091,
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-core-client/12.1.10/jetty-websocket-core-client-12.1.10.jar",
+      "sha256": "10ee92d90fe1d112a6d6d612083de853f28935310902443bdbe5daea84e530f5",
+      "size": 25089,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/websocket/jetty-websocket-core-common/12.1.9/jetty-websocket-core-common-12.1.9.jar",
-      "sha256": "7ac4edfd74d42983c6a6ff96a36f8c96dd422d8e23f9a2301890b4b4166ef957",
-      "size": 204608,
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-core-common/12.1.10/jetty-websocket-core-common-12.1.10.jar",
+      "sha256": "bc6397bf67feeb18d7851b5fbf817c4ed11016024481202e8db790bb5a8321e1",
+      "size": 205224,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/websocket/jetty-websocket-core-server/12.1.9/jetty-websocket-core-server-12.1.9.jar",
-      "sha256": "4dfe1f58fb52bc02a32f30693fc2d92ffdaa94d29508efa68e1f9bfebb43e71a",
-      "size": 45767,
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-core-server/12.1.10/jetty-websocket-core-server-12.1.10.jar",
+      "sha256": "ca9e5cdecde06d21d0637f7b0c15e40b90463290fa8c75d2c66b4bad6910608d",
+      "size": 45764,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-api/12.1.9/jetty-websocket-jetty-api-12.1.9.jar",
-      "sha256": "8cf964d69272939166603c9c57a92a7791f09034a4f1bffa4734aa5c3140ad69",
-      "size": 32114,
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-api/12.1.10/jetty-websocket-jetty-api-12.1.10.jar",
+      "sha256": "f3b33c3c284c12917bef8a5af9b347dfecfbcb3b1a416a7d00041f5ad1b2b76f",
+      "size": 32118,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-client/12.1.9/jetty-websocket-jetty-client-12.1.9.jar",
-      "sha256": "fede7e02b5cea189371dc76bc637c3c8748883bd8ee71ed553701c41ebbfda16",
-      "size": 22187,
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-client/12.1.10/jetty-websocket-jetty-client-12.1.10.jar",
+      "sha256": "5c003615ff57ffe4ceb60c82b701a1bd7fb01187290275c61231a3fa69469f4f",
+      "size": 22197,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-common/12.1.9/jetty-websocket-jetty-common-12.1.9.jar",
-      "sha256": "b0ecaa48294563374093cd2ec7876d00239641f0faf6eb28342eb666db4ee468",
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-common/12.1.10/jetty-websocket-jetty-common-12.1.10.jar",
+      "sha256": "b7b6766b0f5eec268b17e971cd8ac8058cffba350aed53e5bf120c00081be4cf",
       "size": 34025,
       "platform": "any"
     },
     {
-      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-server/12.1.9/jetty-websocket-jetty-server-12.1.9.jar",
-      "sha256": "f489c16f2aa97c77b1bc49b2d1d0331fd32898941351676adc29d1141b83239d",
-      "size": 21282,
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-server/12.1.10/jetty-websocket-jetty-server-12.1.10.jar",
+      "sha256": "e9fb2d66de7edd797f95089afad93717f24e8948097f238fb2bb94bbc1718584",
+      "size": 21348,
       "platform": "any"
     },
     {
-      "path": "org/ow2/asm/asm-commons/9.9.1/asm-commons-9.9.1.jar",
-      "sha256": "c2319e014ce7199f2b7f7d56d6bb991863168c3f4b6cd6c9f542a4937ef7ef88",
-      "size": 75010,
+      "path": "org/ow2/asm/asm-commons/9.10/asm-commons-9.10.jar",
+      "sha256": "4282689aaa9a7023dd7a9ccd0bcca39aca49863e16d1ac709b392a6f36a50bfb",
+      "size": 74835,
       "platform": "any"
     },
     {
-      "path": "org/ow2/asm/asm-tree/9.9.1/asm-tree-9.9.1.jar",
-      "sha256": "0f3555096b720b820bbacab0b515589bee0200bee099bda14c561738ae837ba1",
-      "size": 51963,
+      "path": "org/ow2/asm/asm-tree/9.10/asm-tree-9.10.jar",
+      "sha256": "02a58618b38c7748e9ce4adff00d1080ced507f309e50b8643b703532ef347e0",
+      "size": 51953,
       "platform": "any"
     },
     {
-      "path": "org/ow2/asm/asm/9.9.1/asm-9.9.1.jar",
-      "sha256": "6f3828a215c920059a5efa2fb55c233d6c54ec5cadca99ce1b1bdd10077c7ddd",
-      "size": 126252,
+      "path": "org/ow2/asm/asm/9.10/asm-9.10.jar",
+      "sha256": "34f38c5d5e8bcb32cbd2d11e44bc12725be1ccdb87c3c96000af57fd81df6e64",
+      "size": 126184,
       "platform": "any"
     },
     {
