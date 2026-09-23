@@ -71,6 +71,7 @@ jobs:
           cargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee "$RUNNER_TEMP/c-guest-runtime.log"
           cargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee "$RUNNER_TEMP/c-guest-provenance.log"
           cargo test --locked -p latent-control-store --lib managed_lease_failure_never_mutates_or_renews_a_historical_replay 2>&1 | tee "$RUNNER_TEMP/c-guest-control-lease.log"
+          cargo test --locked -p latent-policy --lib mutation_renewal_persists_a_full_window_even_before_the_sampler_margin 2>&1 | tee "$RUNNER_TEMP/c-guest-clock-window.log"
       - name: Qualify standalone C projects and the printed guide
         run: |
           python3 -m unittest tools.tests.test_c_capsule_authoring

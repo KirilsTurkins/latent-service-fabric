@@ -18,7 +18,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "set -o pipefail\npython3 tools/build_guest_capsules.py --output \"$LSF_GUEST_CAPSULES\" 2>&1 | tee \"$RUNNER_TEMP/c-guest-build.log\"\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/c-guest-runtime.log\"\ncargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee \"$RUNNER_TEMP/c-guest-provenance.log\"\ncargo test --locked -p latent-control-store --lib managed_lease_failure_never_mutates_or_renews_a_historical_replay 2>&1 | tee \"$RUNNER_TEMP/c-guest-control-lease.log\""
+      "run": "set -o pipefail\npython3 tools/build_guest_capsules.py --output \"$LSF_GUEST_CAPSULES\" 2>&1 | tee \"$RUNNER_TEMP/c-guest-build.log\"\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/c-guest-runtime.log\"\ncargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee \"$RUNNER_TEMP/c-guest-provenance.log\"\ncargo test --locked -p latent-control-store --lib managed_lease_failure_never_mutates_or_renews_a_historical_replay 2>&1 | tee \"$RUNNER_TEMP/c-guest-control-lease.log\"\ncargo test --locked -p latent-policy --lib mutation_renewal_persists_a_full_window_even_before_the_sampler_margin 2>&1 | tee \"$RUNNER_TEMP/c-guest-clock-window.log\""
     },
     ".github/workflows/ci.yml:profile:select": {
       "workflow": ".github/workflows/ci.yml",
@@ -109,6 +109,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 -m pip install --requirement tools/requirements.lock"
+    },
+    ".github/workflows/ci.yml:rust:Install the real Fish completion test shell": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Install the real Fish completion test shell",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish"
     },
     ".github/workflows/ci.yml:rust:renderer_preflight": {
       "workflow": ".github/workflows/ci.yml",
@@ -5832,8 +5842,8 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/c-guest-authoring.yml": "32deb6259d51103bca265117e5a45ab495c35a826ece26e1eb4b591a94fd1c26",
-    ".github/workflows/ci.yml": "a7f311e9002c815503ccd24bca8d48df62d4cd6d4211c5acff35db98ddad215f",
+    ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
+    ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",

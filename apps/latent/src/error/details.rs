@@ -178,6 +178,8 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
 
 const CATALOG_REASONS: &[&str] = &[
     "deployment-generation-conflict",
+    "deployment-state-version-conflict",
+    "deployment-operation-conflict",
     "deployment-scope-conflict",
     "deployment-not-found",
     "deployment-count-limit",
