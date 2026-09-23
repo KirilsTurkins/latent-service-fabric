@@ -1,0 +1,7 @@
+using @root@;
+using Raw = @raw@;
+namespace Lsf.Guest;
+public static class Metrics
+{
+    public static Result<bool, Raw.TelemetryError> Emit(Raw.Metric value) => Raw.EmitMetric(value);
+}

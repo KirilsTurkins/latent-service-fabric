@@ -6,6 +6,17 @@
   "target": "guest",
   "variants": [
     {
+      "language": "csharp",
+      "kind": "maintained",
+      "source": "sdk/dotnet-guest/templates/word-count.cs",
+      "regions": ["capsule"],
+      "validation": {
+        "target": "tools/qualify_dotnet_capsules.py",
+        "instructions": "docs/component-development/dotnet-authoring.md",
+        "evidence": null
+      }
+    },
+    {
       "language": "typescript",
       "kind": "maintained",
       "source": "sdk/typescript-guest/templates/word-count.ts",

@@ -4251,6 +4251,7 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "dotnet_capsules_require_the_closed_native_aot_recipe_and_separate_approval",
         "go_capsules_require_source_bound_go_builder_approval_and_closed_runtime_claims",
         "guest_profiles_require_separate_builder_approval_and_preserve_legacy_echo",
         "mixed_recipes_missing_tools_and_unbounded_claims_are_rejected",
@@ -4263,7 +4264,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-signing/Cargo.toml",
-      "minimumCases": 6,
+      "minimumCases": 7,
       "mode": "libtest",
       "package": "latent-signing",
       "platforms": [
@@ -8083,8 +8084,13 @@
       "minimumCases": 0,
       "mode": "compile-only",
       "package": "latent-wasmtime",
-      "platforms": ["linux-x86_64"],
-      "prerequisites": ["pinned Rust toolchain", "successful source-matched Cargo artifact inventory"],
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
       "source": "examples/typescript_runtime_probe.rs",

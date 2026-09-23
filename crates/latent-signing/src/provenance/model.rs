@@ -59,6 +59,19 @@ pub enum BuildRecipe {
     RustCapsule(RustCapsuleBuildParameters),
     TypeScriptCapsule(TypeScriptCapsuleBuildParameters),
     GoCapsule(GoCapsuleBuildParameters),
+    DotnetCapsule(DotnetCapsuleBuildParameters),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DotnetCapsuleBuildParameters {
+    pub compiler: String,
+    pub bindings: String,
+    pub language: String,
+    pub target: String,
+    pub runtime: String,
+    pub locked: bool,
+    pub ambient_wasi: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

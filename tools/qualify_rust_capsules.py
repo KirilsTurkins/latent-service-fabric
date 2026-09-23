@@ -49,6 +49,11 @@ def inputs(language="rust"):
                     "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
                     "typescript_guest/probe.py", "typescript_guest/componentize.mjs", "typescript_guest/bundle.mjs",
                     "typescript_guest/signed64.mjs", "../.cargo/managed-guest.toml")
+    elif language == "dotnet":
+        helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
+                    "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/sdk.py",
+                    "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py",
+                    "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
             "guide": file_identity(ROOT / f"docs/component-development/{language}-authoring.md"),
@@ -89,8 +94,8 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
     return result
 
 
-def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None):
-    if language not in {"rust", "c", "go", "typescript"}:
+def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None, dotnet_tools=None):
+    if language not in {"rust", "c", "go", "typescript", "dotnet"}:
         raise ValueError("unsupported authoring qualification language")
     if language == "typescript" and typescript_tools is None:
         raise ValueError("explicit pinned TypeScript compiler installation required")
@@ -105,6 +110,12 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         from tools.typescript_guest.project import create as creator
         from tools.typescript_guest.build import build as builder
         typescript_tools = Path(typescript_tools).resolve(strict=True)
+    elif language == "dotnet":
+        from tools.dotnet_guest.project import create as creator
+        from tools.dotnet_guest.build import build as builder
+        if dotnet_tools is None:
+            raise ValueError("explicit pinned .NET compiler installation required")
+        dotnet_tools = Path(dotnet_tools).resolve(strict=True)
     output = output.absolute()
     if output == ROOT or ROOT in output.parents:
         raise ValueError("qualification projects must be outside the runtime checkout")
@@ -125,12 +136,14 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
             environment["CARGO_NET_OFFLINE"] = "true"
         paths, materials = resolve_tools(pins, ROOT, environment)
         environment["RUSTC"] = str(paths["rustc"])
-        cargo_options = ["--config", ROOT / ".cargo/managed-guest.toml"] if language == "typescript" else []
+        cargo_options = ["--config", ROOT / ".cargo/managed-guest.toml"] if language in {"typescript", "dotnet"} else []
         if language == "typescript":
             environment["LSF_TYPESCRIPT_TOOLS"] = str(typescript_tools)
+        if language == "dotnet":
+            environment["LSF_DOTNET_TOOLS"] = str(dotnet_tools)
         commands = Commands(ROOT, output, environment, **(
-            {"deadline_seconds": 3600, "command_seconds": 1800} if language == "typescript" else {}))
-        result["commandLimits"] = {"overallSeconds": 3600 if language == "typescript" else 900,
+            {"deadline_seconds": 3600, "command_seconds": 1800} if language in {"typescript", "dotnet"} else {}))
+        result["commandLimits"] = {"overallSeconds": 3600 if language in {"typescript", "dotnet"} else 900,
                                    "perCommandSeconds": commands.command_seconds}
         result["tools"] = materials
         stage = "host-build"
@@ -151,7 +164,8 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
             artifact = builder(project, output / "builds" / template, binaries["examples/capsule_contracts"],
                 binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric",
                 **({"offline": offline} if language == "rust" else
-                   {"tools": typescript_tools} if language == "typescript" else {}))
+                   {"tools": typescript_tools} if language == "typescript" else
+                   {"tools": dotnet_tools} if language == "dotnet" else {}))
             built.append(artifact)
             result["builds"][template] = read_json(artifact / "BUILD-COMPLETE.json")
         stage = "ownership"
@@ -164,6 +178,9 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         elif language == "go":
             commands.run("go-owner-tests", "go", "test", ROOT / "sdk/go-guest/ownership/owner.go",
                          ROOT / "sdk/go-guest/ownership/owner_test.go")
+        elif language == "dotnet":
+            from tools.check_dotnet_capsule_ownership import check
+            result["ownership"] = check(output / "ownership", environment)
         else:
             node = shutil.which("node", path=environment["PATH"])
             if node is None:
@@ -180,11 +197,12 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         stage = "sdk-runtime-ownership"
         # Rust/C qualifications preserve their combined runtime gate. Go runs
         # the same ten provider/ownership cases with actual Go components.
-        sdk_builder = f"build_{language}_guest_capsules.py" if language in {"go", "typescript"} else "build_guest_capsules.py"
+        sdk_builder = f"build_{language}_guest_capsules.py" if language in {"go", "typescript", "dotnet"} else "build_guest_capsules.py"
         commands.run("build-sdk-guests", sys.executable, ROOT / "tools" / sdk_builder, "--output", output / "sdk-guests",
-                     *(["--tools", typescript_tools] if language == "typescript" else []))
+                     *(["--tools", typescript_tools] if language == "typescript" else
+                       ["--tools", dotnet_tools] if language == "dotnet" else []))
         commands.environment["LSF_GUEST_CAPSULES"] = str(output / "sdk-guests")
-        if language in {"go", "typescript"}:
+        if language in {"go", "typescript", "dotnet"}:
             commands.environment["LSF_GUEST_SDK_LANGUAGE"] = language
         commands.run("sdk-runtime-tests", paths["cargo"], *cargo_options, "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
                      "--", "--ignored", "--test-threads=1")

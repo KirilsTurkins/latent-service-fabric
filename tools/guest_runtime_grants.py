@@ -9,8 +9,13 @@ RUNTIME = {
 }
 
 
-def configure(settings, templates):
-    for name, (contract, _profile, _operation, _kind) in RUNTIME.items():
+def profiles(language):
+    require(language in {"go", "dotnet"}, "runtime-grant-language")
+    return RUNTIME if language == "go" else {"clockMonotonic": RUNTIME["clockMonotonic"]}
+
+
+def configure(settings, templates, language="go"):
+    for name, (contract, _profile, _operation, _kind) in profiles(language).items():
         settings["providers"][name] = {"identity": {"id": name, "tenant": "examples", "service": "runtime-host", "epoch": 1}}
         for template in sorted(templates):
             settings["providers"]["bindings"].append({"name": name + "-" + template,
@@ -20,13 +25,13 @@ def configure(settings, templates):
     settings["audit"].update(records=4096, diskBytes=67108864)
 
 
-def grant(client, node, fixture, targets, publications, result):
+def grant(client, node, fixture, targets, publications, result, language="go"):
     denied = call(client, targets["greeting"], "greeting", "greet", ["Ada"], "runtime-grant-denied")
     require(denied["exitCode"] == 4 and denied["response"]["error"]["code"] == "permission-denied",
             "runtime-imports-require-explicit-grants")
     result["runtimeGrantDenied"] = denied
     grants = []
-    for name, (capability, profile, operation, kind) in RUNTIME.items():
+    for name, (capability, profile, operation, kind) in profiles(language).items():
         installed = [row for row in node.startup_record["providers"] if row["id"] == name]
         require(len(installed) == 1 and installed[0]["capability"] == capability and installed[0]["profile"] == profile,
                 "runtime-provider-installation-identity")
@@ -42,7 +47,7 @@ def grant(client, node, fixture, targets, publications, result):
             "id": "runtime", "effect": "allow", "principals": [{"kind": "administrator", "subject": "workflow-operator"}],
             "services": sorted(target["service"] for target in targets.values()),
             "publications": sorted(publications.values()), "capability": capability, "operations": [operation],
-            "resources": {"kind": kind}, "ceiling": {"operations": 4096, "inputBytes": 0,
+            "resources": {"kind": kind}, "ceiling": {"operations": 4096, "inputBytes": 8 if kind == "random" else 0,
                 "outputBytes": 32768, "wallTimeMillis": 5000}}]})
         client.call("policy", "apply", "--id", name + "-allow", "--file", policy,
                     "--operation-id", "grant-" + name, "--expected-generation", "0")

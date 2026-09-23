@@ -1,0 +1,8 @@
+using @root@;
+using Raw = @raw@;
+namespace Lsf.Guest;
+public static class Random
+{
+    public static Result<byte[], Raw.RandomError> Bytes(uint length) => Raw.Bytes(length);
+    public static Result<ulong, Raw.RandomError> U64() => Raw.U64Value();
+}

@@ -176,6 +176,31 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
             wrong["materials"] = [row for row in wrong["materials"] if row["name"] != name]
             self.invalid("build-observation", wrong)
 
+    def test_dotnet_profile_requires_exact_recipe_materials_and_builder_choice(self):
+        current = samples()
+        value = current["build-observation"]
+        value.update(buildType="https://latent.dev/build/dotnet-capsule/v1",
+            dependencyCompleteness="declared-inputs-incomplete",
+            parameters={"compiler": "native-aot-llvm", "bindings": "wit-bindgen-csharp", "language": "csharp",
+                        "target": "wasi-wasm", "runtime": "native-aot", "locked": True, "ambientWasi": False})
+        value["source"].update(revision="b" * 64, capture="explicit-input-files")
+        names = ("dotnet", "wit-bindgen", "closed-runtime", "compiler-inputs", "contracts-tool", "packager", "package-inputs")
+        value["materials"] += [{"name": name, "digest": DIGEST, "size": 1} for name in names]
+        current["package-provenance-statement"]["predicate"]["observation"] = value
+        current["builder-policy"]["requirements"][0]["buildType"] = value["buildType"]
+        for name in ("build-observation", "package-provenance-statement", "builder-policy"):
+            self.validators[name].validate(current[name])
+        for field, expected in value["parameters"].items():
+            wrong = copy.deepcopy(value)
+            wrong["parameters"][field] = not expected if isinstance(expected, bool) else "different"
+            self.invalid("build-observation", wrong)
+            current["package-provenance-statement"]["predicate"]["observation"] = wrong
+            self.invalid("package-provenance-statement", current["package-provenance-statement"])
+        for name in (*names, "dependency-lock"):
+            wrong = copy.deepcopy(value)
+            wrong["materials"] = [row for row in wrong["materials"] if row["name"] != name]
+            self.invalid("build-observation", wrong)
+
     def test_statement_subject_and_signed_shape(self):
         original = samples()["package-provenance-statement"]
         for subjects in ([], original["subject"] * 2):

@@ -32,7 +32,7 @@ TEMPLATES = {"greeting", "word-count", "shipping", "http-status", "recovery"}
 
 
 def run(cli, node_binary, fixture, evidence, *, language="rust"):
-    require(language in {"rust", "c", "go", "typescript"}, "authoring-language")
+    require(language in {"rust", "c", "go", "typescript", "dotnet"}, "authoring-language")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -60,13 +60,13 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                 work = Path(temporary)
                 for name in ("client", "node", "peer"):
                     (work / name).mkdir(mode=0o700)
-                seconds = 900 if language == "typescript" else 180
-                invocation_millis = 120000 if language == "typescript" else 5000
+                seconds = 900 if language in {"typescript", "dotnet"} else 180
+                invocation_millis = 120000 if language in {"typescript", "dotnet"} else 5000
                 result["limits"] = {"overallSeconds": seconds, "invocationMillis": invocation_millis}
                 client = RecordingClient(cli, work / "client", cancellation, time.monotonic() + seconds,
                                          evidence=evidence / "controls", invocation_timeout_millis=invocation_millis)
                 peer, port = start_provider(client, work / "peer")
-                config, settings = configure(work / "node", fixture, port, runtime_grants=language == "go", language=language)
+                config, settings = configure(work / "node", fixture, port, runtime_grants=language in {"go", "dotnet"}, language=language)
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
                 # stay private and no token is copied into the exported receipt.
@@ -95,9 +95,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                         result["releases"][template] = published["data"]["operation"]
                         targets[template] = deploy(client, source / "deployment.json", publication)
                     names = population(client, fixture, targets, publications, probe, result)
-                    if language == "go":
+                    if language in {"go", "dotnet"}:
                         from tools.guest_runtime_grants import grant
-                        grant(client, node, fixture, targets, publications, result)
+                        grant(client, node, fixture, targets, publications, result, language=language)
                     tutorials(client, targets, result)
                     result["samples"].append(sample(client, probe, "after-tutorials", len(names)))
                     faults(client, targets["recovery"], probe, result, len(names))

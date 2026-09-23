@@ -92,7 +92,7 @@ def configure(directory, fixture, port, *, runtime_grants=False, language="rust"
         "consumerService": "examples/my-http-status", "providerService": "http-host",
         "contract": "latent:http/client@0.2.0", "providerBinding": "http-installed", "route": "my-http-status"}]
     settings["cache"].update(entries=2, preparations=1)
-    if language == "typescript":
+    if language in {"typescript", "dotnet"}:
         settings["cells"][0]["maximumMemoryBytes"] = 134217728
         settings["execution"]["maximumWallTimeMillis"] = 120000
     settings["catalogs"].update(releaseEntries=8, deployments=24)
@@ -102,7 +102,7 @@ def configure(directory, fixture, port, *, runtime_grants=False, language="rust"
         "maximumReadOwners": 64, "maximumPageRecords": 16}
     if runtime_grants:
         from tools.guest_runtime_grants import configure as configure_runtime
-        configure_runtime(settings, ("greeting", "word-count", "shipping", "http-status", "recovery"))
+        configure_runtime(settings, ("greeting", "word-count", "shipping", "http-status", "recovery"), language=language)
     path = directory / "authoring-node.json"
     write_json(path, settings)
     return path, settings

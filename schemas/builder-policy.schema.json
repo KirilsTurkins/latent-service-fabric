@@ -101,7 +101,8 @@
               "https://latent.dev/build/angular-component/v1",
               "https://latent.dev/build/rust-capsule/v1",
               "https://latent.dev/build/go-capsule/v1",
-              "https://latent.dev/build/typescript-capsule/v1"
+              "https://latent.dev/build/typescript-capsule/v1",
+              "https://latent.dev/build/dotnet-capsule/v1"
             ]
           },
           "sourceRepository": {

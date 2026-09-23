@@ -1,6 +1,6 @@
 use super::{
-    BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, GO_CAPSULE_BUILD_TYPE,
-    PROVENANCE_BUILD_TYPE, RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE,
+    BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, DOTNET_CAPSULE_BUILD_TYPE,
+    GO_CAPSULE_BUILD_TYPE, PROVENANCE_BUILD_TYPE, RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE,
     TYPESCRIPT_CAPSULE_BUILD_TYPE,
 };
 use crate::{SignatureFailure, SignatureResult};
@@ -179,6 +179,16 @@ pub(crate) fn validate_observation(
             "packager",
             "package-inputs",
         ],
+        DOTNET_CAPSULE_BUILD_TYPE => &[
+            "dotnet",
+            "wit-bindgen",
+            "closed-runtime",
+            "compiler-inputs",
+            "dependency-lock",
+            "contracts-tool",
+            "packager",
+            "package-inputs",
+        ],
         _ => unreachable!("profile checked above"),
     };
     for required in tool_materials {
@@ -256,6 +266,15 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
                 && p.language == "typescript"
                 && p.target == "wasm32-component"
                 && p.runtime == "spidermonkey"
+                && !p.ambient_wasi
+        }
+        (DOTNET_CAPSULE_BUILD_TYPE, BuildRecipe::DotnetCapsule(p)) => {
+            p.compiler == "native-aot-llvm"
+                && p.bindings == "wit-bindgen-csharp"
+                && p.language == "csharp"
+                && p.target == "wasi-wasm"
+                && p.runtime == "native-aot"
+                && p.locked
                 && !p.ambient_wasi
         }
         (GO_CAPSULE_BUILD_TYPE, BuildRecipe::GoCapsule(p)) => {

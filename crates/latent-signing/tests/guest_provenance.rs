@@ -4,6 +4,86 @@ mod support;
 use latent_signing::*;
 use support::*;
 
+#[test]
+fn dotnet_capsules_require_the_closed_native_aot_recipe_and_separate_approval() {
+    let mut value = standalone();
+    value.build_type = DOTNET_CAPSULE_BUILD_TYPE.into();
+    value.parameters = BuildRecipe::DotnetCapsule(DotnetCapsuleBuildParameters {
+        compiler: "native-aot-llvm".into(),
+        bindings: "wit-bindgen-csharp".into(),
+        language: "csharp".into(),
+        target: "wasi-wasm".into(),
+        runtime: "native-aot".into(),
+        locked: true,
+        ambient_wasi: false,
+    });
+    for name in ["dotnet", "closed-runtime", "compiler-inputs"] {
+        value.materials.push(BuildMaterial {
+            name: name.into(),
+            digest: value.source.snapshot_digest.clone(),
+            size: 1,
+        });
+    }
+    let (signer, public, _) = signer(BUILDER);
+    let evidence = signed(&signer, &value);
+    let mut policy = policy_value(&public);
+    assert_eq!(
+        verifier(&policy)
+            .verify_package(&subject(), evidence.as_ref(), NOW)
+            .unwrap_err()
+            .reason(),
+        SignatureFailure::PredicateDisallowed
+    );
+    policy["requirements"][0]["buildType"] = DOTNET_CAPSULE_BUILD_TYPE.into();
+    verifier(&policy)
+        .verify_package(&subject(), evidence.as_ref(), NOW)
+        .unwrap();
+    let encoded = serde_json::to_value(&value).unwrap();
+    assert!(matches!(
+        decode_build_observation(&serde_json::to_vec(&encoded).unwrap(), Default::default())
+            .unwrap()
+            .parameters,
+        BuildRecipe::DotnetCapsule(_)
+    ));
+    for (field, invalid) in [
+        ("compiler", serde_json::json!("different")),
+        ("bindings", serde_json::json!("different")),
+        ("language", serde_json::json!("different")),
+        ("target", serde_json::json!("different")),
+        ("runtime", serde_json::json!("different")),
+        ("locked", serde_json::json!(false)),
+        ("ambientWasi", serde_json::json!(true)),
+        ("unreviewedOption", serde_json::json!(true)),
+    ] {
+        let mut wrong = encoded.clone();
+        wrong["parameters"][field] = invalid;
+        assert!(
+            decode_build_observation(&serde_json::to_vec(&wrong).unwrap(), Default::default())
+                .is_err()
+        );
+    }
+    for name in [
+        "dotnet",
+        "wit-bindgen",
+        "closed-runtime",
+        "compiler-inputs",
+        "dependency-lock",
+        "contracts-tool",
+        "packager",
+        "package-inputs",
+    ] {
+        let mut wrong = encoded.clone();
+        wrong["materials"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|row| row["name"] != name);
+        assert!(
+            decode_build_observation(&serde_json::to_vec(&wrong).unwrap(), Default::default())
+                .is_err()
+        );
+    }
+}
+
 fn guest(c: bool) -> BuildObservation {
     let mut value = observation();
     value.build_type = if c {
