@@ -11,6 +11,9 @@ on:
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
       - tools/guest_runtime_grants.py
+      - tools/tests/test_go_capsule_authoring.py
+      - tools/tests/test_build_provenance_schemas.py
+      - schemas/**
       - docs/component-development/go-authoring.md
       - docs/development/go-capsule-qualification.md
       - crates/latent-wasmtime/**
@@ -37,6 +40,9 @@ on:
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
       - tools/guest_runtime_grants.py
+      - tools/tests/test_go_capsule_authoring.py
+      - tools/tests/test_build_provenance_schemas.py
+      - schemas/**
       - docs/component-development/go-authoring.md
       - docs/development/go-capsule-qualification.md
       - crates/latent-wasmtime/**

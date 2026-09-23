@@ -78,6 +78,23 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
     def invalid(self, name, value):
         self.assertFalse(self.validators[name].is_valid(value), name)
 
+    def test_signed_recipes_match_every_standalone_profile_and_builder_choice(self):
+        standalone = self.validators["build-observation"].schema
+        embedded = self.validators["package-provenance-statement"].schema["properties"]["predicate"]["properties"]["observation"]
+        policy = self.validators["builder-policy"].schema["properties"]["requirements"]["items"]
+        profiles = set(standalone["properties"]["buildType"]["enum"])
+        self.assertEqual(profiles, set(embedded["properties"]["buildType"]["enum"]))
+        web = json.loads((ROOT / "schemas/web-build-observation.schema.json").read_bytes())
+        self.assertEqual(profiles | set(web["properties"]["buildType"]["enum"]),
+                         set(policy["properties"]["buildType"]["enum"]))
+        def recipes(schema):
+            rows = schema["allOf"]
+            result = {row["if"]["properties"]["buildType"]["const"]: row for row in rows}
+            self.assertEqual(len(rows), len(result), "duplicate recipe condition")
+            self.assertEqual(set(result), profiles, "an allowed profile lacks a closed recipe")
+            return result
+        self.assertEqual(recipes(standalone), recipes(embedded))
+
     def test_builder_policy_and_observation_recipes_stay_in_sync(self):
         observation = self.validators["build-observation"].schema["properties"]["buildType"]["enum"]
         web = json.loads((ROOT / "schemas/web-build-observation.schema.json").read_bytes())["properties"]["buildType"]["enum"]

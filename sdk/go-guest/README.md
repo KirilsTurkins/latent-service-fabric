@@ -66,6 +66,9 @@ authority from a standard-library import. Filesystem access, sockets, process
 creation, dynamic libraries, CGo and arbitrary third-party module graphs are
 outside this profile. Unsupported ambient WASI operations fail closed; use the
 typed LSF capabilities for host effects. This is not unrestricted native Go.
+In particular, `time.Sleep` and timer-backed standard-library polling are not
+component waits: the closed adapter rejects `poll_oneoff`. Use the generated
+asynchronous capability calls; do not introduce a busy-wait workaround.
 
 Owners contain private, shared state. Copying a wrapper does not create a
 second host resource. A pending operation borrows its owner; closing, consuming
