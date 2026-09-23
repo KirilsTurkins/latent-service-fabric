@@ -2665,7 +2665,7 @@
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
     },
     "tools/dotnet_guest_bindings.py": {
-      "sha256": "ba9bcfb34858c19b2ac77ca8f57bcc327956aacc079deb5b6b15bc8ba403936a"
+      "sha256": "6c51ffa8c2cd39b9f57f3cc4d48303d734a845c15a476038a6289b77d0efbc82"
     },
     "tools/install_guest_bindgen.py": {
       "sha256": "5b44bb8ee33f2d0b2466afa6a38b990fb1358fbd9818061b392ef960b535eca1"

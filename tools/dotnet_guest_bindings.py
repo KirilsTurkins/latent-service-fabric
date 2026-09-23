@@ -47,6 +47,27 @@ def contract_graph(value):
     return value
 
 
+def canonical_resource_order(text: str) -> str:
+    """Sort only complete, pinned-generator resource class declarations.
+
+    wit-bindgen 0.62 stores resources in a randomized map. Declaration order
+    does not affect these nested types, but every byte inside each declaration
+    (including canonical import names and ownership code) must remain checked.
+    """
+    patterns = (
+        r"(?ms)^    public class ([A-Za-z_][A-Za-z_0-9]*): global::System.IDisposable \{\n.*?^    \}\n",
+        r"(?ms)^        internal static class ([A-Za-z_][A-Za-z_0-9]*)\n        \{\n.*?^        \}\n",
+    )
+    for pattern in patterns:
+        matches = list(re.finditer(pattern, text))
+        names = [match[1] for match in matches]
+        if len(names) != len(set(names)):
+            raise BindingError("duplicate-generated-resource-class")
+        ordered = iter(match[0] for match in sorted(matches, key=lambda match: match[1]))
+        text = re.sub(pattern, lambda _: next(ordered), text)
+    return text
+
+
 def stackful_projection(document: dict) -> dict:
     """Change only async implementation kinds, never signatures or identities."""
     result = copy.deepcopy(document)
@@ -187,6 +208,9 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
         generated = directory / "generated"
         run([bindgen, "c-sharp", str(projection), "--world", world,
              "--runtime", "native-aot", "--with-wit-results", "--out-dir", str(generated)])
+        for path in generated.glob("*.cs"):
+            value = read_bytes(path).decode("utf-8")
+            path.write_text(canonical_resource_order(value), encoding="utf-8", newline="\n")
         metadata = list(generated.glob("*_component_type.wit"))
         if len(metadata) != 1:
             raise BindingError("missing-unique-component-type")

@@ -15,6 +15,24 @@ from tools import dotnet_guest_bindings as bindings
 
 
 class BindingTests(unittest.TestCase):
+    def test_resource_order_is_canonical_but_bodies_remain_authoritative(self):
+        first = '    public class Body: global::System.IDisposable {\n        public void Dispose() { Drop(1); }\n    }\n'
+        second = '    public class Upload: global::System.IDisposable {\n        public void Dispose() { Drop(2); }\n    }\n'
+        left = 'namespace Test {\n' + first + '\n' + second + '}\n'
+        right = 'namespace Test {\n' + second + '\n' + first + '}\n'
+        self.assertEqual(bindings.canonical_resource_order(left), bindings.canonical_resource_order(right))
+        self.assertNotEqual(bindings.canonical_resource_order(left),
+                            bindings.canonical_resource_order(right.replace('Drop(2)', 'Drop(3)')))
+        self.assertEqual(bindings.canonical_resource_order(left), left)
+
+    def test_interop_resource_order_does_not_hide_unrelated_methods(self):
+        first = '        internal static class Body\n        {\n\n        }\n'
+        second = first.replace('Body', 'Upload')
+        self.assertEqual(bindings.canonical_resource_order(second + first), first + second)
+        self.assertEqual(bindings.canonical_resource_order('void Run() { Foo(); }'), 'void Run() { Foo(); }')
+        with self.assertRaisesRegex(bindings.BindingError, 'duplicate-generated-resource-class'):
+            bindings.canonical_resource_order(first + first)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
