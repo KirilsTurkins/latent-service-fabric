@@ -51,40 +51,42 @@ fn mapping(tenant: &str, topic: &str, subject: &str, stream: &str) -> TopicMappi
 #[tokio::test]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn typed_event_receipt_denial_and_uncertainty_do_not_retry() {
-    for mode in [stub::Mode::Healthy, stub::Mode::Malformed] {
-        let root = tempfile::tempdir().unwrap();
-        let publication = package::publish(root.path(), "rust-events").await;
-        let peer = stub::Stub::new(mode).await;
-        let f = Fixture::with_publication(
-            peer.config.clone(),
-            None,
-            Default::default(),
-            Some(publication),
-        )
-        .await;
-        let (mut request, control) = f.request("sdk-event", 0);
-        input(&mut request, 0, "allowed", 1);
-        assert_eq!(
-            run(&f.backend, request, &control).await,
-            if matches!(mode, stub::Mode::Healthy) {
-                1
-            } else {
-                11
-            }
-        );
-        f.idle();
-        assert_eq!(peer.publishes.load(Ordering::Acquire), 1);
-        let (mut request, control) = f.request("sdk-event-denied", 0);
-        input(&mut request, 0, "denied", 2);
-        assert_eq!(run(&f.backend, request, &control).await, 10);
-        f.idle();
-        assert_eq!(peer.publishes.load(Ordering::Acquire), 1);
-        assert!(f
-            .pools
-            .shutdown(Instant::now() + Duration::from_secs(2))
-            .await
-            .unwrap()
-            .is_clean());
-        peer.close().await;
+    for language in ["rust", "c"] {
+        for mode in [stub::Mode::Healthy, stub::Mode::Malformed] {
+            let root = tempfile::tempdir().unwrap();
+            let publication = package::publish(root.path(), &format!("{language}-events")).await;
+            let peer = stub::Stub::new(mode).await;
+            let f = Fixture::with_publication(
+                peer.config.clone(),
+                None,
+                Default::default(),
+                Some(publication),
+            )
+            .await;
+            let (mut request, control) = f.request("sdk-event", 0);
+            input(&mut request, 0, "allowed", 1);
+            assert_eq!(
+                run(&f.backend, request, &control).await,
+                if matches!(mode, stub::Mode::Healthy) {
+                    1
+                } else {
+                    11
+                }
+            );
+            f.idle();
+            assert_eq!(peer.publishes.load(Ordering::Acquire), 1);
+            let (mut request, control) = f.request("sdk-event-denied", 0);
+            input(&mut request, 0, "denied", 2);
+            assert_eq!(run(&f.backend, request, &control).await, 10);
+            f.idle();
+            assert_eq!(peer.publishes.load(Ordering::Acquire), 1);
+            assert!(f
+                .pools
+                .shutdown(Instant::now() + Duration::from_secs(2))
+                .await
+                .unwrap()
+                .is_clean());
+            peer.close().await;
+        }
     }
 }

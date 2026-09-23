@@ -155,3 +155,27 @@ crate-type = ["cdylib"]
 test = false
 bench = false
 doc = false
+
+[[example]]
+name = "tutorial-greeting"
+path = "examples/tutorial_greeting/component.rs"
+crate-type = ["cdylib"]
+test = true
+bench = false
+doc = false
+
+[[example]]
+name = "tutorial-word-count"
+path = "examples/tutorial_word_count/component.rs"
+crate-type = ["cdylib"]
+test = true
+bench = false
+doc = false
+
+[[example]]
+name = "tutorial-shipping"
+path = "examples/tutorial_shipping/component.rs"
+crate-type = ["cdylib"]
+test = true
+bench = false
+doc = false

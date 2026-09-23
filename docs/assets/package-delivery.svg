@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="delivery-title delivery-description">
+  <title id="delivery-title">Deliver a capsule or website to an LSF node</title>
+  <desc id="delivery-description">Build and package a component, static website or supported Angular server renderer. Sign the package and supply build evidence. Optionally transfer it through an OCI registry. The node checks its own current trust policy before admission and deployment. Authenticated calls and configured HTTP routes select a publication. Capsules and server rendering use temporary activations; static files are served without guest execution. Idle deployments retain bounded metadata, not a process or listener for each service.</desc>
+  <defs>
+    <marker id="delivery-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#F2CA68"/>
+    </marker>
+    <style>
+      .heading { font: 700 34px system-ui, sans-serif; fill: #F3EBDD; }
+      .subtitle { font: 400 18px system-ui, sans-serif; fill: #C7BA9C; }
+      .step { font: 600 14px system-ui, sans-serif; fill: #F2CA68; }
+      .title { font: 700 21px system-ui, sans-serif; fill: #F3EBDD; }
+      .copy { font: 400 18px system-ui, sans-serif; fill: #F3EBDD; }
+      .note { font: 400 16px system-ui, sans-serif; fill: #C7BA9C; }
+    </style>
+  </defs>
+  <rect width="1440" height="760" rx="28" fill="#0D0D0B"/>
+  <text x="72" y="100" class="heading">From your code to a running service</text>
+  <text x="72" y="139" class="subtitle">A package supplies the content. The node decides whether it may be used.</text>
+  <g fill="#191812" stroke="#9F8C62" stroke-width="2">
+    <rect x="72" y="202" width="384" height="294" rx="24"/>
+    <rect x="528" y="202" width="384" height="294" rx="24"/>
+    <rect x="984" y="202" width="384" height="294" rx="24"/>
+  </g>
+  <g stroke="#F2CA68" stroke-width="3" marker-end="url(#delivery-arrow)">
+    <path d="M 468 344 H 514"/>
+    <path d="M 924 344 H 970"/>
+  </g>
+  <text x="104" y="246" class="step">1 / BUILD</text>
+  <text x="104" y="285" class="title">Prepare your package</text>
+  <text x="104" y="329" class="copy">Capsule code and WIT contracts,</text>
+  <text x="104" y="359" class="copy">static files, or an Angular renderer.</text>
+  <text x="104" y="411" class="note">Use the matching build guide.</text>
+  <text x="104" y="439" class="note">Package the selected build output.</text>
+  <text x="560" y="246" class="step">2 / DELIVER</text>
+  <text x="560" y="285" class="title">Sign, admit and deploy</text>
+  <text x="560" y="329" class="copy">Attach signatures and build evidence.</text>
+  <text x="560" y="359" class="copy">Transfer directly or through OCI.</text>
+  <text x="560" y="411" class="note">The node checks current trust policy.</text>
+  <text x="560" y="439" class="note">A deployment selects exact content.</text>
+  <text x="1016" y="246" class="step">3 / USE</text>
+  <text x="1016" y="285" class="title">Call or open your service</text>
+  <text x="1016" y="329" class="copy">Invoke a capsule with a client.</text>
+  <text x="1016" y="359" class="copy">Open a configured HTTP route.</text>
+  <text x="1016" y="411" class="note">Grants limit access to providers.</text>
+  <text x="1016" y="439" class="note">Roll out or roll back explicitly.</text>
+  <rect x="72" y="544" width="1296" height="144" rx="24" fill="#242017" stroke="#9F8C62" stroke-width="2"/>
+  <text x="104" y="586" class="title">Resources follow the work</text>
+  <text x="104" y="625" class="copy">Capsules and server rendering use temporary activations. Static files need no guest activation.</text>
+  <text x="104" y="657" class="note">Dormant deployments keep bounded metadata; they do not each own a process, thread, guest heap or listener.</text>
+</svg>

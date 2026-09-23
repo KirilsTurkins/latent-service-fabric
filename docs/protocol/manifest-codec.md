@@ -1,4 +1,4 @@
-# Manifest codec and Phase 1 admission contract
+# Manifest codec and admission contract
 
 Status: Phase 1 normative contract for issue #3.
 
