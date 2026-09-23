@@ -55,7 +55,12 @@ async fn typed_service_outcomes_use_node_admission_and_reused_cells() {
                     )
                 };
                 let result: Vec<String> = serde_json::from_slice(&success.output).unwrap();
-                assert_eq!(result, [if permit { expected } else { 11 }.to_string()]);
+                assert_eq!(
+                    result,
+                    [if permit { expected } else { 11 }.to_string()],
+                    "caller/child terminals: {:?}",
+                    f.observations.terminals.lock().unwrap()
+                );
                 assert_eq!(success.consumption.child_calls, u32::from(permit));
                 f.idle().await;
             }

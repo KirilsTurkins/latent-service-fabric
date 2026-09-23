@@ -73,6 +73,7 @@ class DotnetAuthoringTests(unittest.TestCase):
             config, _, _ = validate(snapshot(project(self.root / name, name)))
             self.assertEqual(config["tenant"], None if name in {"service", "callee"} else "tests")
             self.assertEqual(config["limits"]["cpuFuel"], 10_000_000_000)
+            self.assertEqual(config["limits"]["memoryBytes"], (256 if name == "service" else 128) * 1024 * 1024)
 
     def test_nuget_uses_verified_content_identity_not_raw_signed_zip_hash(self):
         directory = self.root / "packages/test/1.0.0"

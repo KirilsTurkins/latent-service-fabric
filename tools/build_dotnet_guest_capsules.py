@@ -33,6 +33,7 @@ def project(directory: Path, name: str) -> Path:
     value.update(world=profile["world"], tenant=None if name in {"service", "callee"} else "tests",
                  service={"service": "caller", "callee": "callee"}.get(name, "generic"))
     value["limits"].update(cpuFuel=10_000_000_000, childCalls=16 if name == "service" else 0,
+        memoryBytes=(256 if name == "service" else 128) * 1024 * 1024,
         outboundRequests=8 if name in {"http", "streaming", "blob", "secrets", "events"} else 0,
         blobReadBytes=65536 if name == "blob" else 0, blobWriteBytes=65536 if name == "blob" else 0)
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")

@@ -70,7 +70,12 @@ budget and deadline; wrappers do not retry or widen them.
 
 Standalone capsules use a 128 MiB memory ceiling, finite one-billion fuel
 ceiling and explicit 120-second cold invocation ceiling. The all-SDK harness
-uses ten-billion fuel for its deliberately multi-operation cases. Cold compile
+uses ten-billion fuel for its deliberately multi-operation cases. Its nested
+service caller alone explicitly reserves 256 MiB; the callee stays at 128 MiB.
+Measured NativeAOT caller and callee activations each need about 54 MiB, and
+the node delegates only half the parent's remaining memory. A 128 MiB caller
+cannot fund that child. This is a finite manifest and operator reservation,
+not a change to production admission or delegation. Cold compile
 cost is separate from warm activation cost; neither is described as free.
 The retained node workflow checks fixed host baseline, active work, bounded
 shared code/cache and increasing dormant deployments. No dormant application

@@ -45,6 +45,17 @@ pub fn memory(default: u64) -> u64 {
     }
 }
 
+pub fn service_memory(default: u64) -> u64 {
+    if std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() == Ok("dotnet") {
+        // A measured NativeAOT caller and callee each need ~54 MiB. The real
+        // node delegates only half of the parent's remaining memory, so the
+        // nested caller explicitly reserves more; ordinary guests stay 128 MiB.
+        256 * 1024 * 1024
+    } else {
+        memory(default)
+    }
+}
+
 pub fn fuel(default: u64) -> u64 {
     match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
         Ok("go" | "typescript" | "dotnet") => 10_000_000_000,
