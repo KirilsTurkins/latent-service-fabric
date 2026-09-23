@@ -87,6 +87,9 @@ impl DirectoryDeploymentRepository {
             limits,
         });
         let mut work = Work::default();
+        if let Some(authority) = &self.admission {
+            authority.renew_control_lease()?;
+        }
         let mut next = compiler::compile_catalog_for_bindings(
             previous.routes.deployments.clone(),
             previous.routes.versions.clone(),
@@ -98,6 +101,7 @@ impl DirectoryDeploymentRepository {
             &mut work,
             self.runtime_profile.as_deref(),
             self.lifecycle.as_ref(),
+            self.admission.as_deref(),
         )
         .await?;
         next.bindings = compile::compile(
@@ -106,6 +110,7 @@ impl DirectoryDeploymentRepository {
             Some(owner),
             self.artifacts.as_ref(),
             true,
+            self.admission.as_deref(),
         )
         .await?;
         let next = persistence::encode(next, self.config, &mut work)?;
@@ -122,6 +127,9 @@ impl DirectoryDeploymentRepository {
     ) -> Result<RouteGeneration, PlatformError> {
         if !prepared.owner.ptr_eq(&Arc::downgrade(&self.current)) {
             return Err(denied());
+        }
+        if let Some(authority) = &self.admission {
+            authority.renew_control_lease()?;
         }
         let generation = prepared.next.catalog().generation;
         self.commit_versioned(
