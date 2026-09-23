@@ -2981,6 +2981,30 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
+      "id": "latent-packaging.example.capsule-contracts",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/capsule_contracts.rs",
+      "target": "capsule_contracts",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
       "id": "latent-packaging.example.package",
       "ignoredLeaves": [],
       "kind": "example",
@@ -3016,6 +3040,13 @@
         "semantics::arena::depths::tests::cycles_and_foreign_ids_do_not_acquire_cached_heights",
         "semantics::arena::depths::tests::type_arena_and_edge_work_are_independently_bounded",
         "semantics::arena::depths::tests::unused_flat_aliases_check_cached_transitive_heights_before_and_after_resolution",
+        "semantics::authoring::tests::complete_full_width_scalar_and_result_contract_is_derived_from_source",
+        "semantics::authoring::tests::exact_host_sources_and_direct_dependencies_are_required",
+        "semantics::authoring::tests::lists_records_variants_enums_aliases_tuples_and_async_kinds_are_retained",
+        "semantics::authoring::tests::malformed_versions_duplicate_packages_paths_and_foreign_sources_fail_closed",
+        "semantics::authoring::tests::source_bytes_work_and_output_budgets_apply_before_returning_metadata",
+        "semantics::authoring::tests::source_order_is_irrelevant_and_utf8_documentation_is_digest_bound",
+        "semantics::authoring::tests::unsupported_nested_resource_async_value_flag_and_world_shapes_are_rejected",
         "semantics::compatibility::binding::tests::dependency_versions_cannot_alias_same_shaped_types",
         "semantics::compatibility::binding::tests::named_definitions_versions_and_exact_function_sets_are_checked",
         "semantics::compatibility::invocation::tests::targets_require_exact_identity_bounded_value_types_and_a_real_function",
@@ -3073,7 +3104,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 63,
+      "minimumCases": 70,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [
@@ -3331,6 +3362,30 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/sbom_association.rs",
       "target": "sbom_association",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-policy.example.capsule-authoring",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-policy/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-policy",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/capsule_authoring.rs",
+      "target": "capsule_authoring",
       "timeoutSeconds": 900
     },
     {
@@ -4194,14 +4249,16 @@
       "boundary": "runtime",
       "expectedCases": [
         "guest_profiles_require_separate_builder_approval_and_preserve_legacy_echo",
-        "mixed_recipes_missing_tools_and_unbounded_claims_are_rejected"
+        "mixed_recipes_missing_tools_and_unbounded_claims_are_rejected",
+        "standalone_capsules_require_their_own_source_bound_builder_approval",
+        "standalone_recipes_cannot_lie_about_target_identity_or_observed_tools"
       ],
       "expectedIgnored": [],
       "id": "latent-signing.test.guest-provenance",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-signing/Cargo.toml",
-      "minimumCases": 2,
+      "minimumCases": 4,
       "mode": "libtest",
       "package": "latent-signing",
       "platforms": [
@@ -7260,14 +7317,15 @@
         "all_shells_work_without_inputs_and_leave_the_home_directory_untouched",
         "invalid_arguments_help_version_and_existing_json_errors_keep_their_exit_contracts",
         "quiet_preserves_script_bytes_and_json_is_never_a_success_envelope",
-        "real_bash_completion_smoke_in_a_clean_shell"
+        "real_bash_completion_smoke_in_a_clean_shell",
+        "real_fish_completion_smoke_in_a_clean_shell"
       ],
       "expectedIgnored": [],
       "id": "latent.test.completions",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 5,
+      "minimumCases": 6,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
@@ -7275,7 +7333,8 @@
       ],
       "prerequisites": [
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
+        "successful source-matched Cargo artifact inventory",
+        "Bash and Fish installed for actual offline shell execution"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",

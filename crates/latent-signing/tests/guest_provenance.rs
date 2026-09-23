@@ -113,3 +113,111 @@ fn mixed_recipes_missing_tools_and_unbounded_claims_are_rejected() {
         }
     }
 }
+
+fn standalone() -> BuildObservation {
+    let mut value = guest(false);
+    value.build_type = RUST_CAPSULE_BUILD_TYPE.into();
+    value.parameters = BuildRecipe::RustCapsule(RustCapsuleBuildParameters {
+        cargo_package: "my-shipping-service".into(),
+        manifest_path: "Cargo.toml".into(),
+        crate_type: "cdylib".into(),
+        target: "wasm32-unknown-unknown".into(),
+        profile: "release".into(),
+        locked: true,
+        incremental: false,
+    });
+    for name in ["contracts-tool", "packager", "package-inputs"] {
+        value.materials.push(BuildMaterial {
+            name: name.into(),
+            digest: value.source.snapshot_digest.clone(),
+            size: 1,
+        });
+    }
+    value
+}
+
+#[test]
+fn standalone_capsules_require_their_own_source_bound_builder_approval() {
+    let (signer, public, _) = signer(BUILDER);
+    let value = standalone();
+    let evidence = signed(&signer, &value);
+    let mut policy = policy_value(&public);
+    for old_type in [
+        PROVENANCE_BUILD_TYPE,
+        RUST_GUEST_BUILD_TYPE,
+        C_GUEST_BUILD_TYPE,
+    ] {
+        policy["requirements"][0]["buildType"] = old_type.into();
+        assert_eq!(
+            verifier(&policy)
+                .verify_package(&subject(), evidence.as_ref(), NOW)
+                .unwrap_err()
+                .reason(),
+            SignatureFailure::PredicateDisallowed
+        );
+    }
+    policy["requirements"][0]["buildType"] = RUST_CAPSULE_BUILD_TYPE.into();
+    policy["requirements"][0]["sourceRevision"] = value.source.revision.clone().into();
+    policy["requirements"][0]["sourceSnapshotDigest"] = value.source.snapshot_digest.clone().into();
+    verifier(&policy)
+        .verify_package(&subject(), evidence.as_ref(), NOW)
+        .unwrap();
+    policy["requirements"][0]["sourceSnapshotDigest"] = format!("sha256:{}", "0".repeat(64)).into();
+    assert_eq!(
+        verifier(&policy)
+            .verify_package(&subject(), evidence.as_ref(), NOW)
+            .unwrap_err()
+            .reason(),
+        SignatureFailure::SourceDisallowed
+    );
+}
+
+#[test]
+fn standalone_recipes_cannot_lie_about_target_identity_or_observed_tools() {
+    let original = serde_json::to_value(standalone()).unwrap();
+    for (field, bad) in [
+        ("cargoPackage", "../escape"),
+        ("cargoPackage", "has--gap"),
+        ("cargoPackage", "Uppercase"),
+        ("manifestPath", "../Cargo.toml"),
+        ("crateType", "bin"),
+        ("target", "x86_64-unknown-linux-gnu"),
+        ("profile", "debug"),
+    ] {
+        let mut value = original.clone();
+        value["parameters"][field] = bad.into();
+        assert!(
+            decode_build_observation(&serde_json::to_vec(&value).unwrap(), Default::default())
+                .is_err()
+        );
+    }
+    for name in [
+        "contracts-tool",
+        "packager",
+        "wit-bindgen",
+        "dependency-lock",
+    ] {
+        let mut value = original.clone();
+        value["materials"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|m| m["name"] != name);
+        assert!(
+            decode_build_observation(&serde_json::to_vec(&value).unwrap(), Default::default())
+                .is_err()
+        );
+    }
+    for field in ["locked", "incremental"] {
+        let mut value = original.clone();
+        value["parameters"][field] = (field != "locked").into();
+        assert!(
+            decode_build_observation(&serde_json::to_vec(&value).unwrap(), Default::default())
+                .is_err()
+        );
+    }
+    let mut value = original.clone();
+    value["parameters"]["cargoExample"] = "guest-http".into();
+    assert!(
+        decode_build_observation(&serde_json::to_vec(&value).unwrap(), Default::default()).is_err()
+    );
+}
