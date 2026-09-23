@@ -86,13 +86,13 @@ jobs:
       - name: Execute Java code, exceptions and GC without claiming node admission
         run: |
           set -o pipefail
-          cargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-feasibility/probe.wasm" 2>&1 | tee "$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log"
+          cargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-feasibility/probe.wasm" 2>&1 | tee "$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log"
       - name: Compile generated typed Java bindings against async capability WIT
         run: python3 tools/qualify_java_bridge.py --output "$RUNNER_TEMP/java-guest-bindings" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Execute typed Java values and async host suspension
         run: |
           set -o pipefail
-          cargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm" --typed 2>&1 | tee "$RUNNER_TEMP/java-guest-bindings/runtime-probe.log"
+          cargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm" --typed 2>&1 | tee "$RUNNER_TEMP/java-guest-bindings/runtime-probe.log"
       - name: Qualify standalone Java projects, nine SDK components, signed node and printed guide
         run: |
           set -o pipefail

@@ -22,8 +22,10 @@ MAX_CALLS = 384
 
 class RecordingClient(Client):
     """Keep bounded results from this public-input experiment, never credentials."""
-    def __init__(self, *args, evidence: Path):
+    def __init__(self, *args, evidence: Path, invocation_timeout_millis=5000):
+        require(invocation_timeout_millis in (5000, 120000), "authoring-invocation-watchdog")
         super().__init__(*args)
+        self.invocation_timeout_millis = invocation_timeout_millis
         self.evidence = evidence
         self.retained = 0
         evidence.mkdir(mode=0o700)
@@ -94,6 +96,7 @@ def configure(directory, fixture, port, *, runtime_grants=False, language="rust"
     settings["audit"].update(records=1024, diskBytes=16777216)
     if language == "java":
         settings.setdefault("engine", {})["javaGuest"] = True
+        settings["execution"]["maximumWallTimeMillis"] = 120000
         for cell in settings["cells"]:
             cell["maximumMemoryBytes"] = 67_108_864
     settings["capabilityPolicies"]["store"] = {
@@ -166,7 +169,7 @@ def start_call(client, target, template, function, arguments, activation, *, wal
         budget["wallTimeLimitMillis"] = wall
     write_json(budget_path, budget)
     argv = [client.executable, "--output", "json", "--config", str(client.config), "--profile", "operator",
-        "--rpc-timeout-ms", "5000", "invoke", "--service", target["service"], "--route", target["name"],
+        "--rpc-timeout-ms", str(client.invocation_timeout_millis), "invoke", "--service", target["service"], "--route", target["name"],
         "--contract", f"examples:{template}/api@1.0.0", "--function", function, "--activation-id", activation,
         "--input", str(path), "--budget", str(budget_path), "--budget-profile", "phase3"]
     process = Process(argv, client.directory, client.environment, client.cancellation, maximum=32768)
@@ -177,7 +180,7 @@ def start_call(client, target, template, function, arguments, activation, *, wal
 
 def finish_call(client, process):
     try:
-        completed = process.complete(min(client.deadline, time.monotonic() + 8))
+        completed = process.complete(min(client.deadline, time.monotonic() + client.invocation_timeout_millis / 1000 + 3))
     finally:
         process.close()
     value = json.loads(completed.stdout)

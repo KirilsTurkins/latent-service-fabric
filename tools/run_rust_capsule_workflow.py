@@ -3,6 +3,7 @@
 
 Linux with readable pressure metrics, Python 3.13; one node, one bounded HTTP
 peer, at most 384 controls, 48 activations, 17 deployments, a 180-second deadline.
+Java's explicit cold-compilation profile allows 900 seconds overall.
 Credentials are public test-only values confined to private temporary files.
 """
 from __future__ import annotations
@@ -59,8 +60,11 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                 work = Path(temporary)
                 for name in ("client", "node", "peer"):
                     (work / name).mkdir(mode=0o700)
-                client = RecordingClient(cli, work / "client", cancellation, time.monotonic() + 180,
-                                         evidence=evidence / "controls")
+                seconds = 900 if language == "java" else 180
+                invocation_millis = 120000 if language == "java" else 5000
+                result["limits"] = {"overallSeconds": seconds, "invocationMillis": invocation_millis}
+                client = RecordingClient(cli, work / "client", cancellation, time.monotonic() + seconds,
+                                         evidence=evidence / "controls", invocation_timeout_millis=invocation_millis)
                 peer, port = start_provider(client, work / "peer")
                 config, settings = configure(work / "node", fixture, port,
                     runtime_grants=language in {"go", "java"}, language=language)

@@ -47,7 +47,7 @@ def compile_all(output: Path, wasi_sdk: Path) -> None:
     report = {"language": "java", "status": "failed", "runtimeQualified": False, "builds": []}
     deadline = time.monotonic() + 1800
     try:
-        commands.run("packaging-tools", "cargo", "build", "--locked", "-p", "latent-packaging",
+        commands.run("packaging-tools", "cargo", "--config", ROOT / ".cargo/managed-guest.toml", "build", "--locked", "-p", "latent-packaging",
                      "--example", "package", "--example", "capsule_contracts")
         (output / "projects").mkdir()
         for name in NAMES:

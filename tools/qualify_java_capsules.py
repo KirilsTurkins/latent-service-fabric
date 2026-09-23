@@ -27,7 +27,7 @@ from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, read_json
 JAVA_HELPERS = (*HELPERS, "java_capsule.py", "java_capsule_project.py", "java_capsule_build.py",
     "qualify_java_capsules.py", "qualify_java_bridge.py", "build_java_guest_capsules.py",
     "java_guest/compiler.py", "java_guest/bindings.py", "java_guest/model.py", "java_guest/java.py",
-    "java_guest/c.py", "java_guest/lock.py", "java_guest/surface.py", "guest_runtime_grants.py", "build_snapshot.py")
+    "java_guest/c.py", "java_guest/lock.py", "java_guest/surface.py", "guest_runtime_grants.py", "build_snapshot.py", "../.cargo/managed-guest.toml")
 
 
 def inputs():
@@ -61,7 +61,7 @@ def qualify(output: Path, wasi_sdk: Path):
         commands = Commands(ROOT, output, environment, deadline_seconds=3600, command_seconds=1800)
         result["tools"] = materials
         stage = "host-build"
-        commands.run(stage, paths["cargo"], "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
+        commands.run(stage, paths["cargo"], "--config", ROOT / ".cargo/managed-guest.toml", "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
             "-p", "latent-packaging", "--example", "package", "--example", "capsule_contracts",
             "-p", "latent-policy", "--example", "capsule_authoring")
         if inputs() != before: raise ValueError("host sources changed during compilation")
@@ -90,7 +90,7 @@ def qualify(output: Path, wasi_sdk: Path):
         commands.run("build-sdk-guests", sys.executable, ROOT / "tools/build_java_guest_capsules.py",
             "--output", output / "sdk-guests", "--wasi-sdk", wasi_sdk)
         commands.environment.update(LSF_GUEST_CAPSULES=str(output / "sdk-guests"), LSF_GUEST_SDK_LANGUAGE="java")
-        commands.run("sdk-runtime-tests", paths["cargo"], "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
+        commands.run("sdk-runtime-tests", paths["cargo"], "--config", ROOT / ".cargo/managed-guest.toml", "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
             "--", "--ignored", "--test-threads=1")
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)

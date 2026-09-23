@@ -41,6 +41,14 @@ pub fn java() -> bool {
     std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() == Ok("java")
 }
 
+pub fn wall_time(default: u64) -> u64 {
+    if java() {
+        120_000
+    } else {
+        default
+    }
+}
+
 fn capabilities() -> &'static [&'static str] {
     if java() {
         &[CLOCKS[0].0, CLOCKS[1].0]

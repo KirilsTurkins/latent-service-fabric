@@ -42,6 +42,7 @@ class Projects(unittest.TestCase):
                     self.assertEqual(metadata["world"], f"examples:{template}/service@1.0.0")
                     self.assertEqual(lock["language"], "java")
                     self.assertEqual(pins["sdk"]["java"], "25.0.4.1+1")
+                    self.assertEqual(metadata["limits"]["wallTimeLimitMillis"], 120000)
                     self.assertIn(b"latent:clock/monotonic@0.1.0", files["wit/world.wit"])
                     files["src/dev/latent/app/Capsule.java"] += b"\n// authored outside the checkout\n"
                     validate(files)

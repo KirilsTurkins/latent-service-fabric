@@ -93,7 +93,10 @@ memory. Wasm exceptions use a non-moving GC reservation of 4 MiB, initially
 before Store creation because Wasmtime 47 has no GC-growth limiter callback.
 The activation's memory budget includes that charge plus every linear memory.
 
-Templates request 64 MiB aggregate memory, 1 billion fuel and 5 seconds.
+Templates request 64 MiB aggregate memory, 1 billion fuel and an explicit
+120-second cold-invocation allowance. Cold compilation is included in that
+deadline; warm activation timings are measured separately. The node defaults
+are unchanged, and the qualification retains its 100 ms deadline/cancel cases.
 Marshalling payloads are capped at 8 MiB, non-byte lists at 65536 items, graph
 depth at 32, imports at 256 and exports at 64. These protocol limits do not
 promise every maximum-size value fits the 4 MiB managed heap. Allocation failure

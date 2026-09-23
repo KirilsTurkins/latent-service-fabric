@@ -768,7 +768,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-feasibility/probe.wasm\" 2>&1 | tee \"$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log\""
+      "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-feasibility/probe.wasm\" 2>&1 | tee \"$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log\""
     },
     ".github/workflows/java-guest-feasibility.yml:compiler-component:Compile generated typed Java bindings against async capability WIT": {
       "workflow": ".github/workflows/java-guest-feasibility.yml",
@@ -788,7 +788,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm\" --typed 2>&1 | tee \"$RUNNER_TEMP/java-guest-bindings/runtime-probe.log\""
+      "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm\" --typed 2>&1 | tee \"$RUNNER_TEMP/java-guest-bindings/runtime-probe.log\""
     },
     ".github/workflows/java-guest-feasibility.yml:compiler-component:Qualify standalone Java projects, nine SDK components, signed node and printed guide": {
       "workflow": ".github/workflows/java-guest-feasibility.yml",
@@ -2725,7 +2725,7 @@
       "sha256": "f9f02c440195578fac1e1ccd297a6ba1824b5952b4c74f021475df2acac106ce"
     },
     "tools/qualify_java_capsules.py": {
-      "sha256": "044f99283f94e750cf3922fbbd74ab9ee13482526fe380c2f13e5fba87d72882"
+      "sha256": "73d178f1d636850a1c6f01f29b2f1a67106370f4adc9f981726a6fdd26e4cb4f"
     },
     "tools/qualify_rust_capsules.py": {
       "sha256": "8be1a3ed2d29898f66fefd9b7a8f801d4c15fb3fe994b0d2490eb9de555627c3"
@@ -3133,8 +3133,10 @@
     ],
     "tools/tests/test_build_provenance_schemas.py": [
       "BuildProvenanceSchemaTests.test_all_closed_fields_required_recursively",
+      "BuildProvenanceSchemaTests.test_builder_policy_and_observation_recipes_stay_in_sync",
       "BuildProvenanceSchemaTests.test_envelope_canonical_base64_and_exact_decoded_ceiling",
       "BuildProvenanceSchemaTests.test_explicit_builder_requirements_and_revocations",
+      "BuildProvenanceSchemaTests.test_java_recipe_is_closed_and_each_compiler_input_is_required",
       "BuildProvenanceSchemaTests.test_observation_profile_and_material_constraints",
       "BuildProvenanceSchemaTests.test_repository_grammar_matches_observation_and_policy",
       "BuildProvenanceSchemaTests.test_statement_subject_and_signed_shape"
@@ -5861,7 +5863,7 @@
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/java-guest-feasibility.yml": "31d8a5745761354188aef8e698b23bb9d96887c2e4a8d19ce2e158b2e7a4851b",
+    ".github/workflows/java-guest-feasibility.yml": "dd615206f5987f3a1662dc2a7b6c45127e18657698a68fdab333fff2ad017bba",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",

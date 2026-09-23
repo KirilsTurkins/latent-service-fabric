@@ -4,6 +4,12 @@ Create an independent Java project, edit its typed contract, and run its signed
 package on a local node. Your application lives outside the LSF checkout and
 uses a pinned copy of the maintained guest SDK.
 
+The examples allow up to 120 seconds for a cold invocation, including component
+compilation. Warm calls still start with fresh guest state. This explicit example
+budget does not change node defaults; cancellation and shorter caller deadlines
+remain enforced. The opt-in build profile optimizes compiler implementation
+libraries while retaining host debug assertions and checked arithmetic.
+
 Use Linux x86-64, Python 3.13.5, Rust 1.97.1 and Temurin JDK
 25.0.4.1+1 (the CI distribution identifier is `25.0.4+101.0.LTS`).
 Set `JAVA_HOME` to that JDK and put its `bin` first on `PATH`.
@@ -26,7 +32,7 @@ export WASI_SDK_PATH="$JAVA_TOOLS/wasi-sdk-29.0-x86_64-linux"
 export PATH="$JAVA_TOOLS/gradle-9.1.0/bin:$PATH"
 cargo install --locked wit-bindgen-cli --version 0.62.0
 cargo install --locked wasm-tools --version 1.254.0
-cargo build --locked -p latent -p latentd --bins \
+cargo --config .cargo/managed-guest.toml build --locked -p latent -p latentd --bins \
   -p latent-packaging --example package --example capsule_contracts \
   -p latent-policy --example capsule_authoring
 ```
@@ -133,7 +139,7 @@ node = {
     "workers": {"runtime": 1, "control": 1},
     "engine": {"javaGuest": True},
     "cells": [{"class": "standard", "capacity": 1, "queueCapacity": 2, "maximumMemoryBytes": 67108864}],
-    "execution": {"maximumCpuFuel": 1000000000, "maximumWallTimeMillis": 5000},
+    "execution": {"maximumCpuFuel": 1000000000, "maximumWallTimeMillis": 120000},
     "cache": {"entries": 2, "preparations": 1},
     "budgetProfile": {"mode": "phase3", "maximumOutboundRequests": 0,
                       "maximumBlobReadBytes": 0, "maximumBlobWriteBytes": 0},
@@ -193,7 +199,7 @@ while True:
 token = json.loads((root / "node/node.json").read_text())["credentials"][0]["token"]
 client = {"formatVersion": 1, "defaultProfile": "local", "profiles": [{
     "name": "local", "endpoint": "http://" + endpoint, "tenant": "examples", "token": token,
-    "connectTimeoutMillis": 1000, "rpcTimeoutMillis": 15000,
+    "connectTimeoutMillis": 1000, "rpcTimeoutMillis": 125000,
 }]}
 with (root / "client.json").open("x") as output:
     json.dump(client, output)
@@ -259,7 +265,8 @@ done
 java_cli deployment apply "$LSF_JAVA_PROJECTS/results/deployment.json" --expected-generation 0 \
   >"$LSF_JAVA_PROJECTS/results/deployed.json"
 printf '["Ada"]\n' >"$LSF_JAVA_PROJECTS/results/input.json"
-java_cli invoke --service examples/my-greeting --route my-greeting \
+java_cli invoke --memory-bytes 67108864 --cpu-fuel 1000000000 --wall-time-ms 120000 \
+  --service examples/my-greeting --route my-greeting \
   --contract examples:greeting/api@1.0.0 --function greet --activation-id my-greeting-valid \
   --input "$LSF_JAVA_PROJECTS/results/input.json" >"$LSF_JAVA_PROJECTS/results/answer.json"
 java_answer() {
@@ -272,7 +279,8 @@ PY
 }
 java_answer "$LSF_JAVA_PROJECTS/results/answer.json"
 printf '[""]\n' >"$LSF_JAVA_PROJECTS/results/empty.json"
-java_cli invoke --service examples/my-greeting --route my-greeting \
+java_cli invoke --memory-bytes 67108864 --cpu-fuel 1000000000 --wall-time-ms 120000 \
+  --service examples/my-greeting --route my-greeting \
   --contract examples:greeting/api@1.0.0 --function greet --activation-id my-greeting-invalid \
   --input "$LSF_JAVA_PROJECTS/results/empty.json" >"$LSF_JAVA_PROJECTS/results/error.json" || test "$?" -eq 3
 java_answer "$LSF_JAVA_PROJECTS/results/error.json"

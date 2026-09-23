@@ -18,7 +18,7 @@ pub fn budget() -> latent_core::ResourceBudget {
             100_000_000
         },
         memory_bytes: runtime_fixture::guest_runtime::memory(4 * 1024 * 1024),
-        wall_time_limit_millis: Some(5000),
+        wall_time_limit_millis: Some(runtime_fixture::guest_runtime::wall_time(5000)),
         child_calls: 16,
         outbound_requests: 0,
         state_read_bytes: 0,
