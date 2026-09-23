@@ -5,6 +5,8 @@
 //! their existing digests are checked, never repaired or used as semantic proof.
 
 mod digest;
+mod generate;
+pub(super) use generate::generate;
 #[cfg(test)]
 mod tests;
 mod types;

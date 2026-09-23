@@ -1,9 +1,7 @@
 # Runtime identities and recovery terms
 
-These terms connect capsule delivery, invocation and operator recovery. The
-control identities below were already part of the alpha.3 surface. Provider
-and Angular capabilities in development have their own versioned contracts;
-this glossary does not certify the Phase 3 gate.
+Use these terms when publishing a capsule, calling it, or finding out what
+happened after a connection failed. Each identifier answers a different question.
 
 | Term | Meaning |
 | --- | --- |

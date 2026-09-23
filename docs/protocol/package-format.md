@@ -1,4 +1,4 @@
-# Phase 2 package identity and artifact format
+# Package identity and artifact format
 
 This is the format foundation delivered by
 [#140](https://github.com/KirilsTurkins/latent-service-fabric/issues/140). It

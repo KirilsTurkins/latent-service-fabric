@@ -177,7 +177,9 @@ npm run coverage:acceptance
 This command is expected to **fail while guide review remains pending**. The
 ordinary `check` verifies truthful metadata without claiming guide completion.
 Acceptance additionally requires an actual guide, all ten authoring criteria,
-human review of an exact commit and version-bound execution receipts. A page
+human review of an exact commit and version-bound execution receipts. The
+maintainer is the sole human reviewer for this gate; an unavailable agent
+review does not add another approval requirement or count as a completed review. A page
 being present or a test file existing cannot satisfy those conditions. #237
 retains the integrated runbook/support matrix, with #357/#358/#359/#361 as its
 delegated authoring owners. No runtime examples are executed by this checker.

@@ -1,144 +1,272 @@
-# First node and retained invocation
+# Run your first node
 
-## Outcome
+Create a local LSF node and give it a small program to run. By the end, you will
+send `hello` to an echo capsule, receive `hello`, and restart the node without
+losing the deployment. Later tutorials use this same node for your own capsules.
 
-Run a native node from source-built artifacts, publish the maintained echo guest,
-invoke it, inspect a declared application failure, restart without republishing,
-invoke the retained deployment, and stop cleanly. The walkthrough also deliberately
-checks invalid configuration, an invalid capsule, wrong credentials and a stopped
-node. It does not install a service or require a registry/container runtime.
+Run the Bash blocks in order, in **one terminal**. Keep it open while you work;
+it holds the paths and helper functions used by later steps.
 
-## Supported version and prerequisites
+## 1. Get the source and build LSF
 
-This is the Linux **development**, `local-experimental-v1` / `trusted-local`
-contributor path, not the externally supplied capsule profile. Use a new, private,
-clean checkout of the reviewed guide commit, with the
-[pinned toolchain](../development/toolchain.md), Python 3.13.5, a local filesystem
-supporting catalog locks/directory synchronization and readable Linux CPU/memory
-pressure observations. Do not reset somebody else's worktree or share a mutable
-Cargo target. Native-bundle operators instead follow [installation](../installation.md).
-
-The full implementation is [the first-node runner](../../tools/run_first_node_guide.py)
-and its [scenario](../../tools/first_node_guide.py). They reuse the existing
-[operator process owner](../../tools/phase2_operator_process.py). The runner
-never builds/downloads artifacts, reads commands from Markdown or silently retries
-an invocation, publication or deployment mutation. Existing
-[interactive commands](../development/standalone-quickstart.md) remain available
-for inspecting each step manually.
-
-## Build the exact inputs
-
-Run these commands from that clean repository root. The commit is recorded before
-building; it identifies the source chosen by the build owner, not an attestation
-inferred from an executable filename.
+Use Linux with Git, Python 3.13.5, Rust 1.97.1 and wasm-tools 1.254.0 installed.
+The [toolchain setup](../development/toolchain.md) describes those prerequisites.
+You do not need Docker, Kubernetes or a cloud account. Windows users can use a
+Linux environment such as WSL for these commands.
 
 ```bash
 set -euo pipefail
 umask 077
-test -z "$(git status --porcelain=v1 --untracked-files=all)"
-SOURCE_COMMIT=$(git -c gc.auto=0 rev-parse HEAD)
+git clone --branch development https://github.com/KirilsTurkins/latent-service-fabric.git
+cd latent-service-fabric
 export CARGO_TARGET_DIR="$PWD/target"
+python3 -m venv target/guide-venv
+source target/guide-venv/bin/activate
 python3 -m pip install -r tools/requirements.lock
-cargo build -p latent -p latentd --locked
+rustup target add wasm32-unknown-unknown
+cargo build --locked -p latent -p latentd
 make echo-capsule
+BIN="$CARGO_TARGET_DIR/debug"
 ```
 
-Expected: both native binaries under `target/debug/`, and the generated component,
-capsule manifest, contracts, deployment and input under `target/capsules/echo/`.
-The checked-in echo publication template contains placeholder digests and is not
-a substitute for those generated inputs. Compilation alone has not invoked LSF.
+`latentd` is the node. `latent` is the command-line client that manages it.
+The last build creates the example program and its configuration in
+`target/capsules/echo`. The first build can take several minutes.
 
-## Run and inspect the walkthrough
+## 2. Create your node
 
-The result directory is private and new. The runner separately owns temporary
-node, client and package directories, never an installed node's data directory.
-
-```bash
-RESULTS=$(mktemp -d "${TMPDIR:-/tmp}/latent-first-node-results.XXXXXXXX")
-python3 tools/run_first_node_guide.py \
-  --cli "$CARGO_TARGET_DIR/debug/latent" \
-  --node "$CARGO_TARGET_DIR/debug/latentd" \
-  --echo-root "$CARGO_TARGET_DIR/capsules/echo" \
-  --source-commit "$SOURCE_COMMIT" > "$RESULTS/receipt.json"
-```
-
-The scenario has a 180-second useful-work deadline and uses the maintained
-separate process-cleanup deadlines. It creates fresh random credentials directly
-in mode-0600 files under private directories. Tokens are neither arguments nor
-public receipt fields. The listener is literal loopback with an ephemeral port;
-only the owned node's validated startup record supplies the client endpoint.
-Authenticated `node get` must report readiness before invocation. A bound socket
-alone does not prove readiness.
-
-| Stage | Expected observation |
-| --- | --- |
-| Configuration | `latentd check-config` accepts the protected local profile, rejects format version zero, and creates no node storage. |
-| Local validation | Generated capsule/deployment validate; a deliberately invalid capsule is `local-error` before dispatch. |
-| Authentication | A separately generated wrong-token client is rejected. The valid configuration remains unchanged. |
-| Publication and deployment | Raw local admission returns the component digest and exact publication; a separate client manifest selects that publication. Deployment creation uses expected generation zero and retains the returned generation. |
-| Invocation | `first-node-before` returns the positional WIT result `[{"ok":"hello"}]`; status is `completed`. `first-node-empty` is a separate `declared-error`, not success or a transport failure. |
-| Restart | The same private catalog reopens, retains the release/deployment generation, and `first-node-after` returns hello without republishing or reapplying. |
-| Removal and shutdown | Delete compares the retained generation, subsequent lookup is not found, and both node processes report clean shutdown and are physically reaped. |
-| Unavailable node | A read against the stopped endpoint is a transport failure. No probe invocation or mutation retry is made. |
-
-Check the bounded receipt rather than printing configuration or arbitrary logs:
+Choose a private directory for this experiment. The configuration below gives
+this node the name `learning-node`, stores its data in that directory, and
+listens only on your machine at port 17840. If that port is already occupied,
+choose another unused port before running the block.
 
 ```bash
-python3 - "$RESULTS/receipt.json" <<'PY'
-import json, sys
-with open(sys.argv[1], "rb") as source:
-    raw = source.read(65537)
-if len(raw) > 65536:
-    raise SystemExit("Receipt is too large")
-record = json.loads(raw)
-if record.get("schemaVersion") != "latent.first-node-guide.v1" or record.get("passed") is not True:
-    raise SystemExit("The first-node walkthrough did not pass")
-if (record["successfulInvocations"] != 2 or record["declaredErrors"] != 1
-        or not record["retainedDeploymentInvokedAfterRestart"]
-        or not record["temporaryOutputsRemoved"]
-        or len(record["shutdowns"]) != 2
-        or not all(item["clean"] and item["reaped"] for item in record["shutdowns"])):
-    raise SystemExit("Missing invocation, recovery or cleanup evidence")
-print("Two successful invocations, one declared error, retained restart, two clean stops.")
+export LSF_TUTORIAL_DIR
+LSF_TUTORIAL_DIR=$(mktemp -d "${TMPDIR:-/tmp}/lsf-learning.XXXXXXXX")
+export LSF_TUTORIAL_PORT=17840
+mkdir "$LSF_TUTORIAL_DIR/node" "$LSF_TUTORIAL_DIR/client"
+python3 - <<'PY'
+import json, os, secrets
+from pathlib import Path
+root = Path(os.environ["LSF_TUTORIAL_DIR"])
+port = int(os.environ["LSF_TUTORIAL_PORT"])
+assert 1024 <= port <= 65535
+token = secrets.token_urlsafe(32)
+node = {
+    "formatVersion": 1, "nodeId": "learning-node",
+    "dataDirectory": "data", "bind": f"127.0.0.1:{port}",
+    "securityProfile": "local-experimental-v1",
+    "supplyChain": {"mode": "trusted-local"},
+    "execution": {"maximumWallTimeMillis": 5000},
+    "credentials": [{"token": token, "subject": "learning-operator",
+                     "tenant": "examples", "role": "operator"}],
+}
+client = {"formatVersion": 1, "defaultProfile": "local", "profiles": [{
+    "name": "local", "endpoint": f"http://127.0.0.1:{port}",
+    "tenant": "examples", "token": token,
+    "connectTimeoutMillis": 1000, "rpcTimeoutMillis": 5000,
+}]}
+for name, value in [("node/node.json", node), ("client/client.json", client)]:
+    with (root / name).open("x", encoding="utf-8") as output:
+        json.dump(value, output, indent=2)
+        output.write("\n")
+print("Created node and client configuration.")
 PY
+"$BIN/latentd" check-config --config "$LSF_TUTORIAL_DIR/node/node.json"
 ```
 
-A passing receipt includes exact CLI/node, collector, lock/toolchain and five
-input-file hashes, rechecked after execution, plus the supplied build source.
-It does not contain credentials, private directory names or raw child output.
-The source field is explicitly caller-supplied: preserve the associated clean
-build record rather than claiming the runner independently proves binary origin.
+The script creates a random password shared by the node and your client, and
+writes it to private files. You do not need to copy or print the password.
+The local profile lets you run capsules you build yourself. Use the
+[installation guide](../installation.md) when you need a persistent server with
+its own trust policy.
 
-## Diagnose failures without changing authority
+## 3. Start the node and check it
 
-| Observation | Next action |
-| --- | --- |
-| `guide-check-failed` or nonzero exit | Stop and inspect the selected artifacts/profile and the [validation procedure](../development/core-guide-validation.md). No success is inferred from a partial run. The public runner deliberately withholds raw exceptions and child output. |
-| `local-error` | Check selected file/manifest/configuration and local bounds. A local output error after a completed RPC can still retain remote completion; inspect `outcomeKnown` and the original identity. |
-| Wrong credentials / permission denial | Verify the selected private profile and tenant, not a token pasted into argv. Do not disable authentication or widen the listener. |
-| Node starts but is not ready | Inspect authenticated inventory and pressure/resource conditions. Read-only readiness polling does not authorize Invoke retries. |
-| `declared-error` | Inspect the declared WIT result. Empty echo input is the intentional failure here, not a guest trap. |
-| Timeout / transport failure / interruption | Query the original activation or operation identity where retained. A client timeout or not-found lookup does not prove non-execution; do not reinvoke blindly. |
-| Shutdown or restart mismatch | Treat the walkthrough as failed. Republish/redeploy would hide the retention defect rather than repair its evidence. |
+The following helpers start this node in the background and stop it when you
+close the terminal. `cli` saves you from typing the client configuration path
+for every command.
 
-For manual diagnostics, use the exact [CLI categories and exits](../reference/operator-cli.md#output-and-exits)
-and the [node configuration/profile contract](../reference/standalone-node.md).
-The interactive quickstart and this runner create separate disposable state;
-do not try to attach a second client to a runner directory after it has been removed.
+```bash
+NODE_PID=
+start_node() {
+    "$BIN/latentd" serve --config "$LSF_TUTORIAL_DIR/node/node.json" \
+      >"$LSF_TUTORIAL_DIR/node/status.jsonl" \
+      2>"$LSF_TUTORIAL_DIR/node/diagnostic.jsonl" &
+    NODE_PID=$!
+}
+stop_node() {
+    if [[ -n "$NODE_PID" ]]; then
+        local pid=$NODE_PID result=0
+        NODE_PID=
+        kill -TERM "$pid" 2>/dev/null || true
+        for ((attempt=0; attempt<100; attempt++)); do
+            if ! kill -0 "$pid" 2>/dev/null; then break; fi
+            sleep 0.05
+        done
+        if kill -0 "$pid" 2>/dev/null; then
+            kill -KILL "$pid" 2>/dev/null || true
+            result=1
+        fi
+        wait "$pid" || result=1
+        return "$result"
+    fi
+}
+trap 'stop_node >/dev/null 2>&1 || true' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+cli() { "$BIN/latent" --config "$LSF_TUTORIAL_DIR/client/client.json" --output json "$@"; }
+ready() {
+    for ((attempt=0; attempt<20; attempt++)); do
+        if cli node get learning-node >"$LSF_TUTORIAL_DIR/client/node.json"; then
+            python3 - "$LSF_TUTORIAL_DIR/client/node.json" <<'PY'
+import json, sys
+node = json.load(open(sys.argv[1]))["data"]["inventory"]
+assert node["health"]["ready"], "Node is not ready; inspect its diagnostics."
+print("Your node is ready.")
+PY
+            return
+        fi
+        if ! kill -0 "$NODE_PID" 2>/dev/null; then return 1; fi
+        sleep 0.1
+    done
+    return 1
+}
+start_node
+ready
+```
 
-## Cleanup, validation and next step
+Wait for **Your node is ready.** A connection error during the first moment of
+startup is harmless if the next attempt succeeds. If the node exits, inspect
+`$LSF_TUTORIAL_DIR/node/diagnostic.jsonl`. An occupied port, incorrect file
+permissions or an unsupported host must be fixed before you continue.
 
-Normal completion/failure cleans the runner's own processes and temporary state.
-SIGINT/SIGTERM use the maintained cancellation owner; forced supervisor death and
-deliberate child session escape are outside that owner contract. The receipt is
-not marked passed until cleanup succeeds. Keep only the small redacted receipt
-and its source/build association. Remove the exact `RESULTS` directory you created
-after review; leave any installed catalogs, other worktrees and shared caches alone.
+## 4. Upload the echo capsule
 
-The [synthetic regression suite](../../tools/tests/test_first_node_guide.py) tests
-sequence rejection and process ownership, not LSF behavior. A real CLI/node run
-under the selected source and a rendered newcomer review are separate acceptance
-checks in the [validation record](../development/core-guide-validation.md).
+Publishing uploads the program to your node. It does not start a permanent
+process for that program. Save the returned publication so the next step can
+select exactly the capsule you uploaded.
 
-Next: [author your first capsule](../learn/author-your-first-capsule.md), then
-[trusted package delivery and recovery](../learn/deliver-and-recover-a-capsule.md).
+```bash
+PACKAGE="$CARGO_TARGET_DIR/capsules/echo"
+RESULTS="$LSF_TUTORIAL_DIR/client"
+field() {
+    python3 - "$@" <<'PY'
+import json, sys
+value = json.load(open(sys.argv[1]))
+for key in sys.argv[2:]:
+    value = value[key]
+print(value)
+PY
+}
+cli release publish --manifest "$PACKAGE/capsule.json" \
+    --component "$PACKAGE/echo-capsule.wasm" --contracts "$PACKAGE/contracts.json" \
+    >"$RESULTS/echo-published.json"
+PUBLICATION=$(field "$RESULTS/echo-published.json" data release publication id)
+DIGEST=$(field "$RESULTS/echo-published.json" data release digest)
+```
+
+## 5. Deploy the capsule
+
+A deployment connects the service name `examples/echo` to your publication.
+The small Python block fills in the generated deployment file for you; there
+are no identifiers to copy by hand.
+
+```bash
+python3 - "$PACKAGE/deployment.json" "$RESULTS/echo-deployment.json" "$DIGEST" "$PUBLICATION" <<'PY'
+import json, sys
+value = json.load(open(sys.argv[1]))
+value["spec"]["release"] = sys.argv[3]
+value["spec"]["publication"] = sys.argv[4]
+with open(sys.argv[2], "x") as output:
+    json.dump(value, output)
+PY
+cli deployment apply "$RESULTS/echo-deployment.json" --expected-generation 0 \
+    >"$RESULTS/echo-applied.json"
+GENERATION=$(field "$RESULTS/echo-applied.json" data deployment generation)
+```
+
+`--expected-generation 0` means “create a new deployment”. It prevents this
+walkthrough from accidentally replacing an existing deployment.
+
+## 6. Call the capsule
+
+The input is a JSON array containing the function's arguments. Write one
+string, invoke `echo`, then decode the returned value:
+
+```bash
+printf '["hello"]\n' >"$RESULTS/input.json"
+cli invoke --service examples/echo --contract examples:echo/api@0.1.0 \
+    --function echo --activation-id learning-echo --input "$RESULTS/input.json" \
+    >"$RESULTS/answer.json"
+answer() {
+    python3 - "$1" <<'PY'
+import base64, json, sys
+reply = json.load(open(sys.argv[1]))
+data = reply["data"]
+payload = data.get("payload") or data["declaredError"]["payload"]
+print(base64.b64decode(payload["data"]).decode())
+PY
+}
+answer "$RESULTS/answer.json"
+```
+
+Expected answer:
+
+```json
+[{"ok":"hello"}]
+```
+
+You have now sent work to a capsule and received its result. Change `hello` to
+another message and use a new `--activation-id` to make another call.
+
+Try an empty string to see an application error:
+
+```bash
+printf '[""]\n' >"$RESULTS/empty.json"
+cli invoke --service examples/echo --contract examples:echo/api@0.1.0 \
+    --function echo --activation-id learning-empty --input "$RESULTS/empty.json" \
+    >"$RESULTS/empty-answer.json" || test "$?" -eq 3
+answer "$RESULTS/empty-answer.json"
+```
+
+The command accepts exit code 3, which means the capsule reported an application
+error. The decoded answer contains `err` and `empty-message`. That is the capsule
+explaining why it cannot process your input. It is different from failing to
+connect to the node.
+
+## 7. Restart and call the saved deployment
+
+```bash
+stop_node
+start_node
+ready
+cli invoke --service examples/echo --contract examples:echo/api@0.1.0 \
+    --function echo --activation-id learning-after-restart --input "$RESULTS/input.json" \
+    >"$RESULTS/restarted-answer.json"
+answer "$RESULTS/restarted-answer.json"
+```
+
+You should receive `hello` again. The node saved your publication and deployment
+in its data directory. You did not need to upload them again.
+
+## 8. Continue or stop
+
+Keep this terminal open and the node running to follow
+[Creating a capsule](../component-development/creating-a-capsule.md).
+For the original echo's implementation, see
+[Author your first capsule](../learn/author-your-first-capsule.md).
+For signing, rollout and recovery, continue with
+[Deliver and recover a capsule](../learn/deliver-and-recover-a-capsule.md).
+
+When you are finished, remove the tutorial deployment and stop this node:
+
+```bash
+cli deployment delete echo-production --expected-generation "$GENERATION"
+stop_node
+printf 'Saved tutorial files: %s\n' "$LSF_TUTORIAL_DIR"
+```
+
+Your private configuration and data remain at the printed path. Keep them if
+you want to inspect the results. This only stops the node started by this
+terminal and leaves other LSF nodes alone.

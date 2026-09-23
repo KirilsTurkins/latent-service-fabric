@@ -1,204 +1,125 @@
 # LSF architecture overview
 
-## Definition
+LSF runs stateless service capsules on a standalone Linux node. A deployed
+capsule is stored code, contracts and configuration. A request creates a
+short-lived activation inside a fixed pool of sandboxed execution cells.
+The node reclaims that activation's execution resources when it finishes.
 
-Latent Service Fabric is a component-native execution fabric in which deployed services are dormant immutable artifacts. Requests become temporary activations. Activations execute inside a fixed pool of reusable sandboxed cells and release activation-owned execution resources when they finish. Durable suspension remains a later-phase model.
+The current development implementation includes authenticated invocation and
+management, package admission, rollout and recovery, capability providers,
+shared HTTP ingress, static-site delivery and the supported Angular SSR profile.
+See [Run your first node](../start/first-node.md) for a working local example.
 
-Phase 1 and its prioritized performance extension are complete. The completed
-[Phase 2](../phase-2-completion.md) adds packaging and authenticated OCI transfer,
-enforced catalog admission, release lifecycle, compatibility, raw/native caches, durable audit and
-atomic rollout, promotion and rollback. The current product remains a standalone
-Linux stateless node, with explicit trusted-local or enforced release policy.
-[Phase 3](../roadmap.md#phase-3-capabilities-and-application-hosting)
-has a concrete capability/provider and web-hosting backlog; those providers and
-application ingress are not implemented by their WIT or package declarations.
+## From source to service
 
-[![Phase 2 trusted delivery: exact packages and evidence, current node authority, and explicit atomic rollout operations.](../assets/phase2-delivery-boundary-presentation.svg)](../assets/phase2-delivery-boundary-presentation.svg)
+[![Build a package, sign and admit it, then invoke a capsule or serve a website through a configured route.](../assets/package-delivery.svg)](../assets/package-delivery.svg)
 
-Restyled presentation of the Phase 2 boundary, not a Phase 3 completion claim.
-Open the image at full size to inspect labels. The [original Phase 2 SVG](../assets/phase2-delivery-boundary.svg) remains unchanged.
+[Open the delivery diagram at full size](../assets/package-delivery.svg).
 
-The [historical Phase 1 diagram](../assets/phase1-delivery-boundary.svg) and its
-retained measurements still describe that milestone. Phase 2 extends that
-delivery boundary without retroactively changing its evidence.
+Developer tooling builds a component or website and packages selected output.
+Publisher signatures and build evidence accompany the immutable package.
+An OCI registry can transfer those bytes. The node checks its own current trust
+policy before admitting them; a registry account or local verification result
+does not grant execution permission.
 
-## Resource invariant
+A deployment selects an admitted publication and its configuration. Calls select
+a revision through the node's routing table. The node authenticates the caller,
+checks admission and execution authority, and runs the selected component.
+[Managed operations](../phase-2-operator-workflows.md) retain operation identities
+for inspecting uncertain outcomes. [Rollout](../phase-2-rollouts.md) and
+[rollback](../phase-2-rollback.md) publish new routes explicitly.
 
-```text
-resident state = fixed node runtime + bounded catalog metadata + active activations + bounded global caches
-```
-
-A deployed but inactive service owns no process, operating-system thread, listener, guest heap, runtime instance, database connection pool, HTTP client pool, timer loop, or telemetry exporter.
-
-Artifact storage, contract indexes, route indexes, policy metadata, and bounded cache entries are permitted to grow with registered service count. Execution allocation is not.
-
-The standalone node also owns one fixed async cleanup supervisor with slots
-bounded by its admitted activation capacity. After a transport disconnect, it
-continues polling the same activation owner under its original deadline, keeping
-quota and cell ownership through bounded cleanup. It adds no per-service worker
-or per-disconnect task. Cell reuse still requires affirmative cleanup proof;
-uncertain cleanup remains quarantined.
-
-Phase 2's optional audit worker and rollout coordinator are fixed node owners.
-Configured native compilation may launch a bounded one-job child; it retains
-input, output and process reservations through actual reap. A deployment does
-not keep a compiler process or timer alive. Raw files, mapped code, retained
-responses and audit history have independent finite limits; those allowances
-are not claims of constant RSS or eagerly allocated capacity.
-
-## Phase 0 evidence boundary
-
-Phase 0 implements one deliberately narrow local composition. Its evidence
-shows that the project can build a real Rust echo Component Model guest with
-generated WIT bindings; load and invoke it through real Wasmtime Component
-Model host bindings; lease a fixed generic cell; create fresh
-activation-owned stores and host state; contain the tested failure paths; and
-affirmatively reclaim measured activation resources.
-
-The configured runtime workers, process count, listeners/sockets, and cell
-capacity remain fixed through the measured lifecycle. Wasmtime may create one
-bounded epoch-interruption helper thread after preparation; that is fixed
-node/runtime infrastructure, not a per-service thread.
-
-The retained August 30 native-Linux resource soak has a matched calibration
-identity and complete descriptor-lifecycle evidence. The full gate
-independently regenerated it with the matching profile and calibration,
-validated a fresh baseline, and authorized Phase 1 for the common canonical
-execution identity. The measurements remain observational and single-host;
-authorization does not imply production readiness or Phase 1 API
-compatibility. Their boundaries and the handoff are recorded in
-[`../phase-0-completion.md`](../phase-0-completion.md).
-
-[![Activation resource lifecycle: prepared components and fixed cells are bounded node-owned resources; every invocation creates fresh activation state and ends by releasing or quarantining its cell.](../assets/phase0-resource-lifecycle-presentation.svg)](../assets/phase0-resource-lifecycle-presentation.svg)
-
-Restyled presentation of the retained Phase 0 composition, not new execution evidence.
-Open the image at full size to inspect labels. The [original Phase 0 SVG](../assets/phase0-resource-lifecycle.svg) remains unchanged.
-
-Phase 0 did not prove dormant registration at 100,000 services, route or
-admission behavior, persistent management/deployment, production
-trust/security, generic dispatch, durable state/effects, remote transport,
-cluster behavior, or production telemetry/SLOs.
-
-## Service model
-
-The current [standalone Linux node](../reference/standalone-node.md) composes
-durable release and deployment catalogs, immutable routing, admission, fair
-scheduling, [generic Wasmtime execution](../runtime/wasmtime.md), activation
-capabilities and lifecycle management, telemetry, and invocation and management
-RPCs. The [operator CLI](../reference/operator-cli.md) drives both the retained
-local release-to-invocation workflow and [Phase 2 operations](../phase-2-operator-workflows.md):
-package build/inspection/verification, OCI transfers, release evidence/lifecycle,
-managed deployment receipts, staged rollout, canary, rollback and audit queries.
-Node credentials and registry credentials remain separate. A local path never
-becomes a node catalog path, and diagnostic package verification cannot create
-execution authority. The
-[Phase 1 completion review](../phase-1-completion.md) records the delivered
-stateless surface, acceptance evidence and completion decision.
-[Bounded conformance](../testing/phase-1-conformance.md) covers selected scenarios.
-The [full measurements](../../benchmarks/phase1/measurements/2026-09-08-container-linux-d72c99b6/REPORT.md)
-show fixed node topology through 100,000 releases/deployments and bounded
-reclamation across three mixed soaks; catalog metadata RSS grows and is reported
-separately. The [controlled comparison](../../benchmarks/phase1/paired/2026-09-08-container-linux-e7e06f7/REPORT.md)
-records actual productionization overhead and its measurement boundaries.
-
-The [completed extension](../phase-1-extension-completion.md) records warm/cold
-preparation, budget, cache, ownership, codec, catalog and scheduler changes, plus
-actual Docker and Kubernetes comparisons. Native handlers retain lower warm
-latency in those infrastructure campaigns; LSF reduces memory and startup cost
-for their dense cohorts. Results include mixed regressions and do not establish
-a universal millisecond SLO or production cluster capacity.
+## Resource ownership
 
 ```text
-Service = stable logical name
-Release = immutable component digest
-Package = exact package-manifest digest, when packaged
-Revision = release + deployment configuration
-Route = rule selecting a revision
-Activation = revision × function × input × identity × budget × deadline
-Current stateless result = output or typed failure + accounting
-Later transactional result = output + state commit + effect intents + accounting
+resident state = fixed node runtime + bounded catalog metadata + active activations + bounded shared caches
 ```
 
-There is intentionally no `Service = PID + port + heap + threads` relationship.
+An inactive deployment owns no executing guest, dedicated process, operating
+system thread, listener, guest heap, connection pool, timer loop or telemetry
+exporter. Catalog, route and policy metadata can grow with deployment count
+within configured bounds. Execution allocation follows active work.
 
-## Planes
+[![An admitted request leases a cell, runs with fresh activation state, then releases the cell after proven cleanup or quarantines it if cleanup is uncertain.](../assets/activation-lifecycle.svg)](../assets/activation-lifecycle.svg)
 
-### Developer plane
+[Open the activation diagram at full size](../assets/activation-lifecycle.svg).
 
-Builds WIT contracts and language components, packages supplied component bytes,
-produces explicit SBOM/provenance evidence, signs exact package identities and
-transfers immutable content through OCI. The package CLI does not execute build
-scripts or manufacture signatures/provenance.
+Each invocation gets fresh guest state, a deadline and a budget. Capability
+handles belong to that activation. Success, declared errors, traps,
+cancellation and timeout all lead through cleanup. Cell reuse requires proof
+that cleanup completed; uncertain cleanup keeps the cell quarantined and its
+resources accounted for.
 
-### Control plane
+A fixed node cleanup supervisor keeps ownership after a client disconnects.
+It does not create a worker for each disconnected caller. Node-wide audit,
+rollout, provider and telemetry owners have finite capacity. Optional native
+compilation runs a bounded temporary child process; a dormant service keeps no
+compiler alive. Limits on stored bytes or reservations are separate from
+measured process memory.
 
-Stores local desired state, validates releases and current authority, compiles
-routes, records bounded inventory/audit and atomically publishes immutable route
-snapshots with rollout progress and operation receipts. General capability
-binding compilation is Phase 3; remote distribution is Phase 5.
+## Names you will encounter
 
-### Data plane
+| Name | Meaning |
+| --- | --- |
+| Service | A stable logical name that callers use. |
+| Capsule | A Wasm component together with its callable WIT contracts. |
+| Package | The exact manifest, configuration and payload bytes delivered together. |
+| Publication | An admitted package identity with its current trust and lifecycle state. |
+| Deployment | A selected publication and its execution, routing and capability configuration. |
+| Revision | The exact deployment selection used by an invocation. |
+| Activation | One invocation's input, identity, budget, deadline and temporary execution state. |
 
-Receives authenticated direct calls, resolves exact local revisions, performs
-admission and bounded preparation, schedules fresh activations, checks current
-release authority, binds supported capabilities and executes guest code. It
-returns stateless results and accounting after contained cleanup.
+The [runtime identity guide](../learn/runtime-identities.md) explains how to keep
+these identities distinct when deploying and recovering an application.
 
-The [control-plane](control-plane.md), [data-plane](data-plane.md) and
-[security](security.md) pages explain the delivered seams. General HTTP/event
-ingress and providers are Phase 3. Guest transactions/effects, clustered control
-and durable workflows remain Phases 4, 5 and 6 respectively. Phase 0 implemented
-only the original local preparation, execution, containment and reclamation slice.
+## Node responsibilities
 
-## Physical topology
+**Build and delivery tooling** compiles sources, records build inputs, packages
+output and transfers content. Package assembly itself does not run arbitrary
+build scripts or invent signatures and provenance.
 
-```text
-Developer tooling ──► OCI registry
-                         │
-Management client ──► latent-control ──► PostgreSQL
-                         │ route snapshots
-                         ▼
-Ingress ─────────────► latentd nodes ◄────► latentd nodes
-                         │
-                         ├── state backend
-                         ├── effect providers
-                         └── telemetry collector
-```
+**Management services** maintain the local catalogs, validate current authority,
+compile grants and bindings, and atomically publish route snapshots. Deployment,
+rollout and audit receipts support explicit recovery after an uncertain reply.
 
-The diagram shows the intended Phase 5 clustered topology, not current
-deployment. Standalone mode embeds local desired-state catalogs and supported
-management services in one Linux `latentd` process using durable local storage.
-Operators can transfer a package through OCI and submit its exact bytes/evidence
-to the node's independent admission boundary. The node does not infer permission
-from a tag, registry credential or client-side verification result. PostgreSQL,
-inter-node invocation and state/effect backends remain later work.
+**Execution services** authenticate calls, select revisions, enforce admission
+and scheduling, prepare components and create fresh activations. Calls into
+providers check current grants, bindings, provider identity and remaining budget.
+See [capability bindings](../runtime/capability-bindings.md) and
+[activation lifecycle](../activation-lifecycle.md).
 
-## Fixed process model
+## Providers and browser delivery
 
-A production node may have a fixed set of execution-host processes partitioned by trust class or workload class:
+The runtime has HTTP, streaming HTTP, immutable blob, secret, event, local-call,
+randomness and custom-metric integrations. The
+[standalone provider configuration](../reference/standalone-providers.md)
+currently installs buffered HTTP and local immutable blobs. Streaming HTTP,
+S3, Vault, NATS and the other embedding integrations use their documented
+trusted Rust composition; their presence in the source does not add fields to
+the standalone JSON configuration.
 
-```text
-latentd supervisor
-├── trusted execution host
-├── ordinary tenant execution host A
-├── ordinary tenant execution host B
-├── restricted/high-value execution host
-└── optional native compatibility host
-```
+The shared [HTTP ingress](../reference/http-ingress.md) handles configured
+application routes with bounded request and response ownership. A
+[static site](../component-development/static-sites.md) serves admitted public
+files without executing a guest. The supported
+[Angular renderer](../component-development/angular-build.md) runs inside a
+component activation and supplies server-rendered HTML alongside browser assets.
+This profile does not run a general Node.js server or arbitrary npm middleware.
 
-This is a possible future execution topology. Current guest execution uses fixed
-in-process cells; stronger trust-class process isolation remains later work.
-The optional Phase 2 compiler child is temporary bounded compilation work, not
-one of these guest execution hosts or a dormant service process.
+## Current topology and limits
 
-## Technology direction
+A standalone deployment uses one Linux `latentd` process, durable local storage,
+fixed runtime and control workers, and configured shared listeners. External
+clients use authenticated RPCs; browsers use the configured HTTP ingress.
+Optional external provider services and an OCI registry have their own owners.
+The node does not run a process or open a port for each deployed capsule.
 
-- WebAssembly Component Model for portable polyglot capsule boundaries.
-- WIT for capsule exports, imports, and host capabilities.
-- Wasmtime as the initial execution engine behind `ExecutionBackend`.
-- OCI artifacts for content-addressed distribution.
-- Protobuf for control-plane and generic management RPCs.
-- A transport abstraction suitable for WIT-native remote invocation.
-- Explicit state transactions and durable effect intents.
+Durable guest state, transactional effects, cluster placement and durable
+workflows are not implemented. A completed HTTP call or event publication is
+not a universal exactly-once transaction. Stronger isolation through separate
+guest execution processes is also not part of the current cell model.
 
-These are recorded in ADRs and remain replaceable behind the Rust trait boundaries where explicitly stated. Phase 1 applies the retain/harden/generalize/rewrite/delete handoff in [`../phase-0-completion.md`](../phase-0-completion.md); the [completion review](../phase-1-completion.md) identifies the retained isolated regression paths and current product surface.
+For configuration, use the [node reference](../reference/standalone-node.md).
+For a design rationale, use the [architecture decisions](../../adr/README.md).
+Contributors can find historical measurements and their tested scope in the
+[validation guide](../../VALIDATION.md).

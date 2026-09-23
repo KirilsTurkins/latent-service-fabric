@@ -27,7 +27,7 @@ command and expected result. The website never executes these commands.
 | Operation | Available composition | Authority and reference |
 | --- | --- | --- |
 | Buffered HTTP and durable local immutable blobs | Opt-in standalone `providers` configuration | [Closed configuration and installed descriptors](../reference/standalone-providers.md) |
-| Isolated local calls | Phase 3 capability runtime and exact local binding | [Configured target, child admission and descendant budgets](../runtime/local-service-invocation.md) |
+| Isolated local calls | capability runtime and exact local binding | [Configured target, child admission and descendant budgets](../runtime/local-service-invocation.md) |
 | Streaming HTTP, S3 blobs, local/Vault secrets, NATS events/triggers, randomness and custom metrics | Their maintained trusted Rust composition and guest conformance fixtures | Provider references below; these are not additional accepted fields in standalone `providers` JSON |
 
 An installed provider is necessary but insufficient. The component import,
