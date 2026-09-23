@@ -110,6 +110,16 @@
       "shell": "default",
       "run": "python3 -m pip install --requirement tools/requirements.lock"
     },
+    ".github/workflows/ci.yml:rust:Install the real Fish completion test shell": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Install the real Fish completion test shell",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish"
+    },
     ".github/workflows/ci.yml:rust:renderer_preflight": {
       "workflow": ".github/workflows/ci.yml",
       "job": "rust",
@@ -5823,7 +5833,7 @@
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
-    ".github/workflows/ci.yml": "a7f311e9002c815503ccd24bca8d48df62d4cd6d4211c5acff35db98ddad215f",
+    ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/java-guest-feasibility.yml": "749317f4732ab656a988d7b16e8ed2aeb1c3414a8857e02defe798c834e54362",

@@ -1,0 +1,9 @@
+Created node and client configuration.
+{"schemaVersion":"latent.standalone.config-check.v1","profile":"local-experimental-v1","threatClass":"T0","guestBoundary":"in-process-wasmtime","admission":"trusted-local","protectedCredentialFile":true,"hostAbiProfile":"lsf-host-abi-phase3-v4","wasmtimeVersion":"47.0.4","target":"x86_64-unknown-linux-gnu","compiler":"in-process","compilerSandbox":null,"authenticatedNativeLoading":false}
+Your node is ready.
+[{"ok":"hello"}]
+[{"err":{"case":"empty-message"}}]
+Your node is ready.
+[{"ok":"hello"}]
+{"category":"success","command":"deployment delete","data":{"auditAck":null},"error":null,"outcomeKnown":true,"requestDispatched":true,"schemaVersion":"latent.cli.result.v1"}
+Saved tutorial files: /tmp/lsf-learning.KQoeWES1

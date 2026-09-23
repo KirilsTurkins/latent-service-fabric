@@ -163,6 +163,8 @@ fn generation(value: &str) -> Option<u64> {
 // Exact public reasons emitted by the current DirectoryDeploymentRepository.
 const CATALOG_REASONS: &[&str] = &[
     "deployment-generation-conflict",
+    "deployment-state-version-conflict",
+    "deployment-operation-conflict",
     "deployment-scope-conflict",
     "deployment-not-found",
     "deployment-count-limit",

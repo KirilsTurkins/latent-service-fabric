@@ -178,6 +178,8 @@ fn current_page_reason_names_survive_and_obsolete_names_do_not() {
         "expired-deployment-page-token",
         "deployment-page-byte-limit",
         "deployment-generation-conflict",
+        "deployment-state-version-conflict",
+        "deployment-operation-conflict",
     ] {
         let wire = decoded(&platform_status(failure(vec![catalog(reason)]), &limits));
         assert_eq!(wire.detail_items[0].fields["reason"], reason);
