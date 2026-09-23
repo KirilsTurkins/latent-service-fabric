@@ -1,4 +1,4 @@
-//! Sealed activation authority. Numeric handles and legacy DTOs are lookup data.
+//! Sealed activation authority. Numeric guest handles are lookup data.
 //!
 //! Lock order is broker -> installed provider -> session -> policy -> catalog ->
 //! publisher authority -> original budget ledger. Authority admission uses
