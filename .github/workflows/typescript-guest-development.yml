@@ -40,12 +40,12 @@ jobs:
           mkdir -p "$RUNNER_TEMP/typescript-toolchain/probe/wit"
           export PROBE="$RUNNER_TEMP/typescript-toolchain/probe"
           cat > "$PROBE/wit/world.wit" <<'WIT'
-          package probe:async@1.0.0;
+          package probe:capabilities@1.0.0;
           interface host { echo: async func(text: string) -> string; }
           world probe { import host; export run: async func(text: string) -> string; }
           WIT
           cat > "$PROBE/probe.js" <<'JS'
-          import {echo} from 'probe:async/host@1.0.0';
+          import {echo} from 'probe:capabilities/host@1.0.0';
           export async function run(text) { return await echo(text); }
           JS
           node --input-type=module <<'JS'
@@ -79,7 +79,29 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: typescript-guest-toolchain-${{ github.sha }}
-          path: ${{ runner.temp }}/typescript-toolchain/
+          name: typescript-guest-tools-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-toolchain/bin/
+            ${{ runner.temp }}/typescript-toolchain/probe/
+            ${{ runner.temp }}/typescript-toolchain/*.txt
+            ${{ runner.temp }}/typescript-toolchain/*.sha256
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: typescript-guest-npm-${{ github.sha }}
+          path: ${{ runner.temp }}/typescript-toolchain/npm.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: typescript-guest-rust-${{ github.sha }}
+          path: ${{ runner.temp }}/typescript-toolchain/rust.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: typescript-guest-cargo-${{ github.sha }}
+          path: ${{ runner.temp }}/typescript-toolchain/cargo-registry.tar.gz
           if-no-files-found: error
           retention-days: 1
