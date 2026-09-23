@@ -7322,14 +7322,15 @@
         "all_shells_work_without_inputs_and_leave_the_home_directory_untouched",
         "invalid_arguments_help_version_and_existing_json_errors_keep_their_exit_contracts",
         "quiet_preserves_script_bytes_and_json_is_never_a_success_envelope",
-        "real_bash_completion_smoke_in_a_clean_shell"
+        "real_bash_completion_smoke_in_a_clean_shell",
+        "real_fish_completion_smoke_in_a_clean_shell"
       ],
       "expectedIgnored": [],
       "id": "latent.test.completions",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 5,
+      "minimumCases": 6,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
@@ -7337,7 +7338,8 @@
       ],
       "prerequisites": [
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
+        "successful source-matched Cargo artifact inventory",
+        "Bash and Fish installed for actual offline shell execution"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
