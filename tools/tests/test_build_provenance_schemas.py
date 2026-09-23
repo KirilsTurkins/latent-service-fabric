@@ -84,7 +84,8 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
         policy = self.validators["builder-policy"].schema["properties"]["requirements"]["items"]
         profiles = set(standalone["properties"]["buildType"]["enum"])
         self.assertEqual(profiles, set(embedded["properties"]["buildType"]["enum"]))
-        self.assertEqual(profiles, set(policy["properties"]["buildType"]["enum"]))
+        non_capsule = {"https://latent.dev/build/web-package-assembly/v1", "https://latent.dev/build/angular-component/v1"}
+        self.assertEqual(profiles | non_capsule, set(policy["properties"]["buildType"]["enum"]))
         def recipes(schema):
             rows = schema["allOf"]
             result = {row["if"]["properties"]["buildType"]["const"]: row for row in rows}
