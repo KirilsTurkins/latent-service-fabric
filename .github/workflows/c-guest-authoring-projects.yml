@@ -1,0 +1,54 @@
+name: C project qualification workspace
+on:
+  push:
+    branches: [feat/545-c-capsule-authoring]
+    paths: [.github/workflows/c-guest-authoring-projects.yml]
+permissions:
+  contents: write
+jobs:
+  projects:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          show-progress: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: 3.13.5
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
+        with:
+          version: "0.16.0"
+      - name: Install verified guest binding generator
+        run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Execute ownership checks and new typed projects
+        run: python3 -m tools.c_guest.qualify --output "$RUNNER_TEMP/c-projects" --update-bindings
+      - name: Retain reviewed generated binding identities
+        if: always()
+        run: |
+          test "$GITHUB_REF" = refs/heads/feat/545-c-capsule-authoring
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sdk/c-guest/bindings.lock.json
+          for path in sdk/c-guest/projects/*/c-bindings.lock.json; do
+            if test -f "$path"; then git add "$path"; fi
+          done
+          if ! git diff --cached --quiet; then
+            git commit -m 'test(c-guest): lock actual generated current C bindings'
+            git push origin HEAD:refs/heads/feat/545-c-capsule-authoring
+          fi
+      - name: Diagnose repository-source projects only
+        if: failure()
+        run: |
+          find "$RUNNER_TEMP/c-projects" -name probe.h -print
+          for d in "$RUNNER_TEMP"/c-projects/build-*/compiled; do
+            test -f "$d/bindings/probe.h" || continue
+            name=$(basename "$(dirname "$d")")
+            name=${name#build-}
+            timeout 120s zig cc -std=c11 -target wasm32-wasi -Wall -Wextra -Werror -fsyntax-only -I "$d/bindings" -I sdk/c-guest/include "$RUNNER_TEMP/c-projects/project-$name/component.c" || true
+          done
