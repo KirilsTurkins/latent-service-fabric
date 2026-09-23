@@ -8,7 +8,7 @@ from pathlib import Path
 import time
 
 from tools.build_process_signals import owned_cancellation
-from tools.c_guest.compiler import ROOT, SDK, safe_output
+from tools.c_guest.compiler import SDK, safe_output
 from tools.phase2_operator_process import Client, read_json, require, stopped_record, write_json, write_selected_deployment
 from tools.phase2_operator_scenario import NODE_ID, configure_node, connect, receipt
 
@@ -81,7 +81,7 @@ def expected(name: str, inputs: list) -> list:
 
 
 def invoke(client, name: str, case: dict, values: list, category: str, ordinal: int) -> dict:
-    path = client.directory / 'input.json'
+    path = client.directory / f'input-{name}-{ordinal}.json'
     write_json(path, values)
     codes = {'success': (0,), 'declared-error': (3,), 'invalid-wire': (2, 4)}[category]
     start = time.perf_counter_ns()
@@ -95,6 +95,7 @@ def invoke(client, name: str, case: dict, values: list, category: str, ordinal: 
         require(value['category'] == 'declared-error' and value['outcomeKnown'], 'C-declared-category')
     else:
         require(value['category'] in ('local-error', 'platform-failure'), 'C-malformed-call-category')
+    print(f'PASS C node invocation: {name} {ordinal} {category}', flush=True)
     return {'category': value['category'], 'endToEndMicros': elapsed}
 
 
