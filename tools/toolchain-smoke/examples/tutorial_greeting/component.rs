@@ -28,7 +28,10 @@ mod tests {
     #[test]
     fn greets_trimmed_names_and_explains_invalid_input() {
         assert_eq!(super::greet("  Ada  ".into()), Ok("Hello, Ada!".into()));
-        assert_eq!(super::greet("  ".into()), Err("Please enter a name.".into()));
+        assert_eq!(
+            super::greet("  ".into()),
+            Err("Please enter a name.".into())
+        );
         assert!(super::greet("a".repeat(101)).is_err());
     }
 }
