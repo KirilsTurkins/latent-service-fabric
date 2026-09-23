@@ -63,6 +63,8 @@ elif args[:2] == ['release', 'get']:
     assert args[2:] == ['--publication', 'publication:sha256:' + 'a' * 64]
     data = {'release': json.loads((root / 'release').read_text())}
 elif args[:2] == ['deployment', 'apply']:
+    selected = json.loads(Path(args[2]).read_text())['spec']['publication']
+    assert selected == json.loads((root / 'release').read_text())['publication']['id']
     (root / 'deployment').write_text('1'); data = {'deployment':{'generation':'1'}}
 elif args[:2] == ['deployment', 'get']:
     if (root / 'deployment').exists(): data = {'deployment':{'generation':'1'}}
@@ -101,7 +103,7 @@ def echo(directory: Path) -> dict:
     documents = {
         'capsule.json': {'component': {'digest': digest}},
         'contracts.json': {'synthetic': True},
-        'deployment.json': {'metadata': {'name':'echo-production', 'tenant':'examples'},
+        'deployment.json': {'kind': 'Deployment', 'metadata': {'name':'echo-production', 'tenant':'examples'},
                             'spec': {'service':'examples/echo', 'release':digest}},
         'input.json': ['hello'],
     }

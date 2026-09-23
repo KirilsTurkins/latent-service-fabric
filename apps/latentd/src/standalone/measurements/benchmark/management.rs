@@ -111,14 +111,13 @@ pub(super) async fn sample(
 fn reapply_request(previous: &VersionedDeployment) -> Result<proto::ApplyDeploymentRequest> {
     let mut deployment =
         deployment_to_proto(previous).map_err(|_| "benchmark deployment encoding")?;
-    // Restore the original selector from the read response. An explicit
-    // publication keeps the component as an assertion; a legacy manifest
-    // keeps its component-only input. Both preserve the benchmark manifest.
-    deployment.publication = deployment.requested_publication.take();
-    let expected_component_digest = deployment
-        .publication
-        .is_some()
-        .then(|| std::mem::take(&mut deployment.release_digest));
+    deployment.publication = Some(
+        deployment
+            .requested_publication
+            .take()
+            .ok_or("benchmark requires an explicitly selected publication")?,
+    );
+    let expected_component_digest = Some(std::mem::take(&mut deployment.release_digest));
     Ok(proto::ApplyDeploymentRequest {
         expected_component_digest,
         operation: None,

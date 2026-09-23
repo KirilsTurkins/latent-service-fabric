@@ -130,7 +130,7 @@ async fn published_typed_capsule_can_be_deployed_without_editing_the_data_direct
         "published",
         "acme",
         "echo",
-        &capsule.descriptor.release_digest,
+        release.publication.as_ref().unwrap(),
     );
     let receipt = harness
         .deployments_client()

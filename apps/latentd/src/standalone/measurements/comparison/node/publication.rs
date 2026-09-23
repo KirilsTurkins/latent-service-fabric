@@ -28,7 +28,7 @@ impl Node {
             component_bytes: fixture.artifact.component_bytes.clone(),
             component_media_type: fixture.artifact.descriptor.media_type.clone(),
         };
-        let deployment = deployment_to_proto(&VersionedDeployment {
+        let mut deployment = deployment_to_proto(&VersionedDeployment {
             publication: None,
             manifest: fixture.deployment.clone(),
             generation: 0,
@@ -57,12 +57,19 @@ impl Node {
         if release.digest != self.fixture.release_digest {
             return Err("comparison publication identity mismatch".into());
         }
+        deployment.publication = Some(
+            release
+                .publication
+                .clone()
+                .ok_or("comparison publication identity missing")?,
+        );
+        deployment.release_digest.clear();
         self.command(false)?;
         let applied =
             proto::deployment_service_client::DeploymentServiceClient::new(self.channel.clone())
                 .apply_deployment(setup_request(
                     proto::ApplyDeploymentRequest {
-                        expected_component_digest: None,
+                        expected_component_digest: Some(release.digest.clone()),
                         operation: None,
                         deployment: Some(deployment),
                         expected_generation: None,

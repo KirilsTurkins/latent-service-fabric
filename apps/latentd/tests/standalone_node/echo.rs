@@ -129,13 +129,16 @@ async fn publish(
             .code(),
         tonic::Code::NotFound
     );
+    let mut desired = deployment(&digest);
+    desired.publication = release.publication.clone();
+    desired.release_digest.clear();
     let applied = DeploymentServiceClient::new(channel)
         .apply_deployment(request(
             OPERATOR,
             proto::ApplyDeploymentRequest {
-                expected_component_digest: None,
+                expected_component_digest: Some(digest.clone()),
                 operation: None,
-                deployment: Some(deployment(&digest)),
+                deployment: Some(desired),
                 expected_generation: Some(0),
             },
         ))
