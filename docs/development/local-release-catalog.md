@@ -48,7 +48,7 @@ cleanup away from the directory whose ownership lock the handle holds.
 
 Completed publications live under `publications/<publication hex>/` and contain `metadata.json`, canonical `manifest.json`, `component.wasm`, and a versioned `COMPLETE` integrity record. Publication validates the manifest, component identity, descriptor bounds, contract metadata and recovery-directory capacity before creating a private directory under `.tmp/`. It writes and fsyncs new shared blobs, hard-links immutable files into the staging directory, fsyncs that directory, and renames the completed directory into its publication location. It verifies the stored entry and fsyncs `publications/`, then commits lifecycle membership and the bounded operation outcome before adopting the descriptor into the in-memory index.
 
-Every successful publication/adoption path synchronizes content and lifecycle state before returning. Historical catalog metadata remains available separately from execution eligibility; `resolve` and `fetch` require current lifecycle and, in enforced mode, signed authority. Identical ordinary publication cannot clear a revoked/retired record or replace evidence. Different content under an existing publication is rejected. Independent publications may share component bytes or an artifact reference; non-unique legacy selection is an explicit ambiguity error.
+Every successful publication/adoption path synchronizes content and lifecycle state before returning. Historical catalog metadata remains available separately from execution eligibility; `resolve` and `fetch` require current lifecycle and, in enforced mode, signed authority. Identical ordinary publication cannot clear a revoked/retired record or replace evidence. Different content under an existing publication is rejected. Independent publications may share component bytes or an artifact reference; non-unique internal component selection is an explicit ambiguity error.
 
 ### Completion record and immutable metadata
 
@@ -112,7 +112,7 @@ accounting excludes the private stamp because it is not returned in a page.
 
 Contract field types have a maximum structural depth of 32 (the root type counts as one) and an aggregate limit of 16,384 type nodes across all contract parameters and results in an artifact. These checks precede recursive conversion and serialization, and apply again when reading persisted metadata. All recursive variants, including both result branches and tuple elements, participate. The JSON reader retains its normal recursion protection. Publication also decodes the exact serialized metadata bytes with the production decoder and checks descriptor/contract equality before writing any files; accepting data that fetch or reopen cannot deserialize is not permitted.
 
-Startup reads inspect file length before allocation and reject persisted metadata, manifests, or components that exceed their configured limits with `ResourceExhausted`. An oversized completion record returns `CorruptArtifact` under its separate fixed bound. Publication releases caller payload buffers before reading back the stored component for verification. Retained incomplete directories count toward recovery-directory and content-exposure bounds, without creating completed-publication index membership. Legacy unscoped `list` remains a component-ordered compatibility interface and refuses a non-unique component. Scoped publication pages use their own exact row ordering, without directory scans per request.
+Startup reads inspect file length before allocation and reject persisted metadata, manifests, or components that exceed their configured limits with `ResourceExhausted`. An oversized completion record returns `CorruptArtifact` under its separate fixed bound. Publication releases caller payload buffers before reading back the stored component for verification. Retained incomplete directories count toward recovery-directory and content-exposure bounds, without creating completed-publication index membership. The internal unscoped `list` reads content in component order and refuses a non-unique component; it is not a publication-management selector. Scoped publication pages use their own exact row ordering, without directory scans per request.
 
 ### Scoped metadata reads
 
@@ -183,21 +183,22 @@ not total decoder or compiler heap usage.
 
 ## Trust boundary
 
-The Phase 1 compatibility mode is locally trusted. It validates and canonicalizes
-capsule manifests and verifies SHA-256 agreement between component bytes,
+The current trusted-local mode is for explicitly selected local workloads. It
+validates and canonicalizes capsule manifests and verifies SHA-256 agreement between component bytes,
 manifest and immutable release identity. It does not authenticate publishers or
 builders. Registration validates catalog data without preparing or instantiating
 the component.
 
-Phase 2 [authenticated package admission](../reference/package-admission.md)
-adds an explicit enforced repository mode, shared live authority, versioned
+[Authenticated package admission](../reference/package-admission.md) uses
+an explicit enforced repository mode, shared live authority, versioned
 completion records binding exact retained package/evidence bytes and a bounded
 historical receipt. Enforced roots reject raw publication and local reopening;
-legacy version-1 records are not automatically upgraded to enforced version 2.
+trusted-local completion records are not converted into authenticated evidence.
 Fresh verification when current authority permits it and sealed eligibility
 checks on deployment/preparation/activation
 keep historical publication separate from current execution authority. The
-linked migration procedure preserves local history in its original catalog.
+[fresh-state procedure](../reference/publication-catalog.md#supported-storage-and-fresh-state)
+requires explicit admission into a new supported catalog for obsolete roots.
 Trusted AOT and untrusted-filesystem protection are separate boundaries.
 
 ## Execution-resource invariant and acceptance evidence
