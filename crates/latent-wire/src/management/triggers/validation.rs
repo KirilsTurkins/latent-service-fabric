@@ -222,8 +222,13 @@ pub(super) fn wire(
     budget.allocation::<proto::TriggerTarget>(1)?;
     let target_kind = proto::TriggerTargetKind::try_from(t.kind)
         .map_err(|_| Status::invalid_argument("invalid trigger target kind"))?;
-    match target_kind {
-        proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application => {
+    let expected_profile = match target_kind {
+        proto::TriggerTargetKind::Unspecified => {
+            return Err(Status::invalid_argument(
+                "explicit trigger target kind is required",
+            ));
+        }
+        proto::TriggerTargetKind::Application => {
             for v in [&t.service, &t.function] {
                 field(v, budget, MAX_IDENTIFIER_BYTES.min(limits.max_id_bytes))?;
             }
@@ -234,6 +239,7 @@ pub(super) fn wire(
             {
                 field(v, budget, MAX_IDENTIFIER_BYTES)?;
             }
+            "buffered-v1"
         }
         proto::TriggerTargetKind::StaticWeb => {
             if !t.service.is_empty()
@@ -247,8 +253,9 @@ pub(super) fn wire(
                     "static web target cannot carry application fields",
                 ));
             }
+            "static-site-v1"
         }
-    }
+    };
     let p = t
         .publication
         .as_ref()
@@ -266,12 +273,6 @@ pub(super) fn wire(
             "closed HTTP trigger configuration is required",
         ));
     }
-    let expected_profile = match target_kind {
-        proto::TriggerTargetKind::StaticWeb => "static-site-v1",
-        proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application => {
-            "buffered-v1"
-        }
-    };
     if value.configuration.get("profile").map(String::as_str) != Some(expected_profile) {
         return Err(Status::invalid_argument(
             "HTTP trigger profile does not match target kind",

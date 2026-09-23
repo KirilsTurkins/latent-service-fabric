@@ -185,10 +185,6 @@ fn static_web_routes_mount_exact_publication_without_application_identity_and_su
     let command = request(&store, "static-create", definition, 0);
     let receipt = execute(&store, command.clone()).value().receipt.clone();
     assert_eq!(receipt.format_version, 2);
-    assert!(receipt.component.is_none());
-    assert!(receipt.deployment_id.is_none());
-    assert!(receipt.deployment_generation.is_none());
-    assert!(receipt.revision.is_none());
     assert!(matches!(
         receipt.target,
         Some(TriggerTargetIdentity::StaticWeb { .. })

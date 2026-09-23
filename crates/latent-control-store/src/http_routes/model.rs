@@ -118,8 +118,7 @@ impl TriggerTargetIdentity {
 }
 
 /// Immutable history, not current permission to select or execute a target.
-/// Format v1 is application-only and uses the legacy flat optional fields.
-/// Format v2 uses the tagged target exclusively; legacy fields are absent on new writes.
+/// Format v2 uses the tagged target exclusively; obsolete format v1 is rejected.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(
     crate = "latent_manifest::__serde",
@@ -142,43 +141,17 @@ pub struct TriggerOperationReceipt {
     pub manifest_digest: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<TriggerTargetIdentity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub publication: Option<PublicationRef>,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "crate::rollouts::codec::optional"
-    )]
-    pub component: Option<ReleaseDigest>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub deployment_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub deployment_generation: Option<u64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub revision: Option<String>,
     pub completed_at_unix_millis: u64,
     pub receipt_digest: String,
 }
 impl TriggerOperationReceipt {
     #[must_use]
     pub fn target_identity(&self) -> Option<TriggerTargetIdentity> {
-        if let Some(target) = &self.target {
-            return Some(target.clone());
-        }
-        Some(TriggerTargetIdentity::Application {
-            publication: self.publication.clone()?,
-            component: self.component.clone()?,
-            deployment_id: self.deployment_id.clone()?,
-            deployment_generation: self.deployment_generation?,
-            revision: self.revision.clone()?,
-        })
+        self.target.clone()
     }
     #[must_use]
     pub fn publication_ref(&self) -> Option<&PublicationRef> {
-        self.target
-            .as_ref()
-            .map(TriggerTargetIdentity::publication)
-            .or(self.publication.as_ref())
+        self.target.as_ref().map(TriggerTargetIdentity::publication)
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -29,7 +29,12 @@ pub(super) fn manifest(value: proto::Trigger) -> Result<TriggerManifest, Status>
         proto::TriggerTargetKind::StaticWeb => {
             TriggerTarget::StaticWeb(StaticWebTriggerTarget { publication })
         }
-        proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application => {
+        proto::TriggerTargetKind::Unspecified => {
+            return Err(Status::invalid_argument(
+                "explicit trigger target kind is required",
+            ));
+        }
+        proto::TriggerTargetKind::Application => {
             TriggerTarget::Application(ApplicationTriggerTarget {
                 service: ServiceId(target.service),
                 contract: ContractId(target.contract),
@@ -189,16 +194,6 @@ pub(super) fn receipt(r: TriggerOperationReceipt) -> proto::TriggerOperationRece
         state_version: r.state_version,
         route_generation: r.route_generation,
         manifest_digest: r.manifest_digest,
-        publication: r.publication.map(|publication| proto::PublicationRef {
-            id: publication.id.into_string(),
-            tenant,
-        }),
-        component_digest: r
-            .component
-            .map_or_else(String::new, |component| component.0),
-        deployment_id: r.deployment_id.unwrap_or_default(),
-        deployment_generation: r.deployment_generation.unwrap_or_default(),
-        revision: r.revision.unwrap_or_default(),
         completed_at_unix_millis: r.completed_at_unix_millis,
         receipt_digest: r.receipt_digest,
         target,

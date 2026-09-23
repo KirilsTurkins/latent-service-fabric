@@ -62,10 +62,7 @@ pub(super) fn target_matches(
     receipt: &proto::TriggerOperationReceipt,
     expected: &proto::TriggerTarget,
 ) -> bool {
-    let application = matches!(
-        proto::TriggerTargetKind::try_from(expected.kind),
-        Ok(proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application)
-    );
+    let application = expected.kind == proto::TriggerTargetKind::Application as i32;
     match receipt.target.as_ref() {
         Some(target) if target.publication == expected.publication => {
             if application {
@@ -77,12 +74,6 @@ pub(super) fn target_matches(
                 expected.kind == proto::TriggerTargetKind::StaticWeb as i32
                     && target.kind == proto::TriggerReceiptTargetKind::StaticWeb as i32
             }
-        }
-        None if application => {
-            receipt.publication == expected.publication
-                && Some(&receipt.deployment_id) == expected.route.as_ref()
-                && Some(receipt.deployment_generation) == expected.deployment_generation
-                && Some(&receipt.revision) == expected.revision.as_ref()
         }
         _ => false,
     }

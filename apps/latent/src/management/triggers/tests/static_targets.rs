@@ -2,25 +2,13 @@ use super::*;
 
 fn current(application: bool) -> proto::TriggerOperationReceipt {
     let mut value = receipt();
-    let target = proto::TriggerReceiptTarget {
-        kind: if application {
-            proto::TriggerReceiptTargetKind::Application
-        } else {
-            proto::TriggerReceiptTargetKind::StaticWeb
-        } as i32,
-        publication: value.publication.take(),
-        component_digest: std::mem::take(&mut value.component_digest),
-        deployment_id: std::mem::take(&mut value.deployment_id),
-        deployment_generation: std::mem::take(&mut value.deployment_generation),
-        revision: std::mem::take(&mut value.revision),
-        ..Default::default()
-    };
+    let target = value.target.take().unwrap();
     value.target = Some(if application {
         target
     } else {
         proto::TriggerReceiptTarget {
             publication: target.publication,
-            kind: target.kind,
+            kind: proto::TriggerReceiptTargetKind::StaticWeb as i32,
             web_manifest_digest: value.manifest_digest.clone(),
             assets_digest: value.manifest_digest.clone(),
             web_generation: u64::MAX,
@@ -71,8 +59,6 @@ fn v2_receipts_reject_hybrids_foreign_scope_and_incomplete_target_identity() {
         (|v: &mut proto::TriggerOperationReceipt| v.format_version = 1)
             as fn(&mut proto::TriggerOperationReceipt),
         |v| v.target = None,
-        |v| v.publication = receipt().publication,
-        |v| v.component_digest = v.manifest_digest.clone(),
         |v| {
             v.target
                 .as_mut()
@@ -119,6 +105,11 @@ fn apply_receipts_match_variant_publication_and_application_revision() {
         };
         assert!(response::target_matches(&value, &expected));
         assert_eq!(response::target_matches(&receipt(), &expected), application);
+        for kind in [proto::TriggerTargetKind::Unspecified as i32, 999] {
+            let mut invalid = expected.clone();
+            invalid.kind = kind;
+            assert!(!response::target_matches(&value, &invalid));
+        }
         let mut changed = expected.clone();
         changed.kind = if application { 2 } else { 1 };
         assert!(!response::target_matches(&value, &changed));

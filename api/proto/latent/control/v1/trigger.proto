@@ -6,9 +6,9 @@ import "latent/control/v1/common.proto";
 import "latent/control/v1/release.proto";
 
 enum TriggerTargetKind {
+  // Omitted or unspecified target kinds are rejected.
   TRIGGER_TARGET_KIND_UNSPECIFIED = 0;
-  // Legacy buffered-v1 clients may omit this discriminator. When present,
-  // application fields 1-7 remain the wire-compatible application variant.
+  // Application fields 1-7 retain their current target identity meanings.
   TRIGGER_TARGET_KIND_APPLICATION = 1;
   // Carries only publication plus this discriminator. Application fields are
   // required to be absent/default and are rejected as a hybrid by validation.
@@ -130,15 +130,11 @@ message TriggerOperationReceipt {
   uint64 state_version = 11;
   uint64 route_generation = 12;
   string manifest_digest = 13;
-  PublicationRef publication = 14;
-  string component_digest = 15;
-  string deployment_id = 16;
-  uint64 deployment_generation = 17;
-  string revision = 18;
+  reserved 14 to 18;
+  reserved "publication", "component_digest", "deployment_id", "deployment_generation", "revision";
   uint64 completed_at_unix_millis = 19;
   string receipt_digest = 20;
-  // Format-v2 exact target identity. Fields 14-18 are retained only for
-  // format-v1 application receipt compatibility and are empty for v2 writes.
+  // Format-v2 exact target identity. Obsolete format-v1 fields stay reserved.
   TriggerReceiptTarget target = 21;
 }
 message GetTriggerOperationRequest {
