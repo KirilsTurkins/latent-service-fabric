@@ -73,21 +73,36 @@ jobs:
           set -o pipefail
           tools="$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64"
           "$tools/wasm-tools" --version
-          find probes/smoke/bin -type f -name '*.wasm' -print
           "$tools/wasm-tools" component wit probes/smoke/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm | tee "$RUNNER_TEMP/dotnet-guest/imports.wit"
       - name: Retain offline compiler qualification inputs
         shell: bash
         run: |
           set -o pipefail
           mkdir -p "$RUNNER_TEMP/dotnet-offline"
-          tar -czf "$RUNNER_TEMP/dotnet-offline/dotnet.tar.gz" -C /usr/share/dotnet dotnet host/fxr sdk/10.0.100 shared/Microsoft.NETCore.App/10.0.12 packs/Microsoft.NETCore.App.Ref/10.0.0
+          tar -czf "$RUNNER_TEMP/dotnet-offline/dotnet.tar.gz" -C /usr/share/dotnet dotnet host/fxr sdk/10.0.100 shared/Microsoft.NETCore.App/10.0.0 shared/Microsoft.NETCore.App/10.0.12 packs/Microsoft.NETCore.App.Ref/10.0.0
           tar -czf "$RUNNER_TEMP/dotnet-offline/nuget.tar.gz" -C "$HOME/.nuget" packages
           tar -czf "$RUNNER_TEMP/dotnet-offline/wasi-sdk.tar.gz" -C "$HOME" .wasi-sdk
-      - name: Upload offline compiler inputs
+      - name: Upload offline managed compiler
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: dotnet-offline-inputs-${{ github.sha }}
-          path: ${{ runner.temp }}/dotnet-offline/
+          name: dotnet-offline-sdk-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-offline/dotnet.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+      - name: Upload offline native compiler packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dotnet-offline-nuget-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-offline/nuget.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+      - name: Upload offline WASI compiler inputs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dotnet-offline-wasi-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-offline/wasi-sdk.tar.gz
           if-no-files-found: error
           compression-level: 0
           retention-days: 1
@@ -109,6 +124,10 @@ jobs:
         run: |
           set -o pipefail
           cargo test -p latent-wasmtime --test dotnet_guest --locked -- --ignored --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/execution.log"
+      - name: Retain the offline diagnostic executable
+        if: always()
+        run: |
+          find target/debug/deps -maxdepth 1 -type f -executable -name 'dotnet_guest-*' -exec cp '{}' "$RUNNER_TEMP/dotnet-guest/diagnostic" ';'
       - name: Retain output and failed attempts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

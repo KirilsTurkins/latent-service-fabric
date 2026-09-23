@@ -43,3 +43,31 @@ async fn closed_dotnet_component_preserves_values_and_drops_every_activation_hea
         support::idle(&backend);
     }
 }
+
+#[test]
+#[ignore = "Requires the compiled .NET qualification component; diagnostic only"]
+fn diagnostic_closed_component_has_no_hidden_startup_dependencies() {
+    use wasmtime::component::{Component, Linker, Val};
+    use wasmtime::{Config, Engine, Store, StoreLimitsBuilder, WasmBacktraceDetails};
+    let directory = std::path::PathBuf::from(std::env::var_os("LSF_DOTNET_PROBE").expect("compiled probe path"));
+    let mut config = Config::new();
+    config.wasm_component_model(true).consume_fuel(true);
+    config.wasm_backtrace_details(WasmBacktraceDetails::Enable);
+    let engine = Engine::new(&config).unwrap();
+    let component = Component::new(&engine, std::fs::read(directory.join("component.wasm")).unwrap()).unwrap();
+    // This diagnostic deliberately installs NO host functions. Production
+    // qualification remains the separately tested LSF admission/backend path.
+    let linker = Linker::new(&engine);
+    let limits = StoreLimitsBuilder::new().memory_size(MEMORY as usize).build();
+    let mut store = Store::new(&engine, limits);
+    store.limiter(|limits| limits);
+    store.set_fuel(1_000_000_000).unwrap();
+    let instance = linker.instantiate(&mut store, &component).unwrap();
+    let (_, interface) = instance.get_export(&mut store, None, CONTRACT).unwrap();
+    let (_, index) = instance.get_export(&mut store, Some(&interface), "echo").unwrap();
+    let function = instance.get_func(&mut store, index).unwrap();
+    let mut output = [Val::String(String::new())];
+    let result = function.call(&mut store, &[Val::String("hello".to_owned())], &mut output);
+    assert!(result.is_ok(), "closed NativeAOT startup failed: {result:?}");
+    assert!(matches!(&output[0], Val::String(value) if value == "hello"));
+}
