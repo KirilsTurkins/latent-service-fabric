@@ -17,18 +17,21 @@ static inline bool lsf_secret_read(probe_string_t *reference, lsf_secret_t *secr
     return secret->owned;
 }
 
-/* Returns a borrow, not a copy or a transferable owner. */
 static inline const latent_secrets_reader_secret_value_t *lsf_secret_borrow(
     const lsf_secret_t *secret) {
     lsf_require(secret && secret->owned);
     return &secret->value;
 }
 
+/* Wipe before deallocation. Explicitly visit aliased nested values rather
+ * than relying on the pinned generator's aggregate *_free implementation. */
 static inline void lsf_secret_close(void *object) {
     lsf_secret_t *secret = object;
     if (!secret || !secret->owned) return;
     lsf_zeroize(secret->value.bytes.ptr, secret->value.bytes.len);
-    latent_secrets_reader_secret_value_free(&secret->value);
+    if (secret->value.bytes.len) free(secret->value.bytes.ptr);
+    probe_string_free(&secret->value.media_type);
+    if (secret->value.version.is_some) probe_string_free(&secret->value.version.val);
     *secret = (lsf_secret_t){0};
 }
 #endif
