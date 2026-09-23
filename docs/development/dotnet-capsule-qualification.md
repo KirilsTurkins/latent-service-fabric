@@ -61,6 +61,27 @@ the final source; this local inspection is not node execution evidence.
 
 ## Required final evidence
 
+[Run 35929987442](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35929987442)
+at `c844116196341fdb373f3bcbca6a61499ed189a8` passed all ten admitted SDK
+cases in 97.14 seconds, including the actual compiled secret alias-zeroization,
+preserved-copy, repeated-disposal and use-after-close assertions. The nested
+service returned successfully cold in 7.538 seconds and warm in about 16 ms.
+Each caller/callee activation peaked at 54,067,200 charged guest-memory bytes;
+the parent receipt includes 108,134,400 aggregate bytes. These are this runner's
+observations, not throughput or whole-process RSS guarantees.
+
+The enforced node reached dormant populations of 5 and 9 with one process,
+seven threads, one listener and no active activation/cell ownership. Applying
+`dormant-09` then failed closed with `signature-stale-proof`: the isolated demo
+signer's 60-second proof age contradicted its 30-minute signed experiment.
+Artifact `10780739918` preserves that failed run; the 17-deployment, invocation,
+cleanup and printed-guide stages remain unqualified. The exact source archive
+independently matched all 4,082 expected Git blobs (archive SHA-256
+`da8aa0ff351fcb26809ecb699d7f7c3967f43f639f61674836b77d191c08dde4`).
+The broad Rust gate also caught a shared test-module dependency, now corrected
+by passing the explicit admission-memory ceiling from its caller. Its failed
+CI is not treated as passing delivery evidence.
+
 [Run 35928271057](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35928271057)
 at `79ef782ab9f3440baa10123a3581ed727c875c87` passed the expanded actual
 NativeAOT probe, all five standalone and nine SDK builds, seven ownership
