@@ -43,7 +43,7 @@ were independently checked with the maintained discovery validator.
 | HTTP, local blobs and durable policies | Separate CLI/node/provider operations pass with revocation and retained deployment selection across restart. A fresh local build passes 28 blob storage/recovery cases and 15 policy CLI calls across two node starts, including exact replay and persisted revocation. | [Provider management](evidence/feature-validation-2026-09-23/provider-management.json), [local execution](evidence/feature-validation-2026-09-23/local/receipt.json) |
 | External providers and event triggers | All 19 selected S3, Vault, NATS publication and NATS trigger cases pass against their pinned real services; runner cleanup is acknowledged. This preserves each provider's declared subset and immediate-operation uncertainty. | [Provider lane](evidence/feature-validation-2026-09-23/lanes/provider.json) |
 | Packaging, OCI, publication authority, rollout and recovery | Verified-TLS Zot tests and the operator, publication, offline and security-profile workflows pass. Independent publications, revoked admission and retained offline invocation are exercised. | [Operator](evidence/feature-validation-2026-09-23/operator/operator-receipt.json), [publication](evidence/feature-validation-2026-09-23/operator/publication-receipt.json), [offline](evidence/feature-validation-2026-09-23/operator/offline-receipt.json), [profile](evidence/feature-validation-2026-09-23/operator/security-profile-receipt.json) |
-| Angular rendering and browser boundaries | Eight renderer selections pass. The actual Angular component passes protected T1 admission, browser hydration, staged rollout, CAS rollback and restart with retained native cache. The separate controlled-Node browser receipts retain their narrower rendering claim. | [Renderer lane](evidence/feature-validation-2026-09-23/lanes/renderer.json), [Angular T1](evidence/feature-validation-2026-09-23/operator/angular-t1-receipt.json) |
+| Angular rendering and browser boundaries | Eight renderer selections pass. The actual Angular component passes protected T1 admission, browser hydration, staged rollout, CAS rollback and restart with retained native cache. A fresh complete reference run also passes public/authenticated browser sessions, provider denial/cancellation, canary promotion, revocation, restart and rollback. | [Renderer lane](evidence/feature-validation-2026-09-23/lanes/renderer.json), [Angular T1](evidence/feature-validation-2026-09-23/operator/angular-t1-receipt.json), [complete reference](evidence/feature-validation-2026-09-23/angular-reference/review.json) |
 | Static/CSR hosting | Signed exact-digest OCI transfer, two-version browser navigation, deep-link reloads, missing-file behavior, mounted redirects, cutover, rollback and revoked/foreign authority checks pass. Static snapshots retain zero active reservations and zero granted execution-cell leases. | [Static workflow](evidence/feature-validation-2026-09-23/operator/static-site-receipt.json) |
 | Existing six-language network clients | All six existing client workflows pass their shared real-node matrix. The separate new capsule-authoring tickets remain with their implementation owner. | [Client matrix](evidence/feature-validation-2026-09-23/clients/matrix.json) |
 | Bounded dormant-resource regression | The small retained resource workflow passes. Large scale and performance campaigns were not rerun. | [Resource receipt](evidence/feature-validation-2026-09-23/operator/resource-receipt.json) |
@@ -57,17 +57,33 @@ include manual 100,000-item/resource/performance collectors, Harbor and full
 Angular-reference qualification, a supplied-configuration diagnostic, and child
 entry points whose parent workflows retain the outcome. An absent individual
 libtest line is not treated as either an executed pass or a feature failure.
+The subsequent [Angular reference execution](evidence/feature-validation-2026-09-23/angular-reference/review.json)
+also passes the separate fixture-export case and the full workflow. The earlier
+ignored-case trace retains its original checkpoint rather than being rewritten.
 
 The local source copy verified 4,361 Git blobs against the selected commit and
 excluded the benchmark tree for these selected builds. CLI and node builds used the locked
 dependency graph offline with fresh target outputs. No SDK authoring source or
 ticket was changed by this review.
 
+The complete Angular reference used the same source and rebuilt the optimized
+compiler. Fixture compilation first failed because the audit copy omitted the
+tracked `benchmarks/phase1/cases.json` compile-time input. That
+[setup failure](evidence/feature-validation-2026-09-23/angular-reference/failed-fixture-diagnostic.log)
+is retained. Restoring that one file from the selected commit allowed the
+unchanged fixture exporter and full workflow to pass. Cargo rebuilt the node
+during fixture preparation; this run records that resulting binary identity.
+All 4,361 original source blobs and the added manifest were verified unchanged
+after execution. The [unaltered workflow receipt](evidence/feature-validation-2026-09-23/angular-reference/reference-receipt.json)
+records 124 CLI processes, three clean node shutdowns, reclaimed backend work,
+public/authenticated Chromium sessions and zero final activation reservations.
+
 Earlier [Harbor/network qualification](reference/oci-network-profile.md),
-[full authenticated Angular reference](testing/angular-reference-workflow.md),
 [resource campaigns](testing/phase3-resource-recovery.md) and
 [installed-bundle VM qualification](development/native-release-gate.md) keep
-their original identities. They were not rerun or relabelled here. Angular
+their original identities. Those campaigns were not rerun or relabelled here;
+the [earlier Angular attempts](testing/angular-reference-workflow.md) also remain
+unchanged beside the newly executed reference workflow. Angular
 compilation still reports unchecked reproducibility and incomplete declared
 dependency coverage. This review covers the declared Linux x86_64 T0/T1
 profiles; T2 guest-process containment and production certification remain
