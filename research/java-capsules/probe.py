@@ -78,8 +78,10 @@ class Attempt:
         self.deadline = time.monotonic() + 900
         self.phases: list[dict] = []
 
-    def run(self, name: str, command: list[str], cwd: Path = ROOT) -> dict:
+    def run(self, name: str, command: list[str], cwd: Path = ROOT, *, timeout_seconds: float = 300) -> dict:
         from tools.build_process import BuildProcessError, run_bounded
+        if not 0 < timeout_seconds <= 600:
+            raise ValueError("invalid-phase-timeout")
         directory = self.output / "phases" / name
         directory.mkdir(parents=True)
         record = {"name": name, "argv": command, "status": "not-started"}
@@ -89,7 +91,7 @@ class Attempt:
             result = run_bounded(
                 [sys.executable, str(PROJECT / "probe.py"), "--child",
                  str(directory / "exit.json"), *command], cwd, self.environment,
-                timeout_seconds=min(300, max(0.001, self.deadline - started)),
+                timeout_seconds=min(timeout_seconds, max(0.001, self.deadline - started)),
                 max_output_bytes=LIMIT)
             (directory / "stdout.txt").write_bytes(result.stdout)
             (directory / "stderr.txt").write_bytes(result.stderr)
@@ -136,9 +138,10 @@ def main() -> int:
         config = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
         receipt["pins"] = {"java": config["sdk"]["java"], "gradle": config["sdk"]["gradle"],
                            "zig": config["sdk"]["zig"], "wasmTools": config["contracts"]["wasm-tools"],
-                           "wasmtime": config["rust"]["dependencies"]["wasmtime"], "teaVM": "0.15.0"}
+                           "wasmtime": config["rust"]["dependencies"]["wasmtime"], "teaVM": "0.15.0",
+                           "node": config["sdk"]["node"]}
         tools = {}
-        for name in ("java", "javac", "gradle", "zig", "wasm-tools"):
+        for name in ("java", "javac", "gradle", "zig", "wasm-tools", "node"):
             executable = shutil.which(name)
             if executable is None:
                 raise ValueError("missing-tool-" + name)
@@ -159,6 +162,7 @@ def main() -> int:
         versions = [
             ("java-toolchain", [sys.executable, str(ROOT / "sdk/java-client/tools/java_toolchain.py"), "check"], None),
             ("gradle-version", [tools["gradle"], "--version"], "Gradle " + config["sdk"]["gradle"]),
+            ("node-version", [tools["node"], "--version"], "v" + config["sdk"]["node"]),
             ("zig-version", [tools["zig"], "version"], config["sdk"]["zig"]),
             ("wasm-tools-version", [tools["wasm-tools"], "--version"], "wasm-tools " + config["contracts"]["wasm-tools"])]
         for name, command, expected in versions:
@@ -196,6 +200,9 @@ def main() -> int:
             if built["status"] == "passed":
                 attempt.run(name + "-component", [tools["wasm-tools"], "component", "new", str(embedded),
                     "-o", str(generated / "component.wasm")])
+        if (output / "build/C/all.c").is_file():
+            from headless_probe import run as run_headless
+            receipt["headlessCandidate"] = run_headless(attempt, tools, project)
         if snapshot() != inputs:
             raise ValueError("source-inputs-changed-during-attempt")
         receipt["observation"] = "completed"

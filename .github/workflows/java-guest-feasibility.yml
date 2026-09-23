@@ -21,7 +21,7 @@ jobs:
   feasibility:
     name: Java compiler and component qualification
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -29,6 +29,9 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
@@ -39,6 +42,23 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-java-feasibility
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
       - name: Install checksum-pinned Gradle
         shell: bash
         run: |
@@ -56,7 +76,13 @@ jobs:
         run: python3 -m unittest discover -s research/java-capsules/tests -v
       - name: Capture actual compiler candidates and unresolved boundaries
         id: probe
-        run: python3 research/java-capsules/probe.py --capture-dependencies --output "$RUNNER_TEMP/java-guest-attempt"
+        run: python3 research/java-capsules/probe.py --output "$RUNNER_TEMP/java-guest-attempt"
+      - name: Observe the actual unchanged LSF backend
+        if: always() && steps.probe.outcome != '' && steps.probe.outcome != 'skipped'
+        run: |
+          python3 research/java-capsules/engine_probe.py \
+            --component "$RUNNER_TEMP/java-guest-attempt/build/C-headless/component.wasm" \
+            --output "$RUNNER_TEMP/java-engine-attempt"
       - name: Retain failed and successful stages without claiming delivery
         if: always() && steps.probe.outcome != '' && steps.probe.outcome != 'skipped'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -68,6 +94,7 @@ jobs:
             ${{ runner.temp }}/java-guest-attempt/phases/
             ${{ runner.temp }}/java-guest-attempt/project/
             ${{ runner.temp }}/java-guest-attempt/build/
+            ${{ runner.temp }}/java-engine-attempt/
           if-no-files-found: error
           retention-days: 14
       - name: Capture resolved artifact identities and reproduction tools
@@ -81,14 +108,18 @@ jobs:
           # Archive tracked inputs only, never credentials or the runner workspace.
           git archive --format=tar HEAD | gzip -1 > "$kit/source.tar.gz"
           git rev-parse HEAD > "$kit/source-commit.txt"
-          tar -C "$JAVA_HOME" -czf "$kit/jdk.tar.gz" bin conf include jmods legal lib release
+          tar -C "$JAVA_HOME" -czf "$kit/jdk.tar.gz" bin conf include legal lib release
           gradle_home="$(dirname "$(dirname "$(readlink -f "$(command -v gradle)")")")"
           tar -C "$gradle_home" -czf "$kit/gradle.tar.gz" .
           zig_home="$(dirname "$(readlink -f "$(command -v zig)")")"
           tar -C "$zig_home" -czf "$kit/zig.tar.gz" .
           cp "$(command -v wasm-tools)" "$kit/wasm-tools"
+          cp "$(command -v node)" "$kit/node"
+          # Only compiler executables/libraries, never Cargo credentials or home.
+          rust_home="$(dirname "$(dirname "$(rustup which rustc)")")"
+          tar -C "$rust_home" -czf "$kit/rust-tools.tar.gz" bin lib
           tar -C "$RUNNER_TEMP/java-guest-attempt/gradle-home/caches/modules-2" -czf "$kit/dependencies.tar.gz" files-2.1
-          (cd "$kit" && sha256sum *.gz *.txt wasm-tools > SHA256SUMS)
+          (cd "$kit" && sha256sum *.gz *.txt wasm-tools node > SHA256SUMS)
       - name: Retain offline compiler reproduction inputs
         if: always() && steps.probe.outcome == 'failure'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
