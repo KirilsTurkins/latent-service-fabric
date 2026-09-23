@@ -166,6 +166,10 @@ fn revocation_blocks_source_and_original_evidence_can_reverify_after_approved_up
     let authority = authority(&fixture, &root.path().join("trust"));
     let repo = catalog(&root.path().join("catalog"), &authority);
     let summary = admit(&repo, fixture.upload()).unwrap();
+    let publication = latent_artifacts::PublicationRef {
+        scope: latent_artifacts::LifecycleScope::Tenant(tenant()),
+        id: summary.publication.clone().unwrap(),
+    };
     let release = &summary.descriptor.release_digest;
     let previous = repo.release_eligibility(release).unwrap().unwrap();
     fixture.policy["generation"] = serde_json::json!(2);
@@ -181,12 +185,12 @@ fn revocation_blocks_source_and_original_evidence_can_reverify_after_approved_up
         .unwrap()
         .identity(release)
         .is_err());
-    assert!(repo.reverify_retained(&tenant(), release).is_err());
+    assert!(repo.reverify_publication(&publication).is_err());
     fixture.policy["generation"] = serde_json::json!(3);
     fixture.policy["publisherRevocations"]["generation"] = serde_json::json!(3);
     fixture.policy["publisherRevocations"]["revokedPublishers"] = serde_json::json!([]);
     authority.replace_policy(fixture.approved()).unwrap();
-    assert_eq!(repo.reverify_retained(&tenant(), release).unwrap(), summary);
+    assert_eq!(repo.reverify_publication(&publication).unwrap(), summary);
     let current = repo.release_eligibility(release).unwrap().unwrap();
     assert_eq!(current.binding(), previous.binding());
     assert_ne!(current.cache_digest(), previous.cache_digest());
@@ -205,6 +209,10 @@ fn expired_package_recovers_only_as_history_and_retired_catalog_tokens_fail() {
     let catalog_root = root.path().join("catalog");
     let repo = catalog(&catalog_root, &authority);
     let summary = admit(&repo, fixture.upload()).unwrap();
+    let publication = latent_artifacts::PublicationRef {
+        scope: latent_artifacts::LifecycleScope::Tenant(tenant()),
+        id: summary.publication.clone().unwrap(),
+    };
     let release = &summary.descriptor.release_digest;
     let token = repo.release_eligibility(release).unwrap().unwrap();
     drop(repo);
@@ -230,7 +238,7 @@ fn expired_package_recovers_only_as_history_and_retired_catalog_tokens_fail() {
         .identity(release)
         .is_err());
     assert!(ready(reopened.fetch(release)).is_err());
-    assert!(reopened.reverify_retained(&tenant(), release).is_err());
+    assert!(reopened.reverify_publication(&publication).is_err());
 }
 
 #[test]
@@ -239,10 +247,12 @@ fn aged_proof_refresh_preserves_original_durable_receipt_and_package() {
     let root = tempfile::tempdir().unwrap();
     let authority = authority(&fixture, &root.path().join("trust"));
     let repo = catalog(&root.path().join("catalog"), &authority);
-    let release = admit(&repo, fixture.upload())
-        .unwrap()
-        .descriptor
-        .release_digest;
+    let summary = admit(&repo, fixture.upload()).unwrap();
+    let publication = latent_artifacts::PublicationRef {
+        scope: latent_artifacts::LifecycleScope::Tenant(tenant()),
+        id: summary.publication.clone().unwrap(),
+    };
+    let release = summary.descriptor.release_digest.clone();
     let previous = repo.release_eligibility(&release).unwrap().unwrap();
     let directory = publication_directory(&repo, &release);
     let complete = std::fs::read(directory.join("COMPLETE")).unwrap();
@@ -250,7 +260,7 @@ fn aged_proof_refresh_preserves_original_durable_receipt_and_package() {
     authority.renew_clock_lease().unwrap();
     assert!(previous.check_current().is_err());
     assert!(ready(repo.fetch(&release)).is_err());
-    repo.reverify_retained(&tenant(), &release).unwrap();
+    repo.reverify_publication(&publication).unwrap();
     let current = repo.release_eligibility(&release).unwrap().unwrap();
     assert_eq!(current.binding(), previous.binding());
     assert_ne!(current.cache_digest(), previous.cache_digest());

@@ -1,6 +1,28 @@
 use super::*;
 mod readers;
 
+// Small test fixtures name their single publication by component. Production
+// lifecycle access uses exact publication IDs and owns no component index.
+impl LifecycleStore {
+    pub(super) fn fixture_publication(
+        &self,
+        scope: Option<&LifecycleScope>,
+        component: &ReleaseDigest,
+    ) -> Result<Option<PublicationId>, PlatformError> {
+        self.owner.check()?;
+        let state = self.state.try_read().map_err(lock_error)?;
+        let mut matches = state.entries.iter().filter(|(_, entry)| {
+            &entry.stored.identity.release == component
+                && scope.is_none_or(|scope| &entry.stored.identity.scope == scope)
+        });
+        let selected = matches.next().map(|(id, _)| id.clone());
+        if matches.next().is_some() {
+            return Err(crate::publication::ambiguous());
+        }
+        Ok(selected)
+    }
+}
+
 fn identity(label: &[u8]) -> LifecycleIdentity {
     LifecycleIdentity {
         scope: LifecycleScope::LocalUnscoped,

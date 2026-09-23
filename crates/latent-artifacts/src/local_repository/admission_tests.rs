@@ -196,6 +196,10 @@ fn retained_ineligible_history_requires_control_reverification() {
     let repo = open(&root, &authority);
     let summary = admit(&repo).unwrap();
     let release = &summary.descriptor.release_digest;
+    let publication = crate::PublicationRef {
+        scope: crate::LifecycleScope::Tenant(tenant()),
+        id: summary.publication.clone().unwrap(),
+    };
     drop(repo);
     authority.allowed.store(false, Ordering::Release);
     let reopened = open(&root, &authority);
@@ -208,16 +212,19 @@ fn retained_ineligible_history_requires_control_reverification() {
         reopened.release_eligibility(release).unwrap_err().code,
         PlatformErrorCode::PermissionDenied
     );
-    assert!(reopened.reverify_retained(&tenant(), release).is_err());
+    assert!(reopened.reverify_publication(&publication).is_err());
     authority.allowed.store(true, Ordering::Release);
     assert_eq!(
-        reopened.reverify_retained(&tenant(), release).unwrap(),
+        reopened.reverify_publication(&publication).unwrap(),
         summary
     );
     assert!(reopened.release_eligibility(release).unwrap().is_some());
     assert_eq!(
         reopened
-            .reverify_retained(&TenantId("other".to_owned()), release)
+            .reverify_publication(&crate::PublicationRef {
+                scope: crate::LifecycleScope::Tenant(TenantId("other".to_owned())),
+                ..publication.clone()
+            })
             .unwrap_err()
             .code,
         PlatformErrorCode::NotFound

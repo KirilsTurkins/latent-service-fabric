@@ -213,18 +213,6 @@ impl DirectoryArtifactRepository {
 
     /// Explicit bounded control-plane proof refresh. The persisted lifecycle
     /// state and selected raw evidence remain unchanged; terminal rows deny it.
-    pub fn reverify_retained(
-        &self,
-        tenant: &TenantId,
-        release: &ReleaseDigest,
-    ) -> Result<ArtifactCatalogEntry, PlatformError> {
-        let reference = self.require_legacy_publication(
-            Some(&crate::LifecycleScope::Tenant(tenant.clone())),
-            release,
-        )?;
-        self.reverify_publication(&reference)
-    }
-
     pub fn reverify_publication(
         &self,
         reference: &crate::PublicationRef,
