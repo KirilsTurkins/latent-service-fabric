@@ -1,0 +1,54 @@
+name: C# toolchain inspection
+on:
+  push:
+    branches: ['feat/csharp-guest-sdk']
+    paths: ['.github/workflows/csharp-toolchain-inspection.yml']
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+      DOTNET_CLI_USE_MSBUILD_SERVER: '0'
+      MSBUILDDISABLENODEREUSE: '1'
+      RUSTUP_TOOLCHAIN: '1.97.1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.100'
+      - name: Resolve the pinned compiler inputs
+        working-directory: sdk/dotnet-guest
+        run: dotnet build examples/greeting/Greeting.csproj --configuration Release --nologo
+      - name: Resolve the pinned Rust host and guest inputs
+        run: |
+          rustup toolchain install 1.97.1 --profile minimal --component rustfmt --target wasm32-unknown-unknown
+          cargo fetch --locked --target x86_64-unknown-linux-gnu --target wasm32-unknown-unknown
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: bytecodealliance/wit-bindgen
+          ref: c604ee01c03f50d7301984a3c920a650752cd136
+          path: target/csharp-upstream
+          persist-credentials: false
+      - name: Resolve the exact binding-generator sources
+        working-directory: target/csharp-upstream
+        run: cargo fetch --locked --target x86_64-unknown-linux-gnu
+      - name: Retain only public source and toolchain inputs
+        run: |
+          mkdir -p "$RUNNER_TEMP/csharp-tools"
+          tar -C /usr/share/dotnet -czf "$RUNNER_TEMP/csharp-tools/dotnet.tar.gz" dotnet host/fxr/10.0.0 shared/Microsoft.NETCore.App/10.0.0 packs/Microsoft.NETCore.App.Ref/10.0.0 sdk/10.0.100
+          tar -C "$HOME" -czf "$RUNNER_TEMP/csharp-tools/dependencies.tar.gz" .nuget/packages .wasi-sdk/wasi-sdk-29.0 .cargo/registry .rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu
+          git -C target/csharp-upstream archive --format=tar.gz --output="$RUNNER_TEMP/csharp-tools/wit-bindgen.tar.gz" HEAD
+          sha256sum "$RUNNER_TEMP/csharp-tools/"*.tar.gz
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: csharp-pinned-inspection-inputs
+          path: ${{ runner.temp }}/csharp-tools/
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
