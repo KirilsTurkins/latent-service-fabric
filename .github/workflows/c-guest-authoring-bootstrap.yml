@@ -26,7 +26,7 @@ jobs:
         run: python3 -m unittest tools.tests.test_c_guest_authoring
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
-          components: rustfmt
+          components: rustfmt, clippy
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
@@ -48,10 +48,9 @@ jobs:
           LSF_C_AUTHORING_BUILD_ROOT: ${{ runner.temp }}/c-projects
           LSF_C_AUTHORING_FIXTURE_ROOT: ${{ runner.temp }}/c-fixture
         run: cargo test --locked -p latent-wasmtime --test c_guest_authoring -- --ignored --nocapture
-      - name: Run authenticated separate-process newcomer workflow
+      - name: Run authenticated separate-process newcomer workflow with finite limits
         run: python3 -m tools.c_guest.node --cli "$PWD/target/debug/latent" --node "$PWD/target/debug/latentd" --fixture "$RUNNER_TEMP/c-fixture" --output "$RUNNER_TEMP/c-node"
-      - name: Diagnose only registered test inputs
-        if: failure()
+      - name: Check C integration Rust formatting and lints
         run: |
-          git diff --stat
-          find "$RUNNER_TEMP/c-projects" -name BUILD-COMPLETE.json -exec cat {} \;
+          cargo fmt --all -- --check
+          cargo clippy --locked -p latent-wasmtime --test c_guest_authoring -- -D warnings
