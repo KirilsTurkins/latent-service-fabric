@@ -1,0 +1,6 @@
+<Project>
+  <ItemGroup>
+    <!-- The component SDK adds this reference. Update it instead of duplicating it. -->
+    <PackageReference Update="Microsoft.DotNet.ILCompiler.LLVM" Version="[10.0.0-rc.1.26306.1]" />
+  </ItemGroup>
+</Project>
