@@ -165,6 +165,7 @@ impl Fixture {
         };
         let config = WasmtimeConfig {
             java_guest: guest_runtime::java(),
+            fuel_async_yield_interval: guest_runtime::java().then_some(10_000),
             maximum_memory_bytes: packages::budget().memory_bytes,
             maximum_fuel: packages::budget().cpu_fuel,
             prepared_cache_maximum_entries: 4,
