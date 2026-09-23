@@ -8,12 +8,19 @@ after exact-head CI. Do not move the historical source-only `0.1.0-alpha.3` tag.
 
 ## Current-format native foundation
 
-The source version `0.1.0-alpha.4-rc.2` prepares a distinct unpublished foundation
-after obsolete alpha APIs and storage readers were removed. HTTP tables and
-receipts use format 2; deployment catalogs use the current publication-aware
-formats. [`compatibility.json`](../../packaging/linux/compatibility.json) declares
-no upgrade source for this foundation. Installer and node configuration formats
-remain version 1; those are current formats, not obsolete compatibility.
+The immutable `0.1.0-alpha.4-rc.2` foundation identifies source
+`a53b7b219a46f6ca91ae7bc7830669f8aa4bbe2e`. Its exact-source
+[CI run 35807320818](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35807320818)
+and [nonpublishing release run 35811188306](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35811188306) passed. Both clean-VM profiles
+used the release-workflow/tag identity and the same authenticated archive;
+the [retained receipt](../evidence/native-foundation-35811188306.json) records its SHA-256,
+real boot IDs, receipt hashes and independent publisher verification.
+
+The distinct `0.1.0-alpha.4` source declares only that observed foundation in
+[`compatibility.json`](../../packaging/linux/compatibility.json). Both versions
+use current publication-aware catalog formats and HTTP table/receipt format 2.
+Installer and node configuration format 1 remain current. No obsolete storage
+reader or migration is restored for this compatible pair.
 
 The earlier immutable `0.1.0-alpha.4-rc.1` tag identifies source
 `010c1c0605533a9f8a51a36e8b45265baa6255bb`. Its maintained CI passed in
@@ -25,12 +32,12 @@ historical evidence and the unfulfilled compatible-pair criterion. This source
 can write obsolete HTTP table format 1 and is no longer a declared predecessor.
 Do not move its tag, rewrite its receipts or reinstate a legacy storage reader.
 
-After rc.2 passes exact-source CI, qualify its own immutable tag with
-`publish=false`. Record the actual release-workflow run, authenticated archive
-digest and both VM receipts. Then bind those observed identities in the distinct
-`0.1.0-alpha.4` source and run the actual compatible upgrade and unsupported
-downgrade checks against rc.2. A foundation run alone cannot complete #308.
-The protected publication environment remains the final approval boundary.
+The foundation remains unpublished and honestly reports
+`acceptanceComplete:false`: it has no selected predecessor of its own. Its
+single-profile success does not complete #308. The final `0.1.0-alpha.4` source
+must pass its own exact-source CI and real compatible-upgrade/unsupported-downgrade
+checks against these actual rc.2 bytes. Complete same-source receipts and the
+protected publication approval remain required before a runtime release exists.
 
 ## Publisher identity and offline verification
 
@@ -138,7 +145,8 @@ Before dispatch, the parent must select and review:
 2. A genuine previous native version/artifact from this same release workflow.
    Commit its exact version/source/archive digest in
    [compatibility.json](../../packaging/linux/compatibility.json), with no migration
-   and compatible runtime/storage/host ABI. No pair is currently approved.
+   and compatible runtime/storage/host ABI. The committed rc.2 predecessor
+   identifies the selected pair; its final VM qualification is still required.
 3. An existing exact release tag and the publisher identity described here.
    Neither workflow creates or moves tags. GitHub must have registered this
    workflow for dispatch; parent-controlled default-branch promotion is not an

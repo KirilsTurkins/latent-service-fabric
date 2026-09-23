@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "latent.native-foundation-evidence.v1",
+  "sourceCommit": "a53b7b219a46f6ca91ae7bc7830669f8aa4bbe2e",
+  "version": "0.1.0-alpha.4-rc.2",
+  "releaseWorkflowRun": 35811188306,
+  "sourceCiRun": 35807320818,
+  "archive": {
+    "name": "lsf-0.1.0-alpha.4-rc.2-x86_64-unknown-linux-gnu.tar.gz",
+    "sha256": "3479b32fb3181066572d61cc6a65abb38bafb2311188b358fac7e7e365195ee3",
+    "size": 28976781
+  },
+  "checksumsSha256": "cf5f36ad6b7155969e0ad6ce133a8f53a6da0e0a5555d25ffc63706fec8e7d2c",
+  "attestationSha256": "b9f9d35dd7ae4ffe7e8a09691c0a8e93f18a1bf41817dd794ef6976d8f301510",
+  "localPublisherVerification": {
+    "verifier": "gh version 2.96.0 (2026-07-02)",
+    "sourceDigest": "a53b7b219a46f6ca91ae7bc7830669f8aa4bbe2e",
+    "signerDigest": "a53b7b219a46f6ca91ae7bc7830669f8aa4bbe2e",
+    "certificateIdentity": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.4-rc.2",
+    "githubHostedRunnerRequired": true,
+    "trustedRootSha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+    "passed": true
+  },
+  "profiles": [
+    {
+      "profile": "local-experimental-v1",
+      "passed": true,
+      "acceptanceComplete": false,
+      "gaps": [
+        "declared-compatible-native-version-pair-not-yet-selected"
+      ],
+      "initialBootId": "51700fdc-1f88-4292-a38a-3378ea22c3f9",
+      "rebootedBootId": "49b448f4-e018-4c0b-aa10-5d801716524b",
+      "receiptSha256": "de366add8360a8a4d82c664613074127c45d739d8343b5cca3cb0ec22391f14c"
+    },
+    {
+      "profile": "external-capsule-v1",
+      "passed": true,
+      "acceptanceComplete": false,
+      "gaps": [
+        "declared-compatible-native-version-pair-not-yet-selected"
+      ],
+      "initialBootId": "72a11246-ccd7-463c-9de3-9f613a860b07",
+      "rebootedBootId": "a4af9067-2794-4714-9499-aeaf9544fbcd",
+      "receiptSha256": "8b8f0d2d313ca4c2e17da9a60451b8c01c5a0e52f4d89266a3d93b73d9f0fba8"
+    }
+  ],
+  "published": false,
+  "compatiblePairQualified": false
+}
