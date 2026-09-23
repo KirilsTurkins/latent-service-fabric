@@ -152,7 +152,9 @@ def qualify(output: Path, *, offline=False, language="rust"):
         # Rust/C qualifications preserve their combined runtime gate. Go runs
         # the same ten provider/ownership cases with actual Go components.
         sdk_builder = "build_go_guest_capsules.py" if language == "go" else "build_guest_capsules.py"
-        commands.run("build-sdk-guests", sys.executable, ROOT / "tools" / sdk_builder, "--output", output / "sdk-guests")
+        sdk_tools = (["--contracts-tool", binaries["examples/capsule_contracts"], "--packager", binaries["examples/package"]]
+                     if language == "go" else [])
+        commands.run("build-sdk-guests", sys.executable, ROOT / "tools" / sdk_builder, "--output", output / "sdk-guests", *sdk_tools)
         commands.environment["LSF_GUEST_CAPSULES"] = str(output / "sdk-guests")
         if language == "go":
             commands.environment["LSF_GUEST_SDK_LANGUAGE"] = "go"
@@ -164,7 +166,12 @@ def qualify(output: Path, *, offline=False, language="rust"):
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node", language=language)
         stage = "printed-guide"
         result["guide"] = guide(output / "guide", environment, language)
-        if inputs(language) != before or {name: file_identity(path) for name, path in binaries.items()} != result["binaries"]:
+        stage = "final-integrity"
+        after = inputs(language)
+        after_binaries = {name: file_identity(path) for name, path in binaries.items()}
+        write_json(output / "source-inputs-after.json", after)
+        write_json(output / "binaries-after.json", after_binaries)
+        if after != before or after_binaries != result["binaries"]:
             raise ValueError("qualification inputs changed")
         result.update(status="passed", commands=commands.records)
         # Large raw OS observations live in the node receipt rather than being

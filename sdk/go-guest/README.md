@@ -40,7 +40,7 @@ Use the generated `wit_component/lsf/<module>` packages for capabilities:
 | Module | Calls and owners |
 | --- | --- |
 | `http` | `Send` returns the exact buffered response or typed HTTP error. |
-| `streaming` | `Start`, upload `Write`/`Finish`/`Abort`, body `Read`/`Trailers`/`Abort`, and independently owned chunks. |
+| `streaming` | `Open`, upload `Write`/`Finish`/`Abort`, body `Read`/`Trailers`/`Abort`, and independently owned chunks. |
 | `blob` | `Create`/`Open` return owned writers/readers; `Write`/`Read` borrow, `Seal` and `Close` consume. |
 | `secrets` | `Read` returns one explicit byte owner; `WithBytes` borrows and `Close` clears the owned bytes. |
 | `events` | `Publish` retains acknowledged, rejected and uncertain outcomes without replay. |

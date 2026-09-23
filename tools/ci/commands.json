@@ -2715,7 +2715,7 @@
       "sha256": "497409dd0d4c072b12a64c84e9ef1dbc804eb888c62ccae6fb8a27b9e64e97ce"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "a861141247898ec1ff68f9907657ef875befad8710f2358a93b1dee20d0bc212"
+      "sha256": "d4bbde09d66af15177d31a4a4107e332beab75e0c9764a4b7b8b63f5233e92c1"
     },
     "tools/reset_validation_echo.py": {
       "sha256": "7bfdd62d41f709ccee0de64e0c2b14868d4033444ca4e2b0a959424019108d2e"
@@ -3421,6 +3421,7 @@
       "GoAuthoringTests.test_guide_and_selectable_examples_cover_the_printed_workflow",
       "GoAuthoringTests.test_module_template_rejects_unreviewed_application_dependencies",
       "GoAuthoringTests.test_sdk_aliases_follow_generated_identity_without_exposing_resource_constructors",
+      "GoAuthoringTests.test_sdk_builder_reuses_captured_tools_without_rebuilding_and_rejects_mutation",
       "GoAuthoringTests.test_sdk_mutation_does_not_silently_become_a_reviewed_input",
       "GoAuthoringTests.test_source_and_wit_remain_editable_but_budget_types_are_closed"
     ],
