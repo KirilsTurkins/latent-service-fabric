@@ -19,11 +19,12 @@ The accepted Phase 3 correction in
 and [RFC-0002](../../rfcs/0002-tenant-scoped-publication-identity.md) separates
 tenant-scoped publication from component identity. The catalog now implements
 independent publications, tenant-neutral package admission and package coexistence.
-[Catalog format 2 and offline migration](publication-catalog.md) describe the
+[Catalog format 2 and fresh-state setup](publication-catalog.md) describe the
 storage boundary. [Runtime and deployment propagation](publication-runtime.md)
 and [public RPC/CLI/SDK selectors](publication-api.md) carry those exact identities
 through execution and management. Existing component fields retain
-their byte identity; legacy selection fails explicitly when it becomes ambiguous.
+their byte identity. Public management requires exact publication references;
+internal component reads reject ambiguous associations.
 
 ## Select the node mode
 
@@ -38,13 +39,14 @@ of two closed forms:
 {"mode":"enforced","policyFile":"admission-policy.json","clockLeaseSeconds":5}
 ```
 
-Omission preserves Phase 1 trusted-local compatibility for local catalogs.
+Use trusted-local only for the controlled local profile; the external-capsule
+profile requires explicit enforced admission.
 Enforced mode requires a complete valid policy file, bounded to 256 KiB. A
 relative `policyFile` resolves against the node configuration file's directory.
 The node derives and retains its exact policy bytes before startup. Missing,
 malformed or incomplete configuration fails; it never becomes an empty
 revocation list or a successful local fallback. An enforced catalog's durable
-mode marker also rejects reopening through the legacy local constructor.
+mode marker also rejects reopening through the trusted-local constructor.
 
 The [node member schema](../../schemas/node-supply-chain.schema.json) describes
 this member only. The [policy schema](../../schemas/supply-chain-policy.schema.json)
@@ -137,7 +139,7 @@ evidence identities; optional SBOM identities; policy/revocation identities and
 generations; coordinator epoch; and verification/expiry times. Its closed
 canonical JSON is limited to 16 KiB. It is historical data, never executable
 authority. `ReleaseDescriptor.admitted=true` also describes historical catalog
-publication, including the legacy locally trusted mode. `GetRelease` and
+publication, including the explicitly selected trusted-local mode. `GetRelease` and
 `ListReleases` do not turn it into a current authorization grant.
 
 The enforced repository hash-binds the receipt and retained exact package and
@@ -175,7 +177,7 @@ an activation already accepted at that point may finish. This does not claim
 atomicity between an external revocation and the literal first guest instruction.
 Retiring the catalog owner also retires its old eligibility capabilities.
 
-## Clock leases, retries and migration
+## Clock leases, retries and fresh admission
 
 `clockLeaseSeconds` is an integer from 1 through 5, default 5. The authority
 durably records a future restart floor before enabling a lease. Currentness
@@ -227,21 +229,17 @@ Do not overwrite evidence or invent a different component identity to bypass
 expiry. A lost or post-rename failed response can leave a pending durable
 candidate; reconcile with the repository's recovery/retry procedure.
 
-To migrate a Phase 1 local catalog:
+To replace an obsolete catalog, use the
+[fresh-state procedure](publication-catalog.md#supported-storage-and-fresh-state).
+Create a new enforced root, select complete packages with honestly observed
+builds and required SBOMs, supply independently approved publisher/builder
+policies, and admit each intended package. Apply deployments with the exact
+accepted publication references. There is no in-place migration or obsolete
+format reader.
 
-1. Stop its owner and preserve the existing root and original source/build inputs.
-2. Repackage each selected capsule with complete pinned WIT and typed metadata.
-   Produce an honestly observed build and required SBOM, then sign and attest
-   the exact final package using separately approved publisher/builder keys.
-3. Configure a fresh enforced catalog with complete current policies,
-   revocations and explicit tenant-to-publisher authorization.
-4. Submit the full package and evidence through authenticated admission, then
-   apply deployments to its accepted release identities.
-
-Version-1 local completion records are not auto-upgraded. Copying a receipt,
-setting `admitted`, changing a marker, or omitting enforced configuration is not
-a migration. Preserve the old root for history; the enforced boundary cannot
-establish an observed build from a legacy digest alone. Catalog storage still
-assumes a cooperating local filesystem owner: cryptographic package admission
-does not protect against an administrator replacing the node executable,
-approved trust configuration, or its entire storage history.
+A trusted-local completion record or component digest cannot establish publisher
+authentication or observed build provenance. Copying a receipt, changing a mode
+marker or setting `admitted` cannot create that authority. Catalog storage assumes
+a cooperating local filesystem owner: cryptographic package admission does not
+protect against an administrator replacing the node executable, approved trust
+configuration or its entire storage history.

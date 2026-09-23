@@ -107,14 +107,16 @@ most 4 KiB. The default ring retains 256 receipts (hard maximum 1,024) within
 one 8 MiB shared metadata allowance for live/next tables, preparation scratch
 and retained replies. Read owners are finite. Preparation uses the existing
 single control-publication slot; no deployment worker, listener or timer is
-added. Legacy writers and every rollout action preserve the operation ring.
-The catalog writes format 4 after its first managed deployment operation;
-legacy formats 1 through 3 keep their existing absent-field/checksum rules.
+added. Every catalog writer and rollout action preserves the operation ring.
+The catalog writes publication-aware format 5, format 6 with capability bindings,
+or format 7 with HTTP route state. Obsolete formats 1 through 4 are rejected
+before recovery cleanup; there is no reader or migration fallback. See the
+[current persistence contract](reference/publication-runtime.md#deployment-selection-and-persistence).
 
 ## Audit and uncertain results
 
 Managed deployment mutations require configured audit and never fall back to
-legacy behavior when that support is unavailable. The server checks the full
+an unmanaged mutation when that support is unavailable. The server checks the full
 response and audit envelope sizes before durable acceptance. After acceptance,
 marking mutation started and committing the prepared catalog are synchronous,
 with no intervening await. Caller loss after commit can leave an audit outcome
@@ -135,14 +137,12 @@ The [deployment service](../api/proto/latent/control/v1/deployment.proto),
 [release service](../api/proto/latent/control/v1/release.proto),
 [rollout service](../api/proto/latent/control/v1/rollout.proto) and
 [audit service](../api/proto/latent/control/v1/audit.proto) are authoritative.
-Generated Rust RPC clients follow those additive contracts. The six existing
-handwritten SDKs expose invocation/guest interfaces; this management extension
-does not change their invocation identity or cancellation contracts. Their
-interface fixtures remain required CI checks. General SDK transports and
-capability/provider convenience models have dedicated Phase 3 tickets
-[#227](https://github.com/KirilsTurkins/latent-service-fabric/issues/227),
-[#228](https://github.com/KirilsTurkins/latent-service-fabric/issues/228) and
-[#230](https://github.com/KirilsTurkins/latent-service-fabric/issues/230).
+All six [external SDK clients](../sdk/README.md) implement the bounded shared
+[client profile](../sdk/profile/README.md), with native authenticated loopback
+transports and invocation, policy/provider inspection, preconditioned management
+and operation recovery. Their common semantic fixtures and real-node transport
+checks cover identity, cancellation and explicit shutdown. Guest capability
+bindings are a separate [component SDK](component-development/guest-sdk.md).
 
 Validation uses compact file, policy, catalog, RPC and separate client/node
 registry workflows. Heavy catalog/benchmark runs remain opt-in.

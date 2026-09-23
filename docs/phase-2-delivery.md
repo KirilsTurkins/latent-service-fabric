@@ -42,7 +42,7 @@ finite observations do not establish production SLOs.
 
 Existing trusted-local catalogs retain their explicit compatibility mode.
 Enforced roots require complete current public policy and cannot reopen through
-the legacy constructor. Review [admission migration and clock leases](reference/package-admission.md#clock-leases-retries-and-migration)
+the trusted-local constructor. Review [fresh admission and clock leases](reference/package-admission.md#clock-leases-retries-and-fresh-admission)
 before changing policy or restarting; an immediate restart can correctly fail
 until its persisted future clock floor is reached. Do not delete a policy floor,
 catalog marker or audit journal to bypass that failure.
