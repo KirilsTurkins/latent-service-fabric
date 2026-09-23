@@ -132,8 +132,10 @@ def foreground_up(args, workspace: Path, connection) -> dict:
     else:
         require(not getattr(args, "test_select", []), "test-selection-requires-watch")
     with state.lock(workspace, "foreground.lock"), owned_cancellation() as cancellation, lease(connection) as check:
+        start_dispatched = False
         try:
             with state.lock(workspace):
+                start_dispatched = True
                 ready = connection.call("up", {})
             emit({"event": "ready", "workspace": args.workspace, "result": ready})
             if args.watch:
@@ -147,9 +149,10 @@ def foreground_up(args, workspace: Path, connection) -> dict:
                     return observed
                 time.sleep(2)
         finally:
-            with cancellation.defer():
-                stopped = connection.call("down", {})
-                emit({"event": "foreground-stopped", "workspace": args.workspace, "cleanup": stopped})
+            if start_dispatched:
+                with cancellation.defer():
+                    stopped = connection.call("down", {})
+                    emit({"event": "foreground-stopped", "workspace": args.workspace, "cleanup": stopped})
 
 
 def dispatch(args) -> dict:

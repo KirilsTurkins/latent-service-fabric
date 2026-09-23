@@ -59,11 +59,13 @@ def run(workspace: Path, connection, source: Path, tool_root: str | None, *, edi
     require(source is not None, "explicit-project-required")
     source = source.absolute()
     descriptor, _raw_identity = project.load(source)
+    identity = project.trust_identity(descriptor)
+    require((workspace / "trust.json").exists()
+            and state.load(workspace, "trust.json") == {"project": str(source), "recipe": identity},
+            "workspace-recipe-trust-required")
     if tool_root is None:
         from .tool_install import selected_root
         tool_root = selected_root(workspace, descriptor)
-    identity = project.trust_identity(descriptor)
-    require(state.load(workspace, "trust.json") == {"project": str(source), "recipe": identity}, "workspace-recipe-trust-required")
     record, content = snapshot.observe(source, descriptor["inputRoots"], tuple(descriptor["exclude"]))
     expected = identity, record["identity"]
     require(selected is None or selected == expected, "guest-build-superseded")

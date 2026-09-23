@@ -68,9 +68,10 @@ def validate(value: dict, environment: str) -> dict:
 
 def run(document: dict, root: Path, environment: str, selection: list[str], adapter,
         identity: dict, *, supported: set[str], initialized_fixtures: set[str] | None = None,
-        execution_controls: bool = False) -> dict:
+        execution_controls: bool = False, expected_revision: dict | None = None) -> dict:
     validate(document, environment)
     require(environment in {"node", "portable"}, "explicit-test-environment-required")
+    require(expected_revision is None or environment == "node", "portable-has-no-node-revision")
     available = {case["id"] for case in document["scenarios"]}
     require(len(selection) <= 128 and set(selection) <= available, "unknown-test-selection")
     selected = [case for case in document["scenarios"] if not selection or case["id"] in selection]
@@ -102,6 +103,14 @@ def run(document: dict, root: Path, environment: str, selection: list[str], adap
             continue
         result = adapter({**case, "timeoutMillis": min(case["timeoutMillis"], remaining)}, raw)
         matched = result.get("category") == case["expect"]["category"] and result.get("outcomeKnown") is True
+        revision = result.get("data", {}).get("resolvedRevision")
+        revision_keys = {"publicationId", "releaseDigest", "revisionId", "routeGeneration"}
+        if (not isinstance(revision, dict) or set(revision) != revision_keys
+                or not all(isinstance(value, str) and 0 < len(value) <= 256 for value in revision.values())):
+            revision = None
+        target_matches = (expected_revision is None or revision is not None
+                          and all(revision.get(key) == value for key, value in expected_revision.items()))
+        matched &= target_matches
         if expected_payload is not None:
             data = result.get("data", {})
             payload = data.get("payload") or (data.get("declaredError") or {}).get("payload", {})
@@ -122,7 +131,8 @@ def run(document: dict, root: Path, environment: str, selection: list[str], adap
         results.append({"id": case["id"], "status": status, "required": case["required"],
                         "category": result.get("category"), "outcomeKnown": result.get("outcomeKnown"),
                         "activationId": result.get("data", {}).get("activationId"), "inputSha256": digest(raw),
-                        "fixtures": case["fixtures"], "platformCode": code})
+                        "fixtures": case["fixtures"], "platformCode": code,
+                        "resolvedRevision": revision, "targetMatches": target_matches})
     return {"schemaVersion": "latent.dev.test-report.v1", "environment": environment,
             "identity": identity, "selection": [case["id"] for case in selected], "results": results,
             "passed": not required_failed, "cleanup": "adapter-must-confirm",

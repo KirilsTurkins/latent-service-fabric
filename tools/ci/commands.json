@@ -3518,6 +3518,10 @@
       "EditorDiagnostics.test_crlf_unicode_locations_match_host_files_and_ignore_outside_inputs",
       "EditorDiagnostics.test_process_tasks_do_not_start_automatically_or_replace_editor_configuration",
       "EditorDiagnostics.test_real_failed_compiler_preserves_last_build_and_maps_diagnostics",
+      "NodeTestIdentity.test_concurrent_deployment_is_rejected_before_invocation",
+      "NodeTestIdentity.test_confirmed_target_uses_the_observed_route_generation",
+      "NodeTestIdentity.test_identical_output_from_another_revision_cannot_pass",
+      "NodeTestIdentity.test_new_build_cannot_label_an_older_deployments_test",
       "OfflineInputs.test_manifest_rejects_oversized_aliases_and_paths",
       "OfflineInputs.test_transfer_replays_only_identical_bytes_and_rechecks_completed_cache",
       "Projects.test_descriptor_rejects_unknown_fields_abi_and_output_loops",
@@ -3528,6 +3532,7 @@
       "Recovery.test_large_invocation_result_does_not_overflow_durable_history",
       "Recovery.test_lost_response_restart_looks_up_original_id_without_replay",
       "Recovery.test_recovered_deployment_cannot_change_selected_publication_or_generation",
+      "Recovery.test_unknown_and_uncertain_operator_receipts_are_not_transport_failures",
       "Recovery.test_unknown_expired_wrong_tenant_and_conflicts_never_release_intent",
       "ScenarioReports.test_arbitrary_candidate_policy_is_not_runtime_release_approval",
       "ScenarioReports.test_missing_qualification_never_passes",
@@ -3560,10 +3565,13 @@
     ],
     "tools/tests/test_dev_watch.py": [
       "BuildCancellation.test_exact_cancellation_and_workspace_stop_reap_real_compiler_descendants",
+      "WatchTransitions.test_failed_foreground_lock_does_not_stop_an_existing_build",
       "WatchTransitions.test_focused_post_deploy_failure_is_visible_and_never_rolls_back",
       "WatchTransitions.test_new_edit_cancels_only_the_original_build_identity_once",
       "WatchTransitions.test_superseded_build_cannot_publish_or_run_tests",
-      "WatchTransitions.test_uncertain_deployment_stops_watch_without_retry"
+      "WatchTransitions.test_uncertain_deployment_stops_watch_without_retry",
+      "WatchTransitions.test_uncertain_dispatched_start_still_requests_owned_cleanup",
+      "WatchTransitions.test_untrusted_build_is_actionable_before_tools_or_backend_are_used"
     ],
     "tools/tests/test_dev_workflow.py": [
       "Documents.test_duplicate_and_unknown_fields_are_rejected",

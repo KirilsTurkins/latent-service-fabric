@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools.dev_workflow import assets, backend, bundle, common, effects, journal, paths, portable, project, qualification, scenarios, state, wsl
+from tools.dev_workflow import assets, backend, bundle, common, effects, journal, node_tests, paths, portable, project, qualification, scenarios, state, wsl
 
 
 def descriptor():
@@ -23,6 +23,68 @@ def descriptor():
             "artifacts": {"component": "output/capsule.wasm", "capsule": "output/capsule.json", "contracts": "output/contracts.json",
                           "deployment": "output/deployment.json", "packageSource": "output/package-source.json",
                           "packageRoot": "output/package"}, "scenarios": ["src/tests.json"]}
+
+
+class NodeTestIdentity(unittest.TestCase):
+    def test_confirmed_target_uses_the_observed_route_generation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            deployed = {"source": "source", "componentDigest": "component", "deployment": "sample",
+                        "generation": "2", "publication": "publication-a"}
+            state.atomic(root, "last-deployment.json", deployed)
+            current = {"generation": "2", "manifest": {"metadata": {"tenant": "examples", "name": "sample"},
+                "spec": {"service": "examples/sample", "publication": "publication-a", "release": "component"}}}
+            class Client:
+                def call(self, *args):
+                    return {"outcomeKnown": True, "category": "success", "data": {"deployment": current, "routeGeneration": "9"}}
+            receipt = {"source": "source", "artifacts": {"component": "component"}}
+            self.assertEqual(node_tests.target(root, descriptor(), receipt, Client()),
+                             (deployed, {"publicationId": "publication-a", "releaseDigest": "component", "routeGeneration": "9"}))
+            current["manifest"]["metadata"]["tenant"] = "another-tenant"
+            with self.assertRaisesRegex(common.DevError, "test-deployment-target-mismatch"):
+                node_tests.target(root, descriptor(), receipt, Client())
+
+    def test_new_build_cannot_label_an_older_deployments_test(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            state.atomic(root, "last-deployment.json", {"source": "old-source", "componentDigest": "old-component"})
+            class Client:
+                def call(self, *args):
+                    raise AssertionError("stale test reached the node")
+            with self.assertRaisesRegex(common.DevError, "test-build-is-not-confirmed-deployment"):
+                node_tests.target(root, descriptor(), {"source": "new-source", "artifacts": {"component": "new-component"}}, Client())
+
+    def test_concurrent_deployment_is_rejected_before_invocation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            deployed = {"source": "source", "componentDigest": "component", "deployment": "sample", "generation": "2"}
+            state.atomic(root, "last-deployment.json", deployed)
+            calls = []
+            class Client:
+                def call(self, *args):
+                    calls.append(args)
+                    return {"outcomeKnown": True, "category": "success", "data": {"deployment": {"generation": "3"}}}
+            with self.assertRaisesRegex(common.DevError, "test-deployment-changed-no-invocation"):
+                node_tests.target(root, descriptor(), {"source": "source", "artifacts": {"component": "component"}}, Client())
+            self.assertEqual(calls, [("deployment", "get", "sample", "--operation-snapshot")])
+
+    def test_identical_output_from_another_revision_cannot_pass(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            paths.write_new(root / "input.json", b"[]")
+            case = {"id": "same-output", "service": "examples/sample", "contract": "examples:sample/api@1.0.0",
+                "function": "run", "input": "input.json", "mediaType": "application/vnd.latent.wit-values.v1+json",
+                "expect": {"category": "success"}, "requires": [], "timeoutMillis": 1000, "required": True, "fixtures": []}
+            expected = {"publicationId": "publication-a", "releaseDigest": "component-a", "routeGeneration": "2"}
+            exact = {**expected, "revisionId": "revision-a"}
+            for revision, passed in ((exact, True), (None, False), ({**exact, "publicationId": "publication-b"}, False),
+                                     ({**exact, "routeGeneration": "3"}, False)):
+                with self.subTest(revision=revision):
+                    report = scenarios.run({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": [case]}, root,
+                        "node", [], lambda *_: {"category": "success", "outcomeKnown": True,
+                        "data": {"resolvedRevision": revision}}, {}, supported=set(), expected_revision=expected)
+                    self.assertEqual(report["passed"], passed)
+                    self.assertEqual(report["results"][0]["targetMatches"], passed)
 
 
 class Projects(unittest.TestCase):
@@ -93,6 +155,20 @@ class Recovery(unittest.TestCase):
             with self.assertRaises(common.DevError):
                 self.journal.recover(lambda *_: {"outcomeKnown": True, "category": "success", "data": data})
             self.assertEqual(self.journal.read()["pending"], intent)
+
+    def test_unknown_and_uncertain_operator_receipts_are_not_transport_failures(self):
+        intent = self.journal.begin("release", {"expectedGeneration": "0"})
+        for disposition, expected in (("UNKNOWN", "original-operation-unknown-or-expired-no-replay"),
+                                      ("UNCERTAIN", "original-operation-durability-uncertain-no-replay")):
+            result = {"category": "success", "outcomeKnown": False, "requestDispatched": True,
+                      "data": {"lookup": "RELEASE_OPERATION_LOOKUP_DISPOSITION_" + disposition, "receipt": None}}
+            with self.assertRaisesRegex(common.DevError, expected) as error:
+                self.journal.recover(lambda *_: result)
+            self.assertTrue(error.exception.uncertain)
+            self.assertEqual(self.journal.read()["pending"], intent)
+        with self.assertRaisesRegex(common.DevError, "recovery-transport-outcome-unknown"):
+            self.journal.recover(lambda *_: {"category": "transport-failure", "outcomeKnown": False, "data": {}})
+        self.assertEqual(self.journal.read()["pending"], intent)
 
     def test_bounded_history_and_no_cross_workspace_identity(self):
         for _ in range(40):

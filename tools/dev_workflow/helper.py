@@ -234,19 +234,21 @@ def dispatch(request: dict) -> dict:
 
 
 def test(root: Path, arguments: dict) -> dict:
-    from . import scenarios
+    from . import node_tests, scenarios
     members(arguments, {"environment", "selection"})
     require(arguments["environment"] == "node", "linux-test-cannot-fallback-to-portable")
     # A test workspace is deliberately named at creation, rather than silently
     # republishing over the user's current development deployment.
     require(root.name.startswith("test-"), "explicit-disposable-test-workspace-required")
     saved = state.load(root, "project.json")
-    source, descriptor = Path(saved["source"]), saved["descriptor"]
+    source, build_receipt = build.accepted(root, saved)
+    descriptor = saved["descriptor"]
+    cli, journal = client(root)
+    deployed, revision = node_tests.target(root, descriptor, build_receipt, cli)
     cases = []
     for name in descriptor["scenarios"]:
         document = scenarios.validate(decode(paths.read(source, name)), "node")
         cases.extend(document["scenarios"])
-    cli, journal = client(root)
     def invoke(case, raw):
         require(case["service"] == descriptor["service"], "scenario-service-outside-test-project")
         path = root / "test-input.json"
@@ -261,12 +263,12 @@ def test(root: Path, arguments: dict) -> dict:
     layout, current = installation(root)
     import platform
     node = decode(paths.read(layout.node.parent, layout.node.name))
-    build_receipt = state.load(root, "last-build.json")["receipt"]
     report = scenarios.run({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": cases}, source, "node",
         arguments["selection"], invoke, {"source": build_receipt["source"], "artifacts": build_receipt["artifacts"],
+        "deployment": deployed, "expectedRevision": revision,
         "runtime": decode(paths.read(current, "release-source.json")), "node": node["nodeId"],
         "profile": node["securityProfile"], "os": "linux", "architecture": platform.machine(), "kernel": platform.release()},
-        supported={"context", "log", "clock", "fresh-state", "fuel", "memory"})
+        supported={"context", "log", "clock", "fresh-state", "fuel", "memory"}, expected_revision=revision)
     report["cleanup"] = "invocation-results-received-node-retained"
     state.atomic(root, "test-report.json", report)
     return report

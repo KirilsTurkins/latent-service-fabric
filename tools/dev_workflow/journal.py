@@ -69,10 +69,24 @@ class Journal:
         value = self.read()
         pending = value["pending"]
         require(pending is not None, "no-pending-operation")
+        try:
+            return self._recover(pending, lookup)
+        except DevError as error:
+            # Any inconclusive validation still retains the original intent.
+            raise DevError(error.code, uncertain=True) from None
+
+    def _recover(self, pending: dict, lookup) -> dict:
         result = lookup(pending["kind"], pending["id"])
+        data = result.get("data", {})
+        if pending["kind"] != "invoke" and result.get("category") == "success":
+            prefix = {"release": "RELEASE", "deployment": "DEPLOYMENT"}[pending["kind"]] + "_OPERATION_LOOKUP_DISPOSITION_"
+            disposition = data.get("lookup", data.get("disposition", ""))
+            if disposition == prefix + "UNKNOWN":
+                raise DevError("original-operation-unknown-or-expired-no-replay", uncertain=True)
+            if disposition == prefix + "UNCERTAIN":
+                raise DevError("original-operation-durability-uncertain-no-replay", uncertain=True)
         if result.get("outcomeKnown") is not True:
             raise DevError("recovery-transport-outcome-unknown", uncertain=True)
-        data = result.get("data", {})
         if pending["kind"] == "invoke":
             require(data.get("activationId") == pending["id"], "recovered-activation-identity")
             require(data.get("terminalState") in {"completed", "failed", "cancelled", "deadline_exceeded"},

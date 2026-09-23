@@ -1,10 +1,12 @@
 """Watch state transitions and real identity-scoped Linux build cancellation."""
 from __future__ import annotations
 
+from contextlib import contextmanager
 from pathlib import Path
 import sys
 import tempfile
 import time
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -13,6 +15,60 @@ from tools.tests.test_dev_contracts import descriptor
 
 
 class WatchTransitions(unittest.TestCase):
+    def test_failed_foreground_lock_does_not_stop_an_existing_build(self):
+        from tools.dev_workflow import cli
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            calls = []
+            class Connection:
+                config = {"kind": "linux"}
+                def call(self, operation, arguments):
+                    calls.append(operation)
+                    raise AssertionError("no start was dispatched")
+            @contextmanager
+            def contended(root, name="controller.lock"):
+                if name == "controller.lock":
+                    raise PermissionError("another build holds this workspace")
+                yield
+            with patch.object(state, "lock", contended), self.assertRaises(PermissionError):
+                cli.foreground_up(SimpleNamespace(watch=False, workspace="test-busy"), workspace, Connection())
+            self.assertEqual(calls, [])
+
+    def test_uncertain_dispatched_start_still_requests_owned_cleanup(self):
+        from tools.dev_workflow import cli
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            calls, events = [], []
+            class Connection:
+                config = {"kind": "linux"}
+                def call(self, operation, arguments):
+                    calls.append(operation)
+                    if operation == "up":
+                        raise common.DevError("start-response-lost", uncertain=True)
+                    return {"state": "stopped", "reaped": True}
+            with patch.object(cli, "emit", events.append), self.assertRaises(common.DevError):
+                cli.foreground_up(SimpleNamespace(watch=False, workspace="test-uncertain"), workspace, Connection())
+            self.assertEqual(calls, ["up", "down"])
+            self.assertTrue(events[0]["cleanup"]["reaped"])
+
+    def test_untrusted_build_is_actionable_before_tools_or_backend_are_used(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workspace, source = root / "workspace", root / "project"
+            paths.new_directory(workspace)
+            paths.new_directory(source)
+            selected = descriptor()
+            paths.write_new(source / "latent.project.json", common.encode(selected))
+            class Connection:
+                def call(self, *args, **kwargs):
+                    raise AssertionError("untrusted project reached the backend")
+            for trusted in (None, {"project": str(source), "recipe": "sha256:" + "0" * 64}):
+                with self.subTest(trusted=trusted):
+                    if trusted is not None:
+                        state.atomic(workspace, "trust.json", trusted)
+                    with self.assertRaisesRegex(common.DevError, "workspace-recipe-trust-required"):
+                        build_client.run(workspace, Connection(), source, None)
+
     def test_new_edit_cancels_only_the_original_build_identity_once(self):
         calls = []
         class Connection:

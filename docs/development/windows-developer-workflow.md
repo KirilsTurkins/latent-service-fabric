@@ -339,13 +339,50 @@ Rust cases. Those failed attempts remain distinct from subsequent passing runs.
 Native source execution does not qualify publisher identity or replace real-node
 differential tests.
 
+A later [Windows source observation](windows-developer-source-observation.json)
+records an actual C watch cycle through the native frontend and WSL node.
+Revision A passed success and declared-error scenarios. Editing to B published
+new bytes and advanced the deployment generation; the unchanged success assertion
+then failed visibly without rollback. An intentional compiler error retained B,
+and a new invocation still returned B. Subsequent publication, deployment and
+Invoke response-discard probes recovered each original operation identity through
+a fresh frontend process. A separate actor advanced the generation, and the
+controller rejected its conflicting deployment without overwriting that actor.
+Restart preserved the selected publication. An excluded `.env` canary did not
+enter the guest snapshot or invalidate its cached build. Snapshot, build and
+operation counts remained within their declared bounds. Explicit down and purge
+removed the owned node, account and distro while retaining the host source and
+the unrelated Docker registration.
+
+These runs found and corrected three controller problems: a failed foreground
+lock could stop another build; a test could report the newest build while
+invoking an older deployment; and a semantic UNKNOWN receipt was reported as
+transport loss. Cleanup now requires that this foreground controller dispatched
+start. Node tests require the accepted build to match the confirmed deployment,
+observe its current scope and generation, and compare every returned invocation
+revision. Unknown, uncertain-durability and transport outcomes retain separate
+diagnostics and the same pending operation. Missing recipe trust also reports an
+actionable trust error before tool selection. The observation retains the failed
+attempts and identifies the updated source frontend/helper bytes used to verify
+the fixes. It is not final authenticated distribution qualification.
+
+`tools/dev_node_fault_probe.py` is a contributor fault-injection harness, separate
+from the shipped helper. Run it only as the explicitly selected `test-` workspace's
+unprivileged Linux owner, with its exact helper path and SHA-256. It requires the
+local experimental profile and uses the installed operator and real node. Release,
+deployment and Invoke modes discard one actual successful response before the
+controller records it; recover with the normal frontend afterward. The concurrent
+mode records a separate actor's intent and applies observed preconditions. The
+unknown mode prepares an undispatched intent and tests honest non-replay; it does
+not establish receipt expiration. The harness never marks qualification complete.
+
 | Child | Remaining Windows acceptance |
 | --- | --- |
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #562 | Mac/native ARM64 requirements deferred by maintainer; no ARM64 support claim. |
 | #563 | Authenticate/install Rust and C tools through the Windows workflow and integrate the other four language-owner recipes. |
-| #564 | Actual A/B redeploy, compile/admission failure, concurrent generation and lost-response injection on a real node. |
+| #564 | Complete malformed/admission failure, rapid edits, in-flight revision, revocation and expired-receipt cases; repeat the observed source watch/recovery schedule with final authenticated packages. |
 | #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |
 | #566 | Complete explicit clock fixtures, verified native distribution and real Linux differential execution; Windows CI includes the locally exercised Rust/C subsets. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
