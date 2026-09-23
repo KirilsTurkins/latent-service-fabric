@@ -92,6 +92,12 @@ jobs:
         run: |
           go test sdk/go-guest/ownership/owner.go sdk/go-guest/ownership/owner_test.go
           python3 tools/build_go_guest_capsules.py --output "$RUNNER_TEMP/go-sdk-capsules"
+      - name: Execute every typed Go capability through real providers and cleanup
+        run: |
+          set -o pipefail
+          export LSF_GUEST_CAPSULES="$RUNNER_TEMP/go-sdk-capsules"
+          export LSF_GUEST_SDK_LANGUAGE=go
+          cargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee "$RUNNER_TEMP/go-sdk-capsules/runtime-qualification.log"
       - name: Build and admit five actual editable Go projects
         run: python3 tools/probe_go_authoring.py --output "$RUNNER_TEMP/go-authoring-projects"
       - name: Retain successful and failed upstream observations

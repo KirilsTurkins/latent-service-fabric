@@ -38,13 +38,21 @@ pub fn input(name: &str) -> PathBuf {
 
 pub fn observation(name: &str) -> BuildObservation {
     let directory = input(name);
-    let root = directory.parent().unwrap();
+    let root = if name.starts_with("go-") {
+        &directory
+    } else {
+        directory.parent().unwrap()
+    };
     let marker: serde_json::Value =
         serde_json::from_slice(&read(&root.join("BUILD-COMPLETE.json"), 65536)).unwrap();
     assert_eq!(marker["formatVersion"], 1);
     let bytes = read(&directory.join("build-observation.json"), 65536);
     assert_eq!(
-        marker["observations"][name],
+        if name.starts_with("go-") {
+            &marker["observationDigest"]
+        } else {
+            &marker["observations"][name]
+        },
         format!("sha256:{:x}", Sha256::digest(&bytes))
     );
     let observation = decode_build_observation(&bytes, ProvenanceLimits::default()).unwrap();

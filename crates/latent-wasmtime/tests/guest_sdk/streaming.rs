@@ -17,7 +17,7 @@ use tokio::{
 #[tokio::test]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn streaming_ownership_and_independent_chunks_survive_body_drop() {
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         let root = tempfile::tempdir().unwrap();
         let publication = package::publish(root.path(), &format!("{language}-streaming")).await;
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();

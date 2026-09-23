@@ -1259,6 +1259,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "go test sdk/go-guest/ownership/owner.go sdk/go-guest/ownership/owner_test.go\npython3 tools/build_go_guest_capsules.py --output \"$RUNNER_TEMP/go-sdk-capsules\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Execute every typed Go capability through real providers and cleanup": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Execute every typed Go capability through real providers and cleanup",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\nexport LSF_GUEST_CAPSULES=\"$RUNNER_TEMP/go-sdk-capsules\"\nexport LSF_GUEST_SDK_LANGUAGE=go\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/go-sdk-capsules/runtime-qualification.log\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -5861,7 +5871,7 @@
     ".github/workflows/ci.yml": "a7f311e9002c815503ccd24bca8d48df62d4cd6d4211c5acff35db98ddad215f",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/go-guest.yml": "732cb21138a2bd61f04581a914521e5a3d8ea4cbb0c96a5900c3938d586d7679",
+    ".github/workflows/go-guest.yml": "33e6c94d08527ba67c97014ec7176eb97f1e9ea085f7765ca5fb09e883de9df7",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",

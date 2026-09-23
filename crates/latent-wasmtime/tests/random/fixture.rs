@@ -86,6 +86,7 @@ impl ExecutionCancellation for Control {
     }
 }
 pub struct Fixture {
+    _guest_runtime: support::guest_runtime::Runtime,
     pub ceiling: latent_core::ResourceBudget,
     pub plan: Arc<CompiledCapabilityPlan>,
     pub provider: Arc<latent_capabilities::broker::random::RandomProvider>,
@@ -224,11 +225,13 @@ impl Fixture {
             route_generation: RouteGeneration(1),
             attributes: Metadata::new(),
         };
+        let guest_runtime =
+            support::guest_runtime::Runtime::new(&broker, &policies, &publication, component::CAP);
         let plan = broker
             .compile_invocation_plan(
                 &revision,
                 Some(&latent_core::DeploymentId("random-deployment".into())),
-                &[CapabilityBindingSpec {
+                &guest_runtime.bindings(&[CapabilityBindingSpec {
                     definition_digest: Some(&latent_artifacts::package::artifact_blob_digest(
                         b"random-fixture-binding-v1",
                     )),
@@ -237,7 +240,7 @@ impl Fixture {
                     policy_ids: &["p".into()],
                     provider_binding_id: "binding",
                     deployment_restriction_json: br#"{"operations":[]}"#,
-                }],
+                }]),
                 &publication,
                 &[],
                 &[],
@@ -268,9 +271,11 @@ impl Fixture {
             .prepare_ready_from_repository(catalog.clone(), key)
             .await
             .unwrap();
+        guest_runtime.install(&runtime);
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
+            _guest_runtime: guest_runtime,
             ceiling,
             plan,
             factory,
@@ -367,7 +372,7 @@ fn install(
                 "id":"allow", "effect":"allow", "requireAudit":required,"principals":[{"kind":"service","subject":"generic-test"}],
                 "services":["generic"], "publications":[publication.publication().as_str()], "capability":component::CAP,
                 "operations":["bytes","u64-value"], "resources":{"kind":"random"},
-                "ceiling":{"operations":1,"inputBytes":1024,"outputBytes":4096,"wallTimeMillis":5000}
+                "ceiling":{"operations":if support::guest_runtime::enabled() {4096} else {1},"inputBytes":1024,"outputBytes":if support::guest_runtime::enabled() {65536} else {4096},"wallTimeMillis":5000}
             }]}),
         ),
         (

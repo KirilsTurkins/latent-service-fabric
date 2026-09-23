@@ -6,11 +6,16 @@ func Run(_ uint32, reference string, _ uint64) uint64 {
 	r := secrets.Read(reference)
 	if r.IsErr() {
 		switch r.Err().Tag() {
-		case secrets.SecretErrorPermissionDenied: return 10
-		case secrets.SecretErrorNotFound: return 11
-		case secrets.SecretErrorExpired: return 12
-		case secrets.SecretErrorUnavailable: return 13
-		default: panic("unknown secret error")
+		case secrets.SecretErrorPermissionDenied:
+			return 10
+		case secrets.SecretErrorNotFound:
+			return 11
+		case secrets.SecretErrorExpired:
+			return 12
+		case secrets.SecretErrorUnavailable:
+			return 13
+		default:
+			panic("unknown secret error")
 		}
 	}
 	secret := r.Ok()
@@ -21,6 +26,10 @@ func Run(_ uint32, reference string, _ uint64) uint64 {
 	secret.Metadata()
 	secret.Close()
 	// Test-only retained alias proves explicit Close erased this allocation.
-	for _, value := range borrowed { if value != 0 { panic("secret not erased") } }
+	for _, value := range borrowed {
+		if value != 0 {
+			panic("secret not erased")
+		}
+	}
 	return count
 }

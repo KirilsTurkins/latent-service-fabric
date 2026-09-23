@@ -94,6 +94,7 @@ impl ExecutionCancellation for Control {
     }
 }
 pub struct Fixture {
+    _guest_runtime: support::guest_runtime::Runtime,
     _factory: WasmtimeComponentEngineFactory,
     pub backend: WasmtimeBackend,
     pub prepared: PreparedComponent,
@@ -265,17 +266,19 @@ impl Fixture {
             route_generation: RouteGeneration(1),
             attributes: Metadata::new(),
         };
+        let guest_runtime =
+            support::guest_runtime::Runtime::new(&broker, &policies, &publication, component::CAP);
         let plan = broker
             .compile_plan(
                 &revision,
-                &[CapabilityBindingSpec {
+                &guest_runtime.bindings(&[CapabilityBindingSpec {
                     definition_digest: None,
                     provider: &provider.reference(),
                     imported_operations: &["open".into()],
                     policy_ids: &["p".into()],
                     provider_binding_id: "binding",
                     deployment_restriction_json: br#"{"operations":[]}"#,
-                }],
+                }]),
                 &publication,
                 Instant::now() + Duration::from_secs(10),
             )
@@ -304,9 +307,11 @@ impl Fixture {
             .prepare_ready_from_repository(catalog.clone(), key)
             .await
             .unwrap();
+        guest_runtime.install(&runtime);
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
+            _guest_runtime: guest_runtime,
             _factory: factory,
             backend,
             prepared,

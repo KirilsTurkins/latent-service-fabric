@@ -41,6 +41,8 @@ use std::{
 mod admission_fixture;
 #[path = "../../../latent-control-store/tests/admission/support.rs"]
 mod authority;
+#[path = "../guest_sdk/runtime.rs"]
+mod guest_runtime;
 
 pub struct Observations {
     pub starts: Mutex<Vec<latent_telemetry::ActivationObservationContext>>,
@@ -77,6 +79,7 @@ impl ActivationIdSource for Ids {
     }
 }
 pub struct Fixture {
+    _guest_runtime: guest_runtime::Runtime,
     pub manager: LocalActivationManager,
     pub backend: Arc<WasmtimeBackend>,
     _factory: WasmtimeComponentEngineFactory,
@@ -202,7 +205,9 @@ impl Fixture {
             latent_core::CapabilityId(SERVICE_INVOCATION_CAPABILITY.into()),
             PolicyId("local-calls".into()),
         )];
+        consumer.grants.extend(guest_runtime::grants());
         let mut target = deployment("callee", target_tenant, &callee, &callee_publication);
+        target.grants = guest_runtime::grants();
         target.resources = catalog
             .fetch(&packages::release(&callee))
             .await
@@ -282,23 +287,36 @@ impl Fixture {
                 minimum_call_charges: &[],
             })
             .unwrap();
+        let guest_runtime = guest_runtime::Runtime::scoped(
+            &broker,
+            &policies,
+            "tenant-a",
+            &["caller", "callee"],
+            &[caller_publication.clone(), callee_publication.clone()],
+            ("user", "alice"),
+            false,
+        );
         let definition = BindingDefinition { manifest: JsonManifestCodec::default().decode_binding(&serde_json::to_vec(&json!({
             "apiVersion":"latent.dev/v1alpha1","kind":"Binding","metadata":{"name":"local-call","tenant":"tenant-a"},
             "spec":{"consumer":{"service":"caller","contract":SERVICE_INVOCATION_CAPABILITY},"provider":{"service":"callee","contract":component::CALLEE,"route":"callee"},"mode":"isolated-local"}})).unwrap()).unwrap(),
             provider_binding_id: "installed".into(), allowed_modes: vec![BindingMode::IsolatedLocal], restriction_json: br#"{"operations":[]}"#.to_vec() };
+        let mut definitions = vec![definition];
+        definitions.extend(guest_runtime.definitions("tenant-a", &["caller", "callee"]));
+        let mut providers = vec![ConfiguredBindingProvider {
+            tenant: TenantId("tenant-a".into()),
+            service: ServiceId("callee".into()),
+            reference: provider.reference(),
+            local_deployment: Some(DeploymentId("callee".into())),
+        }];
+        providers.extend(guest_runtime.providers("tenant-a"));
         let (generation, transaction) = store.binding_version().unwrap();
         let update = store
             .prepare_binding_update(
                 generation,
                 transaction,
-                vec![definition],
+                definitions,
                 broker.clone(),
-                vec![ConfiguredBindingProvider {
-                    tenant: TenantId("tenant-a".into()),
-                    service: ServiceId("callee".into()),
-                    reference: provider.reference(),
-                    local_deployment: Some(DeploymentId("callee".into())),
-                }],
+                providers,
                 latent_control_store::bindings::BindingLimits::default(),
             )
             .await
@@ -308,6 +326,7 @@ impl Fixture {
             broker.clone(),
             store.clone(),
         ));
+        guest_runtime.install(&capabilities);
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             config,
             WasmtimeHostServices {
@@ -373,6 +392,7 @@ impl Fixture {
             .install_local_services(manager.local_service_invoker(packages::budget()).unwrap())
             .unwrap();
         Self {
+            _guest_runtime: guest_runtime,
             manager,
             backend,
             _factory: factory,

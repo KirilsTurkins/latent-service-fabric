@@ -1,8 +1,8 @@
 package export_tests_streaming_http_api
 
 import (
-	http "wit_component/lsf/streaming"
 	wit "go.bytecodealliance.org/pkg/wit/types"
+	http "wit_component/lsf/streaming"
 )
 
 func Run(which uint32, url string, _ uint64) uint64 {
@@ -10,15 +10,24 @@ func Run(which uint32, url string, _ uint64) uint64 {
 		BodyLength: wit.Some[uint64](4), BodyMediaType: wit.Some("text/plain"),
 		IdempotencyKey: wit.None[string](), TimeoutMillis: wit.Some[uint64](1000)})
 	if r.IsErr() {
-		if r.Err().Tag() == http.HttpErrorPermissionDenied { return 10 }
+		if r.Err().Tag() == http.HttpErrorPermissionDenied {
+			return 10
+		}
 		panic("unexpected streaming open error")
 	}
-	upload := r.Ok(); defer upload.Close()
-	if which == 1 { return 1 }
-	if upload.Write([]byte("data")).IsErr() { panic("streaming write failed") }
+	upload := r.Ok()
+	defer upload.Close()
+	if which == 1 {
+		return 1
+	}
+	if upload.Write([]byte("data")).IsErr() {
+		panic("streaming write failed")
+	}
 	response := upload.Finish().Ok()
 	defer response.Body.Close()
-	if which == 2 { return 2 }
+	if which == 2 {
+		return 2
+	}
 	if which == 3 {
 		chunk := response.Body.Read(4).Ok().Some()
 		defer chunk.Close()
@@ -28,10 +37,14 @@ func Run(which uint32, url string, _ uint64) uint64 {
 	var count uint64
 	for {
 		next := response.Body.Read(4).Ok()
-		if next.IsNone() { break }
+		if next.IsNone() {
+			break
+		}
 		count += uint64(len(next.Some().Bytes().Ok()))
 	}
 	response.Body.Trailers().Ok()
-	if response.Body.Trailers().Err().Tag() != http.HttpErrorInvalidState { panic("repeated trailers accepted") }
+	if response.Body.Trailers().Err().Tag() != http.HttpErrorInvalidState {
+		panic("repeated trailers accepted")
+	}
 	return count
 }

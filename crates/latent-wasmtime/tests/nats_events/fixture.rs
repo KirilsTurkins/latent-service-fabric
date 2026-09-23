@@ -98,6 +98,7 @@ impl ExecutionCancellation for Control {
 use latent_capabilities::broker::secrets::TlsCredentialScope;
 use latent_nats::{NatsConfig, NatsCredential, NatsPublisher};
 pub struct Fixture {
+    _guest_runtime: support::guest_runtime::Runtime,
     pub ceiling: latent_core::ResourceBudget,
     _factory: WasmtimeComponentEngineFactory,
     pub backend: WasmtimeBackend,
@@ -283,11 +284,13 @@ impl Fixture {
             route_generation: RouteGeneration(1),
             attributes: Metadata::new(),
         };
+        let guest_runtime =
+            support::guest_runtime::Runtime::new(&broker, &policies, &publication, component::CAP);
         let plan = broker
             .compile_invocation_plan(
                 &revision,
                 Some(&latent_core::DeploymentId("secret-deployment".into())),
-                &[CapabilityBindingSpec {
+                &guest_runtime.bindings(&[CapabilityBindingSpec {
                     definition_digest: Some(&latent_artifacts::package::artifact_blob_digest(
                         b"secret-fixture-binding-v1",
                     )),
@@ -296,7 +299,7 @@ impl Fixture {
                     policy_ids: &["p".into()],
                     provider_binding_id: "binding",
                     deployment_restriction_json: br#"{"operations":[]}"#,
-                }],
+                }]),
                 &publication,
                 &[],
                 &[],
@@ -327,9 +330,11 @@ impl Fixture {
             .prepare_ready_from_repository(catalog.clone(), key)
             .await
             .unwrap();
+        guest_runtime.install(&runtime);
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
+            _guest_runtime: guest_runtime,
             ceiling,
             _factory: factory,
             backend,
