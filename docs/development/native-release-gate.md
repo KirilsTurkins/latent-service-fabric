@@ -2,8 +2,14 @@
 
 This is the maintainer gate for [native standalone installation](../installation.md)
 and [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
-The final alpha.4 rehearsal has complete VM acceptance; protected binary
-publication remains pending.
+**Publication is on hold at the maintainer's request.** The premature
+`0.1.0-alpha.4` tag was removed on September 23, 2026, and publication run
+[35822633436](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35822633436)
+was cancelled before publication. No GitHub release or release assets existed.
+The version is reserved for completed Phase 3: finish all requirements, merge
+`development` into `release`, obtain explicit maintainer approval, and only then
+create the tag on that approved release commit and qualify/publish its artifacts.
+The earlier rehearsal remains historical evidence for its original source.
 The release maintainer chooses the final reviewed commit and new version only
 after exact-head CI. Do not move the historical source-only `0.1.0-alpha.3` tag.
 
@@ -38,14 +44,14 @@ The foundation remains unpublished and honestly reports
 scoped success does not complete #308 or change the final bundle's independent
 acceptance requirements.
 
-## Qualified alpha.4 upgrade
+## Historical compatible-upgrade rehearsal
 
-The immutable `0.1.0-alpha.4` tag identifies
+The removed `0.1.0-alpha.4` tag formerly identified
 `193d52c37635026de416feffd4a2dfd57d082451`, merged through
 [PR #537](https://github.com/KirilsTurkins/latent-service-fabric/pull/537) after
 [exact-source CI 35818046307](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35818046307) passed.
 [Nonpublishing release run 35821200294](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35821200294)
-then authenticated the final archive and passed both real VM profiles with
+then authenticated its rehearsal archive and passed both real VM profiles with
 `acceptanceComplete:true` and empty `gaps`. The
 [retained original receipts and independent verification](../evidence/native-upgrade-35821200294/README.md)
 bind the source, harness, release certificate, archive and exact rc.2 predecessor.
@@ -55,7 +61,8 @@ the rc.2-to-alpha.4 upgrade with unsupported downgrade rejection. The local
 profile also exercised non-root foreground evaluation. This proof uses current
 storage formats; it introduces no obsolete reader or compatibility shim.
 
-Protected publication remains a separate requirement. Its run rebuilds and
+The cancelled publication run must not be resumed. After the release-branch
+merge and explicit approval, a new run rebuilds and
 authenticates a new archive and reruns both profiles before maintainer approval.
 Do not use the rehearsal archive's digest as the digest of a later rebuild or
 claim that a release exists from these nonpublishing receipts.

@@ -1,12 +1,19 @@
 # Native alpha.4 compatible-upgrade rehearsal
 
 [Release run 35821200294](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35821200294)
-completed successfully on September 23, 2026 with `publish=false`. The immutable
-`0.1.0-alpha.4` tag, source and harness all identify
+completed successfully on September 23, 2026 with `publish=false`. At that time
+the `0.1.0-alpha.4` tag, source and harness all identified
 `193d52c37635026de416feffd4a2dfd57d082451`. Its
 [exact-source CI 35818046307](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35818046307)
 passed before tag selection. These are complete VM qualification results for
-this rehearsal archive; protected publication remains pending.
+this rehearsal archive.
+
+**Historical evidence:** the premature tag was subsequently removed at the
+maintainer's request. Publication run 35822633436 was cancelled before publishing;
+no release or release assets existed. The final version is reserved until all
+requirements are complete, development is merged into release and the maintainer
+approves publication. These original receipts are preserved unchanged and do
+not approve or qualify a future release commit.
 
 | Recorded input | Identity |
 | --- | --- |

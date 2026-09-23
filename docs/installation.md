@@ -1,14 +1,15 @@
 # Native standalone installation
 
-**Delivery status:** native packaging and fail-closed installer delivery for
-[#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
-The `0.1.0-alpha.4` bundle passed both clean-VM profiles under the exact
-release-workflow identity: real reboot, retained invocation, backup/recovery,
-removal/purge and an actual upgrade from the current-format rc.2 foundation.
-The local profile additionally passed rootless foreground evaluation. Both
-[authenticated VM receipts](evidence/native-upgrade-35821200294/README.md)
-report complete acceptance with no gaps. Protected publication remains pending;
-the qualified rehearsal archive is not a published binary release.
+**Availability:** prebuilt native publication is on hold. The premature
+`0.1.0-alpha.4` tag has been removed and its publication run cancelled; no
+binary release was published. Use the [source walkthrough](start/first-node.md)
+to try LSF while the installation release is being completed and reviewed.
+
+The [historical native rehearsal](evidence/native-upgrade-35821200294/README.md)
+passed rootless evaluation and both clean-VM profiles, including reboot,
+retained invocation, backup/recovery, removal and a compatible upgrade.
+Those receipts qualify only their recorded source and archive. A future
+approved release will receive its own build, checks and publication evidence.
 The historical
 [`0.1.0-alpha.3` release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3)
 remains source-only. Do not install an unsigned candidate as an authenticated
