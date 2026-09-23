@@ -111,6 +111,9 @@ The final gate must pass all ten actual provider/ownership cases, covering
 buffered/streaming HTTP, blobs, secrets, events, local service invocation,
 randomness and metrics. Owners must release normally and on failure, denial,
 budget exhaustion and cancellation without retrying uncertain effects.
+The actual secret component observes zeroization of its owned bytes, unchanged
+application copies, idempotent close and rejection of post-close access; these
+checks do not rely only on the supplementary ownership model.
 
 The signed real node must reject unsigned publication, enforce source-bound
 builder approval, execute valid/invalid tutorials and allowed/denied HTTP,
