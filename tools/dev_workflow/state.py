@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import errno
 import os
 from pathlib import Path
 import secrets
@@ -43,7 +44,7 @@ def atomic(root: Path, name: str, value: dict) -> None:
 
 
 @contextmanager
-def lock(root: Path, name: str = "controller.lock"):
+def lock(root: Path, name: str = "controller.lock", *, timeout: float = 0):
     paths.private_root(root)
     paths.relative(name)
     require("/" not in name, "lock-must-be-direct-child")
@@ -56,12 +57,21 @@ def lock(root: Path, name: str = "controller.lock"):
     flags = os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
     descriptor = os.open(path, flags)
     try:
-        if os.name == "nt":
-            import msvcrt
-            msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
-        else:
-            import fcntl
-            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        require(0 <= timeout <= 1, "controller-lock-wait-limit")
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError as error:
+                if error.errno not in {errno.EACCES, errno.EAGAIN} or time.monotonic() >= deadline:
+                    raise
+                time.sleep(0.01)
         yield
     finally:
         os.close(descriptor)

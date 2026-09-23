@@ -1168,7 +1168,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_build_process"
+      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_build_process"
     },
     ".github/workflows/developer-tools.yml:windows:Install exact hashed frontend build inputs": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -3410,12 +3410,20 @@
       "Recovery.test_unknown_expired_wrong_tenant_and_conflicts_never_release_intent",
       "ScenarioReports.test_arbitrary_candidate_policy_is_not_runtime_release_approval",
       "ScenarioReports.test_missing_qualification_never_passes",
+      "ScenarioReports.test_node_declared_error_payload_is_asserted_as_exact_bytes",
       "ScenarioReports.test_portable_fixture_identity_and_kind_are_checked_before_execution",
       "ScenarioReports.test_portable_required_linux_checks_fail_without_invoking",
       "Transports.test_actual_helper_digest_and_parent_checks_precede_execution",
       "Transports.test_helper_digest_is_checked_before_hello",
       "Transports.test_ssh_identity_options_and_constant_command",
       "WslOwnership.test_recovery_observes_original_registration_and_user_nonce_without_reimport"
+    ],
+    "tools/tests/test_dev_watch.py": [
+      "BuildCancellation.test_exact_cancellation_and_workspace_stop_reap_real_compiler_descendants",
+      "WatchTransitions.test_focused_post_deploy_failure_is_visible_and_never_rolls_back",
+      "WatchTransitions.test_new_edit_cancels_only_the_original_build_identity_once",
+      "WatchTransitions.test_superseded_build_cannot_publish_or_run_tests",
+      "WatchTransitions.test_uncertain_deployment_stops_watch_without_retry"
     ],
     "tools/tests/test_dev_workflow.py": [
       "Documents.test_duplicate_and_unknown_fields_are_rejected",
@@ -5714,6 +5722,7 @@
     "tools/tests/test_deterministic_tests.py",
     "tools/tests/test_dev_build_cache.py",
     "tools/tests/test_dev_contracts.py",
+    "tools/tests/test_dev_watch.py",
     "tools/tests/test_dev_workflow.py",
     "tools/tests/test_docs_pages.py",
     "tools/tests/test_echo_cli_package.py",
@@ -5928,6 +5937,6 @@
     ".github/workflows/rust-capsule-authoring.yml": "a69b8d1ac076990c1e197203b807f306005df327bc1b4c6fee87b6b40ba199fb",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/developer-tools.yml": "66d0a78493ab9927715fea515f80dcf52ef5f51a1f4592bb3c78a2ec0bf88bac"
+    ".github/workflows/developer-tools.yml": "1f6e24c3853d689525696653da646df1db002e4754cd4d8c0acd54a4d42a8d3d"
   }
 }

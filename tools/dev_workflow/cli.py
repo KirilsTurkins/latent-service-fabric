@@ -54,7 +54,7 @@ def parser() -> argparse.ArgumentParser:
     for name in ("wsl-recover", "wsl-purge"):
         command = dev.add_parser(name)
         command.add_argument("--confirm-distribution", required=True)
-    for name in ("install", "up", "status", "logs", "down", "purge", "build", "deploy", "recover", "invoke", "test"):
+    for name in ("install", "up", "status", "logs", "down", "purge", "build", "build-status", "deploy", "recover", "invoke", "test"):
         command = dev.add_parser(name)
         command.add_argument("--workspace", required=True)
         if name == "install":
@@ -65,6 +65,7 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--tool-root", help="verified guest tool inventory directory")
         if name == "up":
             command.add_argument("--watch", action="store_true")
+            command.add_argument("--test-select", action="append", default=[], help="focused post-deploy cases in a test- workspace")
         if name == "purge":
             command.add_argument("--confirm-workspace", required=True)
         if name == "invoke":
@@ -102,75 +103,17 @@ def _backend(root: Path, name: str):
     return workspace, backend.Backend(config, name, workspace)
 
 
-def _build(workspace: Path, connection, source: Path, tool_root: str, *, editor_diagnostics: bool = False) -> dict:
-    from . import diagnostics
-    require(source is not None and tool_root is not None, "explicit-project-and-tool-root-required")
-    source = source.absolute()
-    descriptor, _raw_identity = project.load(source)
-    selected_trust = state.load(workspace, "trust.json")
-    identity = project.trust_identity(descriptor)
-    require(selected_trust == {"project": str(source), "recipe": identity}, "workspace-recipe-trust-required")
-    record, content = snapshot.observe(source, descriptor["inputRoots"], tuple(descriptor["exclude"]))
-    connection.call("snapshot", {"snapshot": record, "project": descriptor, "trustedRecipe": identity,
-                    "content": {name: base64.b64encode(raw).decode() for name, raw in content.items()}}, timeout=120)
-    try:
-        result = connection.call("build", {"toolRoot": tool_root}, timeout=descriptor["build"]["timeoutSeconds"] + 15)
-    except DevError as error:
-        error.diagnostics = diagnostics.for_host(error.diagnostics, source)
-        if editor_diagnostics:
-            for line in diagnostics.editor_lines(error.diagnostics):
-                print(line, file=sys.stderr)
-        raise
-    result["diagnostics"] = diagnostics.for_host(result.get("diagnostics", []), source)
-    if editor_diagnostics:
-        for line in diagnostics.editor_lines(result["diagnostics"]):
-            print(line, file=sys.stderr)
-    return result
+def _build(workspace: Path, connection, source: Path, tool_root: str, *, editor_diagnostics: bool = False,
+           selected: tuple[str, str] | None = None) -> dict:
+    from .build_client import run
+    return run(workspace, connection, source, tool_root, editor_diagnostics=editor_diagnostics, selected=selected)
 
 
 def watch(workspace: Path, connection, source: Path, tool_root: str, *, editor_diagnostics: bool = False,
-          check_session=lambda: None) -> dict:
-    from tools.build_process_signals import owned_cancellation
-    require(source is not None and tool_root is not None, "watch-project-and-tools-required")
-    source = source.absolute()
-    last_observed = None
-    # One synchronous build/mutation at a time; only the latest observed snapshot
-    # is pending. A mutation already dispatched is never cancelled into a replay.
-    with owned_cancellation() as cancellation:
-        try:
-            while True:
-                cancellation.check()
-                check_session()
-                observed = connection.call("status", {})
-                if observed.get("state") != "ready":
-                    return observed
-                descriptor, _identity = project.load(source)
-                record, _content = snapshot.observe(source, descriptor["inputRoots"], tuple(descriptor["exclude"]))
-                current = record["identity"]
-                if current != last_observed:
-                    # A second coherent observation implements a finite debounce.
-                    time.sleep(0.2)
-                    newer, _content = snapshot.observe(source, descriptor["inputRoots"], tuple(descriptor["exclude"]))
-                    if newer["identity"] != current:
-                        continue
-                    last_observed = current
-                    try:
-                        with state.lock(workspace):
-                            built = _build(workspace, connection, source, tool_root, editor_diagnostics=editor_diagnostics)
-                            deployed = connection.call("deploy", {})
-                        emit({"event": "deployed", "build": built, "deployment": deployed})
-                    except DevError as error:
-                        emit({"event": "edit-failed", "source": current, "code": error.code,
-                              "uncertain": error.uncertain, "lastGoodRetained": not error.uncertain,
-                              "diagnostics": error.diagnostics})
-                        if error.uncertain:
-                            raise
-                time.sleep(0.25)
-        finally:
-            # A failed transport preserves uncertainty; stop is never inferred.
-            with cancellation.defer():
-                stopped = connection.call("down", {})
-                emit({"event": "watch-stopped", "cleanup": stopped})
+          check_session=lambda: None, test_selection=None) -> dict:
+    from .watch import run
+    return run(workspace, connection, source, tool_root, build=_build, emit=emit,
+               editor_diagnostics=editor_diagnostics, check_session=check_session, test_selection=test_selection)
 
 
 def foreground_up(args, workspace: Path, connection) -> dict:
@@ -179,6 +122,9 @@ def foreground_up(args, workspace: Path, connection) -> dict:
     require(not (workspace / "purged.json").exists(), "workspace-purged-create-new-workspace")
     if args.watch:
         require(args.project is not None and args.tool_root is not None, "watch-project-and-tools-required")
+        require(not args.test_select or args.workspace.startswith("test-"), "focused-watch-tests-require-test-workspace")
+    else:
+        require(not getattr(args, "test_select", []), "test-selection-requires-watch")
     with state.lock(workspace, "foreground.lock"), owned_cancellation() as cancellation, lease(connection) as check:
         try:
             with state.lock(workspace):
@@ -186,7 +132,7 @@ def foreground_up(args, workspace: Path, connection) -> dict:
             emit({"event": "ready", "workspace": args.workspace, "result": ready})
             if args.watch:
                 return watch(workspace, connection, args.project, args.tool_root,
-                             editor_diagnostics=args.editor_diagnostics, check_session=check)
+                             editor_diagnostics=args.editor_diagnostics, check_session=check, test_selection=args.test_select)
             while True:
                 cancellation.check()
                 check()
@@ -287,6 +233,8 @@ def dispatch(args) -> dict:
     workspace, connection = _backend(root, args.workspace)
     if args.command == "up":
         return foreground_up(args, workspace, connection)
+    if args.command in {"down", "status", "logs", "build-status"} and not (workspace / "purged.json").exists():
+        return connection.call(args.command, {})
     with state.lock(workspace):
         if (workspace / "purged.json").exists():
             require(args.command in {"purge", "status"}, "workspace-purged-create-new-workspace")
@@ -316,7 +264,7 @@ def dispatch(args) -> dict:
             return connection.call("invoke", {"service": args.service, "contract": args.contract, "function": args.function,
                 "mediaType": args.media_type, "input": base64.b64encode(paths.read(args.input.absolute().parent, args.input.name, 1048576)).decode()})
         if args.command == "test":
-            return connection.call("test", {"environment": args.environment, "selection": args.select})
+            return connection.call("test", {"environment": args.environment, "selection": args.select}, timeout=315)
         return connection.call(args.command, {})
 
 

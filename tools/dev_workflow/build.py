@@ -39,7 +39,7 @@ def compile_recipe(root: Path, source: Path, descriptor: dict, record: dict, too
     return observed
 
 
-def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trusted: str, cli: Path) -> dict:
+def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trusted: str, cli: Path, control=None) -> dict:
     project.validate(descriptor)
     require(trusted == project.trust_identity(descriptor), "workspace-recipe-trust-required")
     record = decode(paths.read(source, "snapshot.json"))
@@ -59,8 +59,15 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
         stack.enter_context(paths.opened(cli.parent, cli.name))
         packager = paths.digest_file(cli.parent, cli.name, 256 * 1024 * 1024)[0]
         attempt, working, receipt = build_cache.allocate(root, source, record, descriptor, trusted, host, packager)
-        check = build_cache.monitor(attempt)
+        if control is not None:
+            control.attach(attempt)
+        observe_usage = build_cache.monitor(attempt)
+        def check():
+            if control is not None:
+                control.check()
+            observe_usage()
         try:
+            check()
             if receipt is None:
                 build_cache.transition(attempt, "running")
                 observed = compile_recipe(root, working, descriptor, record, tools, deadline, check)
@@ -80,6 +87,7 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
             unchanged(working, descriptor, record)
             unchanged(source, descriptor, record)
             build_cache.usage(attempt)
+            check()
             build_cache.transition(attempt, "complete")
             state.atomic(root, "last-build.json", {"sourceDirectory": str(working), "receipt": receipt})
             return receipt

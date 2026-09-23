@@ -62,6 +62,16 @@ compilers remain separate, explicitly selected build inputs.
   afterward. Recipes cannot silently supply an already assembled package.
   Failed builds preserve the accepted build and deployment. Recovery retains the
   exact attempt alongside the original publication/deployment operation identity.
+- Watch checks source and recipe changes during compilation and sends cancellation
+  for that exact build identity. The Linux owner confirms child reaping before
+  releasing the attempt. A final source check precedes deployment. `down`,
+  `status`, `logs` and `build-status` remain available while a build holds the
+  command lock. Interrupted transport requires an explicit cleanup observation;
+  controller restart never adopts or signals an old numeric PID.
+  Use `up --watch --test-select CASE` in a `test-` workspace for focused node
+  scenarios after each confirmed deployment. Test failure is a separate event;
+  it leaves that deployment selected and does not trigger rollback. Without a
+  selection, watch reports that no post-deploy tests were selected.
 - `down` addresses the workspace supervisor and retains data. `purge` requires
   the exact workspace name and delegates runtime removal to the existing
   installation owner before removing owned snapshots.

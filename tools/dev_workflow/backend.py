@@ -99,7 +99,7 @@ class Backend:
         self.config, self.workspace, self.cwd = validate(config), workspace, cwd
         self.negotiated = False
 
-    def call(self, operation: str, arguments: dict, *, timeout: int = 60) -> dict:
+    def call(self, operation: str, arguments: dict, *, timeout: int = 60, check=None) -> dict:
         if self.config["kind"] == "wsl2":
             from .wsl import verify_workspace
             verify_workspace(self.cwd.parent, self.workspace, self.config)
@@ -109,7 +109,7 @@ class Backend:
         request = protocol.request(operation, self.workspace, arguments)
         try:
             completed = process.run(command(self.config), self.cwd, timeout=timeout,
-                                    stdin=encode(request), maximum=4 * 1024 * 1024)
+                                    stdin=encode(request), maximum=4 * 1024 * 1024, check=check)
             require(completed.returncode != 126, "helper-identity-mismatch-before-execution")
             require(completed.returncode == 0, "backend-helper-exit")
             return protocol.result(decode(completed.stdout, 4 * 1024 * 1024), request)

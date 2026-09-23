@@ -8,7 +8,7 @@ import time
 import xml.etree.ElementTree as ET
 
 from . import paths
-from .common import decode, digest, encode, identifier, integer, members, require
+from .common import MAX_DOCUMENT, decode, digest, encode, identifier, integer, members, require
 
 OUTCOMES = {"success", "declared-error", "platform-failure", "transport-failure"}
 NODE_ONLY = {"authentication", "deployment", "restart", "pressure", "compiler-isolation", "protected-files", "native-cache"}
@@ -18,6 +18,7 @@ PORTABLE = {"context", "log", "clock", "random", "metrics", "buffered-http-fixtu
 def validate(value: dict, environment: str) -> dict:
     members(value, {"schemaVersion", "scenarios"})
     require(value["schemaVersion"] == "latent.dev.scenarios.v1" and environment in {"node", "portable"}, "scenario-environment")
+    require(len(encode(value)) <= MAX_DOCUMENT, "scenario-document-byte-limit")
     require(isinstance(value["scenarios"], list) and 0 < len(value["scenarios"]) <= 128, "scenario-count-limit")
     names = set()
     fixtures_by_id = {}
@@ -79,9 +80,15 @@ def run(document: dict, root: Path, environment: str, selection: list[str], adap
                  paths.read(root, case["expect"]["payload"], 1048576) if "payload" in case["expect"] else None)
                 for case in selected]
     results = []
+    deadline = time.monotonic() + 300
     required_failed = False
     fixtures = initialized_fixtures or set()
     for case, raw, expected_payload in prepared:
+        remaining = int((deadline - time.monotonic()) * 1000)
+        if remaining <= 0:
+            results.append({"id": case["id"], "status": "failed", "required": case["required"], "reason": "test-run-deadline"})
+            required_failed = True
+            continue
         missing = set(case["requires"]) - supported
         if "execution" in case and not execution_controls:
             missing.add("per-invocation-execution-controls")
@@ -93,10 +100,11 @@ def run(document: dict, root: Path, environment: str, selection: list[str], adap
                             "missing": sorted(missing), "unavailableFixtures": sorted(missing_fixtures)})
             required_failed |= case["required"]
             continue
-        result = adapter(case, raw)
+        result = adapter({**case, "timeoutMillis": min(case["timeoutMillis"], remaining)}, raw)
         matched = result.get("category") == case["expect"]["category"] and result.get("outcomeKnown") is True
         if expected_payload is not None:
-            payload = result.get("data", {}).get("payload", {})
+            data = result.get("data", {})
+            payload = data.get("payload") or (data.get("declaredError") or {}).get("payload", {})
             try:
                 actual = base64.b64decode(payload.get("data", ""), validate=True)
             except (ValueError, TypeError):

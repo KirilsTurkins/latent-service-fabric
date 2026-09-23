@@ -347,6 +347,24 @@ class EditorDiagnostics(unittest.TestCase):
 
 
 class ScenarioReports(unittest.TestCase):
+    def test_node_declared_error_payload_is_asserted_as_exact_bytes(self):
+        import base64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            raw = b'[{"err":"controlled application error"}]'
+            paths.write_new(root / "input.json", b'[]')
+            paths.write_new(root / "expected.json", raw)
+            case = {"id": "application-error", "service": "examples/echo", "contract": "examples:echo/api@0.1.0",
+                "function": "echo", "input": "input.json", "mediaType": "application/vnd.latent.wit-values.v1+json",
+                "expect": {"category": "declared-error", "payload": "expected.json"}, "requires": [],
+                "timeoutMillis": 1000, "required": True, "fixtures": []}
+            result = {"category": "declared-error", "outcomeKnown": True, "data": {"payload": None,
+                "declaredError": {"payload": {"encoding": "base64", "data": base64.b64encode(raw).decode(),
+                    "byteLength": str(len(raw)), "mediaType": case["mediaType"]}}}}
+            report = scenarios.run({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": [case]},
+                root, "node", [], lambda *_: result, {}, supported=set())
+            self.assertTrue(report["passed"])
+
     def test_portable_fixture_identity_and_kind_are_checked_before_execution(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

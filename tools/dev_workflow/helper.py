@@ -153,16 +153,31 @@ def dispatch(request: dict) -> dict:
         members(arguments, set())
         return protocol.hello()
     root = state.workspace(root_directory(), request["workspace"], create=operation in {"install", "asset-begin", "purge"})
+    from . import build_control
+    if operation == "build-status":
+        members(arguments, set())
+        return build_control.status(root)
+    if operation == "cancel-build":
+        members(arguments, {"buildId", "reason"})
+        return build_control.cancel(root, arguments["buildId"], arguments["reason"])
     if operation in {"status", "logs", "down", "up"}:
         from . import service
         members(arguments, set())
         if operation == "up":
             with state.lock(root):
                 return service.start(root, Path(sys.argv[0]).absolute())
+        if operation == "down":
+            build_control.stop(root)
         try:
-            return service.request(root, operation)
+            result = service.request(root, operation)
         except (FileNotFoundError, ConnectionRefusedError):
-            return service.disconnected(root)
+            result = service.disconnected(root)
+        if operation == "down":
+            result["build"] = build_control.wait_stopped(root)
+        if operation == "status":
+            from .workflow_status import observe
+            result["workflow"] = observe(root)
+        return result
     with state.lock(root):
         if operation.startswith("asset-"):
             from .assets import receive
@@ -176,16 +191,20 @@ def dispatch(request: dict) -> dict:
         if operation == "snapshot":
             return sync(root, arguments)
         if operation == "build":
-            members(arguments, {"toolRoot"})
+            members(arguments, {"toolRoot", "buildId"})
             saved = state.load(root, "project.json")
-            return build.execute(root, Path(saved["source"]), saved["descriptor"], Path(arguments["toolRoot"]),
-                                 trusted=saved["trust"], cli=installation(root)[1] / "bin/latent")
+            with build_control.session(root, arguments["buildId"]) as control:
+                return build.execute(root, Path(saved["source"]), saved["descriptor"], Path(arguments["toolRoot"]),
+                                     trusted=saved["trust"], cli=installation(root)[1] / "bin/latent", control=control)
         if operation == "deploy":
             members(arguments, set())
             return deploy(root)
         if operation == "recover":
             members(arguments, set())
             cli, journal = client(root)
+            if journal.read()["pending"] is None:
+                from .workflow_status import observe
+                return {"state": "no-pending-operation", "workflow": observe(root)}
             return journal.recover(cli.lookup)
         if operation == "purge":
             from .cleanup import purge
@@ -235,7 +254,7 @@ def test(root: Path, arguments: dict) -> dict:
         return journal.execute("invoke", {"case": case["id"], "inputSha256": digest(raw)}, lambda activation:
             cli.call("invoke", "--service", case["service"], "--contract", case["contract"], "--function", case["function"],
                 "--input", path, "--media-type", case["mediaType"], "--activation-id", activation,
-                "--rpc-timeout-ms", str(case["timeoutMillis"])))
+                "--rpc-timeout-ms", str(case["timeoutMillis"]), timeout=case["timeoutMillis"] / 1000 + 5))
     layout, current = installation(root)
     import platform
     node = decode(paths.read(layout.node.parent, layout.node.name))

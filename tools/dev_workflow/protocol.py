@@ -8,7 +8,8 @@ import sys
 from .common import PROTOCOL, HOST_ABI, members, require
 
 FEATURES = frozenset({"doctor", "install", "up", "status", "logs", "down", "purge", "snapshot",
-                      "build", "deploy", "recover", "invoke", "test", "asset-begin", "asset-chunk", "asset-finish"})
+                      "build", "build-status", "cancel-build", "deploy", "recover", "invoke", "test",
+                      "asset-begin", "asset-chunk", "asset-finish"})
 
 
 def hello() -> dict:
