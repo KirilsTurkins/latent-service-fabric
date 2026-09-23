@@ -22,7 +22,7 @@
     "verifiedGitBlobs": 4361,
     "archiveSha256": "1131053e01fce7c93fb2dfd69b0018cdc2fb5cfbe9de94fab4eecfcf239db312",
     "excluded": [
-      "benchmarks/ (retained historical evidence, no compiler inputs)"
+      "benchmarks/ (not required by the selected CLI/node, protected-file and blob-storage builds; other test harnesses may require its case manifests)"
     ],
     "buildProfile": "dev, debug=0, incremental=0, locked, offline",
     "protectedFileCases": 14,
@@ -314,11 +314,6 @@
       "sha256": "e804fdd815de350057c0b7df40b2f238e88d75591d37861511184622745f06d5"
     },
     {
-      "path": "local/durable-policy-cli.stderr",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
       "path": "local/durable-policy-cli.stdout",
       "bytes": 186,
       "sha256": "eedf708576651b57c474991cfcc547ff2e551afd7f7e1e9630e84bd7ed6b17e3"
@@ -329,24 +324,9 @@
       "sha256": "2634d6bec047c4b96747f1a3f5477692a2fcb9c070b23938b5095ce219b2e697"
     },
     {
-      "path": "local/fresh-cli-node-build.stdout",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": "local/fresh-echo-capsule.stderr",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
       "path": "local/fresh-echo-capsule.stdout",
       "bytes": 258,
       "sha256": "d5102bb73e6b21913e1ac822b24f1d80fa0dfa980f07e741593a3f65aaf9c38d"
-    },
-    {
-      "path": "local/printed-first-node-walkthrough.stderr",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
       "path": "local/printed-first-node-walkthrough.stdout",
@@ -383,5 +363,28 @@
     "Linux x86_64 T0/T1; no T2 guest-process containment or production certification.",
     "Human documentation review and Pages deployment remain separate.",
     "No runtime tag, release, or release-branch promotion authorized or performed."
-  ]
+  ],
+  "emptyOutputs": [
+    {
+      "path": "local/durable-policy-cli.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "local/fresh-cli-node-build.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "local/fresh-echo-capsule.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "local/printed-first-node-walkthrough.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "emptyOutputRepresentation": "Empty process streams are represented by zero bytes and the empty SHA-256, without empty repository files."
 }

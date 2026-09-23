@@ -29,7 +29,8 @@ Development `8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21` passed
 [full CI 35879906121](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35879906121).
 The [execution review](evidence/feature-validation-2026-09-23/review.json)
 records the source tree, successful jobs, intentionally skipped steps, original
-artifact identities and hashes of 36 unmodified receipts and local outputs.
+artifact identities, hashes of 32 unmodified receipt/output files, and four
+verified empty process streams.
 Every registered active libtest name was found in the successful workspace log.
 Both custom compiler harness markers and the complete supervisor case coverage
 were independently checked with the maintained discovery validator.
@@ -58,7 +59,7 @@ entry points whose parent workflows retain the outcome. An absent individual
 libtest line is not treated as either an executed pass or a feature failure.
 
 The local source copy verified 4,361 Git blobs against the selected commit and
-excluded only retained benchmark evidence. CLI and node builds used the locked
+excluded the benchmark tree for these selected builds. CLI and node builds used the locked
 dependency graph offline with fresh target outputs. No SDK authoring source or
 ticket was changed by this review.
 
