@@ -2785,7 +2785,7 @@
       "sha256": "497409dd0d4c072b12a64c84e9ef1dbc804eb888c62ccae6fb8a27b9e64e97ce"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "eb8215c7245ec3cdce64171d1f922bae0f8f169c55b748ea886e3b3aa3d55a4e"
+      "sha256": "b053a9d5eabf57f4b33d3bbe58558b0642cfdb5ad29cc829b9d2601e97f22fd7"
     },
     "tools/qualify_typescript_capsules.py": {
       "sha256": "9ebcf28e77e5fa9bca9018d8e15afffac9e075427315ad334fa7fc7a8d4b4e44"
@@ -3494,8 +3494,11 @@
       "GoAuthoringTests.test_every_editable_template_has_exact_runtime_imports_and_captured_sdk",
       "GoAuthoringTests.test_every_sdk_fixture_is_an_editable_source_project_with_exact_wit",
       "GoAuthoringTests.test_existing_source_and_overlapping_build_outputs_are_never_overwritten",
+      "GoAuthoringTests.test_generated_resource_owners_have_no_gc_effects_and_reject_shape_drift",
       "GoAuthoringTests.test_guide_and_selectable_examples_cover_the_printed_workflow",
+      "GoAuthoringTests.test_readme_entrypoints_match_every_typed_capability_facade",
       "GoAuthoringTests.test_sdk_aliases_follow_generated_identity_without_exposing_resource_constructors",
+      "GoAuthoringTests.test_sdk_builder_reuses_captured_tools_without_rebuilding_and_rejects_mutation",
       "GoAuthoringTests.test_sdk_mutation_does_not_silently_become_a_reviewed_input",
       "GoAuthoringTests.test_source_and_wit_remain_editable_but_budget_types_are_closed"
     ],

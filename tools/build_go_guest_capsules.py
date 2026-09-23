@@ -9,11 +9,11 @@ import sys
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.build_observation import build_environment
+from tools.build_observation import build_environment, file_identity
 from tools.go_capsule_project import ROOT, RUNTIME_IMPORTS, create
 from tools.go_capsule_build import build
 from tools.rust_capsule_build import Commands
-from tools.rust_capsule_project import fresh, read_file, snapshot, write_json
+from tools.rust_capsule_project import checked_path, fresh, read_file, snapshot, write_json
 
 NAMES = ("http", "streaming", "blob", "secrets", "events", "random", "metrics", "service", "callee")
 
@@ -49,7 +49,19 @@ def project(directory: Path, name: str) -> Path:
     return directory
 
 
-def compile_all(output: Path) -> None:
+def packaging_tools(commands, target: Path, contracts_tool: Path | None, packager: Path | None):
+    if (contracts_tool is None) != (packager is None):
+        raise ValueError("provide both captured packaging executables")
+    if contracts_tool is None:
+        commands.run("packaging-tools", "cargo", "--config", ROOT / ".cargo/managed-guest.toml", "build", "--locked", "-p", "latent-packaging",
+                     "--example", "package", "--example", "capsule_contracts")
+        contracts_tool, packager = (target / "debug/examples/capsule_contracts", target / "debug/examples/package")
+    return checked_path(contracts_tool), checked_path(packager)
+
+
+def compile_all(output: Path, *, contracts_tool: Path | None = None, packager: Path | None = None) -> None:
+    if (contracts_tool is None) != (packager is None):
+        raise ValueError("provide both captured packaging executables")
     output = output.absolute()
     if output == ROOT or ROOT in output.parents:
         raise ValueError("Go SDK fixtures require an independent output directory")
@@ -59,14 +71,17 @@ def compile_all(output: Path) -> None:
     commands.environment.update(CARGO_TARGET_DIR=str(target), CARGO_INCREMENTAL="0", CARGO_PROFILE_DEV_DEBUG="0")
     report = {"language": "go", "status": "failed", "runtimeQualified": False, "builds": []}
     try:
-        commands.run("packaging-tools", "cargo", "--config", ROOT / ".cargo/managed-guest.toml", "build", "--locked", "-p", "latent-packaging",
-                     "--example", "package", "--example", "capsule_contracts")
+        contracts_tool, packager = packaging_tools(commands, target, contracts_tool, packager)
+        paths = {"contracts-tool": contracts_tool, "packager": packager}
+        report["packagingTools"] = {name: file_identity(path, name) for name, path in paths.items()}
         (output / "projects").mkdir()
         for name in NAMES:
             source = project(output / "projects" / name, name)
-            build(source, output / ("go-" + name), target / "debug/examples/capsule_contracts",
-                  target / "debug/examples/package", "https://github.com/KirilsTurkins/latent-service-fabric")
+            build(source, output / ("go-" + name), contracts_tool,
+                  packager, "https://github.com/KirilsTurkins/latent-service-fabric")
             report["builds"].append(name)
+        if {name: file_identity(path, name) for name, path in paths.items()} != report["packagingTools"]:
+            raise ValueError("Go SDK packaging executables changed")
         report["status"] = "built-execution-required"
     finally:
         report["commands"] = commands.records
@@ -76,4 +91,7 @@ def compile_all(output: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    compile_all(parser.parse_args().output)
+    parser.add_argument("--contracts-tool", type=Path)
+    parser.add_argument("--packager", type=Path)
+    args = parser.parse_args()
+    compile_all(args.output, contracts_tool=args.contracts_tool, packager=args.packager)

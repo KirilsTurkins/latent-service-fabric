@@ -48,24 +48,23 @@ async fn typed_service_outcomes_use_node_admission_and_reused_cells() {
                 request.input = serde_json::to_vec(&serde_json::json!([which, "", "0"])).unwrap();
                 let started = std::time::Instant::now();
                 let receipt = f.manager.start(request).unwrap().await;
+                let terminals = f.observations.terminals.lock().unwrap().clone();
+                let starts = f.observations.starts.lock().unwrap().clone();
                 eprintln!(
-                    "service timing language={language} permit={permit} case={index} elapsed={:?}; caller/child terminals: {:?}",
-                    started.elapsed(),
-                    f.observations.terminals.lock().unwrap()
+                    "service timing language={language} permit={permit} case={index} elapsed={:?}; caller/child starts: {starts:?}; terminals: {terminals:?}",
+                    started.elapsed()
                 );
                 let ActivationOutcome::Succeeded(success) = receipt.outcome else {
                     panic!(
-                        "{:?}; caller/child terminals: {:?}",
-                        receipt.outcome,
-                        f.observations.terminals.lock().unwrap()
+                        "{:?}; caller/child starts: {starts:?}; terminals: {terminals:?}",
+                        receipt.outcome
                     )
                 };
                 let result: Vec<String> = serde_json::from_slice(&success.output).unwrap();
                 assert_eq!(
                     result,
                     [if permit { expected } else { 11 }.to_string()],
-                    "caller/child terminals: {:?}",
-                    f.observations.terminals.lock().unwrap()
+                    "caller/child terminals: {terminals:?}"
                 );
                 assert_eq!(success.consumption.child_calls, u32::from(permit));
                 f.idle().await;
