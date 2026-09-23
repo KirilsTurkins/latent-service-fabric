@@ -84,7 +84,8 @@ def new_output(path: Path, root: Path = ROOT) -> Path:
     return output
 
 
-def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str) -> dict:
+def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str,
+          bootstrap_dependencies: bool = False) -> dict:
     config = tomllib.loads((ROOT / 'tools/toolchain.toml').read_text())
     sources = source_inputs(ROOT)
     report = {'formatVersion': 1, 'candidate': 'teavm-0.15.0-c',
@@ -148,8 +149,19 @@ def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str) ->
             except ProbeFailure as error:
                 report['stages'][-1].update(status='failed', error=str(error))
                 raise
-        run('java-source-test', [gradle, '--no-daemon', 'probeJvm'])
+        verification = ['--write-verification-metadata', 'sha256'] if bootstrap_dependencies else []
+        if not bootstrap_dependencies and not (project / 'gradle/verification-metadata.xml').is_file():
+            raise ProbeFailure('missing-reviewed-dependency-metadata')
+        run('java-source-test', [gradle, '--no-daemon', *verification, 'probeJvm'])
         run('java-to-c', [gradle, '--no-daemon', 'generateC'])
+        from dependencies import retain
+        try:
+            dependencies = retain(output / 'gradle-home/caches/modules-2/files-2.1',
+                                  project, output, bootstrap_dependencies)
+        except (ValueError, OSError) as error:
+            raise ProbeFailure(f'dependency-evidence: {error}') from error
+        report['dependencies'] = dependencies
+        report['dependencyCompleteness'] = dependencies['status']
         generated = project / 'build/teavm-c/c'
         if not (generated / 'all.c').is_file():
             raise ProbeFailure('missing-generated-c-entrypoint')
@@ -158,10 +170,10 @@ def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str) ->
         run('wit-bindings', [bindgen, 'c', str(project / 'wit'), '--world', 'capsule',
                             '--rename-world', 'probe', '--out-dir', str(output / 'bindings')])
         core = output / 'probe.core.wasm'
-        run('c-to-wasm', [zig, 'cc', '-target', 'wasm32-wasi', '-O2',
+        run('c-to-wasm', [zig, 'cc', '-target', 'wasm32-wasi', '-std=c11', '-O2',
                          '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory',
                          '-Wl,-z,stack-size=65536', '-I', str(output / 'bindings'),
-                         '-I', str(generated), str(generated / 'all.c'),
+                         '-iquote', str(generated), str(generated / 'all.c'),
                          str(project / 'bridge.c'), str(output / 'bindings/probe.c'),
                          str(output / 'bindings/probe_component_type.o'), '-o', str(core)])
         component = output / 'probe.wasm'
@@ -184,13 +196,16 @@ def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str) ->
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--bootstrap-dependencies', action='store_true',
+                        help='write unreviewed candidates only inside the fresh output directory')
     parser.add_argument('--gradle', default='gradle')
     parser.add_argument('--zig', default='zig')
     parser.add_argument('--wit-bindgen', default='wit-bindgen')
     parser.add_argument('--wasm-tools', default='wasm-tools')
     args = parser.parse_args()
     try:
-        report = probe(new_output(args.output), args.gradle, args.zig, args.wit_bindgen, args.wasm_tools)
+        report = probe(new_output(args.output), args.gradle, args.zig, args.wit_bindgen, args.wasm_tools,
+                       args.bootstrap_dependencies)
     except (OSError, ValueError) as error:
         print(f'Java feasibility preflight failed: {error}', file=sys.stderr)
         return 1

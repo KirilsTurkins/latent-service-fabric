@@ -27,7 +27,11 @@ jobs:
         with:
           persist-credentials: false
       - name: Retain the exact checked-out source revision
-        run: git archive --format=tar.gz -o "$RUNNER_TEMP/java-feasibility-source.tar.gz" HEAD
+        run: |
+          git archive --format=tar.gz -o "$RUNNER_TEMP/java-feasibility-source.tar.gz" HEAD \
+            sdk/java-guest .github/workflows/java-guest-feasibility.yml \
+            tools \
+            wit/platform crates/latent-wasmtime/src/surface.rs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: java-feasibility-source-${{ github.sha }}
@@ -59,7 +63,7 @@ jobs:
           cargo install --locked wit-bindgen-cli --version 0.62.0
           cargo install --locked wasm-tools --version 1.254.0
       - name: Compile real Java sources and retain the first incompatible stage
-        run: python3 sdk/java-guest/tools/feasibility.py --output "$RUNNER_TEMP/java-guest-feasibility"
+        run: python3 sdk/java-guest/tools/feasibility.py --output "$RUNNER_TEMP/java-guest-feasibility" --bootstrap-dependencies
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -67,6 +71,9 @@ jobs:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
             ${{ runner.temp }}/java-guest-feasibility/report.json
+            ${{ runner.temp }}/java-guest-feasibility/*.candidate.json
+            ${{ runner.temp }}/java-guest-feasibility/*.candidate.xml
+            ${{ runner.temp }}/java-guest-feasibility/*.observed.json
             ${{ runner.temp }}/java-guest-feasibility/*.log
             ${{ runner.temp }}/java-guest-feasibility/*.exit.json
             ${{ runner.temp }}/java-guest-feasibility/*.failure.txt
