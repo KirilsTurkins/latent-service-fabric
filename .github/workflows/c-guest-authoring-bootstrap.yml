@@ -2,7 +2,7 @@ name: C guest authoring workspace
 on:
   push:
     branches: [feat/545-c-capsule-authoring]
-    paths: [.github/workflows/c-guest-authoring-bootstrap.yml]
+    paths: [.github/workflows/c-guest-authoring-bootstrap.yml, tools/c_guest/node.py]
 permissions:
   contents: read
 jobs:
@@ -31,6 +31,7 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           key: c-guest-authoring-runtime
+          cache-on-failure: true
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613
         with:
           version: 1.254.0
