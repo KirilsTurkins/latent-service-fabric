@@ -1,0 +1,35 @@
+name: TypeScript guest development inputs
+
+on:
+  push:
+    branches:
+      - feat/546-typescript-guest-sdk
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-guest-inputs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-inputs:
+    name: Capture tracked source inputs (not runtime conformance)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Preserve only committed sources for reproducible qualification
+        run: |
+          mkdir -p "$RUNNER_TEMP/typescript-guest-inputs"
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/typescript-guest-inputs/source.tar.gz"
+          git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-inputs/revision.txt"
+          sha256sum "$RUNNER_TEMP/typescript-guest-inputs/source.tar.gz" > "$RUNNER_TEMP/typescript-guest-inputs/source.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: typescript-guest-source-${{ github.sha }}
+          path: ${{ runner.temp }}/typescript-guest-inputs/
+          if-no-files-found: error
+          retention-days: 2
