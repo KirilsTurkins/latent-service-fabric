@@ -6,5 +6,7 @@ interface probe {
 }
 
 world capsule {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
     export probe;
 }

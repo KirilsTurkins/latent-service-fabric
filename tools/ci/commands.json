@@ -1189,6 +1189,46 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 -m unittest tools.tests.test_c_capsule_authoring\npython3 tools/qualify_c_capsules.py --output \"$RUNNER_TEMP/c-capsule-authoring\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Retain the exact checked-out source revision": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Retain the exact checked-out source revision",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "git archive --format=tar.gz -o \"$RUNNER_TEMP/java-feasibility-source.tar.gz\" HEAD \\\n  sdk/java-guest .github/workflows/java-guest-feasibility.yml \\\n  tools \\\n  wit/platform crates/latent-wasmtime/src/surface.rs"
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Test evidence and process-capture behavior": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Test evidence and process-capture behavior",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest discover -s sdk/java-guest/tests -v"
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Install pinned compiler tools": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Install pinned compiler tools",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\npython3 -m pip install --disable-pip-version-check ziglang==0.16.0\npython3 -c 'import pathlib, ziglang; print(pathlib.Path(ziglang.__file__).parent)' >> \"$GITHUB_PATH\"\ncargo install --locked wit-bindgen-cli --version 0.62.0\ncargo install --locked wasm-tools --version 1.254.0"
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Compile real Java sources and retain the first incompatible stage": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Compile real Java sources and retain the first incompatible stage",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 sdk/java-guest/tools/feasibility.py --output \"$RUNNER_TEMP/java-guest-feasibility\" --bootstrap-dependencies"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2750,6 +2790,9 @@
     },
     "tools/qualify_c_capsules.py": {
       "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
+    },
+    "sdk/java-guest/tools/feasibility.py": {
+      "sha256": "29808646e23c082b4e74c8f47cd8bed6d46dd4c9abd817c4bfde30acabbedc7f"
     }
   },
   "pythonCases": {
@@ -5771,6 +5814,7 @@
     ".github/workflows/ci.yml": "a7f311e9002c815503ccd24bca8d48df62d4cd6d4211c5acff35db98ddad215f",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
+    ".github/workflows/java-guest-feasibility.yml": "86a614f6ba5de9bfdbbce0fb18c3393a78373ae39406a39e414c7c987efff0c1",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",

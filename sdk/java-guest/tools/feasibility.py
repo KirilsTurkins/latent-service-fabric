@@ -167,14 +167,22 @@ def probe(output: Path, gradle: str, zig: str, bindgen: str, wasm_tools: str,
             raise ProbeFailure('missing-generated-c-entrypoint')
         report['generatedC'] = {str(p.relative_to(generated)): identity(p)
                                 for p in sorted(generated.rglob('*')) if p.is_file()}
-        run('wit-bindings', [bindgen, 'c', str(project / 'wit'), '--world', 'capsule',
+        from teavm_platform import adapt
+        try:
+            report['platformAdaptation'] = adapt(generated)
+        except ValueError as error:
+            raise ProbeFailure(str(error)) from error
+        from tools.stage_runtime_wit import stage
+        stage(output / 'wit', project / 'wit')
+        run('wit-bindings', [bindgen, 'c', str(output / 'wit'), '--world', 'capsule',
                             '--rename-world', 'probe', '--out-dir', str(output / 'bindings')])
         core = output / 'probe.core.wasm'
         run('c-to-wasm', [zig, 'cc', '-target', 'wasm32-wasi', '-std=c11', '-O2',
+                         '-DLSF_TEAVM_WASM=1', '-DTEAVM_USE_SETJMP=0', '-DTEAVM_CUSTOM_LOG=1',
                          '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory',
                          '-Wl,-z,stack-size=65536', '-I', str(output / 'bindings'),
                          '-iquote', str(generated), str(generated / 'all.c'),
-                         str(project / 'bridge.c'), str(output / 'bindings/probe.c'),
+                         str(project / 'bridge.c'), str(project / 'platform.c'), str(output / 'bindings/probe.c'),
                          str(output / 'bindings/probe_component_type.o'), '-o', str(core)])
         component = output / 'probe.wasm'
         run('component-new', [wasm_tools, 'component', 'new', str(core), '-o', str(component)])
