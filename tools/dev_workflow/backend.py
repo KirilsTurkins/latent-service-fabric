@@ -11,6 +11,7 @@ from . import paths, process, protocol
 from .common import DevError, MAX_SNAPSHOT, decode, digest, encode, members, require, sha
 
 HELPER = "/opt/latent-dev/helper.pyz"
+GUEST_PYTHON = "/usr/local/bin/python3.13"
 VERIFY_HELPER = ("import hashlib,os,stat,sys; p=sys.argv[1]; "
                  "f=os.open(p,os.O_RDONLY|os.O_NOFOLLOW); s=os.fstat(f); "
                  "assert stat.S_ISREG(s.st_mode) and s.st_nlink==1 and s.st_size<=16777216; "
@@ -55,8 +56,8 @@ def wsl_executable() -> str:
 def command(config: dict, *, verify: bool = False) -> list[str]:
     validate(config)
     # SSH transmits only this constant remote command. Untrusted data stays on stdin.
-    guest = (["/usr/bin/python3", "-I", "-c", VERIFY_HELPER, HELPER] if verify
-             else ["/usr/bin/python3", "-I", HELPER, "rpc"])
+    guest = ([GUEST_PYTHON, "-I", "-c", VERIFY_HELPER, HELPER] if verify
+             else [GUEST_PYTHON, "-I", HELPER, "rpc"])
     if config["kind"] == "wsl2":
         return [wsl_executable(), "--distribution", config["distribution"], "--user", config["user"], "--exec", *guest]
     if config["kind"] == "linux":

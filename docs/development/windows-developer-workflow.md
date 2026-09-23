@@ -40,9 +40,15 @@ compilers remain separate, explicitly selected build inputs.
   A persisted mutation intent contains the original operation identity and
   observed preconditions. Recovery looks up that identity and does not replay
   an Invoke, publication or deployment. Unknown/expired receipts remain unknown.
+  Confirmed publication/deployment metadata is persisted before clearing the
+  intent; interruption between those writes repeats only local settlement.
+  Invocation history retains result digests rather than unbounded payloads.
 - `down` addresses the workspace supervisor and retains data. `purge` requires
   the exact workspace name and delegates runtime removal to the existing
   installation owner before removing owned snapshots.
+  A reaped node is reported separately from a clean shutdown: the latter requires
+  a zero exit and the node's complete `stopped` record. A bounded reader drains
+  diagnostics during readiness/shutdown and redacts credentials before retention.
 
 These implementations still need the packaged integration runs below. An
 adapter unit test is not a WSL provisioning receipt.
@@ -54,6 +60,11 @@ owner (#544–#549), immutable template revision, ABI, build host, pinned tools,
 explicit input roots, exclusions, output paths and application scenarios.
 It integrates supplied language artifacts; it does not ship parallel SDKs or
 claim the pending language-owner PRs are delivered.
+
+The Linux helper uses pinned Python 3.13.5, negotiated before any operation.
+The managed guest provides it at `/usr/local/bin/python3.13`; the distro's own
+system Python is separate. A preprovisioned SSH host needs that same reviewed
+helper/interpreter layout. Direct Linux connections explicitly select both paths.
 
 Source snapshots retain exact bytes, including CRLF. A second observation checks
 the full selected tree before accepting a coherent snapshot. Absolute paths,

@@ -8,7 +8,7 @@ import pwd
 import re
 import sys
 
-from . import build, paths, project, protocol, snapshot, state
+from . import build, effects, paths, project, protocol, snapshot, state
 from .client import Client, successful
 from .common import DevError, MAX_SNAPSHOT, decode, digest, encode, members, require
 from .journal import Journal
@@ -34,7 +34,8 @@ def installation(root: Path):
 def client(root: Path) -> tuple[Client, Journal]:
     layout, current = installation(root)
     config = decode(paths.read(layout.node.parent, layout.node.name))
-    return Client(current / "bin/latent", layout.client, root), Journal(root, config["nodeId"], "examples")
+    return Client(current / "bin/latent", layout.client, root), Journal(root, config["nodeId"], "examples",
+        settle=lambda operation, result: effects.settle(root, operation, result))
 
 
 def install(root: Path, arguments: dict) -> dict:
@@ -97,18 +98,24 @@ def deploy(root: Path) -> dict:
                 "built-artifact-modified-before-deploy")
     node = decode(paths.read(root / "runtime/config", "node.json"))
     require(descriptor["tenant"] == "examples", "project-tenant-does-not-match-workspace-credential")
-    if node["supplyChain"]["mode"] == "trusted-local":
-        published = journal.execute("release", {"source": saved["snapshot"], "expectedGeneration": "0"},
+    if journal.read()["pending"] is not None:
+        raise DevError("recover-original-operation-before-new-mutation", uncertain=True)
+    prior = state.load(root, "last-publication.json") if (root / "last-publication.json").exists() else None
+    release_intent = {"source": saved["snapshot"], "componentDigest": receipt["artifacts"]["component"], "expectedGeneration": "0"}
+    if prior and prior["source"] == saved["snapshot"] and prior["componentDigest"] == receipt["artifacts"]["component"]:
+        publication = prior["publication"]
+    elif node["supplyChain"]["mode"] == "trusted-local":
+        published = journal.execute("release", release_intent,
             lambda operation: cli.call("release", "publish", "--manifest", source / artifacts["capsule"],
                 "--component", source / artifacts["component"], "--contracts", source / artifacts["contracts"],
                 "--operation-id", operation, "--expected-generation", "0"))
+        publication = successful(published)["release"]["publication"]["id"]
     else:
         require("packageRoot" in artifacts and "evidence" in artifacts, "signed-package-handoff-required")
-        published = journal.execute("release", {"source": saved["snapshot"], "expectedGeneration": "0"},
+        published = journal.execute("release", release_intent,
             lambda operation: cli.call("release", "publish-package", source / artifacts["packageRoot"],
                 "--evidence", source / artifacts["evidence"], "--operation-id", operation, "--expected-generation", "0"))
-    admitted = successful(published)
-    publication = admitted["release"]["publication"]["id"]
+        publication = successful(published)["release"]["publication"]["id"]
     deployment = decode(paths.read(source, artifacts["deployment"]))
     deployment["spec"]["publication"] = publication
     name = deployment["metadata"]["name"]
@@ -124,14 +131,12 @@ def deploy(root: Path) -> dict:
     require(generation == (last["generation"] if last else "0"), "concurrent-deployment-change-no-overwrite")
     state.atomic(root, "selected-deployment.json", deployment)
     applied = journal.execute("deployment", {"publication": publication, "source": saved["snapshot"],
+        "componentDigest": receipt["artifacts"]["component"], "deployment": name,
         "expectedGeneration": generation, "expectedStateVersion": version}, lambda operation:
         cli.call("deployment", "apply", root / "selected-deployment.json", "--expected-generation", generation,
                  "--operation-id", operation, "--expected-state-version", version))
-    result = successful(applied)
-    retained = {"source": saved["snapshot"], "publication": publication,
-                "generation": result["deployment"]["generation"], "deployment": name}
-    state.atomic(root, "last-deployment.json", retained)
-    return retained
+    successful(applied)
+    return state.load(root, "last-deployment.json")
 
 
 def dispatch(request: dict) -> dict:

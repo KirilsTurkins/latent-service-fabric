@@ -17,6 +17,7 @@ from tools.native_runtime import checks
 from tools.native_runtime.layout import Layout
 from . import paths, process, state
 from .common import DevError, MAX_LOG, decode, encode, require
+from .node_output import NodeOutput
 
 
 def parent_death():
@@ -60,7 +61,8 @@ def start(root: Path, helper: Path) -> dict:
     except (FileNotFoundError, ConnectionRefusedError):
         pass
     # The durable record is diagnostic only; it never authorizes killing a PID.
-    state.atomic(root, "lifecycle.json", {"state": "starting", "profile": "local-experimental-v1"})
+    node_config = decode(paths.read(layout.node.parent, layout.node.name))
+    state.atomic(root, "lifecycle.json", {"state": "starting", "profile": node_config["securityProfile"]})
     child = subprocess.Popen([sys.executable, "-I", str(helper), "supervise", str(root)],
                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              close_fds=True, start_new_session=True, env=process.environment())
@@ -83,8 +85,8 @@ def supervise(root: Path) -> int:
     layout = Layout.local(root / "runtime")
     owner = OwnedProcess()
     selector = selectors.DefaultSelector()
-    retained = bytearray()
-    clean = False
+    reaped = False
+    output = None
     selected_socket = socket_path(root)
     node_config = decode(paths.read(layout.node.parent, layout.node.name))
     profile = node_config["securityProfile"]
@@ -105,9 +107,7 @@ def supervise(root: Path) -> int:
                 cwd=layout.data, env=process.environment(), stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, start_new_session=True,
                 preexec_fn=parent_death)
-            for stream in (owner.process.stdout, owner.process.stderr):
-                os.set_blocking(stream.fileno(), False)
-                selector.register(stream, selectors.EVENT_READ, "log")
+            output = NodeOutput(owner.process, [item["token"] for item in node_config["credentials"]])
             # The bounded installer readiness probe checks node identity, credentials,
             # profile, pressure availability and admission-ready state.
             current["readiness"] = checks.readiness(layout)
@@ -117,31 +117,24 @@ def supervise(root: Path) -> int:
             while not stopping:
                 if owner.exited():
                     raise DevError("owned-node-exited")
+                require(output.failure is None, "node-output-read-failed")
                 for key, _events in selector.select(timeout=0.2):
-                    if key.data == "log":
-                        raw = os.read(key.fileobj.fileno(), 8192)
-                        if raw:
-                            retained.extend(raw)
-                            del retained[:-MAX_LOG]
-                        else:
-                            selector.unregister(key.fileobj)
-                        continue
                     connection, _address = server.accept()
                     with connection:
                         connection.settimeout(2)
                         peer = struct.unpack("3i", connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
                         require(peer[1] == os.geteuid(), "supervisor-request-owner")
-                        raw = connection.recv(4097)
-                        document = decode(raw, 4096)
+                        raw = bytearray()
+                        while part := connection.recv(4097 - len(raw)):
+                            raw.extend(part)
+                            require(len(raw) <= 4096, "supervisor-request-byte-limit")
+                        document = decode(bytes(raw), 4096)
                         require(set(document) == {"operation"}, "supervisor-request-fields")
                         operation = document["operation"]
                         require(operation in {"status", "logs", "down"}, "supervisor-command")
                         if operation == "logs":
                             # Only the node's structured bounded diagnostics are returned.
-                            text = retained.decode("utf-8", errors="replace")
-                            for credential in node_config["credentials"]:
-                                text = text.replace(credential["token"], "[redacted]")
-                            result = {**current, "logs": text}
+                            result = {**current, "logs": output.logs()}
                         elif operation == "down":
                             stopping = True
                             os.kill(owner.process.pid, signal.SIGTERM)
@@ -149,8 +142,10 @@ def supervise(root: Path) -> int:
                             while not owner.exited() and time.monotonic() < until:
                                 time.sleep(0.02)
                             owner.finish(time.monotonic() + 5)
-                            clean = True
-                            current.update(state="stopped", reaped=True, dataRetained=True)
+                            reaped = True
+                            output.finish()
+                            current.update(state="stopped", reaped=True, dataRetained=True,
+                                cleanShutdown=owner.process.returncode == 0 and output.clean_stop)
                             state.atomic(root, "lifecycle.json", current)
                             result = current
                         else:
@@ -163,11 +158,16 @@ def supervise(root: Path) -> int:
         finally:
             try:
                 owner.finish(time.monotonic() + 5)
-                clean = True
+                reaped = True
+                if output:
+                    output.finish()
             finally:
                 owner.close()
                 selector.close()
                 server.close()
                 selected_socket.unlink(missing_ok=True)
-                if not clean:
+                if not reaped:
                     state.atomic(root, "lifecycle.json", {**current, "state": "uncertain", "cleanup": "unconfirmed"})
+                elif current["state"] != "stopped":
+                    state.atomic(root, "lifecycle.json", {**current, "state": "stopped", "reaped": True,
+                        "cleanShutdown": False, "failure": "node-or-supervisor-failed", "dataRetained": True})

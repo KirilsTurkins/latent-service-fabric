@@ -109,7 +109,7 @@ def workspace(root: Path, name: str, helper_sha256: str) -> dict:
             workspaces[name] = {**value, "state": "creating"}
             state.atomic(root, "wsl.json", record)
             completed = process.run([backend.wsl_executable(), "--distribution", record["distribution"],
-                "--user", "root", "--exec", "/usr/bin/python3", "-I", backend.HELPER, "create-user"], root,
+                "--user", "root", "--exec", backend.GUEST_PYTHON, "-I", backend.HELPER, "create-user"], root,
                 stdin=encode(value), timeout=30, maximum=8192)
             require(completed.returncode == 0 and decode(completed.stdout).get("user") == user,
                     "wsl-workspace-provision-failed-no-adoption")

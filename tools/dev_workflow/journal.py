@@ -11,8 +11,9 @@ MAX_HISTORY = 32
 
 
 class Journal:
-    def __init__(self, root: Path, node: str, tenant: str):
+    def __init__(self, root: Path, node: str, tenant: str, *, settle=None):
         self.root, self.node, self.tenant = root, node, tenant
+        self.settle = settle
 
     def read(self) -> dict:
         if not (self.root / "operations.json").exists():
@@ -28,7 +29,8 @@ class Journal:
     def begin(self, kind: str, intent: dict) -> dict:
         require(kind in {"release", "deployment", "invoke"}, "operation-kind")
         value = self.read()
-        require(value["pending"] is None, "recover-original-operation-before-new-mutation")
+        if value["pending"] is not None:
+            raise DevError("recover-original-operation-before-new-mutation", uncertain=True)
         operation = {"id": "dev-" + secrets.token_hex(16), "kind": kind, "intent": intent,
                      "requestDigest": digest(encode(intent)), "node": self.node, "tenant": self.tenant,
                      "state": "prepared"}
@@ -39,10 +41,19 @@ class Journal:
     def finish(self, operation: dict, result: dict) -> dict:
         value = self.read()
         require(value["pending"] == operation, "operation-journal-conflict")
-        if not result.get("outcomeKnown"):
+        if result.get("outcomeKnown") is not True:
             raise DevError("operation-outcome-uncertain-use-recover", uncertain=True)
+        # Commit idempotent local consequences before releasing this intent. A
+        # crash between the two writes recovers the same ID and repeats only the
+        # local metadata write, never the remote operation.
+        if self.settle is not None:
+            try:
+                self.settle(operation, result)
+            except DevError as error:
+                raise DevError(error.code, uncertain=True) from None
         record = {"id": operation["id"], "kind": operation["kind"], "requestDigest": operation["requestDigest"],
-                  "category": result["category"], "receipt": result.get("data", {})}
+                  "category": result["category"], "resultSha256": digest(encode(result)),
+                  "source": operation["intent"].get("source")}
         require(len(encode(record)) <= 4096, "operation-receipt-byte-limit")
         value["history"] = (value["history"] + [record])[-MAX_HISTORY:]
         value["pending"] = None
@@ -59,7 +70,8 @@ class Journal:
         pending = value["pending"]
         require(pending is not None, "no-pending-operation")
         result = lookup(pending["kind"], pending["id"])
-        require(result.get("outcomeKnown") is True, "recovery-transport-outcome-unknown")
+        if result.get("outcomeKnown") is not True:
+            raise DevError("recovery-transport-outcome-unknown", uncertain=True)
         data = result.get("data", {})
         if pending["kind"] == "invoke":
             require(data.get("activationId") == pending["id"], "recovered-activation-identity")
@@ -68,11 +80,15 @@ class Journal:
         else:
             disposition = data.get("lookup", data.get("disposition", ""))
             receipt = data.get("receipt")
-            if not isinstance(receipt, dict) or not disposition.endswith("_FOUND"):
+            expected = {"release": "RELEASE_OPERATION_LOOKUP_DISPOSITION_FOUND",
+                        "deployment": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_FOUND"}[pending["kind"]]
+            if not isinstance(receipt, dict) or disposition != expected:
                 raise DevError("original-operation-unknown-or-expired-no-replay", uncertain=True)
             require(receipt.get("operationId") == pending["id"] and receipt.get("tenant") == self.tenant,
                     "recovered-operation-identity")
             for name in ("expectedGeneration", "expectedStateVersion"):
                 if name in pending["intent"]:
                     require(receipt.get(name) == pending["intent"][name], "recovered-precondition-mismatch")
+            if pending["kind"] == "release" and receipt.get("disposition") == "RELEASE_OPERATION_DISPOSITION_REJECTED":
+                result = {**result, "category": "platform-failure", "error": {"code": "original-publication-rejected"}}
         return self.finish(pending, result)

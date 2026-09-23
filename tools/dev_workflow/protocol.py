@@ -13,14 +13,16 @@ FEATURES = frozenset({"doctor", "install", "up", "status", "logs", "down", "purg
 
 def hello() -> dict:
     return {"protocol": PROTOCOL, "helperVersion": "1", "hostAbi": HOST_ABI,
-            "os": sys.platform, "architecture": platform.machine(), "features": sorted(FEATURES)}
+            "os": sys.platform, "architecture": platform.machine(), "python": platform.python_version(),
+            "features": sorted(FEATURES)}
 
 
 def negotiate(value: dict, *, architecture: str = "x86_64", host_abi: str = HOST_ABI) -> dict:
-    members(value, {"protocol", "helperVersion", "hostAbi", "os", "architecture", "features"})
+    members(value, {"protocol", "helperVersion", "hostAbi", "os", "architecture", "python", "features"})
     require(value["protocol"] == PROTOCOL and value["helperVersion"] == "1", "incompatible-backend-protocol")
     require(value["hostAbi"] == host_abi, "incompatible-host-abi")
     require(value["os"] == "linux" and value["architecture"] == architecture, "unsupported-backend-target")
+    require(value["python"] == "3.13.5", "backend-requires-pinned-python-3-13-5")
     require(isinstance(value["features"], list) and len(value["features"]) == len(set(value["features"]))
             and set(value["features"]) == FEATURES, "incompatible-backend-features")
     return value

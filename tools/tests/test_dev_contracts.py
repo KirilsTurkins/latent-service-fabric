@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools.dev_workflow import backend, bundle, common, journal, paths, project, qualification, scenarios
+from tools.dev_workflow import backend, bundle, common, effects, journal, paths, project, qualification, scenarios, state
 
 
 def descriptor():
@@ -98,6 +98,57 @@ class Recovery(unittest.TestCase):
         with self.assertRaisesRegex(common.DevError, "owner-mismatch"):
             journal.Journal(self.root, "different-node", "tenant-a").read()
 
+    def test_large_invocation_result_does_not_overflow_durable_history(self):
+        result = {"category": "success", "outcomeKnown": True, "data": {"payload": "x" * 200000}}
+        self.assertEqual(self.journal.execute("invoke", {}, lambda _: result), result)
+        self.assertLess((self.root / "operations.json").stat().st_size, 2048)
+
+    def test_crash_after_local_publication_write_recovers_original_without_republish(self):
+        controller = journal.Journal(self.root, "node-a", "tenant-a",
+            settle=lambda operation, result: effects.settle(self.root, operation, result))
+        intent = {"source": "sha256:" + "a" * 64, "componentDigest": "sha256:" + "b" * 64, "expectedGeneration": "0"}
+        calls, receipts = [], []
+        def publish(operation):
+            calls.append(operation)
+            receipt = {"operationId": operation, "tenant": "tenant-a", "expectedGeneration": "0",
+                "componentDigest": intent["componentDigest"], "publication": {"id": "test-publication", "tenant": "tenant-a"},
+                "disposition": "RELEASE_OPERATION_DISPOSITION_COMMITTED"}
+            receipts.append(receipt)
+            return {"category": "success", "outcomeKnown": True, "data": {"operation": receipt}}
+        original = state.atomic
+        def crash(root, name, value):
+            if name == "operations.json" and value["pending"] is None:
+                raise OSError("controller interrupted before final journal write")
+            original(root, name, value)
+        with patch.object(state, "atomic", crash), self.assertRaises(OSError):
+            controller.execute("release", intent, publish)
+        saved = state.load(self.root, "last-publication.json")
+        self.assertEqual(saved["operation"], calls[0])
+        controller.recover(lambda kind, operation: {"category": "success", "outcomeKnown": True,
+            "data": {"lookup": "RELEASE_OPERATION_LOOKUP_DISPOSITION_FOUND", "receipt": receipts[0]}})
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(state.load(self.root, "last-publication.json"), saved)
+        self.assertIsNone(controller.read()["pending"])
+
+    def test_recovered_deployment_cannot_change_selected_publication_or_generation(self):
+        controller = journal.Journal(self.root, "node-a", "tenant-a",
+            settle=lambda operation, result: effects.settle(self.root, operation, result))
+        intent = {"source": "sha256:" + "a" * 64, "componentDigest": "sha256:" + "b" * 64,
+            "deployment": "sample", "publication": "selected", "expectedGeneration": "1", "expectedStateVersion": "2"}
+        operation = controller.begin("deployment", intent)
+        receipt = {"operationId": operation["id"], "tenant": "tenant-a", "expectedGeneration": "1",
+            "expectedStateVersion": "2", "componentDigest": intent["componentDigest"], "deploymentId": "sample",
+            "publication": {"id": "other", "tenant": "tenant-a"}, "objectGeneration": "2"}
+        result = {"category": "success", "outcomeKnown": True, "data": {
+            "disposition": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_FOUND", "receipt": receipt,
+            "durability": "DEPLOYMENT_DURABILITY_CONFIRMED"}}
+        with self.assertRaises(common.DevError):
+            controller.recover(lambda *_: result)
+        self.assertIsNotNone(controller.read()["pending"])
+        receipt["publication"]["id"] = "selected"
+        controller.recover(lambda *_: result)
+        self.assertEqual(state.load(self.root, "last-deployment.json")["generation"], "2")
+
 
 class Transports(unittest.TestCase):
     def test_ssh_identity_options_and_constant_command(self):
@@ -107,7 +158,7 @@ class Transports(unittest.TestCase):
         command = backend.command(config)
         for required in ("StrictHostKeyChecking=yes", "BatchMode=yes", "IdentitiesOnly=yes", "ForwardAgent=no", "ProxyCommand=none"):
             self.assertIn(required, command)
-        self.assertEqual(command[-1], "/usr/bin/python3 -I /opt/latent-dev/helper.pyz rpc")
+        self.assertEqual(command[-1], "/usr/local/bin/python3.13 -I /opt/latent-dev/helper.pyz rpc")
         with self.assertRaises(common.DevError):
             backend.command({**config, "host": "node;do-bad-things"})
 

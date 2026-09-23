@@ -22,7 +22,7 @@ class Documents(unittest.TestCase):
     def test_protocol_target_abi_and_response_association(self):
         hello = {**protocol.hello(), "os": "linux", "architecture": "x86_64"}
         protocol.negotiate(hello)
-        for changed in ({"hostAbi": "old"}, {"architecture": "aarch64"}, {"features": []}):
+        for changed in ({"hostAbi": "old"}, {"architecture": "aarch64"}, {"features": []}, {"python": "3.12.3"}):
             with self.assertRaises(common.DevError):
                 protocol.negotiate({**hello, **changed})
         request = protocol.request("status", "workspace", {})
@@ -143,6 +143,25 @@ class OwnedCommands(unittest.TestCase):
                                      "SSH_AUTH_SOCK": "socket", "PYTHONPATH": "injection"}):
             self.assertTrue({"AWS_SECRET_ACCESS_KEY", "GH_TOKEN", "SSH_AUTH_SOCK", "PYTHONPATH"}
                             .isdisjoint(process.environment()))
+
+    @unittest.skipUnless(sys.platform == "linux", "Linux supervisor pipe ownership")
+    def test_live_node_output_drains_flood_redacts_before_retention_and_requires_complete_status(self):
+        from tools.dev_workflow.node_output import NodeOutput
+        command = "import sys; print('x'*20000); print('private-token'); print('y'*500000); print('{\\\"schemaVersion\\\":\\\"latent.standalone.status.v1\\\",\\\"event\\\":\\\"stopped\\\",\\\"clean\\\":true}'); sys.stdout.flush()"
+        child = subprocess.Popen([sys.executable, "-I", "-c", command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            output = NodeOutput(child, ["private-token"])
+            self.assertEqual(child.wait(timeout=10), 0)
+            output.finish()
+            self.assertTrue(output.clean_stop)
+            self.assertNotIn("private-token", output.logs())
+            self.assertLessEqual(len(output.logs().encode()), common.MAX_LOG)
+        finally:
+            if child.poll() is None:
+                child.kill()
+                child.wait(timeout=5)
+            child.stdout.close()
+            child.stderr.close()
 
 
 if __name__ == "__main__":
