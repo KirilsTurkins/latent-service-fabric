@@ -74,6 +74,35 @@ class RunnerContractTests(unittest.TestCase):
             close.assert_called_once()
             self.assertIsNone(oci.ACTIVE_RUN.get())
 
+    def test_oci_modes_execute_the_registered_prepared_cases(self):
+        registry_case = 'real_tls_registry_roundtrips_tag_race_auth_and_referrers'
+        provenance_case = 'real_observed_build_provenance_roundtrip'
+        web_case = 'supply_chain::tests::web_catalog::registry::authenticated_web_registry_admission_roundtrip'
+        manifest = self.root / 'inventory.json'
+        cases = (
+            ([], 'latent-oci.test.registry', [registry_case]),
+            (['--provenance-input', str(self.root / 'provenance')],
+             'latent-oci.test.registry', [provenance_case, registry_case]),
+            (['--web-admission-component', str(self.root / 'web.wasm')],
+             'latent-policy.lib.latent-policy', [web_case]),
+        )
+        for options, suite, selected in cases:
+            with self.subTest(options=options), redirect_stdout(io.StringIO()), \
+                    patch.object(TestRun, 'source_identity'), patch.object(TestRun, 'prerequisites'), \
+                    patch.object(TestRun, 'artifact'), patch.object(oci, 'certificates'), \
+                    patch.object(oci, 'ready'), patch.object(oci, 'wasm'), \
+                    patch.object(oci, 'provenance_artifacts'), \
+                    patch.object(oci.Registry, 'launch', return_value='https://127.0.0.1:1'), \
+                    patch.object(oci.Registry, 'close') as close, patch.object(oci, 'execute') as execute:
+                self.assertEqual(oci.main(['--test-manifest', str(manifest),
+                                          '--diagnostic-root', str(self.root), *options]), 0)
+                execute.assert_called_once()
+                self.assertEqual(execute.call_args.args[1]['id'], suite)
+                self.assertEqual(execute.call_args.args[2], manifest)
+                self.assertEqual(execute.call_args.kwargs['selected'], selected)
+                close.assert_called_once()
+                self.assertIsNone(oci.ACTIVE_RUN.get())
+
     def test_registry_readiness_rejects_foreign_id_label_and_endpoint(self):
         registry = oci.Registry(self.root)
         registry.container_id = 'a' * 64
