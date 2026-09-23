@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tools.typescript_guest import project
 from tools.typescript_guest.build import build
@@ -84,6 +85,22 @@ class TypeScriptAuthoringTests(unittest.TestCase):
             with self.subTest(compiler=compiler), self.assertRaisesRegex(ValueError, "compiler installation"):
                 build(self.root, self.root.parent / "output", Path("missing"), Path("missing"),
                       "https://example.invalid/source", tools=compiler)
+
+    def test_public_contract_rejection_precedes_guest_compiler_execution(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "rejected"
+            with patch("tools.typescript_guest.build.file_identity", return_value={}), \
+                 patch("tools.typescript_guest.build.Commands.run", side_effect=ValueError("unsupported-resource-identity")) as run, \
+                 patch("tools.typescript_guest.build.Compiler") as compiler, \
+                 self.assertRaisesRegex(ValueError, "unsupported-resource-identity"):
+                build(self.root, output, Path("contracts-tool"), Path("packager"),
+                      "https://example.invalid/source", tools=Path(temporary) / "compiler")
+            compiler.assert_not_called()
+            self.assertEqual(run.call_count, 1)
+            self.assertEqual(run.call_args.args[0], "contracts")
+            failure = json.loads((output / "BUILD-FAILED.json").read_text())
+            self.assertEqual(failure["stage"], "contracts")
+            self.assertFalse((output / "BUILD-COMPLETE.json").exists())
 
     def test_identity_budget_and_lock_formats_are_closed(self):
         for name, mutate in (

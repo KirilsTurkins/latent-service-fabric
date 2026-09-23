@@ -32,6 +32,16 @@ Dormant services must own no process, OS thread, event loop, listener, execution
 cell, provider pool or initialized guest heap. Shared compiler/cache ownership
 is measured separately from active guest state.
 
+Authoritative contract derivation runs before guest compiler execution and
+rejects public RPC resource parameters/results, including nested owned/borrowed
+values. The production packaging regressions exercise this rejection; the
+TypeScript builder regression requires failure before invoking the JavaScript
+compiler. Declared blob and streaming host resource imports remain supported.
+A native builder attempt with a nested `list<own<handle>>` public result and
+an intentionally absent JavaScript compiler stopped at the real contract tool
+with `unsupported-resource-identity`; no component or completion marker was
+produced. This is explicit negative authoring evidence, not runtime admission.
+
 ## Retained attempts and compiler boundary fixes
 
 [Run 35926422583](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35926422583)

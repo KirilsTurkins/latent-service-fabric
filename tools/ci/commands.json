@@ -5546,6 +5546,7 @@
       "TypeScriptAuthoringTests.test_fresh_project_and_safe_names_never_overwrite_source",
       "TypeScriptAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
       "TypeScriptAuthoringTests.test_import_identity_follows_selected_world_and_never_arena_indexes",
+      "TypeScriptAuthoringTests.test_public_contract_rejection_precedes_guest_compiler_execution",
       "TypeScriptAuthoringTests.test_qualification_watchdogs_remain_explicit_and_finite",
       "TypeScriptAuthoringTests.test_sdk_wit_and_compiler_lock_drift_are_rejected",
       "TypeScriptAuthoringTests.test_source_and_compiler_directory_overlap_is_rejected_before_execution",

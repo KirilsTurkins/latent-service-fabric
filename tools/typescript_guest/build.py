@@ -47,19 +47,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
-            stage = "compiler-inputs"
-            compiler = Compiler(tools, commands, {name: files["vendor/lsf/sdk/typescript-guest/tools/" + name]
-                                                 for name in ("package.json", "package-lock.json")})
-            write_json(output / "compiler-inputs.json", compiler.before)
-            paths = {"contracts-tool": checked_path(contracts_tool), "packager": checked_path(packager),
-                     "node": compiler.node, "wasm-tools": compiler.wasm}
+            paths = {"contracts-tool": checked_path(contracts_tool), "packager": checked_path(packager)}
             materials = [file_identity(path, name) for name, path in paths.items()]
-            stage = "compile"
-            component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
-            component = read_file(component_path, 64 * 1024 * 1024)
-            (output / "component.wasm").write_bytes(component)
-            (output / "generated-bindings.js").write_bytes(read_file(temporary / "compiled/generated-bindings.js", 8 * 1024 * 1024))
-            write_json(output / "bindings.json", generated)
+            # Check the production public-value profile before compiling the
+            # embedded engine. Host resource imports remain legal, but public
+            # RPC signatures cannot transfer owned/borrowed resource handles.
             stage = "contracts"
             wit_input = temporary / "wit-inputs.json"
             write_json(wit_input, {"world": project["world"], "sources": [
@@ -68,6 +60,19 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands.run("contracts", paths["contracts-tool"], wit_input, derived)
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
+            stage = "compiler-inputs"
+            compiler = Compiler(tools, commands, {name: files["vendor/lsf/sdk/typescript-guest/tools/" + name]
+                                                 for name in ("package.json", "package-lock.json")})
+            write_json(output / "compiler-inputs.json", compiler.before)
+            compiler_paths = {"node": compiler.node, "wasm-tools": compiler.wasm}
+            materials.extend(file_identity(path, name) for name, path in compiler_paths.items())
+            paths.update(compiler_paths)
+            stage = "compile"
+            component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
+            component = read_file(component_path, 64 * 1024 * 1024)
+            (output / "component.wasm").write_bytes(component)
+            (output / "generated-bindings.js").write_bytes(read_file(temporary / "compiled/generated-bindings.js", 8 * 1024 * 1024))
+            write_json(output / "bindings.json", generated)
             package_inputs(output, project, read_json(derived / "surface.json"), files, component)
             stage = "package"
             commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")

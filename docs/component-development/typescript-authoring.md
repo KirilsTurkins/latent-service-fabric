@@ -77,14 +77,17 @@ python3 tools/typescript_capsule.py build "$LSF_TYPESCRIPT_PROJECTS/my-greeting"
 
 Use your own public repository URL for an application you maintain. That label
 does not authenticate its source. The builder captures the actual project
-files, checks generated SDK bindings, builds the component, derives contracts
-from WIT, and inspects the package. `BUILD-COMPLETE.json` appears only after all
+files, derives contracts from WIT, checks generated SDK bindings, builds the
+component, and inspects the package. `BUILD-COMPLETE.json` appears only after all
 steps succeed. Use a fresh output directory for each new attempt.
 
 The output includes `component.wasm`, `capsule.json`, `contracts.json`,
 `wit-lock.json`, `deployment.json`, `package/` and `build-observation.json`.
 Full-width WIT integers retain their original types; application errors remain
 `result` values. Unsupported WIT types fail explicitly during contract derivation.
+Public RPC parameters/results cannot transfer owned or borrowed resource values,
+even inside records or lists. Blob and streaming capability imports keep their
+declared resource ownership; close those owners within the activation.
 
 ## 3. Sign for this local experiment
 
