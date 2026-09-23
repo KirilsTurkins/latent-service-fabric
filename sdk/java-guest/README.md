@@ -52,11 +52,14 @@ resource ownership have typed representations. Declared WIT errors are
 `Result.err`, not Java exceptions. Uncaught exceptions trap the activation.
 
 One named exported interface is supported. Future/stream values, exported
-resources, empty records, borrowed-resource export parameters, resource constructors/methods,
+resources, empty records, resource-valued public parameters/results, resource constructors/methods,
 inline interfaces, world-owned named types and ambiguous interface versions are
 rejected before compilation. Asynchronous host operations
 suspend the Wasmtime activation while Java code waits synchronously. They do
 not require a Java executor, hidden worker, retry queue or detached cleanup.
+Owned/borrowed resources are supported on imported capability calls, not on the
+node's public JSON RPC exports, including nested resource values. Unsupported
+public signatures are rejected before Java compilation rather than at invocation.
 
 ## Capability ownership
 

@@ -90,25 +90,28 @@ class Graph:
         self.resources = [index for index in sorted(self.live) if self.types[index]["kind"] == "resource"]
         for function in self.exports:
             for parameter in function["params"]:
-                self.reject_export_borrow(parameter["type"])
+                self.reject_export_resources(parameter["type"])
+            self.reject_export_resources(function.get("result"))
         for index in self.resources:
             if self.types[index]["owner"]["interface"] in self.export_ids:
                 raise ValueError("Java profile does not yet support exported resources")
 
-    def reject_export_borrow(self, value, depth=0):
+    def reject_export_resources(self, value, depth=0):
         if value is None or isinstance(value, str): return
         if depth > 32: raise ValueError("Java export type depth limit")
         kind = self.types[value]["kind"]
-        if kind == "resource": return
+        if kind == "resource":
+            raise ValueError("Java public RPC signatures do not support exported resources")
         form, body = next(iter(kind.items()))
-        if form == "handle" and "borrow" in body:
-            raise ValueError("Java profile rejects borrowed resource export parameters")
+        if form == "handle":
+            ownership = "borrowed" if "borrow" in body else "owned"
+            raise ValueError(f"Java public RPC signatures reject {ownership} resource export values")
         if form in {"type", "option", "list"}: children = [body]
         elif form in {"record", "variant"}: children = [item["type"] for item in body["fields" if form == "record" else "cases"]]
         elif form == "tuple": children = body["types"]
         elif form == "result": children = list(body.values())
         else: children = []
-        for child in children: self.reject_export_borrow(child, depth + 1)
+        for child in children: self.reject_export_resources(child, depth + 1)
 
     def c_prefix(self, index: int, exported: bool = False) -> str:
         interface = self.data["interfaces"][index]

@@ -58,6 +58,25 @@ class Bindings(unittest.TestCase):
         self.assertIn("lsf_allocate", bridge)
         self.assertNotIn("double", bridge)
 
+    def test_imported_resources_cannot_escape_through_public_rpc_values(self):
+        for ownership in ("own", "borrow"):
+            for selected in (1, 2, 3):
+                for position in ("parameter", "result"):
+                    with self.subTest(ownership=ownership, selected=selected, position=position):
+                        data = document()
+                        data["interfaces"].append({"name": "resources", "package": 0,
+                                                   "types": {"item": 1}, "functions": {}})
+                        data["worlds"][0]["imports"]["interface-1"] = {"interface": {"id": 1}}
+                        data["types"].extend([
+                            {"name": "item", "kind": "resource", "owner": {"interface": 1}},
+                            {"name": None, "kind": {"handle": {ownership: 1}}, "owner": None},
+                            {"name": None, "kind": {"option": 2}, "owner": None}])
+                        function = data["interfaces"][0]["functions"]["run"]
+                        if position == "parameter": function["params"][0]["type"] = selected
+                        else: function["result"] = selected
+                        with self.assertRaisesRegex(ValueError, "exported resources|resource export values"):
+                            Graph(data, "service", HEADER)
+
     def test_parameter_names_cannot_shadow_private_transport_locals(self):
         for name in ("input", "output", "result", "operation", "arguments", "data", "length"):
             data = document()
