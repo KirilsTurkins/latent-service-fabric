@@ -90,6 +90,7 @@ impl DirectoryDeploymentRepository {
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
                 Some(&pins),
+                None,
             )
             .await?,
         ))
