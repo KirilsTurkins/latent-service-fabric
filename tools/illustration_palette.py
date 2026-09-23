@@ -1,4 +1,4 @@
-"""Check or regenerate only inventoried presentation copies; preserve historical bytes."""
+"""Check current diagram palettes and inventoried copies; preserve historical bytes."""
 
 from __future__ import annotations
 
@@ -112,6 +112,20 @@ def prepare(root: Path = ROOT) -> tuple[dict, dict, list[tuple[str, bytes]]]:
         for consumer in entry["consumers"]:
             require(Path(entry["path"]).name in read_bytes(root, consumer).decode("utf-8"), f"missing presentation consumer: {consumer}")
         outputs.append((entry["path"], render(sources[entry["source"]], inventory["replacements"], tokens)))
+    maintained = set()
+    for entry in inventory.get("maintained", []):
+        require(entry["classification"] == "maintained-diagram" and entry["owner"], "current diagram needs an owner")
+        relative = entry["path"]
+        require(bool(re.fullmatch(r"docs/assets/[a-z0-9-]+\.svg", relative)), "invalid current diagram path")
+        require(relative not in sources and relative not in maintained
+                and relative not in {name for name, _ in outputs}, "duplicate current diagram")
+        content = read_bytes(root, relative).decode("utf-8")
+        colors = {value.upper() for value in COLOR.findall(content)}
+        require(colors and colors <= set(tokens.values()), f"current diagram uses colors outside palette: {relative}")
+        require(entry["consumers"], "current diagram needs a consumer")
+        for consumer in entry["consumers"]:
+            require(Path(relative).name in read_bytes(root, consumer).decode("utf-8"), f"missing current diagram consumer: {consumer}")
+        maintained.add(relative)
     tracked = {name for name in git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard").strip("\0").split("\0") if name.lower().endswith(".svg")}
     snapshots = set()
     for entry in inventory.get("snapshots", []):
@@ -122,7 +136,7 @@ def prepare(root: Path = ROOT) -> tuple[dict, dict, list[tuple[str, bytes]]]:
         require(entry["path"] not in sources and entry["path"] not in snapshots, "duplicate snapshot SVG")
         require(hashlib.sha256(read_bytes(root, entry["path"])).hexdigest() == entry["sha256"], "snapshot SVG bytes changed")
         snapshots.add(entry["path"])
-    expected = set(sources) | {name for name, _ in outputs} | snapshots
+    expected = set(sources) | {name for name, _ in outputs} | snapshots | maintained
     require(tracked <= expected, f"SVG missing an explicit disposition: {sorted(tracked - expected)}")
     require(set(sources) | snapshots <= tracked, "historical SVG missing from repository inventory")
     return inventory, palette, outputs

@@ -1,10 +1,11 @@
 export function buildSidebars(pages) {
   const sidebars = {start: [], learn: [], howTo: [], reference: [], understand: [], contribute: []};
-  const start = new Set(['development/standalone-quickstart', 'reference/standalone-node', 'roadmap']);
+  const start = new Set(['reference/standalone-node']);
   const howTo = new Set(['phase-2-delivery', 'phase-2-operator-workflows', 'phase-2-rollouts', 'phase-2-rollback', 'phase-2-canary-promotion', 'phase-2-canary-observation']);
   for (const page of pages.filter(page => page.source.startsWith('docs/'))) {
     let group = 'understand';
-    if (start.has(page.id) || page.id.startsWith('start/')) group = 'start';
+    if (page.id === 'roadmap' || /^(phase-[01]-|phase-[23]-.*(?:completion|review)$|phase3-management-integration$|evidence\/|architecture\/cluster-freshness-handoff$|protocol\/phase-1-contract-hardening$)/.test(page.id)) group = 'contribute';
+    else if (start.has(page.id) || page.id.startsWith('start/')) group = 'start';
     else if (page.id.startsWith('component-development/') || page.id.startsWith('learn/')) group = 'learn';
     else if (howTo.has(page.id) || /^(operations|how-to)\//.test(page.id)) group = 'howTo';
     else if (/^(reference|protocol)\//.test(page.id) || page.id === 'api-surface') group = 'reference';

@@ -1,6 +1,7 @@
 # Durable single-node rollouts
 
-Phase 2 issue #153 adds an optional manual rollout coordinator over the existing
+Use a manual rollout to move traffic from an existing deployment to a new
+candidate in explicit stages. The optional coordinator uses the node's
 embedded deployment catalog. It has one shared bounded worker and persists each
 committed operation together with the complete route state. It does not add
 background service instances or automatically advance stages.
@@ -10,8 +11,8 @@ background service instances or automatically advance stages.
 A plan names a tenant, service, retained rollout ID, one existing base deployment
 with its exact object generation, and one explicitly named new candidate. Both
 deployments must have the same tenant, namespace and service, and different
-component or publication identities. Phase 3's
-[publication propagation](reference/publication-runtime.md) permits corrected
+component or publication identities.
+[Publication propagation](reference/publication-runtime.md) permits corrected
 packages containing unchanged Wasm and pins each side independently. Start supports a cohort containing only that base; it
 rejects broader cohorts and existing candidate IDs.
 
@@ -145,4 +146,4 @@ the limit does not change ordinary artifact-catalog admission limits.
 Shutdown first closes and joins the coordinator, then the audit worker and
 control runtime. A timeout preserves actual accepted ownership and reports an
 unclean shutdown. All rollout work is node-local; distributed reconciliation,
-placement and consensus remain later phases.
+placement and consensus are not supported by the standalone node.

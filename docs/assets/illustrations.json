@@ -16,14 +16,14 @@
       "classification": "immutable-historical",
       "sha256": "6ff9c70c2809fd064faca2677b04985029f36b77985a799494d6302baf52c6dd",
       "generator": "retained hand-authored SVG",
-      "reason": "Explicitly retained Phase 0 composition; current overview uses a labelled presentation copy."
+      "reason": "Original composition retained with historical evidence; the current overview uses activation-lifecycle.svg."
     },
     {
       "path": "docs/assets/phase0-scope-boundary.svg",
       "classification": "immutable-historical",
       "sha256": "76e4450734b65b91fe4da487043c5cdca43654df53d8ca4f06ca880e0c9b3c6e",
       "generator": "retained hand-authored SVG",
-      "reason": "Historical measured scope and authorization; README historical evidence section keeps original."
+      "reason": "Historical measured scope retained with its dated evidence, not the current README."
     },
     {
       "path": "docs/assets/phase1-delivery-boundary.svg",
@@ -37,30 +37,10 @@
       "classification": "immutable-historical",
       "sha256": "48d13eeb8997ca87d334417db5928a68c317ff0974a601a499482e359cbfeb12",
       "generator": "retained hand-authored SVG",
-      "reason": "Released alpha Phase 2 boundary and completion evidence; delivery/completion pages keep original."
+      "reason": "Historical delivery boundary retained only for the dated completion review; current guides use package-delivery.svg."
     }
   ],
-  "outputs": [
-    {
-      "path": "docs/assets/phase0-resource-lifecycle-presentation.svg",
-      "classification": "maintained-presentation",
-      "source": "docs/assets/phase0-resource-lifecycle.svg",
-      "consumers": [
-        "docs/architecture/overview.md"
-      ],
-      "caption": "Restyled presentation of the retained Phase 0 composition, not new execution evidence."
-    },
-    {
-      "path": "docs/assets/phase2-delivery-boundary-presentation.svg",
-      "classification": "maintained-presentation",
-      "source": "docs/assets/phase2-delivery-boundary.svg",
-      "consumers": [
-        "README.md",
-        "docs/architecture/overview.md"
-      ],
-      "caption": "Restyled presentation of the Phase 2 boundary, not a Phase 3 completion claim."
-    }
-  ],
+  "outputs": [],
   "replacements": {
     "#1b102d": "canvas",
     "#1e3a5f": "surface",
@@ -147,6 +127,26 @@
       "sourceRevision": "44891f4158a663de5c08b177431686ec70c0bdf3",
       "generator": "website/scripts/snapshot.mjs",
       "reason": "Exact released alpha.3 historical illustration; preserved by the immutable version manifest, never recolored in place."
+    }
+  ],
+  "maintained": [
+    {
+      "path": "docs/assets/package-delivery.svg",
+      "classification": "maintained-diagram",
+      "owner": "hand-authored current delivery diagram",
+      "consumers": [
+        "README.md",
+        "docs/architecture/overview.md",
+        "docs/phase-2-delivery.md"
+      ]
+    },
+    {
+      "path": "docs/assets/activation-lifecycle.svg",
+      "classification": "maintained-diagram",
+      "owner": "hand-authored current activation diagram",
+      "consumers": [
+        "docs/architecture/overview.md"
+      ]
     }
   ]
 }
