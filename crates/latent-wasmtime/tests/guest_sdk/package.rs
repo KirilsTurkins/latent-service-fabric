@@ -48,11 +48,13 @@ pub fn observation(name: &str) -> BuildObservation {
     assert_eq!(marker["formatVersion"], 1);
     let bytes = read(&directory.join("build-observation.json"), 65536);
     assert_eq!(
-        if name.starts_with("go-") {
+        (if name.starts_with("go-") {
             &marker["observationDigest"]
         } else {
             &marker["observations"][name]
-        },
+        })
+        .as_str()
+        .expect("completed build observation digest"),
         format!("sha256:{:x}", Sha256::digest(&bytes))
     );
     let observation = decode_build_observation(&bytes, ProvenanceLimits::default()).unwrap();
