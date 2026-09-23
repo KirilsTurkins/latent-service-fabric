@@ -13,6 +13,24 @@ public class ApiExportsImpl : IApiExports
             Raw.SecretError.Tags.Unavailable => 13,
             _ => throw new System.InvalidOperationException("unexpected secret result") };
         using var value = result.AsOk;
-        return value.Use(bytes => (ulong)bytes.Length);
+        var copy = value.Use(bytes => bytes.ToArray());
+        var original = (byte[])copy.Clone();
+        value.Dispose();
+        value.Dispose();
+        bool rejected = false;
+        try { value.Use(bytes => bytes.Length); }
+        catch (System.InvalidOperationException) { rejected = true; }
+        if (!rejected) throw new System.InvalidOperationException("closed secret was borrowed");
+        for (int index = 0; index < copy.Length; index++)
+            if (copy[index] != original[index]) throw new System.InvalidOperationException("application copy changed");
+
+        // Exercise the exact facade's zeroization under the actual NativeAOT
+        // compiler while retaining an alias solely for this ownership probe.
+        var owned = new byte[] { 0, 1, 127, 128, 255 };
+        using var probe = new Secret(new Raw.SecretValue(owned, "application/octet-stream", null, null));
+        probe.Dispose();
+        for (int index = 0; index < owned.Length; index++)
+            if (owned[index] != 0) throw new System.InvalidOperationException("owned secret bytes were not erased");
+        return (ulong)copy.Length;
     }
 }
