@@ -6,8 +6,7 @@ accepts the existing shared raw artifact cache. The ordinary constructors retain
 their static-address behavior. No upgrade or registry response enables DNS,
 token services or storage destinations implicitly.
 
-This profile implements [#270](https://github.com/KirilsTurkins/latent-service-fabric/issues/270)
-on the [scoped bearer owner](oci-bearer-read-auth.md), under
+The profile uses the [scoped bearer owner](oci-bearer-read-auth.md), under
 [ADR-0029](../../adr/0029-separate-registry-authority-from-transport-profile.md).
 It does not grant guest network capabilities, admit packages, establish publisher
 trust or claim production/hostile-multitenant certification.
@@ -21,7 +20,7 @@ Both the registry and configured token realm must have approved entries. They
 may share an origin, but the exact token URL remains separately bound by bearer
 policy. Duplicate origins, unknown destinations and partial policies fail closed.
 
-The selected network constructor requires `BearerChallenge`, empty legacy
+The selected network constructor requires `BearerChallenge`, empty static
 `RegistryConfig.addresses` and token `addresses`, and verified HTTPS. It rejects
 `allow_insecure_loopback`; the static test profile remains separate. TLS uses the
 original origin hostname, the pinned root set and explicitly supplied DER roots,
@@ -147,9 +146,12 @@ native-referrer evidence profile; no mutable fallback is implemented.
 ```sh
 cargo test -p latent-network -p latent-oci --all-targets --locked
 python -m unittest tools.tests.test_harbor_registry_runner
-python tools/run_oci_registry_tests.py
 python tools/run_harbor_registry_tests.py --network --output target/harbor-network.json
 ```
+
+For Zot, use the [prepared registry check](oci-registry.md#run-the-real-registry-check),
+including its required Cargo inventory. The owned integration runners require
+Linux x86_64 and Docker.
 
 Harbor uses the digest-pinned images in
 [`images.json`](../../tools/harbor_registry/images.json), the hash-verified 2.15.2
@@ -171,6 +173,6 @@ counts, denial/cleanup results and source identity. A clean committed-head run i
 required for reviewed evidence. Supplied test binaries are hashed but explicitly
 do not establish source correspondence. Working-tree diagnostics are not release
 evidence. The broader HTTP integration fixtures require Linux durable catalogs;
-Windows can run the shared parser/address and registry tests, not substitute for
-that Linux integration coverage. PR CI runs deterministic tests; the owned Harbor
+Windows parser/address tests do not substitute for that Linux integration
+coverage. PR CI runs deterministic tests and the owned Zot integration; the owned Harbor
 invocation is explicit conformance evidence, not an implicit hosted-service check.

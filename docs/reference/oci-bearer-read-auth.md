@@ -1,8 +1,7 @@
 # Bounded OCI Bearer authentication
 
-Phase 3 issue [#269](https://github.com/KirilsTurkins/latent-service-fabric/issues/269)
-extends the original read-only PR #297 with scoped token caching, coalesced
-on-demand refresh, credential rotation and authenticated writes. The complete
+`lsf-oci-bearer-v1` provides scoped token caching, coalesced on-demand refresh,
+credential rotation and authenticated writes. The complete
 `lsf-oci-bearer-v1` transport adds the separately configured
 [DNS and redirect policy](oci-network-profile.md); authentication alone does not
 authorize either implicitly.
@@ -59,9 +58,8 @@ registry advertises another URL.
 
 The identity and action set are trusted operator configuration, never values
 learned from a challenge or guest. Identity fields must be nonempty bounded
-printable ASCII; epochs are positive `u64`. The alpha `BearerChallenge` Rust
-constructor now requires explicit `identity` and `actions`. Static credential
-variants retain their previous meaning. Share one `HttpOciRegistry` owner or its
+printable ASCII; epochs are positive `u64`. The `BearerChallenge` Rust
+constructor requires explicit `identity` and `actions`. Share one `HttpOciRegistry` owner or its
 clones; do not construct a provider/client per dormant deployment or per request.
 
 ## Challenge and scope rules
@@ -174,9 +172,12 @@ reclamation. Rotation does not undo a mutation already submitted to a registry.
 cargo test -p latent-oci --all-targets --locked
 cargo clippy -p latent-oci --all-targets --locked --no-deps -- -D warnings
 python -m unittest tools.tests.test_harbor_registry_runner tools.tests.test_oci_registry_runner
-python tools/run_oci_registry_tests.py
 python tools/run_harbor_registry_tests.py --output target/harbor-receipt.json
 ```
+
+Run the owned integration fixtures on Linux x86_64 with Docker. For the static
+Zot profile, follow the [prepared registry check](oci-registry.md#run-the-real-registry-check);
+that runner requires an explicit Cargo test inventory.
 
 The ordinary Rust suite includes TLS fault peers for malicious authority,
 malformed/oversized/expired tokens, read/write permission, coalescing, retained

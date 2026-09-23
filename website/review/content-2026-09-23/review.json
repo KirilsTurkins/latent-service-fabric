@@ -1346,24 +1346,34 @@
     },
     {
       "source": "docs/reference/oci-bearer-read-auth.md",
-      "words": 1409,
-      "sha256": "206786e15281e252f6b7ffe9ceda65f3dab5dbd785c35243144e4abee52ecf00",
-      "status": "pending",
-      "findings": []
+      "words": 1417,
+      "sha256": "730fb71c491db3701ee18dbbe6527ccb486e41e76c249d1441c630ec2c93fedc",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the entire page against scoped token acquisition, rotation, uncertain writes and current conformance owners.",
+        "Replaced implementation history with the supported authentication behavior; corrected the shared Zot invocation and Linux qualification prerequisites."
+      ]
     },
     {
       "source": "docs/reference/oci-network-profile.md",
-      "words": 1254,
-      "sha256": "7bbbbf49cd2dd12c9a3812c9e02ad4c5b33aed57a36abf50a93a5116a10ee2bb",
-      "status": "pending",
-      "findings": []
+      "words": 1271,
+      "sha256": "1301443cb81bfd475386b50091b98e867bf6449059e4b6dc16c6782cacc0a34c",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the entire page against current address, DNS, connection, redirect and ownership contracts.",
+        "Removed ticket chronology and obsolete compatibility wording; linked the working prepared Zot workflow and stated the maintained Linux qualification boundary."
+      ]
     },
     {
       "source": "docs/reference/oci-registry.md",
-      "words": 2151,
-      "sha256": "f5b0972d251b558778585b3bc078fbdb5053965c4bc48fe76410f4fd355e8141",
-      "status": "pending",
-      "findings": []
+      "words": 2181,
+      "sha256": "2d16757e561a5fc45f84cea698e54a751a4977766dcfe28892a35328a3b2a12a",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the entire page against current registry implementation and successful CI execution.",
+        "Removed obsolete future-work claims for Bearer, Harbor, DNS, redirects and browser hosting.",
+        "Corrected the runnable registry check to prepare and supply the required Cargo inventory; corrected Linux runner support and optional binary semantics."
+      ]
     },
     {
       "source": "docs/reference/operator-cli.md",
