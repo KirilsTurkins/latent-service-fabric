@@ -57,13 +57,13 @@ def wit_bindgen_version() -> str:
     return config["rust"]["dependencies"]["wit-bindgen"]
 
 
-def check_tools() -> None:
+def check_tools(*, include_c: bool = True) -> None:
     config = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
     paths, materials = resolve_tools(config, ROOT, BUILD_ENVIRONMENT)
     TOOL_PATHS.update(paths)
     TOOL_MATERIALS.update({item["name"]: item for item in materials})
     BUILD_ENVIRONMENT["RUSTC"] = str(paths["rustc"])
-    for tool in ("wit-bindgen", "zig"):
+    for tool in (("wit-bindgen", "zig") if include_c else ("wit-bindgen",)):
         located = shutil.which(tool, path=BUILD_ENVIRONMENT.get("PATH"))
         if located is None:
             raise ValueError(f"missing guest tool: {tool}")
@@ -72,6 +72,8 @@ def check_tools() -> None:
     for tool, version in (("wasm-tools", config["contracts"]["wasm-tools"]),
                           ("wit-bindgen", config["rust"]["dependencies"]["wit-bindgen"]),
                           ("zig", config["sdk"]["zig"])):
+        if tool == "zig" and not include_c:
+            continue
         actual = run(tool, "version" if tool == "zig" else "--version", capture=True).strip()
         if version not in actual.split():
             raise ValueError(f"{tool}: expected {version}, found {actual}")
@@ -238,7 +240,7 @@ def main() -> None:
     temporary.mkdir(exist_ok=True)
     BUILD_ENVIRONMENT.update(build_environment(temporary))
     BUILD_ENVIRONMENT.update({"CARGO_INCREMENTAL": "0", "CARGO_TARGET_DIR": str(Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")).resolve())})
-    check_tools()
+    check_tools(include_c=not args.skip_c)
     bindings(output, args.update_bindings)
     sources, started = source_inputs(), int(time.time())
     profiles = [json.loads(path.read_text()) for path in sorted(EXAMPLES.glob("guest_*/profile.json"))]

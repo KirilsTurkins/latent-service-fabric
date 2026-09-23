@@ -1,5 +1,7 @@
 //! Bounded semantic checks for supplied artifacts; no compilation, execution or trust.
 mod arena;
+mod authoring;
+pub use authoring::{derive_capsule_contracts, CapsuleContractInputs};
 mod compare;
 mod compatibility;
 mod host;

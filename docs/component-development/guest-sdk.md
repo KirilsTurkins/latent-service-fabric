@@ -1,5 +1,9 @@
 # Guest SDK: build and run a capsule
 
+For a new independent project, follow [Create your own Rust capsule](rust-authoring.md).
+That guide covers editable source, generated contracts, packaging, signing,
+enforced node admission and cleanup. This reference describes capability ownership.
+
 The maintained guest SDK is [Rust `latent-guest`](../../sdk/rust-guest/README.md).
 A [C fixture](../../sdk/c-guest/README.md) checks generated canonical ABI ownership.
 External client interfaces in Go, TypeScript, Java, .NET, C and Rust are separate
@@ -9,7 +13,7 @@ support or a Node.js/WASI environment inside an LSF activation.
 ## Exact toolchain and host surface
 
 Use the pins in [tools/toolchain.toml](../../tools/toolchain.toml): Rust 1.97.1,
-`wit-bindgen` 0.60.0, `wasm-tools` 1.254.0, Python 3.13.5 and Zig 0.16.0 for C.
+`wit-bindgen` 0.62.0, `wasm-tools` 1.254.0, Python 3.13.5 and Zig 0.16.0 for C.
 Rust guests target `wasm32-unknown-unknown`. The C reactor uses Zig's libc and
 64 KiB stack without importing WASI. Node and compiler use Wasmtime 47.0.4.
 The generated aggregate is `latent:platform/capsule@0.4.0` (host profile V4).

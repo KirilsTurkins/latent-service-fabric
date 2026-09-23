@@ -70,6 +70,16 @@
       "shell": "default",
       "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-state/src/lib.rs'])\nassert selection.profile == 'fast'\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\""
     },
+    ".github/workflows/ci.yml:rust:cargo-cache-identity": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "cargo-cache-identity",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "github.event_name == 'workflow_dispatch' && inputs.cargo_dependency_cache == 'recipe'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/ci_cargo_cache.py --github-output \"$GITHUB_OUTPUT\" > \"$RUNNER_TEMP/lsf-cargo-cache-identity.json\""
+    },
     ".github/workflows/ci.yml:rust:Install pinned validation dependencies": {
       "workflow": ".github/workflows/ci.yml",
       "job": "rust",
@@ -220,6 +230,16 @@
       "shell": "bash",
       "run": "set -o pipefail\npython3 tools/test.py check --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py prepare --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py run --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\""
     },
+    ".github/workflows/ci.yml:rust:Qualify the deterministic Phase 3 security matrix": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Qualify the deterministic Phase 3 security matrix",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_phase3_security\nmkdir -p target/phase3-security\npython3 tools/phase3_security.py --profile pr --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --source-commit \"$GITHUB_SHA\" --output target/phase3-security/pr-receipt.json"
+    },
     ".github/workflows/ci.yml:rust:Validate small Phase 3 resource regressions": {
       "workflow": ".github/workflows/ci.yml",
       "job": "rust",
@@ -230,6 +250,26 @@
       "shell": "default",
       "run": "python3 -m unittest tools.tests.test_phase3_resource tools.tests.test_phase3_resource_web"
     },
+    ".github/workflows/ci.yml:rust:Prepare immutable browser lane component": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Prepare immutable browser lane component",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "mkdir -p \"$RUNNER_TEMP/browser-component\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-component/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-component/application.wasm\""
+    },
+    ".github/workflows/ci.yml:rust:integration_lanes": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "integration_lanes",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\""
+    },
     ".github/workflows/ci.yml:rust:Fetch the pinned operator workflow registry": {
       "workflow": ".github/workflows/ci.yml",
       "job": "rust",
@@ -239,6 +279,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395"
+    },
+    ".github/workflows/ci.yml:rust:Qualify signed static sites through OCI and actual browsers": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Qualify signed static sites through OCI and actual browsers",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "# Reviewed capture owner: tools/static_site.py\nstatic_root=\"${RUNNER_TEMP}/static-site\"\nmkdir -p \"$static_root\" \"${RUNNER_TEMP}/phase2-gate\"\nobjcopy --strip-debug \"${PWD}/target/debug/latentd\" \"${static_root}/latentd\"\npython3 tools/build_static_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --toolchain examples/renderer-profile --output \"${static_root}/builds\"\nLSF_STATIC_BUILDS=\"${static_root}/builds\" LSF_STATIC_FIXTURE_ROOT=\"${static_root}/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_static_site_workflow.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${static_root}/latentd\" --fixture \"${static_root}/fixture\" --toolchain examples/renderer-profile --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/static-site-receipt.json\""
     },
     ".github/workflows/ci.yml:rust:Validate bounded Phase 2 delivery and resource workflows": {
       "workflow": ".github/workflows/ci.yml",
@@ -930,6 +980,46 @@
       "shell": "default",
       "run": "unset CARGO_INCREMENTAL\npython3 tools/run_phase1_measurements.py --profile \"$MEASUREMENT_PROFILE\" --kind \"$MEASUREMENT_KIND\""
     },
+    ".github/workflows/rust-capsule-authoring.yml:authoring:Install pinned validation and guest tools": {
+      "workflow": ".github/workflows/rust-capsule-authoring.yml",
+      "job": "authoring",
+      "name": "Install pinned validation and guest tools",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\ncargo fetch --locked"
+    },
+    ".github/workflows/rust-capsule-authoring.yml:authoring:Test standalone validation and process ownership": {
+      "workflow": ".github/workflows/rust-capsule-authoring.yml",
+      "job": "authoring",
+      "name": "Test standalone validation and process ownership",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process"
+    },
+    ".github/workflows/rust-capsule-authoring.yml:authoring:Execute complete outside-checkout authoring qualification": {
+      "workflow": ".github/workflows/rust-capsule-authoring.yml",
+      "job": "authoring",
+      "name": "Execute complete outside-checkout authoring qualification",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/qualify_rust_capsules.py --output \"$RUNNER_TEMP/rust-capsule-authoring\""
+    },
+    ".github/workflows/rust-capsule-authoring.yml:authoring:Test contract derivation and isolated provenance approvals": {
+      "workflow": ".github/workflows/rust-capsule-authoring.yml",
+      "job": "authoring",
+      "name": "Test contract derivation and isolated provenance approvals",
+      "jobIf": "success()",
+      "stepIf": "success() || failure()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo test --locked -p latent-packaging semantics::authoring\ncargo test --locked -p latent-signing --test guest_provenance"
+    },
     ".github/workflows/security-baseline.yml:scope:select": {
       "workflow": ".github/workflows/security-baseline.yml",
       "job": "scope",
@@ -1069,56 +1159,6 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 controls/tools/security_scan.py rustsec --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
-    },
-    ".github/workflows/ci.yml:rust:Qualify the deterministic Phase 3 security matrix": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Qualify the deterministic Phase 3 security matrix",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 -m unittest tools.tests.test_phase3_security\nmkdir -p target/phase3-security\npython3 tools/phase3_security.py --profile pr --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --source-commit \"$GITHUB_SHA\" --output target/phase3-security/pr-receipt.json"
-    },
-    ".github/workflows/ci.yml:rust:Prepare immutable browser lane component": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Prepare immutable browser lane component",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "mkdir -p \"$RUNNER_TEMP/browser-component\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-component/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-component/application.wasm\""
-    },
-    ".github/workflows/ci.yml:rust:integration_lanes": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "integration_lanes",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\""
-    },
-    ".github/workflows/ci.yml:rust:Qualify signed static sites through OCI and actual browsers": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Qualify signed static sites through OCI and actual browsers",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "bash",
-      "run": "# Reviewed capture owner: tools/static_site.py\nstatic_root=\"${RUNNER_TEMP}/static-site\"\nmkdir -p \"$static_root\" \"${RUNNER_TEMP}/phase2-gate\"\nobjcopy --strip-debug \"${PWD}/target/debug/latentd\" \"${static_root}/latentd\"\npython3 tools/build_static_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --toolchain examples/renderer-profile --output \"${static_root}/builds\"\nLSF_STATIC_BUILDS=\"${static_root}/builds\" LSF_STATIC_FIXTURE_ROOT=\"${static_root}/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_static_site_workflow.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${static_root}/latentd\" --fixture \"${static_root}/fixture\" --toolchain examples/renderer-profile --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/static-site-receipt.json\""
-    },
-    ".github/workflows/ci.yml:rust:cargo-cache-identity": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "cargo-cache-identity",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "github.event_name == 'workflow_dispatch' && inputs.cargo_dependency_cache == 'recipe'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 tools/ci_cargo_cache.py --github-output \"$GITHUB_OUTPUT\" > \"$RUNNER_TEMP/lsf-cargo-cache-identity.json\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2478,7 +2518,7 @@
       "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
     },
     "tools/build_guest_capsules.py": {
-      "sha256": "62c3ef3aadb3c9b4ee1d319ef59730292c609de1e01b805ef0ac9613b6550976"
+      "sha256": "34e8ed5683bc9625a8c263c66a56d9af3e671e0f707d04971130fd902317316a"
     },
     "tools/build_native_runtime.py": {
       "sha256": "8aa6e2df82afe7f69c4acc7ae4ddddcc339b0ee16681cfa0984df90623aa4732"
@@ -2492,6 +2532,9 @@
     "tools/build_provenance.py": {
       "sha256": "03c1c677cb530fc6b762440dd3a7f762f945892909ad9034af7a115a17fbdb97"
     },
+    "tools/build_static_sites.py": {
+      "sha256": "5acd3d499791273271236d0e60077763b6e9dd22ccee58aaac46d2b69733035c"
+    },
     "tools/check_owned_diagnostics.py": {
       "sha256": "38d0f7507d674c4b0ba0c0e6a72199b6250fbc48139dc909079116c1244f5d92"
     },
@@ -2500,6 +2543,12 @@
     },
     "tools/check_tool_versions.py": {
       "sha256": "5e4f554e98632c88406d142deb121bd65c5acb54b376479624672f8e79545df6"
+    },
+    "tools/ci_cargo.py": {
+      "sha256": "ceb80198a3ba1cf436b02271bdba3f9f104b943b875d75fc87468990794e8392"
+    },
+    "tools/ci_cargo_cache.py": {
+      "sha256": "2e8182e237e1dbce64e0c7d0375319dde5df3c69517a785d808549c48a119972"
     },
     "tools/ci_coverage.py": {
       "sha256": "67df58fbde773857194e74f52810f8a5e1458efbfe3d7dfe4166ec19aa1461f1"
@@ -2545,6 +2594,9 @@
     },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
+    },
+    "tools/qualify_rust_capsules.py": {
+      "sha256": "e398d6069280aac5b6e7efef32cc71098cdd09626df42a53c8a1f920893a8630"
     },
     "tools/reset_validation_echo.py": {
       "sha256": "7bfdd62d41f709ccee0de64e0c2b14868d4033444ca4e2b0a959424019108d2e"
@@ -2612,6 +2664,9 @@
     "tools/run_security_profile_workflow.py": {
       "sha256": "a5652152f2d52549122a413ccab5726bea2c7fd2006ee8e89be1633cb95fa3d2"
     },
+    "tools/run_static_site_workflow.py": {
+      "sha256": "4660f2e124a5e180fc986e667fc52c9e91ffd8f69ff88ec9686ee610b8c3e995"
+    },
     "tools/run_vault_secret_tests.py": {
       "sha256": "81ab09bf676f22fca2e1cb923353586cef8d36361980cac4091677bcbe9abcf4"
     },
@@ -2629,6 +2684,12 @@
     },
     "tools/stage_runtime_wit.py": {
       "sha256": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520"
+    },
+    "tools/static_site.py": {
+      "sha256": "5e2a5228f9bd06b06534a7b5c5b51b8e3a42ec0d924c82e661f4af44249504ce"
+    },
+    "tools/test.py": {
+      "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
     },
     "tools/validate_contracts.sh": {
       "sha256": "19a9c1c469cdf4ec6fd26b7d882ad979107f91e66ae50bcb72fb74d6890ea7ba"
@@ -2656,24 +2717,6 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
-    },
-    "tools/test.py": {
-      "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
-    },
-    "tools/build_static_sites.py": {
-      "sha256": "5acd3d499791273271236d0e60077763b6e9dd22ccee58aaac46d2b69733035c"
-    },
-    "tools/run_static_site_workflow.py": {
-      "sha256": "4660f2e124a5e180fc986e667fc52c9e91ffd8f69ff88ec9686ee610b8c3e995"
-    },
-    "tools/static_site.py": {
-      "sha256": "5e2a5228f9bd06b06534a7b5c5b51b8e3a42ec0d924c82e661f4af44249504ce"
-    },
-    "tools/ci_cargo.py": {
-      "sha256": "ceb80198a3ba1cf436b02271bdba3f9f104b943b875d75fc87468990794e8392"
-    },
-    "tools/ci_cargo_cache.py": {
-      "sha256": "2e8182e237e1dbce64e0c7d0375319dde5df3c69517a785d808549c48a119972"
     }
   },
   "pythonCases": {
@@ -2933,6 +2976,8 @@
       "BuildProcessTests.test_flood_is_bounded_and_creates_no_reader_threads",
       "BuildProcessTests.test_limits_reject_before_spawning",
       "BuildProcessTests.test_nonzero_output_and_spawn_error_are_redacted",
+      "BuildProcessTests.test_opt_in_diagnostics_do_not_disable_process_output_limits",
+      "BuildProcessTests.test_opt_in_nonzero_diagnostics_preserve_status_and_both_streams",
       "BuildProcessTests.test_repeated_success_and_failure_do_not_retain_handles_or_threads",
       "BuildProcessTests.test_second_cancellation_during_cleanup_cannot_skip_termination",
       "BuildProcessTests.test_signal_before_cleanup_context_entry_cannot_abandon_owner",
@@ -2998,6 +3043,61 @@
       "BrowserArtifactTests.test_regressions_run_in_the_existing_lightweight_job",
       "BrowserArtifactTests.test_skipped_or_unreached_producer_never_uploads",
       "BrowserArtifactTests.test_unselected_renderer_never_uploads"
+    ],
+    "tools/tests/test_ci_cargo.py": [
+      "CargoRecipeTests.test_all_five_host_guest_binding_checks_are_retained",
+      "CargoRecipeTests.test_cli_plan_is_json_and_execution_errors_return_failure",
+      "CargoRecipeTests.test_every_command_has_a_coverage_tuple",
+      "CargoRecipeTests.test_failed_first_build_removes_stale_inventory",
+      "CargoRecipeTests.test_failure_stops_later_commands",
+      "CargoRecipeTests.test_format_and_clippy_policy_are_retained",
+      "CargoRecipeTests.test_independent_production_feature_resolution_is_retained",
+      "CargoRecipeTests.test_invalid_or_unsuccessful_stream_never_publishes",
+      "CargoRecipeTests.test_inventory_cannot_overwrite_source_or_follow_symlinks",
+      "CargoRecipeTests.test_inventory_option_is_exclusive_to_preparation",
+      "CargoRecipeTests.test_missing_toolchain_declaration_fails_without_executing",
+      "CargoRecipeTests.test_msrv_is_independent_and_comes_from_workspace_declaration",
+      "CargoRecipeTests.test_no_cache_hit_short_circuit",
+      "CargoRecipeTests.test_options_precede_rustc_separator",
+      "CargoRecipeTests.test_overlong_inventory_line_fails",
+      "CargoRecipeTests.test_partial_inventory_is_removed_on_cargo_failure",
+      "CargoRecipeTests.test_signal_exit_is_a_failure",
+      "CargoRecipeTests.test_successful_inventory_is_published_atomically",
+      "CargoRecipeTests.test_tests_doctests_and_compatibility_negative_controls_are_retained",
+      "CargoRecipeTests.test_timings_do_not_change_formatting",
+      "CargoRecipeTests.test_unknown_recipes_and_configurations_fail_closed",
+      "CargoRecipeTests.test_workflow_keeps_required_recipes_and_runtime_inventory_handoff",
+      "CargoRecipeTests.test_workspace_build_and_check_are_not_assumed_redundant",
+      "FoundationRecipeTests.test_comment_cannot_replace_binding_execution",
+      "FoundationRecipeTests.test_conditionally_skipped_binding_step_does_not_satisfy_foundation",
+      "FoundationRecipeTests.test_real_invocations_satisfy_foundation",
+      "FoundationRecipeTests.test_recipe_must_contain_host_and_guest_binding_checks",
+      "FoundationRecipeTests.test_workspace_locked_scope_is_not_optional"
+    ],
+    "tools/tests/test_ci_cargo_aot_handoff.py": [
+      "AotRecipeHandoffTests.test_missing_preparation_is_not_a_valid_merge",
+      "AotRecipeHandoffTests.test_only_aot_selectors_are_exported_from_the_prepared_manifest",
+      "AotRecipeHandoffTests.test_preparation_after_tests_is_not_a_valid_merge",
+      "AotRecipeHandoffTests.test_same_inventory_reaches_authenticated_preparation_before_tests",
+      "AotRecipeHandoffTests.test_skipped_or_ignored_preparation_is_not_a_valid_merge"
+    ],
+    "tools/tests/test_ci_cargo_cache.py": [
+      "CacheIdentityTests.test_cache_scope_is_dependencies_not_evidence_or_workspace_outputs",
+      "CacheIdentityTests.test_candidate_rejects_unknown_or_msrv_profile_combinations",
+      "CacheIdentityTests.test_candidate_rejects_unobserved_compiler_or_linker_overrides",
+      "CacheIdentityTests.test_credentials_and_unrelated_environment_are_not_retained",
+      "CacheIdentityTests.test_every_build_input_changes_its_hash",
+      "CacheIdentityTests.test_full_compatibility_digest_is_in_the_nonfallback_prefix",
+      "CacheIdentityTests.test_identity_is_deterministic_and_order_independent",
+      "CacheIdentityTests.test_inactive_profile_is_not_a_baseline_build_input",
+      "CacheIdentityTests.test_input_count_and_size_are_bounded",
+      "CacheIdentityTests.test_missing_deleted_foreign_and_symlinked_inputs_fail",
+      "CacheIdentityTests.test_observation_failure_cannot_produce_a_key",
+      "CacheIdentityTests.test_opt_in_profile_preserves_correctness_and_never_overrides_release",
+      "CacheIdentityTests.test_recipe_feature_and_target_changes_invalidate",
+      "CacheIdentityTests.test_toolchain_architecture_profile_flags_and_lock_invalidate",
+      "CacheIdentityTests.test_unrelated_workflow_docs_and_source_changes_do_not_invalidate",
+      "CacheIdentityTests.test_workflow_cache_writes_and_scope_match_the_reviewed_policy"
     ],
     "tools/tests/test_ci_coverage.py": [
       "CoverageTests.test_changed_nested_owner_requires_explicit_inventory_review",
@@ -5005,6 +5105,30 @@
       "ExecutionTests.test_real_path_sentinels_fail_and_record_every_forbidden_tool",
       "ExecutionTests.test_unsupported_platform_never_creates_success_report"
     ],
+    "tools/tests/test_rust_capsule_authoring.py": [
+      "RustProjectTests.test_additional_dependencies_require_exact_versions_and_no_path_escape",
+      "RustProjectTests.test_all_tutorials_and_capability_examples_create_valid_standalone_inputs",
+      "RustProjectTests.test_build_failure_retains_stage_but_cannot_publish_a_success_marker",
+      "RustProjectTests.test_build_rejects_source_output_overlap_before_tool_execution",
+      "RustProjectTests.test_build_script_must_be_captured_not_an_absolute_escape",
+      "RustProjectTests.test_captured_application_code_can_change_without_runtime_edits",
+      "RustProjectTests.test_cargo_and_manifest_identity_must_agree",
+      "RustProjectTests.test_cargo_configuration_and_toolchain_overrides_are_rejected",
+      "RustProjectTests.test_duplicate_nonfinite_and_excessively_nested_json_are_rejected",
+      "RustProjectTests.test_edited_sdk_does_not_satisfy_the_original_source_lock",
+      "RustProjectTests.test_fresh_projects_never_overwrite_existing_files",
+      "RustProjectTests.test_independent_project_preserves_canonical_source_and_exact_lock",
+      "RustProjectTests.test_manifest_fields_budgets_and_versions_are_closed",
+      "RustProjectTests.test_nonportable_and_colliding_package_names_are_rejected_before_creation",
+      "RustProjectTests.test_opt_in_diagnostics_keep_nonzero_status_without_false_success",
+      "RustProjectTests.test_overall_command_deadline_precedes_child_creation",
+      "RustProjectTests.test_reviewed_dependency_lock_rejects_changed_authoritative_checksums",
+      "RustProjectTests.test_sdk_inheritance_cannot_introduce_uncaptured_dependency_overrides",
+      "RustProjectTests.test_sdk_lock_shape_and_version_fail_closed",
+      "RustProjectTests.test_snapshot_enforces_file_byte_count_and_total_budgets",
+      "RustProjectTests.test_snapshot_excludes_only_root_build_and_git_data",
+      "RustProjectTests.test_snapshot_rejects_linked_files_directories_and_ancestors"
+    ],
     "tools/tests/test_s3_blob_runner.py": [
       "S3RunnerTests.test_cleanup_verifies_label_and_immutable_id",
       "S3RunnerTests.test_daemon_failure_cannot_report_successful_cleanup",
@@ -5345,61 +5469,6 @@
     ],
     "tools/tests/test_zig_cache_boundary.py": [
       "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation"
-    ],
-    "tools/tests/test_ci_cargo.py": [
-      "CargoRecipeTests.test_all_five_host_guest_binding_checks_are_retained",
-      "CargoRecipeTests.test_cli_plan_is_json_and_execution_errors_return_failure",
-      "CargoRecipeTests.test_every_command_has_a_coverage_tuple",
-      "CargoRecipeTests.test_failed_first_build_removes_stale_inventory",
-      "CargoRecipeTests.test_failure_stops_later_commands",
-      "CargoRecipeTests.test_format_and_clippy_policy_are_retained",
-      "CargoRecipeTests.test_independent_production_feature_resolution_is_retained",
-      "CargoRecipeTests.test_invalid_or_unsuccessful_stream_never_publishes",
-      "CargoRecipeTests.test_inventory_cannot_overwrite_source_or_follow_symlinks",
-      "CargoRecipeTests.test_inventory_option_is_exclusive_to_preparation",
-      "CargoRecipeTests.test_missing_toolchain_declaration_fails_without_executing",
-      "CargoRecipeTests.test_msrv_is_independent_and_comes_from_workspace_declaration",
-      "CargoRecipeTests.test_no_cache_hit_short_circuit",
-      "CargoRecipeTests.test_options_precede_rustc_separator",
-      "CargoRecipeTests.test_overlong_inventory_line_fails",
-      "CargoRecipeTests.test_partial_inventory_is_removed_on_cargo_failure",
-      "CargoRecipeTests.test_signal_exit_is_a_failure",
-      "CargoRecipeTests.test_successful_inventory_is_published_atomically",
-      "CargoRecipeTests.test_tests_doctests_and_compatibility_negative_controls_are_retained",
-      "CargoRecipeTests.test_timings_do_not_change_formatting",
-      "CargoRecipeTests.test_unknown_recipes_and_configurations_fail_closed",
-      "CargoRecipeTests.test_workflow_keeps_required_recipes_and_runtime_inventory_handoff",
-      "CargoRecipeTests.test_workspace_build_and_check_are_not_assumed_redundant",
-      "FoundationRecipeTests.test_comment_cannot_replace_binding_execution",
-      "FoundationRecipeTests.test_conditionally_skipped_binding_step_does_not_satisfy_foundation",
-      "FoundationRecipeTests.test_real_invocations_satisfy_foundation",
-      "FoundationRecipeTests.test_recipe_must_contain_host_and_guest_binding_checks",
-      "FoundationRecipeTests.test_workspace_locked_scope_is_not_optional"
-    ],
-    "tools/tests/test_ci_cargo_cache.py": [
-      "CacheIdentityTests.test_cache_scope_is_dependencies_not_evidence_or_workspace_outputs",
-      "CacheIdentityTests.test_candidate_rejects_unknown_or_msrv_profile_combinations",
-      "CacheIdentityTests.test_candidate_rejects_unobserved_compiler_or_linker_overrides",
-      "CacheIdentityTests.test_credentials_and_unrelated_environment_are_not_retained",
-      "CacheIdentityTests.test_every_build_input_changes_its_hash",
-      "CacheIdentityTests.test_full_compatibility_digest_is_in_the_nonfallback_prefix",
-      "CacheIdentityTests.test_identity_is_deterministic_and_order_independent",
-      "CacheIdentityTests.test_inactive_profile_is_not_a_baseline_build_input",
-      "CacheIdentityTests.test_input_count_and_size_are_bounded",
-      "CacheIdentityTests.test_missing_deleted_foreign_and_symlinked_inputs_fail",
-      "CacheIdentityTests.test_observation_failure_cannot_produce_a_key",
-      "CacheIdentityTests.test_opt_in_profile_preserves_correctness_and_never_overrides_release",
-      "CacheIdentityTests.test_recipe_feature_and_target_changes_invalidate",
-      "CacheIdentityTests.test_toolchain_architecture_profile_flags_and_lock_invalidate",
-      "CacheIdentityTests.test_unrelated_workflow_docs_and_source_changes_do_not_invalidate",
-      "CacheIdentityTests.test_workflow_cache_writes_and_scope_match_the_reviewed_policy"
-    ],
-    "tools/tests/test_ci_cargo_aot_handoff.py": [
-      "AotRecipeHandoffTests.test_missing_preparation_is_not_a_valid_merge",
-      "AotRecipeHandoffTests.test_only_aot_selectors_are_exported_from_the_prepared_manifest",
-      "AotRecipeHandoffTests.test_preparation_after_tests_is_not_a_valid_merge",
-      "AotRecipeHandoffTests.test_same_inventory_reaches_authenticated_preparation_before_tests",
-      "AotRecipeHandoffTests.test_skipped_or_ignored_preparation_is_not_a_valid_merge"
     ]
   },
   "pythonTestModules": [
@@ -5609,6 +5678,7 @@
     "tools/tests/test_reset_validation_echo.py",
     "tools/tests/test_rollout_canary_policy_schema.py",
     "tools/tests/test_run_aot_tests.py",
+    "tools/tests/test_rust_capsule_authoring.py",
     "tools/tests/test_s3_blob_runner.py",
     "tools/tests/test_sbom_policy_schema.py",
     "tools/tests/test_sbom_schemas.py",
@@ -5649,6 +5719,7 @@
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
+    ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b"
   }

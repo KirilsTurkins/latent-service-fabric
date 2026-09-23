@@ -56,6 +56,7 @@ pub struct BuildParameters {
 pub enum BuildRecipe {
     Rust(BuildParameters),
     C(CBuildParameters),
+    RustCapsule(RustCapsuleBuildParameters),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -96,4 +97,17 @@ pub(crate) struct Predicate<T = BuildObservation> {
     pub(crate) issued_at: u64,
     pub(crate) expires_at: u64,
     pub(crate) observation: T,
+}
+
+/// Standalone Cargo library recipe, distinct from the maintained guest fixtures.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RustCapsuleBuildParameters {
+    pub cargo_package: String,
+    pub manifest_path: String,
+    pub crate_type: String,
+    pub target: String,
+    pub profile: String,
+    pub locked: bool,
+    pub incremental: bool,
 }
