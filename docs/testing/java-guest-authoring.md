@@ -41,7 +41,7 @@ engine does not gain Java features or larger operator limits. Pooling and mixed
 renderer installation are rejected for this profile.
 
 The evidence distinguishes static reservation charge from actual resident RSS.
-Node receipts retain process-tree RSS/PSS, thread counts, provider ownership,
+Node receipts retain process-tree RSS/high-water RSS, thread counts, provider ownership,
 prepared-cache metrics, cold/warm timing and invocation memory/fuel receipts.
 Those observations are measured evidence, not a general claim about every Java
 class-library program. Final component sizes, compilation and activation times
@@ -97,3 +97,18 @@ field`. Empty records now fail explicitly before Java compilation, and the
 generator validates its real component-type metadata before invoking TeaVM.
 The executable regression uses valid empty and populated lists of a non-empty
 record. This unsupported contract is not silently translated into another type.
+
+The [first enforced-node attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35922138058)
+at `8f3c11f9df5d129b2aaaecc5847495f3a19e888a` passed all ten real SDK tests,
+including local service, in 30.90 seconds. Five initial deployments, dormant
+populations of 5/9/17, all twelve typed tutorial calls, Java exception cleanup,
+managed heap exhaustion and fresh subsequent invocations passed. Fuel exhaustion
+then exposed a shared clock-accounting defect: provider calls charged the common
+ledger without reducing the native Store counter, so final accounting overran
+the grant by the clock charges and masked the fuel interruption as a trap.
+Both clock imports now checkpoint and synchronize the native counter at the
+host boundary. The finite fuel budget and required resource-exhausted outcome
+remain unchanged. A real two-clock/infinite-loop regression checks exact guest
+plus host accounting and fresh reuse with and without cooperative fuel yielding.
+The remainder of the node workflow and printed guide remain unqualified until
+the complete corrected run passes.
