@@ -41,6 +41,9 @@ async fn main() -> wasmtime::Result<()> {
     if std::env::args().nth(3).as_deref() == Some("sdk-random") {
         return sdk_random(&engine, &component).await;
     }
+    if std::env::args().nth(3).as_deref() == Some("sdk-blob") {
+        return sdk_blob(&engine, &component).await;
+    }
     let pending = Arc::new(AtomicUsize::new(0));
     let count = pending.clone();
     let mut linker = Linker::new(&engine);
@@ -169,6 +172,111 @@ async fn sdk_random(engine: &Engine, component: &Component) -> wasmtime::Result<
         println!("diagnostic random case {which}: {result:?}, output {output:?}");
         result?;
         assert_eq!(output, [Val::U64(expected)]);
+    }
+    Ok(())
+}
+
+async fn sdk_blob(engine: &Engine, component: &Component) -> wasmtime::Result<()> {
+    use latent_component_bindings::host::blob::latent::blob0_2_0::blob as wit;
+    use wasmtime::component::{Resource, ResourceType};
+    let dropped = Arc::new(AtomicUsize::new(0));
+    let counter = dropped.clone();
+    let mut linker = Linker::new(engine);
+    let mut host = linker.instance("latent:blob/blob@0.2.0")?;
+    host.resource(
+        "chunk",
+        ResourceType::host::<wit::Chunk>(),
+        move |_, rep| {
+            assert_eq!(rep, 7);
+            counter.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        },
+    )?;
+    host.func_wrap_concurrent("create", |_, (_media, size): (String, Option<u64>)| {
+        Box::pin(async move {
+            assert_eq!(size, Some(4));
+            Ok((Ok::<u64, wit::BlobError>(1),))
+        })
+    })?;
+    host.func_wrap_concurrent("open", |_, (reference,): (wit::BlobReference,)| {
+        Box::pin(async move {
+            assert_eq!(reference.size, 4);
+            Ok((Ok::<u64, wit::BlobError>(2),))
+        })
+    })?;
+    host.func_wrap_concurrent(
+        "write",
+        |_, (handle, offset, bytes): (u64, u64, Vec<u8>)| {
+            Box::pin(async move {
+                assert_eq!(
+                    (handle, offset, bytes.as_slice()),
+                    (1, 0, b"data".as_slice())
+                );
+                Ok((Ok::<u64, wit::BlobError>(4),))
+            })
+        },
+    )?;
+    host.func_wrap_concurrent("seal", |_, (handle,): (u64,)| {
+        Box::pin(async move {
+            assert_eq!(handle, 1);
+            Ok((Ok::<_, wit::BlobError>(wit::BlobReference {
+                digest: format!("sha256:{}", "a".repeat(64)),
+                size: 4,
+                media_type: "text/plain".into(),
+            }),))
+        })
+    })?;
+    host.func_wrap_concurrent("close", |_, (handle,): (u64,)| {
+        Box::pin(async move {
+            assert_eq!(handle, 2);
+            Ok((Ok::<bool, wit::BlobError>(true),))
+        })
+    })?;
+    host.func_wrap_concurrent("read", |_, (handle, offset, length): (u64, u64, u32)| {
+        Box::pin(async move {
+            assert_eq!((handle, offset, length), (2, 0, 4));
+            Ok((Ok::<_, wit::BlobError>(Resource::<wit::Chunk>::new_own(7)),))
+        })
+    })?;
+    host.func_wrap_concurrent("chunk-bytes", |_, (chunk,): (Resource<wit::Chunk>,)| {
+        Box::pin(async move {
+            assert_eq!(chunk.rep(), 7);
+            Ok((Ok::<_, wit::BlobError>(b"data".to_vec()),))
+        })
+    })?;
+    for (ordinal, which) in [0, 3, 0].into_iter().enumerate() {
+        let mut store = Store::new(
+            engine,
+            StoreLimitsBuilder::new()
+                .memory_size(128 * 1024 * 1024)
+                .build(),
+        );
+        store.limiter(|limits| limits);
+        store.set_fuel(1_000_000_000)?;
+        let instance = linker.instantiate_async(&mut store, component).await?;
+        let (_, interface) = instance
+            .get_export(&mut store, None, "tests:local-blobs/api@1.0.0")
+            .expect("blob API");
+        let (_, index) = instance
+            .get_export(&mut store, Some(&interface), "run")
+            .expect("run");
+        let function = instance.get_func(&mut store, index).expect("function");
+        let mut output = [Val::Bool(false)];
+        let result = function
+            .call_async(
+                &mut store,
+                &[Val::U32(which), Val::String(String::new()), Val::U64(0)],
+                &mut output,
+            )
+            .await;
+        println!("diagnostic blob case {which}: {result:?}, output {output:?}");
+        result?;
+        assert_eq!(output, [Val::U64(if which == 3 { 3 } else { 4 })]);
+        assert_eq!(
+            dropped.load(Ordering::SeqCst),
+            ordinal + 1,
+            "explicit canonical drop required before store cleanup"
+        );
     }
     Ok(())
 }
