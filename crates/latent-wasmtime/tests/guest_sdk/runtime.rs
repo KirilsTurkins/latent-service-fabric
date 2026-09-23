@@ -130,7 +130,9 @@ impl Runtime {
                             "services":services,"publications":publications.iter().map(PublicationId::as_str).collect::<Vec<_>>(),
                             "capability":capability,"operations":entry.operation,
                             "resources":{"kind":if capability == RANDOM {"random"} else {"clock"}},
-                            "ceiling":{"operations":4096,"inputBytes":0,"outputBytes":32768,"wallTimeMillis":5000}
+                            // The scalar random provider audits an eight-byte
+                            // requested-length input, even though WIT has no args.
+                            "ceiling":{"operations":4096,"inputBytes":if capability == RANDOM {8} else {0},"outputBytes":32768,"wallTimeMillis":5000}
                         }]
                     }),
                 ),
