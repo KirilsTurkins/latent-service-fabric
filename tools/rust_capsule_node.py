@@ -76,7 +76,7 @@ def deploy(client, source, publication, *, name=None, grants=None, generation="0
                         "--expected-generation", generation, "--expected-state-version", state["stateVersion"])
     require(result["outcomeKnown"], "authoring-deployment-uncertain")
     return {"name": name, "service": value["spec"]["service"], "budget": value["spec"]["resources"],
-            "generation": result["data"]["receipt"]["generation"], "publication": publication}
+            "generation": result["data"]["receipt"]["objectGeneration"], "publication": publication}
 
 
 def grant_http(client, node, fixture, publication, target, port):

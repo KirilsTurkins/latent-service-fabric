@@ -1,8 +1,30 @@
 name: Rust capsule authoring
 
 on:
+  pull_request:
+    branches: [development]
+    paths:
+      - '.github/workflows/rust-capsule-authoring.yml'
+      - 'sdk/rust-guest/**'
+      - 'crates/**'
+      - 'apps/**'
+      - 'examples/**'
+      - 'schemas/**'
+      - 'tools/**'
+      - 'wit/**'
+      - 'Cargo.*'
   push:
-    branches: [feat/544-rust-capsule-authoring]
+    branches: [development]
+    paths:
+      - '.github/workflows/rust-capsule-authoring.yml'
+      - 'sdk/rust-guest/**'
+      - 'crates/**'
+      - 'apps/**'
+      - 'examples/**'
+      - 'schemas/**'
+      - 'tools/**'
+      - 'wit/**'
+      - 'Cargo.*'
 
 permissions:
   contents: read
@@ -13,12 +35,9 @@ concurrency:
 
 jobs:
   authoring:
-    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/feat/544-rust-capsule-authoring'
     name: Standalone Rust capsule authoring
     runs-on: ubuntu-24.04
     timeout-minutes: 35
-    permissions:
-      contents: write
     env:
       CARGO_BUILD_JOBS: 2
       CARGO_PROFILE_DEV_DEBUG: 0
@@ -28,42 +47,6 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: Apply the exact authored implementation checkpoint
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import base64, hashlib, json, lzma, os, subprocess, urllib.request
-          from pathlib import Path
-          repo = 'KirilsTurkins/latent-service-fabric'
-          branch = 'feat/544-rust-capsule-authoring'
-          assert os.environ['GITHUB_REPOSITORY'] == repo
-          assert os.environ['GITHUB_REF'] == 'refs/heads/' + branch
-          if not Path('tools/qualify_rust_capsules.py').exists():
-              identities = ['8487814b80a0d421c92f0931104883fbc1adc552', 'f0c1a2c8d6abaae7f9c8bdfee5fda58f1e2c30ff', '94c3cdd0eac64edc2fb8f49c4b2c9c78d835c105', '6d1d39be1d71344e7993511011a921cebccbd657', 'dec503b3125868339c5150c89bb74df54b3667ad', '8c6cf072d1fe95800633783efa7181f7918e26c0', '36185b14b72edac759dd41fb7a65f5c960a32a88', '1713c591f2c12c4a23362035fde4783d82f3f70f', '2b34f06dbba25350502bc0bc1bdab9e3f3a01317', '4e427565c48c98861a4565a3490b54987f813a83', '00502db8a22404b92875f0aabf875dc97b678ddd']
-              chunks = []
-              for identity in identities:
-                  request = urllib.request.Request(f'https://api.github.com/repos/{repo}/git/blobs/{identity}', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
-                  with urllib.request.urlopen(request, timeout=20) as response:
-                      data = json.loads(response.read(20000))
-                  chunk = base64.b64decode(data['content'])
-                  assert len(chunk) <= 4096
-                  assert hashlib.sha1(b'blob ' + str(len(chunk)).encode() + b'\0' + chunk).hexdigest() == identity
-                  chunks.append(chunk)
-              decoder = lzma.LZMADecompressor(memlimit=64 * 1024 * 1024)
-              patch = decoder.decompress(b''.join(chunks), max_length=202413)
-              assert decoder.eof and len(patch) == 202412
-              assert hashlib.sha256(patch).hexdigest() == '68d477ef0ba0bbc85bc3f6d62416198f8a0405a11042cdcdbb83e27a56dfe620'
-              assert b'diff --git a/.github/' not in patch
-              subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
-              subprocess.run(['git', 'apply', '-'], input=patch, check=True)
-              subprocess.run(['git', 'add', 'crates', 'examples', 'schemas', 'tools'], check=True)
-              subprocess.run(['git', '-c', 'user.name=github-actions[bot]', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com', 'commit', '-m', 'feat: add standalone typed Rust capsule authoring and enforced-node qualification (#544)'], check=True)
-              env = dict(os.environ)
-              env.update(GIT_CONFIG_COUNT='1', GIT_CONFIG_KEY_0='http.https://github.com/.extraheader', GIT_CONFIG_VALUE_0='AUTHORIZATION: basic ' + base64.b64encode(('x-access-token:' + os.environ['GH_TOKEN']).encode()).decode())
-              subprocess.run(['git', 'push', 'origin', 'HEAD:refs/heads/' + branch], env=env, check=True)
-          print('Qualification source:', subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip())
-          PY
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.13.5
