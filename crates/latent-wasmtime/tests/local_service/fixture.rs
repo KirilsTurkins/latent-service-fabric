@@ -102,6 +102,7 @@ pub struct Fixture {
     _provider: ProviderRegistration,
     pub target: DeploymentManifest,
     pub observations: Arc<Observations>,
+    load: Arc<NodeLoadState>,
     _root: tempfile::TempDir,
 }
 impl Fixture {
@@ -377,18 +378,12 @@ impl Fixture {
             )
             .unwrap(),
         );
-        let load = Arc::new(
-            NodeLoadState::new(NodeLoadSnapshot {
-                accepting: true,
-                cpu_pressure_milli: 0,
-                memory_pressure_milli: 0,
-                queue_delay_millis: 0,
-                observed_at: Instant::now(),
-            })
-            .unwrap(),
+        let load = Arc::new(NodeLoadState::new(current_fixture_load()).unwrap());
+        let admission = LocalAdmissionController::new(
+            Arc::new(store.pin().unwrap()),
+            quotas.clone(),
+            load.clone(),
         );
-        let admission =
-            LocalAdmissionController::new(Arc::new(store.pin().unwrap()), quotas.clone(), load);
         let observations = Arc::new(Observations {
             starts: Mutex::new(vec![]),
             terminals: Mutex::new(vec![]),
@@ -427,14 +422,16 @@ impl Fixture {
             _provider: provider,
             target,
             observations,
+            load,
             _root: root,
         }
     }
-    #[expect(
-        clippy::unused_self,
-        reason = "fixture keeps request construction paired with its node composition"
-    )]
     pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
+        // This fixture has no production node monitor. Publish its explicitly
+        // synthetic current load before each new request, including after slow
+        // cold managed-component compilation. Admission's normal sample-age
+        // limit remains unchanged, and a failed invocation is never retried.
+        self.load.publish(current_fixture_load()).unwrap();
         let mut request = admission_fixture::request(id);
         request.target.service = ServiceId("caller".into());
         request.target.contract = ContractId(component::CALLER.into());
@@ -490,6 +487,15 @@ impl Fixture {
                 &mut |_| Ok(()),
             )
             .unwrap();
+    }
+}
+fn current_fixture_load() -> NodeLoadSnapshot {
+    NodeLoadSnapshot {
+        accepting: true,
+        cpu_pressure_milli: 0,
+        memory_pressure_milli: 0,
+        queue_delay_millis: 0,
+        observed_at: Instant::now(),
     }
 }
 fn deployment(
