@@ -55,7 +55,7 @@ per publication. A mutation's compare-and-swap precondition belongs to that
 publication. A new package starts with expected generation zero. Reusing the
 generation of another publication is a conflict.
 
-Retained successful legacy operation receipts preserve their original association.
+Retained successful operation receipts preserve their exact publication association.
 Replay after coexistence or restart returns that captured publication and the
 original historical result, even if fresh component selection is now ambiguous.
 Replay does not restore current eligibility to a revoked or retired publication.
