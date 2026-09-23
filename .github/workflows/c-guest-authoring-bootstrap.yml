@@ -8,16 +8,29 @@ permissions:
 jobs:
   capture:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Capture exact tracked implementation inputs
-        run: git archive --format=tar.gz --output="$RUNNER_TEMP/c-guest-source.tar.gz" HEAD
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
+        with:
+          version: "0.16.0"
+      - name: Install verified guest binding generator
+        run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Capture pinned guest compiler inputs
+        run: |
+          mkdir -p "$RUNNER_TEMP/compiler/zig"
+          cp -a "$(dirname "$(realpath "$(command -v zig)")")/zig" "$RUNNER_TEMP/compiler/zig/"
+          cp -a "$(dirname "$(realpath "$(command -v zig)")")/lib" "$RUNNER_TEMP/compiler/zig/"
+          cp -L "$(command -v wit-bindgen)" "$(command -v wasm-tools)" "$RUNNER_TEMP/compiler/"
+          tar -czf "$RUNNER_TEMP/c-guest-tools.tar.gz" -C "$RUNNER_TEMP/compiler" .
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: c-guest-authoring-source
-          path: ${{ runner.temp }}/c-guest-source.tar.gz
+          name: c-guest-authoring-tools
+          path: ${{ runner.temp }}/c-guest-tools.tar.gz
           if-no-files-found: error
           retention-days: 1
