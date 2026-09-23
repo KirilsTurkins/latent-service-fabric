@@ -1,0 +1,104 @@
+{
+  "capabilities": {
+    "blob": {
+      "formatVersion": 1,
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:a6cdfb94742916f42383a2746e5ff3669f2f092f48e3ba7b6d62825033cd8fbe",
+        "probe.h": "sha256:f992e0084cb14a97dc01466b14caa7ae33a1b03c553ffa894e845be52794c17d",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:c38b2555ee27d94623b3a8971646b49cd0bd0cc1c53c4f61ff2ddf0ca3141f56"
+      },
+      "world": "tests:local-blobs/service@1.0.0"
+    },
+    "callee": {
+      "formatVersion": 1,
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:8aa49ef26ac5303851c63dab5aac86bc4d895b505cdb2b5f2067ef98e1e501b5",
+        "probe.h": "sha256:1b70cd564be508cd586952b5afbb0d492fa0cdb23b83f8347aa031172b749ae6",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:ecddf6366ab0136a2dbaa5ba70f9e6b55285f7ce24b7305644474bc63e391f1c"
+      },
+      "world": "tests:local/service@1.0.0"
+    },
+    "events": {
+      "formatVersion": 1,
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:2258fca6609bb4c9dd59ae8f2d02300415ec85770be9d0c8312307a29108c636",
+        "probe.h": "sha256:c96df97c5e3f7400528e4e8f2f651454d9e385fe6ca175e464c827dfee6f96fd",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:1668c5021b6d2c7a278c705ca81ec17f4330a12b2320abe4cbdea22e62a3b6e4"
+      },
+      "world": "tests:nats-events/service@1.0.0"
+    },
+    "http": {
+      "formatVersion": 1,
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:d31d0ab2ed2c18783f612b4331b0db247d4a4c2661014a117c1f2f29bbd67ecf",
+        "probe.h": "sha256:44707cbebed666bede7c683b651dbffefb3999b498d674ce3ec0ae0982e1737b",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:735366c469cc4115ca9fbeec3cb215cf0ede59e587eef7f418b8ce9837900f42"
+      },
+      "world": "tests:http/service@1.0.0"
+    },
+    "metrics": {
+      "formatVersion": 1,
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:11cd6a489a12c7d1f350593dcb2a6c8d9999ee08641f4e5228b41a124e0b40d2",
+        "probe.h": "sha256:f3b8ca024b2250e1628532df3a2c9a20e809ade48ed2dd4052f1ade48f1946a9",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:3c04139c0959402d71ddfb0e51c9a6c9bb320d1bab8c87d7d360ab1dbca66eae"
+      },
+      "world": "tests:metrics/service@1.0.0"
+    },
+    "random": {
+      "formatVersion": 1,
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:e5945d449123df17e8a6870240afdafb47073a9021535c40422f9168a5330569",
+        "probe.h": "sha256:00c9740653b9ea8eb6090c47e8e9c2a8caade0958e69f0df6b139bb3a33d73f2",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:a60d680180a73efad63e39b681d2037bff1f801c7eac7da9e7e84f7093cd66b5"
+      },
+      "world": "tests:random/service@1.0.0"
+    },
+    "secrets": {
+      "formatVersion": 1,
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:83ffbdca65c5a76422889db10f4e35b34224faf5dc07665732ef7199c92e99f2",
+        "probe.h": "sha256:a2d11f80edf769add9b6c3577dcdf91bbcdf6969814feda4681f864d091a1139",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:74f563c61c6ac80e0fb651ebda27c666b912db94a0b1381d03ddcf76c055048e"
+      },
+      "world": "tests:local-secrets/service@1.0.0"
+    },
+    "service": {
+      "formatVersion": 1,
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:694a48d86446e3b43eaae9dcb3d46f6527f3b1d421f1be64a31b9d23076efbc6",
+        "probe.h": "sha256:24fc11dcf14c14a823a5363fcd794d03d7138f9615f425e197018114575164f6",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:d785c448139b1988f4ac50bd71d567e9e07e80f90789790bd418d22f2ed25134"
+      },
+      "world": "tests:caller/service@1.0.0"
+    },
+    "streaming": {
+      "formatVersion": 1,
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:fa751f1b3956e1c373e3d36e8e8c9ce21d98113bec2077bf247f45f28ccdaa5d",
+        "probe.h": "sha256:fa3f0335c6c7a1e4fd8a1efb4c6a499dcccc8a5f8b798e903a63019db700cc64",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:f094736f188bf0e821d0041e6243cc8116c7dd282c53805978618d95bad4b473"
+      },
+      "world": "tests:streaming-http/service@1.0.0"
+    }
+  },
+  "formatVersion": 1
+}

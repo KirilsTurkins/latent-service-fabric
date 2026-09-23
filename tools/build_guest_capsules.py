@@ -288,6 +288,9 @@ def build_c(output: Path, profiles: list[dict], sources: bytes) -> None:
                 profile["world"], temporary / name,
                 memory_bytes=4_194_304 if name in {"service", "callee"} else 16_777_216,
                 trap=name != "blob")
+            locks = json.loads((ROOT / "sdk/c-guest/capabilities.lock.json").read_text())
+            if locks.get("formatVersion") != 1 or set(locks.get("capabilities", {})) != set(CAPABILITIES) or locks["capabilities"][name] != lock:
+                raise ValueError("C capability binding drift: " + name)
             destination = output / ("c-" + name)
             package_inputs(destination, profile, EXAMPLES / ("guest_" + name) / "world.wit", component)
             write_json(destination / "bindings.json", lock)

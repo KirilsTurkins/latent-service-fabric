@@ -3,6 +3,9 @@
   "name": "word-count",
   "version": "1.0.0",
   "world": "examples:word-count/component@1.0.0",
-  "sources": ["component.c"],
-  "memoryBytes": 4194304
+  "sources": [
+    "component.c"
+  ],
+  "memoryBytes": 4194304,
+  "sourceRepository": "https://github.com/KirilsTurkins/latent-service-fabric"
 }

@@ -17,10 +17,20 @@ def digest(data: bytes) -> str:
 def regular_tree(source: Path, suffix: str, maximum: int = 256) -> list[Path]:
     if source.is_symlink() or not source.is_dir():
         raise ValueError("C WIT source must be a real directory")
-    paths = sorted(source.rglob("*"))
-    if any(path.is_symlink() for path in paths):
-        raise ValueError("C source trees cannot contain symlinks")
-    files = [path for path in paths if path.is_file() and path.suffix == suffix]
+    pending, files, seen = [source], [], 0
+    while pending:
+        directory = pending.pop()
+        for path in directory.iterdir():
+            seen += 1
+            if seen > 1024 or path.is_symlink():
+                raise ValueError("C source tree entry bound or symlink violation")
+            if path.is_dir():
+                pending.append(path)
+            elif path.is_file() and path.suffix == suffix:
+                files.append(path)
+            elif not path.is_file():
+                raise ValueError("C source trees require regular files")
+    files.sort()
     if not files or len(files) > maximum or any(path.stat().st_size > 262144 for path in files):
         raise ValueError("C WIT source inventory exceeds its bound or is empty")
     if sum(path.stat().st_size for path in files) > 4 * 1024 * 1024:

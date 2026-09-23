@@ -69,7 +69,7 @@ class Compiler:
         generated, lock = generate(self.run, wit_source, world, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=c11", "-target", "wasm32-wasi", "-O2",
-                   "-Wall", "-Wextra", "-Werror", "-mexec-model=reactor",
+                   "-Wall", "-Wextra", "-Werror", "-g0", "-Wl,--strip-debug", "-mexec-model=reactor",
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
                    "-I", str(SDK / "include"), *map(str, sources)]

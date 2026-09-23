@@ -7,6 +7,7 @@ import re
 import shutil
 import time
 import tomllib
+from urllib.parse import urlsplit
 
 from tools.build_observation import file_identity
 from tools.c_guest.bindings import check_lock, digest, generate
@@ -47,7 +48,7 @@ def checked_root(path: Path) -> Path:
 def load(project: Path) -> tuple[Path, dict, list[Path]]:
     project = checked_root(project)
     config = closed_json(project / 'c-project.json')
-    expected = {'formatVersion', 'name', 'version', 'world', 'sources', 'memoryBytes'}
+    expected = {'formatVersion', 'name', 'version', 'world', 'sources', 'memoryBytes', 'sourceRepository'}
     if set(config) != expected or type(config['formatVersion']) is not int or config['formatVersion'] != 1:
         raise ProjectError('unsupported or non-closed C project configuration')
     if not isinstance(config['name'], str) or not re.fullmatch(r'[a-z][a-z0-9-]{0,62}', config['name']):
@@ -56,6 +57,12 @@ def load(project: Path) -> tuple[Path, dict, list[Path]]:
         raise ProjectError('use a release semantic version')
     if not isinstance(config['world'], str) or len(config['world']) > 256 or '@' not in config['world']:
         raise ProjectError('use a fully qualified WIT world')
+    repository = config['sourceRepository']
+    if not isinstance(repository, str) or len(repository) > 2048 or any(c.isspace() or ord(c) < 32 for c in repository):
+        raise ProjectError('invalid source repository URI')
+    uri = urlsplit(repository)
+    if uri.scheme != 'https' or not uri.hostname or uri.username or uri.password or uri.query or uri.fragment or uri.path in ('', '/'):
+        raise ProjectError('use an explicit HTTPS source repository without credentials')
     memory = config['memoryBytes']
     if type(memory) is not int or not 2_097_152 <= memory <= 67_108_864 or memory % 65536:
         raise ProjectError('invalid page-aligned guest memory ceiling')
@@ -79,7 +86,7 @@ def load(project: Path) -> tuple[Path, dict, list[Path]]:
 def inventory(project: Path) -> bytes:
     records, total = {}, 0
     roots = [('project', project), ('sdk', SDK / 'include'),
-             ('runtime', SDK / 'src'), ('recipe', ROOT / 'tools/c_guest')]
+             ('runtime', SDK / 'src'), ('recipe', ROOT / 'tools/c_guest'), ('platform-wit', ROOT / 'wit/platform')]
     for prefix, root in roots:
         pending = [root]
         seen = 0
@@ -104,7 +111,7 @@ def inventory(project: Path) -> bytes:
     for name in ('tools/toolchain.toml', 'tools/stage_runtime_wit.py', 'tools/build_process.py',
                  'tools/build_process_linux.py', 'tools/build_process_windows.py',
                  'tools/build_process_signals.py', 'tools/build_observation.py',
-                 'examples/echo-contract/capsule.json', 'Cargo.toml'):
+                 'examples/echo-contract/capsule.json', 'tools/c_guest_authoring.py', 'Cargo.toml'):
         record = file_identity(ROOT / name, name, 262144)
         records[record.pop('name')] = record
     return canonical(records)
@@ -173,7 +180,7 @@ def build(project: Path, output: Path) -> dict:
                  ('toolchain-config', (ROOT / 'tools/toolchain.toml').read_bytes()),
                  ('c-bindings-lock', (project / 'c-bindings.lock.json').read_bytes())]
     observation = {'formatVersion': 1, 'buildType': 'https://latent.dev/build/c-guest/v1',
-        'source': {'repository': 'https://github.com/KirilsTurkins/latent-service-fabric',
+        'source': {'repository': config['sourceRepository'],
                    'revision': digest(before).split(':')[1], 'snapshotDigest': digest(before),
                    'repositoryTrust': 'operator-asserted', 'capture': 'explicit-input-files'},
         'componentDigest': digest(component.read_bytes()), 'componentSize': component.stat().st_size,

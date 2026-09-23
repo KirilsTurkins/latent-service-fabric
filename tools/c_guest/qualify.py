@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 
 from tools.c_guest.bindings import check_lock, generate
-from tools.c_guest.compiler import Compiler, SDK, safe_output
+from tools.c_guest.compiler import Compiler, SDK, ROOT, CAPABILITIES, safe_output
 from tools.c_guest.project import build, bindings
 from tools.c_guest_authoring import create, TEMPLATES
 
@@ -31,6 +31,13 @@ def qualify(output: Path, update: bool = False) -> dict:
         '-I', str(generated), '-I', str(SDK / 'include'),
         str(SDK / 'tests/ownership.c'), '-o', str(executable)], check=True, timeout=120)
     subprocess.run([str(executable)], check=True, timeout=30)
+    capabilities = {}
+    for name in CAPABILITIES:
+        profile = ROOT / 'tools/toolchain-smoke/examples' / ('guest_' + name)
+        document = json.loads((profile / 'profile.json').read_text())
+        _, capability_lock = generate(compiler.run, profile, document['world'], output / ('binding-' + name))
+        capabilities[name] = capability_lock
+    check_lock(SDK / 'capabilities.lock.json', {'formatVersion': 1, 'capabilities': capabilities}, update=update)
     receipts = {}
     for name in TEMPLATES:
         project = output / ('project-' + name)
