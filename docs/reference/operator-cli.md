@@ -5,14 +5,13 @@ OCI, and manages the [standalone Linux node](standalone-node.md). Node commands
 connect once and send one generated gRPC request. Local paths never name the
 node's catalogs, and the CLI does not execute components locally.
 Start with the [scriptable echo quickstart](../development/standalone-quickstart.md)
-and the [Phase 2 operator workflows](../phase-2-operator-workflows.md).
+and the [package and deployment workflows](../phase-2-operator-workflows.md).
 
 Build the binaries with `cargo build -p latent -p latentd --locked`. The existing
 `make echo-capsule` build produces `echo-capsule.wasm`, `capsule.json`,
 `contracts.json`, `deployment.json`, and `input.json` under `target/capsules/echo/`.
 The typed metadata is checked against the component's extracted WIT; the generated
-deployment names the actual component digest. Existing Phase 0 build receipts and
-spike commands retain their own format and behavior.
+deployment names the actual component digest. The generated deployment also needs the publication ID returned by the node.
 
 ## Commands
 
@@ -21,7 +20,7 @@ the command.
 
 | Command | Behavior |
 | --- | --- |
-| `validate capsule FILE` | Bounded schema and Phase 1 semantic checks, without credentials or a connection. |
+| `validate capsule FILE` | Bounded schema and stateless semantic checks, without credentials or a connection. |
 | `validate deployment FILE` | Local manifest checks; release-aware admission remains the node's responsibility. |
 | `release publish --manifest FILE --component FILE --contracts FILE [--operation-id OP --expected-generation 0]` | Publishes raw component inputs once, optionally with a managed publication identity; the configured node admission mode still applies. |
 | `release get --publication ID` | Gets one exact tenant-scoped publication summary. |
@@ -108,9 +107,9 @@ Rollout operations retain their own revision and operation identity:
 There is no automatic pagination, cursor restart, retry, stale-precondition
 replacement, operation-ID generation, or hidden reconciliation request. Source
 compilation, signing/key creation, watch, cluster registration,
-and benchmark commands remain outside this CLI. General capability providers,
-HTTP/web hosting and expanded SDK transports belong to Phase 3; durable service
-state, transactional effects and clustering remain later phases.
+and benchmark commands remain outside this CLI. Capability policy, shared HTTP ingress, web publication and native SDK
+transports are implemented. Durable service state, transactional effects and
+clustering remain unimplemented.
 
 ## Credentials and limits
 
@@ -217,8 +216,8 @@ Read and reconsider that conflict before choosing a new operation.
 
 Release lifecycle generation, deployment object generation, catalog state version,
 route generation and rollout revision are distinct. Rollback requires the recorded
-historical target generation and publishes a newer route generation. Old rollout
-rows without a captured target remain readable but cannot accept a new rollback.
+historical target generation and publishes a newer route generation. Restoration requires the recorded target and current eligibility. Obsolete
+catalog formats are rejected; see the [storage contract](publication-catalog.md#supported-storage-and-fresh-state).
 Pause/abort, receipt lookup and diagnostic evaluation never imply that traffic was
 restored or a release became eligible.
 
@@ -244,14 +243,19 @@ The default payload media type is `application/vnd.latent.wit-values.v1+json`.
 Inputs are positional arrays, for example `["hello"]` for echo. The
 [canonical WIT value mapping](../protocol/wit-values.md) defines integer strings,
 tagged options/results/variants, and composite values. The node validates the
-actual export types; the CLI does not infer Phase 0 text dispatch from payloads.
+actual export types; the CLI does not infer a function or input encoding from arbitrary payloads.
 
 Budget files use the resource budget's camelCase JSON fields. Omitted fields use
 CPU fuel `100000000`, memory `67108864`, log bytes `16384`, no relative wall limit,
-and zero for later-phase dimensions. Present scalar flags override the corresponding
-file values. Explicit zero remains zero, including wall time. Nonzero child calls,
-outbound requests, state/blob access, and effects remain unsupported by the current
-standalone execution profile. These request ceilings are intersected with capsule, deployment, and node grants.
+and zero for optional capability dimensions. Present scalar flags override the
+corresponding file values. Explicit zero remains zero, including wall time.
+For capability budgets, select `--budget-profile phase3` and use a budget file;
+the default basic profile rejects unsupported nonzero dimensions. The selected
+node profile and installed provider must support the requested operation. Request
+ceilings are intersected with capsule, deployment and node grants; a larger
+request does not grant additional authority. State transactions and deferred
+effects remain unsupported. See [resource budgets](../runtime/resource-budgets.md).
+
 
 One monotonic RPC allowance starts after local preflight and covers connection
 and response waiting. Connection also obeys its smaller configured ceiling. An
@@ -333,7 +337,7 @@ It does not make the remote invocation unexecuted.
 `requestDispatched:false` records failure before a call was submitted.
 `outcomeKnown:false` warns that a submitted mutation or invocation may have run.
 The client never retries, even when an explicit platform error says retryable.
-Validated `committed:true` legacy deployment details preserve commit evidence.
+Validated `committed:true` object-versioned deployment details preserve commit evidence.
 Managed Apply includes the compact receipt, replay flag, durability and audit
 acknowledgement. Managed Delete keeps an Empty protobuf body and projects its
 bounded operation/audit metadata; `deployment operation OP` returns the full
@@ -346,5 +350,5 @@ OutOfRange statuses are conservatively transport failures because local message
 limits can produce them. Valid bounded structured platform details retain their
 typed classification. See [validation tiers](../../VALIDATION.md) for the bounded
 CLI/unit/real-process tests. The separate
-[Phase 1 completion report](../phase-1-completion.md) records the completed
+[historical runtime acceptance report](../phase-1-completion.md) records the completed
 scaling, reclamation and integrated conformance gate.

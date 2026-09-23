@@ -31,11 +31,12 @@
     },
     {
       "source": "README.md",
-      "words": 1763,
-      "sha256": "4104b501c50f77d6a8a79f497b09854ce84fc3743d339e379a3b64e5249597cd",
-      "status": "read-needs-update",
+      "words": 896,
+      "sha256": "e1a08ce737c54b4334dbf266bfd3c429a96b3fc586a56f1b8eb79c17eb64c52f",
+      "status": "updated-source-reviewed",
       "findings": [
-        "Replaced outdated SVG and future-provider claims; remaining README feature inventory and install references need completion review."
+        "Replaced outdated SVG and future-provider claims; remaining README feature inventory and install references need completion review.",
+        "Replaced phase-organized implementation inventory with current product support, first-node path, provider scope, capsule-language gap and contributor links."
       ]
     },
     {
@@ -49,10 +50,12 @@
     },
     {
       "source": "VALIDATION.md",
-      "words": 3533,
-      "sha256": "1f07155cb2461749cb8d9bdbe4284406ead657828f02282305a80d6a4688aa35",
-      "status": "pending",
-      "findings": []
+      "words": 1388,
+      "sha256": "bbf69d089823081d2d6c9193b8d72b431a1a41753e525333176a87e47d8dab92",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Reconciled normal Makefile and native SDK checks; separated explicit large campaigns, historical integrity and human/release acceptance."
+      ]
     },
     {
       "source": "adr/0001-use-rust-for-the-runtime.md",
@@ -509,29 +512,37 @@
       "source": "docs/component-development/angular-build.md",
       "words": 750,
       "sha256": "d0e929ce96db13365c7c6ce8253b68cf853545af954237fa7bb851c86fa80996",
-      "status": "pending",
-      "findings": []
+      "status": "read-needs-update",
+      "findings": [
+        "Full build tutorial reviewed; its promised next guide builds a different reference application. Fix the build-to-browser continuity before claiming completion."
+      ]
     },
     {
       "source": "docs/component-development/creating-a-capsule.md",
       "words": 934,
       "sha256": "23f3be1974963e41a453f12c36c5a72c7c33865da6019538a390fece8285d45d",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read all three programs and commands. Local Linux execution returned greeting, word count, shipping and declared invalid-input results. Six-language capsule authoring remains pending its SDK work."
+      ]
     },
     {
       "source": "docs/component-development/guest-sdk.md",
       "words": 1083,
       "sha256": "2ea4653a381b75e2235e6fc3fec5748d90378dcdaa5e37ef83be70d880d0c1ee",
-      "status": "pending",
-      "findings": []
+      "status": "read-needs-update",
+      "findings": [
+        "Full content reviewed. Primarily conformance/build-profile details; align with standalone authoring work while preserving reference ownership contracts."
+      ]
     },
     {
       "source": "docs/component-development/packaging.md",
-      "words": 1441,
-      "sha256": "a0ce3bb4f3be0a0c74a1fc3b6ac583cc26292d9525d99bc9cdcf63ca8157ece4",
-      "status": "pending",
-      "findings": []
+      "words": 1472,
+      "sha256": "81fa847387ba280ef458ff1230d241f778cbd4cfa7f78528bd49c7a27cf3dec0",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Corrected old context/log/clock-only and synchronous-only claims against current semantic host/profile comparison; retained bounds and package identity details."
+      ]
     },
     {
       "source": "docs/component-development/sbom.md",
@@ -544,8 +555,10 @@
       "source": "docs/component-development/static-sites.md",
       "words": 1425,
       "sha256": "7f2a9841d679d50fb847cae27c1494e4a4289eb106f5011d29f2865b5165854b",
-      "status": "pending",
-      "findings": []
+      "status": "read-needs-update",
+      "findings": [
+        "Full page reviewed. Manual build/admission placeholders and long qualification report need a reproducible user path; reference limits remain useful."
+      ]
     },
     {
       "source": "docs/contribute/index.md",
@@ -882,59 +895,75 @@
     },
     {
       "source": "docs/installation.md",
-      "words": 941,
-      "sha256": "e30e46f9e1a5c9629acfb8303c48465c39dc9cc21173af089413b1aacc40cae8",
-      "status": "pending",
-      "findings": []
+      "words": 509,
+      "sha256": "514ff6656e3adbfbe634e77b1ecb5b895be92a61917c9c90d12b4098d9bdda12",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Made unavailable native publication and working source path explicit; installation choices and requirements replace internal release handoff narrative."
+      ]
     },
     {
       "source": "docs/learn/author-your-first-capsule.md",
-      "words": 854,
-      "sha256": "1f29978130ac43968b528e4dd7618dd4408dcd0498b783b5bc511bd58c231de8",
-      "status": "pending",
-      "findings": []
+      "words": 578,
+      "sha256": "89fde14b1d57bb0f052723de4267586124f3b32347f0a8d0aceeb1cfb6c4be28",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Replaced source-evidence workflow with contract/implementation explanation linked to runnable first-node and three-function tutorials."
+      ]
     },
     {
       "source": "docs/learn/build-and-deliver-angular.mdx",
       "words": 1309,
       "sha256": "6781e9be0723242484b639a74cf28f95adb3da2a4f9c2e8b30883b50a0ddff7a",
-      "status": "pending",
-      "findings": []
+      "status": "read-needs-update",
+      "findings": [
+        "Full page reviewed. Rebuild around the same user-owned Angular application and actual browser steps; preserve qualification recipe in developer records."
+      ]
     },
     {
       "source": "docs/learn/deliver-and-recover-a-capsule.md",
-      "words": 1558,
-      "sha256": "55c91c656d5ba8e178700439ffa15787aa6432b2efdaeab30682ce9b95057135",
-      "status": "pending",
-      "findings": []
+      "words": 687,
+      "sha256": "ddae183187feee7e95f293feddf248d294690f5717725cf1de0ea47e96cf2e30",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Replaced stale-source test harness narrative with manual update and restoration of the greeting service. The documented commands returned Welcome then Hello and cleaned up on the retained local Linux node binary; new guest component built from an isolated source copy."
+      ]
     },
     {
       "source": "docs/learn/read-contracts-and-evidence.md",
-      "words": 1277,
-      "sha256": "6cd56bbdc95672a998c54059a2e912e41cf717bcccdf0a02f846b751d6b8d03d",
-      "status": "pending",
-      "findings": []
+      "words": 624,
+      "sha256": "9a60b0925cdb4a9911761eba00fd947d963bb417015f103b3d45f1bc03af28bb",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Replaced historical receipt validation with reading actual WIT arguments, results, imports and API source selection."
+      ]
     },
     {
       "source": "docs/learn/runtime-identities.md",
-      "words": 605,
-      "sha256": "f4293b947e875818ff92e9057b3ef943fac64337fb116a27c5a4ad49ca5bc21a",
-      "status": "pending",
-      "findings": []
+      "words": 684,
+      "sha256": "25aafb2b6d702963d35d765730dcc2599921e3e65f2e0fd520dcc9a818d67a72",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Replaced dense glossary and Wiki migration prose with one request lifecycle, practical identities, update and recovery behavior."
+      ]
     },
     {
       "source": "docs/learn/use-a-client.mdx",
       "words": 1978,
-      "sha256": "dd1a137ccae854d4ca55144e56d9ca54a8adb5cdb1088c6426af55186f29a29b",
-      "status": "pending",
-      "findings": []
+      "sha256": "eeb674a9ea5c08e0f2c5a5b24f8851ebacfef2422ad182719517de2bb6f0e873",
+      "status": "read-needs-update",
+      "findings": [
+        "Read every section and corrected Java 25 toolchain. Still a participant-conformance narrative; needs a simpler user path and runnable all-language application examples."
+      ]
     },
     {
       "source": "docs/learn/use-capabilities.md",
       "words": 1172,
       "sha256": "ab3390f08b1ae92f352a75809395aa9e34cc51c2c78a05585854ab94f6e83e9b",
-      "status": "pending",
-      "findings": []
+      "status": "read-needs-update",
+      "findings": [
+        "Stale exact source and qualification harness dominate learning content; needs current capability setup and user-facing example steps."
+      ]
     },
     {
       "source": "docs/operations/maintained-security-monitoring.md",
@@ -1192,10 +1221,12 @@
     },
     {
       "source": "docs/reference/operator-cli.md",
-      "words": 3264,
-      "sha256": "42cca21427e99e39b15e4304686c66a2b18707ccbcc5934010106d82a9ef0fd3",
-      "status": "pending",
-      "findings": []
+      "words": 3296,
+      "sha256": "3e1d0b40ebcc081d776da348a08c6cd1fa571371563e232cfd7a1e82cdb7c9c4",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read full reference and corrected implemented providers/web/SDK support, supported capability budgets and obsolete rollout readability claim against current CLI/storage code."
+      ]
     },
     {
       "source": "docs/reference/package-admission.md",
@@ -1515,16 +1546,20 @@
     {
       "source": "docs/start/first-node.md",
       "words": 1170,
-      "sha256": "68a36302b96ee9aeed44ae0db9b42f2bff18fbc763c885a07870f6116d3070f3",
-      "status": "pending",
-      "findings": []
+      "sha256": "b72bc655b1a44b63849f1bff9e531c90c4670628c8a7ce32c9b087d74a9d7916",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Reviewed complete steps and updated the next guide title. Retained local Linux node run exercised setup, restart, calls and cleanup; it is not a fresh PR binary build."
+      ]
     },
     {
       "source": "docs/start/index.md",
       "words": 394,
       "sha256": "81668ac106cf7be79b763df3609b7333874a0bcbef6b9c1dbe4bf676e50b8431",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Reviewed full introduction: user outcome, node creation link, follow-on examples and plain terms fit Start."
+      ]
     },
     {
       "source": "docs/svg-style.md",
@@ -1756,6 +1791,15 @@
       "sha256": "cbf0ebb587304ea655add137e600aff2d87dfc3c0f2b60fca3dc3014915f7dcf",
       "status": "pending",
       "findings": []
+    },
+    {
+      "source": "sdk/README.md",
+      "findings": [
+        "Removed stale transport delivery ticket language and phase headings; preserved current complete-profile ownership contracts."
+      ],
+      "words": 1556,
+      "sha256": "527706a5338ccf6f3c73bfc4dc18b99007996c1bab0e8132d9cf0dea95d13d85",
+      "status": "updated-source-reviewed"
     }
   ]
 }

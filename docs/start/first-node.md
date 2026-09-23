@@ -255,7 +255,7 @@ in its data directory. You did not need to upload them again.
 Keep this terminal open and the node running to follow
 [Creating a capsule](../component-development/creating-a-capsule.md).
 For the original echo's implementation, see
-[Author your first capsule](../learn/author-your-first-capsule.md).
+[Understand your first capsule](../learn/author-your-first-capsule.md).
 For signing, rollout and recovery, continue with
 [Deliver and recover a capsule](../learn/deliver-and-recover-a-capsule.md).
 
