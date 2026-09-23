@@ -12,6 +12,19 @@ from tools.go_guest.sdk import install, CAPABILITIES, explicit_resource_owners
 
 
 class GoAuthoringTests(unittest.TestCase):
+    def test_readme_entrypoints_match_every_typed_capability_facade(self):
+        import re
+        from tools.go_capsule_project import ROOT
+        sdk = ROOT / "sdk/go-guest"
+        readme = (sdk / "README.md").read_text()
+        rows = re.findall(r"^\| `([a-z]+)` \| (.+) \|$", readme, re.M)
+        self.assertEqual({name for name, _ in rows}, set(CAPABILITIES))
+        for name, description in rows:
+            source = (sdk / "capabilities" / (name + ".go.in")).read_text()
+            for entrypoint in re.findall(r"`([A-Z][A-Za-z0-9]+)`", description):
+                with self.subTest(capability=name, entrypoint=entrypoint):
+                    self.assertRegex(source, r"func (?:\([^\n]+\) )?" + entrypoint + r"\(")
+
     def test_sdk_builder_reuses_captured_tools_without_rebuilding_and_rejects_mutation(self):
         from tools import build_go_guest_capsules as sdk_builder
         with tempfile.TemporaryDirectory() as temporary:

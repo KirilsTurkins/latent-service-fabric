@@ -45,7 +45,7 @@ Use the generated `wit_component/lsf/<module>` packages for capabilities:
 | `secrets` | `Read` returns one explicit byte owner; `WithBytes` borrows and `Close` clears the owned bytes. |
 | `events` | `Publish` retains acknowledged, rejected and uncertain outcomes without replay. |
 | `service` | `Call` preserves returned, declared-error and platform-error outcomes and host descendant budgets. |
-| `random` | `Bytes` and `U64` call the granted entropy provider once. |
+| `random` | `Bytes` and `U64Value` call the granted entropy provider once. |
 | `metrics` | `EmitMetric` uses only host-configured instruments and labels. |
 
 Complete typed fixtures are in [examples](examples). They include HTTP denial,

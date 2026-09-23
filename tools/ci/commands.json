@@ -3420,6 +3420,7 @@
       "GoAuthoringTests.test_generated_resource_owners_have_no_gc_effects_and_reject_shape_drift",
       "GoAuthoringTests.test_guide_and_selectable_examples_cover_the_printed_workflow",
       "GoAuthoringTests.test_module_template_rejects_unreviewed_application_dependencies",
+      "GoAuthoringTests.test_readme_entrypoints_match_every_typed_capability_facade",
       "GoAuthoringTests.test_sdk_aliases_follow_generated_identity_without_exposing_resource_constructors",
       "GoAuthoringTests.test_sdk_builder_reuses_captured_tools_without_rebuilding_and_rejects_mutation",
       "GoAuthoringTests.test_sdk_mutation_does_not_silently_become_a_reviewed_input",
