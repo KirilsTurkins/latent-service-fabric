@@ -1,17 +1,18 @@
 """Compile actual Java sources using the current maintained TeaVM C backend."""
 from __future__ import annotations
 import json
+import importlib.util
 import os
 from pathlib import Path
 import shutil
 import sys
 import time
 import tomllib
-import types
 
 from tools.build_observation import build_environment, file_identity
 from tools.build_process import run_bounded_result
 from tools.java_guest.bindings import generate
+from tools.java_guest.surface import surface as wit_surface
 from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_file, snapshot, write_json
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
@@ -19,16 +20,20 @@ from tools.stage_runtime_wit import copy_wit_tree, dependencies
 def source_module(path: Path):
     """Load this captured SDK helper, never a prior project's module cache.
 
-    Executing the captured bytes avoids creating unobserved __pycache__ files
-    inside staging. Legacy diagnostic helpers may adjust sys.path; isolate it.
+    Use the standard file loader, with bytecode writes disabled, for an explicit
+    captured path. Legacy diagnostic helpers may adjust sys.path; isolate it.
     """
-    module = types.ModuleType("lsf_java_captured_" + path.stem)
-    module.__file__ = str(path)
-    search = list(sys.path)
+    read_file(path)  # Bound and reject nonregular source before importing it.
+    spec = importlib.util.spec_from_file_location("lsf_java_captured_" + path.stem, path)
+    if spec is None or spec.loader is None: raise ValueError("invalid captured Java helper module")
+    module = importlib.util.module_from_spec(spec)
+    search, bytecode = list(sys.path), sys.dont_write_bytecode
     try:
-        exec(compile(read_file(path), str(path), "exec"), module.__dict__)
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(module)
     finally:
         sys.path[:] = search
+        sys.dont_write_bytecode = bytecode
     return module
 
 
@@ -94,6 +99,12 @@ class Compiler:
             located = shutil.which(selected, path=self.environment.get("PATH"))
             if not located: raise ValueError("missing Java tool: " + name)
             self.paths[name] = Path(located).resolve()
+            if name == "java":
+                jdk = self.paths[name].parent.parent
+                selected = self.environment.get("JAVA_HOME")
+                if selected is not None and Path(selected).resolve(strict=True) != jdk:
+                    raise ValueError("JAVA_HOME and PATH must select the same pinned Java compiler")
+                self.environment["JAVA_HOME"] = str(jdk)
             self.materials.append(file_identity(self.paths[name], name))
             log = self.run(name + "-version", name, "-version" if name == "java" else "--version")
             verify_version(name + "-version", log, version)
@@ -109,9 +120,12 @@ class Compiler:
         if remaining <= 0: raise ValueError("Java build deadline exceeded")
         path = self.paths.get(tool, Path(tool))
         started = time.monotonic()
+        argv = [str(path), *map(str, arguments)]
+        exit_code = None
         try:
-            result = run_bounded_result([str(path), *map(str, arguments)], cwd or self.directory, self.environment,
+            result = run_bounded_result(argv, cwd or self.directory, self.environment,
                                  timeout_seconds=min(remaining, 600), max_output_bytes=4 * 1024 * 1024)
+            exit_code = result.returncode
             log = result.stdout + b"\n" + result.stderr
             self.retained_bytes += len(log)
             if self.retained_bytes > 16 * 1024 * 1024:
@@ -121,7 +135,8 @@ class Compiler:
                 raise ValueError("Java compiler stage failed: " + stage + "; see retained log")
             return log.decode("utf-8")
         finally:
-            self.records.append({"stage": stage, "seconds": round(time.monotonic() - started, 6)})
+            self.records.append({"stage": stage, "command": argv, "exitCode": exit_code,
+                                 "seconds": round(time.monotonic() - started, 6)})
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path) -> tuple[Path, dict]:
         destination.mkdir(parents=True, exist_ok=False)
@@ -139,6 +154,12 @@ class Compiler:
         # Build script is owned by the SDK; applications supply Java and WIT,
         # never arbitrary Gradle plugins or unrecorded repository dependencies.
         (project / "build.gradle").write_bytes(read_file(self.sdk / "compiler.gradle"))
+        # Never let Gradle silently select or provision an unobserved JDK. This
+        # generated private property file is part of this source-bound recipe.
+        (project / "gradle.properties").write_text(
+            "org.gradle.java.installations.auto-detect=false\n"
+            "org.gradle.java.installations.auto-download=false\n"
+            "org.gradle.java.installations.fromEnv=JAVA_HOME\n", encoding="utf-8")
         java_root = project / "src/main/java"
         shutil.copytree(self.sdk / "runtime/dev", java_root / "dev")
         for path in sorted(sources.rglob("*.java")):
@@ -170,7 +191,11 @@ class Compiler:
         self.run("component-validate", "wasm-tools", "validate", component)
         surface = self.run("component-surface", "wasm-tools", "component", "wit", component)
         if "import wasi:" in surface: raise ValueError("ambient WASI survived the closed Java runtime")
-        return component, {"bindings": bindings, "dependencies": retained, "platform": adaptation}
+        expected = wit_surface(json.loads(self.run("expected-wit", "wasm-tools", "component", "wit", staged, "--json")), world)
+        actual = wit_surface(json.loads(self.run("compiled-wit", "wasm-tools", "component", "wit", component, "--json")))
+        if actual != expected: raise ValueError("compiled Java component changed authoritative WIT semantics")
+        return component, {"bindings": bindings, "dependencies": retained, "platform": adaptation,
+                           "semanticSurfaceDigest": digest(canonical(actual))}
 
     def check_unchanged(self):
         if self.original_sdk != sdk_snapshot(self.sdk): raise ValueError("Java SDK changed during build")

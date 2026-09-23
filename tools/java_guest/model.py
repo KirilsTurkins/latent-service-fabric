@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 
 JAVA_WORDS = set("abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for goto if implements import instanceof int interface long native new package private protected public return short static strictfp super switch synchronized this throw throws transient try void volatile while record yield var true false null".split())
+JAVA_MEMBERS = {"equals", "hashCode", "toString", "getClass", "clone", "finalize", "notify", "notifyAll", "wait", "tag"}
 C_WORDS = JAVA_WORDS | set("alignas alignof and and_eq asm auto atomic_cancel atomic_commit atomic_noexcept bitand bitor bool char8_t char16_t char32_t compl concept consteval constexpr constinit co_await co_return co_yield decltype delete dynamic_cast explicit export extern friend inline mutable namespace noexcept not not_eq nullptr operator or or_eq register reinterpret_cast requires signed sizeof static_assert static_cast struct template thread_local typedef typeid typename union unsigned using virtual wchar_t xor xor_eq restrict _Atomic".split())
 PRIMITIVES = {"bool", "u8", "s8", "u16", "s16", "u32", "s32", "u64", "s64", "f32", "f64", "char", "string"}
 
@@ -19,7 +20,7 @@ def camel(value: str) -> str:
 def jident(value: str) -> str:
     result = camel(value)
     result = result[:1].lower() + result[1:]
-    return result + "_" if result in JAVA_WORDS else result
+    return result + "_" if result in JAVA_WORDS | JAVA_MEMBERS else result
 
 
 def cident(value: str) -> str:
@@ -87,9 +88,27 @@ class Graph:
             for parameter in function["params"]: self.visit(parameter["type"])
             self.visit(function.get("result"))
         self.resources = [index for index in sorted(self.live) if self.types[index]["kind"] == "resource"]
+        for function in self.exports:
+            for parameter in function["params"]:
+                self.reject_export_borrow(parameter["type"])
         for index in self.resources:
             if self.types[index]["owner"]["interface"] in self.export_ids:
                 raise ValueError("Java profile does not yet support exported resources")
+
+    def reject_export_borrow(self, value, depth=0):
+        if value is None or isinstance(value, str): return
+        if depth > 32: raise ValueError("Java export type depth limit")
+        kind = self.types[value]["kind"]
+        if kind == "resource": return
+        form, body = next(iter(kind.items()))
+        if form == "handle" and "borrow" in body:
+            raise ValueError("Java profile rejects borrowed resource export parameters")
+        if form in {"type", "option", "list"}: children = [body]
+        elif form in {"record", "variant"}: children = [item["type"] for item in body["fields" if form == "record" else "cases"]]
+        elif form == "tuple": children = body["types"]
+        elif form == "result": children = list(body.values())
+        else: children = []
+        for child in children: self.reject_export_borrow(child, depth + 1)
 
     def c_prefix(self, index: int, exported: bool = False) -> str:
         interface = self.data["interfaces"][index]

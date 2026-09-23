@@ -32,7 +32,7 @@ static void lsf_put(lsf_wire *wire, uint64_t value, size_t width) {
         size_t capacity = wire->capacity ? wire->capacity * 2 : 128;
         if (capacity > LSF_MAX_BYTES) capacity = LSF_MAX_BYTES;
         uint8_t *next = lsf_allocate(capacity, 1);
-        memcpy(next, wire->data, wire->length);
+        if (wire->length) memcpy(next, wire->data, wire->length);
         lsf_release(wire->data, wire->capacity);
         wire->data = next; wire->capacity = capacity;
     }
@@ -52,7 +52,8 @@ void lsf_java_free(void *pointer) {
 }
 static void *lsf_result(lsf_wire *wire) {
     void *result = lsf_java_alloc((int32_t)wire->length);
-    memcpy((uint8_t *)result + 4, wire->data, wire->length); lsf_dispose(wire); return result;
+    if (wire->length) memcpy((uint8_t *)result + 4, wire->data, wire->length);
+    lsf_dispose(wire); return result;
 }
 extern int main(int argc, char **argv);
 extern void *lsf_java_dispatch(int32_t operation, void *data, int32_t length);

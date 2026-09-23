@@ -96,16 +96,19 @@ def generate(graph: Graph) -> str:
     output = ['/* Generated from authoritative WIT. DO NOT EDIT. */', '#include "bridge.h"']
     codec = Codec(graph)
     for function in graph.exports:
-        parameters = ", ".join(p["type"] + " " + ("*" if p["pointer"] else "") + p["name"] for p in function["cParams"]) or "void"
+        # ABI argument names are not contract identity. Isolate them from the
+        # bridge's input/output/result locals, even for identically named WIT.
+        params = [{**p, "name": "arg" + str(i)} for i, p in enumerate(function["cParams"])]
+        parameters = ", ".join(p["type"] + " " + ("*" if p["pointer"] else "") + p["name"] for p in params) or "void"
         output.extend([f"{function['cReturn']} {function['symbol']}({parameters}) {{", "lsf_wire output = {0};"])
-        for p, cp in zip(function["params"], function["cParams"]):
+        for p, cp in zip(function["params"], params):
             expression = ("*" if cp["pointer"] else "") + cp["name"]
             output.extend(codec.emit(p["type"], expression, "write", "&output"))
             output.extend(codec.emit(p["type"], expression, "free", "NULL"))
         output.append(f"void *owned; lsf_wire input = lsf_invoke({function['operation']}, &output, &owned);")
         result = function.get("result")
         if result is not None:
-            if function["cReturn"] == "void": result_name = "*" + function["cParams"][-1]["name"]
+            if function["cReturn"] == "void": result_name = "*" + params[-1]["name"]
             else:
                 result_name = "result"
                 output.append(function["cReturn"] + " result = {0};")
@@ -120,7 +123,8 @@ def generate(graph: Graph) -> str:
     for function in graph.imports:
         output.append(f"case {function['operation']}: {{")
         arguments, inputs = [], []
-        for p, cp in zip(function["params"], function["cParams"]):
+        params = [{**p, "name": "arg" + str(i)} for i, p in enumerate(function["cParams"])]
+        for p, cp in zip(function["params"], params):
             output.append(cp["type"] + " " + cp["name"] + " = {0};")
             output.extend(codec.emit(p["type"], cp["name"], "read", "&input"))
             arguments.append(("&" if cp["pointer"] else "") + cp["name"])

@@ -120,17 +120,17 @@ def generate(graph: Graph) -> str:
     output.extend(definitions(graph))
     output.append("public interface Exports {")
     for function in graph.exports:
-        arguments = ", ".join(graph.jtype(p["type"]) + " " + jident(p["name"]) for p in function["params"])
+        arguments = ", ".join(graph.jtype(p["type"]) + " arg" + str(i) for i, p in enumerate(function["params"]))
         output.append(graph.jtype(function.get("result")) + " " + jident(function["name"]) + "(" + arguments + ");")
     output.append("}")
     for interface in sorted({f["interface"] for f in graph.imports}):
         name = graph.interface_names[interface]
         output.append(f"public static final class {name} {{ private {name}() {{ }}")
         for function in [f for f in graph.imports if f["interface"] == interface]:
-            arguments = ", ".join(graph.jtype(p["type"]) + " " + jident(p["name"]) for p in function["params"])
+            arguments = ", ".join(graph.jtype(p["type"]) + " arg" + str(i) for i, p in enumerate(function["params"]))
             output.append("public static " + graph.jtype(function.get("result")) + " " + jident(function["name"]) + "(" + arguments + ") {")
             output.append("try (Wire.Writer arguments = new Wire.Writer()) {")
-            output.extend(writer(graph, p["type"], jident(p["name"]), "arguments") for p in function["params"])
+            output.extend(writer(graph, p["type"], "arg" + str(i), "arguments") for i, p in enumerate(function["params"]))
             output.append(f"try (Wire.Reader input = arguments.call({function['operation']})) {{")
             output.extend([graph.jtype(function.get("result")) + " result = " + reader(graph, function.get("result")) + ";",
                            "input.finish(); return result;", "} } }"])
@@ -142,10 +142,10 @@ def generate(graph: Graph) -> str:
                    "switch (operation) {"])
     for function in graph.exports:
         output.append(f"case {function['operation']}: {{")
-        for p in function["params"]:
-            output.append(graph.jtype(p["type"]) + " " + jident(p["name"]) + " = " + reader(graph, p["type"]) + ";")
+        for i, p in enumerate(function["params"]):
+            output.append(graph.jtype(p["type"]) + " arg" + str(i) + " = " + reader(graph, p["type"]) + ";")
         output.append("input.finish();")
-        arguments = ", ".join(jident(p["name"]) for p in function["params"])
+        arguments = ", ".join("arg" + str(i) for i, _p in enumerate(function["params"]))
         call = "new dev.latent.app.Capsule()." + jident(function["name"]) + "(" + arguments + ")"
         output.append(writer(graph, function.get("result"), call))
         output.append("return output.nativeResult(); }")

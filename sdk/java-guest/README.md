@@ -5,10 +5,11 @@ an editable Java project outside the runtime checkout, builds its actual source,
 packages it, and demonstrates signed admission and cleanup on a local node.
 This guest SDK is separate from the [external Java RPC client](../java-client).
 
-Qualification is **in progress**. Compilation and local state-machine tests are
-not signed-node proof. The [implementation report](../../docs/testing/java-guest-authoring.md)
-tracks the required real-component, ownership, node and guide gates. Do not treat
-this branch as a release or close #548 until its exact-source qualification passes.
+Compilation and local state-machine tests are not signed-node proof. The
+[implementation report](../../docs/testing/java-guest-authoring.md) records the
+status and exact-source evidence for the required real-component, ownership,
+node and guide gates. A source-matched qualification receipt is required before
+closing #548; this profile does not authorize runtime release publication.
 
 ## Compiler and source contract
 
@@ -51,8 +52,9 @@ resource ownership have typed representations. Declared WIT errors are
 `Result.err`, not Java exceptions. Uncaught exceptions trap the activation.
 
 One named exported interface is supported. Future/stream values, exported
-resources, resource constructors/methods, inline/world-owned named interfaces
-and ambiguous interface versions are rejected. Asynchronous host operations
+resources, borrowed-resource export parameters, resource constructors/methods,
+inline interfaces, world-owned named types and ambiguous interface versions are
+rejected before compilation. Asynchronous host operations
 suspend the Wasmtime activation while Java code waits synchronously. They do
 not require a Java executor, hidden worker, retry queue or detached cleanup.
 

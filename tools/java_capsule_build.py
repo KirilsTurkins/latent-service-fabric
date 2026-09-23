@@ -16,7 +16,7 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
 BUILD_TYPE = "https://latent.dev/build/java-capsule/v1"
 RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_capsule_build.py",
           "tools/java_guest/compiler.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
-          "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/rust_capsule_project.py",
+          "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",

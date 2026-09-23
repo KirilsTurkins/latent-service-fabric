@@ -61,6 +61,9 @@ jobs:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
       - name: Install pinned compiler tools
         shell: bash
         run: |
@@ -76,8 +79,8 @@ jobs:
             -o "$RUNNER_TEMP/wasi-sdk.tar.gz"
           echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
-          cargo install --locked wit-bindgen-cli --version 0.62.0
-          cargo install --locked wasm-tools --version 1.254.0
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
+          echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
       - name: Compile real Java sources and retain the first incompatible stage
         run: python3 sdk/java-guest/tools/feasibility.py --output "$RUNNER_TEMP/java-guest-feasibility" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Execute Java code, exceptions and GC without claiming node admission

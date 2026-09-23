@@ -27,7 +27,7 @@ from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, read_json
 JAVA_HELPERS = (*HELPERS, "java_capsule.py", "java_capsule_project.py", "java_capsule_build.py",
     "qualify_java_capsules.py", "qualify_java_bridge.py", "build_java_guest_capsules.py",
     "java_guest/compiler.py", "java_guest/bindings.py", "java_guest/model.py", "java_guest/java.py",
-    "java_guest/c.py", "java_guest/lock.py", "guest_runtime_grants.py", "build_snapshot.py")
+    "java_guest/c.py", "java_guest/lock.py", "java_guest/surface.py", "guest_runtime_grants.py", "build_snapshot.py")
 
 
 def inputs():

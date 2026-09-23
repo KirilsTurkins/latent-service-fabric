@@ -6,6 +6,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from tools.java_guest.model import Graph
 from tools.java_guest import java, c
+from tools.java_guest.surface import surface
 
 
 def document():
@@ -20,11 +21,35 @@ HEADER = "void exports_examples_sample_api_run(uint64_t value, sample_result_t *
 
 
 class Bindings(unittest.TestCase):
+    def test_surface_preserves_async_width_identity_and_ignores_parser_ids(self):
+        original = document()
+        expected = surface(original, "service")
+        moved = deepcopy(original)
+        moved["types"].insert(0, {"name": None, "kind": {"type": "u8"}, "owner": None})
+        moved["interfaces"][0]["functions"]["run"]["result"] = 1
+        self.assertEqual(surface(moved, "service"), expected)
+        for field, changed in (("kind", "async-freestanding"), ("result", "s32")):
+            data = deepcopy(original)
+            data["interfaces"][0]["functions"]["run"][field] = changed
+            self.assertNotEqual(surface(data, "service"), expected)
+        data = deepcopy(original)
+        data["packages"][0]["name"] = "examples:sample@2.0.0"
+        self.assertNotEqual(surface(data, "service"), expected)
+
+    def test_borrowed_export_parameters_are_rejected_before_compilation(self):
+        data = document()
+        data["types"].extend([
+            {"name": "item", "kind": "resource", "owner": {"interface": 0}},
+            {"name": None, "kind": {"handle": {"borrow": 1}}, "owner": None}])
+        data["interfaces"][0]["functions"]["run"]["params"][0]["type"] = 2
+        with self.assertRaisesRegex(ValueError, "borrowed resource export"):
+            Graph(data, "service", HEADER)
+
     def test_full_width_result_and_source_owned_exports_are_explicit(self):
         graph = Graph(document(), "examples:sample/service@1.0.0", HEADER)
         output = java.generate(graph)
-        self.assertIn("Result<Long, String> run(Unsigned64 value)", output)
-        self.assertIn("new dev.latent.app.Capsule().run(value)", output)
+        self.assertIn("Result<Long, String> run(Unsigned64 arg0)", output)
+        self.assertIn("new dev.latent.app.Capsule().run(arg0)", output)
         self.assertIn("value.bits(), 8", output)
         self.assertNotIn("catch (", output)
         self.assertEqual(output, java.generate(graph))
@@ -32,6 +57,15 @@ class Bindings(unittest.TestCase):
         self.assertIn("lsf_java_free(owned)", bridge)
         self.assertIn("lsf_allocate", bridge)
         self.assertNotIn("double", bridge)
+
+    def test_parameter_names_cannot_shadow_private_transport_locals(self):
+        for name in ("input", "output", "result", "operation", "arguments", "data", "length"):
+            data = document()
+            data["interfaces"][0]["functions"]["run"]["params"][0]["name"] = name
+            header = HEADER.replace("uint64_t value", "uint64_t " + name)
+            graph = Graph(data, "service", header)
+            self.assertIn("Unsigned64 arg0", java.generate(graph))
+            self.assertIn("uint64_t arg0, sample_result_t *arg1", c.generate(graph))
 
     def test_unsupported_future_and_inline_interface_fail_closed(self):
         data = document()
