@@ -1266,7 +1266,7 @@
         "deployments::tests::golden::catalog_preserves_legacy_manifest_snapshot_and_weighted_assignments",
         "deployments::tests::http::http_atomic_routes_exact_replay_delete_recreate_and_restart",
         "deployments::tests::http::recovery::http_corrupt_history_and_mismatched_prepared_owner_are_rejected",
-        "deployments::tests::http::recovery::http_format_v1_application_state_recovers_and_static_cannot_masquerade_as_legacy",
+        "deployments::tests::http::recovery::obsolete_http_table_and_receipt_formats_are_rejected_without_rewriting_state",
         "deployments::tests::http::recovery::http_interrupted_commit_and_uncertain_sync_preserve_whole_state",
         "deployments::tests::http::recovery::http_pages_receipt_eviction_and_read_owners_remain_bounded_and_scoped",
         "deployments::tests::http::selection::http_exact_prefix_precedence_canonical_conflicts_and_no_stale_fallback",

@@ -223,10 +223,7 @@ fn inactive_history_never_hides_component_corruption() {
     revoke(&releases, &first);
     drop(store);
     let publication = releases
-        .resolve_publication(
-            &LifecycleScope::LocalUnscoped,
-            &latent_artifacts::PublicationSelector::LegacyComponent(first.clone()),
-        )
+        .select_execution_publication(&latent_core::TenantId("alice".into()), &first, None)
         .unwrap()
         .unwrap();
     let file = roots[0]

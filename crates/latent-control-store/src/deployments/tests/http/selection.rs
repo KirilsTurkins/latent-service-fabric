@@ -86,7 +86,7 @@ fn http_prepared_mutation_fences_deployment_edits_and_revocation() {
         .unwrap();
     repo.change_publication_lifecycle(
         publication_context("alice", "revoke", 1),
-        &PublicationSelector::Publication(publication),
+        &publication,
         ReleaseLifecycleAction::Revoke,
         ReleaseLifecycleReason::OperatorRevocation,
         &mut |_| Ok(()),
@@ -131,7 +131,7 @@ fn http_publications_sharing_bytes_and_tenants_keep_independent_routes_and_revoc
     let held = selected(&store, "alice", "/old").unwrap();
     repo.change_publication_lifecycle(
         publication_context("alice", "revoke", 1),
-        &PublicationSelector::Publication(first),
+        &first,
         ReleaseLifecycleAction::Revoke,
         ReleaseLifecycleReason::OperatorRevocation,
         &mut |_| Ok(()),
@@ -185,10 +185,6 @@ fn static_web_routes_mount_exact_publication_without_application_identity_and_su
     let command = request(&store, "static-create", definition, 0);
     let receipt = execute(&store, command.clone()).value().receipt.clone();
     assert_eq!(receipt.format_version, 2);
-    assert!(receipt.component.is_none());
-    assert!(receipt.deployment_id.is_none());
-    assert!(receipt.deployment_generation.is_none());
-    assert!(receipt.revision.is_none());
     assert!(matches!(
         receipt.target,
         Some(TriggerTargetIdentity::StaticWeb { .. })

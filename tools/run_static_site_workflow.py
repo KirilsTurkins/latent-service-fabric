@@ -181,7 +181,10 @@ def browser(client, args, hosts, version, mode='navigation', transition=None):
                 time.sleep(0.025)
             require(read_json(ready)['stage'] == 'A-document-selected', 'static-browser-selected-document')
             transition()
-            write_json(resume, {'stage': 'B-trigger-committed'})
+            # The browser treats existence as a completed handoff in this direction too.
+            pending_resume = resume.with_name(resume.name + '.pending')
+            write_json(pending_resume, {'stage': 'B-trigger-committed'})
+            pending_resume.rename(resume)
         result = process.complete(min(client.deadline, time.monotonic() + 75))
         require(result.returncode == 0, 'static-browser-qualification-failed: ' +
                 redact(result.stderr.decode('utf-8', errors='replace'))[-1600:])

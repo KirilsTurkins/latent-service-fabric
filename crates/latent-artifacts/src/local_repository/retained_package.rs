@@ -41,11 +41,13 @@ impl DirectoryArtifactRepository {
         let reference = if publication.is_some() {
             self.select_execution_publication(tenant, release, publication)?
         } else {
-            let Some(reference) = self.resolve_publication(
-                &LifecycleScope::Tenant(tenant.clone()),
-                &crate::PublicationSelector::LegacyComponent(release.clone()),
-            )?
-            else {
+            let reference = self
+                .index
+                .read()
+                .map_err(super::lock_error)?
+                .legacy_component(Some(&LifecycleScope::Tenant(tenant.clone())), release)?
+                .map(|entry| entry.publication.clone());
+            let Some(reference) = reference else {
                 return Ok(None);
             };
             reference

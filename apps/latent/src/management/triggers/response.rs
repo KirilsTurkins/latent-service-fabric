@@ -78,12 +78,6 @@ pub(super) fn target_matches(
                     && target.kind == proto::TriggerReceiptTargetKind::StaticWeb as i32
             }
         }
-        None if application => {
-            receipt.publication == expected.publication
-                && Some(&receipt.deployment_id) == expected.route.as_ref()
-                && Some(receipt.deployment_generation) == expected.deployment_generation
-                && Some(&receipt.revision) == expected.revision.as_ref()
-        }
         _ => false,
     }
 }

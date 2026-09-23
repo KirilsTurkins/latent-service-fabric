@@ -133,10 +133,7 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
         let entry = self
             .services
             .artifacts
-            .get_selected_catalog_entry(
-                &LifecycleScope::Tenant(tenant.clone()),
-                &latent_artifacts::PublicationSelector::Publication(selector.clone()),
-            )
+            .get_selected_catalog_entry(&LifecycleScope::Tenant(tenant.clone()), &selector)
             .await
             .map_err(|error| platform_status(error, &self.limits))?;
         if entry.is_none() {

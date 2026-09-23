@@ -55,14 +55,6 @@ impl PublicationRef {
     }
 }
 
-/// A caller must supply either exact publication identity or a legacy component.
-/// Scope authorization is independent and precedes resolution.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PublicationSelector {
-    Publication(PublicationRef),
-    LegacyComponent(ReleaseDigest),
-}
-
 pub(crate) fn ambiguous() -> PlatformError {
     PlatformError {
         code: PlatformErrorCode::StateConflict,

@@ -2,8 +2,8 @@ use super::*;
 use crate::capability::{CallRestrictions, CapabilityCeiling, GrantRestriction};
 use latent_artifacts::{
     ArtifactDescriptor, ArtifactRepository, CapsuleArtifact, LifecycleScope,
-    ManagedPublicationReceipt, ManagedPublicationUpload, PublicationSelector, ReleaseActor,
-    ReleaseActorKind, ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseMutationContext,
+    ManagedPublicationReceipt, ManagedPublicationUpload, ReleaseActor, ReleaseActorKind,
+    ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseMutationContext,
     ReleaseOperationPrecondition,
 };
 use latent_core::{ArtifactReference, BoxFuture};
@@ -210,7 +210,7 @@ fn final_admission_checks_real_catalog_owner_publication_and_every_narrowing() {
         .catalog
         .change_publication_lifecycle(
             context("revoke", 1),
-            &PublicationSelector::Publication(p1.publication),
+            &p1.publication,
             ReleaseLifecycleAction::Revoke,
             ReleaseLifecycleReason::OperatorRevocation,
             &mut |_| Ok(()),

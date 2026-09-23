@@ -79,10 +79,7 @@ impl ManagementServiceAdapter {
         let value = self
             .services
             .artifacts
-            .get_selected_lifecycle(
-                &LifecycleScope::Tenant(tenant.clone()),
-                &latent_artifacts::PublicationSelector::Publication(selection.clone()),
-            )
+            .get_selected_lifecycle(&LifecycleScope::Tenant(tenant.clone()), &selection)
             .await
             .map_err(|error| platform_status(error, &self.limits))?;
         if value.is_none() {
@@ -193,13 +190,7 @@ impl ManagementServiceAdapter {
             };
             self.services
                 .artifacts
-                .change_selected_lifecycle(
-                    context,
-                    &latent_artifacts::PublicationSelector::Publication(selection),
-                    action,
-                    reason,
-                    &mut callback,
-                )
+                .change_selected_lifecycle(context, &selection, action, reason, &mut callback)
                 .await
         };
         let ack = audit
@@ -290,13 +281,7 @@ impl ManagementServiceAdapter {
             };
             self.services
                 .artifacts
-                .renew_selected_evidence(
-                    context,
-                    &latent_artifacts::PublicationSelector::Publication(selection),
-                    &package,
-                    evidence,
-                    &mut callback,
-                )
+                .renew_selected_evidence(context, &selection, &package, evidence, &mut callback)
                 .await
         };
         let ack = audit

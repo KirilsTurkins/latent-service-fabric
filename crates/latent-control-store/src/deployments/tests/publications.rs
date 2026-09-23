@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use latent_artifacts::{
     ArtifactRepository, DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig,
-    LifecycleScope, ManagedPublicationUpload, PublicationRef, PublicationSelector, ReleaseActor,
-    ReleaseActorKind, ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseMutationContext,
+    LifecycleScope, ManagedPublicationUpload, PublicationRef, ReleaseActor, ReleaseActorKind,
+    ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseMutationContext,
     ReleaseOperationPrecondition,
 };
 use latent_core::{DeploymentId, RouteGeneration, TenantId};
@@ -91,7 +91,7 @@ fn revoke(repository: &DirectoryArtifactRepository, reference: &PublicationRef) 
     repository
         .change_publication_lifecycle(
             context(&tenant.0, "revoke", 1),
-            &PublicationSelector::Publication(reference.clone()),
+            &reference.clone(),
             ReleaseLifecycleAction::Revoke,
             ReleaseLifecycleReason::OperatorRevocation,
             &mut |_| Ok(()),

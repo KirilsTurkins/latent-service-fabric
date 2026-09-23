@@ -461,10 +461,11 @@ retain their wire shape and new static targets cannot synthesize deployment or
 component identity.
 
 Trigger operation receipts add the tagged `TriggerReceiptTarget` at field 21
-and its closed target-kind enum. Existing receipt fields 14 through 18 remain
-reserved for format-v1 application compatibility; format-v2 writes use the
-tagged identity, and static receipts leave the legacy execution fields empty.
-These are additive Protobuf changes with no renumbering or RPC signature change.
+and its closed target-kind enum. Obsolete format-v1 fields 14 through 18 and
+their names are reserved after removal. Only format-v2 tagged receipts are
+accepted; static receipts have no application execution identity. There is no
+compatibility reader or automatic upgrade. Current field numbers and RPC
+signatures remain unchanged.
 The normalized descriptor golden deliberately records the new enums, messages,
 and fields. See [ADR-0043](../../adr/0043-select-static-web-publications-as-first-class-http-targets.md)
 and the [HTTP trigger reference](../reference/http-triggers.md).

@@ -114,8 +114,9 @@ claimed by this milestone.
 
 The concrete catalog now projects an exact SSR web publication into the common
 preparation metadata and lifecycle interface. This is not a capsule publication:
-the capsule index and legacy component-only lookup remain unchanged, and no
-`AdmissionGrant` is created from web receipts or digests. The sealed projection
+the capsule index retains executable content identity, while publication
+management requires an exact scoped reference. No `AdmissionGrant` is created
+from web receipts or digests. The sealed projection
 retains the actual web grant, its originating catalog and admission authority,
 the exact package/assets association, and its current lifecycle generation.
 Browser-only packages cannot acquire this projection.

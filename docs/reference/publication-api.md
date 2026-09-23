@@ -61,7 +61,7 @@ receipt and generations even after deletion or revocation. Replay does not
 install the historical deployment again. An unscoped local publication cannot
 be submitted as a tenant publication or selected through a component fallback.
 
-## Recovery and compatibility
+## Recovery and current contracts
 
 Deployment operation table format 2 stores the full captured publication
 reference alongside each unchanged format-1 receipt. The enclosing catalog
@@ -78,10 +78,11 @@ object generations across restart. See the
 for accepted catalog and rollout-plan versions.
 
 The [publication schema](../../schemas/publication-ref.schema.json), release
-lifecycle schema, Protobuf descriptor contract and compatibility fixtures cover
-presence and additive field meanings. Generated Rust bindings are built from
-the authoritative Protobuf files. All six SDKs expose matching interface models;
-this does not announce a new executable SDK client.
+lifecycle schema, Protobuf descriptor contract and conformance fixtures cover
+presence and exact publication identity. Generated Rust bindings are built from
+the authoritative Protobuf files. All six executable SDK clients use the same
+current management profile. The artifact catalog API takes `PublicationRef`
+directly; the obsolete component-or-publication selector has been removed.
 
 | Request | Current behavior |
 | --- | --- |

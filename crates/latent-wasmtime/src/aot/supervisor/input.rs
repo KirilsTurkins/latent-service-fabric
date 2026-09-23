@@ -267,7 +267,7 @@ pub(super) mod tests {
 
     #[test]
     fn native_proofs_cannot_cross_publications_of_the_same_component() {
-        use latent_artifacts::{ManagedPublicationUpload, PublicationSelector};
+        use latent_artifacts::ManagedPublicationUpload;
         let fixture = Fixture::new();
         let first = fixture.read();
         let context = |operation: &str, generation| ReleaseMutationContext {
@@ -327,10 +327,10 @@ pub(super) mod tests {
             .repository
             .change_publication_lifecycle(
                 context("revoke-first", 1),
-                &PublicationSelector::Publication(latent_artifacts::PublicationRef {
+                &latent_artifacts::PublicationRef {
                     id: first.key().publication().clone(),
                     scope: LifecycleScope::Tenant(TenantId("tests".into())),
-                }),
+                },
                 ReleaseLifecycleAction::Revoke,
                 ReleaseLifecycleReason::OperatorRevocation,
                 &mut |_| Ok(()),

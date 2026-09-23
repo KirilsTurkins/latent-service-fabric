@@ -7,8 +7,7 @@ use crate::{
         MAX_DEFINITION_BYTES, MAX_IDENTIFIER_BYTES, MAX_RECORDS, MAX_TABLE_BYTES,
     },
 };
-use latent_artifacts::{LifecycleScope, PublicationRef};
-use latent_core::{ArtifactBlobDigest, PlatformError, ReleaseDigest};
+use latent_core::{ArtifactBlobDigest, PlatformError};
 use latent_manifest::{
     __serde::{Deserialize, Serialize},
     JsonManifestCodec, ManifestCodec, TriggerManifest, TriggerTarget,
@@ -21,14 +20,6 @@ pub(in crate::deployments) const RECEIPTS: usize = 64;
 pub(in crate::deployments) struct StoredRecord {
     pub manifest: String,
     pub generation: u64,
-    // Present only in format-v1 application-only state.
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "crate::rollouts::codec::optional"
-    )]
-    pub component: Option<ReleaseDigest>,
-    // Present only in format-v2 state.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<TriggerTargetIdentity>,
 }
@@ -84,7 +75,7 @@ impl HttpTable {
         state: u64,
         route: u64,
     ) -> Result<Arc<Self>, PlatformError> {
-        if !matches!(data.format_version, 1 | 2)
+        if data.format_version != 2
             || data.records.len() > MAX_RECORDS
             || data.receipts.len() as u64 != data.sequence.min(RECEIPTS as u64)
             || data.sequence > state
@@ -129,21 +120,7 @@ impl HttpTable {
             if codec::manifest(&manifest)? != stored.manifest {
                 return Err(corrupt());
             }
-            let target = match data.format_version {
-                1 => {
-                    if stored.target.is_some() {
-                        return Err(corrupt());
-                    }
-                    legacy_target(&manifest, stored.component.as_ref().ok_or_else(corrupt)?)?
-                }
-                2 => {
-                    if stored.component.is_some() {
-                        return Err(corrupt());
-                    }
-                    stored.target.clone().ok_or_else(corrupt)?
-                }
-                _ => return Err(corrupt()),
-            };
+            let target = stored.target.clone().ok_or_else(corrupt)?;
             validate_target(&manifest, &target, route)?;
             let key = (&manifest.metadata.tenant, &manifest.id);
             if rows
@@ -255,26 +232,6 @@ impl HttpTable {
     }
 }
 
-fn legacy_target(
-    manifest: &TriggerManifest,
-    component: &ReleaseDigest,
-) -> Result<TriggerTargetIdentity, PlatformError> {
-    let tenant = manifest.metadata.tenant.clone().ok_or_else(corrupt)?;
-    let TriggerTarget::Application(target) = &manifest.target else {
-        return Err(corrupt());
-    };
-    Ok(TriggerTargetIdentity::Application {
-        publication: PublicationRef {
-            id: target.publication.clone().ok_or_else(corrupt)?,
-            scope: LifecycleScope::Tenant(tenant),
-        },
-        component: component.clone(),
-        deployment_id: target.route.clone().ok_or_else(corrupt)?,
-        deployment_generation: target.deployment_generation.ok_or_else(corrupt)?,
-        revision: target.revision.clone().ok_or_else(corrupt)?,
-    })
-}
-
 fn validate_target(
     manifest: &TriggerManifest,
     target: &TriggerTargetIdentity,
@@ -351,27 +308,7 @@ fn validate_receipt(r: &TriggerOperationReceipt) -> Result<(), PlatformError> {
     }
     r.actor.validate().map_err(|_| corrupt())?;
     let target = r.target_identity().ok_or_else(corrupt)?;
-    let version_valid = match r.format_version {
-        1 => {
-            r.target.is_none()
-                && r.publication.is_some()
-                && r.component.is_some()
-                && r.deployment_id.is_some()
-                && r.deployment_generation.is_some()
-                && r.revision.is_some()
-                && matches!(target, TriggerTargetIdentity::Application { .. })
-        }
-        2 => {
-            r.target.is_some()
-                && r.publication.is_none()
-                && r.component.is_none()
-                && r.deployment_id.is_none()
-                && r.deployment_generation.is_none()
-                && r.revision.is_none()
-        }
-        _ => false,
-    };
-    if !version_valid
+    if r.format_version != 2
         || r.expected_state_version.checked_add(1) != Some(r.state_version)
         || r.route_generation > r.state_version
         || target

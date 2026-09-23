@@ -1,10 +1,7 @@
 //! Exact publication reads share the catalog's one owner and bounded index.
 
 use super::*;
-use crate::{
-    ArtifactCatalogEntry, LifecycleScope, PublicationRef, PublicationSelector,
-    ReleaseOperationReceipt,
-};
+use crate::{ArtifactCatalogEntry, LifecycleScope, PublicationRef, ReleaseOperationReceipt};
 use latent_core::PublicationId;
 
 impl DirectoryArtifactRepository {
@@ -96,28 +93,21 @@ impl DirectoryArtifactRepository {
     }
 
     /// The trusted adapter must authorize `scope` before invoking this lookup.
-    /// Foreign references appear absent; legacy selection never skips revoked rows.
+    /// Foreign publication IDs appear absent inside the authorized scope.
     pub fn resolve_publication(
         &self,
         scope: &LifecycleScope,
-        selector: &PublicationSelector,
+        reference: &PublicationRef,
     ) -> Result<Option<PublicationRef>, PlatformError> {
         scope.validate()?;
         let index = self.index.read().map_err(lock_error)?;
-        let entry = match selector {
-            PublicationSelector::Publication(reference) => {
-                if &reference.scope != scope {
-                    return Err(error(
-                        PlatformErrorCode::InvalidArgument,
-                        "publication-selector-scope-mismatch",
-                    ));
-                }
-                index.exact(reference)?
-            }
-            PublicationSelector::LegacyComponent(component) => {
-                index.legacy_component(Some(scope), component)?
-            }
-        };
+        if &reference.scope != scope {
+            return Err(error(
+                PlatformErrorCode::InvalidArgument,
+                "publication-selector-scope-mismatch",
+            ));
+        }
+        let entry = index.exact(reference)?;
         Ok(entry.map(|entry| entry.publication.clone()))
     }
 

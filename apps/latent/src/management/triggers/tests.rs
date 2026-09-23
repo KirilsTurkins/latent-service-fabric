@@ -141,7 +141,7 @@ fn preparation_is_local_and_canonical_without_component_substitution() {
 fn receipt() -> proto::TriggerOperationReceipt {
     let digest = format!("sha256:{}", "a".repeat(64));
     proto::TriggerOperationReceipt {
-        format_version: 1,
+        format_version: 2,
         tenant: "tenant-a".into(),
         actor: Some(proto::ReleaseActor {
             subject: "operator".into(),
@@ -157,17 +157,20 @@ fn receipt() -> proto::TriggerOperationReceipt {
         state_version: 11,
         route_generation: 2,
         manifest_digest: digest.clone(),
-        publication: Some(proto::PublicationRef {
-            id: format!("publication:{digest}"),
-            tenant: "tenant-a".into(),
+        target: Some(proto::TriggerReceiptTarget {
+            kind: proto::TriggerReceiptTargetKind::Application as i32,
+            publication: Some(proto::PublicationRef {
+                id: format!("publication:{digest}"),
+                tenant: "tenant-a".into(),
+            }),
+            component_digest: digest.clone(),
+            deployment_id: "web-deployment".into(),
+            deployment_generation: 1,
+            revision: format!("revision-v1:{digest}"),
+            ..Default::default()
         }),
-        component_digest: digest.clone(),
-        deployment_id: "web-deployment".into(),
-        deployment_generation: 1,
-        revision: format!("revision-v1:{digest}"),
         completed_at_unix_millis: u64::MAX,
         receipt_digest: digest,
-        target: None,
     }
 }
 
@@ -183,16 +186,26 @@ fn receipts_bind_scope_publication_and_counters_without_rounding() {
     assert!(response::receipt_scope(&original, "tenant-a", "other", None).is_err());
     for mutate in [
         (|value: &mut proto::TriggerOperationReceipt| {
-            value.publication.as_mut().unwrap().tenant = "tenant-b".into();
+            value
+                .target
+                .as_mut()
+                .unwrap()
+                .publication
+                .as_mut()
+                .unwrap()
+                .tenant = "tenant-b".into();
         }) as fn(&mut proto::TriggerOperationReceipt),
-        |value| value.publication.as_mut().unwrap().id = value.component_digest.clone(),
+        |value| {
+            let target = value.target.as_mut().unwrap();
+            target.publication.as_mut().unwrap().id = target.component_digest.clone();
+        },
         |value| value.actor = None,
         |value| value.action = 999,
         |value| value.state_version = value.expected_state_version,
         |value| value.expected_generation = u64::MAX,
         |value| value.object_generation = 1,
         |value| value.route_generation = value.state_version + 1,
-        |value| value.deployment_generation = value.route_generation + 1,
+        |value| value.target.as_mut().unwrap().deployment_generation = value.route_generation + 1,
     ] {
         let mut value = original.clone();
         mutate(&mut value);
