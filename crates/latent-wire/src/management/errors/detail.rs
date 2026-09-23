@@ -11,6 +11,7 @@ pub(super) enum PublicDetail {
     PublicationAmbiguous,
     Release(release::ReleaseDetail),
     Catalog(&'static str),
+    Currentness(&'static str),
     Mutation {
         object_generation: u64,
         catalog_generation: u64,
@@ -47,6 +48,14 @@ impl PublicDetail {
                 Some(Self::PublicationAmbiguous)
             }
             "release-operation" => release::ReleaseDetail::parse(source).map(Self::Release),
+            "admission.currentness" => {
+                let reason = source.fields.get("reason")?;
+                latent_core::error::ADMISSION_CURRENTNESS_REASONS
+                    .iter()
+                    .copied()
+                    .find(|candidate| *candidate == reason.as_str())
+                    .map(Self::Currentness)
+            }
             "deployment-catalog" => {
                 let reason = source.fields.get("reason")?;
                 CATALOG_REASONS
@@ -83,6 +92,9 @@ impl PublicDetail {
             Self::Catalog(reason) => {
                 4 * 128 + "deployment-catalog".len() + "reason".len() + reason.len()
             }
+            Self::Currentness(reason) => {
+                4 * 128 + "admission.currentness".len() + "reason".len() + reason.len()
+            }
             Self::Mutation { .. } => {
                 8 * 128
                     + "deployment-mutation".len()
@@ -106,6 +118,10 @@ impl PublicDetail {
                 .into(),
             },
             Self::Release(value) => value.into_proto(),
+            Self::Currentness(reason) => proto::ErrorDetail {
+                kind: "admission.currentness".into(),
+                fields: [("reason".into(), reason.into())].into(),
+            },
             Self::Catalog(reason) => proto::ErrorDetail {
                 kind: "deployment-catalog".to_owned(),
                 fields: [("reason".to_owned(), reason.to_owned())]

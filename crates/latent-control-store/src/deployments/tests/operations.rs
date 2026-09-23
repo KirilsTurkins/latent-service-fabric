@@ -6,6 +6,7 @@ use latent_manifest::__serde_json as json;
 use latent_routing::RouteResolver;
 use std::sync::{atomic::Ordering, Arc};
 
+mod lease;
 mod mixed;
 mod ownership;
 mod persistence;

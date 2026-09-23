@@ -41,6 +41,13 @@ impl DirectoryDeploymentRepository {
             }
             Ok(())
         } else {
+            // Preparation and durable audit may outlive a lease. Renew before
+            // entering any catalog or policy fence, then recheck every grant
+            // under the unchanged fence before and after the single mutation.
+            // Historical replay above remains a read, not a lease renewal.
+            if let Some(authority) = &self.admission {
+                authority.renew_control_lease()?;
+            }
             prepared
                 .next_routes
                 .check_admission_mode(self.admission.as_ref(), self.lifecycle.as_ref())?;

@@ -18,7 +18,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "set -o pipefail\npython3 tools/build_guest_capsules.py --output \"$LSF_GUEST_CAPSULES\" 2>&1 | tee \"$RUNNER_TEMP/c-guest-build.log\"\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/c-guest-runtime.log\"\ncargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee \"$RUNNER_TEMP/c-guest-provenance.log\""
+      "run": "set -o pipefail\npython3 tools/build_guest_capsules.py --output \"$LSF_GUEST_CAPSULES\" 2>&1 | tee \"$RUNNER_TEMP/c-guest-build.log\"\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/c-guest-runtime.log\"\ncargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee \"$RUNNER_TEMP/c-guest-provenance.log\"\ncargo test --locked -p latent-control-store --lib managed_lease_failure_never_mutates_or_renews_a_historical_replay 2>&1 | tee \"$RUNNER_TEMP/c-guest-control-lease.log\""
     },
     ".github/workflows/ci.yml:profile:select": {
       "workflow": ".github/workflows/ci.yml",
@@ -5574,7 +5574,9 @@
       "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
       "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project",
       "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected",
-      "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs"
+      "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs",
+      "ControlDiagnosticsTests.test_cyclic_audit_cursor_stops_without_hiding_the_original_failure",
+      "ControlDiagnosticsTests.test_paginated_evidence_never_retries_or_changes_the_failed_mutation"
     ]
   },
   "pythonTestModules": [
@@ -5820,7 +5822,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/c-guest-authoring.yml": "c33370aa6512c949048b920a76f26d5017ab92ac270bb8c21e30b58369864407",
+    ".github/workflows/c-guest-authoring.yml": "32deb6259d51103bca265117e5a45ab495c35a826ece26e1eb4b591a94fd1c26",
     ".github/workflows/ci.yml": "a7f311e9002c815503ccd24bca8d48df62d4cd6d4211c5acff35db98ddad215f",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
