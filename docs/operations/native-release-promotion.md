@@ -8,32 +8,20 @@ an explicitly approved publication. This is a development runbook for
 [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308), not a
 download announcement or production/hostile-multitenancy certification.
 
-The selected versions are `0.1.0-alpha.4-rc.2` for the recorded foundation and
-`0.1.0-alpha.4` for the final bundle. The foundation's source, tag and archive
-identity are recorded below. Final bundle qualification and protected
-publication remain separate requirements.
-The historical `0.1.0-alpha.3` tag remains unchanged and source-only.
+**Publication is on hold.** The maintainer reserves `0.1.0-alpha.4` for
+completed requirements merged from `development` into `release`, followed by
+explicit approval. The premature final tag was removed and
+[publication run 35822633436](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35822633436)
+was cancelled before publication. No GitHub release or public assets existed.
+Do not recreate the tag, resume the cancelled run or publish the earlier build.
 
-The current rc.2 foundation is now qualified in
-[release run 35811188306](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35811188306), at source
-`a53b7b219a46f6ca91ae7bc7830669f8aa4bbe2e`. Its
-[authenticated receipt](../evidence/native-foundation-35811188306.json) supplies the actual
-archive identity committed for `0.1.0-alpha.4`. Final compatible-pair VM
-acceptance and protected publication remain pending; the steps below retain
-their separate exact-source and artifact checks.
-
-The earlier unpublished `0.1.0-alpha.4-rc.1` foundation and its receipts remain
-historical evidence. Its HTTP table format is now obsolete, so it is no longer
-a declared upgrade source. Use the distinct rc.2 foundation with current storage
-formats; do not restore a legacy reader or move the rc.1 tag.
-
-The first native profile is Ubuntu Server 24.04, Linux x86_64, with the
-[installer's actual host prerequisites](../../packaging/linux/INSTALL.md#prerequisites-and-independent-bootstrap-trust).
-Use `local-experimental-v1` only for controlled local workloads;
-`external-capsule-v1` requires enforced admission and the real isolated compiler
-probe, not a fallback to the local profile. Rootless evaluation is foreground
-local execution, not a user systemd service. There is no Docker, Podman,
-Kubernetes, guest compiler or source-checkout prerequisite in an installed guest.
+The [historical rehearsal](../evidence/native-upgrade-35821200294/README.md)
+records complete acceptance for source
+`193d52c37635026de416feffd4a2dfd57d082451` and its actual archive. It does not
+qualify the eventual release commit. The current-format `0.1.0-alpha.4-rc.2`
+foundation and its authenticated predecessor archive remain intact. Earlier
+receipts retain their original source and result, including incomplete and
+failed attempts.
 
 ## Keep the three publication authorities separate
 
@@ -200,65 +188,44 @@ Preserve the actual installer/config/storage/host-ABI compatibility contract; a
 version string alone is not compatibility. Do not guess a digest, rename the
 foundation binaries, move a tag or use same-version reinstall as an upgrade.
 
-## 4. Qualify the final source against that foundation
+## 4. Select the final source after approval
 
-The maintainer reviews the final version/compatibility commit, obtains its own exact
-CI/security results and creates its distinct immutable final tag. Independently
-approve the release certificate ending in `@refs/tags/0.1.0-alpha.4`, with both
-source and signer pinned to that final source, not to the foundation or a PR base.
+Complete all delivery and documentation requirements, including the human guide
+review. Merge the completed `development` branch into `release`. Present that
+exact release commit and its passing CI to the maintainer and obtain explicit
+approval before creating `0.1.0-alpha.4`. The version must identify the approved
+release commit, not the earlier rehearsal source. No final commit or CI run is
+selected while the hold is in effect.
 
-The maintainer's nonpublishing rehearsal selects the actual foundation run:
+After approval, create the tag once and select a fresh release-workflow run.
+Qualify that exact source and artifact against the authenticated rc.2 foundation.
+Require both VM receipts to contain:
 
-```bash
-: "${FINAL_COMMIT:?Set the approved full final source commit}"
-: "${FINAL_CI_RUN:?Set the successful maintained CI run for the exact final source}"
-FINAL_VERSION=0.1.0-alpha.4
-timeout --kill-after=5s 30s gh workflow run native-runtime-release.yml \
-  --repo "$REPOSITORY" --ref "$FINAL_VERSION" \
-  -f version="$FINAL_VERSION" -f commit="$FINAL_COMMIT" \
-  -f ci_run="$FINAL_CI_RUN" -f predecessor_run="$FOUNDATION_RUN" -F publish=false
-```
+- The final source and harness commit, exact archive digest, authenticated
+  release workflow/tag/source policy and declared predecessor identity.
+- `passed:true`, `acceptanceComplete:true`, empty `gaps`, distinct boot IDs,
+  retained invocation and a real upgrade with unsupported downgrade rejection.
+- Native non-root systemd operation, consistent backup and full-set restore,
+  removal/reinstall and separately confirmed purge; additionally, non-root
+  foreground evaluation in the local profile.
 
-Dispatch is a mutation. If its response is lost or times out, inspect runs for
-the exact tag/source before any retry. Select the actual run ID, not simply the
-newest run, and do not overwrite an existing tag or release.
+The retained older rehearsal cannot substitute for those final-source checks.
+Use the [maintainer gate](../development/native-release-gate.md#protected-publication)
+for the exact workflow inputs and acceptance contract.
 
-Retain the actual run ID and inspect both
-`native-runtime-release-vm-<profile>-<FINAL_COMMIT>` artifacts. Require all of:
+## 5. Publish the approved release and verify its assets
 
-- `sourceCommit` **and** `harnessSourceCommit` equal the final full source,
-  `purpose:"release"`, the exact final archive SHA, and authenticated release
-  workflow/tag/source policy. Diagnostic artifact reuse across revisions fails.
-- `passed:true`, `acceptanceComplete:true`, empty `gaps`, distinct real boot IDs,
-  and successful `initial`, `retained`, `upgrade` phases for both profiles.
-  The local profile additionally has the actual UID-nonzero `rootless` phase.
-- The declared predecessor equals the authenticated foundation version, source
-  and TAR SHA. The guest installs that old bundle, publishes/invokes, upgrades
-  explicitly, retains the publication/configuration/credentials/AOT identity and
-  rejects an unsupported binary downgrade without mutating retained state.
-- The same run proves native non-root systemd, actual reboot/retained invocation,
-  stopped consistent backup/full-set restore, removal/reinstall recovery and
-  separately confirmed purge. Test fixtures or a container are not clean-VM proof.
+Only after the preceding approval may the maintainer dispatch publication.
+The workflow rebuilds and authenticates the archive, reruns both VM profiles,
+rechecks CI and waits for the required-reviewer environment. Review the actual
+archive identity produced by that run; do not reuse a previous build's digest.
+The gate authenticates the acceptance documents and uses `--verify-tag`.
 
-The release gate checks these relationships, not just job colour. If the compiler
-changes compatibly, the installer requires explicit approval of that exact
-compiler SHA; it does not regenerate the AOT key or silently discard trust.
-Binary downgrade is not an inverse storage migration.
-
-## 5. Review publication, then observe its result
-
-The maintainer selects `publish=true` after qualification. The existing workflow
-builds/attests again and reruns both VM profiles for those exact new artifact
-bytes, rechecks live CI and waits for the required-reviewer environment. A
-nonpublishing run's TAR hash must not be asserted for a later rebuild.
-The gate authenticates the acceptance documents and creates one prerelease with
-`--verify-tag`; it does not create tags or overwrite an existing release.
-
-An interrupted/failed publish is uncertain, not authorization to delete/recreate
-or retry. Inspect the exact remote release, asset states/digests and retained
-`native-publication-result.json`. Escalate partial upload or mismatched bytes to
-the release maintainer. The separately attested fixture helper is test infrastructure, not a
-runtime release asset. Keep credentials, AOT keys, VM disks and backups private.
+Observe the release and all public assets, compare their digests with the
+accepted archive and retain `native-publication-result.json`. An uncertain or
+partial upload requires inspection before retrying. Do not overwrite mismatched
+assets or reuse the cancelled run. Test helpers, credentials, keys, VM disks
+and backups are not runtime release assets.
 
 ## Failure, cleanup and validation boundary
 
@@ -284,5 +251,6 @@ authority to consume a candidate through the release verification procedure.
 
 The [guide review handoff](../development/operator-guide-acceptance.md)
 separates retained execution, command/source checks and pending rendered human
-review. The recorded rc.2 foundation is executed evidence; the final source's
-rehearsal and publication must retain their own results before being called complete.
+review. The recorded rc.2 foundation and final alpha.4 rehearsal are executed
+evidence. Publication must retain its own authenticated results before being
+called complete.
