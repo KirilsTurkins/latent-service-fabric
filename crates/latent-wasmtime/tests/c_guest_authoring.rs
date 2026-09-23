@@ -1,11 +1,16 @@
 //! Fresh public-only fixture for the authenticated, separate-process C guide.
 #![cfg(target_os = "linux")]
+// These shared fixture modules also serve the complete guest runtime suite.
+#[allow(dead_code)]
 #[path = "guest_sdk/package.rs"]
 mod package;
+#[allow(dead_code)]
+#[path = "generic_backend/support.rs"]
+mod support;
 
 use latent_artifacts::ReleaseEvidenceUpload;
-use latent_signing::{decode_build_observation, ProvenanceLimits, C_GUEST_BUILD_TYPE};
-use serde_json::{json, Value};
+use latent_signing::{C_GUEST_BUILD_TYPE, ProvenanceLimits, decode_build_observation};
+use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{io::Read, path::Path};
 
@@ -40,15 +45,22 @@ fn export_c_authoring_fixture() {
     let mut components = serde_json::Map::new();
     for name in ["greeting", "word-count", "shipping"] {
         let build = inputs.join(format!("build-{name}"));
-        let marker: Value = serde_json::from_slice(&read(&build.join("BUILD-COMPLETE.json"), 65536)).unwrap();
+        let marker: Value =
+            serde_json::from_slice(&read(&build.join("BUILD-COMPLETE.json"), 65536)).unwrap();
         assert_eq!(marker["formatVersion"], 1);
         let bytes = read(&build.join("build-observation.json"), 65536);
         assert_eq!(marker["observationDigest"], digest(&bytes));
         let observation = decode_build_observation(&bytes, ProvenanceLimits::default()).unwrap();
         assert_eq!(observation.build_type, C_GUEST_BUILD_TYPE);
-        assert_eq!(observation.source.snapshot_digest, digest(&read(&build.join("source-inputs.json"), 1_048_576)));
+        assert_eq!(
+            observation.source.snapshot_digest,
+            digest(&read(&build.join("source-inputs.json"), 1_048_576))
+        );
         let bundle = package::bundle(&build.join("package-inputs"));
-        assert_eq!(bundle.layout().component_release().unwrap().as_str(), observation.component_digest);
+        assert_eq!(
+            bundle.layout().component_release().unwrap().0,
+            observation.component_digest
+        );
         let upload = signers.upload(&bundle, &observation);
         let evidence = ReleaseEvidenceUpload {
             signatures: upload.signatures,
@@ -58,9 +70,17 @@ fn export_c_authoring_fixture() {
         let directory = output.join(name);
         std::fs::create_dir(&directory).unwrap();
         latent_packaging::write_package_directory(&bundle, &directory.join("package")).unwrap();
-        latent_packaging::write_package_evidence(bundle.layout().digest(), &evidence,
-            &directory.join("evidence"), 16 * 1024 * 1024).unwrap();
-        let mut deployment: Value = serde_json::from_slice(include_bytes!("../../../examples/echo-contract/deployment.json")).unwrap();
+        latent_packaging::write_package_evidence(
+            bundle.layout().digest(),
+            &evidence,
+            &directory.join("evidence"),
+            16 * 1024 * 1024,
+        )
+        .unwrap();
+        let mut deployment: Value = serde_json::from_slice(include_bytes!(
+            "../../../examples/echo-contract/deployment.json"
+        ))
+        .unwrap();
         deployment["metadata"] = json!({"name": name, "tenant": "tests"});
         deployment["spec"]["service"] = json!(name);
         deployment["spec"]["release"] = json!(observation.component_digest);
@@ -69,14 +89,20 @@ fn export_c_authoring_fixture() {
         deployment["spec"]["resources"]["memoryBytes"] = json!(4_194_304);
         deployment["spec"]["resources"]["logBytes"] = json!(0);
         write(&directory.join("deployment.json"), &deployment);
-        components.insert(name.into(), json!({
-            "componentDigest": observation.component_digest,
-            "componentBytes": observation.component_size,
-            "sourceSnapshotDigest": observation.source.snapshot_digest,
-            "observationDigest": digest(&bytes)
-        }));
+        components.insert(
+            name.into(),
+            json!({
+                "componentDigest": observation.component_digest,
+                "componentBytes": observation.component_size,
+                "sourceSnapshotDigest": observation.source.snapshot_digest,
+                "observationDigest": digest(&bytes)
+            }),
+        );
     }
-    write(&output.join("fixture.json"), &json!({"formatVersion": 1, "tenant": "tests",
-        "components": components,
-        "provenance": "actual bounded C compiler observations; fresh ephemeral test signing keys"}));
+    write(
+        &output.join("fixture.json"),
+        &json!({"formatVersion": 1, "tenant": "tests",
+            "components": components,
+            "provenance": "actual bounded C compiler observations; fresh ephemeral test signing keys"}),
+    );
 }
