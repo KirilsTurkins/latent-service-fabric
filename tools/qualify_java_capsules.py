@@ -37,6 +37,19 @@ def inputs():
             "helpers": {name: file_identity(ROOT / "tools" / name, 1024 * 1024) for name in JAVA_HELPERS}}
 
 
+def verify_inputs(output: Path, before: dict, binaries: dict, expected_binaries: dict):
+    after = inputs()
+    actual_binaries = {name: file_identity(path) for name, path in binaries.items()}
+    write_json(output / "source-inputs-after.json", after)
+    write_json(output / "binaries-after.json", actual_binaries)
+    if after != before:
+        raise ValueError("Java qualification source inputs changed")
+    changed = sorted(name for name in actual_binaries.keys() | expected_binaries.keys()
+                     if actual_binaries.get(name) != expected_binaries.get(name))
+    if changed:
+        raise ValueError("Java qualification binaries changed: " + ", ".join(changed))
+
+
 def qualify(output: Path, wasi_sdk: Path):
     output = output.absolute()
     if output == ROOT or ROOT in output.parents:
@@ -88,7 +101,8 @@ def qualify(output: Path, wasi_sdk: Path):
         commands.run(stage, "java", "-cp", classes, "dev.latent.guest.Ownership")
         stage = "sdk-runtime-ownership"
         commands.run("build-sdk-guests", sys.executable, ROOT / "tools/build_java_guest_capsules.py",
-            "--output", output / "sdk-guests", "--wasi-sdk", wasi_sdk)
+            "--output", output / "sdk-guests", "--wasi-sdk", wasi_sdk,
+            "--contracts-tool", binaries["examples/capsule_contracts"], "--packager", binaries["examples/package"])
         commands.environment.update(LSF_GUEST_CAPSULES=str(output / "sdk-guests"), LSF_GUEST_SDK_LANGUAGE="java")
         commands.run("sdk-runtime-tests", paths["cargo"], "--config", ROOT / ".cargo/managed-guest.toml", "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
             "--", "--ignored", "--test-threads=1")
@@ -98,8 +112,8 @@ def qualify(output: Path, wasi_sdk: Path):
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node", language="java")
         stage = "printed-guide"
         result["guide"] = guide(output / "guide", environment, "java")
-        if inputs() != before or {name: file_identity(path) for name, path in binaries.items()} != result["binaries"]:
-            raise ValueError("Java qualification inputs changed")
+        stage = "final-integrity"
+        verify_inputs(output, before, binaries, result["binaries"])
         if time.monotonic() >= commands.deadline: raise ValueError("Java qualification deadline exceeded")
         result.update(status="passed", commands=commands.records)
         result["node"] = {"status": result["node"]["status"], "receiptDigest": file_identity(output / "node/workflow.json")["sha256"]}

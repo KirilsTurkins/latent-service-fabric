@@ -112,3 +112,18 @@ remain unchanged. A real two-clock/infinite-loop regression checks exact guest
 plus host accounting and fresh reuse with and without cooperative fuel yielding.
 The remainder of the node workflow and printed guide remain unqualified until
 the complete corrected run passes.
+
+The [complete execution attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35924966518)
+at `b4da8d288c3b2d127f47450dca80a68d5e8df089` passed all ten SDK tests in
+30.71 seconds, all 29 recorded node invocations, dormant/active observations,
+physical cleanup, and all six printed guide blocks. The node and held HTTP peer
+were cleanly reaped; fuel exhaustion remained resource exhaustion, and fresh
+calls succeeded after every failure. The overall attempt nevertheless failed
+its final binary-identity guard. The SDK builder's narrower Cargo package set
+changed feature unification and replaced both packaging executables after they
+were recorded. The corrected qualifier supplies its exact prebuilt tools to the
+SDK stage; standalone SDK builds may still build their own tools. Both stages
+retain and compare the original and final binary identities, with explicit
+failure diagnostics and regression tests. These passing execution receipts do
+not override the failed overall integrity check; final completion still requires
+one fully source- and binary-matched qualification.

@@ -2725,7 +2725,7 @@
       "sha256": "f9f02c440195578fac1e1ccd297a6ba1824b5952b4c74f021475df2acac106ce"
     },
     "tools/qualify_java_capsules.py": {
-      "sha256": "73d178f1d636850a1c6f01f29b2f1a67106370f4adc9f981726a6fdd26e4cb4f"
+      "sha256": "54a371d38d626291fd1415e2ddda6841054c5ad34334869408459461d9788792"
     },
     "tools/qualify_rust_capsules.py": {
       "sha256": "8be1a3ed2d29898f66fefd9b7a8f801d4c15fb3fe994b0d2490eb9de555627c3"
