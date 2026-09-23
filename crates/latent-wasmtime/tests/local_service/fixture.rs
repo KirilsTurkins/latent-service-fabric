@@ -46,6 +46,12 @@ mod guest_runtime;
 
 pub struct Observations {
     pub starts: Mutex<Vec<latent_telemetry::ActivationObservationContext>>,
+    pub terminals: Mutex<
+        Vec<(
+            latent_telemetry::ActivationObservationContext,
+            latent_telemetry::ActivationTerminalObservation,
+        )>,
+    >,
     pub child_running: tokio::sync::Notify,
 }
 impl latent_telemetry::ActivationObserver for Observations {
@@ -55,7 +61,7 @@ impl latent_telemetry::ActivationObserver for Observations {
         event: &latent_telemetry::ActivationObservation,
     ) {
         use latent_telemetry::ActivationObservationKind;
-        match event.kind {
+        match &event.kind {
             ActivationObservationKind::Received => {
                 let mut starts = self.starts.lock().unwrap();
                 assert!(starts.len() < 32);
@@ -65,6 +71,11 @@ impl latent_telemetry::ActivationObserver for Observations {
                 phase: latent_core::ActivationPhase::Running,
                 ..
             } if context.parent_activation_id.is_some() => self.child_running.notify_one(),
+            ActivationObservationKind::Terminal(terminal) => {
+                let mut terminals = self.terminals.lock().unwrap();
+                assert!(terminals.len() < 32);
+                terminals.push((context.clone(), terminal.clone()));
+            }
             _ => (),
         }
     }
@@ -239,7 +250,7 @@ impl Fixture {
                 "id":"call","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":["caller"],
                 "publications":[caller_publication.as_str()],"capability":SERVICE_INVOCATION_CAPABILITY,"operations":["call"],
                 "resources":{"kind":"service","services":["callee"],"publications":[allowed_target]},
-                "ceiling":{"operations":8,"inputBytes":65536,"outputBytes":65536,"wallTimeMillis":5000},"requireAudit":audit.is_some()}]}),
+                "ceiling":{"operations":8,"inputBytes":65536,"outputBytes":65536,"wallTimeMillis":packages::budget().wall_time_limit_millis.unwrap_or(5000)},"requireAudit":audit.is_some()}]}),
             ),
             (
                 "installed",
@@ -291,9 +302,20 @@ impl Fixture {
             &broker,
             &policies,
             "tenant-a",
-            &["caller", "callee"],
-            &[caller_publication.clone(), callee_publication.clone()],
-            ("user", "alice"),
+            &[
+                guest_runtime::Scope {
+                    services: &["caller"],
+                    publications: &[caller_publication.clone()],
+                    principal: ("user", "alice"),
+                },
+                // Local invocation deliberately derives a service principal;
+                // the child does not inherit Alice's user authority.
+                guest_runtime::Scope {
+                    services: &["callee"],
+                    publications: &[callee_publication.clone()],
+                    principal: ("service", "service:8:tenant-a:6:caller"),
+                },
+            ],
             false,
         );
         let definition = BindingDefinition { manifest: JsonManifestCodec::default().decode_binding(&serde_json::to_vec(&json!({
@@ -369,6 +391,7 @@ impl Fixture {
             LocalAdmissionController::new(Arc::new(store.pin().unwrap()), quotas.clone(), load);
         let observations = Arc::new(Observations {
             starts: Mutex::new(vec![]),
+            terminals: Mutex::new(vec![]),
             child_running: tokio::sync::Notify::new(),
         });
         let manager = LocalActivationManager::with_services(

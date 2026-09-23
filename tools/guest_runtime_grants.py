@@ -42,7 +42,7 @@ def grant(client, node, fixture, targets, publications, result):
             "id": "runtime", "effect": "allow", "principals": [{"kind": "administrator", "subject": "workflow-operator"}],
             "services": sorted(target["service"] for target in targets.values()),
             "publications": sorted(publications.values()), "capability": capability, "operations": [operation],
-            "resources": {"kind": kind}, "ceiling": {"operations": 4096, "inputBytes": 0,
+            "resources": {"kind": kind}, "ceiling": {"operations": 4096, "inputBytes": 8 if kind == "random" else 0,
                 "outputBytes": 32768, "wallTimeMillis": 5000}}]})
         client.call("policy", "apply", "--id", name + "-allow", "--file", policy,
                     "--operation-id", "grant-" + name, "--expected-generation", "0")

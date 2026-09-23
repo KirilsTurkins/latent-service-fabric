@@ -48,7 +48,11 @@ async fn typed_service_outcomes_use_node_admission_and_reused_cells() {
                 request.input = serde_json::to_vec(&serde_json::json!([which, "", "0"])).unwrap();
                 let receipt = f.manager.start(request).unwrap().await;
                 let ActivationOutcome::Succeeded(success) = receipt.outcome else {
-                    panic!("{:?}", receipt.outcome)
+                    panic!(
+                        "{:?}; caller/child terminals: {:?}",
+                        receipt.outcome,
+                        f.observations.terminals.lock().unwrap()
+                    )
                 };
                 let result: Vec<String> = serde_json::from_slice(&success.output).unwrap();
                 assert_eq!(result, [if permit { expected } else { 11 }.to_string()]);

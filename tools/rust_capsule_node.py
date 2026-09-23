@@ -92,8 +92,8 @@ def configure(directory, fixture, port, *, runtime_grants=False, language="rust"
         "consumerService": "examples/my-http-status", "providerService": "http-host",
         "contract": "latent:http/client@0.2.0", "providerBinding": "http-installed", "route": "my-http-status"}]
     settings["cache"].update(entries=2, preparations=1)
-    if language == "typescript":
-        settings["cells"][0]["maximumMemoryBytes"] = 134217728
+    if language in {"go", "typescript"}:
+        settings["cells"][0]["maximumMemoryBytes"] = 134217728 if language == "typescript" else 67108864
         settings["execution"]["maximumWallTimeMillis"] = 120000
     settings["catalogs"].update(releaseEntries=8, deployments=24)
     settings["audit"].update(records=1024, diskBytes=16777216)
