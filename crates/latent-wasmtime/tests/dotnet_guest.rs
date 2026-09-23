@@ -5,7 +5,7 @@
 mod support;
 
 use latent_core::{CapabilityId, ContractId};
-use latent_executor::{BoundImport, ExecutionBackend};
+use latent_executor::{BoundImport, ExecutionBackend, GuestOutcome};
 use latent_manifest::ContractImport;
 use latent_wasmtime::WasmtimeComponentEngineFactory;
 
@@ -119,6 +119,7 @@ async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_h
             serde_json::json!([{"err": "empty\0text 世界"}]),
         ),
         ("profile", serde_json::json!([]), serde_json::json!([17])),
+        ("reflection", serde_json::json!([]), serde_json::Value::Null),
         ("next", serde_json::json!([]), serde_json::json!([1])),
         ("next", serde_json::json!([]), serde_json::json!([1])),
     ]
@@ -142,7 +143,31 @@ async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_h
         let started = std::time::Instant::now();
         let outcome = support::run(&backend, request, &control).await.unwrap();
         println!("dotnet {function}: {:?}; {outcome:?}", started.elapsed());
-        assert_eq!(support::returned(outcome), expected);
+        if function == "reflection" {
+            let GuestOutcome::Trapped { trap, .. } = outcome else {
+                panic!("unsupported member lookup acquired ambient authority: {outcome:?}");
+            };
+            assert_eq!(trap.code, "guest-trap");
+            assert_eq!(
+                trap.metadata.get("trap").map(String::as_str),
+                Some("unreachable-code")
+            );
+        } else if expected[0].get("err").is_some() {
+            let GuestOutcome::DeclaredError { error, .. } = outcome else {
+                panic!("expected declared application error, got {outcome:?}");
+            };
+            assert_eq!(error.code, "declared-error");
+            assert_eq!(
+                error.media_type,
+                "application/vnd.latent.wit-values.v1+json"
+            );
+            assert_eq!(
+                serde_json::from_slice::<serde_json::Value>(&error.payload).unwrap(),
+                expected
+            );
+        } else {
+            assert_eq!(support::returned(outcome), expected);
+        }
         support::idle(&backend);
     }
 }
@@ -158,6 +183,7 @@ async fn diagnostic_dotnet_component_requires_only_the_declared_clock() {
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
     config.wasm_backtrace_details(WasmBacktraceDetails::Enable);
+    config.wasm_backtrace_max_frames(std::num::NonZeroUsize::new(128));
     let engine = Engine::new(&config).unwrap();
     let component = Component::new(
         &engine,
@@ -186,14 +212,23 @@ async fn diagnostic_dotnet_component_requires_only_the_declared_clock() {
         .await
         .unwrap();
     let (_, interface) = instance.get_export(&mut store, None, CONTRACT).unwrap();
-    let (_, index) = instance
-        .get_export(&mut store, Some(&interface), "echo")
-        .unwrap();
-    let function = instance.get_func(&mut store, index).unwrap();
-    let mut output = [Val::String(String::new())];
-    let result = function
-        .call_async(&mut store, &[Val::String("hello".to_owned())], &mut output)
-        .await;
-    assert!(result.is_ok(), "NativeAOT startup failed: {result:?}");
-    assert!(matches!(&output[0], Val::String(value) if value == "hello"));
+    for (name, arguments, expected) in [
+        (
+            "echo",
+            vec![Val::String("hello".into())],
+            Val::String("hello".into()),
+        ),
+        ("profile", vec![], Val::U32(17)),
+    ] {
+        let (_, index) = instance
+            .get_export(&mut store, Some(&interface), name)
+            .unwrap();
+        let function = instance.get_func(&mut store, index).unwrap();
+        let mut output = [Val::Bool(false)];
+        let result = function
+            .call_async(&mut store, &arguments, &mut output)
+            .await;
+        assert!(result.is_ok(), "NativeAOT {name} failed: {result:?}");
+        assert_eq!(output, [expected]);
+    }
 }

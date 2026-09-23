@@ -61,6 +61,17 @@ the final source; this local inspection is not node execution evidence.
 
 ## Required final evidence
 
+[Run 35926712630](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35926712630)
+at `2a2e131d1a51971cfc24eb792fea5323240114f1` executed the actual full-width
+and aggregate value cases successfully. Its declared-error probe returned the
+correct typed error, but the test used a success-only assertion. Artifact
+`10779557766` retains that harness failure. The assertion now checks the error
+category and exact payload separately. A local diagnostic of that unchanged
+compiled component also traced member lookup through `String.GetHashCode`
+to the closed runtime's ambient-entropy denial. Reflection lookup is therefore
+an explicit negative test, separate from supported library/task/GC checks.
+The following successful fresh invocation must still pass.
+
 [Run 35922933562](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35922933562)
 at `2dc9ed406cfb0975024b4454e749677d3d4b6f55` built all five standalone and
 nine SDK components, passed six owner checks and seven of ten admitted SDK
@@ -84,8 +95,10 @@ complete Linux run; they are not a claim that the failed run passed.
 actual SDK builds, seven explicit disposable-owner/zeroization checks and all ten
 admitted provider/ownership cases. The compiled probe also checks full-width
 signed/unsigned values, UTF-8/NUL strings, options, nested record lists, declared
-errors, statically rooted reflection after trimming, dynamic-code flags,
-activation-local tasks and GC collection. Compilation alone does not pass those
+errors, rooted WIT exports after trimming, dynamic-code flags,
+activation-local tasks and GC collection. A separate negative member-lookup
+probe verifies that unsupported runtime reflection traps without ambient
+hash-seed entropy, followed by fresh successful invocations. Compilation alone does not pass those
 execution checks.
 
 The signed real-node workflow must cover the three tutorials, allowed/denied

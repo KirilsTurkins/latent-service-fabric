@@ -35,12 +35,12 @@ Use the generated `wit_component/lsf/<module>` packages for capabilities:
 | Module | Calls and owners |
 | --- | --- |
 | `http` | `Send` returns the exact buffered response or typed HTTP error. |
-| `streaming` | `Start`, upload `Write`/`Finish`/`Abort`, body `Read`/`Trailers`/`Abort`, and independently owned chunks. |
+| `streaming` | `Open`, upload `Write`/`Finish`/`Abort`, body `Read`/`Trailers`/`Abort`, and independently owned chunks. |
 | `blob` | `Create`/`Open` return owned writers/readers; `Write`/`Read` borrow, `Seal` and `Close` consume. |
 | `secrets` | `Read` returns one explicit byte owner; `WithBytes` borrows and `Close` clears the owned bytes. |
 | `events` | `Publish` retains acknowledged, rejected and uncertain outcomes without replay. |
 | `service` | `Call` preserves returned, declared-error and platform-error outcomes and host descendant budgets. |
-| `random` | `Bytes` and `U64` call the granted entropy provider once. |
+| `random` | `Bytes` and `U64Value` call the granted entropy provider once. |
 | `metrics` | `EmitMetric` uses only host-configured instruments and labels. |
 
 Complete typed fixtures are in [examples](examples). They include HTTP denial,
@@ -63,6 +63,10 @@ consumes the owner; calling it again is misuse. A chunk can be materialized only
 once and retains its own host charge after its reader or body closes. Unclosed
 owners remain charged until the activation is cleaned up. The SDK adds no
 finalizers, goroutines, threads, background drains or retry workers.
+The builder removes the pinned generator's `runtime.AddCleanup` blocks from
+imported capability resource constructors, rejecting any unreviewed shape.
+Explicit generated `Drop` methods stay intact; garbage collection cannot drop
+a host owner behind the SDK's back. Abandonment is reclaimed by Store cleanup.
 
 Secret zeroization covers the SDK-owned byte slice, including its aliases.
 Copies or strings made by application code are outside that guarantee. A borrow

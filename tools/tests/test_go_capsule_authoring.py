@@ -3,14 +3,60 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import Mock, patch
 
 from tools.go_capsule_project import create, snapshot, validate, TEMPLATES, RUNTIME_IMPORTS
 from tools.go_capsule_build import build
 from tools.build_go_guest_capsules import project as sdk_project, NAMES
-from tools.go_guest.sdk import install, CAPABILITIES
+from tools.go_guest.sdk import install, CAPABILITIES, explicit_resource_owners
 
 
 class GoAuthoringTests(unittest.TestCase):
+    def test_readme_entrypoints_match_every_typed_capability_facade(self):
+        import re
+        from tools.go_capsule_project import ROOT
+        sdk = ROOT / "sdk/go-guest"
+        readme = (sdk / "README.md").read_text()
+        rows = re.findall(r"^\| `([a-z]+)` \| (.+) \|$", readme, re.M)
+        self.assertEqual({name for name, _ in rows}, set(CAPABILITIES))
+        for name, description in rows:
+            source = (sdk / "capabilities" / (name + ".go.in")).read_text()
+            for entrypoint in re.findall(r"`([A-Z][A-Za-z0-9]+)`", description):
+                with self.subTest(capability=name, entrypoint=entrypoint):
+                    self.assertRegex(source, r"func (?:\([^\n]+\) )?" + entrypoint + r"\(")
+
+    def test_sdk_builder_reuses_captured_tools_without_rebuilding_and_rejects_mutation(self):
+        from tools import build_go_guest_capsules as sdk_builder
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            contracts, packager = root / "contracts-tool", root / "packager"
+            contracts.write_bytes(b"captured contracts")
+            packager.write_bytes(b"captured packager")
+            with patch.object(sdk_builder, "NAMES", ("http",)), \
+                    patch.object(sdk_builder, "project", side_effect=lambda path, _name: path), \
+                    patch.object(sdk_builder, "build") as compiler:
+                sdk_builder.compile_all(root / "valid", contracts_tool=contracts, packager=packager)
+                compiler.assert_called_once_with(root / "valid/projects/http", root / "valid/go-http",
+                    contracts, packager, "https://github.com/KirilsTurkins/latent-service-fabric")
+                report = json.loads((root / "valid/SDK-BUILD.json").read_text())
+                self.assertEqual(report["status"], "built-execution-required")
+                self.assertEqual(report["commands"], [])
+                self.assertFalse(report["runtimeQualified"])
+                compiler.side_effect = lambda *_args: packager.write_bytes(b"changed executable")
+                with self.assertRaisesRegex(ValueError, "packaging executables changed"):
+                    sdk_builder.compile_all(root / "changed", contracts_tool=contracts, packager=packager)
+                failed = json.loads((root / "changed/SDK-BUILD.json").read_text())
+                self.assertEqual(failed["status"], "failed")
+            for selected in ({"contracts_tool": contracts}, {"packager": packager}):
+                with self.subTest(selected=selected), self.assertRaisesRegex(ValueError, "both captured"):
+                    sdk_builder.compile_all(root / "incomplete", **selected)
+                self.assertFalse((root / "incomplete").exists())
+            commands = Mock()
+            selected = sdk_builder.packaging_tools(commands, root / "target", None, None)
+            self.assertEqual(selected, (root / "target/debug/examples/capsule_contracts",
+                                        root / "target/debug/examples/package"))
+            commands.run.assert_called_once()
+
     def test_guide_and_selectable_examples_cover_the_printed_workflow(self):
         import re
         from tools.go_capsule_project import ROOT
@@ -80,6 +126,37 @@ class GoAuthoringTests(unittest.TestCase):
                 for capability in RUNTIME_IMPORTS:
                     self.assertIn(("import " + capability + ";").encode(), files["wit/world.wit"])
                 self.assertNotIn(b"grants", files["capsule-project.json"])
+
+    def test_generated_resource_owners_have_no_gc_effects_and_reject_shape_drift(self):
+        constructor = '''func ChunkFromOwnHandle(handleValue int32) *Chunk {
+\thandle := witRuntime.MakeHandle(handleValue)
+\tvalue := &Chunk{handle}
+\truntime.AddCleanup(value, func(_ int) {
+\t\thandleValue := handle.TakeOrNil()
+\t\tif handleValue != 0 {
+\t\t\tresourceDropChunk(handleValue)
+\t\t}
+\t}, 0)
+\treturn value
+}'''
+        explicit = '''func (self *Chunk) Drop() {
+\thandle := self.handle.TakeOrNil()
+\tif handle != 0 {
+\t\tresourceDropChunk(handle)
+\t}
+}'''
+        source = 'package blob\nimport (\n\t"runtime"\n)\n' + explicit + "\n" + constructor
+        adapted = explicit_resource_owners(source)
+        self.assertNotIn("AddCleanup", adapted)
+        self.assertNotIn('"runtime"', adapted)
+        self.assertIn(explicit, adapted)
+        self.assertIn("value := &Chunk{handle}", adapted)
+        self.assertIn('"runtime"', explicit_resource_owners(source + "\nfunc keep() { runtime.KeepAlive(nil) }"))
+        for changed in (source.replace("func(_ int)", "func(_ uint32)"),
+                        source.replace("resourceDropChunk(handleValue)", "otherDrop(handleValue)"),
+                        source + "\nfunc unexpected() { runtime.SetFinalizer(nil, nil) }"):
+            with self.subTest(changed=changed[-120:]), self.assertRaises(ValueError):
+                explicit_resource_owners(changed)
 
     def test_sdk_mutation_does_not_silently_become_a_reviewed_input(self):
         with tempfile.TemporaryDirectory() as temporary:

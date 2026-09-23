@@ -23,16 +23,21 @@ and derives package contracts from that WIT. Full-width integers use C#
 `long`/`ulong` and `int`/`uint`, without JSON-number conversion.
 Canonical strings preserve UTF-8 and embedded NUL; lists, records, variants,
 options, typed results and resources use the generated canonical ABI.
+Resource ownership belongs to imported capabilities; public RPC parameters and
+results cannot transfer component resources and package contract validation
+rejects those shapes.
 First-class WIT future/stream, map and fixed-size-list forms are explicitly
 rejected. Async imports use a reviewed synchronous C# binding projection:
 Wasmtime suspends the activation stack while host operations are pending.
 This is not permission to turn asynchronous operations into blocking host I/O.
 
 NativeAOT has no JIT or dynamic assembly loading. The compiled profile probe
-checks dynamic-code flags, statically rooted method metadata after trimming,
-UTF-8 library round-trips, completed/uncompleted activation-local tasks and
-explicit GC collection. Reflection is limited to statically visible, rooted
-metadata; this is not arbitrary runtime discovery. Arbitrary reflection,
+checks dynamic-code flags, UTF-8 library round-trips, completed/uncompleted
+activation-local tasks and explicit GC collection. WIT exports remain rooted
+after trimming. Runtime reflection/member lookup is unsupported: even
+`GetMethod` for a statically named method requests ambient hash-seed entropy
+in this pinned runtime and traps. A separate negative probe and fresh-state
+invocation check that boundary; reflection failure is not a supported return.
 Reflection.Emit, application threads, timers, task schedulers and a CLR host
 event loop are outside this profile. An unresolved managed task may belong
 to an activation, but cannot preserve an application after its activation

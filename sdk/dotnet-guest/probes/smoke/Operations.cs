@@ -17,16 +17,21 @@ public class OperationsExportsImpl : IOperationsExports
 
     public static uint Next() => ++calls;
 
-    // Only statically visible reflection metadata is supported by this trimmed
-    // profile. This does not opt arbitrary reflection or dynamic code into it.
+    // Member lookup needs runtime hash-seed entropy in this compiler profile.
+    // The separate negative probe proves it cannot acquire ambient authority.
+    public static uint Reflection()
+    {
+        var method = typeof(OperationsExportsImpl).GetMethod(nameof(Wide), new[] { typeof(ulong) });
+        return method?.ReturnType == typeof(ulong) ? 1U : 0U;
+    }
+
+    // These library operations are qualified independently of unsupported
+    // reflection, dynamic code, threading or a persistent CLR event loop.
     public static uint Profile()
     {
         if (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported ||
             System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
             throw new System.InvalidOperationException("dynamic code enabled");
-        var method = typeof(OperationsExportsImpl).GetMethod(nameof(Wide), new[] { typeof(ulong) });
-        if (method?.ReturnType != typeof(ulong))
-            throw new System.InvalidOperationException("rooted reflection metadata missing");
         const string text = "library\0世界 🚚";
         if (System.Text.Encoding.UTF8.GetString(System.Text.Encoding.UTF8.GetBytes(text)) != text)
             throw new System.InvalidOperationException("UTF-8 library mismatch");
