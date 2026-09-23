@@ -58,6 +58,12 @@ pub struct Runtime {
 }
 
 impl Runtime {
+    pub fn entropy_calls(&self) -> u64 {
+        self.random
+            .as_ref()
+            .map_or(0, |provider| provider.snapshot().u64_calls)
+    }
+
     pub fn new(
         broker: &ActivationCapabilityBroker,
         policies: &PolicyStore,
