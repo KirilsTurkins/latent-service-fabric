@@ -155,9 +155,11 @@ Interrupted staging leaves the previous complete state. After a rename with
 uncertain directory sync, memory reflects the same new complete state, but new
 HTTP selections and mutations deny until successful recovery. Recovery verifies canonical manifests, target-variant receipt associations and
 checksums; it never treats an old receipt as current permission. HTTP table
-format v1 remains readable as application-only state. New mutations write format
-v2 tagged target identities and migrate v1 rows only as part of that already
-requested mutation. Mixed/corrupt variant records fail closed. Stale or revoked targets remain inspectable and
+and receipt format v2 are required. Obsolete v1 tables, receipts and flat
+execution fields are rejected without rewriting the stored catalog. Restore a
+current-format snapshot or explicitly recreate state using the
+[fresh-state procedure](publication-catalog.md#supported-storage-and-fresh-state).
+Mixed/corrupt variant records fail closed. Stale or revoked targets remain inspectable and
 deletable. Pending trigger audit attempts reconcile through retained receipts;
 terminal Unknown audit records are not rewritten.
 
