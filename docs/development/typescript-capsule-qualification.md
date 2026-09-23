@@ -34,6 +34,18 @@ is measured separately from active guest state.
 
 ## Retained attempts and compiler boundary fixes
 
+[Run 35926422583](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35926422583)
+at `27f0bb21111fbdf778ad9ecb759b213734d95e4f` passed the first cold nested
+service invocation in 82.891 seconds, including a successful child in 42.388
+seconds. The child's observed peak was 9,502,720 bytes and the caller's aggregate
+peak, including the child, was 19,005,440 bytes. The next request correctly
+failed admission because the test fixture's one-shot synthetic load sample was
+older than the unchanged 60-second admission limit. The fixture now publishes
+its synthetic current load at each new request, like its missing node monitor;
+it neither retries the failed request nor weakens production freshness checks.
+The attempt passed nine of ten SDK tests in 669.71 seconds, but remained failed
+before full-node or guide qualification. Artifact `10779964328` retains it.
+
 [Run 35922509041](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35922509041)
 at `cf6767285352ad8b5508f0675fa612cde175aa87` built all fourteen components and
 passed nine of ten admitted SDK cases, including opaque blob and streaming
