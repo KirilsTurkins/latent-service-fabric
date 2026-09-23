@@ -1084,11 +1084,13 @@
     },
     {
       "source": "docs/learn/use-a-client.mdx",
-      "words": 1978,
-      "sha256": "e18aedc3144c8c20ba20a30d10cc9b7f3a894dd3138bf11dc0a7b77397e63a51",
-      "status": "read-needs-update",
+      "words": 1162,
+      "sha256": "c75473e1d575dc24583c2bb59471fbec8143f9f71079fe0a3de1babec7022d21",
+      "status": "updated-source-reviewed",
       "findings": [
-        "Read every section and corrected Java 25 toolchain. Still a participant-conformance narrative; needs a simpler user path and runnable all-language application examples."
+        "Read the complete client guide and replaced qualification prose with a numbered one-language walkthrough and selectable build/run commands.",
+        "Corrected Java launch flags to match the maintained recipe and replaced the nonexistent passed field with a summary of actual participant assertions and clean shutdown.",
+        "Preserved all three registered six-language examples and their stable anchors; no SDK source or human acceptance was changed."
       ]
     },
     {
