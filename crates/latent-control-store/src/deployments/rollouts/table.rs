@@ -63,10 +63,6 @@ pub(in crate::deployments) struct CohortMember {
     deny_unknown_fields
 )]
 pub(in crate::deployments) struct StoredRollout {
-    #[serde(
-        default = "legacy_plan_version",
-        skip_serializing_if = "is_legacy_plan"
-    )]
     pub plan_version: u32,
     pub status: RolloutStatus,
     pub base_manifest: String,
@@ -294,14 +290,10 @@ pub(in crate::deployments) fn receipt_hash(
         .remove("receiptDigest");
     Ok(codec::hash(&codec::encode(&value, MAX_RECEIPT_BYTES)?))
 }
-fn legacy_plan_version() -> u32 {
-    1
-}
-fn is_legacy_plan(version: &u32) -> bool {
-    *version == 1
-}
-
 pub(in crate::deployments) fn plan_hash(row: &StoredRollout) -> Result<ArtifactBlobDigest> {
+    if row.plan_version != 2 {
+        return Err(corrupt());
+    }
     let s = &row.status;
     let mut value = json::json!({
         "version":row.plan_version,"tenant":s.tenant.0,"rollout":s.id.0,
@@ -309,20 +301,16 @@ pub(in crate::deployments) fn plan_hash(row: &StoredRollout) -> Result<ArtifactB
         "weights":s.candidate_weights,"basePackage":s.base.package.as_ref().map(latent_core::PackageDigest::as_str),
         "candidatePackage":s.candidate.package.as_ref().map(latent_core::PackageDigest::as_str)
     });
-    if row.plan_version == 2 {
-        value["basePublication"] = json::json!(s
-            .base
-            .publication
-            .as_ref()
-            .map(latent_core::PublicationId::as_str));
-        value["candidatePublication"] = json::json!(s
-            .candidate
-            .publication
-            .as_ref()
-            .map(latent_core::PublicationId::as_str));
-    } else if row.plan_version != 1 {
-        return Err(corrupt());
-    }
+    value["basePublication"] = json::json!(s
+        .base
+        .publication
+        .as_ref()
+        .map(latent_core::PublicationId::as_str));
+    value["candidatePublication"] = json::json!(s
+        .candidate
+        .publication
+        .as_ref()
+        .map(latent_core::PublicationId::as_str));
     if let Some(policy) = s.canary_policy {
         value["canaryPolicy"] = json::to_value(policy).map_err(|_| corrupt())?;
     }
@@ -598,25 +586,20 @@ pub(super) fn publication_pins(row: &StoredRollout) -> super::super::compiler::P
         .collect()
 }
 
-/// Upgrade selection only; old plan digests, receipt bytes, CAS and manifests stay
-/// unchanged. Current evidence is checked later when a new route grant is needed.
-pub(in crate::deployments) async fn recover_publications(
+/// Validate captured associations. Current evidence is checked again when a
+/// new route grant is needed.
+pub(in crate::deployments) async fn validate_publications(
     data: &mut TableData,
     artifacts: &dyn latent_artifacts::ArtifactRepository,
-    upgrade: bool,
 ) -> Result<()> {
     for row in &mut data.rows {
         for release in [&mut row.status.base, &mut row.status.candidate] {
-            let selected = if upgrade && release.publication.is_none() {
-                artifacts.recover_execution_publication(&row.status.tenant, &release.component)?
-            } else {
-                artifacts.select_execution_publication(
-                    &row.status.tenant,
-                    &release.component,
-                    release.publication.as_ref(),
-                )?
-            };
-            if !upgrade && selected.as_ref().map(|v| &v.id) != release.publication.as_ref() {
+            let selected = artifacts.select_execution_publication(
+                &row.status.tenant,
+                &release.component,
+                release.publication.as_ref(),
+            )?;
+            if selected.as_ref().map(|v| &v.id) != release.publication.as_ref() {
                 return Err(corrupt());
             }
             if let Some(selected) = selected {

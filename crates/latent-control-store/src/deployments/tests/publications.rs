@@ -192,7 +192,7 @@ fn scoped_routes_keep_selected_publications_across_coexistence_revocation_and_re
     );
 }
 
-fn legacy_catalog(root: &TempRoot) -> Vec<u8> {
+fn obsolete_catalog(root: &TempRoot) -> Vec<u8> {
     let path = root.0.join("catalog.json");
     let mut value: json::Value = json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
     value["format_version"] = json::json!(2);
@@ -220,62 +220,29 @@ fn legacy_catalog(root: &TempRoot) -> Vec<u8> {
 }
 
 #[test]
-fn legacy_upgrade_persists_pins_before_coexistence_and_rejects_ambiguous_unmapped_history() {
+fn obsolete_catalog_rejection_never_infers_unique_or_ambiguous_publications() {
     for ambiguous in [false, true] {
         let roots = [TempRoot::new(), TempRoot::new()];
         let repository = artifacts(&roots[0]);
-        let first = publish(&repository, "alice", "first");
+        publish(&repository, "alice", "first");
         let catalog = store(&roots[1], &repository);
-        let manifest = deployment("base", "alice", &release());
-        run(catalog.apply(manifest.clone())).unwrap();
-        let original = catalog.resolve(&target("alice", None), None).unwrap();
+        run(catalog.apply(deployment("base", "alice", &release()))).unwrap();
         drop(catalog);
-        let old_bytes = legacy_catalog(&roots[1]);
+        let bytes = obsolete_catalog(&roots[1]);
         if ambiguous {
             publish(&repository, "alice", "second");
         }
-        let opened = run(Store::open_with_catalog(
+        assert!(run(Store::open_with_catalog(
             &roots[1].0,
             repository.clone(),
             Limits::default(),
             repository.lifecycle_authority(),
-            super::lifecycle::profile("47.0.4"),
-        ));
-        if ambiguous {
-            assert!(opened.is_err());
-            assert_eq!(
-                std::fs::read(roots[1].0.join("catalog.json")).unwrap(),
-                old_bytes
-            );
-            continue;
-        }
-        let catalog = opened.unwrap();
-        assert_eq!(catalog.generation(), original.route_generation);
+            super::lifecycle::profile("47.0.4")
+        ))
+        .is_err());
         assert_eq!(
-            catalog
-                .resolve(&target("alice", None), None)
-                .unwrap()
-                .revision,
-            original.revision
-        );
-        assert_eq!(
-            run(DeploymentStore::get(&catalog, &manifest.id)).unwrap(),
-            Some(manifest)
-        );
-        let upgraded: json::Value =
-            json::from_slice(&std::fs::read(roots[1].0.join("catalog.json")).unwrap()).unwrap();
-        assert_eq!(upgraded["format_version"], 5);
-        publish(&repository, "alice", "second");
-        drop(catalog);
-        drop(repository);
-        let repository = artifacts(&roots[0]);
-        let catalog = store(&roots[1], &repository);
-        assert_eq!(
-            catalog
-                .resolve(&target("alice", None), None)
-                .unwrap()
-                .publication,
-            Some(first.id)
+            std::fs::read(roots[1].0.join("catalog.json")).unwrap(),
+            bytes
         );
     }
 }
