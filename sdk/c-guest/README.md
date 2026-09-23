@@ -63,3 +63,6 @@ bind captured inputs, actual tools and outputs; they are operator assertions,
 not authenticated source or a complete transitive SBOM. Demo signing occurs
 only after compilation in a separate process. The human newcomer review remains
 the separate #345 gate.
+
+Measured results and retained failed attempts are documented in the
+[developer qualification report](../../docs/development/c-capsule-qualification.md).
