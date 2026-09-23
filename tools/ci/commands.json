@@ -2626,7 +2626,7 @@
       "sha256": "3cc265b8f13f24ce08da3cf079d3e66ca072515b0741f8594b43d412a3b9cd9d"
     },
     "tools/aot_test_inputs.py": {
-      "sha256": "01b7951763092dbf4c8a677122b90e841241feacdbfa5bb7d5913a4302a0ddbf"
+      "sha256": "fbe07c84a2d8bed4dfd9578f43b916aa6df404b23e35c741d27a867c80edfe1a"
     },
     "tools/build_angular_package.py": {
       "sha256": "6355b56981461912e5aeea8c9cc69424b512d5d55a6d805516af6eae523a02a0"
@@ -2965,6 +2965,7 @@
       "PreparedInputsTests.test_incomplete_failed_duplicate_foreign_and_wrong_profile_inventories",
       "PreparedInputsTests.test_missing_measurement_feature_is_not_the_all_features_profile",
       "PreparedInputsTests.test_missing_modified_or_nonexecutable_copy_is_rejected",
+      "PreparedInputsTests.test_previous_feature_closure_is_not_the_current_profile",
       "PreparedInputsTests.test_stale_original_and_checkout_are_rejected",
       "PreparedInputsTests.test_symlink_copy_is_rejected",
       "PreparedInputsTests.test_validation_and_environment_do_not_build_strip_or_query_rustc",

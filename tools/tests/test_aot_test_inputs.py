@@ -187,6 +187,13 @@ class PreparedInputsTests(unittest.TestCase):
         with self.assertRaisesRegex(inputs.InputError, "feature"):
             self.prepare()
 
+    def test_previous_feature_closure_is_not_the_current_profile(self):
+        for record in self.records[:-1]:
+            record["features"] = ["aot-test-timings"]
+        self.write_inventory()
+        with self.assertRaisesRegex(inputs.InputError, "incompatible-cargo-feature-sets"):
+            self.prepare()
+
     def test_changed_inventory_and_runtime_injection_fail_validation(self):
         path = self.prepare()
         saved = self.inventory.read_bytes()
