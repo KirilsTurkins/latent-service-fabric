@@ -3,8 +3,9 @@
 This is developer execution evidence for #549, separate from the beginner
 [C# authoring guide](../component-development/dotnet-authoring.md). It does not
 authorize a release or replace human newcomer review #345. The complete finite
-qualification passed at the source recorded below. Final delivery still requires
-the reporting/source-hygiene changes and all exact-head PR gates to pass.
+qualification and its clean-source repeat passed at the sources recorded below.
+Final delivery still requires the integrated development base and all exact-head
+PR gates to pass.
 
 ## Supported experiment
 
@@ -33,6 +34,32 @@ cold invocation. Deliberately multi-operation SDK tests use ten billion fuel.
 These are finite experiment bounds, not throughput or production sizing claims.
 
 ## Successful finite qualification
+
+[Run 35934374519](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934374519)
+repeated the complete qualification successfully at
+`f8fff6bb1f0e854e6caff3a577848bd87a12a883`. Artifact `10782987086` contains all ten
+SDK cases, 27 signed-node invocations, 24 resource observations, the 5/9/17 dormant
+populations and all six printed Bash steps. The node and HTTP peer shut down
+cleanly, all three held HTTP operations closed and no unexpected requests occurred.
+Independent Git comparison verified 2,341 captured inputs, including exactly the
+tracked SDK sources: zero generated build or Python-cache outputs were included.
+The source and execution-tool inventories remained unchanged before and after
+qualification. The runtime digest is
+`sha256:5e68470fa3a4985748fe90586981b8c2a88c126a59d8f799328327cdffa1bf15`
+(2,181 files, 13,680,816 bytes), and the qualification marker digest is
+`sha256:ac9f38c9d50e03533639125b568352e12c495c5234278b21212f6ff486b46eb0`.
+The separate immutable archive matched all 4,084 expected Git blobs and modes,
+SHA-256 `1f9b9dd15268c62bd0a6536be4dc87c9c5178566252c717876401922b586b03f`.
+
+The same head's broader CI run `35934375368` separately failed the unchanged
+small-WAT concurrent local-service acceptance case in the Phase 3 security matrix.
+The existing wrapper retained only `command-exit`, not the assertion details;
+that gate is not claimed green and its cause is not inferred from the successful
+.NET qualification. Final integrated CI must pass it with bounded failure
+diagnostics available.
+
+The following first-success measurements remain tied to their original source,
+not to the later integration head.
 
 [Run 35932426366](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35932426366)
 passed at `57fbc36690d9ccad65b6a18d2c49a4188e1ff061`. Artifact `10782416468`
