@@ -37,7 +37,10 @@ def project(directory: Path, name: str) -> Path:
             destination.write_bytes(data)
     path = directory / "capsule-project.json"
     value = json.loads(read_file(path))
-    value.update(world=profile["world"], tenant="tenant-a" if name in {"service", "callee"} else "tests",
+    # Reusable contracts keep their tests: namespace. As with the Rust/C
+    # fixtures, only the operator's admission selects tenant-a; the capsule
+    # itself must not assert a conflicting owner for that namespace.
+    value.update(world=profile["world"], tenant=None if name in {"service", "callee"} else "tests",
                  service={"service": "caller", "callee": "callee"}.get(name, "generic"))
     value["limits"].update(cpuFuel=10_000_000_000, childCalls=16 if name == "service" else 0,
         outboundRequests=8 if name in {"http", "streaming", "blob", "secrets", "events"} else 0,

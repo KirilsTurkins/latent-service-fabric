@@ -33,6 +33,7 @@ class GoAuthoringTests(unittest.TestCase):
                 value, _, _ = validate(files)
                 self.assertEqual(value["name"], "guest-" + name)
                 self.assertEqual(value["limits"]["memoryBytes"], 67108864)
+                self.assertEqual(value["tenant"], None if name in {"service", "callee"} else "tests")
                 for identity in RUNTIME_IMPORTS:
                     self.assertEqual(files["wit/world.wit"].count(("import " + identity + ";").encode()), 1)
 
@@ -81,6 +82,13 @@ class GoAuthoringTests(unittest.TestCase):
             files["src/main.go"] += b"\n// developer edit\n"
             files["wit/world.wit"] += b"\n// contract edit\n"
             validate(files)
+            for invalid in (True, 1, "", []):
+                changed = dict(files)
+                value = json.loads(files["capsule-project.json"])
+                value["tenant"] = invalid
+                changed["capsule-project.json"] = json.dumps(value).encode()
+                with self.subTest(tenant=invalid), self.assertRaises(ValueError):
+                    validate(changed)
             for invalid in (True, -1, 2**64, None):
                 changed = dict(files)
                 value = json.loads(files["capsule-project.json"])

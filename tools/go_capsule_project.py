@@ -70,8 +70,10 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         raise ValueError("unsupported capsule project format")
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid Go capsule name")
-    if not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "tenant", "service", "world")):
+    if not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "service", "world")):
         raise ValueError("invalid capsule identity")
+    if project["tenant"] is not None and (not isinstance(project["tenant"], str) or not 0 < len(project["tenant"]) <= 512):
+        raise ValueError("invalid capsule tenant scope")
     if (not isinstance(lock, dict) or set(lock) != {"formatVersion", "language", "sdk", "template"}
             or type(lock["formatVersion"]) is not int or lock["formatVersion"] != 1 or lock["language"] != "go"):
         raise ValueError("unsupported Go SDK lock")
