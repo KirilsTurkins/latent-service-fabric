@@ -57,7 +57,7 @@ jobs:
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-guest/tools"
           cp "$(command -v wasm-tools)" "$RUNNER_TEMP/dotnet-guest/tools/wasm-tools"
           python3 tools/stage_runtime_wit.py target/dotnet-binding-wit --source wit/platform/runtime-phase3-blobs
-          "$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen" c-sharp target/dotnet-binding-wit --world capsule --runtime native-aot --with-wit-results --out-dir "$RUNNER_TEMP/dotnet-guest/generated"
+          LSF_WIT_BINDGEN="$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen" LSF_WASM_TOOLS=wasm-tools python3 tools/dotnet_guest_bindings.py c-sharp target/dotnet-binding-wit --world capsule --runtime native-aot --with-wit-results --out-dir "$RUNNER_TEMP/dotnet-guest/generated"
       - name: Compile the actual C# probe
         working-directory: sdk/dotnet-guest
         shell: bash
@@ -75,6 +75,22 @@ jobs:
           "$tools/wasm-tools" --version
           find probes/smoke/bin -type f -name '*.wasm' -print
           "$tools/wasm-tools" component wit probes/smoke/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm | tee "$RUNNER_TEMP/dotnet-guest/imports.wit"
+      - name: Retain offline compiler qualification inputs
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/dotnet-offline"
+          tar -czf "$RUNNER_TEMP/dotnet-offline/dotnet.tar.gz" -C /usr/share/dotnet dotnet host/fxr sdk/10.0.100 shared/Microsoft.NETCore.App/10.0.12 packs/Microsoft.NETCore.App.Ref/10.0.0
+          tar -czf "$RUNNER_TEMP/dotnet-offline/nuget.tar.gz" -C "$HOME/.nuget" packages
+          tar -czf "$RUNNER_TEMP/dotnet-offline/wasi-sdk.tar.gz" -C "$HOME" .wasi-sdk
+      - name: Upload offline compiler inputs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dotnet-offline-inputs-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-offline/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
       - name: Compose a closed compiler runtime
         shell: bash
         run: |
