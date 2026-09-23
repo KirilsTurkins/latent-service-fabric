@@ -1,4 +1,4 @@
-# Phase 3 budgets and cancellation trees
+# Budgets and cancellation trees
 
 Issue [#208](https://github.com/KirilsTurkins/latent-service-fabric/issues/208)
 adds explicit Phase 3 accounting to RPC validation, request normalization,

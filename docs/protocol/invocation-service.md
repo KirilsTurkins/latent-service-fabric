@@ -1,4 +1,4 @@
-# Phase 1 generic invocation service
+# Generic invocation service
 
 `latent-wire::invocation` implements the generated Tonic `Invoke`, `Cancel`,
 and `GetActivation` methods. `LocalInvocationRuntime` connects the adapter to

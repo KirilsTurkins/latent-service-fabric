@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "id": "guest/tutorial-greeting",
+  "title": "Greet a visitor",
+  "audience": "guest-author",
+  "target": "guest",
+  "variants": [
+    {
+      "language": "rust",
+      "kind": "maintained",
+      "source": "tools/toolchain-smoke/examples/tutorial_greeting/component.rs",
+      "regions": [
+        "capsule"
+      ],
+      "validation": {
+        "target": "tools/build_tutorial_capsules.py",
+        "instructions": "docs/component-development/creating-a-capsule.md",
+        "evidence": null
+      }
+    }
+  ]
+}

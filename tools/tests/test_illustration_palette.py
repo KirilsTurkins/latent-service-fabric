@@ -22,7 +22,14 @@ class IllustrationPaletteTests(unittest.TestCase):
         self.assertEqual(len(inventory["snapshots"]), 5)
         for entry in inventory["snapshots"]:
             self.assertEqual(hashlib.sha256(palette_tool.read_bytes(palette_tool.ROOT, entry["path"])).hexdigest(), entry["sha256"])
-        self.assertEqual(len(outputs), 2)
+        self.assertEqual(len(outputs), 0)
+        self.assertEqual(len(inventory["maintained"]), 2)
+        for entry in inventory["maintained"]:
+            content = palette_tool.read_bytes(palette_tool.ROOT, entry["path"])
+            svg = ElementTree.fromstring(content)
+            self.assertEqual(svg.get("role"), "img")
+            self.assertIsNotNone(svg.find("{http://www.w3.org/2000/svg}title"))
+            self.assertIsNotNone(svg.find("{http://www.w3.org/2000/svg}desc"))
         for relative, expected in outputs:
             self.assertEqual(palette_tool.read_bytes(palette_tool.ROOT, relative), expected)
             entry = next(entry for entry in inventory["outputs"] if entry["path"] == relative)
@@ -43,8 +50,12 @@ class IllustrationPaletteTests(unittest.TestCase):
         inventory, palette, outputs = palette_tool.prepare()
         original_hashes = {entry["path"]: hashlib.sha256(palette_tool.read_bytes(palette_tool.ROOT, entry["path"])).hexdigest() for entry in inventory["sources"]}
         changed = dict(palette["modes"]["dark"], link="#FFE4A3")
-        for entry, (_, expected) in zip(inventory["outputs"], outputs, strict=True):
+        # Exercise the optional color-only copier with a retained source. Current
+        # diagrams are authored for current behavior rather than copied history.
+        entries = inventory["outputs"] or [{"source": "docs/assets/phase0-resource-lifecycle.svg"}]
+        for entry in entries:
             source = palette_tool.read_bytes(palette_tool.ROOT, entry["source"])
+            expected = palette_tool.render(source, inventory["replacements"], palette["modes"]["dark"])
             self.assertEqual(palette_tool.render(source, inventory["replacements"], palette["modes"]["dark"]), expected)
             self.assertNotEqual(palette_tool.render(source, inventory["replacements"], changed), expected)
         self.assertEqual(original_hashes, {entry["path"]: hashlib.sha256(palette_tool.read_bytes(palette_tool.ROOT, entry["path"])).hexdigest() for entry in inventory["sources"]})
@@ -64,6 +75,12 @@ class IllustrationPaletteTests(unittest.TestCase):
             return content + b"\n" if relative == "docs/assets/phase0-gate-decision.svg" else content
         with patch.object(palette_tool, "read_bytes", side_effect=altered_read):
             with self.assertRaisesRegex(ValueError, "historical bytes changed"):
+                palette_tool.prepare()
+        def stale_palette(root: Path, relative: str) -> bytes:
+            content = original_read(root, relative)
+            return content.replace(b"#F2CA68", b"#7C3AED") if relative == "docs/assets/package-delivery.svg" else content
+        with patch.object(palette_tool, "read_bytes", side_effect=stale_palette):
+            with self.assertRaisesRegex(ValueError, "outside palette"):
                 palette_tool.prepare()
 
     def test_paths_duplicates_and_limits_fail_closed(self) -> None:

@@ -7,6 +7,11 @@ human review remains pending. Review the rendered development guides at one
 identified source commit, then report the row IDs that pass and any corrections.
 The review can be completed in batches using the same source identity.
 
+The maintainer, KirilsTurkins, is the sole human guide reviewer. The attempted
+agent review could not access the site and supplies no review result. Keep each
+row pending until the maintainer explicitly reports its outcome; automated
+checks and assistant edits do not stand in for that review.
+
 ## Record the version you reviewed
 
 For the public site, record the `revision` from its
@@ -43,7 +48,7 @@ review metadata. An unchecked box means no review result has been recorded.
 | Reviewed | Outcome ID | Guide issue | Rendered learning paths |
 | --- | --- | --- | --- |
 | [ ] | `evaluate-boundary` | #357 | [Start with LSF](../start/index.md) |
-| [ ] | `install-auth-readiness` | #357 | [First node and retained invocation](../start/first-node.md), [Native standalone installation](../installation.md) |
+| [ ] | `install-auth-readiness` | #357 | [Run your first node](../start/first-node.md), [Native standalone installation](../installation.md) |
 | [ ] | `contributor-checks` | #357 | [Operate a local node and choose a contribution](../how-to/operate-and-contribute.md) |
 | [ ] | `author-capsule` | #357 | [Author your first capsule](../learn/author-your-first-capsule.md) |
 | [ ] | `package-sign-publish` | #357 | [Author your first capsule](../learn/author-your-first-capsule.md), [Deliver, invoke and recover a capsule](../learn/deliver-and-recover-a-capsule.md) |
