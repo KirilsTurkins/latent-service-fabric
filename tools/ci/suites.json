@@ -6918,6 +6918,7 @@
         "management::errors::release_tests::release_operation_details_preserve_uncertainty_and_strip_private_messages",
         "management::errors::release_tests::release_operation_details_reject_missing_unknown_and_oversized_fields",
         "management::errors::tests::current_page_reason_names_survive_and_obsolete_names_do_not",
+        "management::errors::tests::currentness_diagnostics_are_closed_and_never_include_private_fields",
         "management::errors::tests::excessive_source_counts_and_capacity_take_a_bounded_fallback",
         "management::errors::tests::fixed_receipt_schema_and_exact_stamps_ignore_small_caller_string_limits",
         "management::errors::tests::malformed_commit_receipts_are_omitted_atomically",
@@ -6966,7 +6967,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 116,
+      "minimumCases": 117,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -7198,6 +7199,7 @@
         "config::tests::selected_profile_defaults_and_nonsecret_overrides_are_exact",
         "config::tests::strict_decode_rejects_duplicate_unknown_deep_and_oversized_documents",
         "error::tests::bare_client_limit_codes_are_ambiguous_but_typed_limits_are_platform_failures",
+        "error::tests::currentness_diagnostic_never_changes_mutation_certainty_or_exposes_peer_text",
         "error::tests::definitive_bare_application_rejections_remain_known_without_remote_text",
         "error::tests::malformed_commit_details_cannot_turn_an_ambiguous_failure_into_known_commit",
         "error::tests::malformed_unknown_and_inconsistent_typed_errors_are_protocol_failures",
@@ -7294,7 +7296,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 119,
+      "minimumCases": 120,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
