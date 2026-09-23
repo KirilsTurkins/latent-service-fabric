@@ -1,0 +1,72 @@
+name: TypeScript guest qualification
+
+on:
+  pull_request:
+    paths:
+      - 'sdk/typescript-guest/**'
+      - 'tools/typescript_guest/**'
+      - 'tools/typescript_capsule.py'
+      - 'examples/typescript-capsules/**'
+      - 'wit/platform/**'
+      - 'tools/toolchain.toml'
+      - 'examples/renderer-profile/package*.json'
+      - '.github/workflows/typescript-guest.yml'
+  push:
+    branches: [development]
+    paths:
+      - 'sdk/typescript-guest/**'
+      - 'tools/typescript_guest/**'
+      - 'tools/typescript_capsule.py'
+      - 'examples/typescript-capsules/**'
+      - 'wit/platform/**'
+      - 'tools/toolchain.toml'
+      - 'examples/renderer-profile/package*.json'
+      - '.github/workflows/typescript-guest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-guest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  boundary:
+    name: TypeScript guest value and ownership boundary
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Retain the exact reviewed command contract input
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: typescript-guest-command-contract-${{ github.sha }}
+          path: tools/ci/commands.json
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: examples/renderer-profile/package-lock.json
+      - name: Install the reviewed JavaScript compiler inputs
+        run: npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund
+      - name: Execute typed value and ownership regressions
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p target/typescript-guest-runtime
+          node examples/renderer-profile/node_modules/typescript/bin/tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts
+          printf '{"type":"module"}\n' > target/typescript-guest-runtime/package.json
+          LSF_TYPESCRIPT_RUNTIME="$PWD/target/typescript-guest-runtime" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log
+      - name: Preserve attempted runtime test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: typescript-guest-runtime-${{ github.sha }}
+          path: target/typescript-guest-runtime/runtime-tests.log
+          if-no-files-found: warn
+          retention-days: 7
