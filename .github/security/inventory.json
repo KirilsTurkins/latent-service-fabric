@@ -1,6 +1,8 @@
 {
   "schema": 1,
   "manifests": [
+    {"path": "sdk/dotnet-guest/tests/Ownership.csproj", "kind": "no-external-packages", "sha256": "2193ac074d5fd2eadd661d2addbeffa90fdcc2ac7e5b300a257e9fb51bb786a4", "absent_when_directory_missing": "sdk/dotnet-guest/tests"},
+    {"path": "sdk/dotnet-guest/tools/package-hash/PackageHash.csproj", "kind": "no-external-packages", "sha256": "8ecf130707633e9451818256df40a6617277a651b1ad09b5557a65ff9bf4bdd7", "absent_when_directory_missing": "sdk/dotnet-guest/tools/package-hash"},
     {"path": "Cargo.toml", "kind": "cargo", "lock": "Cargo.lock"},
     {"path": "tools/native-fixture/Cargo.toml", "kind": "cargo", "lock": "tools/native-fixture/Cargo.lock", "isolated": true, "manifest_sha256": "7b43528d2c654a4cd136a5584a452406a4b67285aa1e99c8d96da57126639751", "absent_when_directory_missing": "tools/native-fixture"},
     {"path": "sdk/typescript-guest/package.json", "kind": "no-external-packages", "sha256": "0d90346664579fc1b3da836a6d1290d47c7f748a476219b712936c7fc5c346ef", "absent_when_directory_missing": "sdk/typescript-guest"},
