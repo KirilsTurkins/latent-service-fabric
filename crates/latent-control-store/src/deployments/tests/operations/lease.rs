@@ -31,11 +31,7 @@ impl AdmissionAuthority for Lease {
         }
     }
 
-    fn verify(
-        &self,
-        _: &TenantId,
-        _: PackageAdmissionUpload,
-    ) -> Result<VerifiedAdmission> {
+    fn verify(&self, _: &TenantId, _: PackageAdmissionUpload) -> Result<VerifiedAdmission> {
         Err(unavailable())
     }
 
