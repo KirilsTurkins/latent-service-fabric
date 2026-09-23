@@ -40,6 +40,46 @@ fn renewal_without_persistence_retains_covered_clock_observation() {
 }
 
 #[test]
+fn mutation_renewal_persists_a_full_window_even_before_the_sampler_margin() {
+    let fixture = Fixture::new();
+    let directory = tempfile::tempdir().unwrap();
+    let authority = SupplyChainAuthority::open(
+        directory.path(),
+        fixture.approved(),
+        fixture.clock.clone(),
+        5,
+    )
+    .unwrap();
+    let grant = authority
+        .verify(&TenantId("tests".into()), fixture.upload())
+        .unwrap()
+        .grant;
+    let original_floor = std::fs::read(directory.path().join("floor.json")).unwrap();
+    fixture.clock.set(NOW + 2);
+    authority.renew_clock_lease().unwrap();
+    assert_eq!(
+        authority.inner.lock().unwrap().floor.restart_not_before,
+        NOW + 5
+    );
+    authority.renew_control_lease().unwrap();
+    assert_eq!(
+        authority.inner.lock().unwrap().floor.restart_not_before,
+        NOW + 7
+    );
+    assert_ne!(
+        std::fs::read(directory.path().join("floor.json")).unwrap(),
+        original_floor
+    );
+    fixture.clock.set(NOW + 5);
+    grant.check_current().unwrap();
+    fixture.clock.set(NOW + 7);
+    assert_eq!(
+        grant.check_current().unwrap_err().message,
+        "admission-clock-lease-uncovered"
+    );
+}
+
+#[test]
 fn renewal_post_sync_regression_cannot_forget_newly_covered_observation() {
     let fixture = Fixture::new();
     let directory = tempfile::tempdir().unwrap();
