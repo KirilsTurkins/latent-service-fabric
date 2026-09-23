@@ -235,7 +235,7 @@ for provider in startup["providers"]:
         "id": "runtime", "effect": "allow", "principals": [{"kind": "administrator", "subject": "go-learner"}],
         "services": ["examples/my-greeting"], "publications": [publication], "capability": capability,
         "operations": [operation], "resources": {"kind": kind},
-        "ceiling": {"operations": 4096, "inputBytes": 0, "outputBytes": 32768, "wallTimeMillis": 5000}}]}
+        "ceiling": {"operations": 4096, "inputBytes": 8 if kind == "random" else 0, "outputBytes": 32768, "wallTimeMillis": 5000}}]}
     for suffix, document in (("binding", binding), ("policy", policy)):
         with (root / "results" / (name + "-" + suffix + ".json")).open("x") as output:
             json.dump(document, output)
