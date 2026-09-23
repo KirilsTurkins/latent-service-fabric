@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 jobs:
-  projects:
+  runtime:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -28,6 +28,14 @@ jobs:
           test "$GITHUB_REF" = refs/heads/feat/545-c-capsule-authoring
           python3 -m tools.c_guest._final_corrections
           python3 -m tools.c_guest._final_integration
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('sdk/c-guest/tests/containment/component.c')
+          text = p.read_text()
+          old = '__asm__ volatile("" : : "r"(bytes) : "memory");'
+          assert text.count(old) == 1
+          p.write_text(text.replace(old, '__asm__ volatile("" ::: "memory");'))
+          PY
           python3 -m unittest tools.tests.test_c_guest_authoring tools.tests.test_ci_coverage
           python3 tools/ci_suite_inventory.py
           python3 tools/validate_repository.py
@@ -52,6 +60,13 @@ jobs:
         run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
       - name: Qualify ownership teaching projects and containment capsule
         run: python3 -m tools.c_guest.qualify --output "$RUNNER_TEMP/c-projects" --update-bindings
+      - name: Diagnose only authored containment C source
+        if: failure()
+        run: |
+          d="$RUNNER_TEMP/c-projects/build-containment/compiled/bindings"
+          if test -f "$d/probe.h"; then
+            timeout 120 zig cc -std=c11 -target wasm32-wasi -Wall -Wextra -Werror -fsyntax-only -I "$d" -I sdk/c-guest/include sdk/c-guest/tests/containment/component.c
+          fi
       - name: Commit reviewed complete source and normal CI integration
         run: |
           test "$GITHUB_REF" = refs/heads/feat/545-c-capsule-authoring
