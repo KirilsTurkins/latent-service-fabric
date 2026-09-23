@@ -8,11 +8,16 @@ an explicitly approved publication. This is a development runbook for
 [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308), not a
 download announcement or production/hostile-multitenancy certification.
 
-The approved **version names** are `0.1.0-alpha.4-rc.1` for the foundation and
+The current **version names** are `0.1.0-alpha.4-rc.2` for the foundation and
 `0.1.0-alpha.4` for the final bundle. Their source commits, immutable tags, archive
 digests and successful release-identity runs still require parent approval and
 observation. Neither a version name nor a green candidate authorizes release.
 The historical `0.1.0-alpha.3` tag remains unchanged and source-only.
+
+The earlier unpublished `0.1.0-alpha.4-rc.1` foundation and its receipts remain
+historical evidence. Its HTTP table format is now obsolete, so it is no longer
+a declared upgrade source. Qualify the distinct rc.2 foundation with current
+storage formats; do not restore a legacy reader or move the rc.1 tag.
 
 The first native profile is Ubuntu Server 24.04, Linux x86_64, with the
 [installer's actual host prerequisites](../../packaging/linux/INSTALL.md#prerequisites-and-independent-bootstrap-trust).
@@ -100,7 +105,7 @@ OAuth workflow scope is available; it is not the remaining activation gate.
 ## 2. Parent prepares the genuine foundation
 
 After integration review, the parent prepares a new version commit whose actual
-workspace/package version is `0.1.0-alpha.4-rc.1`, promotes the reviewed workflow
+workspace/package version is `0.1.0-alpha.4-rc.2`, promotes the reviewed workflow
 normally to the default branch, obtains maintained `.github/workflows/ci.yml`
 success at the exact selected source and creates the new immutable tag. A merge
 commit is a different source: a green PR head cannot qualify it by association.
@@ -111,7 +116,7 @@ Independently approve this foundation publisher identity **before** consuming it
 
 ```text
 repository: KirilsTurkins/latent-service-fabric
-certificate SAN: https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.4-rc.1
+certificate SAN: https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.4-rc.2
 issuer: https://token.actions.githubusercontent.com
 source digest and signer digest: the same independently reviewed full foundation commit
 runners: GitHub-hosted only
@@ -125,7 +130,7 @@ it does not publish a GitHub release or satisfy the cross-version gate.
 ```bash
 : "${FOUNDATION_COMMIT:?Set the approved full foundation source commit}"
 : "${FOUNDATION_CI_RUN:?Set the successful maintained CI run for the exact foundation source}"
-FOUNDATION_VERSION=0.1.0-alpha.4-rc.1
+FOUNDATION_VERSION=0.1.0-alpha.4-rc.2
 timeout --kill-after=5s 30s gh workflow run native-runtime-release.yml \
   --repo "$REPOSITORY" --ref "$FOUNDATION_VERSION" \
   -f version="$FOUNDATION_VERSION" -f commit="$FOUNDATION_COMMIT" \
@@ -190,7 +195,7 @@ from pathlib import Path
 import sys
 
 manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-if manifest["version"] != "0.1.0-alpha.4-rc.1" or manifest["sourceCommit"] != sys.argv[2]:
+if manifest["version"] != "0.1.0-alpha.4-rc.2" or manifest["sourceCommit"] != sys.argv[2]:
     raise SystemExit("Authenticated foundation does not match the approved identity")
 print(json.dumps({"version": manifest["version"], "sourceCommit": manifest["sourceCommit"],
                   "archiveSha256": manifest["archive"]["sha256"]}, indent=2))
