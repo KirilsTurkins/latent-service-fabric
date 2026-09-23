@@ -82,6 +82,13 @@ The broad Rust gate also caught a shared test-module dependency, now corrected
 by passing the explicit admission-memory ceiling from its caller. Its failed
 CI is not treated as passing delivery evidence.
 
+The isolated demo signer now aligns both proof-age ceilings with its existing
+1,800-second signature lifetime. Real cryptographic regressions check positive
+proofs at 61, 900 and 1,799 seconds, exact rejection at 1,800, and independent
+enforcement of a shorter publisher or builder proof age. This does not change
+production policy defaults, revocation/currentness enforcement or the finite
+five-second durable clock lease. The node and guide still need a complete rerun.
+
 [Run 35928271057](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35928271057)
 at `79ef782ab9f3440baa10123a3581ed727c875c87` passed the expanded actual
 NativeAOT probe, all five standalone and nine SDK builds, seven ownership

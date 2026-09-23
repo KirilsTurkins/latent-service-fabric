@@ -105,6 +105,9 @@ builder recipe. For a maintained deployment, use your organization's publisher,
 builder and revocation policies through the [package workflow](packaging.md).
 Finish the steps below within 30 minutes of signing; otherwise sign into a new
 directory and start a new experiment.
+Only this isolated demo gives publisher and builder proofs the same finite
+1,800-second window as its signatures. Signature expiry, revocation and the
+node's currentness checks remain enforced; production policies are unchanged.
 
 ## 4. Start a node with enforced admission
 
