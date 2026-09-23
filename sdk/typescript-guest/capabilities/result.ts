@@ -7,7 +7,11 @@ export function call<T, E extends { tag: string }>(operation: () => T,
   catch (error) {
     // The pinned maintained generator puts a WIT result error in Error.payload.
     // Never translate arbitrary exceptions or resource misuse into WIT success.
-    if (!(error instanceof Error) || !Object.hasOwn(error, 'payload')) throw error;
+    // The generated binding and application use distinct SpiderMonkey realms;
+    // instanceof uses the local Error prototype and rejects valid WIT errors.
+    if (typeof error !== 'object' || error === null
+        || Object.prototype.toString.call(error) !== '[object Error]'
+        || !Object.hasOwn(error, 'payload')) throw error;
     const value: unknown = (error as Error & { payload: unknown }).payload;
     if (typeof value !== 'object' || value === null || !('tag' in value)
         || typeof value.tag !== 'string' || Object.keys(value).length !== 1
