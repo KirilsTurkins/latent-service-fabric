@@ -132,6 +132,28 @@ No operation retry or automatic proof refresh hides this retained failure.
 The separate source artifact for the failed run was independently matched to
 all 4,039 archived Git blobs at that head; it cannot qualify the later fix.
 
+[Run 35932372496](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35932372496),
+head `7c13b9a7e19794b6d46d2a71f74871a08ea1b86c`, passed all ten SDK cases in
+151.63 seconds, all three dormant populations, all twelve tutorial calls,
+explicit trap and memory-exhaustion classification, and fresh-state recovery.
+The next four-goroutine scheduling loop returned `guest-trap` at 717,764,529
+fuel rather than exhausting its 1-billion-fuel budget. Its retained receipt
+does not expose the private host or Wasm failure cause; eighteen node results
+and sixteen resource samples are partial evidence, not completed qualification.
+
+A separate diagnostic ran that exact recovery component in fresh Wasmtime
+Stores: it returned `1`, consumed its full native fuel, then returned `1` in a
+new Store. The spinning channel loop made about 30,432 monotonic-clock imports.
+That shows the fixture mixed fuel exhaustion with repeated authorized host
+operations; it does not prove which private condition caused the node failure.
+The corrected fixture completes one rendezvous with each of four real workers,
+leaves their channels and stacks blocked, and exhausts fuel in the main
+goroutine. The real-node budget, grants, `resource-exhausted` expectation and
+subsequent fresh-state checks are unchanged. An early compiler diagnostic now
+requires genuine `OutOfFuel`, fresh state and at most 4,096 calls per runtime
+capability for this bounded fixture. It explicitly does not claim admission.
+Complete node, guide and final-integrity evidence remains required.
+
 ## Reproduction and delivery boundary
 
 Install the exact Linux tools from the beginner guide, then use a fresh output

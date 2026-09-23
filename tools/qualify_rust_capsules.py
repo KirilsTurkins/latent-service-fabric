@@ -119,12 +119,15 @@ def qualify(output: Path, *, offline=False, language="rust"):
             {"deadline_seconds": 3600, "command_seconds": 1800} if language == "go" else {}))
         result["tools"] = materials
         stage = "host-build"
+        go_diagnostic = ["-p", "latent-wasmtime", "--example", "go_runtime_probe"] if language == "go" else []
         commands.run(stage, paths["cargo"], *cargo_options, "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
             "-p", "latent-packaging", "--example", "package", "--example", "capsule_contracts",
-            "-p", "latent-policy", "--example", "capsule_authoring")
+            "-p", "latent-policy", "--example", "capsule_authoring", *go_diagnostic)
         if inputs(language) != before:
             raise ValueError("host sources changed during compilation")
         binaries = {name: target / "debug" / name for name in ("latent", "latentd", "examples/package", "examples/capsule_contracts", "examples/capsule_authoring")}
+        if language == "go":
+            binaries["examples/go_runtime_probe"] = target / "debug/examples/go_runtime_probe"
         result["binaries"] = {name: file_identity(path) for name, path in binaries.items()}
         stage = "standalone-builds"
         built = []
@@ -138,6 +141,10 @@ def qualify(output: Path, *, offline=False, language="rust"):
                 **({"offline": offline} if language == "rust" else {}))
             built.append(artifact)
             result["builds"][template] = read_json(artifact / "BUILD-COMPLETE.json")
+        if language == "go":
+            stage = "go-recovery-diagnostic"
+            commands.run(stage, binaries["examples/go_runtime_probe"],
+                         output / "builds/recovery/component.wasm", "--recovery")
         stage = "ownership"
         if language == "rust":
             result["ownership"] = ownership(output / "ownership", offline=offline)
