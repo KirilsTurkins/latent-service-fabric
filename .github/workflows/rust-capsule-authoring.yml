@@ -21,15 +21,37 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: Retain the exact tracked qualification source
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: rustfmt,clippy
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Prepare reviewed dependency and compiler inputs
         run: |
+          cargo fetch --locked
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          mkdir -p "$RUNNER_TEMP/offline/cargo/bin" "$RUNNER_TEMP/offline/rustup/toolchains" "$RUNNER_TEMP/offline/bin"
+          toolchain="$(rustup show active-toolchain | cut -d' ' -f1)"
+          cp -a "$HOME/.cargo/registry" "$RUNNER_TEMP/offline/cargo/"
+          cp "$HOME/.cargo/bin/rustup" "$RUNNER_TEMP/offline/cargo/bin/"
+          for tool in cargo rustc rustdoc rustfmt cargo-fmt cargo-clippy clippy-driver; do
+            ln -s rustup "$RUNNER_TEMP/offline/cargo/bin/$tool"
+          done
+          cp "$HOME/.rustup/settings.toml" "$RUNNER_TEMP/offline/rustup/"
+          cp -a "$HOME/.rustup/toolchains/$toolchain" "$RUNNER_TEMP/offline/rustup/toolchains/"
+          rm -rf "$RUNNER_TEMP/offline/rustup/toolchains/$toolchain/share/doc"
+          cp "$(command -v wasm-tools)" "$RUNNER_TEMP/offline/bin/"
+          cp "$RUNNER_TEMP/guest-tools/wit-bindgen" "$RUNNER_TEMP/offline/bin/"
           mkdir -p "$RUNNER_TEMP/rust-capsule-evidence"
-          git rev-parse HEAD > "$RUNNER_TEMP/rust-capsule-evidence/revision.txt"
-          git archive --format=tar HEAD | gzip -n > "$RUNNER_TEMP/rust-capsule-evidence/source.tar.gz"
-          sha256sum "$RUNNER_TEMP/rust-capsule-evidence/source.tar.gz" > "$RUNNER_TEMP/rust-capsule-evidence/source.sha256"
+          git fetch --no-tags --depth=1 origin 91d70e139f5959e5a3bcbd36559e8e7d3978e69a
+          git archive --format=tar FETCH_HEAD tools/build_tutorial_capsules.py tools/toolchain-smoke/Cargo.toml tools/toolchain-smoke/examples/tutorial_greeting tools/toolchain-smoke/examples/tutorial_word_count tools/toolchain-smoke/examples/tutorial_shipping > "$RUNNER_TEMP/rust-capsule-evidence/tutorial-sources.tar"
+          tar -C "$RUNNER_TEMP/offline" -czf "$RUNNER_TEMP/rust-capsule-evidence/offline-inputs.tar.gz" .
+          sha256sum "$RUNNER_TEMP/rust-capsule-evidence/"*.tar* > "$RUNNER_TEMP/rust-capsule-evidence/SHA256SUMS"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: rust-capsule-source-${{ github.sha }}
+          name: rust-capsule-offline-inputs-${{ github.sha }}
           path: ${{ runner.temp }}/rust-capsule-evidence/
           if-no-files-found: error
           retention-days: 1
