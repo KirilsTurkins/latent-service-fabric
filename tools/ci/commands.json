@@ -5841,6 +5841,6 @@
     ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/typescript-guest.yml": "969ffc2f0ff174650d04f557aafcd558d049f558942a231dff38632fb8ad8a69"
+    ".github/workflows/typescript-guest.yml": "a78473f6036f0f8ab6ba3c8bf22bbc547aa19dd7dded99b2c69dfa9b3ee9a1f0"
   }
 }
