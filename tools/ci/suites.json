@@ -5164,6 +5164,30 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
+      "id": "latent-wasmtime.example.java-runtime-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/java_runtime_probe.rs",
+      "target": "java_runtime_probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
       "id": "latent-wasmtime.bin.latent-aot-compiler",
       "ignoredLeaves": [],
       "kind": "bin",

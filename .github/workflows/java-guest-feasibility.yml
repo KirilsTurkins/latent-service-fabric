@@ -8,6 +8,7 @@ on:
       - 'tools/toolchain.toml'
       - 'wit/platform/**'
       - 'crates/latent-wasmtime/src/surface.rs'
+      - 'crates/latent-wasmtime/examples/java_runtime_probe.rs'
   workflow_dispatch:
 
 permissions:
@@ -22,6 +23,10 @@ jobs:
     name: Actual Java compiler and component probe (not language qualification)
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -67,6 +72,10 @@ jobs:
           cargo install --locked wasm-tools --version 1.254.0
       - name: Compile real Java sources and retain the first incompatible stage
         run: python3 sdk/java-guest/tools/feasibility.py --output "$RUNNER_TEMP/java-guest-feasibility" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Execute Java code, exceptions and GC without claiming node admission
+        run: |
+          set -o pipefail
+          cargo run --locked -p latent-wasmtime --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-feasibility/probe.wasm" 2>&1 | tee "$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

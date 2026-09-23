@@ -9,6 +9,7 @@
 extern int main(int argc, char **argv);
 extern int64_t lsf_java_identity(int64_t value);
 extern int32_t lsf_java_smoke(void);
+extern int32_t lsf_java_next(void);
 static bool initialized;
 
 static void initialize(void) {
@@ -26,4 +27,9 @@ int64_t exports_tests_java_feasibility_probe_identity(int64_t value) {
 uint32_t exports_tests_java_feasibility_probe_smoke(void) {
     initialize();
     return (uint32_t) lsf_java_smoke();
+}
+
+uint32_t exports_tests_java_feasibility_probe_next(void) {
+    initialize();
+    return (uint32_t) lsf_java_next();
 }

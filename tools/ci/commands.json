@@ -1229,6 +1229,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 sdk/java-guest/tools/feasibility.py --output \"$RUNNER_TEMP/java-guest-feasibility\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Execute Java code, exceptions and GC without claiming node admission": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Execute Java code, exceptions and GC without claiming node admission",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-feasibility/probe.wasm\" 2>&1 | tee \"$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2792,7 +2802,7 @@
       "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
     },
     "sdk/java-guest/tools/feasibility.py": {
-      "sha256": "693e0252a60ac2e1499b6bb27ad4b0f35925c3d22cee08511d748c0d24142154"
+      "sha256": "429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c"
     }
   },
   "pythonCases": {
@@ -5814,7 +5824,7 @@
     ".github/workflows/ci.yml": "a7f311e9002c815503ccd24bca8d48df62d4cd6d4211c5acff35db98ddad215f",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/java-guest-feasibility.yml": "85edbace05e2a25db0c3bb0bd69cb3e26c2f44847523b0b19e8fef1b6cbf67ea",
+    ".github/workflows/java-guest-feasibility.yml": "6ffe7a12555f2d2f7c3faf7b291451b3afe4f67fd757b3962b3ce555975ad645",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",

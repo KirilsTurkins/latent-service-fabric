@@ -5,7 +5,11 @@ import org.teavm.interop.Export;
 
 /** Compiler probe, not a guest SDK or a deployment qualification. */
 public final class Probe {
+    private static int activations;
     private Probe() { }
+
+    @Export(name = "lsf_java_next")
+    public static int next() { return ++activations; }
 
     @Export(name = "lsf_java_identity")
     public static long identity(long value) {

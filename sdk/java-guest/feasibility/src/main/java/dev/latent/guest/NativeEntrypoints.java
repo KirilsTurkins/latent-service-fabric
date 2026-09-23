@@ -18,5 +18,6 @@ public final class NativeEntrypoints {
     public static void main(String[] args) {
         Function.get(Identity.class, Probe.class, "identity");
         Function.get(Smoke.class, Probe.class, "smoke");
+        Function.get(Smoke.class, Probe.class, "next");
     }
 }

@@ -196,9 +196,16 @@ def probe(output: Path, gradle: str, wasi_sdk: str, bindgen: str, wasm_tools: st
                          str(project / 'bridge.c'), str(project / 'platform.c'), str(output / 'bindings/probe.c'),
                          str(output / 'bindings/probe_component_type.o'), '-o', str(core)])
         component = output / 'probe.wasm'
-        run('component-new', [wasm_tools, 'component', 'new', str(core), '-o', str(component)])
+        adapter = output / 'closed-runtime.wasm'
+        run('closed-runtime-adapter', [wasm_tools, 'component', 'embed', str(output / 'wit'),
+                                      str(project / 'closed-runtime.wat'), '--world', 'runtime-support',
+                                      '-o', str(adapter)])
+        run('component-new', [wasm_tools, 'component', 'new', str(core),
+                              '--adapt', 'wasi_snapshot_preview1=' + str(adapter), '-o', str(component)])
         run('component-validate', [wasm_tools, 'validate', str(component)])
-        run('component-wit', [wasm_tools, 'component', 'wit', str(component)])
+        surface = run('component-wit', [wasm_tools, 'component', 'wit', str(component)])
+        if 'import wasi:' in surface:
+            raise ProbeFailure('ambient-wasi-import-survived-closed-runtime')
         report.update(status='component-built-unqualified', component=identity(component))
     except ProbeFailure as error:
         last = report['stages'][-1] if report['stages'] else {}
