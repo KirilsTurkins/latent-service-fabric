@@ -44,6 +44,13 @@ produced. This is explicit negative authoring evidence, not runtime admission.
 
 ## Retained attempts and compiler boundary fixes
 
+[Security run 35930223945](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35930223945)
+caught a stale dependency-inventory digest after the obsolete synthetic runtime
+export was removed from the SDK manifest. The manifest still declares no
+external packages; its reviewed digest now covers only the real capabilities
+and text exports. The fail-closed security assertion remains unchanged, and
+all 60 security regressions pass locally (one platform-specific test skipped).
+
 [Run 35926422583](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35926422583)
 at `27f0bb21111fbdf778ad9ecb759b213734d95e4f` passed the first cold nested
 service invocation in 82.891 seconds, including a successful child in 42.388

@@ -3,7 +3,7 @@
   "manifests": [
     {"path": "Cargo.toml", "kind": "cargo", "lock": "Cargo.lock"},
     {"path": "tools/native-fixture/Cargo.toml", "kind": "cargo", "lock": "tools/native-fixture/Cargo.lock", "isolated": true, "manifest_sha256": "7b43528d2c654a4cd136a5584a452406a4b67285aa1e99c8d96da57126639751", "absent_when_directory_missing": "tools/native-fixture"},
-    {"path": "sdk/typescript-guest/package.json", "kind": "no-external-packages", "sha256": "0d90346664579fc1b3da836a6d1290d47c7f748a476219b712936c7fc5c346ef", "absent_when_directory_missing": "sdk/typescript-guest"},
+    {"path": "sdk/typescript-guest/package.json", "kind": "no-external-packages", "sha256": "2da28e0c5c3648f886c09d611398d562278191b5ebb25327b68e1f71bbfbdf10", "absent_when_directory_missing": "sdk/typescript-guest"},
     {"path": "sdk/typescript-guest/tools/package.json", "kind": "npm", "lock": "sdk/typescript-guest/tools/package-lock.json", "absent_when_directory_missing": "sdk/typescript-guest/tools"},
     {"path": "sdk/typescript-client/package.json", "kind": "npm", "lock": "sdk/typescript-client/package-lock.json"},
     {"path": "examples/renderer-profile/package.json", "kind": "npm", "lock": "examples/renderer-profile/package-lock.json", "absent_when_directory_missing": "examples/renderer-profile"},
