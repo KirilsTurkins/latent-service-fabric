@@ -13,6 +13,7 @@ on:
       - 'tools/**'
       - 'wit/**'
       - 'Cargo.*'
+      - 'docs/component-development/rust-authoring.md'
   push:
     branches: [development]
     paths:
@@ -25,6 +26,7 @@ on:
       - 'tools/**'
       - 'wit/**'
       - 'Cargo.*'
+      - 'docs/component-development/rust-authoring.md'
 
 permissions:
   contents: read
@@ -92,5 +94,9 @@ jobs:
             ${{ runner.temp }}/rust-capsule-authoring/ownership/*.stderr.txt
             ${{ runner.temp }}/rust-capsule-authoring/node/**
             ${{ runner.temp }}/rust-capsule-authoring/releases/**
+            ${{ runner.temp }}/rust-capsule-authoring/guide/guide.json
+            ${{ runner.temp }}/rust-capsule-authoring/guide/guide.sh
+            ${{ runner.temp }}/rust-capsule-authoring/guide/logs/**
+            ${{ runner.temp }}/rust-capsule-authoring/guide/projects/results/**
           if-no-files-found: warn
           retention-days: 3

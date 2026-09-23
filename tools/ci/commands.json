@@ -2596,7 +2596,7 @@
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "f74d8983b41fc4d13ce0bb641ce4d39899ec14818f76896060af111cfa922806"
+      "sha256": "e398d6069280aac5b6e7efef32cc71098cdd09626df42a53c8a1f920893a8630"
     },
     "tools/reset_validation_echo.py": {
       "sha256": "7bfdd62d41f709ccee0de64e0c2b14868d4033444ca4e2b0a959424019108d2e"
@@ -5731,7 +5731,7 @@
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
-    ".github/workflows/rust-capsule-authoring.yml": "fe74de7ca5f3bcb3f99b73c094f5d4625c4cb44bfaca215360fc683593bef2af",
+    ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b"
   }

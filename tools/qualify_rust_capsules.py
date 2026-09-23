@@ -8,9 +8,12 @@ process and its keys never reach a compiler. Every failure keeps its own output.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 from pathlib import Path
+import re
+import shutil
 import sys
 import time
 import tomllib
@@ -35,7 +38,42 @@ HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py"
 def inputs():
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / "sdk/rust-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
+            "guide": file_identity(ROOT / "docs/component-development/rust-authoring.md"),
             "helpers": {name: file_identity(ROOT / "tools" / name, 1024 * 1024) for name in HELPERS}}
+
+
+def guide(output: Path, environment: dict[str, str]):
+    """Execute only the reviewed guide's six printed Bash steps with built tools."""
+    output = fresh(output)
+    source = ROOT / "docs/component-development/rust-authoring.md"
+    before = source.read_bytes()
+    if len(before) > 32768:
+        raise ValueError("authoring guide byte limit")
+    blocks = re.findall(r"^```bash\n(.*?)^```$", before.decode().replace("\r\n", "\n"), re.M | re.S)
+    if len(blocks) != 6:
+        raise ValueError("review the authoring guide execution steps")
+    script = output / "guide.sh"
+    script.write_text("\n".join(blocks), encoding="utf-8")
+    projects = output / "projects"
+    commands = Commands(ROOT, output, dict(environment, LSF_RUST_PROJECTS=str(projects)))
+    bash = shutil.which("bash", path=environment["PATH"])
+    if bash is None:
+        raise ValueError("Bash is required to execute the printed authoring guide")
+    commands.run("printed-guide", bash, "--noprofile", "--norc", script)
+    for filename, category, expected in (
+        ("answer.json", "success", [{"ok": "Hello, Ada!"}]),
+        ("error.json", "declared-error", [{"err": "Please enter a name."}]),
+    ):
+        value = read_json(projects / "results" / filename)
+        payload = value["data"].get("payload") or value["data"]["declaredError"]["payload"]
+        actual = json.loads(base64.b64decode(payload["data"], validate=True))
+        if value["category"] != category or not value["outcomeKnown"] or actual != expected:
+            raise ValueError("printed authoring guide result mismatch")
+    if source.read_bytes() != before:
+        raise ValueError("authoring guide changed during execution")
+    result = {"status": "passed", "sourceDigest": digest(before), "bashSteps": len(blocks), "commands": commands.records}
+    write_json(output / "guide.json", result)
+    return result
 
 
 def qualify(output: Path, *, offline=False):
@@ -93,6 +131,8 @@ def qualify(output: Path, *, offline=False):
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node")
+        stage = "printed-guide"
+        result["guide"] = guide(output / "guide", environment)
         if inputs() != before or {name: file_identity(path) for name, path in binaries.items()} != result["binaries"]:
             raise ValueError("qualification inputs changed")
         result.update(status="passed", commands=commands.records)

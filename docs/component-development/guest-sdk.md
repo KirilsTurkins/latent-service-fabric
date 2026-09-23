@@ -1,5 +1,9 @@
 # Guest SDK: build and run a capsule
 
+For a new independent project, follow [Create your own Rust capsule](rust-authoring.md).
+That guide covers editable source, generated contracts, packaging, signing,
+enforced node admission and cleanup. This reference describes capability ownership.
+
 The maintained guest SDK is [Rust `latent-guest`](../../sdk/rust-guest/README.md).
 A [C fixture](../../sdk/c-guest/README.md) checks generated canonical ABI ownership.
 External client interfaces in Go, TypeScript, Java, .NET, C and Rust are separate
