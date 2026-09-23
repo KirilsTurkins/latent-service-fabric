@@ -5,6 +5,10 @@ on:
     paths:
       - sdk/go-guest/**
       - tools/go_guest/**
+      - tools/go_capsule*.py
+      - tools/probe_go_authoring.py
+      - apps/latentd/**
+      - crates/latent-signing/**
       - crates/latent-wasmtime/examples/go_runtime_probe.rs
       - wit/**
       - tools/toolchain.toml
@@ -14,6 +18,10 @@ on:
     paths:
       - sdk/go-guest/**
       - tools/go_guest/**
+      - tools/go_capsule*.py
+      - tools/probe_go_authoring.py
+      - apps/latentd/**
+      - crates/latent-signing/**
       - crates/latent-wasmtime/examples/go_runtime_probe.rs
       - wit/**
       - tools/toolchain.toml
@@ -31,7 +39,7 @@ jobs:
   upstream-probe:
     name: Go upstream compatibility probe
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       CARGO_BUILD_JOBS: 2
       CARGO_INCREMENTAL: 0
@@ -53,6 +61,7 @@ jobs:
           curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-guest-tools/go.tbz" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz
           echo "4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz" | sha256sum --check --strict
           tar -xjf "$RUNNER_TEMP/go-guest-tools/go.tbz" -C "$RUNNER_TEMP/go-guest-tools"
+          echo "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin" >> "$GITHUB_PATH"
       - name: Retain pinned reproduction tools
         run: |
           set -euo pipefail
@@ -75,11 +84,17 @@ jobs:
         run: |
           set -o pipefail
           cargo run --locked -p latent-wasmtime --example go_runtime_probe -- "$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm" 2>&1 | tee "$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log"
+      - name: Check standalone project source boundaries
+        run: python3 -m unittest tools.tests.test_go_capsule_authoring
+      - name: Build and admit five actual editable Go projects
+        run: python3 tools/probe_go_authoring.py --output "$RUNNER_TEMP/go-authoring-projects"
       - name: Retain successful and failed upstream observations
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: go-guest-upstream-${{ github.sha }}
-          path: ${{ runner.temp }}/go-guest-probe/
+          path: |
+            ${{ runner.temp }}/go-guest-probe/
+            ${{ runner.temp }}/go-authoring-projects/
           if-no-files-found: warn
           retention-days: 7

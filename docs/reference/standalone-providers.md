@@ -1,7 +1,9 @@
 # Standalone provider bootstrap and shared workflow (#226)
 
 The opt-in `providers` object installs the existing bounded HTTP and immutable
-local-blob providers in the standalone node. It does not install a guest secret
+local-blob providers in the standalone node. Explicit `clockMonotonic`, `clockWall`
+and `random` installations also enable the maintained activation-clock and
+OS-entropy providers. It does not install a guest secret
 provider, streaming HTTP, S3, events, or an invented provider profile. The
 [configuration schema](../../schemas/node-providers.schema.json) describes the
 closed input. This example is the provider section of a protected node file:
@@ -22,6 +24,16 @@ closed input. This example is the provider section of a protected node file:
   }
 }
 ```
+
+Each scalar installation takes only `identity` (the same closed fields as the
+blob example). The corresponding contracts are `latent:clock/monotonic@0.1.0`,
+`latent:clock/wall@0.1.0`, and `latent:random/random@0.1.0`. Installation does not
+grant access: an explicit binding, provider-binding policy, capability policy
+and deployment grant are still required for each consumer. Clock profiles
+charge 100 fuel per call. Entropy uses the existing nonblocking OS provider,
+with at most 4096 bytes per call and 65536 per activation; no seeded test source
+or fallback entropy can be configured. Registrations are shared node-owned
+objects, with no per-service worker, timer, listener or persistent guest heap.
 
 Installation requires Linux x86_64, a protected configuration file, `phase3`
 budgets, `capabilityPolicies`, and durable audit. Omission disables installation;

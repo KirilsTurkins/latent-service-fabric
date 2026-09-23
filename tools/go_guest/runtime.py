@@ -28,7 +28,8 @@ def replace_once(text: str, old: str, new: str) -> str:
 GO_PACKAGE_RUNTIME_SHA256 = "abff1455a417b51e77e83e01da34fe1048330a9fe0e7d607bb5265f2162eb9b5"
 
 
-def overlay(goroot: Path, destination: Path, go_package: Path | None = None) -> Path:
+def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
+            *, sdk: Path | None = None) -> Path:
     goroot, destination = goroot.resolve(), destination.resolve()
     if (destination == goroot or destination in goroot.parents or goroot in destination.parents
             or destination == ROOT or destination in ROOT.parents
@@ -50,7 +51,8 @@ def overlay(goroot: Path, destination: Path, go_package: Path | None = None) -> 
     ):
         name = declaration.split("(")[0].removeprefix("func ")
         text = replace_once(text, f"//go:wasmimport wasi_snapshot_preview1 {name}\n//go:noescape\n{declaration}", "")
-    text += "\n" + (ROOT / "sdk/go-guest/runtime/runtime_bridge.go.in").read_text(encoding="utf-8")
+    sdk = sdk or ROOT / "sdk/go-guest"
+    text += "\n" + (sdk / "runtime/runtime_bridge.go.in").read_text(encoding="utf-8")
     sources["runtime/os_wasip1.go"] = text
     for relative, name, declaration in (
         ("syscall/fs_wasip1.go", "random_get", "func random_get(buf *byte, bufLen size) Errno"),

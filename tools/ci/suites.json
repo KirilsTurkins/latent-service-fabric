@@ -4248,6 +4248,7 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "go_capsules_require_source_bound_go_builder_approval_and_closed_runtime_claims",
         "guest_profiles_require_separate_builder_approval_and_preserve_legacy_echo",
         "mixed_recipes_missing_tools_and_unbounded_claims_are_rejected",
         "standalone_capsules_require_their_own_source_bound_builder_approval",
@@ -4258,7 +4259,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-signing/Cargo.toml",
-      "minimumCases": 4,
+      "minimumCases": 5,
       "mode": "libtest",
       "package": "latent-signing",
       "platforms": [
@@ -5158,6 +5159,30 @@
       "resourceClass": "runtime-bounded",
       "source": "src/lib.rs",
       "target": "latent_vault",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.example.go-runtime-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/go_runtime_probe.rs",
+      "target": "go_runtime_probe",
       "timeoutSeconds": 900
     },
     {
@@ -7471,6 +7496,7 @@
         "config::tests::nonlocal_bind_duplicate_tokens_and_unusable_manifest_tenants_are_rejected",
         "config::tests::providers::protected_provider_configuration_is_opt_in_closed_and_side_effect_free",
         "config::tests::providers::provider_input_rejects_null_unknown_and_raw_secret_fields",
+        "config::tests::providers::scalar_provider_definitions_require_the_exact_installed_identity_and_contract",
         "config::tests::relative_paths_anchor_to_configuration_parent_and_port_zero_is_valid",
         "config::tests::renderer::renderer_opt_in_is_closed_and_preserves_operator_budgets",
         "config::tests::security::a_profile_label_cannot_replace_enforced_admission_or_isolated_compilation",
@@ -7713,7 +7739,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 217,
+      "minimumCases": 218,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
