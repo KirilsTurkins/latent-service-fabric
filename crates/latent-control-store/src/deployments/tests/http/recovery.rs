@@ -168,82 +168,68 @@ fn http_pages_receipt_eviction_and_read_owners_remain_bounded_and_scoped() {
 }
 
 #[test]
-fn http_format_v1_application_state_recovers_and_static_cannot_masquerade_as_legacy() {
-    let (_roots, _repo, store, _) = setup();
-    execute(
-        &store,
-        request(
+fn obsolete_http_table_and_receipt_formats_are_rejected_without_rewriting_state() {
+    for obsolete_receipt in [false, true] {
+        let (roots, repo, store, _) = setup();
+        execute(
             &store,
-            "legacy-create",
-            definition(&store, "alice", "browser", "web", "/", "prefix"),
-            0,
-        ),
-    );
-    let snapshot = store.read_publication();
-    let mut legacy = snapshot.http.data.clone();
-    legacy.format_version = 1;
-    for record in &mut legacy.records {
-        let target = record.target.take().unwrap();
-        let TriggerTargetIdentity::Application { component, .. } = target else {
-            panic!("application target")
-        };
-        record.component = Some(component);
+            request(
+                &store,
+                "create",
+                definition(&store, "alice", "browser", "web", "/", "prefix"),
+                0,
+            ),
+        );
+        let snapshot = store.read_publication();
+        let current_table = json::to_value(&snapshot.http.data).unwrap();
+        for obsolete_field in ["component", "publication"] {
+            let mut table = current_table.clone();
+            if obsolete_field == "component" {
+                table["records"][0][obsolete_field] = json::json!("sha256:obsolete");
+            } else {
+                table["receipts"][0][obsolete_field] = json::Value::Null;
+            }
+            assert!(json::from_value::<crate::deployments::http::table::TableData>(table).is_err());
+        }
+        drop(snapshot);
+        drop(store);
+        let file = roots[1].0.join("catalog.json");
+        let current = std::fs::read(&file).unwrap();
+        let mut record: crate::deployments::persistence::Record =
+            json::from_slice(&current).unwrap();
+        let table = record
+            .payload
+            .control
+            .as_mut()
+            .unwrap()
+            .http_routes
+            .as_mut()
+            .unwrap();
+        if obsolete_receipt {
+            let receipt = &mut table.receipts[0];
+            receipt.format_version = 1;
+            receipt.receipt_digest = crate::http_routes::codec::receipt_hash(receipt).unwrap();
+        } else {
+            table.format_version = 1;
+        }
+        record.checksum =
+            latent_artifacts::content_digest(&json::to_vec(&record.payload).unwrap()).0;
+        let obsolete = json::to_vec(&record).unwrap();
+        std::fs::write(&file, &obsolete).unwrap();
+        for _ in 0..2 {
+            assert!(run(Store::open_with_catalog(
+                &roots[1].0,
+                repo.clone(),
+                Limits::default(),
+                repo.lifecycle_authority(),
+                super::super::lifecycle::profile("47.0.4")
+            ))
+            .is_err());
+            assert_eq!(std::fs::read(&file).unwrap(), obsolete);
+        }
+        std::fs::write(&file, &current).unwrap();
+        let reopened = catalog(&roots[1], &repo);
+        assert!(selected(&reopened, "alice", "/").is_ok());
+        assert_eq!(std::fs::read(&file).unwrap(), current);
     }
-    for receipt in &mut legacy.receipts {
-        let target = receipt.target.take().unwrap();
-        let TriggerTargetIdentity::Application {
-            publication,
-            component,
-            deployment_id,
-            deployment_generation,
-            revision,
-        } = target
-        else {
-            panic!("application target")
-        };
-        receipt.format_version = 1;
-        receipt.publication = Some(publication);
-        receipt.component = Some(component);
-        receipt.deployment_id = Some(deployment_id);
-        receipt.deployment_generation = Some(deployment_generation);
-        receipt.revision = Some(revision);
-        receipt.receipt_digest = crate::http_routes::codec::hash(b"");
-        receipt.receipt_digest = crate::http_routes::codec::receipt_hash(receipt).unwrap();
-    }
-    assert!(crate::deployments::http::table::HttpTable::new(
-        legacy,
-        &store.http_budget,
-        snapshot.transaction,
-        snapshot.routes.generation.0,
-    )
-    .is_ok());
-    drop(snapshot);
-
-    let roots = [TempRoot::new(), TempRoot::new()];
-    let repo = static_repo(&roots[0]);
-    let publication = publish_static(&repo, "alice");
-    let static_store = catalog(&roots[1], &repo);
-    execute(
-        &static_store,
-        request(
-            &static_store,
-            "static-create",
-            static_definition("alice", "site", &publication, "/", "prefix"),
-            0,
-        ),
-    );
-    let snapshot = static_store.read_publication();
-    let mut corrupt_legacy = snapshot.http.data.clone();
-    corrupt_legacy.format_version = 1;
-    for record in &mut corrupt_legacy.records {
-        record.target = None;
-        record.component = None;
-    }
-    assert!(crate::deployments::http::table::HttpTable::new(
-        corrupt_legacy,
-        &static_store.http_budget,
-        snapshot.transaction,
-        snapshot.routes.generation.0,
-    )
-    .is_err());
 }

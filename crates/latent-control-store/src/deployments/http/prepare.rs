@@ -103,15 +103,6 @@ impl DirectoryDeploymentRepository {
         // Reserve the entire bounded candidate before copying any current rows.
         let reservation = self.http_budget.reserve(MAX_TABLE_BYTES)?;
         let mut data = previous.http.data.clone();
-        // Legacy format-v1 rows are application-only. Upgrade them in-memory
-        // only when this table is already being mutated; recovery remains read-compatible.
-        if data.format_version == 1 {
-            for (stored, row) in data.records.iter_mut().zip(previous.http.rows.iter()) {
-                stored.target = Some(row.target.clone());
-                stored.component = None;
-            }
-            data.format_version = 2;
-        }
         let (manifest, target_identity, action, object_generation, apply_result, static_selection) =
             match request {
                 TriggerOperationRequest::Apply { manifest, .. } => {
@@ -177,7 +168,6 @@ impl DirectoryDeploymentRepository {
                     let stored = StoredRecord {
                         manifest: definition.ok_or_else(corrupt)?,
                         generation,
-                        component: None,
                         target: Some(target_identity.clone()),
                     };
                     if let Some(i) = index {
@@ -235,11 +225,6 @@ impl DirectoryDeploymentRepository {
             route_generation: previous.routes.generation.0,
             manifest_digest: codec::hash(codec::manifest(&manifest)?.as_bytes()),
             target: Some(target_identity),
-            publication: None,
-            component: None,
-            deployment_id: None,
-            deployment_generation: None,
-            revision: None,
             completed_at_unix_millis: super::super::now()?,
             receipt_digest: codec::hash(b""),
         };

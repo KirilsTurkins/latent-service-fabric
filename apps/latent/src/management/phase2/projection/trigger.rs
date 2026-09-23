@@ -22,43 +22,19 @@ impl Project for proto::TriggerOperationReceipt {
         }
         let actor = self.actor.as_ref().ok_or_else(invalid_response)?;
         actor.validate(tree)?;
-        let (publication, application) = match self.format_version {
-            1 if self.target.is_none() => (
-                self.publication.as_ref().ok_or_else(invalid_response)?,
-                Some((
-                    &self.component_digest,
-                    &self.deployment_id,
-                    self.deployment_generation,
-                    &self.revision,
-                )),
-            ),
-            2 if self.publication.is_none()
-                && self.component_digest.is_empty()
-                && self.deployment_id.is_empty()
-                && self.deployment_generation == 0
-                && self.revision.is_empty() =>
-            {
-                let target = self.target.as_ref().ok_or_else(invalid_response)?;
-                target.validate(tree)?;
-                (
-                    target.publication.as_ref().ok_or_else(invalid_response)?,
-                    (target.kind == proto::TriggerReceiptTargetKind::Application as i32).then_some(
-                        (
-                            &target.component_digest,
-                            &target.deployment_id,
-                            target.deployment_generation,
-                            &target.revision,
-                        ),
-                    ),
-                )
-            }
-            _ => return Err(invalid_response()),
-        };
-        publication.validate(tree)?;
-        // Charge even forbidden legacy fields before projecting a v2 response.
-        tree.text(&self.component_digest, 71)?;
-        tree.text(&self.deployment_id, 128)?;
-        tree.text(&self.revision, 128)?;
+        if self.format_version != 2 {
+            return Err(invalid_response());
+        }
+        let target = self.target.as_ref().ok_or_else(invalid_response)?;
+        target.validate(tree)?;
+        let publication = target.publication.as_ref().ok_or_else(invalid_response)?;
+        let application = (target.kind == proto::TriggerReceiptTargetKind::Application as i32)
+            .then_some((
+                &target.component_digest,
+                &target.deployment_id,
+                target.deployment_generation,
+                &target.revision,
+            ));
         if publication.tenant != self.tenant
             || self.expected_state_version.checked_add(1) != Some(self.state_version)
             || (application.is_some() && self.route_generation == 0)
@@ -104,12 +80,6 @@ impl Project for proto::TriggerOperationReceipt {
             "receiptDigest":self.receipt_digest});
         if let Some(target) = self.target {
             value["target"] = target.project();
-        } else {
-            value["publication"] = self.publication.map_or(Value::Null, Project::project);
-            value["componentDigest"] = json!(self.component_digest);
-            value["deploymentId"] = json!(self.deployment_id);
-            value["deploymentGeneration"] = json!(self.deployment_generation.to_string());
-            value["revision"] = json!(self.revision);
         }
         value
     }
