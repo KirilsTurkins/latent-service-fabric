@@ -14,7 +14,8 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from tools.build_process import run_bounded
+from tools.go_guest.process import run_bounded
+from tools.build_observation import build_environment
 from tools.stage_runtime_wit import stage
 
 
@@ -40,7 +41,7 @@ def probe(output: Path, go: Path, componentize: Path, wasm_tools: Path) -> None:
               "sourceInputs": {}, "limitations": [
                   "Upstream WASI adapter is not an LSF runtime-authority adapter.",
                   "Binding generation and compilation are not real-node conformance."]}
-    environment = os.environ.copy()
+    environment = build_environment(output / "tmp")
     environment.update(GOTOOLCHAIN="local", GOWORK="off", GOFLAGS="-mod=readonly",
                        GOCACHE=str(output / "go-cache"), TMPDIR=str(output / "tmp"))
     (output / "tmp").mkdir()
@@ -59,6 +60,7 @@ def probe(output: Path, go: Path, componentize: Path, wasm_tools: Path) -> None:
             return result.stdout.decode("utf-8")
         except Exception as error:
             entry["error"] = str(error)
+            (output / f"{label}.failure.txt").write_text(str(error), encoding="utf-8")
             raise
         finally:
             entry["elapsedSeconds"] = time.monotonic() - started

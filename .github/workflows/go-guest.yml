@@ -34,17 +34,9 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: Capture exact tracked qualification sources
-        run: |
-          mkdir -p "$RUNNER_TEMP/go-guest-source"
-          git rev-parse HEAD > "$RUNNER_TEMP/go-guest-source/revision.txt"
-          git archive --format=tar HEAD .cargo .github crates tools sdk wit examples docs Cargo.toml Cargo.lock rust-toolchain.toml | gzip -n > "$RUNNER_TEMP/go-guest-source/source.tar.gz"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          name: go-guest-source-${{ github.sha }}
-          path: ${{ runner.temp }}/go-guest-source/
-          if-no-files-found: error
-          retention-days: 7
+          python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Install the locked compiler and generator
         run: |
@@ -55,6 +47,18 @@ jobs:
           curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-guest-tools/go.tbz" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz
           echo "4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz" | sha256sum --check --strict
           tar -xjf "$RUNNER_TEMP/go-guest-tools/go.tbz" -C "$RUNNER_TEMP/go-guest-tools"
+      - name: Retain exact tools for local qualification reproduction
+        run: |
+          mkdir -p "$RUNNER_TEMP/go-guest-reproduction"
+          cp "$RUNNER_TEMP/go-guest-tools/go.tbz" "$RUNNER_TEMP/go-guest-reproduction/"
+          tar -czf "$RUNNER_TEMP/go-guest-reproduction/tools.tar.gz" -C "$HOME/.cargo/bin" componentize-go wasm-tools
+          sha256sum "$HOME/.cargo/bin/componentize-go" "$HOME/.cargo/bin/wasm-tools" > "$RUNNER_TEMP/go-guest-reproduction/tools.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: go-guest-tools-${{ github.sha }}
+          path: ${{ runner.temp }}/go-guest-reproduction/
+          if-no-files-found: error
+          retention-days: 7
       - name: Generate and compile the actual LSF capability surface
         run: python3 tools/go_guest/probe.py --output "$RUNNER_TEMP/go-guest-probe" --go "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
       - name: Retain successful and failed upstream observations
