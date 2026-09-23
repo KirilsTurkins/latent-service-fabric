@@ -6,6 +6,17 @@
   "target": "guest",
   "variants": [
     {
+      "language": "go",
+      "kind": "maintained",
+      "source": "sdk/go-guest/templates/greeting.go",
+      "regions": ["capsule"],
+      "validation": {
+        "target": "tools/qualify_go_capsules.py",
+        "instructions": "docs/component-development/go-authoring.md",
+        "evidence": null
+      }
+    },
+    {
       "language": "rust",
       "kind": "maintained",
       "source": "tools/toolchain-smoke/examples/tutorial_greeting/component.rs",

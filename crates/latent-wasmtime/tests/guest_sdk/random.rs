@@ -10,7 +10,7 @@ use fixture::*;
 #[tokio::test]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn generated_random_binding_and_reused_cell() {
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         let root = tempfile::tempdir().unwrap();
         let publication = package::publish(root.path(), &format!("{language}-random")).await;
         let f = Fixture::with_publication(None, Default::default(), None, Some(publication)).await;

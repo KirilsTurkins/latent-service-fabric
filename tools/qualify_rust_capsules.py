@@ -36,8 +36,14 @@ HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py"
 
 
 def inputs(language="rust"):
-    helpers = HELPERS if language == "rust" else (*HELPERS, "c_capsule.py", "c_capsule_project.py",
-        "c_capsule_build.py", "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py")
+    helpers = HELPERS
+    if language == "c":
+        helpers += ("c_capsule.py", "c_capsule_project.py", "c_capsule_build.py",
+                    "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py")
+    elif language == "go":
+        helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
+                    "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py",
+                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
             "guide": file_identity(ROOT / f"docs/component-development/{language}-authoring.md"),
@@ -79,12 +85,15 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
 
 
 def qualify(output: Path, *, offline=False, language="rust"):
-    if language not in {"rust", "c"}:
+    if language not in {"rust", "c", "go"}:
         raise ValueError("unsupported authoring qualification language")
     creator, builder = create, build
     if language == "c":
         from tools.c_capsule_project import create as creator
         from tools.c_capsule_build import build as builder
+    elif language == "go":
+        from tools.go_capsule_project import create as creator
+        from tools.go_capsule_build import build as builder
     output = output.absolute()
     if output == ROOT or ROOT in output.parents:
         raise ValueError("qualification projects must be outside the runtime checkout")
@@ -130,15 +139,21 @@ def qualify(output: Path, *, offline=False, language="rust"):
         stage = "ownership"
         if language == "rust":
             result["ownership"] = ownership(output / "ownership", offline=offline)
-        else:
+        elif language == "c":
             commands.run("c-scope-compile", "zig", "cc", "-std=c11", "-Wall", "-Wextra", "-Werror",
                 "-I", ROOT / "sdk/c-guest/include", ROOT / "sdk/c-guest/tests/ownership.c", "-o", output / "c-ownership")
             commands.run("c-scope-runtime", output / "c-ownership")
+        else:
+            commands.run("go-owner-tests", "go", "test", ROOT / "sdk/go-guest/ownership/owner.go",
+                         ROOT / "sdk/go-guest/ownership/owner_test.go")
         stage = "sdk-runtime-ownership"
-        # Preserve the full Rust AND C guest gate. The optional Rust-only local
-        # iteration switch is deliberately not used by qualification.
-        commands.run("build-sdk-guests", sys.executable, ROOT / "tools/build_guest_capsules.py", "--output", output / "sdk-guests")
+        # Rust/C qualifications preserve their combined runtime gate. Go runs
+        # the same ten provider/ownership cases with actual Go components.
+        sdk_builder = "build_go_guest_capsules.py" if language == "go" else "build_guest_capsules.py"
+        commands.run("build-sdk-guests", sys.executable, ROOT / "tools" / sdk_builder, "--output", output / "sdk-guests")
         commands.environment["LSF_GUEST_CAPSULES"] = str(output / "sdk-guests")
+        if language == "go":
+            commands.environment["LSF_GUEST_SDK_LANGUAGE"] = "go"
         commands.run("sdk-runtime-tests", paths["cargo"], "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
                      "--", "--ignored", "--test-threads=1")
         stage = "sign-demo"

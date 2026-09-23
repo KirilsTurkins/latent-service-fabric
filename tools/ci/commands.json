@@ -720,6 +720,66 @@
       "shell": "default",
       "run": "npm run test:build\nnpm run test:theme\nnpm run test:examples\nnpm run test:versions\nnpm run test:discovery"
     },
+    ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Install the locked compiler and generator",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ncargo install --locked wasm-tools --version 1.254.0\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\"\necho \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin\" >> \"$GITHUB_PATH\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Retain pinned reproduction tools": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Retain pinned reproduction tools",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-guest-tools\"\ncp \"$HOME/.cargo/bin/componentize-go\" \"$HOME/.cargo/bin/wasm-tools\" \"$out/\"\nsha256sum \"$out/componentize-go\" \"$out/wasm-tools\" > \"$out/tools.sha256\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Generate and compile upstream and constrained LSF components": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Generate and compile upstream and constrained LSF components",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/go_guest/probe.py --output \"$RUNNER_TEMP/go-guest-probe\" --go \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Execute the compiled runtime diagnostic without claiming admission": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Execute the compiled runtime diagnostic without claiming admission",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --example go_runtime_probe -- \"$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm\" 2>&1 | tee \"$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Check standalone project source boundaries": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Check standalone project source boundaries",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_go_capsule_authoring"
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Qualify editable projects, all SDK owners, enforced node and printed guide": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Qualify editable projects, all SDK owners, enforced node and printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-capsule-authoring\""
+    },
     ".github/workflows/native-runtime-release.yml:gate:Prepare private exact-source host workspace": {
       "workflow": ".github/workflows/native-runtime-release.yml",
       "job": "gate",
@@ -2674,6 +2734,9 @@
     "tools/docs_pages.py": {
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
     },
+    "tools/go_guest/probe.py": {
+      "sha256": "6a662ae08917327c27279bc9128231004683c27e8f4c539468e6c4637c886be2"
+    },
     "tools/install_guest_bindgen.py": {
       "sha256": "5b44bb8ee33f2d0b2466afa6a38b990fb1358fbd9818061b392ef960b535eca1"
     },
@@ -2698,8 +2761,11 @@
     "tools/qualify_c_capsules.py": {
       "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
     },
+    "tools/qualify_go_capsules.py": {
+      "sha256": "497409dd0d4c072b12a64c84e9ef1dbc804eb888c62ccae6fb8a27b9e64e97ce"
+    },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "8be1a3ed2d29898f66fefd9b7a8f801d4c15fb3fe994b0d2490eb9de555627c3"
+      "sha256": "00fbefd129146130eec342b4728a47360214166be2d73395ba1c7c98decbbd63"
     },
     "tools/reset_validation_echo.py": {
       "sha256": "7bfdd62d41f709ccee0de64e0c2b14868d4033444ca4e2b0a959424019108d2e"
@@ -3402,6 +3468,15 @@
       "Payloads.test_uncertain_and_wrong_activation_never_pass",
       "Sequencing.test_complete_synthetic_sequence_reuses_owners_and_does_not_republish",
       "Sequencing.test_failure_is_not_retried_or_reported_as_success"
+    ],
+    "tools/tests/test_go_capsule_authoring.py": [
+      "GoAuthoringTests.test_every_editable_template_has_exact_runtime_imports_and_captured_sdk",
+      "GoAuthoringTests.test_every_sdk_fixture_is_an_editable_source_project_with_exact_wit",
+      "GoAuthoringTests.test_existing_source_and_overlapping_build_outputs_are_never_overwritten",
+      "GoAuthoringTests.test_guide_and_selectable_examples_cover_the_printed_workflow",
+      "GoAuthoringTests.test_sdk_aliases_follow_generated_identity_without_exposing_resource_constructors",
+      "GoAuthoringTests.test_sdk_mutation_does_not_silently_become_a_reviewed_input",
+      "GoAuthoringTests.test_source_and_wit_remain_editable_but_budget_types_are_closed"
     ],
     "tools/tests/test_guest_build_profiles.py": [
       "GeneratorArchive.test_links_missing_duplicate_and_oversized_binary_fail",
@@ -5652,6 +5727,7 @@
     "tools/tests/test_docs_pages.py",
     "tools/tests/test_echo_cli_package.py",
     "tools/tests/test_first_node_guide.py",
+    "tools/tests/test_go_capsule_authoring.py",
     "tools/tests/test_guest_build_profiles.py",
     "tools/tests/test_harbor_registry_runner.py",
     "tools/tests/test_helper_directory_watch.py",
@@ -5857,6 +5933,7 @@
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
+    ".github/workflows/go-guest.yml": "8af2188b281fa1dd96a956ec73ce49de86e74e63a4e98dddad8baf8b8230871c",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",

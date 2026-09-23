@@ -80,7 +80,7 @@ class RecordingClient(Client):
         return value
 
 
-def configure(directory, fixture, port):
+def configure(directory, fixture, port, *, runtime_grants=False):
     initial = configure_provider_node(directory, fixture, port)
     settings = read_json(initial)
     settings["credentials"][0]["tenant"] = "examples"
@@ -95,6 +95,9 @@ def configure(directory, fixture, port):
     settings["capabilityPolicies"]["store"] = {
         "maximumRecords": 64, "maximumOutcomes": 128, "maximumCatalogBytes": 4194304,
         "maximumReadOwners": 64, "maximumPageRecords": 16}
+    if runtime_grants:
+        from tools.guest_runtime_grants import configure as configure_runtime
+        configure_runtime(settings, ("greeting", "word-count", "shipping", "http-status", "recovery"))
     path = directory / "authoring-node.json"
     write_json(path, settings)
     return path, settings
@@ -114,11 +117,12 @@ def deploy(client, source, publication, *, name=None, grants=None, generation="0
                         "--expected-generation", generation, "--expected-state-version", state["stateVersion"])
     require(result["outcomeKnown"], "authoring-deployment-uncertain")
     return {"name": name, "service": value["spec"]["service"], "budget": value["spec"]["resources"],
+            "grants": value["spec"]["grants"],
             "generation": result["data"]["receipt"]["objectGeneration"], "publication": publication}
 
 
 def grant_http(client, node, fixture, publication, target, port):
-    descriptors = node.startup_record["providers"]
+    descriptors = [row for row in node.startup_record["providers"] if row["capability"] == "latent:http/client@0.2.0"]
     require(len(descriptors) == 1, "authoring-provider-count")
     descriptor = descriptors[0]
     require(descriptor["capability"] == "latent:http/client@0.2.0" and descriptor["tenant"] == "examples"
@@ -142,7 +146,7 @@ def grant_http(client, node, fixture, publication, target, port):
     client.call("policy", "apply", "--id", "http-allow", "--file", policy,
                 "--operation-id", "grant-http", "--expected-generation", "0")
     return deploy(client, fixture / "my-http-status/deployment.json", publication, generation=str(target["generation"]),
-                  grants=[{"capability": descriptor["capability"], "policy": "http-allow"}])
+                  grants=target["grants"] + [{"capability": descriptor["capability"], "policy": "http-allow"}])
 
 
 def start_call(client, target, template, function, arguments, activation, *, wall=None):

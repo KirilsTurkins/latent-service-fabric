@@ -1,6 +1,7 @@
 use super::{
-    BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, PROVENANCE_BUILD_TYPE,
-    RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE, TYPESCRIPT_CAPSULE_BUILD_TYPE,
+    BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, GO_CAPSULE_BUILD_TYPE,
+    PROVENANCE_BUILD_TYPE, RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE,
+    TYPESCRIPT_CAPSULE_BUILD_TYPE,
 };
 use crate::{SignatureFailure, SignatureResult};
 use std::collections::BTreeSet;
@@ -170,6 +171,14 @@ pub(crate) fn validate_observation(
             "packager",
             "package-inputs",
         ],
+        GO_CAPSULE_BUILD_TYPE => &[
+            "go",
+            "componentize-go",
+            "dependency-lock",
+            "contracts-tool",
+            "packager",
+            "package-inputs",
+        ],
         _ => unreachable!("profile checked above"),
     };
     for required in tool_materials {
@@ -247,6 +256,22 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
                 && p.language == "typescript"
                 && p.target == "wasm32-component"
                 && p.runtime == "spidermonkey"
+                && !p.ambient_wasi
+        }
+        (GO_CAPSULE_BUILD_TYPE, BuildRecipe::GoCapsule(p)) => {
+            !p.go_package.is_empty()
+                && p.go_package.len() <= 64
+                && p.go_package.as_bytes()[0].is_ascii_lowercase()
+                && p.go_package.split('-').all(|part| {
+                    !part.is_empty()
+                        && part
+                            .bytes()
+                            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
+                })
+                && p.compiler == "componentize-go"
+                && p.target == "wasm32-wasip1"
+                && p.runtime == "go-component-async-v1"
+                && p.locked
                 && !p.ambient_wasi
         }
         _ => false,

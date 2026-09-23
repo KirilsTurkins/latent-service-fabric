@@ -1,0 +1,114 @@
+name: Go guest qualification
+
+on:
+  pull_request:
+    paths:
+      - sdk/go-guest/**
+      - tools/go_guest/**
+      - tools/go_capsule*.py
+      - tools/probe_go_authoring.py
+      - tools/qualify_go_capsules.py
+      - tools/qualify_rust_capsules.py
+      - tools/*rust_capsule*.py
+      - tools/guest_runtime_grants.py
+      - docs/component-development/go-authoring.md
+      - crates/latent-wasmtime/tests/**
+      - tools/build_go_guest_capsules.py
+      - apps/latentd/**
+      - crates/latent-signing/**
+      - crates/latent-wasmtime/examples/go_runtime_probe.rs
+      - wit/**
+      - tools/toolchain.toml
+      - .github/workflows/go-guest.yml
+  push:
+    branches: [development]
+    paths:
+      - sdk/go-guest/**
+      - tools/go_guest/**
+      - tools/go_capsule*.py
+      - tools/probe_go_authoring.py
+      - tools/qualify_go_capsules.py
+      - tools/qualify_rust_capsules.py
+      - tools/*rust_capsule*.py
+      - tools/guest_runtime_grants.py
+      - docs/component-development/go-authoring.md
+      - crates/latent-wasmtime/tests/**
+      - tools/build_go_guest_capsules.py
+      - apps/latentd/**
+      - crates/latent-signing/**
+      - crates/latent-wasmtime/examples/go_runtime_probe.rs
+      - wit/**
+      - tools/toolchain.toml
+      - .github/workflows/go-guest.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-guest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  upstream-probe:
+    name: Go runtime and complete capsule qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Install the locked compiler and generator
+        run: |
+          set -euo pipefail
+          cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go
+          cargo install --locked wasm-tools --version 1.254.0
+          mkdir -p "$RUNNER_TEMP/go-guest-tools"
+          curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-guest-tools/go.tbz" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz
+          echo "4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz" | sha256sum --check --strict
+          tar -xjf "$RUNNER_TEMP/go-guest-tools/go.tbz" -C "$RUNNER_TEMP/go-guest-tools"
+          echo "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin" >> "$GITHUB_PATH"
+      - name: Retain pinned reproduction tools
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/go-guest-tools"
+          cp "$HOME/.cargo/bin/componentize-go" "$HOME/.cargo/bin/wasm-tools" "$out/"
+          sha256sum "$out/componentize-go" "$out/wasm-tools" > "$out/tools.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: go-guest-tools-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-guest-tools/go.tbz
+            ${{ runner.temp }}/go-guest-tools/componentize-go
+            ${{ runner.temp }}/go-guest-tools/wasm-tools
+            ${{ runner.temp }}/go-guest-tools/tools.sha256
+          if-no-files-found: error
+          retention-days: 1
+      - name: Generate and compile upstream and constrained LSF components
+        run: python3 tools/go_guest/probe.py --output "$RUNNER_TEMP/go-guest-probe" --go "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
+      - name: Execute the compiled runtime diagnostic without claiming admission
+        run: |
+          set -o pipefail
+          cargo run --locked -p latent-wasmtime --example go_runtime_probe -- "$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm" 2>&1 | tee "$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log"
+      - name: Check standalone project source boundaries
+        run: python3 -m unittest tools.tests.test_go_capsule_authoring
+      - name: Qualify editable projects, all SDK owners, enforced node and printed guide
+        run: python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
+      - name: Retain successful and failed upstream observations
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: go-guest-upstream-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-guest-probe/
+            ${{ runner.temp }}/go-capsule-authoring/
+          if-no-files-found: warn
+          retention-days: 7

@@ -44,7 +44,13 @@ pub(super) async fn compile(
         return Err(capacity());
     }
     invocation::configured_graph(catalog, &definitions, &owner)?;
+    let order_bytes = catalog
+        .records
+        .len()
+        .checked_mul(std::mem::size_of::<&RevisionRecord>())
+        .ok_or_else(capacity)?;
     if owner.retained_bytes()
+        + order_bytes
         + data
             .iter()
             .map(StoredBinding::retained_bytes)
@@ -58,7 +64,18 @@ pub(super) async fn compile(
         .ok_or_else(capacity)?;
     let mut plans = Vec::with_capacity(catalog.records.len());
     let mut unavailable = 0;
-    for record in &catalog.records {
+    // One transient consumer package, not one retained package per deployment.
+    // Each plan still checks live eligibility and its own scoped grants. Sorting
+    // the bounded pointer list groups only identical tenant/publication/source
+    // identities; no cache or authority survives this compilation.
+    let mut order = Vec::new();
+    order
+        .try_reserve_exact(catalog.records.len())
+        .map_err(|_| capacity())?;
+    order.extend(catalog.records.iter().map(Arc::as_ref));
+    order.sort_unstable_by(|left, right| package_key(left).cmp(&package_key(right)));
+    let mut consumer = None;
+    for record in order {
         if matches!(
             catalog.selected_eligibility(&record.deployment.release, record.publication.as_ref()),
             Some(crate::deployments::admission_fence::SelectedEligibility::Inactive(_))
@@ -66,7 +83,16 @@ pub(super) async fn compile(
             unavailable += 1;
             continue;
         }
-        let result = plan(catalog, record, &definitions, &owner, artifacts, deadline).await;
+        let result = plan(
+            catalog,
+            record,
+            &definitions,
+            &owner,
+            artifacts,
+            deadline,
+            &mut consumer,
+        )
+        .await;
         match result {
             Ok(plan) => plans.push(plan),
             Err(failure)
@@ -91,6 +117,25 @@ pub(super) async fn compile(
         plans: plans.into_boxed_slice(),
         unavailable,
     })
+}
+
+fn package_key(
+    record: &RevisionRecord,
+) -> (
+    &Option<latent_core::TenantId>,
+    &Option<latent_core::PublicationId>,
+    &latent_core::ReleaseDigest,
+) {
+    (
+        &record.deployment.metadata.tenant,
+        &record.publication,
+        &record.deployment.release,
+    )
+}
+
+#[cfg(test)]
+thread_local! {
+    pub(in crate::deployments) static PACKAGE_READS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 fn definitions(
     data: &[StoredBinding],
@@ -219,6 +264,8 @@ async fn bundle(
     owner: &CompilerOwner,
     artifacts: &dyn ArtifactRepository,
 ) -> Result<PackageBundle, PlatformError> {
+    #[cfg(test)]
+    PACKAGE_READS.with(|reads| reads.set(reads.get() + 1));
     let tenant = record
         .deployment
         .metadata
@@ -311,13 +358,14 @@ struct Import<'a> {
     policies: Vec<String>,
     restriction: Vec<u8>,
 }
-async fn plan(
+async fn plan<'a>(
     catalog: &CompiledCatalog,
-    record: &RevisionRecord,
+    record: &'a RevisionRecord,
     definitions: &[BindingDefinition],
     owner: &Arc<CompilerOwner>,
     artifacts: &dyn ArtifactRepository,
     deadline: Instant,
+    cached: &mut Option<(&'a RevisionRecord, PackageBundle)>,
 ) -> Result<Arc<latent_capabilities::broker::CompiledCapabilityPlan>, PlatformError> {
     if Instant::now() >= deadline {
         return Err(error(
@@ -330,7 +378,15 @@ async fn plan(
         return web::compile(catalog, record, definitions, owner, &publication, deadline);
     }
     let comparison = PackageComparisonLimits::default();
-    let consumer = bundle(record, owner, artifacts).await?;
+    if cached
+        .as_ref()
+        .is_none_or(|(previous, _)| package_key(previous) != package_key(record))
+    {
+        // Drop the preceding package before reading another bounded package.
+        *cached = None;
+        *cached = Some((record, bundle(record, owner, artifacts).await?));
+    }
+    let consumer = &cached.as_ref().expect("current checked consumer package").1;
     let surface = consumer.surface().ok_or_else(denied)?;
     let mut imports = Vec::new();
     let mut dependencies = Vec::new();
@@ -366,11 +422,11 @@ async fn plan(
                     resolved,
                     target_proof.functions(),
                 )?);
-                latent_packaging::compile_host_binding(&consumer, interface, comparison)?
+                latent_packaging::compile_host_binding(consumer, interface, comparison)?
             } else {
                 local_targets.push(resolved);
                 latent_packaging::compile_local_binding(
-                    &consumer,
+                    consumer,
                     &provider_bundle,
                     interface,
                     &d.manifest.provider.contract.0,
@@ -378,7 +434,7 @@ async fn plan(
                 )?
             }
         } else {
-            latent_packaging::compile_host_binding(&consumer, interface, comparison)?
+            latent_packaging::compile_host_binding(consumer, interface, comparison)?
         };
         let (policies, restriction) = grant(record, d, interface)?;
         imports.push(Import {
