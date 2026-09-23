@@ -519,6 +519,10 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
         );
         self.idle();
     }
+    pub fn runtime_entropy_calls(&self) -> u64 {
+        self._guest_runtime.entropy_calls()
+    }
+
     pub fn idle(&self) {
         let resources = self.backend.resource_snapshot();
         assert_eq!(resources.live_stores, 0);

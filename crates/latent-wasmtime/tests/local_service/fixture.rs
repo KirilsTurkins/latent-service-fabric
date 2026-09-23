@@ -241,7 +241,7 @@ impl Fixture {
                 "id":"call","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":["caller"],
                 "publications":[caller_publication.as_str()],"capability":SERVICE_INVOCATION_CAPABILITY,"operations":["call"],
                 "resources":{"kind":"service","services":["callee"],"publications":[allowed_target]},
-                "ceiling":{"operations":8,"inputBytes":65536,"outputBytes":65536,"wallTimeMillis":5000},"requireAudit":audit.is_some()}]}),
+                "ceiling":{"operations":8,"inputBytes":65536,"outputBytes":65536,"wallTimeMillis":packages::budget().wall_time_limit_millis.unwrap_or(5000)},"requireAudit":audit.is_some()}]}),
             ),
             (
                 "installed",
