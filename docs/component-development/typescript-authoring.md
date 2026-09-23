@@ -50,8 +50,9 @@ The generated project includes the authoritative WIT, generated-at-build binding
 SDK under `vendor/lsf`, and `capsule-project.json`. Edit your `src` and `wit`
 files and update the selected world in `capsule-project.json` when renaming
 the contract. Keep the SDK files unchanged. The build rejects SDK drift,
-path escapes and unsupported contract shapes. Add relative TypeScript/JavaScript
-modules inside the project. The bundler accepts only captured relative imports
+path escapes and unsupported contract shapes. Add relative TypeScript modules
+inside the project. A JavaScript module also needs matching `.d.ts` declarations
+for strict typechecking; untyped JavaScript imports are rejected. The bundler accepts only captured relative imports
 or the exact versioned interfaces declared by your WIT. Arbitrary npm packages,
 dynamic imports, `require`, Node built-ins, and application compiler/config
 overrides are rejected. Vendoring an ordinary source module is supported; its

@@ -40,6 +40,9 @@ clock, entropy, filesystem, network, timer, worker, process or DOM authority.
 Effects require configured, declared LSF imports and host grants. Dynamic
 imports, Node built-ins, `require`, npm dependencies and application compiler
 configuration overrides are outside this captured-source profile.
+Relative JavaScript source modules require matching `.d.ts` declarations;
+untyped imports fail the strict TypeScript check. TypeScript source modules
+can be imported directly within the captured project.
 
 ## Typed capability wrappers
 
