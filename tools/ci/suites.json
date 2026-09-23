@@ -7347,6 +7347,7 @@
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
         "standalone::http::assets::browser::actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress",
         "standalone::http::assets::browser::browser_boundary_reclaims_two_incomplete_peers_and_continues_eligible_asset_admission",
+        "standalone::http::assets::cache::tests::cache_bookkeeping_contention_bypasses_residency_but_keeps_memory_charged",
         "standalone::http::assets::cache::tests::corruption_refetches_once_and_bad_source_never_becomes_a_cache_hit",
         "standalone::http::assets::cache::tests::eviction_and_clear_do_not_release_pinned_output_bytes",
         "standalone::http::assets::cache::tests::zero_length_assets_are_verified_and_oversized_declarations_do_not_read",
@@ -7577,7 +7578,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 216,
+      "minimumCases": 217,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
