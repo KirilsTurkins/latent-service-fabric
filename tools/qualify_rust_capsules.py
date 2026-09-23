@@ -44,6 +44,11 @@ def inputs(language="rust"):
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py",
                     "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py")
+    elif language == "typescript":
+        helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
+                    "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
+                    "typescript_guest/probe.py", "typescript_guest/componentize.mjs", "typescript_guest/bundle.mjs",
+                    "typescript_guest/signed64.mjs", "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
             "guide": file_identity(ROOT / f"docs/component-development/{language}-authoring.md"),
@@ -84,9 +89,11 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
     return result
 
 
-def qualify(output: Path, *, offline=False, language="rust"):
-    if language not in {"rust", "c", "go"}:
+def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None):
+    if language not in {"rust", "c", "go", "typescript"}:
         raise ValueError("unsupported authoring qualification language")
+    if language == "typescript" and typescript_tools is None:
+        raise ValueError("explicit pinned TypeScript compiler installation required")
     creator, builder = create, build
     if language == "c":
         from tools.c_capsule_project import create as creator
@@ -94,6 +101,10 @@ def qualify(output: Path, *, offline=False, language="rust"):
     elif language == "go":
         from tools.go_capsule_project import create as creator
         from tools.go_capsule_build import build as builder
+    elif language == "typescript":
+        from tools.typescript_guest.project import create as creator
+        from tools.typescript_guest.build import build as builder
+        typescript_tools = Path(typescript_tools).resolve(strict=True)
     output = output.absolute()
     if output == ROOT or ROOT in output.parents:
         raise ValueError("qualification projects must be outside the runtime checkout")
@@ -114,10 +125,16 @@ def qualify(output: Path, *, offline=False, language="rust"):
             environment["CARGO_NET_OFFLINE"] = "true"
         paths, materials = resolve_tools(pins, ROOT, environment)
         environment["RUSTC"] = str(paths["rustc"])
-        commands = Commands(ROOT, output, environment)
+        cargo_options = ["--config", ROOT / ".cargo/managed-guest.toml"] if language == "typescript" else []
+        if language == "typescript":
+            environment["LSF_TYPESCRIPT_TOOLS"] = str(typescript_tools)
+        commands = Commands(ROOT, output, environment, **(
+            {"deadline_seconds": 3600, "command_seconds": 1800} if language == "typescript" else {}))
+        result["commandLimits"] = {"overallSeconds": 3600 if language == "typescript" else 900,
+                                   "perCommandSeconds": commands.command_seconds}
         result["tools"] = materials
         stage = "host-build"
-        commands.run(stage, paths["cargo"], "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
+        commands.run(stage, paths["cargo"], *cargo_options, "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
             "-p", "latent-packaging", "--example", "package", "--example", "capsule_contracts",
             "-p", "latent-policy", "--example", "capsule_authoring")
         if inputs(language) != before:
@@ -133,7 +150,8 @@ def qualify(output: Path, *, offline=False, language="rust"):
             project = creator(output / "projects" / template, template)
             artifact = builder(project, output / "builds" / template, binaries["examples/capsule_contracts"],
                 binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric",
-                **({"offline": offline} if language == "rust" else {}))
+                **({"offline": offline} if language == "rust" else
+                   {"tools": typescript_tools} if language == "typescript" else {}))
             built.append(artifact)
             result["builds"][template] = read_json(artifact / "BUILD-COMPLETE.json")
         stage = "ownership"
@@ -143,18 +161,32 @@ def qualify(output: Path, *, offline=False, language="rust"):
             commands.run("c-scope-compile", "zig", "cc", "-std=c11", "-Wall", "-Wextra", "-Werror",
                 "-I", ROOT / "sdk/c-guest/include", ROOT / "sdk/c-guest/tests/ownership.c", "-o", output / "c-ownership")
             commands.run("c-scope-runtime", output / "c-ownership")
-        else:
+        elif language == "go":
             commands.run("go-owner-tests", "go", "test", ROOT / "sdk/go-guest/ownership/owner.go",
                          ROOT / "sdk/go-guest/ownership/owner_test.go")
+        else:
+            node = shutil.which("node", path=environment["PATH"])
+            if node is None:
+                raise ValueError("pinned Node compiler required")
+            owners = output / "typescript-owners"
+            commands.run("typescript-owner-compile", node, typescript_tools / "node_modules/typescript/bin/tsc",
+                "--target", "ES2022", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--strict",
+                "--lib", "ES2022", "--outDir", owners, ROOT / "sdk/typescript-guest/capabilities/owner.ts",
+                ROOT / "sdk/typescript-guest/capabilities/result.ts")
+            write_json(owners / "package.json", {"type": "module"})
+            commands.environment["LSF_TYPESCRIPT_OWNERS"] = str(owners)
+            commands.run("typescript-owner-tests", node, "--test", ROOT / "sdk/typescript-guest/tests/owner.test.mjs",
+                         ROOT / "sdk/typescript-guest/tests/signed64.test.mjs")
         stage = "sdk-runtime-ownership"
         # Rust/C qualifications preserve their combined runtime gate. Go runs
         # the same ten provider/ownership cases with actual Go components.
-        sdk_builder = "build_go_guest_capsules.py" if language == "go" else "build_guest_capsules.py"
-        commands.run("build-sdk-guests", sys.executable, ROOT / "tools" / sdk_builder, "--output", output / "sdk-guests")
+        sdk_builder = f"build_{language}_guest_capsules.py" if language in {"go", "typescript"} else "build_guest_capsules.py"
+        commands.run("build-sdk-guests", sys.executable, ROOT / "tools" / sdk_builder, "--output", output / "sdk-guests",
+                     *(["--tools", typescript_tools] if language == "typescript" else []))
         commands.environment["LSF_GUEST_CAPSULES"] = str(output / "sdk-guests")
-        if language == "go":
-            commands.environment["LSF_GUEST_SDK_LANGUAGE"] = "go"
-        commands.run("sdk-runtime-tests", paths["cargo"], "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
+        if language in {"go", "typescript"}:
+            commands.environment["LSF_GUEST_SDK_LANGUAGE"] = language
+        commands.run("sdk-runtime-tests", paths["cargo"], *cargo_options, "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
                      "--", "--ignored", "--test-threads=1")
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)

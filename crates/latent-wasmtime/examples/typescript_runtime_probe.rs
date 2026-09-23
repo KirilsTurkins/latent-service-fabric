@@ -41,26 +41,33 @@ async fn main() -> wasmtime::Result<()> {
     let pending = Arc::new(AtomicUsize::new(0));
     let count = pending.clone();
     let mut linker = Linker::new(&engine);
-    linker
-        .instance("lsf:typescript-probe/host@1.0.0")?
-        .func_wrap_concurrent("echo", move |_, (text,): (String,)| {
-            let count = count.clone();
-            Box::pin(async move {
-                count.fetch_add(1, Ordering::SeqCst);
-                let _owner = Pending(count);
-                let delay = if text == "cancel" { 60_000 } else { 20 };
-                tokio::time::sleep(Duration::from_millis(delay)).await;
-                Ok((text,))
-            })
-        })?;
-    for text in ["Hello, 世界! 🚚", "", "panic", "cancel", "Hello again"] {
+    let mut host = linker.instance("lsf:typescript-probe/host@1.0.0")?;
+    host.func_wrap_concurrent("echo", move |_, (text,): (String,)| {
+        let count = count.clone();
+        Box::pin(async move {
+            count.fetch_add(1, Ordering::SeqCst);
+            let _owner = Pending(count);
+            let delay = if text == "cancel" { 60_000 } else { 20 };
+            tokio::time::sleep(Duration::from_millis(delay)).await;
+            Ok((text,))
+        })
+    })?;
+    host.func_wrap_concurrent(
+        "roundtrip",
+        |_, (value, minimum, maximum): (u64, i64, i64)| {
+            Box::pin(async move { Ok(((value, minimum, maximum),)) })
+        },
+    )?;
+    for text in ["Hello, \0世界! 🚚", "", "panic", "cancel", "Hello again"] {
         let input = Val::Record(vec![
             ("value".into(), Val::U64(u64::MAX)),
+            ("minimum".into(), Val::S64(i64::MIN)),
+            ("maximum".into(), Val::S64(i64::MAX)),
             ("text".into(), Val::String(text.into())),
             ("bytes".into(), Val::List(vec![Val::U8(0), Val::U8(255)])),
         ]);
         let started = Instant::now();
-        let future = invoke(&engine, &component, &linker, input.clone());
+        let future = invoke(&engine, &component, &linker, "run", input.clone());
         if text == "cancel" {
             assert!(tokio::time::timeout(Duration::from_millis(100), future)
                 .await
@@ -87,9 +94,13 @@ async fn main() -> wasmtime::Result<()> {
             started.elapsed().as_millis()
         );
     }
-    println!(
-        "TypeScript async boundary passed; signed admission and SDK qualification remain required"
-    );
+    for value in [i64::MIN, -1, 0, i64::MAX] {
+        assert_eq!(
+            invoke(&engine, &component, &linker, "echo-signed", Val::S64(value)).await?,
+            Val::S64(value)
+        );
+    }
+    println!("TypeScript async and signed scalar boundaries passed; signed admission and SDK qualification remain required");
     Ok(())
 }
 
@@ -97,6 +108,7 @@ async fn invoke(
     engine: &Engine,
     component: &Component,
     linker: &Linker<StoreLimits>,
+    function: &str,
     input: Val,
 ) -> wasmtime::Result<Val> {
     let limits = StoreLimitsBuilder::new()
@@ -110,7 +122,7 @@ async fn invoke(
         .get_export(&mut store, None, "lsf:typescript-probe/probe@1.0.0")
         .ok_or_else(|| wasmtime::Error::msg("missing contract"))?;
     let (_, index) = instance
-        .get_export(&mut store, Some(&interface), "run")
+        .get_export(&mut store, Some(&interface), function)
         .ok_or_else(|| wasmtime::Error::msg("missing function"))?;
     let function = instance
         .get_func(&mut store, index)

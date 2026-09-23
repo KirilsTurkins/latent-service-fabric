@@ -10,6 +10,17 @@ from tools.build_typescript_guest_capsules import NAMES, project as sdk_project
 
 
 class TypeScriptAuthoringTests(unittest.TestCase):
+    def test_qualification_watchdogs_remain_explicit_and_finite(self):
+        from tools.rust_capsule_build import Commands
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for overall, command in [(True, 1), (900, True), (0, 1), (7201, 1), (3600, 1801), (60, 61)]:
+                with self.subTest(overall=overall, command=command), self.assertRaisesRegex(ValueError, "finite"):
+                    Commands(root, root, {}, deadline_seconds=overall, command_seconds=command)
+            self.assertFalse((root / "logs").exists())
+            owner = Commands(root, root, {}, deadline_seconds=3600, command_seconds=1800)
+            self.assertEqual(owner.command_seconds, 1800)
+
     def test_import_identity_follows_selected_world_and_never_arena_indexes(self):
         from tools.typescript_guest.compiler import import_identities
         graph = {"packages": [{"name": "latent:http@0.2.0"}, {"name": "tests:app@1.0.0"}],

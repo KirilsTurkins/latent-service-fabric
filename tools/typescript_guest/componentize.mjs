@@ -1,9 +1,10 @@
-// Narrow, checksum-pinned diagnostic: expose the real compiler's core output.
-// The compiler and engine are unchanged; only the returned object gains bytes.
+// Checksum-pinned compiler adapter: expose core output and normalize the
+// maintained generator's signed i64 lowering to the embedding's core ABI.
 import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { basename, dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { coreI64Lowering } from './signed64.mjs';
 
 const [compiler, witPath, sourcePath, output, world = 'capsule'] = process.argv.slice(2);
 const bytes = await readFile(compiler);
@@ -14,8 +15,11 @@ if (createHash('sha256').update(bytes).digest('hex') !==
 const original = bytes.toString('utf8');
 const before = '  return {\n    component,\n';
 if (original.split(before).length !== 2) throw new Error('compiler-output-shape-drift');
-const adapted = original.replace(before, '  return {\n    core: finalBin,\n    component,\n');
-const path = join(dirname(compiler), 'componentize.lsf-core.mjs');
+const bindingWrite = '  await writeFile(initializerPath, jsBindings);';
+if (original.split(bindingWrite).length !== 2) throw new Error('compiler-binding-hook-drift');
+const adapted = original.replace(before, '  return {\n    core: finalBin,\n    component,\n')
+  .replace(bindingWrite, '  jsBindings = opts.lsfBindings(jsBindings);\n' + bindingWrite);
+const path = join(dirname(compiler), 'componentize.lsf-core-v2.mjs');
 try {
   await writeFile(path, adapted, { flag: 'wx' });
 } catch (error) {
@@ -26,6 +30,7 @@ if (!witPath) process.exit(0); // Prepare and hash the reviewed adapter before t
 const result = await componentize({
   sourcePath, sourceName: basename(sourcePath),
   witPath, worldName: world, enableAot: false, env: {},
+  lsfBindings: coreI64Lowering,
   disableFeatures: ['stdio', 'random', 'clocks', 'http', 'fetch-event'],
 });
 if (!result.core || result.core.byteLength > 64 * 1024 * 1024) throw new Error('core-output-bound');

@@ -6,6 +6,17 @@
   "target": "guest",
   "variants": [
     {
+      "language": "typescript",
+      "kind": "maintained",
+      "source": "sdk/typescript-guest/templates/shipping.ts",
+      "regions": ["capsule"],
+      "validation": {
+        "target": "tools/qualify_typescript_capsules.py",
+        "instructions": "docs/component-development/typescript-authoring.md",
+        "evidence": null
+      }
+    },
+    {
       "language": "go",
       "kind": "maintained",
       "source": "sdk/go-guest/templates/shipping.go",

@@ -38,7 +38,8 @@ pub fn input(name: &str) -> PathBuf {
 
 pub fn observation(name: &str) -> BuildObservation {
     let directory = input(name);
-    let root = if name.starts_with("go-") {
+    let standalone = name.starts_with("go-") || name.starts_with("typescript-");
+    let root = if standalone {
         &directory
     } else {
         directory.parent().unwrap()
@@ -48,7 +49,7 @@ pub fn observation(name: &str) -> BuildObservation {
     assert_eq!(marker["formatVersion"], 1);
     let bytes = read(&directory.join("build-observation.json"), 65536);
     assert_eq!(
-        (if name.starts_with("go-") {
+        (if standalone {
             &marker["observationDigest"]
         } else {
             &marker["observations"][name]
@@ -199,7 +200,7 @@ pub async fn publish(root: &Path, name: &str) -> Publication {
         .publish_managed(
             ReleaseMutationContext {
                 scope: LifecycleScope::Tenant(TenantId(
-                    if name.starts_with("go-")
+                    if (name.starts_with("go-") || name.starts_with("typescript-"))
                         && (name.ends_with("-service") || name.ends_with("-callee"))
                     {
                         "tenant-a"

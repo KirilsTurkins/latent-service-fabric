@@ -35,10 +35,10 @@ pub fn enabled() -> bool {
 }
 
 pub fn memory(default: u64) -> u64 {
-    if enabled() {
-        64 * 1024 * 1024
-    } else {
-        default
+    match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
+        Ok("go") => 64 * 1024 * 1024,
+        Ok("typescript") => 128 * 1024 * 1024,
+        _ => default,
     }
 }
 

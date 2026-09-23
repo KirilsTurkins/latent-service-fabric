@@ -28,7 +28,9 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     if template == "http-status":
         files["wit/deps/http/package.wit"] = read_file(ROOT / "wit/platform/http-v2/package.wit")
     limits = json.loads(read_file(ROOT / "examples/echo-contract/capsule.json"))["execution"]["limits"]
-    limits.update(cpuFuel=1_000_000_000, memoryBytes=134_217_728, wallTimeLimitMillis=5000, logBytes=0)
+    # Includes cold compilation of the embedded engine, not just a warm call.
+    # A caller can request a tighter deadline; no default node limit is raised.
+    limits.update(cpuFuel=1_000_000_000, memoryBytes=134_217_728, wallTimeLimitMillis=120000, logBytes=0)
     if template == "http-status":
         limits["outboundRequests"] = 1
     project = {"formatVersion": 1, "name": name, "version": "1.0.0", "tenant": "examples",

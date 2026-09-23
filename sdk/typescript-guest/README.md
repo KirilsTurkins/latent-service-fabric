@@ -1,37 +1,86 @@
 # TypeScript guest SDK
 
-This work implements issue #546 on a separate guest-authoring path. It is not
-the Node client transport and does not enable an unrestricted Node or browser
-runtime inside an activation.
+Use [Create your own TypeScript capsule](../../docs/component-development/typescript-authoring.md)
+for an editable project, package/sign/admit/deploy/invoke/cleanup path.
+This guest SDK is separate from the external Node client and closed Angular
+renderer. It does not embed Node, a browser, or application-owned host threads.
 
-The runtime boundary preserves full-width WIT integers as `bigint`, explicit
-option/result cases, Unicode scalars, byte arrays and nominal resource owners.
-Each invocation owns its scope; calls outside that scope fail. Owned arguments
-move once, borrowed arguments retain their owners, and resource destructors are
-not retried. Primitive blob handles require explicit asynchronous close or seal.
-Secret helpers zero their owned byte array; application-created copies retain
-their own lifetime. Host grants and budgets remain authoritative.
+## Contract and compiler
 
-## Validation status
+`tools/typescript_capsule.py new` copies authoritative WIT and the immutable
+reviewed SDK into an independent project. Edit `src/main.ts`, relative source
+modules and `wit`; keep `vendor/lsf` unchanged. The build generates declarations,
+typechecks the application, bundles captured modules, uses the locked maintained
+ComponentizeJS compiler and packages the actual component. Tool, dependency and
+source observations are retained.
 
-The local runtime tests exercise JavaScript value and ownership behavior using
-a deliberately synthetic broker. They are not native async, provider, signed
-admission or real-node evidence. The general component adapter and its native
-qualification must pass before this SDK is described as a supported execution
-profile or issue #546 is closed.
+The generator supplies a synchronous JavaScript ABI. The builder checks its
+projected type graph and restores the original async WIT. Wasmtime suspends the
+activation across host calls; no application process waits for a provider.
+Return ordinary contract values, not promises. Each activation owns its guest
+promise/microtask state and heap. The recovery test deliberately retains
+unresolved promises until Store destruction, then requires fresh module state.
 
-Compile and test the runtime with the reviewed TypeScript compiler:
+WIT `u64`/`s64` use `bigint`, UTF-8 strings preserve embedded NUL, byte lists
+use `Uint8Array`, and records/results preserve generated types. The guarded
+compiler adapter normalizes signed i64 lowering bit patterns for ComponentizeJS
+0.22's unsigned internal embedding ABI. WIT types and signed lifting do not
+change. CI tests both signed extremes and unsigned maximum through the real
+compiled boundary, including scalar returns.
+
+WIT future/stream/map/fixed-size-list values, named/free-standing imports and
+colliding generated import filenames fail explicitly. There is no ambient
+clock, entropy, filesystem, network, timer, worker, process or DOM authority.
+Effects require configured, declared LSF imports and host grants. Dynamic
+imports, Node built-ins, `require`, npm dependencies and application compiler
+configuration overrides are outside this captured-source profile.
+
+## Typed capability wrappers
+
+`capabilities/` imports exact generated interfaces, not a synthetic broker or
+grant. `examples/` contains nine fixtures for all eight capabilities plus the
+local-service callee.
+
+| Module | Ownership |
+| --- | --- |
+| `http` | One buffered call and typed result; no retry. |
+| `streaming` | Upload/body/chunk owners; finish/abort consumes; close invokes the generated destructor. |
+| `blob` | Reader/writer handles close or seal explicitly; chunks materialize once and close explicitly. |
+| `secrets` | Close zeroes owned bytes; application-created copies have their own lifetime. |
+| `events` | Exact receipt/error/uncertainty; no hidden outbox or retry. |
+| `service` | Returned, domain-error and platform-failure outcomes; host-controlled descendant budgets. |
+| `random` | Host-authorized bounded bytes/full-width integers, never ambient entropy. |
+| `metrics` | Exact instrument kind/attributes; no guest exporter or provider. |
+
+Owners reject use after close/consume and reentrant borrow. Aliases share live
+state. Consuming calls invalidate before uncertain effects; destructors are
+never retried. Use `try/finally` or a finite `Scope` closed in `finally`.
+Scope teardown attempts every owner even after a destructor fails. GC
+finalizers are not resource management.
+
+Cancellation cannot prove an external effect did not occur. Charges remain
+until the real owner is reclaimed. The host enforces permissions, input/output
+bounds, deadlines, fuel, memory, pooling and containment after a guest trap.
+
+## Qualification
+
+After the guide's prerequisites, run from the checkout:
 
 ```sh
-node examples/renderer-profile/node_modules/typescript/bin/tsc \
-  --target ES2022 --module NodeNext --moduleResolution NodeNext --strict \
-  --lib ES2022 --outDir target/typescript-guest-runtime \
-  sdk/typescript-guest/runtime/*.ts
-printf '{"type":"module"}\n' > target/typescript-guest-runtime/package.json
-LSF_TYPESCRIPT_RUNTIME="$PWD/target/typescript-guest-runtime" \
-  node --test sdk/typescript-guest/tests/runtime.test.mjs
+python3 tools/qualify_typescript_capsules.py \
+  --tools "$LSF_TYPESCRIPT_TOOLS" \
+  --output "$(mktemp -d)/typescript-authoring"
 ```
 
-The compiler is a build-time tool only. Guest code has no ambient clock, random,
-network, process, filesystem, browser DOM, timer or worker authority. Application
-module loading and native async qualification are separate build checks.
+The gate builds five independent projects and nine SDK fixtures, exercises
+production signature/admission and capability tests, and runs a real node
+through valid/invalid tutorials, allowed/denied HTTP, cancellation, disconnect,
+trap, memory/fuel exhaustion and fresh-state recovery. It measures dormant
+populations, active owners, shared cache bounds and clean shutdown, and executes
+the guide's six printed Bash steps.
+
+Only `qualification.json` with `status: passed` is complete execution evidence.
+`BUILD-COMPLETE.json` proves a build, not execution. Failed attempts keep their
+own diagnostics. Older synthetic value/broker unit tests remain supplementary,
+not provider or node qualification. Newcomer review #345 and release publication
+approval remain separate requirements.
