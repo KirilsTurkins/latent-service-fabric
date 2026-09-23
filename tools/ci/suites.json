@@ -6863,6 +6863,7 @@
         "invocation::cleanup::tests::shutdown_timeout_aborts_and_joins_before_returning",
         "invocation::conversion::tests::absent_pin_is_exactly_empty_empty_zero_for_platform_failure",
         "invocation::conversion::tests::all_outcomes_preserve_fields_and_generated_wire_encoding",
+        "invocation::conversion::tests::bounds::currentness_details_only_publish_closed_reasons_and_no_private_fields",
         "invocation::conversion::tests::bounds::generated_catalog_identity_is_independent_of_short_caller_name_limit",
         "invocation::conversion::tests::bounds::omitted_response_fields_and_spare_capacity_are_bounded_before_conversion",
         "invocation::conversion::tests::bounds::owned_public_conversion_moves_payload_effect_and_metadata_allocations",
@@ -6969,7 +6970,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 117,
+      "minimumCases": 118,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
