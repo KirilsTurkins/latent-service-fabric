@@ -115,6 +115,27 @@
           "status": "executed",
           "sourceCommit": "21e03395d4f062d290fec21951439f9b09302cd8",
           "scope": "Actual source-based first node: 19 CLI commands, protected authentication, two invocations, five negative cases, retained deployment after restart and physical cleanup. Collector and binary hashes are separate; native bundle installation remains with #308."
+        },
+        {
+          "path": "docs/evidence/native-upgrade-35821200294/summary.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "193d52c37635026de416feffd4a2dfd57d082451",
+          "scope": "Authenticated alpha.4 rehearsal at the exact tagged source: both native VM profiles have complete acceptance, actual rc.2 upgrade, reboot/retained invocation, unsupported downgrade rejection and recovery/removal. The local profile also proves rootless execution. Protected publication and human review remain separate."
+        },
+        {
+          "path": "docs/evidence/native-upgrade-35821200294/local-experimental-v1.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "193d52c37635026de416feffd4a2dfd57d082451",
+          "scope": "Authenticated alpha.4 local profile at the exact tagged source: complete acceptance, actual rc.2 upgrade, reboot/retained invocation, unsupported downgrade rejection, recovery/removal and non-root foreground evaluation. Protected publication and human review remain separate."
+        },
+        {
+          "path": "docs/evidence/native-upgrade-35821200294/external-capsule-v1.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "193d52c37635026de416feffd4a2dfd57d082451",
+          "scope": "Authenticated alpha.4 enforced external-capsule profile at the exact tagged source: complete acceptance, actual rc.2 upgrade, reboot/retained invocation, unsupported downgrade rejection and recovery/removal. Protected publication and human review remain separate."
         }
       ],
       "review": {
@@ -309,6 +330,20 @@
           "status": "executed",
           "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
           "scope": "Actual offline package transfer, authenticated publication and invocation at the same CI source tree."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/publication-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current actual publication identities, authorization/refusal and retained invocation; fixture signatures remain synthetic. CI 35818046307 artifact origin supplies the exact source association."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/offline-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current offline transfer, protected admission and retained invocation using actual binaries; no production deployment certification. CI 35818046307 artifact origin supplies the exact source association."
         }
       ],
       "review": {
@@ -373,6 +408,13 @@
           "status": "executed",
           "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
           "scope": "Actual operator rollout/canary/rollback, recovery and reaped node processes from the successful Phase 2 CI step."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/operator-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current actual operator delivery, rollout/canary/rollback, recovery and clean process shutdown from CI 35818046307. This receipt does not supply human guide review."
         }
       ],
       "review": {
@@ -436,7 +478,21 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/rust.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current rust native client passed all 18 assertions in CI 35818046307, with nine distinct activations, one retained operation receipt, four physically closed held requests and clean shutdown. Artifact origin binds the actual CI checkout; browser and installed-bundle qualification remain false."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/matrix.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current six-language matrix at CI 35818046307: same node/CLI/fixture bytes, 54 distinct activations, six operation receipts, 24 physically closed held requests and six clean shutdowns. The retained integration summary binds the CI checkout and equivalent selected source tree; no human review is inferred."
         }
       ],
       "review": {
@@ -500,7 +556,21 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/typescript.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current typescript native client passed all 18 assertions in CI 35818046307, with nine distinct activations, one retained operation receipt, four physically closed held requests and clean shutdown. Artifact origin binds the actual CI checkout; browser and installed-bundle qualification remain false."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/matrix.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current six-language matrix at CI 35818046307: same node/CLI/fixture bytes, 54 distinct activations, six operation receipts, 24 physically closed held requests and six clean shutdowns. The retained integration summary binds the CI checkout and equivalent selected source tree; no human review is inferred."
         }
       ],
       "review": {
@@ -564,7 +634,21 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/go.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current go native client passed all 18 assertions in CI 35818046307, with nine distinct activations, one retained operation receipt, four physically closed held requests and clean shutdown. Artifact origin binds the actual CI checkout; browser and installed-bundle qualification remain false."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/matrix.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current six-language matrix at CI 35818046307: same node/CLI/fixture bytes, 54 distinct activations, six operation receipts, 24 physically closed held requests and six clean shutdowns. The retained integration summary binds the CI checkout and equivalent selected source tree; no human review is inferred."
         }
       ],
       "review": {
@@ -628,7 +712,21 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/c.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current c native client passed all 18 assertions in CI 35818046307, with nine distinct activations, one retained operation receipt, four physically closed held requests and clean shutdown. Artifact origin binds the actual CI checkout; browser and installed-bundle qualification remain false."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/matrix.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current six-language matrix at CI 35818046307: same node/CLI/fixture bytes, 54 distinct activations, six operation receipts, 24 physically closed held requests and six clean shutdowns. The retained integration summary binds the CI checkout and equivalent selected source tree; no human review is inferred."
         }
       ],
       "review": {
@@ -692,7 +790,21 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/java.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current java native client passed all 18 assertions in CI 35818046307, with nine distinct activations, one retained operation receipt, four physically closed held requests and clean shutdown. Artifact origin binds the actual CI checkout; browser and installed-bundle qualification remain false."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/matrix.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current six-language matrix at CI 35818046307: same node/CLI/fixture bytes, 54 distinct activations, six operation receipts, 24 physically closed held requests and six clean shutdowns. The retained integration summary binds the CI checkout and equivalent selected source tree; no human review is inferred."
         }
       ],
       "review": {
@@ -756,7 +868,21 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "All six native clients passed CI 35509915448; 18 registered variants match executed source and validation bytes. Newcomer review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/dotnet.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current dotnet native client passed all 18 assertions in CI 35818046307, with nine distinct activations, one retained operation receipt, four physically closed held requests and clean shutdown. Artifact origin binds the actual CI checkout; browser and installed-bundle qualification remain false."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/sdk/matrix.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current six-language matrix at CI 35818046307: same node/CLI/fixture bytes, 54 distinct activations, six operation receipts, 24 physically closed held requests and six clean shutdowns. The retained integration summary binds the CI checkout and equivalent selected source tree; no human review is inferred."
         }
       ],
       "review": {
@@ -992,6 +1118,13 @@
           "status": "executed",
           "sourceCommit": "55ba1c301518c670820d482bcc991780167e903c",
           "scope": "Actual HTTP/blob provider workflow: 31 CLI commands, nine activations, four authorized upstream requests, grant revocation, selected revision after restart and two clean reaped nodes. CLI/node byte identities are retained separately."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/lanes/provider.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current bounded provider lane passed all 19 selected S3/Vault/NATS cases in CI 35818046307. Its exact selection and owned-service diagnostics bound the claim; it is not a hosted-vendor campaign or human walkthrough."
         }
       ],
       "review": {
@@ -1072,6 +1205,13 @@
           "status": "executed",
           "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
           "scope": "Actual S3/Vault/NATS TLS guests: 19 passing selected cases and explicit owned-service cleanup. CI merge tree equals reviewed 55ba1c30; the separate failed Angular T1 step is retained as a limitation, not reclassified."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/lanes/provider.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current bounded provider lane passed all 19 selected S3/Vault/NATS cases in CI 35818046307. Its exact selection and owned-service diagnostics bound the claim; it is not a hosted-vendor campaign or human walkthrough."
         }
       ],
       "review": {
@@ -1151,6 +1291,13 @@
           "status": "executed",
           "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
           "scope": "Actual S3/Vault/NATS TLS guests: 19 passing selected cases and explicit owned-service cleanup. CI merge tree equals reviewed 55ba1c30; the separate failed Angular T1 step is retained as a limitation, not reclassified."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/lanes/provider.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current bounded provider lane passed all 19 selected S3/Vault/NATS cases in CI 35818046307. Its exact selection and owned-service diagnostics bound the claim; it is not a hosted-vendor campaign or human walkthrough."
         }
       ],
       "review": {
@@ -1376,6 +1523,20 @@
           "status": "executed",
           "sourceCommit": "5f192095e761c5899626bc83eec77d128eba55f7",
           "scope": "Actual protected external-capsule configuration, negative checks, cold/warm/restarted native execution and clean shutdown; security-monitor activation remains with #282."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/security-profile-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current enforced external-capsule profile, protected configuration, refusal cases, cold/warm/restarted native execution and clean shutdown in CI 35818046307."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/security-pr.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current PR security selection: 27 entries in 13 groups and 57 bounded commands, clean source and removed temporary outputs. The receipt retains its exclusions; broader historical manual checks and human review remain separate."
         }
       ],
       "review": {
@@ -1457,13 +1618,27 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
-          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
+          "scope": "Earlier complete guide-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         },
         {
           "path": "tools/run_static_site_workflow.py",
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Maintained signed Angular CSR/static-generator OCI and real-browser workflow. Its retained runtime receipts are linked from the static-site guide; the website does not execute this source or provide human review."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/angular-t1-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current real Angular build, external-capsule-v1 admission and isolated AOT, staged web rollout, deployment-CAS rollback, retained native cache after restart and clean shutdown. The recorded profile is T1; reproducibility is not checked. This does not replace the separately scoped browser proof."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/static-site-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current signed CSR/static-generator versions at exact OCI digests: real Chromium navigation, deep reload, lazy scripts, mounted redirects/404s, cutover/rollback and revoked/foreign authority checks. Before/dormant/after states have zero activation reservations and no granted cell leases. No SSR claim is inferred from static delivery."
         }
       ],
       "review": {
@@ -1550,13 +1725,27 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
-          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
+          "scope": "Earlier complete guide-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         },
         {
           "path": "tools/run_static_site_workflow.py",
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Maintained signed Angular CSR/static-generator OCI and real-browser workflow. Its retained runtime receipts are linked from the static-site guide; the website does not execute this source or provide human review."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/angular-t1-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current real Angular build, external-capsule-v1 admission and isolated AOT, staged web rollout, deployment-CAS rollback, retained native cache after restart and clean shutdown. The recorded profile is T1; reproducibility is not checked. This does not replace the separately scoped browser proof."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/static-site-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current signed CSR/static-generator versions at exact OCI digests: real Chromium navigation, deep reload, lazy scripts, mounted redirects/404s, cutover/rollback and revoked/foreign authority checks. Before/dormant/after states have zero activation reservations and no granted cell leases. No SSR claim is inferred from static delivery."
         }
       ],
       "review": {
@@ -1638,13 +1827,27 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
-          "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
+          "scope": "Earlier complete guide-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
         },
         {
           "path": "tools/run_static_site_workflow.py",
           "kind": "test-source",
           "status": "available-not-run",
           "scope": "Maintained signed Angular CSR/static-generator OCI and real-browser workflow. Its retained runtime receipts are linked from the static-site guide; the website does not execute this source or provide human review."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/angular-t1-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current real Angular build, external-capsule-v1 admission and isolated AOT, staged web rollout, deployment-CAS rollback, retained native cache after restart and clean shutdown. The recorded profile is T1; reproducibility is not checked. This does not replace the separately scoped browser proof."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/static-site-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current signed CSR/static-generator versions at exact OCI digests: real Chromium navigation, deep reload, lazy scripts, mounted redirects/404s, cutover/rollback and revoked/foreign authority checks. Before/dormant/after states have zero activation reservations and no granted cell leases. No SSR claim is inferred from static delivery."
         }
       ],
       "review": {
@@ -1834,6 +2037,13 @@
           "status": "executed",
           "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
           "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
+        },
+        {
+          "path": "docs/evidence/phase3-integration-35818046307/operator/resource-receipt.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "58965f399a116eb713dd4a5fc966f682167204f7",
+          "scope": "Current bounded phase2-dormant-32-r3 regression in CI 35818046307: 32 releases, 16 deployments and 32 invocations. This is separate from the immutable Phase 3 resource campaigns and is not a 100k or throughput measurement."
         }
       ],
       "review": {

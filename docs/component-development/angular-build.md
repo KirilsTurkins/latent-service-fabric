@@ -1,185 +1,122 @@
-# Observed Angular application builds
+# Build your first Angular application
 
-The maintained builder compiles actual Angular 22.1.6 server and browser code,
-embeds the server in the qualified JavaScript component, composes the fixed
-public async adapter, and assembles a componentless `ssr-package`. It implements
-[#234](https://github.com/KirilsTurkins/latent-service-fabric/issues/234) for the
-[closed renderer profile](../runtime/angular-renderer-profile.md). This is a
-trusted developer-plane build operation with finite process ownership; it does
-not start a node, publish a package, sign evidence or authorize execution.
+Build a small website with a greeting and a counter button. Angular produces
+the page on the server, then makes the counter interactive in the browser.
+LSF packages the server program and browser files together so you can deploy
+them as one application.
 
-## Build an application
+This tutorial builds the application. Continue with
+[running and updating the application](../learn/build-and-deliver-angular.mdx)
+to publish it to a node and open it in a browser.
 
-Provision Python 3.13, the repository's exact Rust and wasm-tools versions, the
-`wasm32-unknown-unknown` target, and Node 24.19.0. The approved tooling root must
-have the exact [qualification package and lock](../../examples/renderer-profile/package.json).
-Install those tools explicitly; application dependency installation and npm
-lifecycle hooks are not part of the recipe:
+## 1. Prepare your tools
 
-```sh
+Use the source checkout from [Run your first node](../start/first-node.md).
+You also need Node 24.19.0 and npm 11.19.1. These examples use Angular 22.1.6;
+the repository's dependency lock selects the matching Angular compiler.
+
+Run these commands from the repository root in your Linux terminal:
+
+```bash
+set -euo pipefail
+umask 077
+export CARGO_TARGET_DIR="$PWD/target"
 npm --prefix examples/renderer-profile ci --ignore-scripts --no-audit --no-fund
+cargo fetch --locked
 cargo build --locked -p latent
-python3 tools/build_angular_package.py \
-  --input-root examples/angular-application \
-  --toolchain-root examples/renderer-profile \
-  --cli "$PWD/target/debug/latent" \
-  --target-root "$PWD/target/angular-build" \
-  --output "$PWD/target/angular-build/hello" \
-  --cargo-target-dir "$PWD/target" \
-  --repository https://example.com/source
 ```
 
-Cargo dependencies must already be available in the approved cache; the adapter
-build uses `--locked --offline`. The example repository URL is an asserted public
-source label, not a claim that source was fetched from that address. The source
-revision is the exact selected-input inventory digest. The caller must select a
-fresh output directory under the explicit scratch root, separate from application
-source. Nothing overwrites an existing package.
+The npm command installs the build tools. `cargo fetch` downloads the Rust
+dependencies needed by the application builder. This can take a few minutes
+the first time.
 
-The result contains `inputs/`, the immutable OCI-layout `package/`,
-`observation.json` and `build-summary.json`. The summary reports exact package,
-SBOM and ordered web-output identities, `trustEvaluated: false` and
-`executionAuthorized: false`. Build children have exited and their owned scratch
-has been reclaimed before the result directory becomes visible. Failed builds
-remove their owned scratch and staged results.
+## 2. Make your own copy of the example
 
-## Supported source and output contract
+```bash
+APP="$PWD/target/my-angular-app"
+test ! -e "$APP"
+cp -R examples/angular-application "$APP"
+```
 
-[`angular-build.json`](../../examples/angular-application/angular-build.json)
-conforms to the [closed build schema](../../schemas/angular-build.schema.json).
-It selects explicit TypeScript, HTML and CSS under `server/`, `client/` and
-`shared/`, two TypeScript entries, explicit public assets and exact routes. It
-cannot select application commands, compiler plugins, arbitrary dependencies or
-tsconfig/Babel/environment substitution. Unlisted files, including `.env` and
-application `package.json`, are not captured. Do not put secrets in selected
-sources or assets.
+Open the new folder in your editor. The files you will work with are:
 
-The fixed compiler recipe permits the declared Angular and RxJS imports and
-captured relative modules. It rejects dynamic imports, native modules, ambient
-process/worker/interval APIs, triple-slash reference directives and uncaptured
-template/style references. Client and shared code cannot import server code or
-read server templates/styles. The bundler also checks the final module graph;
-templates are checked earlier because Angular inlines them before bundling.
-These checks define a conservative authoring profile, not a JavaScript security
-sandbox. Final component validation and the runtime resource boundary remain
-mandatory.
-
-External resource metadata requires explicit string-literal `templateUrl` and
-`styleUrl` properties, or a literal `styleUrls` array of string literals. Shorthand
-resource properties, accessors and methods are rejected before compilation, even
-when their identifiers refer to captured files. Computed property names are
-unsupported by this conservative scanner. Resource paths must be relative and
-resolve to declared files in the permitted source area; absolute paths, Windows
-path spellings and URLs are not accepted. Escaped property names do not bypass
-these checks.
-
-The generated browser entry has the content-addressed path
-`/client/<full SHA-256>/main.js`. The supplied server's
-`__LSF_CLIENT_ASSET__` marker is replaced with this path before the HTML leaves
-the fixed wrapper. Public assets contain the browser graph and explicitly named
-`public/` inputs. Server code is retained only in the private renderer; source
-and bundle inventories are private package metadata. Source maps are disabled.
-The web deployment/serving integration must bind documents and asset requests to
-their selected publication; this build-time content hash alone is not deployment
-authorization or a revocation policy.
-
-Routes may select server rendering, client documents or explicitly supplied
-prerender HTML. Supplied prerenders are validated and inventoried as inputs;
-the builder does not claim to have rendered them. `render()` must return the
-closed status/header/HTML shape. Every render has fresh module and activation
-state under the [generic-cell runtime](../runtime/angular-renderer-runtime.md).
-
-| Resource | Builder profile |
+| File | What it does |
 | --- | --- |
-| Build duration / individual tool | 1,800 seconds aggregate / at most 300 seconds |
-| Tool stdout plus stderr | At most 4 MiB per invocation |
-| Source files / individual source / source total | 256 / 1 MiB / 16 MiB |
-| Supplied public assets / generated browser entries | 126 / one |
-| Individual asset / asset tree | 8 MiB / 16 MiB |
-| Portable path / path segment | 220 / 64 ASCII characters |
-| Routes / web manifest | 128 / 64 KiB |
-| Renderer component | 32 MiB |
-| Returned or supplied HTML | 128 KiB |
-| Returned or supplied JSON / transfer-state data | 32 KiB aggregate; at most 64 script tags |
-| Installed npm tree observation | 40,000 entries / 1 GiB file bytes / 8 MiB inventory |
-| SBOM inventory | 1,024 entries / 1 MiB |
+| `shared/app.ts` | Defines the greeting, counter and button |
+| `server/main.ts` | Produces the initial HTML page |
+| `client/main.ts` | Makes the existing page interactive in the browser |
+| `angular-build.json` | Lists the source files, entry points and routes to include |
+| `public/offline.html` | A ready-made HTML page served at `/offline` |
 
-Hydration accounting includes every script whose `type`, after trimming ASCII
-whitespace and ignoring case, is `application/json`, and every script whose
-case-sensitive `id` ends with `-state`. State-ID scripts are counted regardless
-of a missing or different MIME type, matching Angular's ID-based state lookup.
-The aggregate ceiling counts UTF-8 payload bytes, including JSON whitespace;
-each recognized payload must also parse as JSON. Runtime output and supplied
-HTML reject ambiguous duplicate attributes, character references in script
-attributes, malformed attributes, incomplete scripts and excess script counts.
-A rejected render does not retain its counters for the next invocation.
+For example, these lines in `shared/app.ts` display the counter and increase it
+when the reader clicks the button:
 
-The installed tool tree, executable identities, recipe and lock identities are
-observed before work and checked again after work. Node children receive a
-private home and a small environment without signing keys, bearer tokens, npm
-configuration or arbitrary Node options. Tool execution reuses the existing
-Python process owner on Linux and Windows, including timeout/cancellation
-cleanup. Deliberate session escape, supervisor termination and hostile-source
-OS isolation remain outside that trusted-build helper's guarantees.
+```typescript
+template: '<h1 id="greeting">Hello {{name}}</h1><button id="count" (click)="increment()">Count {{count()}}</button>'
+```
 
-## Evidence and reproducibility
+```typescript
+count = signal(0);
+increment() { this.count.update(value => value + 1); }
+```
 
-The existing web predicate now supports the separately approved build type
-`https://latent.dev/build/angular-component/v1`. The old supplied-file assembly
-recipe keeps its original wire representation. Approval for that assembly recipe
-does not authorize the Angular recipe. The Angular observation binds the exact
-final component and profile digest, JS embedding, compiled async adapter,
-adapter source, public/private WIT, actual server/client bundles, npm lock and
-installed tree, Cargo lock, tool executables, source inventory and recipe.
+`signal(0)` starts the counter at zero. Updating the signal lets Angular update
+the displayed number. These are Angular TypeScript files. If you are building
+a client in Rust, Go, C, Java or C#, follow the
+[client SDK guide](../learn/use-a-client.mdx) instead.
 
-The package-bound SBOM uses actual output bytes, installed npm manifests checked
-against the lock, and the adapter's actual Cargo JSON units with existing
-bounded manifest/lock attribution. Duplicate installation aliases collapse only
-when their attribution is identical. Registry archive digests remain declared
-archive identities; observing a cached manifest does not prove that archive's
-contents. The embedded JS engine, transitive runtime closure and native tool
-dependencies are not claimed complete. `dependencyCompleteness` remains
-`declared-inputs-incomplete`, and `hermetic` remains false.
+## 3. Change the greeting
 
-Ordinary builds report `reproducibility: not-checked`. Add
-`--verify-reproducible` to run two complete builds from the same captured input
-bytes and require exact final package equality. A mismatch fails with
-`Angular byte reproducibility failed; no package was published`, removes both
-staged results and emits no successful observation. ComponentizeJS's initializer
-and fresh build-path behavior have not established byte reproducibility for this
-profile. Package assembly is deterministic for identical supplied output bytes;
-that does not make compilation reproducible. No compiled bytes, timestamps,
-receipts or evidence are rewritten to make a comparison pass.
-Two actual builds of the maintained example failed this byte-equality check
-during #234 validation; both staged results were reclaimed. A policy requiring
-reproducibility rejects the ordinary `not-checked` observation.
+In your copy of `shared/app.ts`, change `Hello {{name}}` to
+`Welcome {{name}}`. Leave the other files as they are for this first build.
 
-An unsigned observation grants nothing. A separately approved builder signs it
-after tool cleanup, and publisher, builder, SBOM and tenant verification must
-all succeed against the actual package. The [enforced T1 workflow](../testing/angular-t1-workflow.md) binds the sealed
-web-publication execution projection and verifies admission, isolated native
-preparation and restart. Continue with the [complete application guide](../learn/build-and-deliver-angular.mdx)
-for scoped backend calls, actual browser navigation and controlled updates;
-its complete execution receipt remains a separate acceptance boundary.
+The app uses the request's caller name for `name`. The server puts that value
+into the initial page, and the browser picks up the same value when it starts.
 
-## Required conformance
+## 4. Build the application
 
-Renderer-related PRs build the actual example through this adapter. Existing
-workspace harnesses then verify structural/package limits, real publisher and
-builder signatures, SBOM policy, tampering, wrong-tenant rejection and admission
-restart. A generic-cell test renders Alice/Bob with fresh state, rejects excessive
-hydration data and proves recovery. Headless Chrome loads that exact client and
-the actual generic-cell HTML, proves the original DOM is reused, checks escaped
-text and clicks the signal-backed counter. Test harnesses are selected from the
-current Cargo build inventory; these gates do not rebuild the Rust workspace.
+```bash
+python3 tools/build_angular_package.py \
+  --input-root "$APP" \
+  --toolchain-root "$PWD/examples/renderer-profile" \
+  --cli "$PWD/target/debug/latent" \
+  --target-root "$PWD/target/angular-build" \
+  --output "$PWD/target/angular-build/welcome" \
+  --cargo-target-dir "$CARGO_TARGET_DIR" \
+  --repository https://github.com/KirilsTurkins/latent-service-fabric
+```
 
-The source-separation gate also runs the production adapter's configure path on
-marker-bearing server HTML/CSS referenced through shorthand metadata from both
-shared and client code, and on existing resources outside the capture. It requires
-rejection before Angular compilation or package output. A shared acceptance
-corpus checks runtime and supplied hydration data, including padded MIME types,
-state IDs with other or missing types, aggregate/UTF-8 limits and recovery.
+The command compiles the server and browser code and writes the finished
+package to `target/angular-build/welcome/package`. It also creates an
+`inputs` folder containing the compiled files. You can inspect the build summary
+if a build fails, but you do not need to copy identifiers from it.
 
-These are finite conformance fixtures, not throughput or memory benchmarks.
-Generated packages and HTML remain temporary CI/local output. No large binary
-or benchmark report is committed.
+The output path must be new. For another build, choose a name such as
+`target/angular-build/welcome-second`. Editing the source does not change a
+package you already built.
+
+## 5. Run it and try the button
+
+Continue with [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx).
+That guide covers the node, publication and browser steps. Building the files
+alone does not start a web server.
+
+When the app is running, the initial page contains the greeting and
+`Count 0`. Clicking the button changes the text to `Count 1`, then `Count 2`.
+The browser keeps the server's initial page and attaches the button behavior
+to it; this is called **hydration**.
+
+## If you get stuck
+
+| What you see | What to do |
+| --- | --- |
+| Node or npm version error | Use the versions listed in step 1 and rerun the dependency installation |
+| Missing offline Cargo dependency | Run `cargo fetch --locked` from the repository root, then build again |
+| Output directory already exists | Choose a fresh output name; keep the previous build if you still need it |
+| A new source file is not included | Add it to `sources` in your copy of `angular-build.json` |
+| An unsupported import or dependency is rejected | Start with the example's dependencies; the current builder accepts the documented Angular profile |
+
+The current builder supports the selected server, client and shared files in
+this example. Converting a larger Angular CLI application may require changes
+to its dependencies and entry points. Keep server credentials out of browser
+and shared source files.

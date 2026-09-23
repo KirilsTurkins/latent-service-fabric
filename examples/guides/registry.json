@@ -10,6 +10,9 @@
     "examples/guides/ui-browser/example.json",
     "examples/guides/angular-dependency/example.json",
     "examples/guides/angular-hydration/example.json",
-    "examples/guides/angular-navigation/example.json"
+    "examples/guides/angular-navigation/example.json",
+    "examples/guides/tutorial-greeting/example.json",
+    "examples/guides/tutorial-word-count/example.json",
+    "examples/guides/tutorial-shipping/example.json"
   ]
 }

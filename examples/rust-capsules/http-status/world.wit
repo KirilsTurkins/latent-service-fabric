@@ -1,0 +1,11 @@
+package examples:http-status@1.0.0;
+
+interface api {
+    use latent:http/client@0.2.0.{http-error};
+    check: async func(url: string) -> result<u16, http-error>;
+}
+
+world service {
+    import latent:http/client@0.2.0;
+    export api;
+}
