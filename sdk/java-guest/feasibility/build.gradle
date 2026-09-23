@@ -30,9 +30,9 @@ configurations.configureEach {
 dependencies { implementation teavm.libs.interop }
 teavm {
     c {
-        mainClass = 'dev.latent.guest.Probe'
+        mainClass = 'dev.latent.guest.NativeEntrypoints'
         // Native callers are outside TeaVM's Java reachability analysis.
-        preservedClasses = ['dev.latent.guest.Probe']
+        preservedClasses = ['dev.latent.guest.Probe', 'dev.latent.guest.NativeEntrypoints']
         outputDir = layout.buildDirectory.dir('teavm-c').get().asFile
         minHeapSize = 1
         maxHeapSize = 4
