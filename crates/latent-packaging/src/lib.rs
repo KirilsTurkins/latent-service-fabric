@@ -30,12 +30,11 @@ pub use sbom::{
     CYCLONEDX_SPEC_VERSION, SBOM_PATH,
 };
 pub use semantics::{
-    derive_capsule_contracts, CapsuleContractInputs,
     check_invocation_target, compare_packages, compile_host_binding, compile_local_binding,
-    inspect_web_bundle, validate_capsule, validate_web_renderer,
-    validate_web_renderer_with_backend, BreakingChangeAllowance, CheckedBinding,
-    CheckedInvocationTarget, CheckedSurface, ComparedPackageIdentity, PackageComparisonLimits,
-    PackageCompatibilityReport, SemanticLimits, SurfaceCounts,
+    derive_capsule_contracts, inspect_web_bundle, validate_capsule, validate_web_renderer,
+    validate_web_renderer_with_backend, BreakingChangeAllowance, CapsuleContractInputs,
+    CheckedBinding, CheckedInvocationTarget, CheckedSurface, ComparedPackageIdentity,
+    PackageComparisonLimits, PackageCompatibilityReport, SemanticLimits, SurfaceCounts,
 };
 
 use latent_core::{PlatformError, PlatformErrorCode};
