@@ -44,6 +44,19 @@ produced. This is explicit negative authoring evidence, not runtime admission.
 
 ## Retained attempts and compiler boundary fixes
 
+The shared Go cross-language gate on the TypeScript branch,
+[run 35930223804](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35930223804),
+passed all ten SDK tests in 153.94 seconds and progressed past initial deployment
+compilation. Its dormant expansion failed at control 034 with
+`signature-stale-proof`; artifact `10780923203` retains the known failed outcome
+and audit without retry. The isolated demo policy had allowed proofs for only
+60 seconds although its signatures and documented experiment last 30 minutes.
+Both demo proof ceilings now use the same finite 1,800-second signature window.
+Real publisher/builder cryptographic regressions accept 61, 900 and 1,799 seconds,
+reject currentness and signature verification at 1,800, and retain independent
+role ceilings. Production proof limits, revocation and finite control leases
+are unchanged. This correction still requires successful full-node execution.
+
 [Security run 35930223945](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35930223945)
 caught a stale dependency-inventory digest after the obsolete synthetic runtime
 export was removed from the SDK manifest. The manifest still declares no
