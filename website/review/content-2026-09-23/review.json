@@ -645,8 +645,10 @@
       "source": "docs/component-development/sbom.md",
       "words": 1433,
       "sha256": "3b78086e59b452e6d2841015e3f5eb1df26cc203a391f5f93ebe9d4be4f75110",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read full SBOM generation, association, policy and bounded CycloneDX profile; checked the SPDX dependency pin in source. Classified as Reference."
+      ]
     },
     {
       "source": "docs/component-development/static-sites.md",
@@ -717,10 +719,12 @@
     },
     {
       "source": "docs/development/core-guide-validation.md",
-      "words": 1708,
-      "sha256": "4921467e9f08d6b8d475a4aa2c104d8d2d6c1467943daf2de1defe61278e52e4",
-      "status": "pending",
-      "findings": []
+      "words": 1759,
+      "sha256": "1bfb0cd63c4e84a9a835b992f92f47049c81121e0c898ddcd5cb53a9eb0d439a",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read full historical validation handoff; corrected current contributor route and automated companion command, marked old guide bytes historical and kept native rehearsal separate."
+      ]
     },
     {
       "source": "docs/development/deterministic-tests.md",
@@ -765,6 +769,15 @@
       "sha256": "8489b910f22dc1360d09716fe5b2bd44b55dc1ce8b8ba08634fb8a822ca43d77",
       "status": "pending",
       "findings": []
+    },
+    {
+      "source": "docs/development/manual-guide-checks.md",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "New bounded local command observations with retained binary hashes and explicit absence of a fresh source-to-binary qualification or human acceptance."
+      ],
+      "words": 353,
+      "sha256": "a396f594c8da81f7abbdc99463238d4a7f95c23358e3df42650b50a38b030bfb"
     },
     {
       "source": "docs/development/native-release-gate.md",
@@ -964,24 +977,30 @@
     },
     {
       "source": "docs/how-to/operate-and-contribute.md",
-      "words": 919,
-      "sha256": "d4653835ec93ecf90a42492aab2520305b6223b83caa0be9abd6c31948d930d2",
-      "status": "pending",
-      "findings": []
+      "words": 771,
+      "sha256": "338d8497d6c00442963bb8500cc35bd166dffda572b194fe6c736ae0966f414e",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Replaced mixed contribution/evidence material with manual node readiness, route, retained status, cancellation and shutdown steps. Executed all applicable blocks on Linux; optional audit requires a configured node."
+      ]
     },
     {
       "source": "docs/how-to/operate-capability-providers.md",
       "words": 1259,
       "sha256": "62267de47fb1b00fdb21c2a39ef88cd2986c940e433135e9be3b654d4851fe6c",
-      "status": "pending",
-      "findings": []
+      "status": "read-needs-update",
+      "findings": [
+        "Full page read: diagnosis tables are useful, but test-harness reproduction and evidence instructions should move to contributor material."
+      ]
     },
     {
       "source": "docs/how-to/reconcile-a-policy-change.md",
-      "words": 1143,
-      "sha256": "684482b42192cb916d395b8503bafcc7cf2f29e6db2caaab580d7211959cdd80",
-      "status": "pending",
-      "findings": []
+      "words": 750,
+      "sha256": "2707815b639714d8b483ae71da502f2db8e790ad7a5a47dd2cbd8454f9acc1f5",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Replaced source-pinned harness instructions with manual create/read/recover/revoke/restart steps on the first-node tutorial. Actual local node execution passed."
+      ]
     },
     {
       "source": "docs/immutable-browser-assets.md",
@@ -1080,8 +1099,10 @@
       "source": "docs/operations/topology.md",
       "words": 703,
       "sha256": "00728dd72e98aff6f431b1f908892649a5203e389f254359d65e5d337ad20141",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Read full single-node topology, ownership, capacity and monitoring guidance; implemented and planned boundaries are explicit."
+      ]
     },
     {
       "source": "docs/phase-0-baselines.md",
@@ -1127,24 +1148,30 @@
     },
     {
       "source": "docs/phase-2-audit.md",
-      "words": 1939,
-      "sha256": "bf9f5768d8b4ff463b48a096f7a008dd613a550d832194c7a9b6c05b39893414",
-      "status": "pending",
-      "findings": []
+      "words": 1960,
+      "sha256": "c2b8bafedec4ad9e74b0bdb3fc7b5d1b790f6be60da241150b5a57abd2d38c1c",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Full durable audit contract read. Corrected managed deployment receipt reconciliation and removed roadmap/gate language from operator prose; moved to Reference."
+      ]
     },
     {
       "source": "docs/phase-2-canary-observation.md",
       "words": 1433,
       "sha256": "9979d2ca2552be6ba986f77592d6ae2b361b28fee744563e147358fef32cd410",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Full attribution, membership, loss, quotas and seal contract read; belongs in Reference rather than step-by-step How-to."
+      ]
     },
     {
       "source": "docs/phase-2-canary-promotion.md",
       "words": 822,
       "sha256": "eb04f6708864062f1e7dbcd3c16f94bdb549c3d1d868897a879b008477efe0b3",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Full policy, integer threshold, promotion, retained ownership and restart contract read; belongs in Reference."
+      ]
     },
     {
       "source": "docs/phase-2-completion.md",
@@ -1164,24 +1191,30 @@
     },
     {
       "source": "docs/phase-2-operator-workflows.md",
-      "words": 1355,
-      "sha256": "c436c5bb60ce7536c5cc319af7c720b9ec73c6c06c8f071e2d12b74434b282f9",
-      "status": "pending",
-      "findings": []
+      "words": 1384,
+      "sha256": "c7de81d2d2a33c2e48c0ae821b003769aee88a4ade32123ba7371cc141b00760",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Full package, transfer, managed receipt and SDK contract read. Verified CLI schema is static-only; Bearer/DNS/redirect implementation is a separate Rust API. Moved technical page to Reference."
+      ]
     },
     {
       "source": "docs/phase-2-rollback.md",
-      "words": 741,
-      "sha256": "81198940ee9be260a9c180ad388124ecb71d55bfecaed88277b152f3f058a30a",
-      "status": "pending",
-      "findings": []
+      "words": 734,
+      "sha256": "fce7e18d2b069dbfc13e7fcce7ec99e24cdff117579eeca40fcd06ca925a9174",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Full rollback contract read; removed legacy-readability promise while retaining the actual missing-target rejection. Moved to Reference."
+      ]
     },
     {
       "source": "docs/phase-2-rollouts.md",
-      "words": 1323,
-      "sha256": "f857eb7c8c5ca38816eea15ff8b4285c455a1f4723fb8d8b529e5f46bfb9be4a",
-      "status": "pending",
-      "findings": []
+      "words": 1320,
+      "sha256": "89fe6ae423287105d03a6befd537ef9f6ac68e62dcf35637ae260cc73fd63476",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Full rollout state, CAS, receipt, admission and ownership contract read; corrected removed format 1-4 recovery claim. Moved to Reference."
+      ]
     },
     {
       "source": "docs/phase-3-gate-review.md",
@@ -1644,8 +1677,8 @@
     },
     {
       "source": "docs/start/first-node.md",
-      "words": 1170,
-      "sha256": "336a76ba0379b270e71ee2b528d80b6604541dc0634b5282f5c58917e3bf9bba",
+      "words": 1174,
+      "sha256": "0ebef955c361c99fb6277044b335b45460d257380d1f101ec8b49173edd75c7d",
       "status": "updated-source-reviewed",
       "findings": [
         "Reviewed complete steps and updated the next guide title. Retained local Linux node run exercised setup, restart, calls and cleanup; it is not a fresh PR binary build."
@@ -1903,6 +1936,77 @@
       "status": "updated-source-reviewed"
     },
     {
+      "source": "sdk/c-guest/README.md",
+      "status": "reviewed-current",
+      "findings": [
+        "Read full current C ownership fixture scope; it does not claim the ergonomic C authoring work under PR 558 is merged."
+      ],
+      "words": 199,
+      "sha256": "d9a156c32f6a74bd572d08898c08b8c4e187ba9be8e3748ce9084d68cee848e3"
+    },
+    {
+      "source": "sdk/c/README.md",
+      "status": "pending",
+      "findings": [],
+      "words": 1191,
+      "sha256": "f02b52834e478deb41cb1ed1ec3841eeec4c8703d485fd019249a0fae5f0ad86"
+    },
+    {
+      "source": "sdk/dotnet/README.md",
+      "status": "pending",
+      "findings": [],
+      "words": 815,
+      "sha256": "feca7623b78b6385de5c954392249a501015937c224aa8586ab1c45ef7846b76"
+    },
+    {
+      "source": "sdk/go/README.md",
+      "status": "pending",
+      "findings": [],
+      "words": 1787,
+      "sha256": "9c3f520fd67f42c0e242d8cf968f8ea6b096c6eb05d9ccb52ab0c6abdc6b8d44"
+    },
+    {
+      "source": "sdk/java-client/README.md",
+      "status": "pending",
+      "findings": [],
+      "words": 2285,
+      "sha256": "cd7e1a080fe2b1556e73b829f3773468f20f7cee5aafeeb8288bf22b616cf9d0"
+    },
+    {
+      "source": "sdk/profile/README.md",
+      "status": "pending",
+      "findings": [],
+      "words": 2640,
+      "sha256": "b2a4e9f52961105fb9c5a76bad989e8082044aea477f73f1b0bc75b31dae3adc"
+    },
+    {
+      "source": "sdk/rust-guest/README.md",
+      "status": "reviewed-current",
+      "findings": [
+        "Read full current Rust wrapper overview, pinned toolchain, owned blobs and cancellation semantics. Standalone authoring changes remain on PR 554."
+      ],
+      "words": 212,
+      "sha256": "30b40c0fa3223bc5edb89f62d2a5d4511ecd5b996e84f641edef94c47a1dc8d5"
+    },
+    {
+      "source": "sdk/rust/README.md",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read full native client workflow and lifetime guidance; corrected current provider availability and WIT value reference."
+      ],
+      "words": 718,
+      "sha256": "585e54b63da4d92b2416179eee831fc673887b22dd4a67e58ee9b49cd9f0eb80"
+    },
+    {
+      "source": "sdk/typescript-client/README.md",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read full package/browser boundary, examples and qualification; made Node pin exact and linked the delivered Angular qualification."
+      ],
+      "words": 774,
+      "sha256": "f5389369905e5f39b1e5685a78a05858867595838cfba738f6e1a47990b0dd3c"
+    },
+    {
       "source": "website/docusaurus.config.ts",
       "status": "updated-source-reviewed",
       "findings": [
@@ -1910,6 +2014,15 @@
       ],
       "words": 517,
       "sha256": "397f597569ec44b6123804582f2890b9e7d82e68eb459f5421c775599743e255"
+    },
+    {
+      "source": "website/lib/navigation.mjs",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read complete section classifier; separated practical tasks, normative references and maintainer procedures and put local operations first."
+      ],
+      "words": 272,
+      "sha256": "719faadffef1bf8f6a2ee1ecc69e3369a961921294bf9374486d03c0e3632d5d"
     },
     {
       "source": "website/src/pages/index.tsx",

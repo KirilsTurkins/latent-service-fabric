@@ -56,7 +56,10 @@ latent package pull --registry-profile registry.json --reference candidate --out
 
 The closed [registry profile](../schemas/cli-registry-profile.schema.json)
 contains an origin, repository, bounded numeric socket addresses, optional
-credential-file reference and optional DER CA-file references. Those relative
+credential-file reference and optional DER CA-file references. This CLI shape
+selects the static transport. Challenge-based Bearer, DNS and redirect configuration
+is available through the [Rust network API](reference/oci-network-profile.md);
+those fields are not accepted in this CLI profile. Those relative
 files are read below the profile's parent using the same regular-file,
 no-follow boundary. Credentials are separate from node management tokens and
 use the closed [credential file schema](../schemas/cli-registry-credentials.schema.json).

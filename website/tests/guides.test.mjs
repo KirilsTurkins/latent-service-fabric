@@ -8,13 +8,17 @@ test('current learning and operator guides appear in their task sidebars', () =>
     howTo: [
       'how-to/exercise-provider-failure-and-recovery',
       'how-to/reconcile-a-policy-change',
+    ],
+    contribute: [
       'operations/maintained-security-monitoring',
       'operations/native-release-promotion',
     ],
+    reference: ['phase-2-rollouts', 'phase-2-audit', 'component-development/packaging'],
   };
+  const flatten = entries => entries.flatMap(entry => entry.type === 'category' ? flatten(entry.items) : [entry]);
   for (const [group, identifiers] of Object.entries(expected)) {
     for (const identifier of identifiers) {
-      assert.ok(sidebars[group].some(entry => entry.type === 'doc' && entry.id === identifier), `${identifier} belongs in ${group}`);
+      assert.ok(flatten(sidebars[group]).some(entry => entry.type === 'doc' && entry.id === identifier), `${identifier} belongs in ${group}`);
       assert.ok(!sidebars.understand.some(entry => entry.type === 'doc' && entry.id === identifier), `${identifier} is a task guide`);
     }
   }

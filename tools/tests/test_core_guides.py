@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GUIDES = {
     'evaluate-boundary': ['docs/start/index.md'],
     'install-auth-readiness': ['docs/start/first-node.md', 'docs/installation.md'],
-    'contributor-checks': ['docs/how-to/operate-and-contribute.md'],
+    'contributor-checks': ['docs/contribute/index.md'],
     'author-capsule': ['docs/learn/author-your-first-capsule.md'],
     'package-sign-publish': ['docs/learn/author-your-first-capsule.md', 'docs/learn/deliver-and-recover-a-capsule.md'],
     'rollout-uncertain-recovery': ['docs/learn/deliver-and-recover-a-capsule.md', 'docs/how-to/operate-and-contribute.md'],
