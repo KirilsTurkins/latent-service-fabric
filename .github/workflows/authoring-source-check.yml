@@ -19,38 +19,35 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: 3.13.5
+      - name: Install pinned Python validators
+        run: python3 -m pip install --requirement tools/requirements.lock
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
           components: rustfmt
           targets: wasm32-unknown-unknown
-      - name: Apply exact authoring integration patch on the dedicated feature branch
+      - name: Qualify the existing locked base64 dependency
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import base64, gzip, hashlib, json, os, subprocess, urllib.request
+          import base64, os, subprocess
           from pathlib import Path
-          if Path('tools/run_rust_authoring.py').exists():
-              raise SystemExit(0)
-          chunks = ['8861959d2296a9679b0c97a1fe10a263ef3b52b1', '4d25bb55778e46a2c34c8709d053a7fd7d6a964b', 'ea38f6154e88d9dc840aa1aef1124d615b685d4d', '4df8351d285ce4d1e32c1c1591767a3767d23b50']
-          data = b''
-          for sha in chunks:
-              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs/' + sha, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
-              with urllib.request.urlopen(request, timeout=30) as response:
-                  blob = json.loads(response.read(65536))
-              part = base64.b64decode(blob['content'])
-              assert hashlib.sha1(b'blob ' + str(len(part)).encode() + b'\0' + part).hexdigest() == sha
-              data += part
-          patch = gzip.decompress(data)
-          assert len(patch) == 53400 and hashlib.sha256(patch).hexdigest() == '95e20ba6e45b6fda575a53a529a611972c487a968fd4d0dcd7d6261c1f4bb747'
-          subprocess.run(['git', 'apply', '--index', '--whitespace=error-all', '-'], input=patch, check=True)
-          subprocess.run(['cargo', 'fmt', '--all'], check=True)
-          subprocess.run(['git', 'add', 'Cargo.lock', 'apps/latentd/tests/phase3_workflow_fixture.rs', 'crates', 'sdk/rust-guest/examples', 'tools/build_rust_authoring.py', 'tools/run_rust_authoring.py', 'tools/rust_capsule.py', 'tools/tests/test_rust_capsule.py', 'tools/toolchain-smoke/examples'], check=True)
-          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
-          subprocess.run(['git', '-c', 'user.name=github-actions[bot]', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com', 'commit', '-m', 'feat: qualify standalone guest ownership and enforced node authoring'], check=True)
-          authorization = base64.b64encode(('x-access-token:' + os.environ['GH_TOKEN']).encode()).decode()
-          env = dict(os.environ, GIT_CONFIG_COUNT='1', GIT_CONFIG_KEY_0='http.https://github.com/.extraheader', GIT_CONFIG_VALUE_0='AUTHORIZATION: basic ' + authorization)
-          subprocess.run(['git', 'push', 'origin', 'HEAD:refs/heads/feat/rust-capsule-authoring-544'], env=env, check=True)
+          p=Path('Cargo.lock'); s=p.read_text(); a=s.index('name = "latent-packaging"'); b=s.index('\n[[package]]',a)
+          part=s[a:b].replace(' "base64",',' "base64 0.23.1",')
+          x=part.index('dependencies = [\n')+len('dependencies = [\n'); y=part.index('\n]',x)
+          part=part[:x]+'\n'.join(sorted(part[x:y].splitlines()))+part[y:]
+          updated=s[:a]+part+s[b:]
+          if s != updated:
+              p.write_text(updated)
+              subprocess.run(['git','add','Cargo.lock'],check=True)
+              subprocess.run(['git','-c','user.name=github-actions[bot]','-c','user.email=41898282+github-actions[bot]@users.noreply.github.com','commit','-m','fix: qualify the locked authoring base64 dependency'],check=True)
+              authorization=base64.b64encode(('x-access-token:'+os.environ['GH_TOKEN']).encode()).decode()
+              env=dict(os.environ,GIT_CONFIG_COUNT='1',GIT_CONFIG_KEY_0='http.https://github.com/.extraheader',GIT_CONFIG_VALUE_0='AUTHORIZATION: basic '+authorization)
+              subprocess.run(['git','push','origin','HEAD:refs/heads/feat/rust-capsule-authoring-544'],env=env,check=True)
           PY
       - name: Test WIT-derived metadata and isolated signing policies
         run: |
@@ -78,7 +75,7 @@ jobs:
         run: |
           set -o pipefail
           cargo build -p latent -p latentd --locked 2>&1 | tee "$RUNNER_TEMP/node-build.log"
-      - name: Execute all existing ownership tests against standalone-built Rust guests
+      - name: Execute ownership tests against standalone-built Rust guests
         env:
           LSF_GUEST_CAPSULES: ${{ runner.temp }}/rust-authoring/builds
         run: |
