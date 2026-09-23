@@ -4,34 +4,33 @@ on:
     branches: [feat/545-c-capsule-authoring]
     paths: [.github/workflows/c-guest-authoring-bootstrap.yml]
 permissions:
-  contents: write
+  contents: read
 jobs:
   capture:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Locate maintained authoring and validation inputs
+        with:
+          persist-credentials: false
+          show-progress: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613
+        with:
+          version: 1.254.0
+      - name: Locate shared application contracts and descriptor generation
         run: |
-          git ls-files | grep -E '(greeting|word.?count|shipping|guide.*\.py$|guest_sdk|stage_runtime_wit|sdk.*generat|contract.*generat)' | head -160
-      - name: Install verified guest binding generator
-        run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
-      - name: Generate authoritative C reference ABI
+          git grep -n -i -E '(greeting|word.count|shipping)' -- wit tools sdk docs website/docs | head -100 || true
+          git ls-files | grep -E '(tutorial|teaching|application_workflow|build_provenance|ci_suite_inventory)' | head -80
+      - name: Inspect authoritative parser JSON
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          from tools.stage_runtime_wit import stage
-          stage(Path('target/c-authoring-wit'), Path('wit/platform/runtime-phase3-blobs'))
-          PY
-          mkdir -p sdk/c-guest/generated
-          wit-bindgen c target/c-authoring-wit --rename-world capsule --out-dir sdk/c-guest/generated
-      - name: Retain generated public source for review on the feature branch
-        run: |
-          test "$GITHUB_REF" = refs/heads/feat/545-c-capsule-authoring
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add sdk/c-guest/generated/capsule.h sdk/c-guest/generated/capsule.c
-          if ! git diff --cached --quiet; then
-            git commit -m 'feat(c-guest): generate authoritative public C capability bindings'
-            git push origin HEAD:refs/heads/feat/545-c-capsule-authoring
-          fi
+          mkdir -p target/c-authoring-schema
+          cat > target/c-authoring-schema/world.wit <<'WIT'
+          package examples:authoring@1.0.0;
+          interface api {
+            record parcel { id: u64, weight: u32, labels: list<string>, }
+            variant error { invalid(string), overflow, }
+            quote: func(input: parcel) -> result<u64, error>;
+          }
+          world component { export api; }
+          WIT
+          wasm-tools component wit target/c-authoring-schema --json
