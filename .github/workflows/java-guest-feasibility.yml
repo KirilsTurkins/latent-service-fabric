@@ -70,3 +70,29 @@ jobs:
             ${{ runner.temp }}/java-guest-attempt/build/
           if-no-files-found: error
           retention-days: 14
+      - name: Export bounded offline compiler reproduction inputs
+        if: always() && steps.probe.outcome == 'failure'
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          kit="$RUNNER_TEMP/java-guest-reproduction"
+          mkdir "$kit"
+          git archive --format=tar HEAD | gzip -1 > "$kit/source.tar.gz"
+          tar -C "$JAVA_HOME" -czf "$kit/jdk.tar.gz" bin conf include jmods legal lib release
+          gradle_home="$(dirname "$(dirname "$(readlink -f "$(command -v gradle)")")")"
+          tar -C "$gradle_home" -czf "$kit/gradle.tar.gz" bin lib LICENSE NOTICE README
+          zig_home="$(dirname "$(readlink -f "$(command -v zig)")")"
+          tar -C "$zig_home" -czf "$kit/zig.tar.gz" zig lib LICENSE README.md
+          cp "$(command -v wasm-tools)" "$kit/wasm-tools"
+          tar -C "$RUNNER_TEMP/java-guest-attempt/gradle-home/caches/modules-2" -czf "$kit/dependencies.tar.gz" files-2.1
+          (cd "$kit" && sha256sum *.gz wasm-tools > SHA256SUMS)
+      - name: Retain offline compiler reproduction inputs
+        if: always() && steps.probe.outcome == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: java-guest-reproduction-${{ github.sha }}
+          path: ${{ runner.temp }}/java-guest-reproduction/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2
