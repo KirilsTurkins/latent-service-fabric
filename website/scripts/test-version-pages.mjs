@@ -62,7 +62,7 @@ try {
           await panel.getByRole('button', {name: 'Copy Rust snippet', exact: true}).click();
           await panel.getByText('Rust snippet copied.', {exact: true}).waitFor();
           assert.equal(await page.evaluate(() => window.__lsfCopiedText), expected.snippet);
-          assert.match(await panel.getByRole('link', {name: /^Complete Rust source/}).getAttribute('href'), new RegExp(`/${expected.source}/`));
+          assert.match(await panel.getByRole('link', {name: 'View complete Rust source', exact: true}).getAttribute('href'), new RegExp(`/${expected.source}/`));
           const image = page.getByRole('img', {name: 'Synthetic version asset'});
           const src = await image.getAttribute('src');
           assert.ok(src.includes(`/content-assets/${expected.version}/${expected.assetSha256}/`));
