@@ -1,5 +1,25 @@
 {
   "after": {
+    ".github/workflows/c-guest-authoring.yml:runtime:Install pinned validation and bindings": {
+      "workflow": ".github/workflows/c-guest-authoring.yml",
+      "job": "runtime",
+      "name": "Install pinned validation and bindings",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\""
+    },
+    ".github/workflows/c-guest-authoring.yml:runtime:Build and execute signed C and Rust capability packages": {
+      "workflow": ".github/workflows/c-guest-authoring.yml",
+      "job": "runtime",
+      "name": "Build and execute signed C and Rust capability packages",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\npython3 tools/build_guest_capsules.py --output \"$LSF_GUEST_CAPSULES\" 2>&1 | tee \"$RUNNER_TEMP/c-guest-build.log\"\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/c-guest-runtime.log\"\ncargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee \"$RUNNER_TEMP/c-guest-provenance.log\""
+    },
     ".github/workflows/ci.yml:profile:select": {
       "workflow": ".github/workflows/ci.yml",
       "job": "profile",
@@ -2518,7 +2538,7 @@
       "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
     },
     "tools/build_guest_capsules.py": {
-      "sha256": "34e8ed5683bc9625a8c263c66a56d9af3e671e0f707d04971130fd902317316a"
+      "sha256": "21e251919f1adf7d6a97f57f0ae4521bcd648a44c3532297387a412ef91eb99e"
     },
     "tools/build_native_runtime.py": {
       "sha256": "8aa6e2df82afe7f69c4acc7ae4ddddcc339b0ee16681cfa0984df90623aa4732"
@@ -5724,6 +5744,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
+    ".github/workflows/c-guest-authoring.yml": "6a211dba73e48d88606a3bc846c28102fa81b2c8c3f92fd197b7dd7f05c76c1f",
     ".github/workflows/ci.yml": "a7f311e9002c815503ccd24bca8d48df62d4cd6d4211c5acff35db98ddad215f",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
