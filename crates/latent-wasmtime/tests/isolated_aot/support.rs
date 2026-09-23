@@ -141,24 +141,30 @@ impl Fixture {
             .join("component.wasm")
     }
     pub fn revoke(&self) {
-        ready(self.repository.change_release_lifecycle(
-            ReleaseMutationContext {
-                scope: LifecycleScope::Tenant(TenantId("tests".into())),
-                actor: ReleaseActor {
-                    subject: "aot-test-host".into(),
-                    kind: ReleaseActorKind::Host,
+        let publication = self
+            .repository
+            .select_execution_publication(&TenantId("tests".into()), self.release(), None)
+            .unwrap()
+            .unwrap();
+        self.repository
+            .change_publication_lifecycle(
+                ReleaseMutationContext {
+                    scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                    actor: ReleaseActor {
+                        subject: "aot-test-host".into(),
+                        kind: ReleaseActorKind::Host,
+                    },
+                    operation: Some(ReleaseOperationPrecondition {
+                        operation_id: "revoke-aot-fixture".into(),
+                        expected_generation: 1,
+                    }),
                 },
-                operation: Some(ReleaseOperationPrecondition {
-                    operation_id: "revoke-aot-fixture".into(),
-                    expected_generation: 1,
-                }),
-            },
-            self.release(),
-            ReleaseLifecycleAction::Revoke,
-            ReleaseLifecycleReason::OperatorRevocation,
-            &mut |_| Ok(()),
-        ))
-        .unwrap();
+                &publication,
+                ReleaseLifecycleAction::Revoke,
+                ReleaseLifecycleReason::OperatorRevocation,
+                &mut |_| Ok(()),
+            )
+            .unwrap();
     }
 }
 

@@ -58,8 +58,9 @@ fn independent_verification_is_visible_but_unreturnable_publication_has_no_criti
     ));
     assert!(result.is_err());
     assert!(matches!(
-        block_on(repo.get_release_operation(&LifecycleScope::Tenant(tenant()), "unreturnable"))
-            .unwrap(),
+        block_on(repo.get_selected_operation(&LifecycleScope::Tenant(tenant()), "unreturnable"))
+            .unwrap()
+            .1,
         ReleaseOperationLookup::Unknown
     ));
     let page = audit

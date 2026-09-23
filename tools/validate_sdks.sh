@@ -47,27 +47,15 @@ python3 -m unittest discover -s sdk/dotnet -p 'test_validate.py'
 python3 sdk/dotnet/validate.py --check
 
 cat > "${OUTPUT}/c/header-smoke.c" <<'EOF_C'
-#include <latent/latent.h>
+#include <latent/profile.h>
 
 int main(void) {
-    latent_invocation_receipt receipt = {0};
-    latent_declared_invocation_error declared = {
-        .receipt = receipt,
+    latent_profile_invoke_response outcome = {
+        .has_declared_error = true,
+        .declared_error = {.code = {"example", 7}},
     };
-    latent_invocation_outcome outcome = {
-        .kind = LATENT_INVOCATION_DECLARED_ERROR,
-        .declared_error = &declared,
-    };
-    latent_activation_success_summary success = {0};
-    latent_retained_invocation_outcome retained = {
-        .kind = LATENT_RETAINED_INVOCATION_SUCCEEDED,
-        .success = &success,
-    };
-    latent_activation_status status = {
-        .has_terminal_outcome = true,
-        .terminal_outcome = retained,
-    };
-    return outcome.declared_error == 0 || !status.has_terminal_outcome;
+    latent_profile_activation_status status = {.has_succeeded = true};
+    return !outcome.has_declared_error || !status.has_succeeded;
 }
 EOF_C
 sed -i 's/^          //' "${OUTPUT}/c/header-smoke.c"
@@ -78,8 +66,8 @@ ZIG_LOCAL_CACHE_DIR="${ZIG_LOCAL_CACHE}" \
 
 ZIG_LOCAL_CACHE_DIR="${ZIG_LOCAL_CACHE}" \
     zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
-    -I sdk/c/include sdk/c/tests/invocation_identity.c -o "${OUTPUT}/c/invocation-identity"
-"${OUTPUT}/c/invocation-identity"
+    -I sdk/c/include sdk/c/tests/profile_semantics.c -o "${OUTPUT}/c/profile-semantics"
+"${OUTPUT}/c/profile-semantics"
 
 python3 sdk/c/tools/validate.py --build-dir "${TARGET_ROOT}/c-sdk"
 python3 sdk/c/tools/validate.py --build-dir "${TARGET_ROOT}/c-sdk-asan" --sanitize

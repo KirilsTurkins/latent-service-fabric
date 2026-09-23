@@ -821,42 +821,6 @@ impl ArtifactRepository for DirectoryArtifactRepository {
     ) -> BoxFuture<'a, Result<crate::ManagedPublicationReceipt, PlatformError>> {
         Box::pin(async move { self.managed_publish(context, upload, preflight) })
     }
-    fn get_release_lifecycle<'a>(
-        &'a self,
-        scope: &'a crate::LifecycleScope,
-        release: &'a ReleaseDigest,
-    ) -> BoxFuture<'a, Result<Option<crate::ReleaseLifecycleStatus>, PlatformError>> {
-        Box::pin(async move { self.lifecycle_status(scope, release) })
-    }
-    fn get_release_operation<'a>(
-        &'a self,
-        scope: &'a crate::LifecycleScope,
-        operation_id: &'a str,
-    ) -> BoxFuture<'a, Result<crate::ReleaseOperationLookup, PlatformError>> {
-        Box::pin(async move { self.life_store().operation(scope, operation_id) })
-    }
-    fn change_release_lifecycle<'a>(
-        &'a self,
-        context: crate::ReleaseMutationContext,
-        release: &'a ReleaseDigest,
-        action: crate::ReleaseLifecycleAction,
-        reason: crate::ReleaseLifecycleReason,
-        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
-                     + Send),
-    ) -> BoxFuture<'a, Result<crate::ReleaseOperationReceipt, PlatformError>> {
-        Box::pin(async move { self.change_lifecycle(context, release, action, reason, preflight) })
-    }
-    fn renew_release_evidence<'a>(
-        &'a self,
-        context: crate::ReleaseMutationContext,
-        release: &'a ReleaseDigest,
-        package: &'a latent_core::PackageDigest,
-        evidence: crate::ReleaseEvidenceUpload,
-        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
-                     + Send),
-    ) -> BoxFuture<'a, Result<crate::ReleaseOperationReceipt, PlatformError>> {
-        Box::pin(async move { self.renew_evidence(context, release, package, evidence, preflight) })
-    }
     fn release_eligibility(
         &self,
         release: &ReleaseDigest,

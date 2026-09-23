@@ -1,8 +1,6 @@
 package dev.latent.sdk.transport;
 
-import dev.latent.sdk.LatentClient;
 import dev.latent.sdk.Management;
-import dev.latent.sdk.Models;
 import com.google.protobuf.Message;
 import io.grpc.ClientCall;
 import io.grpc.ClientStreamTracer;
@@ -27,7 +25,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +38,7 @@ import latent.control.v1.Capability;
 import latent.control.v1.CapabilityServiceGrpc;
 
 @SuppressWarnings("deprecation")
-public final class RpcClient implements Management.ClientProfile, LatentClient, AutoCloseable {
+public final class RpcClient implements Management.ClientProfile, AutoCloseable {
     private static final AtomicInteger OWNERS = new AtomicInteger();
     private static final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER);
     private final ClientConfig config;
@@ -358,7 +355,4 @@ public final class RpcClient implements Management.ClientProfile, LatentClient, 
     @Override public CompletableFuture<Management.ClientResponse<Management.GetPolicyOperationResponse>> getPolicyOperation(Management.GetPolicyOperationRequest request, Management.CallOptions options) {
         return call(request, options, Wire::toWire, Wire::fromWire, PolicyServiceGrpc.getGetPolicyOperationMethod(), PolicyOuterClass.GetPolicyOperationResponse.getDefaultInstance(), Wire::fromWire);
     }
-    @Override public CompletionStage<Models.InvocationOutcome> invoke(Models.InvokeRequest request) { return Legacy.invoke(this, request); }
-    @Override public CompletionStage<Models.CancelResponse> cancel(String activationId, String reason) { return Legacy.cancel(this, activationId, reason); }
-    @Override public CompletionStage<Models.ActivationStatus> getActivation(String activationId) { return Legacy.getActivation(this, activationId); }
 }

@@ -2649,7 +2649,7 @@
       "sha256": "193a70e7ee64254adb4469193759f6246c0e0793c026d4f120f339768c8830a5"
     },
     "tools/validate_sdks.sh": {
-      "sha256": "5c3d2bfcca6364aeea85de29a102cac3d712459f9db96421a664a9c28b9ee0b4"
+      "sha256": "d54f23e45547763efb7ebe6261060474c4816e048ce5ccc73ef2c846e5466aab"
     },
     "tools/validate_workflow_actions.py": {
       "sha256": "be4ece95d8ff964c3af99eded12af6784301e7297e447ed5013b5c921d8eef30"

@@ -27,24 +27,29 @@ pub(super) fn profile(version: &str) -> Arc<RuntimeCompatibilityProfile> {
 }
 
 pub(super) fn revoke(repository: &DirectoryArtifactRepository, release: &ReleaseDigest) {
-    run(repository.change_release_lifecycle(
-        ReleaseMutationContext {
-            scope: LifecycleScope::LocalUnscoped,
-            actor: ReleaseActor {
-                subject: "lifecycle-test".into(),
-                kind: ReleaseActorKind::Host,
+    let publication = repository
+        .select_execution_publication(&latent_core::TenantId("alice".into()), release, None)
+        .unwrap()
+        .unwrap();
+    repository
+        .change_publication_lifecycle(
+            ReleaseMutationContext {
+                scope: LifecycleScope::LocalUnscoped,
+                actor: ReleaseActor {
+                    subject: "lifecycle-test".into(),
+                    kind: ReleaseActorKind::Host,
+                },
+                operation: Some(ReleaseOperationPrecondition {
+                    operation_id: "revoke-test".into(),
+                    expected_generation: 1,
+                }),
             },
-            operation: Some(ReleaseOperationPrecondition {
-                operation_id: "revoke-test".into(),
-                expected_generation: 1,
-            }),
-        },
-        release,
-        ReleaseLifecycleAction::Revoke,
-        ReleaseLifecycleReason::OperatorRevocation,
-        &mut |_| Ok(()),
-    ))
-    .unwrap();
+            &publication,
+            ReleaseLifecycleAction::Revoke,
+            ReleaseLifecycleReason::OperatorRevocation,
+            &mut |_| Ok(()),
+        )
+        .unwrap();
 }
 
 struct Fixture {

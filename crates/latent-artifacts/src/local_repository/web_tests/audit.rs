@@ -88,8 +88,9 @@ fn web_audit_binds_real_publication_and_replay_without_capsule_receipts() {
     assert!(replay.replay);
     assert_eq!(first.receipt, replay.receipt);
     assert!(matches!(
-        block_on(repository.get_release_operation(&first.receipt.publication.scope, "publish"))
-            .unwrap(),
+        block_on(repository.get_selected_operation(&first.receipt.publication.scope, "publish"))
+            .unwrap()
+            .1,
         ReleaseOperationLookup::Unknown
     ));
     let rows = journal.rows();

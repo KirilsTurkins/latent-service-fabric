@@ -656,90 +656,6 @@ static void allocation_failures(void) {
     printf("C allocation fault sweep: %zu injected failures across 160 positions\n", injected);
 }
 
-static void legacy_callback(latent_invocation *handle, const latent_invocation_outcome *outcome,
-                            const latent_transport_error *error, void *data) {
-    observed *record = data;
-    ++record->calls;
-    assert(record->calls == 1 && (error == NULL) != (outcome == NULL));
-    if (error != NULL) { record->failed = true; return; }
-    assert(handle != NULL);
-    record->variant = (unsigned)outcome->kind;
-    if (outcome->kind == LATENT_INVOCATION_SUCCEEDED) assert(outcome->success->route_generation == UINT64_MAX);
-    else if (outcome->kind == LATENT_INVOCATION_DECLARED_ERROR) assert(outcome->declared_error->receipt.consumption.cpu_fuel == UINT64_MAX);
-    else assert(outcome->platform_failure->receipt.consumption.cpu_fuel == UINT64_MAX);
-}
-
-static void legacy_status(latent_client *client, const latent_activation_status *value,
-                          const latent_transport_error *error, void *data) {
-    observed *record = data;
-    assert(client != NULL && ++record->calls == 1 && (value == NULL) != (error == NULL));
-    record->failed = error != NULL;
-    if (value != NULL) {
-        record->terminal = value->has_terminal_state;
-        if (record->terminal) assert(value->final_consumption.cpu_fuel == UINT64_MAX);
-    }
-}
-
-static void legacy_cancel(latent_client *client, const latent_cancel_response *value,
-                          const latent_transport_error *error, void *data) {
-    observed *record = data;
-    assert(client != NULL && ++record->calls == 1 && (value == NULL) != (error == NULL));
-    record->failed = error != NULL;
-    if (value != NULL) record->disposition = value->disposition;
-}
-
-static void legacy(void) {
-    latent_transport *owner = create(configuration());
-    latent_invoke_request value = {.has_activation_id = true, .activation_id = TEXT("legacy"),
-        .target = {.tenant = TEXT("tests"), .service = TEXT("example"), .contract = TEXT("tests:local/api@1.0.0"), .function = TEXT("run")},
-        .payload = {(const uint8_t *)"ok", 2}, .media_type = TEXT("application/octet-stream")};
-    observed record = {0};
-    latent_invocation *handle = latent_transport_legacy_vtable()->invoke(latent_transport_legacy(owner), &value, legacy_callback, &record);
-    assert(handle != NULL);
-    wait_for(owner, &record);
-    assert(latent_transport_get_usage(owner).retained_calls == 0);
-    const latent_client_vtable *legacy = latent_transport_legacy_vtable();
-    const latent_string modes[] = {TEXT("declared"), TEXT("platform")};
-    for (unsigned index = 0; index < 2; ++index) {
-        record = (observed){0};
-        value.payload = (latent_bytes){(const uint8_t *)modes[index].data, modes[index].length};
-        assert(legacy->invoke(latent_transport_legacy(owner), &value, legacy_callback, &record) != NULL);
-        wait_for(owner, &record);
-        assert(!record.failed && record.variant == (unsigned)(index == 0 ? LATENT_INVOCATION_DECLARED_ERROR : LATENT_INVOCATION_PLATFORM_FAILURE));
-    }
-    value.activation_id = TEXT("legacy-pending");
-    value.payload = (latent_bytes){(const uint8_t *)"hold", 4};
-    record = (observed){0};
-    assert(legacy->invoke(latent_transport_legacy(owner), &value, legacy_callback, &record) != NULL);
-    assert(latent_transport_poll(owner, 2));
-    observed running = {0};
-    legacy->get_activation(latent_transport_legacy(owner), value.activation_id, legacy_status, &running);
-    wait_for(owner, &running);
-    assert(!running.failed && !running.terminal && record.calls == 0);
-    for (unsigned index = 0; index < 3; ++index) {
-        observed cancelled_record = {0};
-        legacy->cancel(latent_transport_legacy(owner), index == 2 ? TEXT("missing-legacy") : value.activation_id,
-                       TEXT("reason"), legacy_cancel, &cancelled_record);
-        wait_for(owner, &cancelled_record);
-        assert(!cancelled_record.failed && cancelled_record.disposition == (int32_t)(index + 1));
-    }
-    wait_for(owner, &record);
-    assert(!record.failed && record.variant == LATENT_INVOCATION_PLATFORM_FAILURE);
-    running = (observed){0};
-    legacy->get_activation(latent_transport_legacy(owner), value.activation_id, legacy_status, &running);
-    wait_for(owner, &running);
-    assert(!running.failed && running.terminal);
-    running = (observed){0};
-    legacy->get_activation(latent_transport_legacy(owner), TEXT("missing-legacy"), legacy_status, &running);
-    wait_for(owner, &running);
-    assert(running.failed);
-    record = (observed){0};
-    assert(legacy->invoke(latent_transport_legacy(owner), NULL, legacy_callback, &record) == NULL);
-    assert(record.failed && record.calls == 1);
-    assert(latent_transport_get_usage(owner).retained_calls == 0);
-    close_owner(owner);
-}
-
 static size_t file_descriptors(void) {
     DIR *directory = opendir("/proc/self/fd");
     assert(directory != NULL);
@@ -762,7 +678,6 @@ int main(int argc, char **argv) {
     bounds_and_shutdown();
     completion_and_allocation_bounds();
     allocation_failures();
-    legacy();
     assert(file_descriptors() == descriptors);
     puts("C HTTP/2/protobuf: eight RPCs, ownership, exact u64, audit absence/future, recovery, limits, deadlines, no retry, shutdown races passed");
     return 0;

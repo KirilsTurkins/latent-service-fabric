@@ -146,7 +146,7 @@ fn sealed_preparation_preserves_exact_publication_through_coexistence_and_revoca
 }
 
 #[test]
-fn same_component_metadata_revisions_keep_independent_authority_and_legacy_replay() {
+fn same_component_metadata_revisions_keep_independent_authority_and_exact_replay() {
     let root = TempRoot::new();
     let repo = repository(root.path());
     let first = artifact("first", b"same wasm");
@@ -154,14 +154,15 @@ fn same_component_metadata_revisions_keep_independent_authority_and_legacy_repla
     let old_token = repo
         .publication_execution_eligibility(&p1.publication)
         .unwrap();
-    let old_revoke = block_on(repo.change_release_lifecycle(
-        context("old-revoke", 1),
-        &first.descriptor.release_digest,
-        ReleaseLifecycleAction::Revoke,
-        ReleaseLifecycleReason::OperatorRevocation,
-        &mut accept,
-    ))
-    .unwrap();
+    let old_revoke = repo
+        .change_publication_lifecycle(
+            context("old-revoke", 1),
+            &p1.publication,
+            ReleaseLifecycleAction::Revoke,
+            ReleaseLifecycleReason::OperatorRevocation,
+            &mut accept,
+        )
+        .unwrap();
     assert!(old_token.check_current().is_err());
     let second = artifact("second", &first.component_bytes);
     let p2 = publish(&repo, second.clone(), "second-create");
@@ -170,9 +171,11 @@ fn same_component_metadata_revisions_keep_independent_authority_and_legacy_repla
         .publication_execution_eligibility(&p2.publication)
         .unwrap();
     assert_eq!(repo.fetch_publication(&p2.publication).unwrap(), second);
-    let ambiguous =
-        block_on(repo.get_release_lifecycle(&scope(), &first.descriptor.release_digest))
-            .unwrap_err();
+    let ambiguous = repo
+        .preparation_source()
+        .unwrap()
+        .identity(&first.descriptor.release_digest)
+        .unwrap_err();
     assert_eq!(ambiguous.code, PlatformErrorCode::StateConflict);
     assert!(!ambiguous.retryable);
     assert!(ambiguous.message.contains("publication-selector-ambiguous"));
@@ -186,13 +189,13 @@ fn same_component_metadata_revisions_keep_independent_authority_and_legacy_repla
         p1
     );
     assert_eq!(
-        block_on(repo.change_release_lifecycle(
+        repo.change_publication_lifecycle(
             context("old-revoke", 1),
-            &first.descriptor.release_digest,
+            &p1.publication,
             ReleaseLifecycleAction::Revoke,
             ReleaseLifecycleReason::OperatorRevocation,
             &mut accept
-        ))
+        )
         .unwrap(),
         old_revoke
     );
@@ -214,7 +217,10 @@ fn same_component_metadata_revisions_keep_independent_authority_and_legacy_repla
         1
     );
     assert!(
-        block_on(repo.get_release_lifecycle(&scope(), &first.descriptor.release_digest)).is_err(),
+        repo.preparation_source()
+            .unwrap()
+            .identity(&first.descriptor.release_digest)
+            .is_err(),
         "retirement does not resolve ambiguity"
     );
     drop(repo);
@@ -230,14 +236,15 @@ fn same_component_metadata_revisions_keep_independent_authority_and_legacy_repla
     );
     assert_eq!(reopened.fetch_publication(&p2.publication).unwrap(), second);
     assert_eq!(
-        block_on(reopened.change_release_lifecycle(
-            context("old-revoke", 1),
-            &first.descriptor.release_digest,
-            ReleaseLifecycleAction::Revoke,
-            ReleaseLifecycleReason::OperatorRevocation,
-            &mut accept
-        ))
-        .unwrap(),
+        reopened
+            .change_publication_lifecycle(
+                context("old-revoke", 1),
+                &p1.publication,
+                ReleaseLifecycleAction::Revoke,
+                ReleaseLifecycleReason::OperatorRevocation,
+                &mut accept
+            )
+            .unwrap(),
         old_revoke
     );
     assert_eq!(

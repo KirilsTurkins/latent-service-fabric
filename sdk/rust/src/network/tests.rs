@@ -91,7 +91,9 @@ fn typed_platform_details_require_canonical_codes_and_never_enable_retries() {
         PlatformErrorCode::PermissionDenied
     );
     assert!(!format!("{failure:?}").contains("untrusted server text"));
-    assert!(!crate::ClientTransportError::from(failure).retryable);
+    let profile = crate::management::ClientFailure::from(failure);
+    assert_eq!(profile.category, crate::management::FailureCategory::RPC);
+    assert!(profile.platform_error.unwrap().retryable);
     let mismatch = Status::with_details(
         Code::Internal,
         "wrong code",

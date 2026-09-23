@@ -1486,7 +1486,7 @@ dependencies = [
 
 [[package]]
 name = "latent"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "base64 0.23.1",
  "clap",
@@ -1513,7 +1513,7 @@ dependencies = [
 
 [[package]]
 name = "latent-activation"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
  "latent-routing",
@@ -1521,7 +1521,7 @@ dependencies = [
 
 [[package]]
 name = "latent-admission"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
  "latent-routing",
@@ -1529,7 +1529,7 @@ dependencies = [
 
 [[package]]
 name = "latent-angular-renderer-adapter"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "base64 0.23.1",
  "serde",
@@ -1539,7 +1539,7 @@ dependencies = [
 
 [[package]]
 name = "latent-artifacts"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-audit",
  "latent-contracts",
@@ -1552,7 +1552,7 @@ dependencies = [
 
 [[package]]
 name = "latent-audit"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
  "libc",
@@ -1564,7 +1564,7 @@ dependencies = [
 
 [[package]]
 name = "latent-blobs"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "getrandom 0.4.3",
  "latent-artifacts",
@@ -1586,7 +1586,7 @@ dependencies = [
 
 [[package]]
 name = "latent-capabilities"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "getrandom 0.4.3",
  "latent-activation",
@@ -1609,7 +1609,7 @@ dependencies = [
 
 [[package]]
 name = "latent-commit"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
  "latent-effects",
@@ -1618,7 +1618,7 @@ dependencies = [
 
 [[package]]
 name = "latent-component-bindings"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "wasmtime",
  "wit-bindgen",
@@ -1626,7 +1626,7 @@ dependencies = [
 
 [[package]]
 name = "latent-contracts"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
  "semver",
@@ -1635,11 +1635,11 @@ dependencies = [
 
 [[package]]
 name = "latent-control"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 
 [[package]]
 name = "latent-control-store"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-activation",
  "latent-admission",
@@ -1665,7 +1665,7 @@ dependencies = [
 
 [[package]]
 name = "latent-core"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "tempfile",
  "tokio",
@@ -1673,14 +1673,14 @@ dependencies = [
 
 [[package]]
 name = "latent-effects"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-executor"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-activation",
  "latent-artifacts",
@@ -1689,7 +1689,7 @@ dependencies = [
 
 [[package]]
 name = "latent-guest"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-component-bindings",
  "zeroize",
@@ -1697,7 +1697,7 @@ dependencies = [
 
 [[package]]
 name = "latent-http"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "bytes",
  "flate2",
@@ -1735,14 +1735,14 @@ dependencies = [
 
 [[package]]
 name = "latent-identity"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-ingress"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "base64 0.23.1",
  "latent-activation",
@@ -1756,7 +1756,7 @@ dependencies = [
 
 [[package]]
 name = "latent-manifest"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
  "serde",
@@ -1766,7 +1766,7 @@ dependencies = [
 
 [[package]]
 name = "latent-nats"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "getrandom 0.4.3",
  "latent-activation",
@@ -1787,7 +1787,7 @@ dependencies = [
 
 [[package]]
 name = "latent-network"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "getrandom 0.4.3",
  "hickory-proto",
@@ -1798,7 +1798,7 @@ dependencies = [
 
 [[package]]
 name = "latent-node"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-activation",
  "latent-admission",
@@ -1815,7 +1815,7 @@ dependencies = [
 
 [[package]]
 name = "latent-oci"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "base64 0.23.1",
  "bytes",
@@ -1845,7 +1845,7 @@ dependencies = [
 
 [[package]]
 name = "latent-optimization-bench"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "clap",
  "latent-artifacts",
@@ -1868,7 +1868,7 @@ dependencies = [
 
 [[package]]
 name = "latent-optimization-workloads"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -1876,7 +1876,7 @@ dependencies = [
 
 [[package]]
 name = "latent-packaging"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "cap-fs-ext",
  "cap-std",
@@ -1896,7 +1896,7 @@ dependencies = [
 
 [[package]]
 name = "latent-policy"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "base64 0.23.1",
  "blake3",
@@ -1916,7 +1916,7 @@ dependencies = [
 
 [[package]]
 name = "latent-protected-files"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
  "rustix",
@@ -1926,7 +1926,7 @@ dependencies = [
 
 [[package]]
 name = "latent-renderer-profile"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "serde_json",
  "sha2 0.10.9",
@@ -1935,7 +1935,7 @@ dependencies = [
 
 [[package]]
 name = "latent-rollout"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-artifacts",
  "latent-audit",
@@ -1952,7 +1952,7 @@ dependencies = [
 
 [[package]]
 name = "latent-routing"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
  "latent-manifest",
@@ -1960,7 +1960,7 @@ dependencies = [
 
 [[package]]
 name = "latent-rpc"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
  "prost",
@@ -1972,7 +1972,7 @@ dependencies = [
 
 [[package]]
 name = "latent-scheduler"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-activation",
  "latent-admission",
@@ -1986,7 +1986,7 @@ dependencies = [
 
 [[package]]
 name = "latent-sdk"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "http",
  "http-body",
@@ -2005,7 +2005,7 @@ dependencies = [
 
 [[package]]
 name = "latent-secrets"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-capabilities",
  "latent-core",
@@ -2022,7 +2022,7 @@ dependencies = [
 
 [[package]]
 name = "latent-signing"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "base64 0.23.1",
  "curve25519-dalek",
@@ -2038,14 +2038,14 @@ dependencies = [
 
 [[package]]
 name = "latent-state"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-telemetry"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -2057,7 +2057,7 @@ dependencies = [
 
 [[package]]
 name = "latent-testkit"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-activation",
  "latent-artifacts",
@@ -2074,7 +2074,7 @@ dependencies = [
 
 [[package]]
 name = "latent-toolchain-smoke"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "blake3",
  "clap",
@@ -2094,7 +2094,7 @@ dependencies = [
 
 [[package]]
 name = "latent-triggers"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -2103,7 +2103,7 @@ dependencies = [
 
 [[package]]
 name = "latent-vault"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "base64 0.23.1",
  "latent-capabilities",
@@ -2120,7 +2120,7 @@ dependencies = [
 
 [[package]]
 name = "latent-wasmtime"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "base64 0.23.1",
  "blake3",
@@ -2169,7 +2169,7 @@ dependencies = [
 
 [[package]]
 name = "latent-wire"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "http-body",
  "hyper-util",
@@ -2200,7 +2200,7 @@ dependencies = [
 
 [[package]]
 name = "latent-workflows"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-core",
  "latent-effects",
@@ -2209,7 +2209,7 @@ dependencies = [
 
 [[package]]
 name = "latent-wrpc"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -2218,7 +2218,7 @@ dependencies = [
 
 [[package]]
 name = "latentd"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.4-rc.2"
 dependencies = [
  "base64 0.23.1",
  "clap",

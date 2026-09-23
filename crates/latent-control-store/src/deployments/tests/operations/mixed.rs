@@ -186,21 +186,26 @@ fn managed_commit_requires_live_release_but_historical_replay_never_reauthorizes
         lookup(&store, "second").value(),
         DeploymentOperationLookup::Unknown { .. }
     ));
-    run(releases.change_release_lifecycle(
-        latent_artifacts::ReleaseMutationContext {
-            scope: latent_artifacts::LifecycleScope::LocalUnscoped,
-            actor: context("unused", 0).actor,
-            operation: Some(latent_artifacts::ReleaseOperationPrecondition {
-                operation_id: "revoke-original".into(),
-                expected_generation: 1,
-            }),
-        },
-        &first,
-        latent_artifacts::ReleaseLifecycleAction::Revoke,
-        latent_artifacts::ReleaseLifecycleReason::OperatorRevocation,
-        &mut |_| Ok(()),
-    ))
-    .unwrap();
+    let publication = releases
+        .select_execution_publication(&latent_core::TenantId("alice".into()), &first, None)
+        .unwrap()
+        .unwrap();
+    releases
+        .change_publication_lifecycle(
+            latent_artifacts::ReleaseMutationContext {
+                scope: latent_artifacts::LifecycleScope::LocalUnscoped,
+                actor: context("unused", 0).actor,
+                operation: Some(latent_artifacts::ReleaseOperationPrecondition {
+                    operation_id: "revoke-original".into(),
+                    expected_generation: 1,
+                }),
+            },
+            &publication,
+            latent_artifacts::ReleaseLifecycleAction::Revoke,
+            latent_artifacts::ReleaseLifecycleReason::OperatorRevocation,
+            &mut |_| Ok(()),
+        )
+        .unwrap();
     let replay = execute(&store, first_request);
     assert_eq!(replay.value().receipt, receipt);
     assert!(replay.value().replayed);

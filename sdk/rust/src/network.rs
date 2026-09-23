@@ -1,8 +1,6 @@
 mod channel;
 mod config;
 mod error;
-mod invocation;
-pub mod management;
 mod ownership;
 mod profile;
 
@@ -49,9 +47,9 @@ enum Connection {
 }
 
 #[derive(Clone, Debug)]
-pub struct RpcResponse<Value> {
-    pub value: Value,
-    pub audit: Option<AuditAcknowledgement>,
+struct RpcResponse<Value> {
+    value: Value,
+    audit: Option<AuditAcknowledgement>,
 }
 
 impl RpcClient {

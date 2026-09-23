@@ -269,7 +269,7 @@ manual tests::verified_metadata::streamed_metadata_rejects_malformed_metadata_ev
 manual tests::oversized_persisted_metadata_is_rejected_before_allocation_on_reopen
 manual tests::admission::corrupt_evidence_is_not_classified_as_expired_history
 manual tests::admission::new_package_coexists_but_cannot_replace_an_existing_packages_evidence
-manual tests::publications::same_component_metadata_revisions_keep_independent_authority_and_legacy_replay
+manual tests::publications::same_component_metadata_revisions_keep_independent_authority_and_exact_replay
 manual tests::integrity::recovery::legacy_and_mixed_catalogs_are_rejected_without_rewriting_committed_bytes
 """),
     library("evidence-authority", "crates/latent-policy", "latent_policy",

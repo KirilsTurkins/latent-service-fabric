@@ -259,8 +259,12 @@ async fn revoke_lifecycle(
     repository: &DirectoryArtifactRepository,
     release: &latent_core::ReleaseDigest,
 ) {
+    let publication = repository
+        .select_execution_publication(&TenantId("tests".into()), release, None)
+        .unwrap()
+        .unwrap();
     repository
-        .change_release_lifecycle(
+        .change_publication_lifecycle(
             latent_artifacts::ReleaseMutationContext {
                 scope: latent_artifacts::LifecycleScope::Tenant(TenantId("tests".into())),
                 actor: latent_artifacts::ReleaseActor {
@@ -272,12 +276,11 @@ async fn revoke_lifecycle(
                     expected_generation: 1,
                 }),
             },
-            release,
+            &publication,
             latent_artifacts::ReleaseLifecycleAction::Revoke,
             latent_artifacts::ReleaseLifecycleReason::OperatorRevocation,
             &mut |_| Ok(()),
         )
-        .await
         .unwrap();
 }
 

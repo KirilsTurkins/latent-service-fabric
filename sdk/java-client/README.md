@@ -1,8 +1,8 @@
 # Bounded Java client
 
-`dev.latent.sdk.transport.RpcClient` implements both
-`Management.ClientProfile` and the existing `CompletionStage`-based
-`LatentClient`. The eight executable operations are Invoke, Cancel,
+`dev.latent.sdk.transport.RpcClient` implements `Management.ClientProfile`. The
+obsolete `LatentClient`, older invocation records and compatibility constructors
+have been removed during alpha. The eight executable operations are Invoke, Cancel,
 GetActivation, GetPolicy, ListPolicies, ListCapabilities, ApplyPolicy and
 GetPolicyOperation. This is a native HTTP/2 gRPC client, not a CLI subprocess,
 JSON bridge, guest-language runtime or direct provider client.
@@ -175,8 +175,8 @@ inputs concurrently with that snapshot. Mutation after return cannot change the
 wire request. Replies own read-only buffers and immutable collections; they do
 not borrow the channel and remain valid after shutdown.
 
-Cancel the returned `CompletableFuture` to cancel the local RPC wait. The legacy
-returned future propagates that cancellation too. Cancellation of an unrelated
+Cancel the returned `CompletableFuture` to cancel the local RPC wait.
+Cancellation of an unrelated
 dependent stage follows standard Java semantics and is not an implicit Cancel
 RPC. `Management.ClientCancellationException` carries the same rich failure
 facts as other exceptions. Inspect with `Management.clientFailure(throwable)`,
@@ -204,7 +204,7 @@ a negative wire value. Response timestamps remain raw unsigned data rather than
 being coerced into a Java clock. Unknown numeric management enums remain numeric;
 unsupported invocation/platform strings fail Decode with bounded raw
 `UnsupportedWireValue`, never a fabricated known disposition or retry decision.
-The legacy closed cancellation enum rejects future values with the raw evidence.
+Cancellation enum values also retain unknown numeric values.
 
 Typed success, declared application error and platform failure remain distinct
 response variants with publication/component and consumption receipts. Failures

@@ -6,28 +6,30 @@ claim that a binary release or its full acceptance evidence already exists.
 The parent integrator chooses the final reviewed commit and new version only
 after exact-head CI. Do not move the historical source-only `0.1.0-alpha.3` tag.
 
-## Qualified unpublished native predecessor
+## Current-format native foundation
 
-The immutable `0.1.0-alpha.4-rc.1` tag identifies source
+The source version `0.1.0-alpha.4-rc.2` prepares a distinct unpublished foundation
+after obsolete alpha APIs and storage readers were removed. HTTP tables and
+receipts use format 2; deployment catalogs use the current publication-aware
+formats. [`compatibility.json`](../../packaging/linux/compatibility.json) declares
+no upgrade source for this foundation. Installer and node configuration formats
+remain version 1; those are current formats, not obsolete compatibility.
+
+The earlier immutable `0.1.0-alpha.4-rc.1` tag identifies source
 `010c1c0605533a9f8a51a36e8b45265baa6255bb`. Its maintained CI passed in
-[run 35757424832](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35757424832).
-The nonpublishing [release run 35763422270](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35763422270)
-authenticated its archive and passed both clean-VM profiles, including actual
-reboot, retained deployment, repeat installation, removal and purge. The local
-profile also passed rootless foreground execution. The
-[retained identity receipt](../evidence/native-foundation-35763422270.json)
-records the archive hash and the remaining compatible-pair gap.
+[run 35757424832](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35757424832),
+and [nonpublishing release run 35763422270](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35763422270)
+passed both clean-VM profiles. Its
+[retained receipt](../evidence/native-foundation-35763422270.json) keeps that
+historical evidence and the unfulfilled compatible-pair criterion. This source
+can write obsolete HTTP table format 1 and is no longer a declared predecessor.
+Do not move its tag, rewrite its receipts or reinstate a legacy storage reader.
 
-The alpha.4 source records this exact predecessor in
-[`compatibility.json`](../../packaging/linux/compatibility.json). Installer and
-node configuration formats remain version 1, with no storage migration declared.
-The workspace and isolated native-fixture locks use the alpha.4 local crate version.
-The foundation is unpublished and does not authorize migration from source-only
-alpha.3. Its single-version receipts do not complete the upgrade criterion.
-
-After alpha.4 passes exact-source CI, dispatch its distinct immutable tag with
-`predecessor_run=35763422270` and `publish=false`. Both profiles must pass the
-actual compatible upgrade and unsupported downgrade checks before publication.
+After rc.2 passes exact-source CI, qualify its own immutable tag with
+`publish=false`. Record the actual release-workflow run, authenticated archive
+digest and both VM receipts. Then bind those observed identities in the distinct
+`0.1.0-alpha.4` source and run the actual compatible upgrade and unsupported
+downgrade checks against rc.2. A foundation run alone cannot complete #308.
 The protected publication environment remains the final approval boundary.
 
 ## Publisher identity and offline verification

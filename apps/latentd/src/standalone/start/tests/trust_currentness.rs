@@ -537,8 +537,12 @@ async fn schedule(cause: Cause) {
         // Fresh catalog recovery may legitimately renew proof-age-only grants;
         // expired policy and revoked publishers must instead retain denied history.
         let scope = LifecycleScope::Tenant(TenantId("tests".into()));
+        let publication = repository
+            .select_execution_publication(&TenantId("tests".into()), &release, None)
+            .unwrap()
+            .unwrap();
         let previous = repository
-            .get_release_lifecycle(&scope, &release)
+            .get_selected_lifecycle(&scope, &publication)
             .await
             .unwrap()
             .unwrap();
@@ -550,7 +554,7 @@ async fn schedule(cause: Cause) {
         let authority = fixture.authority(clock.clone());
         let repository = fixture.repository(authority.clone());
         let recovered = repository
-            .get_release_lifecycle(&scope, &release)
+            .get_selected_lifecycle(&scope, &publication)
             .await
             .unwrap()
             .unwrap();
