@@ -40,11 +40,20 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - name: Capture immutable qualification source inputs
+        shell: bash
+        run: |
+          git archive --format=tar --output "$RUNNER_TEMP/typescript-guest-source.tar" HEAD
+          test "$(stat --format=%s "$RUNNER_TEMP/typescript-guest-source.tar")" -le 134217728
+          git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-source.sha"
       - name: Retain the exact reviewed command contract input
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: typescript-guest-command-contract-${{ github.sha }}
-          path: tools/ci/commands.json
+          path: |
+            tools/ci/commands.json
+            ${{ runner.temp }}/typescript-guest-source.tar
+            ${{ runner.temp }}/typescript-guest-source.sha
           if-no-files-found: error
           retention-days: 7
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
