@@ -203,7 +203,9 @@ answer() {
     python3 - "$1" <<'PY'
 import base64, json, sys
 reply = json.load(open(sys.argv[1]))
-print(base64.b64decode(reply["data"]["payload"]["data"]).decode())
+data = reply["data"]
+payload = data.get("payload") or data["declaredError"]["payload"]
+print(base64.b64decode(payload["data"]).decode())
 PY
 }
 answer "$RESULTS/answer.json"
@@ -224,11 +226,12 @@ Try an empty string to see an application error:
 printf '[""]\n' >"$RESULTS/empty.json"
 cli invoke --service examples/echo --contract examples:echo/api@0.1.0 \
     --function echo --activation-id learning-empty --input "$RESULTS/empty.json" \
-    >"$RESULTS/empty-answer.json"
+    >"$RESULTS/empty-answer.json" || test "$?" -eq 3
 answer "$RESULTS/empty-answer.json"
 ```
 
-The decoded answer contains `err` and `empty-message`. That is the capsule
+The command accepts exit code 3, which means the capsule reported an application
+error. The decoded answer contains `err` and `empty-message`. That is the capsule
 explaining why it cannot process your input. It is different from failing to
 connect to the node.
 

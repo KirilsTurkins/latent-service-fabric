@@ -166,7 +166,7 @@ Now request zero items to see how an application reports invalid input:
 printf '[0, false]\n' >"$RESULTS/invalid-shipping.json"
 cli invoke --service examples/shipping --contract examples:shipping/api@1.0.0 \
     --function quote --activation-id tutorial-invalid-shipping \
-    --input "$RESULTS/invalid-shipping.json" >"$RESULTS/invalid-answer.json"
+    --input "$RESULTS/invalid-shipping.json" >"$RESULTS/invalid-answer.json" || test "$?" -eq 3
 answer "$RESULTS/invalid-answer.json"
 ```
 
