@@ -217,7 +217,19 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
         }
         (C_GUEST_BUILD_TYPE, BuildRecipe::C(p)) => {
             p.compiler == "zig-cc"
-                && p.fixture == "blob"
+                && matches!(
+                    p.fixture.as_str(),
+                    "blob"
+                        | "callee"
+                        | "events"
+                        | "http"
+                        | "metrics"
+                        | "random"
+                        | "secrets"
+                        | "service"
+                        | "streaming"
+                        | "application"
+                )
                 && p.target == "wasm32-wasi"
                 && p.optimization == "O2"
         }

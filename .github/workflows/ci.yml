@@ -176,6 +176,8 @@ jobs:
           cache-dependency-path: tools/requirements.lock
       - name: Install pinned validation dependencies
         run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Install the real Fish completion test shell
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish
       - name: Check selected renderer prerequisites before building
         id: renderer_preflight
         if: needs.profile.outputs.renderer == 'true'

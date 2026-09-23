@@ -1,5 +1,35 @@
 {
   "after": {
+    ".github/workflows/c-guest-authoring.yml:runtime:Install pinned validation and bindings": {
+      "workflow": ".github/workflows/c-guest-authoring.yml",
+      "job": "runtime",
+      "name": "Install pinned validation and bindings",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\""
+    },
+    ".github/workflows/c-guest-authoring.yml:runtime:Build and execute signed C and Rust capability packages": {
+      "workflow": ".github/workflows/c-guest-authoring.yml",
+      "job": "runtime",
+      "name": "Build and execute signed C and Rust capability packages",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\npython3 tools/build_guest_capsules.py --output \"$LSF_GUEST_CAPSULES\" 2>&1 | tee \"$RUNNER_TEMP/c-guest-build.log\"\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/c-guest-runtime.log\"\ncargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee \"$RUNNER_TEMP/c-guest-provenance.log\"\ncargo test --locked -p latent-control-store --lib managed_lease_failure_never_mutates_or_renews_a_historical_replay 2>&1 | tee \"$RUNNER_TEMP/c-guest-control-lease.log\"\ncargo test --locked -p latent-policy --lib mutation_renewal_persists_a_full_window_even_before_the_sampler_margin 2>&1 | tee \"$RUNNER_TEMP/c-guest-clock-window.log\""
+    },
+    ".github/workflows/c-guest-authoring.yml:runtime:Qualify standalone C projects and the printed guide": {
+      "workflow": ".github/workflows/c-guest-authoring.yml",
+      "job": "runtime",
+      "name": "Qualify standalone C projects and the printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_c_capsule_authoring\npython3 tools/qualify_c_capsules.py --output \"$RUNNER_TEMP/c-capsule-authoring\""
+    },
     ".github/workflows/ci.yml:profile:select": {
       "workflow": ".github/workflows/ci.yml",
       "job": "profile",
@@ -89,6 +119,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 -m pip install --requirement tools/requirements.lock"
+    },
+    ".github/workflows/ci.yml:rust:Install the real Fish completion test shell": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Install the real Fish completion test shell",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish"
     },
     ".github/workflows/ci.yml:rust:renderer_preflight": {
       "workflow": ".github/workflows/ci.yml",
@@ -570,6 +610,156 @@
       "shell": "default",
       "run": "python3 tools/ci_result.py"
     },
+    ".github/workflows/developer-tools.yml:contracts:Exercise controller boundaries and actual owned subprocesses": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "contracts",
+      "name": "Exercise controller boundaries and actual owned subprocesses",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_build_process"
+    },
+    ".github/workflows/developer-tools.yml:rust-tools:Stage the pinned relocatable Python prefix": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "rust-tools",
+      "name": "Stage the pinned relocatable Python prefix",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/rust-tools-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_DEV_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\""
+    },
+    ".github/workflows/developer-tools.yml:rust-tools:Assemble pinned compiler tools and maintained Rust templates": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "rust-tools",
+      "name": "Assemble pinned compiler tools and maintained Rust templates",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/build_dev_rust_tools.py --output target/dev-rust --python-prefix \"$LSF_DEV_PYTHON_PREFIX\""
+    },
+    ".github/workflows/developer-tools.yml:rust-tools:Compile actual projects with isolated tools and separate operator packaging": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "rust-tools",
+      "name": "Compile actual projects with isolated tools and separate operator packaging",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/run_dev_rust_tools_tests.py --payload target/dev-rust/payload --packager target/dev-rust/latent-test --output \"$RUNNER_TEMP/dev-rust-projects\""
+    },
+    ".github/workflows/developer-tools.yml:rust-tools:Retain offline Rust tool attestation": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "rust-tools",
+      "name": "Retain offline Rust tool attestation",
+      "jobIf": "success()",
+      "stepIf": "github.event_name != 'pull_request'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-rust/candidate/attestation.json"
+    },
+    ".github/workflows/developer-tools.yml:windows:Install exact hashed frontend build inputs": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Install exact hashed frontend build inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m pip install --require-hashes -r tools/dev-frontend-windows.lock"
+    },
+    ".github/workflows/developer-tools.yml:windows:Build native frontend and isolated Linux helper": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Build native frontend and isolated Linux helper",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/build_dev_frontend.py --output target/dev-candidate"
+    },
+    ".github/workflows/developer-tools.yml:windows:Install pinned component manifest validator": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Install pinned component manifest validator",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m pip install jsonschema==4.26.0"
+    },
+    ".github/workflows/developer-tools.yml:windows:Build native portable host and maintained compiled Rust guests": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Build native portable host and maintained compiled Rust guests",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo build -p latent-portable-test-host --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_echo_capsule.py --output-dir target/dev-echo\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build -p latent-toolchain-smoke --example generic-capsule --target wasm32-unknown-unknown --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_portable_dev_guests.py --output target/dev-providers\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }"
+    },
+    ".github/workflows/developer-tools.yml:windows:Exercise native production Wasmtime and shared scenario assertions outside checkout": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Exercise native production Wasmtime and shared scenario assertions outside checkout",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --providers target/dev-providers --output target/dev-portable-smoke.json"
+    },
+    ".github/workflows/developer-tools.yml:windows:Record exact portable output for candidate assembly": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Record exact portable output for candidate assembly",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -c \"from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-candidate/portable'); d.mkdir(); p=d/'latent-portable-test-host.exe'; shutil.copyfile('target/release/latent-portable-test-host.exe',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'windows-x86_64','profile':'release'}))\""
+    },
+    ".github/workflows/developer-tools.yml:wsl-image:Build reviewed image and observed package license inventory": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "wsl-image",
+      "name": "Build reviewed image and observed package license inventory",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/build_dev_rootfs.py --output target/dev-wsl"
+    },
+    ".github/workflows/developer-tools.yml:wsl-image:Retain offline image attestation": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "wsl-image",
+      "name": "Retain offline image attestation",
+      "jobIf": "success()",
+      "stepIf": "github.event_name != 'pull_request'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-wsl/candidate/attestation.json"
+    },
+    ".github/workflows/developer-tools.yml:windows-bundle:Assemble Windows candidate using existing dependency inventory owner": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows-bundle",
+      "name": "Assemble Windows candidate using existing dependency inventory owner",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/build_dev_bundle.py --frontend target/windows-input --portable target/windows-input/portable/latent-portable-test-host.exe --output target/dev-windows"
+    },
+    ".github/workflows/developer-tools.yml:windows-bundle:Retain offline Windows attestation": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows-bundle",
+      "name": "Retain offline Windows attestation",
+      "jobIf": "success()",
+      "stepIf": "github.event_name != 'pull_request'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-windows/candidate/attestation.json"
+    },
     ".github/workflows/docs-pages.yml:select:Verify successful push origin, exact attempt, immutable artifact and fresh source": {
       "workflow": ".github/workflows/docs-pages.yml",
       "job": "select",
@@ -1010,6 +1200,16 @@
       "shell": "default",
       "run": "python3 tools/qualify_rust_capsules.py --output \"$RUNNER_TEMP/rust-capsule-authoring\""
     },
+    ".github/workflows/rust-capsule-authoring.yml:authoring:Exercise developer cache with the actual operator and compiled Rust package inputs": {
+      "workflow": ".github/workflows/rust-capsule-authoring.yml",
+      "job": "authoring",
+      "name": "Exercise developer cache with the actual operator and compiled Rust package inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent --inputs \"$RUNNER_TEMP/rust-capsule-authoring/builds/greeting\" --output \"$RUNNER_TEMP/dev-build-cache\""
+    },
     ".github/workflows/rust-capsule-authoring.yml:authoring:Test contract derivation and isolated provenance approvals": {
       "workflow": ".github/workflows/rust-capsule-authoring.yml",
       "job": "authoring",
@@ -1159,166 +1359,6 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 controls/tools/security_scan.py rustsec --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
-    },
-    ".github/workflows/developer-tools.yml:contracts:Exercise controller boundaries and actual owned subprocesses": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "contracts",
-      "name": "Exercise controller boundaries and actual owned subprocesses",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_build_process"
-    },
-    ".github/workflows/developer-tools.yml:windows:Install exact hashed frontend build inputs": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "windows",
-      "name": "Install exact hashed frontend build inputs",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python -m pip install --require-hashes -r tools/dev-frontend-windows.lock"
-    },
-    ".github/workflows/developer-tools.yml:windows:Build native frontend and isolated Linux helper": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "windows",
-      "name": "Build native frontend and isolated Linux helper",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python tools/build_dev_frontend.py --output target/dev-candidate"
-    },
-    ".github/workflows/developer-tools.yml:windows:Install pinned component manifest validator": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "windows",
-      "name": "Install pinned component manifest validator",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python -m pip install jsonschema==4.26.0"
-    },
-    ".github/workflows/developer-tools.yml:windows:Build native portable host and maintained compiled Rust guests": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "windows",
-      "name": "Build native portable host and maintained compiled Rust guests",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "cargo build -p latent-portable-test-host --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_echo_capsule.py --output-dir target/dev-echo\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build -p latent-toolchain-smoke --example generic-capsule --target wasm32-unknown-unknown --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_portable_dev_guests.py --output target/dev-providers\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }"
-    },
-    ".github/workflows/developer-tools.yml:windows:Exercise native production Wasmtime and shared scenario assertions outside checkout": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "windows",
-      "name": "Exercise native production Wasmtime and shared scenario assertions outside checkout",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --providers target/dev-providers --output target/dev-portable-smoke.json"
-    },
-    ".github/workflows/developer-tools.yml:windows:Record exact portable output for candidate assembly": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "windows",
-      "name": "Record exact portable output for candidate assembly",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python -c \"from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-candidate/portable'); d.mkdir(); p=d/'latent-portable-test-host.exe'; shutil.copyfile('target/release/latent-portable-test-host.exe',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'windows-x86_64','profile':'release'}))\""
-    },
-    ".github/workflows/developer-tools.yml:wsl-image:Build reviewed image and observed package license inventory": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "wsl-image",
-      "name": "Build reviewed image and observed package license inventory",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python tools/build_dev_rootfs.py --output target/dev-wsl"
-    },
-    ".github/workflows/developer-tools.yml:wsl-image:Retain offline image attestation": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "wsl-image",
-      "name": "Retain offline image attestation",
-      "jobIf": "success()",
-      "stepIf": "github.event_name != 'pull_request'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-wsl/candidate/attestation.json"
-    },
-    ".github/workflows/developer-tools.yml:windows-bundle:Assemble Windows candidate using existing dependency inventory owner": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "windows-bundle",
-      "name": "Assemble Windows candidate using existing dependency inventory owner",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python tools/build_dev_bundle.py --frontend target/windows-input --portable target/windows-input/portable/latent-portable-test-host.exe --output target/dev-windows"
-    },
-    ".github/workflows/developer-tools.yml:windows-bundle:Retain offline Windows attestation": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "windows-bundle",
-      "name": "Retain offline Windows attestation",
-      "jobIf": "success()",
-      "stepIf": "github.event_name != 'pull_request'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-windows/candidate/attestation.json"
-    },
-    ".github/workflows/rust-capsule-authoring.yml:authoring:Exercise developer cache with the actual operator and compiled Rust package inputs": {
-      "workflow": ".github/workflows/rust-capsule-authoring.yml",
-      "job": "authoring",
-      "name": "Exercise developer cache with the actual operator and compiled Rust package inputs",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent --inputs \"$RUNNER_TEMP/rust-capsule-authoring/builds/greeting\" --output \"$RUNNER_TEMP/dev-build-cache\""
-    },
-    ".github/workflows/developer-tools.yml:rust-tools:Stage the pinned relocatable Python prefix": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "rust-tools",
-      "name": "Stage the pinned relocatable Python prefix",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/rust-tools-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_DEV_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\""
-    },
-    ".github/workflows/developer-tools.yml:rust-tools:Assemble pinned compiler tools and maintained Rust templates": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "rust-tools",
-      "name": "Assemble pinned compiler tools and maintained Rust templates",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python tools/build_dev_rust_tools.py --output target/dev-rust --python-prefix \"$LSF_DEV_PYTHON_PREFIX\""
-    },
-    ".github/workflows/developer-tools.yml:rust-tools:Compile actual projects with isolated tools and separate operator packaging": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "rust-tools",
-      "name": "Compile actual projects with isolated tools and separate operator packaging",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python tools/run_dev_rust_tools_tests.py --payload target/dev-rust/payload --packager target/dev-rust/latent-test --output \"$RUNNER_TEMP/dev-rust-projects\""
-    },
-    ".github/workflows/developer-tools.yml:rust-tools:Retain offline Rust tool attestation": {
-      "workflow": ".github/workflows/developer-tools.yml",
-      "job": "rust-tools",
-      "name": "Retain offline Rust tool attestation",
-      "jobIf": "success()",
-      "stepIf": "github.event_name != 'pull_request'",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-rust/candidate/attestation.json"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2674,11 +2714,23 @@
     "tools/build_angular_renderer.py": {
       "sha256": "7a52c2a73e1178a12066b940849fc1ddfc5504705621cb11c920552258e1a809"
     },
+    "tools/build_dev_bundle.py": {
+      "sha256": "aa9f74f6d3c48e5b748163a56747b46208405f2c3c34ffb42d134d1a7b347d13"
+    },
+    "tools/build_dev_frontend.py": {
+      "sha256": "c8e8959a795e1d207cbead426acb255cb23839cd7424fd1e5633bd69046a6888"
+    },
+    "tools/build_dev_rootfs.py": {
+      "sha256": "b0a0df997fc39bd4447f1afe825ce58c7ce6ae16a851fa7e3a8ad70bafe479c0"
+    },
+    "tools/build_dev_rust_tools.py": {
+      "sha256": "947c9e5d8185fad25428cd53b2e3de572aa36da932cabe278bb07ab31ced9433"
+    },
     "tools/build_echo_capsule.py": {
       "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
     },
     "tools/build_guest_capsules.py": {
-      "sha256": "5b7c25f375e59abdf5a6d88dc0d31e25fe60ab07f0839202b0d79bc7fdd2694f"
+      "sha256": "0fc418c9dce391c402562b01e303abe71d45a6ee6e8046ba5008a9ea16667570"
     },
     "tools/build_native_runtime.py": {
       "sha256": "8aa6e2df82afe7f69c4acc7ae4ddddcc339b0ee16681cfa0984df90623aa4732"
@@ -2688,6 +2740,9 @@
     },
     "tools/build_phase1_measurement_fixtures.sh": {
       "sha256": "7931eda35e8c31a35bddf111dda1be447455129895d61324530fd85469475de3"
+    },
+    "tools/build_portable_dev_guests.py": {
+      "sha256": "75deb7b113291d81a5cb1d2422df02964bdad8371178d99ec239c3dd1b2fb23f"
     },
     "tools/build_provenance.py": {
       "sha256": "03c1c677cb530fc6b762440dd3a7f762f945892909ad9034af7a115a17fbdb97"
@@ -2708,7 +2763,7 @@
       "sha256": "ceb80198a3ba1cf436b02271bdba3f9f104b943b875d75fc87468990794e8392"
     },
     "tools/ci_cargo_cache.py": {
-      "sha256": "8f58517d55f91fbfc5ac4b6dd65853a8c43ba17b315a41286ea0a261863106e1"
+      "sha256": "2e8182e237e1dbce64e0c7d0375319dde5df3c69517a785d808549c48a119972"
     },
     "tools/ci_coverage.py": {
       "sha256": "67df58fbde773857194e74f52810f8a5e1458efbfe3d7dfe4166ec19aa1461f1"
@@ -2755,8 +2810,11 @@
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
     },
+    "tools/qualify_c_capsules.py": {
+      "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
+    },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "e398d6069280aac5b6e7efef32cc71098cdd09626df42a53c8a1f920893a8630"
+      "sha256": "8be1a3ed2d29898f66fefd9b7a8f801d4c15fb3fe994b0d2490eb9de555627c3"
     },
     "tools/reset_validation_echo.py": {
       "sha256": "7bfdd62d41f709ccee0de64e0c2b14868d4033444ca4e2b0a959424019108d2e"
@@ -2776,6 +2834,12 @@
     "tools/run_ci_lanes.py": {
       "sha256": "895017b292b9935a603f399e68fd16be20d491d7946c8345814c72636562fbdf"
     },
+    "tools/run_dev_build_cache_tests.py": {
+      "sha256": "7664b879113ad53073ba342eea41af3b7d6bb64b38a8443c7a573761162c1a85"
+    },
+    "tools/run_dev_rust_tools_tests.py": {
+      "sha256": "c4930e52c5d33a9342ac691ae176fb2c2b1cf92cff01bfc9a286352cf29233cc"
+    },
     "tools/run_native_vm.py": {
       "sha256": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12"
     },
@@ -2783,7 +2847,7 @@
       "sha256": "65af7a9eb855be44b4724fe1a183bf4d4d379c37566076a1b12ae26ecd8e38c8"
     },
     "tools/run_oci_registry_tests.py": {
-      "sha256": "51e7fb9db3da64092a271a36fbf3c0ebec1202b956ed57e5e627df2ae6f23ef4"
+      "sha256": "83aebbd9068b29edc9772da719108c4db2a04857faa2860c0228547bd41a95e8"
     },
     "tools/run_optimization_benchmarks.py": {
       "sha256": "9bf9f29cdf3d27dc12c5e3b954e99ba210ec7f5e4f1637217d24da21c51dbaf9"
@@ -2808,6 +2872,9 @@
     },
     "tools/run_phase3_resource_acceptance.py": {
       "sha256": "1c59a51493d89074474527ce496123b0078e968013a8a35a78ad907e56ede3e7"
+    },
+    "tools/run_portable_dev_tests.py": {
+      "sha256": "090f2ef288e611d9ea52809c9d83fb6ad9ad43ffecc75e5b9a2fafd7daf453ad"
     },
     "tools/run_publication_workflow.py": {
       "sha256": "8db908658b41757e598285dd0c0a1bdf288dd706e56de5463ce9facc23d5fd42"
@@ -2834,7 +2901,7 @@
       "sha256": "a1faa5ff9fc7480499a12c6d44a681a59073f7f02b6930964678e92dcd9ce581"
     },
     "tools/security_scope.py": {
-      "sha256": "27560fc26ec6aeb4f227b4c08688d6a1c0eeeb6e1f5fd1c7f8dc7e44015c12fa"
+      "sha256": "57a38d0492f115bc255ac009449ece88dff1912934891677141ee74dea777282"
     },
     "tools/security_selftest.py": {
       "sha256": "fcccbe5b1eb0ecdb277d1d0f17d4b20cb4b627eee0fd4e3bf77b077a1da45485"
@@ -2877,30 +2944,6 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
-    },
-    "tools/build_dev_frontend.py": {
-      "sha256": "c8e8959a795e1d207cbead426acb255cb23839cd7424fd1e5633bd69046a6888"
-    },
-    "tools/run_portable_dev_tests.py": {
-      "sha256": "090f2ef288e611d9ea52809c9d83fb6ad9ad43ffecc75e5b9a2fafd7daf453ad"
-    },
-    "tools/build_dev_bundle.py": {
-      "sha256": "aa9f74f6d3c48e5b748163a56747b46208405f2c3c34ffb42d134d1a7b347d13"
-    },
-    "tools/build_dev_rootfs.py": {
-      "sha256": "b0a0df997fc39bd4447f1afe825ce58c7ce6ae16a851fa7e3a8ad70bafe479c0"
-    },
-    "tools/build_portable_dev_guests.py": {
-      "sha256": "75deb7b113291d81a5cb1d2422df02964bdad8371178d99ec239c3dd1b2fb23f"
-    },
-    "tools/run_dev_build_cache_tests.py": {
-      "sha256": "7664b879113ad53073ba342eea41af3b7d6bb64b38a8443c7a573761162c1a85"
-    },
-    "tools/build_dev_rust_tools.py": {
-      "sha256": "947c9e5d8185fad25428cd53b2e3de572aa36da932cabe278bb07ab31ced9433"
-    },
-    "tools/run_dev_rust_tools_tests.py": {
-      "sha256": "c4930e52c5d33a9342ac691ae176fb2c2b1cf92cff01bfc9a286352cf29233cc"
     }
   },
   "pythonCases": {
@@ -3201,6 +3244,17 @@
       "BuildSnapshotTests.test_real_capture_uses_committed_bytes_excludes_evidence_and_is_repeatable",
       "BuildSnapshotTests.test_unsafe_members_cannot_escape_or_introduce_special_files"
     ],
+    "tools/tests/test_c_capsule_authoring.py": [
+      "CAuthoringTests.test_all_templates_capture_editable_source_and_authoritative_contracts",
+      "CAuthoringTests.test_c_namespace_aliases_never_invent_or_hide_ambiguous_bindings",
+      "CAuthoringTests.test_fresh_output_does_not_overwrite_existing_project",
+      "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
+      "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project",
+      "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected",
+      "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs",
+      "ControlDiagnosticsTests.test_cyclic_audit_cursor_stops_without_hiding_the_original_failure",
+      "ControlDiagnosticsTests.test_paginated_evidence_never_retries_or_changes_the_failed_mutation"
+    ],
     "tools/tests/test_capability_policy_schema.py": [
       "CapabilityPolicySchemaTests.test_capability_operation_and_resource_kinds_cannot_be_mixed",
       "CapabilityPolicySchemaTests.test_identifiers_and_paths_reject_trailing_newlines_and_dot_segments",
@@ -3278,7 +3332,6 @@
       "CacheIdentityTests.test_input_count_and_size_are_bounded",
       "CacheIdentityTests.test_missing_deleted_foreign_and_symlinked_inputs_fail",
       "CacheIdentityTests.test_observation_failure_cannot_produce_a_key",
-      "CacheIdentityTests.test_only_trusted_refs_may_write",
       "CacheIdentityTests.test_opt_in_profile_preserves_correctness_and_never_overrides_release",
       "CacheIdentityTests.test_recipe_feature_and_target_changes_invalidate",
       "CacheIdentityTests.test_toolchain_architecture_profile_flags_and_lock_invalidate",
@@ -3340,12 +3393,7 @@
       "IntegrationContractTests.test_current_inventory_supplies_nonempty_exact_lane_cases",
       "IntegrationContractTests.test_missing_lane_receipt_fails_closed",
       "IntegrationContractTests.test_real_lane_graph_dispatches_provider_and_renderer_together",
-      "IntegrationContractTests.test_receipt_requires_exact_steps_cases_and_timing",
-      "JobResultTests.test_accepts_only_exact_expected_results",
-      "JobResultTests.test_empty_or_overlapping_required_selection_is_invalid",
-      "JobResultTests.test_intentionally_unselected_is_not_missing_or_successful",
-      "JobResultTests.test_missing_and_unregistered_job_fail",
-      "JobResultTests.test_required_failure_cancellation_skip_and_missing_output_fail"
+      "IntegrationContractTests.test_receipt_requires_exact_steps_cases_and_timing"
     ],
     "tools/tests/test_ci_profile.py": [
       "ClassificationTests.test_code_after_three_hundred_documentation_paths_is_not_truncated",
@@ -3746,8 +3794,7 @@
       "RegistryRunnerTests.test_cleanup_rejects_unowned_container_and_daemon_failure",
       "RegistryRunnerTests.test_cleanup_removes_verified_id_only",
       "RegistryRunnerTests.test_launch_pins_image_loopback_and_container_resources",
-      "RegistryRunnerTests.test_recovery_validates_name_and_does_not_overwrite_other_state",
-      "RegistryRunnerTests.test_web_mode_runs_only_the_required_catalog_integration"
+      "RegistryRunnerTests.test_recovery_validates_name_and_does_not_overwrite_other_state"
     ],
     "tools/tests/test_optimization_backend_build.py": [
       "BackendBuildTests.test_cpu_source_is_required_only_for_cold_experiment",
@@ -4694,6 +4741,7 @@
       "RunnerContractTests.test_expected_fault_validator_rejects_stale_or_missing_cleanup",
       "RunnerContractTests.test_inventory_contracts_reference_real_suites_and_pinned_services",
       "RunnerContractTests.test_oci_interrupted_launch_still_closes_owned_fixture",
+      "RunnerContractTests.test_oci_modes_execute_the_registered_prepared_cases",
       "RunnerContractTests.test_oci_normal_and_fault_paths_always_retire_registry",
       "RunnerContractTests.test_preflight_reports_no_test_execution",
       "RunnerContractTests.test_registry_cleanup_does_not_unlink_replaced_foreign_state",
@@ -4802,10 +4850,6 @@
       "Phase0ExecutionEvidenceIdentityTests.test_commit_identity_resolves_the_commits_actual_tree",
       "Phase0ExecutionEvidenceIdentityTests.test_pinned_build_input_changes_alter_the_canonical_identity",
       "Phase0ExecutionEvidenceIdentityTests.test_pinned_build_inputs_are_execution_relevant"
-    ],
-    "tools/tests/test_phase0_test_environment.py": [
-      "Phase0TestEnvironmentTests.test_explicit_rejection_tests_can_add_an_override_after_sanitizing",
-      "Phase0TestEnvironmentTests.test_sanitizes_fixed_and_patterned_build_overrides"
     ],
     "tools/tests/test_phase1_archive.py": [
       "ArchiveTests.test_archive_is_reproducible_without_source_mtime",
@@ -5486,9 +5530,8 @@
       "SecurityChangedPathTests.test_present_base_uses_exact_local_diff_without_network"
     ],
     "tools/tests/test_security_rustsec_workflow.py": [
-      "SecurityWorkflowTests.test_actual_aggregate_script_checks_the_same_results",
+      "SecurityWorkflowTests.test_actual_aggregate_checks_selected_results_and_rejects_failures",
       "SecurityWorkflowTests.test_docs_and_svg_only_keep_existing_ci_profile_and_only_secret_job",
-      "SecurityWorkflowTests.test_exact_selected_result_cannot_pass_after_failure_or_cancellation",
       "SecurityWorkflowTests.test_fork_pull_requests_have_no_privileged_token_cache_or_input_execution",
       "SecurityWorkflowTests.test_one_coordinator_reuses_rustsec_and_covers_both_maintained_branches",
       "SecurityWorkflowTests.test_policy_checks_immutable_actions_including_reused_workflow",
@@ -5761,6 +5804,7 @@
     "tools/tests/test_build_provenance.py",
     "tools/tests/test_build_provenance_schemas.py",
     "tools/tests/test_build_snapshot.py",
+    "tools/tests/test_c_capsule_authoring.py",
     "tools/tests/test_capability_policy_schema.py",
     "tools/tests/test_check_tool_versions.py",
     "tools/tests/test_ci_browser_artifacts.py",
@@ -5902,7 +5946,6 @@
     "tools/tests/test_phase0_build_environment.py",
     "tools/tests/test_phase0_collector_identity.py",
     "tools/tests/test_phase0_evidence.py",
-    "tools/tests/test_phase0_test_environment.py",
     "tools/tests/test_phase1_archive.py",
     "tools/tests/test_phase1_budget_archive.py",
     "tools/tests/test_phase1_budget_lifecycle_archive.py",
@@ -5985,7 +6028,9 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/ci.yml": "a7f311e9002c815503ccd24bca8d48df62d4cd6d4211c5acff35db98ddad215f",
+    ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
+    ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
+    ".github/workflows/developer-tools.yml": "3e9c9d4d5a119d125797d470a68ddbfc55636520bb4a38c753c5af6891272e08",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
@@ -5994,7 +6039,6 @@
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/rust-capsule-authoring.yml": "a69b8d1ac076990c1e197203b807f306005df327bc1b4c6fee87b6b40ba199fb",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
-    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/developer-tools.yml": "3e9c9d4d5a119d125797d470a68ddbfc55636520bb4a38c753c5af6891272e08"
+    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b"
   }
 }

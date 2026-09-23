@@ -22,6 +22,7 @@ async fn rollback_restores_real_base_invocation_and_retires_canary_observation()
     .await
     .unwrap();
     let input = canary::seed(&catalogs, &settings.node.trust_classes[0]).await;
+    let artifacts = catalogs.artifacts.clone();
     let deployments = catalogs.deployments.clone();
     let candidate = input.expected_candidate_component_digest.clone().unwrap();
     let node = Box::pin(super::super::super::StandaloneNode::start_with_catalogs(
@@ -48,6 +49,9 @@ async fn rollback_restores_real_base_invocation_and_retires_canary_observation()
         .unwrap();
     let target = before.rollback_target.unwrap();
     let base = before.base.unwrap().component_digest;
+    canary::prepare_invocation(&node, artifacts.as_ref(), &candidate).await;
+    canary::prepare_invocation(&node, artifacts.as_ref(), &base).await;
+    drop(artifacts);
     let invocation_target = InvocationTarget {
         tenant: TenantId("tests".into()),
         service: ServiceId("echo".into()),

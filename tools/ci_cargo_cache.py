@@ -50,11 +50,6 @@ def environment_identity(environment: Mapping[str, str]) -> dict[str, str]:
             if (name in ENV_NAMES or name.startswith(ENV_PREFIXES)) and not SECRET_NAME.search(name)}
 
 
-def writer_allowed(event: str, ref: str) -> bool:
-    return ((event == "push" and ref == "refs/heads/development") or
-            (event == "workflow_dispatch" and ref in {"refs/heads/development", "refs/heads/release"}))
-
-
 def relevant(path: str, configuration: str) -> bool:
     p = Path(path)
     return (p.name in {"Cargo.toml", "Cargo.lock", "rust-toolchain", "rust-toolchain.toml", "build.rs"}

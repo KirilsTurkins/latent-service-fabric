@@ -58,6 +58,33 @@ fn invoke_request(value: invocation::InvokeRequest) -> tonic::Request<invocation
     value
 }
 
+pub(super) async fn prepare_invocation(
+    node: &crate::standalone::StandaloneNode,
+    artifacts: &dyn ArtifactRepository,
+    component: &str,
+) {
+    use latent_executor::ExecutionBackend;
+    let release = latent_core::ReleaseDigest(component.to_owned());
+    let mut key = node.backend.preparation_key(&release).unwrap();
+    key.publication = Some(
+        artifacts
+            .select_execution_publication(&TenantId("tests".into()), &release, None)
+            .unwrap()
+            .expect("published canary component")
+            .id,
+    );
+    // Canary routing/outcome assertions use the normal one-second invocation
+    // budget. Cold compilation is bounded setup, not a runner-speed assertion.
+    let prepared = tokio::time::timeout(
+        Duration::from_secs(10),
+        node.backend.prepare_from_repository(artifacts, &key),
+    )
+    .await
+    .expect("bounded canary compilation setup")
+    .expect("canary component preparation");
+    drop(prepared);
+}
+
 pub(super) fn configured(directory: &TempDir) -> NodeSettings {
     let mut value = settings(directory);
     value.audit = Some(AuditLimits::default());
@@ -160,6 +187,7 @@ async fn actual_candidate_invocation_drives_only_the_matching_canary_promotion()
     .await
     .unwrap();
     let input = seed(&catalogs, &settings.node.trust_classes[0]).await;
+    let artifacts = catalogs.artifacts.clone();
     let deployments = catalogs.deployments.clone();
     let candidate = input.expected_candidate_component_digest.clone().unwrap();
     let node = Box::pin(
@@ -172,6 +200,8 @@ async fn actual_candidate_invocation_drives_only_the_matching_canary_promotion()
     )
     .await
     .unwrap();
+    prepare_invocation(&node, artifacts.as_ref(), &candidate).await;
+    drop(artifacts);
     let endpoint = format!("http://{}", node.endpoint());
     let mut client = proto::rollout_service_client::RolloutServiceClient::connect(endpoint.clone())
         .await

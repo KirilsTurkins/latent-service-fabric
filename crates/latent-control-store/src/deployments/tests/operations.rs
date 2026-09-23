@@ -6,6 +6,7 @@ use latent_manifest::__serde_json as json;
 use latent_routing::RouteResolver;
 use std::sync::{atomic::Ordering, Arc};
 
+mod lease;
 mod mixed;
 mod ownership;
 mod persistence;
@@ -184,6 +185,12 @@ fn finite_receipt_eviction_cannot_replay_an_absent_object_creation() {
     let failure = run(store.prepare_operation(request.clone())).err().unwrap();
     assert_eq!(failure.code, Code::StateConflict);
     assert_eq!(failure.message, "deployment-state-version-conflict");
+    assert_eq!(failure.details.len(), 1);
+    assert_eq!(failure.details[0].kind, "deployment-catalog");
+    assert_eq!(
+        failure.details[0].fields["reason"],
+        "deployment-state-version-conflict"
+    );
     assert!(
         run(store.get_versioned(&alice(), &DeploymentId("blue".into())))
             .unwrap()

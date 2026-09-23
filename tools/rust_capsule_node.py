@@ -32,13 +32,51 @@ class RecordingClient(Client):
         require(self.calls < MAX_CALLS, "authoring-control-count")
         expected = kwargs.pop("codes", (0,))
         value = super().call(*args, codes=(0, 2, 3, 4, 5, 6, 130), **kwargs)
+        original_call = self.calls
         encoded = json.dumps(value).encode()
         self.retained += len(encoded)
         require(self.retained <= 4 * 1024 * 1024, "authoring-control-retention")
         write_json(self.evidence / f"{self.calls:03}.json", value)
         code = {"success": 0, "local-error": 2, "declared-error": 3, "platform-failure": 4,
                 "transport-failure": 5, "not-found": 6, "interrupted": 130}[value["category"]]
-        require(code in expected, f"authoring-control-{self.calls}-{code}")
+        if code not in expected:
+            # Read-only failure evidence. Never retry an uncertain mutation or
+            # turn a subsequently found receipt into a successful test attempt.
+            diagnostics = {"failedCall": original_call, "audit": [], "auditComplete": False}
+            commands = []
+            if args[:2] in (("deployment", "apply"), ("deployment", "delete")) and "--operation-id" in args:
+                operation = args[args.index("--operation-id") + 1]
+                commands.insert(0, ("operation", ("deployment", "operation", operation)))
+            for name, command in commands:
+                try:
+                    require(self.calls < MAX_CALLS, "authoring-diagnostic-count")
+                    diagnostics[name] = super().call(*command, codes=(0, 2, 3, 4, 5, 6, 130))
+                except Exception as error:
+                    diagnostics[name] = {"diagnosticFailure": type(error).__name__}
+            token, seen = None, set()
+            for _page in range(8):
+                try:
+                    require(self.calls < MAX_CALLS, "authoring-diagnostic-count")
+                    command = ("audit", "query", "--scope", "tenant", "--page-size", "64")
+                    if token is not None:
+                        command += ("--page-token", token)
+                    page = super().call(*command, codes=(0, 2, 3, 4, 5, 6, 130))
+                    require(len(json.dumps(diagnostics).encode()) + len(json.dumps(page).encode()) <= 262144,
+                            "authoring-diagnostic-retention")
+                    diagnostics["audit"].append(page)
+                    if page["category"] != "success":
+                        break
+                    token = page["data"]["page"]["nextPageToken"]
+                    if token is None:
+                        diagnostics["auditComplete"] = True
+                        break
+                    require(isinstance(token, str) and token not in seen, "authoring-diagnostic-page-cycle")
+                    seen.add(token)
+                except Exception as error:
+                    diagnostics["auditFailure"] = type(error).__name__
+                    break
+            write_json(self.evidence / "unexpected-control-diagnostics.json", diagnostics)
+        require(code in expected, f"authoring-control-{original_call}-{code}")
         return value
 
 

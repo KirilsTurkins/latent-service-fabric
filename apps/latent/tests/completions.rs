@@ -174,3 +174,36 @@ fn real_bash_completion_smoke_in_a_clean_shell() {
     );
     assert_eq!(output.stdout, b"bash completion smoke passed\n");
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn real_fish_completion_smoke_in_a_clean_shell() {
+    let directory = tempfile::tempdir().unwrap();
+    let generated = client(&directory)
+        .args(["completions", "fish"])
+        .output()
+        .unwrap();
+    assert!(generated.status.success());
+    fs::write(directory.path().join("latent.fish"), generated.stdout).unwrap();
+    let output = Command::new("fish")
+        .env_clear()
+        .env("PATH", "/usr/bin:/bin")
+        .env("HOME", directory.path())
+        .env("XDG_CONFIG_HOME", directory.path())
+        .env("LC_ALL", "C")
+        .current_dir(directory.path())
+        .args([
+            "--no-config",
+            "-c",
+            include_str!("completions/fish-smoke.fish"),
+        ])
+        .output()
+        .expect("the Linux completion smoke test requires Fish (see toolchain setup)");
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(output.stdout, b"fish completion smoke passed\n");
+    assert!(!directory.path().join("unexpected-callback").exists());
+}

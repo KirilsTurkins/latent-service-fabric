@@ -1,0 +1,107 @@
+{
+  "sourceRevision": "8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+  "scope": "Fresh Linux builds and bounded execution; no SDK authoring or publication.",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.36",
+  "uid": 0,
+  "commands": [
+    {
+      "name": "fresh-cli-node-build",
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "-p",
+        "latent",
+        "-p",
+        "latentd"
+      ],
+      "exit": 0,
+      "elapsedSeconds": 0.363,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "2634d6bec047c4b96747f1a3f5477692a2fcb9c070b23938b5095ce219b2e697"
+    },
+    {
+      "name": "protected-files-including-privileged-owner",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "latent-protected-files",
+        "--lib",
+        "--",
+        "--include-ignored"
+      ],
+      "exit": 0,
+      "elapsedSeconds": 2.556,
+      "stdoutSha256": "8f7207bd3a78ee35df738cbd12719b2616deae426224c1341eb4d049bbd2911d",
+      "stderrSha256": "787c961c59282819cd582add1088760ffd93041e6d6e0f6330800d88b62d043a"
+    },
+    {
+      "name": "bounded-local-blob-recovery",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "latent-blobs",
+        "--lib"
+      ],
+      "exit": 0,
+      "elapsedSeconds": 30.35,
+      "stdoutSha256": "e804fdd815de350057c0b7df40b2f238e88d75591d37861511184622745f06d5",
+      "stderrSha256": "467f43d88f73dd2265fac7aa1827b69917e31c47d55e99d76250a57a6b3badae"
+    },
+    {
+      "name": "durable-policy-cli",
+      "argv": [
+        "python3",
+        "tools/run_capability_policy_workflow.py",
+        "--cli",
+        "/tmp/lsf-feature-validation-8eea5c73/target/debug/latent",
+        "--node",
+        "/tmp/lsf-feature-validation-8eea5c73/target/debug/latentd"
+      ],
+      "exit": 0,
+      "elapsedSeconds": 0.441,
+      "stdoutSha256": "eedf708576651b57c474991cfcc547ff2e551afd7f7e1e9630e84bd7ed6b17e3",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "fresh-echo-capsule",
+      "argv": [
+        "make",
+        "echo-capsule"
+      ],
+      "exit": 0,
+      "elapsedSeconds": 21.723,
+      "stdoutSha256": "d5102bb73e6b21913e1ac822b24f1d80fa0dfa980f07e741593a3f65aaf9c38d",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "printed-first-node-walkthrough",
+      "argv": [
+        "bash",
+        "/tmp/lsf-feature-validation-8eea5c73/target/feature-review/first-node.sh"
+      ],
+      "exit": 0,
+      "elapsedSeconds": 1.725,
+      "stdoutSha256": "99ed6a132caeb17462c5a43c749abe5cc1ce2d6a99b2a6b95fe3ddded2167152",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "guide": {
+    "path": "docs/start/first-node.md",
+    "sha256": "68a36302b96ee9aeed44ae0db9b42f2bff18fbc763c885a07870f6116d3070f3",
+    "executedBashBlocks": 8,
+    "preparation": "Pinned tools provisioned; CLI, node and echo fixture freshly built from verified Git source."
+  },
+  "binaries": {
+    "latent": "b1c5f116110d53e8c5a8a6406487111056369050ba51e85c8dd4bdec41480250",
+    "latentd": "da847792d1b9779cc083b576d530982b7ab99c553611de3bc68c6a8f9afff5dc"
+  },
+  "passed": true
+}

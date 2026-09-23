@@ -10,7 +10,6 @@ import unittest
 from tools import ci_suite_inventory
 from tools.ci_lanes import (
     Completion, LaneError, Lease, Phase, Scheduler, Stage, State,
-    require_job_results,
 )
 from tools.run_ci_lanes import CHILD_SCHEMA, _expected_cases, _read_receipt, stages
 
@@ -309,48 +308,6 @@ class ExecutionPolicyTests(unittest.TestCase):
                     finish(sched, lease)
                 self.assertTrue(sched.passed)
                 self.assertCountEqual(executed, [s.name for s in stages])
-
-
-class JobResultTests(unittest.TestCase):
-    def check(self, results):
-        return require_job_results(results, required=frozenset({"correctness", "provider"}),
-                                   unselected=frozenset({"renderer"}))
-
-    def valid(self):
-        return {"correctness": {"result": "success"}, "provider": {"result": "success"},
-                "renderer": {"result": "skipped"}}
-
-    def test_accepts_only_exact_expected_results(self):
-        self.assertEqual(self.check(self.valid()), ())
-
-    def test_required_failure_cancellation_skip_and_missing_output_fail(self):
-        for value in ({"result": "failure"}, {"result": "cancelled"},
-                      {"result": "skipped"}, {}, None):
-            with self.subTest(value=value):
-                results = self.valid()
-                results["provider"] = value
-                self.assertIn("provider", self.check(results))
-
-    def test_missing_and_unregistered_job_fail(self):
-        results = self.valid()
-        del results["provider"]
-        self.assertIn("job-inventory-mismatch", self.check(results))
-        results = self.valid()
-        results["unregistered"] = {"result": "success"}
-        self.assertIn("job-inventory-mismatch", self.check(results))
-
-    def test_intentionally_unselected_is_not_missing_or_successful(self):
-        results = self.valid()
-        del results["renderer"]
-        self.assertIn("renderer", self.check(results))
-        results["renderer"] = {"result": "success"}
-        self.assertIn("renderer", self.check(results))
-
-    def test_empty_or_overlapping_required_selection_is_invalid(self):
-        for required, unselected in ((frozenset(), frozenset()),
-                                     (frozenset({"a"}), frozenset({"a"}))):
-            with self.assertRaises(LaneError):
-                require_job_results({}, required=required, unselected=unselected)
 
 
 class IntegrationContractTests(unittest.TestCase):

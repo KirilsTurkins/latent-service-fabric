@@ -179,9 +179,13 @@ impl SupplyChainAuthority {
             std::sync::TryLockError::WouldBlock => unavailable("admission-control-busy"),
             std::sync::TryLockError::Poisoned(_) => unavailable("admission-authority-poisoned"),
         })?;
-        self.renew_unfenced(&ledger)
+        self.renew_unfenced(&ledger, false)
     }
-    fn renewal(&self, state: &mut State) -> Result<Option<DurableFloor>, PlatformError> {
+    fn renewal(
+        &self,
+        state: &mut State,
+        full_window: bool,
+    ) -> Result<Option<DurableFloor>, PlatformError> {
         if self.inner.retired.load(Ordering::Acquire) {
             return Err(unavailable("admission-owner-retired"));
         }
@@ -195,9 +199,10 @@ impl SupplyChainAuthority {
         // Keep at least two seconds of margin with the default lease, avoiding
         // filesystem work on every control tick. Short leases renew each second.
         let margin = state.lease_seconds.min(2);
-        if now
-            .checked_add(margin)
-            .is_some_and(|until| until < state.floor.restart_not_before)
+        if !full_window
+            && now
+                .checked_add(margin)
+                .is_some_and(|until| until < state.floor.restart_not_before)
         {
             state.observed_at = now;
             return Ok(None);
@@ -225,14 +230,14 @@ impl SupplyChainAuthority {
         Ok(())
     }
     fn renew(&self, state: &mut State, ledger: &Ledger) -> Result<(), PlatformError> {
-        if let Some(next) = self.renewal(state)? {
+        if let Some(next) = self.renewal(state, false)? {
             self.inner.persist(ledger, &next)?;
             self.finish_renewal(state, next)?;
         }
         Ok(())
     }
-    fn renew_unfenced(&self, ledger: &Ledger) -> Result<(), PlatformError> {
-        let next = self.renewal(&mut *self.inner.lock()?)?;
+    fn renew_unfenced(&self, ledger: &Ledger, full_window: bool) -> Result<(), PlatformError> {
+        let next = self.renewal(&mut *self.inner.lock()?, full_window)?;
         let Some(next) = next else {
             return Ok(());
         };
@@ -303,7 +308,12 @@ impl AdmissionAuthority for SupplyChainAuthority {
             .ledger
             .lock()
             .map_err(|_| unavailable("admission-authority-poisoned"))?;
-        self.renew_unfenced(&ledger)
+        // A mutation can occupy the control worker longer than the sampler's
+        // two-second margin. Start its work with a complete configured window,
+        // not merely a currently covered (but almost expired) sampler lease.
+        // The maximum window, persistence-before-use and all grant fences stay
+        // unchanged; this never retries the caller's mutation.
+        self.renew_unfenced(&ledger, true)
     }
 
     fn verify_web(
@@ -472,7 +482,14 @@ fn invalid(message: &'static str) -> PlatformError {
     error(PlatformErrorCode::InvalidArgument, message)
 }
 fn unavailable(message: &'static str) -> PlatformError {
-    error(PlatformErrorCode::Unavailable, message)
+    let mut failure = error(PlatformErrorCode::Unavailable, message);
+    if latent_core::error::ADMISSION_CURRENTNESS_REASONS.contains(&message) {
+        failure.details.push(latent_core::ErrorDetail {
+            kind: "admission.currentness".into(),
+            fields: [("reason".into(), message.into())].into(),
+        });
+    }
+    failure
 }
 fn denied(message: &'static str) -> PlatformError {
     error(PlatformErrorCode::PermissionDenied, message)
