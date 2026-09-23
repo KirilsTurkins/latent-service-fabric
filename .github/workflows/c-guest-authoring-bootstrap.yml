@@ -6,9 +6,9 @@ on:
 permissions:
   contents: read
 jobs:
-  capture:
+  compile:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -17,20 +17,16 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613
         with:
           version: 1.254.0
-      - name: Locate shared application contracts and descriptor generation
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
+        with:
+          version: "0.16.0"
+      - name: Install verified guest binding generator
+        run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Compile real C guests
+        run: python3 sdk/c-guest/tools/compile.py --output "$RUNNER_TEMP/c-guests"
+      - name: Inspect integration registration and source profiles
+        if: always()
         run: |
-          git grep -n -i -E '(greeting|word.count|shipping)' -- wit tools sdk docs website/docs | head -100 || true
-          git ls-files | grep -E '(tutorial|teaching|application_workflow|build_provenance|ci_suite_inventory)' | head -80
-      - name: Inspect authoritative parser JSON
-        run: |
-          mkdir -p target/c-authoring-schema
-          cat > target/c-authoring-schema/world.wit <<'WIT'
-          package examples:authoring@1.0.0;
-          interface api {
-            record parcel { id: u64, weight: u32, labels: list<string>, }
-            variant error { invalid(string), overflow, }
-            quote: func(input: parcel) -> result<u64, error>;
-          }
-          world component { export api; }
-          WIT
-          wasm-tools component wit target/c-authoring-schema --json
+          git grep -n 'fixture.*blob\|C_GUEST_BUILD_TYPE\|c-guest/v1' -- crates/latent-signing schemas tools/tests/test_build_provenance.py | head -100
+          sed -n '1,180p' tools/ci_coverage.py
+          git grep -n 'guest_sdk\|test_guest\|build_guest_capsules' -- .github/workflows/ci.yml tools/ci* | head -80
