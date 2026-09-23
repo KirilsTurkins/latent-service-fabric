@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'sdk/java-guest/**'
+      - 'tools/java_guest/**'
+      - 'tools/qualify_java_bridge.py'
       - '.github/workflows/java-guest-feasibility.yml'
       - 'tools/toolchain.toml'
       - 'wit/platform/**'
@@ -77,6 +79,12 @@ jobs:
         run: |
           set -o pipefail
           cargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-feasibility/probe.wasm" 2>&1 | tee "$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log"
+      - name: Compile generated typed Java bindings against async capability WIT
+        run: python3 tools/qualify_java_bridge.py --output "$RUNNER_TEMP/java-guest-bindings" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Execute typed Java values and async host suspension
+        run: |
+          set -o pipefail
+          cargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm" --typed 2>&1 | tee "$RUNNER_TEMP/java-guest-bindings/runtime-probe.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -93,5 +101,11 @@ jobs:
             ${{ runner.temp }}/java-guest-feasibility/project/build/teavm-c/
             ${{ runner.temp }}/java-guest-feasibility/bindings/
             ${{ runner.temp }}/java-guest-feasibility/*.wasm
+            ${{ runner.temp }}/java-guest-bindings/report.json
+            ${{ runner.temp }}/java-guest-bindings/compiler/*.log
+            ${{ runner.temp }}/java-guest-bindings/compiler-inputs.json
+            ${{ runner.temp }}/java-guest-bindings/runtime-probe.log
+            ${{ runner.temp }}/java-guest-bindings/compiled/bindings/
+            ${{ runner.temp }}/java-guest-bindings/compiled/component.wasm
           if-no-files-found: warn
           retention-days: 14

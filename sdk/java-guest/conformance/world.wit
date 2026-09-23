@@ -1,0 +1,22 @@
+package tests:java-feasibility@1.0.0;
+
+interface probe {
+    identity: func(value: s64) -> s64;
+    unsigned: func(value: u64) -> u64;
+    text: func(value: string) -> string;
+    declared: func(fail: bool) -> result<u32, string>;
+    smoke: async func() -> u32;
+    next: func() -> u32;
+}
+
+world capsule {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    import latent:random/random@0.1.0;
+    export probe;
+}
+
+world runtime-support {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+}

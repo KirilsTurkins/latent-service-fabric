@@ -12,6 +12,7 @@ async fn main() -> wasmtime::Result<()> {
     let path = std::env::args()
         .nth(1)
         .ok_or_else(|| wasmtime::Error::msg("component path required"))?;
+    let typed = std::env::args().any(|value| value == "--typed");
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
     #[cfg(feature = "java-guest-diagnostic")]
@@ -49,13 +50,7 @@ async fn main() -> wasmtime::Result<()> {
             let (_, interface) = instance
                 .get_export(&mut store, None, "tests:java-feasibility/probe@1.0.0")
                 .ok_or_else(|| wasmtime::Error::msg("missing Java export interface"))?;
-            for (name, input, expected) in [
-                ("identity", vec![Val::S64(i64::MIN)], Val::S64(i64::MIN)),
-                ("identity", vec![Val::S64(i64::MAX)], Val::S64(i64::MAX)),
-                ("smoke", vec![], Val::U32(4)),
-                ("next", vec![], Val::U32(1)),
-                ("next", vec![], Val::U32(2)),
-            ] {
+            for (name, input, expected) in cases(typed) {
                 let (_, index) = instance
                     .get_export(&mut store, Some(&interface), name)
                     .ok_or_else(|| wasmtime::Error::msg("missing Java export function"))?;
@@ -91,12 +86,69 @@ async fn main() -> wasmtime::Result<()> {
     Ok(())
 }
 
+fn cases(typed: bool) -> Vec<(&'static str, Vec<Val>, Val)> {
+    let mut cases = vec![
+        ("identity", vec![Val::S64(i64::MIN)], Val::S64(i64::MIN)),
+        ("identity", vec![Val::S64(i64::MAX)], Val::S64(i64::MAX)),
+        ("smoke", vec![], Val::U32(4)),
+        ("next", vec![], Val::U32(1)),
+        ("next", vec![], Val::U32(2)),
+    ];
+    if typed {
+        cases.extend([
+            ("unsigned", vec![Val::U64(u64::MAX)], Val::U64(u64::MAX)),
+            (
+                "text",
+                vec![Val::String("Grüße 🌍\0Java".into())],
+                Val::String("Grüße 🌍\0Java".into()),
+            ),
+            (
+                "declared",
+                vec![Val::Bool(true)],
+                Val::Result(Err(Some(Box::new(Val::String(
+                    "declared Java error".into(),
+                ))))),
+            ),
+            (
+                "declared",
+                vec![Val::Bool(false)],
+                Val::Result(Ok(Some(Box::new(Val::U32(42))))),
+            ),
+        ]);
+    }
+    cases
+}
+
 fn linker(
     engine: &Engine,
     denied: bool,
     calls: Arc<AtomicUsize>,
 ) -> wasmtime::Result<Linker<StoreLimits>> {
     let mut linker = Linker::new(engine);
+    linker
+        .instance("latent:random/random@0.1.0")?
+        .func_new_async("bytes", |_, _, arguments, results| {
+            Box::new(async move {
+                tokio::task::yield_now().await;
+                let [Val::U32(length)] = arguments else {
+                    return Err(wasmtime::Error::msg("random-input"));
+                };
+                if *length != 32 {
+                    return Err(wasmtime::Error::msg("random-budget"));
+                }
+                results[0] = Val::Result(Ok(Some(Box::new(Val::List(vec![Val::U8(7); 32])))));
+                Ok(())
+            })
+        })?;
+    linker
+        .instance("latent:random/random@0.1.0")?
+        .func_new_async("u64", |_, _, _, results| {
+            Box::new(async move {
+                tokio::task::yield_now().await;
+                results[0] = Val::Result(Ok(Some(Box::new(Val::U64(u64::MAX)))));
+                Ok(())
+            })
+        })?;
     let monotonic = Arc::clone(&calls);
     let origin = Instant::now();
     linker
