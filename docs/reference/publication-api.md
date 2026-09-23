@@ -69,13 +69,13 @@ checksum covers that association. Receipt canonical bytes and `receipt_digest`
 retain their previous meaning; they do not alone authenticate the additive
 publication reference. Protected catalog ownership remains required.
 
-Startup upgrades a format-1 operation table using a matching retained object
-revision or a unique current scoped publication. Ambiguous history is rejected;
-archived Phase 2 migration mappings are not read.
-The upgrade is durably committed before routes are exposed and preserves
-request hashes, receipt bytes, CAS versions and object generations. A format-5
-deployment envelope can therefore still need an operation-table upgrade. Older
-binaries reject table format 2; preserve a stopped backup before upgrading.
+Startup requires operation table format 2. Obsolete format-1 tables are rejected
+without inventing publication associations or rewriting catalog bytes. Receipt
+format 1 remains the current receipt encoding; it is independent of the table
+version. Current tables preserve request hashes, receipt bytes, CAS versions and
+object generations across restart. See the
+[deployment storage contract](publication-runtime.md#deployment-selection-and-persistence)
+for accepted catalog and rollout-plan versions.
 
 The [publication schema](../../schemas/publication-ref.schema.json), release
 lifecycle schema, Protobuf descriptor contract and compatibility fixtures cover
@@ -93,7 +93,7 @@ this does not announce a new executable SDK client.
 Phase 2 release roots are unsupported. The offline migrator has been removed;
 follow the [fresh-state procedure](publication-catalog.md#supported-storage-and-fresh-state)
 instead. A nonempty obsolete root cannot become a newly admitted publication
-catalog. Current deployment operation-table recovery remains separate from
+catalog. Current deployment operation-table validation remains separate from
 retired release-root formats.
 
 ## Rollout and invocation receipts

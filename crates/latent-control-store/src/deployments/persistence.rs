@@ -1,7 +1,7 @@
 mod encoding;
 mod hashing;
 #[cfg(test)]
-mod legacy;
+mod oracle;
 mod projection;
 
 use std::collections::BTreeMap;
@@ -99,10 +99,6 @@ struct StoredPublicationPin {
 }
 
 impl Record {
-    pub(super) fn needs_publication_upgrade(&self) -> bool {
-        self.format_version < 5
-    }
-
     pub(super) fn publication_pins(
         &self,
         deployments: &BTreeMap<DeploymentId, DeploymentManifest>,
@@ -136,11 +132,7 @@ impl Record {
         deployments: &BTreeMap<DeploymentId, DeploymentManifest>,
     ) -> Result<BTreeMap<DeploymentId, u64>, PlatformError> {
         match (self.format_version, &self.payload.object_generations) {
-            (1, None) => Ok(deployments
-                .keys()
-                .map(|id| (id.clone(), self.payload.generation))
-                .collect()),
-            (2..=7, Some(stored)) if stored.len() == deployments.len() => {
+            (5..=7, Some(stored)) if stored.len() == deployments.len() => {
                 let mut versions = BTreeMap::new();
                 for entry in stored {
                     let id = DeploymentId(entry.id.clone());
@@ -225,11 +217,13 @@ pub(super) fn own_root(root: &Path) -> Result<(PathBuf, OwnerLock), PlatformErro
             ));
         }
     }
-    // Cleanup is only allowed after acquiring the exclusive root lock. A staging
-    // marker, including an empty or truncated one, is never authoritative state.
-    remove_pending(&root)?;
-    remove_if_present(&root.join(INITIALIZED_PENDING_FILE))?;
     Ok((root, owner))
+}
+
+/// Discard non-authoritative staging only after the owned catalog is validated.
+pub(super) fn discard_staging(root: &Path) -> Result<(), PlatformError> {
+    remove_pending(root)?;
+    remove_if_present(&root.join(INITIALIZED_PENDING_FILE))
 }
 
 /// Synchronize every link that makes the catalog reachable, leaf to filesystem root.
@@ -276,9 +270,14 @@ pub(super) fn load(
         return Err(byte_limit());
     }
     let record: Record = json::from_slice(&bytes).map_err(|_| corrupt())?;
+    if !matches!(record.format_version, 5..=7) {
+        return Err(error(
+            PlatformErrorCode::CorruptArtifact,
+            "unsupported-catalog-format-use-fresh-state",
+        ));
+    }
     let checksum = payload_checksum(&record.payload, config.max_state_bytes, work)?;
-    if !matches!(record.format_version, 1..=7)
-        || (record.format_version >= 5) != record.payload.publication_pins.is_some()
+    if record.payload.publication_pins.is_none()
         || (record.format_version < 7
             && (record.format_version == 6) != record.payload.capability_bindings.is_some())
         || (record.format_version == 7)
@@ -287,20 +286,6 @@ pub(super) fn load(
                 .control
                 .as_ref()
                 .is_some_and(|v| v.http_routes.is_some())
-        || (record.format_version < 5
-            && (matches!(record.format_version, 3 | 4) != record.payload.control.is_some()
-                || (record.format_version == 4)
-                    != record
-                        .payload
-                        .control
-                        .as_ref()
-                        .is_some_and(|v| v.deployment_operations.is_some())))
-        || (record.format_version == 3
-            && record
-                .payload
-                .control
-                .as_ref()
-                .is_some_and(|v| v.rollouts.rows.is_empty()))
         || record
             .payload
             .control
@@ -320,27 +305,27 @@ pub(super) struct EncodedCatalog {
     bytes: Vec<u8>,
 }
 
-/// A compiler-owned route candidate. Legacy callers already encoded their v2
-/// envelope; an established v3 owner supplies control metadata before encoding.
+/// A compiler-owned route candidate. Ordinary mutation supplies encoded bytes;
+/// a combined control owner supplies its metadata before encoding.
 pub(super) enum PublicationCandidate {
-    Legacy(EncodedCatalog),
+    Encoded(EncodedCatalog),
     Combined(CompiledCatalog),
 }
 impl From<EncodedCatalog> for PublicationCandidate {
     fn from(value: EncodedCatalog) -> Self {
-        Self::Legacy(value)
+        Self::Encoded(value)
     }
 }
 impl PublicationCandidate {
     pub(super) fn catalog(&self) -> &CompiledCatalog {
         match self {
-            Self::Legacy(value) => value.catalog(),
+            Self::Encoded(value) => value.catalog(),
             Self::Combined(value) => value,
         }
     }
     pub(super) fn into_parts(self) -> (CompiledCatalog, Option<Vec<u8>>) {
         match self {
-            Self::Legacy(value) => {
+            Self::Encoded(value) => {
                 let (catalog, bytes) = value.into_parts();
                 (catalog, Some(bytes))
             }
@@ -467,26 +452,7 @@ impl Write for LimitedBytes {
 }
 
 pub(super) fn matches_restored_snapshot(record: &Record, catalog: &CompiledCatalog) -> bool {
-    let mut expected = catalog_snapshot_value(catalog);
-    if record.needs_publication_upgrade() {
-        if let Some(services) = expected["services"].as_array_mut() {
-            for service in services {
-                if let Some(revisions) = service["revisions"].as_array_mut() {
-                    for revision in revisions {
-                        revision
-                            .as_object_mut()
-                            .expect("owned revision")
-                            .remove("publication");
-                        revision["attributes"]
-                            .as_object_mut()
-                            .expect("owned attributes")
-                            .remove("lsf.publication");
-                    }
-                }
-            }
-        }
-    }
-    record.payload.snapshot == expected
+    record.payload.snapshot == catalog_snapshot_value(catalog)
 }
 
 /// Direct canonical traversal avoids a second owned public route snapshot.

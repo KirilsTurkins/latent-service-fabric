@@ -102,14 +102,12 @@ fn operation_history_keeps_exact_publication_after_delete_revoke_restart_and_rep
 }
 
 #[test]
-fn legacy_operation_upgrade_preserves_canonical_receipt_and_captures_before_coexistence() {
+fn obsolete_operation_table_is_rejected_without_inventing_publication_receipts() {
     let roots = [TempRoot::new(), TempRoot::new()];
     let repository = artifacts(&roots[0]);
     let first = publish(&repository, "alice", "first");
     let catalog = store(&roots[1], &repository);
-    let input = apply("legacy", None, 0);
-    let original = commit(&catalog, input.clone());
-    let canonical = original.canonical_bytes().unwrap();
+    commit(&catalog, apply("original", Some(&first), 0));
     drop(catalog);
     let path = roots[1].0.join("catalog.json");
     let mut record: crate::deployments::persistence::Record =
@@ -127,27 +125,17 @@ fn legacy_operation_upgrade_preserves_canonical_receipt_and_captures_before_coex
         row.publication = None;
     }
     record.checksum = latent_artifacts::content_digest(&json::to_vec(&record.payload).unwrap()).0;
-    std::fs::write(&path, json::to_vec(&record).unwrap()).unwrap();
-    let catalog = store(&roots[1], &repository);
-    assert_eq!(
-        lookup(&catalog, "legacy").canonical_bytes().unwrap(),
-        canonical
-    );
-    assert_eq!(
-        lookup(&catalog, "legacy").publication.as_ref(),
-        Some(&first)
-    );
-    let stored: json::Value = json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
-    assert_eq!(
-        stored["payload"]["control"]["deployment_operations"]["format_version"],
-        2
-    );
-    publish(&repository, "alice", "second");
-    revoke(&repository, &first);
-    drop(catalog);
-    let catalog = store(&roots[1], &repository);
-    assert_eq!(lookup(&catalog, "legacy"), original);
-    assert_eq!(commit(&catalog, input), original);
+    let bytes = json::to_vec(&record).unwrap();
+    std::fs::write(&path, &bytes).unwrap();
+    assert!(run(Store::open_with_catalog(
+        &roots[1].0,
+        repository.clone(),
+        Limits::default(),
+        repository.lifecycle_authority(),
+        super::super::lifecycle::profile("47.0.4")
+    ))
+    .is_err());
+    assert_eq!(std::fs::read(&path).unwrap(), bytes);
 }
 
 #[test]
