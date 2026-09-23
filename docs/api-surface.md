@@ -51,7 +51,7 @@ one bounded authenticated loopback listener on Linux.
 | `ReleaseService` | Publish/Get/List, lifecycle status, retained operation lookup, revoke/retire and detached evidence renewal. Package publication uses independent current node admission. |
 | `DeploymentService` | Apply/Get/List/Delete, optional managed operation IDs and exact object/state preconditions, coherent operation snapshots and GetDeploymentOperation. |
 | `RolloutService` | Optional audited Start/Change/Evaluate/Get/List/GetOperation; Change includes manual stages, pause/resume/abort, sealed canary promotion and explicit rollback. |
-| `AuditService` | Optional QueryPhase2Audit with typed scope/filter/cursor/coverage and a limited legacy QueryAudit projection. |
+| `AuditService` | Optional `QueryPhase2Audit` with typed scope, filters, records, cursors and loss coverage. |
 | `RouteService` | Tenant-scoped GetRouteSnapshot. |
 | `NodeService` | GetNode and ListNodes for the configured node's bounded inventory. |
 | `ContractService` | Declared registry/comparison RPCs; compatibility is currently a Rust host API used by local control compilation. |

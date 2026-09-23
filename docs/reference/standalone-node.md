@@ -430,9 +430,8 @@ downgrade. Audit configuration is unsupported on other node platforms.
 Tenant queries require an administrator and exactly that principal's tenant.
 Node queries additionally require the trusted `latent.node.operator` claim;
 that claim does not grant access to another tenant's history. Cursors are opaque
-and bound to their scope and filters. `QueryAudit` supplies a limited tenant
-projection; unsupported resource-prefix filters are rejected. Page records,
-scan work and encoded responses are bounded. The response retains its page
+and bound to their scope and filters. Every query supplies an explicit scope.
+Page records, scan work and encoded responses are bounded. The response retains its page
 allowance through body consumption or cancellation, including bytes still owned
 by the transport.
 

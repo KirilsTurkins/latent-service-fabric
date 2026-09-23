@@ -165,8 +165,8 @@ allocation or process RSS.
 `AuditService.QueryPhase2Audit` returns typed records. Tenant queries require an
 administrator bound to exactly the authenticated tenant. Node queries additionally
 require the trusted `latent.node.operator` claim; it grants no cross-tenant query
-access. The existing `QueryAudit` method provides a limited tenant projection;
-unsupported resource-prefix filters are rejected.
+access. Every query supplies an explicit scope and returns coverage with its
+records.
 
 Cursors bind the journal epoch, exact scope and filters, position and frozen high
 watermark. They grant no authorization. Later appends are excluded from the same
