@@ -11,7 +11,10 @@ jobs:
   native:
     if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/feat/rust-capsule-authoring-544'
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_TERM_COLOR: never
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -20,16 +23,16 @@ jobs:
         with:
           components: rustfmt
           targets: wasm32-unknown-unknown
-      - name: Apply exact reviewed patch on the dedicated feature branch
+      - name: Apply exact authoring integration patch on the dedicated feature branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
           import base64, gzip, hashlib, json, os, subprocess, urllib.request
           from pathlib import Path
-          if Path('tools/rust_capsule.py').exists():
+          if Path('tools/run_rust_authoring.py').exists():
               raise SystemExit(0)
-          chunks = ['0db3759084ab4203b034aee2bc10969603f3c072', '33460ac0f66051c4b4bd28d4ad9b702b378615d5', 'a13f33e5776741d3a28e44c86cea369005287f9b', 'f29e42df1eb4a877e62db6d682b32e39c773490e', 'b49383a034aff45abe4c15d2f2973317a714e600', '9411b7c458a3e1573faefaace99d98f9deb541e1']
+          chunks = ['8861959d2296a9679b0c97a1fe10a263ef3b52b1', '4d25bb55778e46a2c34c8709d053a7fd7d6a964b', 'ea38f6154e88d9dc840aa1aef1124d615b685d4d', '4df8351d285ce4d1e32c1c1591767a3767d23b50']
           data = b''
           for sha in chunks:
               request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs/' + sha, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
@@ -39,12 +42,12 @@ jobs:
               assert hashlib.sha1(b'blob ' + str(len(part)).encode() + b'\0' + part).hexdigest() == sha
               data += part
           patch = gzip.decompress(data)
-          assert len(patch) == 71522 and hashlib.sha256(patch).hexdigest() == 'a00d05afe956ab6f4c77d2d5d80271eccdfcde5703b1fcd21d0a5e2f951fd943'
+          assert len(patch) == 53400 and hashlib.sha256(patch).hexdigest() == '95e20ba6e45b6fda575a53a529a611972c487a968fd4d0dcd7d6261c1f4bb747'
           subprocess.run(['git', 'apply', '--index', '--whitespace=error-all', '-'], input=patch, check=True)
           subprocess.run(['cargo', 'fmt', '--all'], check=True)
-          subprocess.run(['git', 'add', 'crates', 'schemas', 'tools/rust_capsule.py', 'tools/tests/test_guest_build_profiles.py'], check=True)
+          subprocess.run(['git', 'add', 'Cargo.lock', 'apps/latentd/tests/phase3_workflow_fixture.rs', 'crates', 'sdk/rust-guest/examples', 'tools/build_rust_authoring.py', 'tools/run_rust_authoring.py', 'tools/rust_capsule.py', 'tools/tests/test_rust_capsule.py', 'tools/toolchain-smoke/examples'], check=True)
           subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
-          subprocess.run(['git', '-c', 'user.name=github-actions[bot]', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com', 'commit', '-m', 'feat: derive standalone Rust capsule packages and isolate authoring provenance'], check=True)
+          subprocess.run(['git', '-c', 'user.name=github-actions[bot]', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com', 'commit', '-m', 'feat: qualify standalone guest ownership and enforced node authoring'], check=True)
           authorization = base64.b64encode(('x-access-token:' + os.environ['GH_TOKEN']).encode()).decode()
           env = dict(os.environ, GIT_CONFIG_COUNT='1', GIT_CONFIG_KEY_0='http.https://github.com/.extraheader', GIT_CONFIG_VALUE_0='AUTHORIZATION: basic ' + authorization)
           subprocess.run(['git', 'push', 'origin', 'HEAD:refs/heads/feat/rust-capsule-authoring-544'], env=env, check=True)
@@ -57,11 +60,48 @@ jobs:
           cargo test -p latent-packaging --lib --locked 2>&1 | tee "$RUNNER_TEMP/packaging-tests.log"
           cargo test -p latent-signing --test guest_provenance --locked 2>&1 | tee "$RUNNER_TEMP/signing-tests.log"
           cargo build -p latent-packaging --example package --locked 2>&1 | tee "$RUNNER_TEMP/packager-build.log"
-      - name: Retain source identity and unsuccessful attempts
+          python3 -m unittest tools.tests.test_rust_capsule tools.tests.test_guest_build_profiles 2>&1 | tee "$RUNNER_TEMP/python-tests.log"
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
+        with:
+          version: "0.16.0"
+      - name: Install exact maintained binding generator
+        run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/lsf-guest-tools" >> "$GITHUB_PATH"
+      - name: Build legacy ownership baseline and independent applications
+        run: |
+          set -o pipefail
+          python3 tools/build_guest_capsules.py --output "$RUNNER_TEMP/legacy-guests" 2>&1 | tee "$RUNNER_TEMP/legacy-build.log"
+          python3 tools/build_rust_authoring.py --output "$RUNNER_TEMP/rust-authoring" --packager "$GITHUB_WORKSPACE/target/debug/examples/package" --legacy-guests "$RUNNER_TEMP/legacy-guests" 2>&1 | tee "$RUNNER_TEMP/standalone-build.log"
+      - name: Build the actual node and management client
+        run: |
+          set -o pipefail
+          cargo build -p latent -p latentd --locked 2>&1 | tee "$RUNNER_TEMP/node-build.log"
+      - name: Execute all existing ownership tests against standalone-built Rust guests
+        env:
+          LSF_GUEST_CAPSULES: ${{ runner.temp }}/rust-authoring/builds
+        run: |
+          set -o pipefail
+          cargo test -p latent-wasmtime --test guest_sdk --locked -- --ignored --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/ownership-tests.log"
+      - name: Exercise allowed and denied providers on the enforced node
+        env:
+          LSF_GUEST_CAPSULES: ${{ runner.temp }}/rust-authoring/builds
+          LSF_PHASE3_WORKFLOW_FIXTURE_ROOT: ${{ runner.temp }}/new-provider-fixture
+        run: |
+          set -o pipefail
+          cargo test -p latentd --test phase3_workflow_fixture --locked -- export_signed_provider_workflow_fixtures --exact --ignored --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/provider-fixture.log"
+          python3 tools/run_phase3_management_workflow.py --cli target/debug/latent --node target/debug/latentd --fixture-root "$RUNNER_TEMP/new-provider-fixture" > "$RUNNER_TEMP/provider-receipt.json"
+      - name: Execute tutorial and failure-cleanup matrix on the enforced node
+        run: |
+          set -o pipefail
+          python3 tools/run_rust_authoring.py --cli target/debug/latent --node target/debug/latentd --packager target/debug/examples/package --builds "$RUNNER_TEMP/rust-authoring/builds" --approve-local-source --receipt "$RUNNER_TEMP/rust-authoring/real-node.json" 2>&1 | tee "$RUNNER_TEMP/real-node.log"
+      - name: Retain exact source identity and unsuccessful attempts
         if: always()
         run: |
           git rev-parse HEAD > "$RUNNER_TEMP/attempt-revision.txt"
           git status --short > "$RUNNER_TEMP/attempt-worktree.txt"
+          git archive --format=tar.gz HEAD tools crates/latent-packaging crates/latent-signing crates/latent-wasmtime/tests/guest_sdk apps/latentd/tests/phase3_workflow_fixture.rs sdk/rust-guest schemas Cargo.lock > "$RUNNER_TEMP/applied-source.tar.gz"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
@@ -70,8 +110,9 @@ jobs:
             ${{ runner.temp }}/*revision.txt
             ${{ runner.temp }}/attempt-worktree.txt
             ${{ runner.temp }}/applied.patch
-            ${{ runner.temp }}/packaging-tests.log
-            ${{ runner.temp }}/signing-tests.log
-            ${{ runner.temp }}/packager-build.log
+            ${{ runner.temp }}/applied-source.tar.gz
+            ${{ runner.temp }}/*.log
+            ${{ runner.temp }}/provider-receipt.json
+            ${{ runner.temp }}/rust-authoring/
           if-no-files-found: error
           retention-days: 7
