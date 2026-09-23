@@ -92,7 +92,7 @@ class ControlDiagnosticsTests(unittest.TestCase):
             if arguments[:2] == ("deployment", "apply"):
                 return {"category": "platform-failure", "outcomeKnown": False, "data": {}}
             token = "next" if arguments[0] == "audit" and "--page-token" not in arguments else None
-            return {"category": "success", "data": {"nextPageToken": token}}
+            return {"category": "success", "data": {"page": {"nextPageToken": token}}}
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             client = RecordingClient("unused", root, None, 0, evidence=root / "evidence")
@@ -109,7 +109,7 @@ class ControlDiagnosticsTests(unittest.TestCase):
         def invoke(client, *arguments, **_kwargs):
             client.calls += 1
             return {"category": "platform-failure" if client.calls == 1 else "success",
-                    "data": {"nextPageToken": "cycle"}}
+                    "data": {"page": {"nextPageToken": "cycle"}}}
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             client = RecordingClient("unused", root, None, 0, evidence=root / "evidence")
