@@ -5,8 +5,8 @@
 This handoff tracks [#237](https://github.com/KirilsTurkins/latent-service-fabric/issues/237)
 and its guide children against the 27 outcomes in the
 [coverage contract](../../website/content/coverage-contract.json).
-The September 22, 2026 review uses development
-`aa87df018c3c2c79069747cd353f146c979501a0`. Executed walkthroughs, human review
+The September 23, 2026 integration uses development
+`532364d697b1b93f2b3187e0df367f878023e91a`. Executed walkthroughs, human review
 and release publication are separate requirements. Each execution record below
 keeps its original source, binary and collector identities; its presence in a
 later checkout does not establish execution of that checkout.
@@ -14,13 +14,13 @@ later checkout does not establish execution of that checkout.
 First-node, operator, provider, six-client and Angular walkthroughs have
 retained execution evidence. Security monitoring is activated. Human newcomer
 and maintainer reviews remain pending in the
-[27-outcome review checklist](phase3-guide-review.md). Native delivery still
-requires the final compatible-version qualification and protected publication
+[27-outcome review checklist](phase3-guide-review.md). Native alpha.4 has complete
+compatible-version rehearsal evidence and still requires protected publication
 under [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
 
 | Guide | Available execution evidence | Remaining acceptance |
 | --- | --- | --- |
-| [Native release promotion](../operations/native-release-promotion.md) | [Authenticated rc.2 foundation](../evidence/native-foundation-35811188306.json), both real VM profiles, reboot, retained invocation, rootless operation and removal/recovery. [PR #533](https://github.com/KirilsTurkins/latent-service-fabric/pull/533) merged the current-format predecessor declaration for alpha.4. The obsolete rc.1 HTTP format is not supported. | Execute the final alpha.4 bundle against rc.2, retain both VM acceptance receipts and publish through the protected release owner; rendered guide review. |
+| [Native release promotion](../operations/native-release-promotion.md) | [Authenticated alpha.4 rehearsal](../evidence/native-upgrade-35821200294/README.md): both real VM profiles have complete acceptance, including actual rc.2 upgrade, unsupported downgrade rejection, reboot, retained invocation and removal/recovery; the local profile also passed rootless operation. The obsolete rc.1 HTTP format is not supported. | Requalify the publication build and publish through the protected release owner; rendered guide review. |
 | [Maintained security monitoring](../operations/maintained-security-monitoring.md) | [Verified activation](security-baseline-evidence.md): approved default-branch workflow, scheduled run `35586505063`, manual run `35752339515`, both maintained refs and required security aggregate. #282 is closed. | Rendered guide review. Preserve the stated limits of settings observations, permission fixtures and scanner canaries. |
 | [First node](../start/first-node.md) and [capsule delivery/recovery](../learn/deliver-and-recover-a-capsule.md) | [Core guide validation](core-guide-validation.md) links actual first-node/build, operator, publication, offline-transfer and enforced-profile receipts. First-node execution covers 19 CLI commands, success and failure cases, retained deployment after restart and clean reaping. | Human walkthrough review and native-bundle installation under #308; source-based execution does not replace bundle qualification. |
 | [Reconcile a policy change](../how-to/reconcile-a-policy-change.md) | [Capability-policy execution](../evidence/guide-capability-policy-2026-09-21.json): 15 actual CLI calls with persisted revocation. [Management execution](../evidence/guide-management-2026-09-21.json) separately supplies guest and HTTP/blob coverage. | Rendered/newcomer review. The policy collector itself has no guest invocations. |

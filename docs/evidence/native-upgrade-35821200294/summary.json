@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "latent.native-upgrade-evidence.v1",
+  "sourceCommit": "193d52c37635026de416feffd4a2dfd57d082451",
+  "version": "0.1.0-alpha.4",
+  "releaseWorkflowRun": 35821200294,
+  "sourceCiRun": 35818046307,
+  "archive": {
+    "name": "lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz",
+    "sha256": "1340b9b2d3e30ee9b0b563da62f1f99f74ff592b07db0c58dc0f7b6b8cdd09d2",
+    "size": 28950166
+  },
+  "checksumsSha256": "8aa63ae73a7d952f463e7e77c3df466f9262796123bf8a96356dd4531ba15b62",
+  "attestationSha256": "76e9558eec9979d7c73a368194f0b3e6c818cf9f8089ca2ea87868e6650235c0",
+  "localPublisherVerification": {
+    "verifier": "gh version 2.96.0 (2026-07-02)",
+    "sourceDigest": "193d52c37635026de416feffd4a2dfd57d082451",
+    "signerDigest": "193d52c37635026de416feffd4a2dfd57d082451",
+    "certificateIdentity": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.4",
+    "githubHostedRunnerRequired": true,
+    "trustedRootSha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+    "passed": true
+  },
+  "profiles": [
+    {
+      "profile": "local-experimental-v1",
+      "passed": true,
+      "acceptanceComplete": true,
+      "gaps": [],
+      "initialBootId": "97cd85e3-849c-4797-a2a4-90f772a50c70",
+      "rebootedBootId": "334b0e6d-6bc6-4c00-aef4-e7a676b2f75d",
+      "receiptSha256": "a43fe0502631a48d6b64bec8d2f7f917737a0ebf7525f9a7d31b3f467647afea"
+    },
+    {
+      "profile": "external-capsule-v1",
+      "passed": true,
+      "acceptanceComplete": true,
+      "gaps": [],
+      "initialBootId": "ac9c5ec0-b4e5-44cf-9d36-a54cf1219ee5",
+      "rebootedBootId": "7a0aa834-fa3f-4ead-b0e8-3b86d6d7c47a",
+      "receiptSha256": "7d388f134ccfed874c861e79866ec54dde04ecd5b6e58030b0f6ba217fe7b98a"
+    }
+  ],
+  "published": false,
+  "compatiblePairQualified": true,
+  "predecessor": {
+    "version": "0.1.0-alpha.4-rc.2",
+    "sourceCommit": "a53b7b219a46f6ca91ae7bc7830669f8aa4bbe2e",
+    "archiveSha256": "3479b32fb3181066572d61cc6a65abb38bafb2311188b358fac7e7e365195ee3"
+  },
+  "predecessorRun": 35811188306
+}
