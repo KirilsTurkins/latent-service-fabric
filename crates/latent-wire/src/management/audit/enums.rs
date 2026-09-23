@@ -65,12 +65,6 @@ pub(super) fn kind_from_proto(value: i32) -> Result<domain::Phase2AuditEventKind
         .find(|entry| kind(*entry) == value)
         .ok_or_else(|| Status::invalid_argument("invalid audit event kind"))
 }
-pub(super) fn kind_from_name(value: &str) -> Result<domain::Phase2AuditEventKind, Status> {
-    KINDS
-        .into_iter()
-        .find(|entry| entry.wire_name() == value)
-        .ok_or_else(|| Status::invalid_argument("unsupported audit action filter"))
-}
 pub(super) fn reason(value: domain::AuditReason) -> &'static str {
     use domain::AuditReason;
     match value {
@@ -100,34 +94,5 @@ pub(super) fn reason(value: domain::AuditReason) -> &'static str {
         AuditReason::CanaryIncomplete => "canary-incomplete",
         AuditReason::CanaryFailed => "canary-failed",
         AuditReason::CanaryUnavailable => "canary-unavailable",
-    }
-}
-pub(super) fn action_name(value: domain::AuditControlAction) -> &'static str {
-    use domain::AuditControlAction;
-    match value {
-        AuditControlAction::Publish => "publish",
-        AuditControlAction::Revoke => "revoke",
-        AuditControlAction::Retire => "retire",
-        AuditControlAction::RenewEvidence => "renew-evidence",
-        AuditControlAction::DeploymentApply => "deployment-apply",
-        AuditControlAction::DeploymentDelete => "deployment-delete",
-        AuditControlAction::TriggerApply => "trigger-apply",
-        AuditControlAction::TriggerDelete => "trigger-delete",
-        AuditControlAction::Rollout => "rollout",
-        AuditControlAction::Promotion => "promotion",
-        AuditControlAction::Rollback => "rollback",
-        AuditControlAction::CapabilityCall => "capability-call",
-    }
-}
-pub(super) fn actor_name(value: domain::AuditActorKind) -> &'static str {
-    use domain::AuditActorKind;
-    match value {
-        AuditActorKind::User => "user",
-        AuditActorKind::Service => "service",
-        AuditActorKind::Node => "node",
-        AuditActorKind::Trigger => "trigger",
-        AuditActorKind::Administrator => "administrator",
-        AuditActorKind::Anonymous => "anonymous",
-        AuditActorKind::Host => "host",
     }
 }

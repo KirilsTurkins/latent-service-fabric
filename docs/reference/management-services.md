@@ -25,7 +25,7 @@ generated package inputs through this RPC boundary.
 | Trigger | `ApplyTrigger`, `GetTrigger`, `ListTriggers`, `DeleteTrigger`, `GetTriggerOperation` | [Closed HTTP routes](http-triggers.md), explicit tenant publication/deployment pins, atomic CAS and bounded historical receipts. Mutations require durable audit. |
 | Route | `GetRouteSnapshot` | Complete projection of the current catalog generation for one tenant. |
 | Node | `GetNode`, `ListNodes` | The one configured node's bounded inventory snapshot. |
-| Audit | `QueryAudit`, `QueryPhase2Audit` | Bounded durable history when the node's optional audit owner is configured. |
+| Audit | `QueryPhase2Audit` | Bounded durable history when the node's optional audit owner is configured. |
 | Rollout | `StartRollout`, `ChangeRollout`, `EvaluateRollout`, `GetRollout`, `ListRollouts`, `GetRolloutOperation` | Optional audited stages and declared canary promotion over one tenant/service cohort. |
 | Policy | `ApplyPolicy`, `GetPolicy`, `ListPolicies`, `DeletePolicy`, `GetPolicyOperation`, `EvaluatePolicy` | Optional durable tenant-scoped capability policies and provider-binding metadata, CAS/replay, bounded pages and descriptive explanation. |
 | Capability | `ListCapabilities`, `ExplainCapabilityGrant` | Optional configured broker inspection: exact deployment bindings, policy/provider currentness, tenant resource usage and operator-only shared counters. Descriptive responses grant no authority. |
@@ -78,8 +78,8 @@ reads never become a tenant-filtered approximation of global resource usage.
 Audit tenant queries require the same administrator and exact tenant association.
 Typed node-scope queries additionally require the trusted node-operator claim
 and forbid a tenant member. Operators cannot query another tenant's history.
-The legacy `QueryAudit` call always uses the authenticated tenant, including
-when its optional tenant field is absent.
+Every request supplies an explicit scope; a tenant scope also requires its exact
+tenant identifier.
 
 See [release lifecycle](release-lifecycle.md) for authenticated actors, atomic
 mutation preconditions, evidence renewal, operation retention and uncertain
@@ -504,10 +504,7 @@ its record, byte or scan limit. After reopening,
 cannot be reconstructed. Reaching the end does not establish complete audit
 coverage or erase those limitations.
 
-`QueryAudit` returns a limited legacy projection of the same tenant-scoped
-records. Its action filter accepts supported observation names; unsupported
-actions and any resource-prefix filter are rejected. Use the typed call for
-full identities and coverage. Scope/filter cursor mismatches, malformed filters
+Scope/filter cursor mismatches, missing scope, malformed filters
 and invalid time ranges are `InvalidArgument`; foreign scopes are
 `PermissionDenied`. Page or owner pressure returns `ResourceExhausted`.
 
