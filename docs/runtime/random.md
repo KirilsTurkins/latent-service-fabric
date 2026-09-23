@@ -5,8 +5,7 @@ The configured `RandomProvider` implements the existing
 Both require an exact import, a current broker plan, the installed provider
 identity and an operation grant with resource kind `random`. Guest input cannot
 select a generator, source, seed or provider. An uninstalled import fails
-preparation. This adds an implementation within the current host ABI profile;
-it changes no WIT, package version or wire field.
+preparation.
 
 ## Composition and authority
 
@@ -16,8 +15,9 @@ Its `reference()` supplies the provider profile, configuration digest and epoch
 for the existing durable binding and plan compiler. Production uses the
 `system-random-v1` profile. Changing limits changes the configuration digest;
 replacement follows normal provider retirement and binding revision rules.
-Standalone provider configuration is tracked by
-[#226](https://github.com/KirilsTurkins/latent-service-fabric/issues/226).
+This provider is available through the Rust embedding. The current
+[standalone provider configuration](../reference/standalone-providers.md)
+exposes HTTP and local blobs; it has no randomness configuration field.
 
 The owner has fixed configuration and numeric counters. There is no service
 generator, entropy file descriptor, thread, task, timer, seed or guest instance.

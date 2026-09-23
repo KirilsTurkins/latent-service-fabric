@@ -602,8 +602,11 @@
       "source": "docs/cli-completions.md",
       "words": 906,
       "sha256": "bab151e92bfb0dcf8085919c819d39f2347f0ad70b7df0e68e446416232793af",
-      "status": "pending",
-      "findings": []
+      "status": "read-needs-update",
+      "findings": [
+        "Read the complete offline generation, installation, removal and shell validation contracts.",
+        "Actual Fish execution exposed missing positional enum choices; fix and executable regression are tracked in PR #573. Reconcile this page after that implementation lands."
+      ]
     },
     {
       "source": "docs/component-development/angular-build.md",
@@ -1090,11 +1093,13 @@
     },
     {
       "source": "docs/learn/use-capabilities.md",
-      "words": 1172,
-      "sha256": "ab3390f08b1ae92f352a75809395aa9e34cc51c2c78a05585854ab94f6e83e9b",
-      "status": "read-needs-update",
+      "words": 755,
+      "sha256": "e071a33fffb59645190d3733e8f1650c44dedc71c87a39413ee133f20f2300e9",
+      "status": "updated-source-reviewed",
       "findings": [
-        "Stale exact source and qualification harness dominate learning content; needs current capability setup and user-facing example steps."
+        "Read the full guide against current provider configuration, fixture exporter, runner and retained current CI result.",
+        "Removed obsolete commit requirement, phase narrative and implementation-validation prose; added ordered preparation, purpose, expected visible results and cleanup.",
+        "Kept the maintained automatic demonstration explicit and retained the current standalone versus embedded-provider boundary."
       ]
     },
     {
@@ -1248,10 +1253,12 @@
     },
     {
       "source": "docs/protocol/activation-lifecycle.md",
-      "words": 261,
-      "sha256": "57dd0e0492fac91c638bea14bad94fc0f262e7613992534b379b0892623d05af",
-      "status": "pending",
-      "findings": []
+      "words": 252,
+      "sha256": "cd706b0883e36a88d645dfcfbb32a55c8d4a11d0320a9de8f7ec7ff82f0dafd0",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete protocol and distinguished implemented stateless activation from planned durable commit, effects and continuation without phase narrative."
+      ]
     },
     {
       "source": "docs/protocol/commit-protocol.md",
@@ -1553,10 +1560,12 @@
     },
     {
       "source": "docs/runtime/custom-metrics.md",
-      "words": 1253,
-      "sha256": "4da17039b4a9a7451d0abe4a8f45c71546502dc5fe5423c1487304ac3561439c",
-      "status": "pending",
-      "findings": []
+      "words": 1262,
+      "sha256": "6b969844b18ea4fc4124670db0db2c9e08857ae188196c2d4f79fdb3af9fd0d0",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the full aggregation, labels, resource accounting, capture/export and failure contract; documented the actual Rust embedding and standalone configuration boundary."
+      ]
     },
     {
       "source": "docs/runtime/descendant-budgets.md",
@@ -1581,10 +1590,12 @@
     },
     {
       "source": "docs/runtime/local-blobs.md",
-      "words": 1343,
-      "sha256": "4a566ef8650619a3143fafff494baf860abae864f94fdfad7d5338ef439f515d",
-      "status": "pending",
-      "findings": []
+      "words": 1346,
+      "sha256": "bf9258604a5699013132dbd85cbc12e330d7f747c403bac18666eb94314a9572",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the complete lifecycle, limits, recovery and retained-owner contracts against the freshly passing 28 storage cases; linked the implemented standalone provider instead of stale delivery status. Legacy ABI recognition remains a runtime follow-up, not an installed provider."
+      ]
     },
     {
       "source": "docs/runtime/local-secrets.md",
@@ -1637,10 +1648,12 @@
     },
     {
       "source": "docs/runtime/random.md",
-      "words": 811,
-      "sha256": "2787f63bba553c7a3edae202ca3e3dedd28f2cc2d4d4a8880d11dd319eb9d88d",
-      "status": "pending",
-      "findings": []
+      "words": 809,
+      "sha256": "54bf217efb473beb0ac660cf03e5a7221cd3894bf3b374e9e8e7d70744ab356c",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read the full bounds, authority, entropy and failure contract; replaced the closed-ticket future configuration claim with the actual Rust embedding boundary and current closed standalone schema."
+      ]
     },
     {
       "source": "docs/runtime/resource-budgets.md",
