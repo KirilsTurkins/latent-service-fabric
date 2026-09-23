@@ -38,16 +38,23 @@ pub fn input(name: &str) -> PathBuf {
 
 pub fn observation(name: &str) -> BuildObservation {
     let directory = input(name);
-    let root = directory.parent().unwrap();
+    let bytes = read(&directory.join("build-observation.json"), 65536);
+    let observation = decode_build_observation(&bytes, ProvenanceLimits::default()).unwrap();
+    let standalone = observation.build_type == RUST_CAPSULE_BUILD_TYPE;
+    let root = if standalone {
+        directory.as_path()
+    } else {
+        directory.parent().unwrap()
+    };
     let marker: serde_json::Value =
         serde_json::from_slice(&read(&root.join("BUILD-COMPLETE.json"), 65536)).unwrap();
     assert_eq!(marker["formatVersion"], 1);
-    let bytes = read(&directory.join("build-observation.json"), 65536);
-    assert_eq!(
-        marker["observations"][name],
-        format!("sha256:{:x}", Sha256::digest(&bytes))
-    );
-    let observation = decode_build_observation(&bytes, ProvenanceLimits::default()).unwrap();
+    let recorded = if standalone {
+        &marker["observationDigest"]
+    } else {
+        &marker["observations"][name]
+    };
+    assert_eq!(recorded, &format!("sha256:{:x}", Sha256::digest(&bytes)));
     let inputs = read(&root.join("source-inputs.json"), 1024 * 1024);
     assert_eq!(
         observation.source.snapshot_digest,
@@ -58,6 +65,11 @@ pub fn observation(name: &str) -> BuildObservation {
 
 pub fn bundle(path: &Path) -> PackageBundle {
     let limits = PackagingLimits::default();
+    let bytes = read(&path.join("build-observation.json"), 65536);
+    let observed = decode_build_observation(&bytes, ProvenanceLimits::default()).unwrap();
+    if observed.build_type == RUST_CAPSULE_BUILD_TYPE {
+        return latent_packaging::read_package_directory(&path.join("package"), limits).unwrap();
+    }
     let source = latent_packaging::decode_package_source(
         &read(&path.join("package-source.json"), 65536),
         limits,

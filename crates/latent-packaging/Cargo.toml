@@ -25,5 +25,7 @@ wasmparser.workspace = true
 wit-parser = { version = "=0.252.0", default-features = false, features = ["std", "decoding"] }
 
 [dev-dependencies]
+latent-signing = { path = "../latent-signing" }
+base64.workspace = true
 tempfile.workspace = true
 wasm-encoder.workspace = true

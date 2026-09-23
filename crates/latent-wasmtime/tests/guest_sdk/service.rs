@@ -15,10 +15,12 @@ use latent_core::TenantId;
 async fn configured(root: &std::path::Path, permit: bool) -> fixture::Fixture {
     let caller = package::bundle(&package::input("rust-service"));
     let callee = package::bundle(&package::input("rust-callee"));
-    let signers = package::Signers::new(latent_signing::RUST_GUEST_BUILD_TYPE);
+    let build_type = package::observation("rust-service").build_type;
+    let signers = package::Signers::new(&build_type);
     let mut uploads = vec![];
     for (name, bundle) in [("rust-service", &caller), ("rust-callee", &callee)] {
         let observation = package::observation(name);
+        assert_eq!(observation.build_type, build_type);
         uploads.push(signers.upload(bundle, &observation));
     }
     let catalog = package::catalog(root, signers.policy);

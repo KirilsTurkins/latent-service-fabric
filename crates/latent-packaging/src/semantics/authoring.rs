@@ -107,9 +107,8 @@ pub fn derive_capsule_contracts(
 pub(super) fn conformance_checks() {
     use latent_contracts::ValueType;
     let source = br"package authoring:typed@1.0.0;
-        interface shared { record item { id: u64, label: string } }
         interface api {
-            use shared.{item};
+            record item { id: u64, label: string }
             record reply { values: list<item>, count: u64 }
             enum mode { fast, slow }
             call: func(id: u64, signed: s64, text: string, values: list<item>,
@@ -128,7 +127,7 @@ pub(super) fn conformance_checks() {
     assert_eq!(generated.contracts.len(), 1);
     let contract = &generated.contracts[0];
     assert_eq!(contract.id.0, "authoring:typed/api@1.0.0");
-    assert_eq!(contract.dependencies[0].0, "authoring:typed/shared@1.0.0");
+    assert!(contract.dependencies.is_empty());
     let functions = &contract.interfaces[0].functions;
     assert_eq!(functions[0].parameters[0].value_type, ValueType::U64);
     assert_eq!(functions[0].parameters[1].value_type, ValueType::S64);
@@ -171,6 +170,7 @@ pub(super) fn conformance_checks() {
     )
     .is_err());
     for source in [
+        "package authoring:typed@1.0.0; interface shared { record item { id: u64 } } interface api { use shared.{item}; call: func(value: item); } world service { export api; }",
         "package authoring:typed; interface api { call: func(); } world service { export api; }",
         "package authoring:typed@1.0.0; world service { export call: func(); }",
         "package authoring:typed@1.0.0; interface api { flags mask { one } record r { flags: mask } call: func(value: r); } world service { export api; }",

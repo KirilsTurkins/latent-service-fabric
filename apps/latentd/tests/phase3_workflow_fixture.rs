@@ -37,12 +37,14 @@ fn export_signed_provider_workflow_fixtures() {
     assert!(root.is_absolute() && !root.exists());
     fs::create_dir(root).unwrap();
     fs::set_permissions(root, fs::Permissions::from_mode(0o700)).unwrap();
-    let signers = package::Signers::new("https://latent.dev/build/rust-guest/v1");
+    let build_type = package::observation("rust-http").build_type;
+    let signers = package::Signers::new(&build_type);
     write(&root.join("policy.json"), &signers.policy_document);
     let mut fixtures = Vec::new();
     for name in ["rust-http", "rust-blob", "rust-callee"] {
         let bundle = package::bundle(&package::input(name));
         let observation = package::observation(name);
+        assert_eq!(observation.build_type, build_type);
         let upload = signers.upload(&bundle, &observation);
         let directory = root.join(name);
         fs::create_dir(&directory).unwrap();

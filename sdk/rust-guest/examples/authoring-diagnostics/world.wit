@@ -1,0 +1,9 @@
+package examples:authoring-diagnostics@1.0.0;
+interface api {
+    record message { unsigned: u64, signed: s64, text: string, values: list<u64> }
+    echo: func(value: message) -> result<message, string>;
+    fresh: func() -> u32;
+    trap: func() -> u32;
+    spin: func() -> u32;
+}
+world service { export api; }

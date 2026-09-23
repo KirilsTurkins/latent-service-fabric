@@ -131,7 +131,10 @@ def new_project(destination: Path, template: str, name: str, root: Path = ROOT) 
         raise ValueError("project destination already exists")
     pin = tomllib.loads(read(root / "tools/toolchain.toml").decode())
     package = tomllib.loads(read(root / "Cargo.toml").decode())["workspace"]["package"]
-    if template in TUTORIALS:
+    if template == "diagnostics":
+        source = root / "sdk/rust-guest/examples/authoring-diagnostics"
+        world, dependency = "examples:authoring-diagnostics/service@1.0.0", None
+    elif template in TUTORIALS:
         source = root / "tools/toolchain-smoke/examples" / ("tutorial_" + template.replace("-", "_"))
         world, dependency = f"examples:{template}/service@1.0.0", None
     elif template.startswith("guest-") and template[6:] in GUESTS:
@@ -433,7 +436,7 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     create = commands.add_parser("new")
     create.add_argument("directory", type=Path)
-    create.add_argument("--template", choices=(*TUTORIALS, *("guest-" + name for name in GUESTS)), default="greeting")
+    create.add_argument("--template", choices=(*TUTORIALS, "diagnostics", *("guest-" + name for name in GUESTS)), default="greeting")
     create.add_argument("--name", required=True)
     lock = commands.add_parser("lock")
     lock.add_argument("directory", type=Path)
