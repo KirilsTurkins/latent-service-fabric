@@ -23,13 +23,15 @@ concurrency:
 
 jobs:
   qualify:
-    name: C# component compiler and admission qualification
+    name: C# component compiler qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: '1'
       DOTNET_NOLOGO: '1'
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+      DOTNET_CLI_USE_MSBUILD_SERVER: '0'
+      MSBUILDDISABLENODEREUSE: '1'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -39,7 +41,7 @@ jobs:
           dotnet-version: '10.0.100'
       - name: Compile the pinned NativeAOT component candidate
         working-directory: sdk/dotnet-guest
-        run: dotnet publish examples/greeting/Greeting.csproj --configuration Release --nologo
+        run: dotnet build examples/greeting/Greeting.csproj --configuration Release --nologo
       - name: Inspect actual compiler output
         if: always()
         shell: bash
@@ -56,6 +58,21 @@ jobs:
               "$tool" component wit "$component" || exit 1
             done < <(find sdk/dotnet-guest/examples/greeting/bin -type f -name '*.wasm' 2>/dev/null)
           fi
+      - name: Generate the authoritative capability bindings
+        if: always()
+        shell: bash
+        run: |
+          python3 tools/stage_runtime_wit.py "$RUNNER_TEMP/csharp-guest/wit" --source wit/platform/runtime-phase3-blobs
+          generator="$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.witbindgen/0.8.0-preview00011/tools/linux-x64/wit-bindgen"
+          "$generator" --version
+          "$generator" c-sharp "$RUNNER_TEMP/csharp-guest/wit" --world capsule --runtime native-aot --with-wit-results --out-dir "$RUNNER_TEMP/csharp-guest/bindings"
+      - name: Retain the exact reviewed source snapshot
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/csharp-guest"
+          git archive --format=tar.gz --output="$RUNNER_TEMP/csharp-guest/source.tar.gz" HEAD
+          sha256sum "$RUNNER_TEMP/csharp-guest/source.tar.gz" > "$RUNNER_TEMP/csharp-guest/source.sha256"
       - name: Retain compilation attempts, bindings and lock candidates
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -65,5 +82,6 @@ jobs:
             sdk/dotnet-guest/examples/greeting/packages.lock.json
             sdk/dotnet-guest/examples/greeting/obj/**/wit_bindgen/**
             sdk/dotnet-guest/examples/greeting/bin/**/*.wasm
-          if-no-files-found: warn
+            ${{ runner.temp }}/csharp-guest/
+          if-no-files-found: error
           retention-days: 7
