@@ -31,6 +31,24 @@ all selected case names and seven executable hashes. This includes local-call
 authority and descendant cleanup, bounded randomness and custom metrics; it
 leaves rendered human walkthrough review pending.
 
+## Current integration and native installation
+
+[CI 35818046307](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35818046307)
+passed after the obsolete alpha API removals. The
+[retained integration set](../evidence/phase3-integration-35818046307/README.md)
+binds actual checkout `58965f399a116eb713dd4a5fc966f682167204f7` to the identical
+tree of selected source `193d52c37635026de416feffd4a2dfd57d082451`. It supplies
+current operator/publication/offline/security, six-client, provider, Angular,
+static-site and bounded-resource receipts with their exact scope limits.
+The coverage inventory links those observations alongside the earlier dedicated
+guide runs below; it does not rewrite their original source identities.
+
+Native installation has separate
+[alpha.4 rehearsal evidence](../evidence/native-upgrade-35821200294/README.md):
+both packaged-artifact VM profiles passed complete compatible-upgrade acceptance,
+including actual reboot and retained invocation; the local profile also passed
+rootless evaluation. Protected publication and all human reviews remain pending.
+
 ## First-node runner contract
 
 The [HTTP/blob execution](../evidence/guide-management-2026-09-21.json) records
@@ -53,7 +71,7 @@ the later collector/build source `55ba1c30` retain separate byte identities.
 This source-based execution leaves native-bundle installation under #308 and
 human newcomer review pending.
 
-The same maintained tree also has current successful CI receipts for
+The earlier maintained tree also has successful CI receipts for
 [operator delivery and recovery](../evidence/guide-operator-2026-09-21.json),
 [managed publication](../evidence/guide-publication-2026-09-21.json),
 [offline transfer](../evidence/guide-offline-2026-09-21.json), and
