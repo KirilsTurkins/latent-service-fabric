@@ -8,6 +8,7 @@ on:
         type: string
         default: ""
   push:
+    branches: ["**"]
     paths:
       - .github/workflows/native-runtime.yml
       - packaging/linux/**
