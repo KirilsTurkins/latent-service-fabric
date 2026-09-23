@@ -1119,6 +1119,36 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 tools/ci_cargo_cache.py --github-output \"$GITHUB_OUTPUT\" > \"$RUNNER_TEMP/lsf-cargo-cache-identity.json\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Capture immutable qualification source inputs": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Capture immutable qualification source inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "# Retain every input used below, including the pinned compiler lock.\n# Historical benchmark archives are not inputs to this runtime lane.\ngit archive --format=tar.gz --output \"$RUNNER_TEMP/typescript-guest-source.tar.gz\" HEAD -- \\\n  sdk/typescript-guest examples/renderer-profile tools/toolchain.toml \\\n  tools/ci/commands.json .github/workflows/typescript-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/typescript-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/typescript-guest-source.sha\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Install the reviewed JavaScript compiler inputs": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Install the reviewed JavaScript compiler inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund"
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Execute typed value and ownership regressions": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Execute typed value and ownership regressions",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode examples/renderer-profile/node_modules/typescript/bin/tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -5662,6 +5692,7 @@
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
-    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b"
+    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
+    ".github/workflows/typescript-guest.yml": "a32a305341f7dad30e506b8f872af92152e6653421e2bcb1245dcc102da52358"
   }
 }

@@ -43,7 +43,11 @@ jobs:
       - name: Capture immutable qualification source inputs
         shell: bash
         run: |
-          git archive --format=tar.gz --output "$RUNNER_TEMP/typescript-guest-source.tar.gz" HEAD
+          # Retain every input used below, including the pinned compiler lock.
+          # Historical benchmark archives are not inputs to this runtime lane.
+          git archive --format=tar.gz --output "$RUNNER_TEMP/typescript-guest-source.tar.gz" HEAD -- \
+            sdk/typescript-guest examples/renderer-profile tools/toolchain.toml \
+            tools/ci/commands.json .github/workflows/typescript-guest.yml
           test "$(stat --format=%s "$RUNNER_TEMP/typescript-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-source.sha"
       - name: Retain the exact reviewed command contract input
