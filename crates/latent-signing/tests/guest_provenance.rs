@@ -68,6 +68,37 @@ fn guest_profiles_require_separate_builder_approval_and_preserve_legacy_echo() {
             SignatureFailure::PredicateDisallowed
         );
     }
+    for fixture in [
+        "blob",
+        "callee",
+        "events",
+        "http",
+        "metrics",
+        "random",
+        "secrets",
+        "service",
+        "streaming",
+        "application",
+    ] {
+        let mut observation = guest(true);
+        let BuildRecipe::C(parameters) = &mut observation.parameters else {
+            unreachable!()
+        };
+        parameters.fixture = fixture.into();
+        let evidence = signed(&signer, &observation);
+        let mut policy = policy_value(&public);
+        assert_eq!(
+            verifier(&policy)
+                .verify_package(&subject(), evidence.as_ref(), NOW)
+                .unwrap_err()
+                .reason(),
+            SignatureFailure::PredicateDisallowed
+        );
+        policy["requirements"][0]["buildType"] = C_GUEST_BUILD_TYPE.into();
+        verifier(&policy)
+            .verify_package(&subject(), evidence.as_ref(), NOW)
+            .unwrap();
+    }
     let value = serde_json::to_value(observation()).unwrap();
     assert_eq!(value["parameters"]["cargoExample"], "echo-capsule");
     assert!(value["parameters"].get("Rust").is_none());
@@ -75,6 +106,14 @@ fn guest_profiles_require_separate_builder_approval_and_preserve_legacy_echo() {
 
 #[test]
 fn mixed_recipes_missing_tools_and_unbounded_claims_are_rejected() {
+    for invalid in ["arbitrary", "../blob", "", "application;sh"] {
+        let mut value = serde_json::to_value(guest(true)).unwrap();
+        value["parameters"]["fixture"] = invalid.into();
+        assert!(
+            decode_build_observation(&serde_json::to_vec(&value).unwrap(), Default::default())
+                .is_err()
+        );
+    }
     for c in [false, true] {
         let valid = guest(c);
         for case in 0..7 {
