@@ -1,18 +1,18 @@
-name: Java guest feasibility
+name: Java guest authoring
 
 on:
   pull_request:
+    branches: [development]
     paths:
       - 'sdk/java-guest/**'
-      - 'tools/java_guest/**'
-      - 'tools/qualify_java_bridge.py'
-      - 'tools/java_capsule*.py'
-      - 'tools/build_java_guest_capsules.py'
+      - 'tools/**'
+      - 'apps/**'
+      - 'crates/**'
+      - 'schemas/**'
+      - 'Cargo.*'
+      - 'docs/component-development/java-authoring.md'
       - '.github/workflows/java-guest-feasibility.yml'
-      - 'tools/toolchain.toml'
       - 'wit/platform/**'
-      - 'crates/latent-wasmtime/src/surface.rs'
-      - 'crates/latent-wasmtime/examples/java_runtime_probe.rs'
   workflow_dispatch:
 
 permissions:
@@ -24,13 +24,15 @@ concurrency:
 
 jobs:
   compiler-component:
-    name: Actual Java compiler and component probe (not language qualification)
+    name: Actual Java sources, SDK ownership and enforced node
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     env:
       CARGO_BUILD_JOBS: 2
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      PYTHONDONTWRITEBYTECODE: 1
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -38,10 +40,9 @@ jobs:
       - name: Retain the exact checked-out source revision
         run: |
           git archive --format=tar.gz -o "$RUNNER_TEMP/java-feasibility-source.tar.gz" HEAD \
-            sdk/java-guest .github/workflows/java-guest-feasibility.yml \
-            tools \
-            wit/platform crates/latent-wasmtime/src/surface.rs \
-            crates/latent-wasmtime/examples/java_runtime_probe.rs crates/latent-wasmtime/Cargo.toml Cargo.toml Cargo.lock
+            apps crates sdk/java-guest sdk/rust tools wit/platform schemas examples \
+            docs/component-development .cargo Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE \
+            .github/workflows/java-guest-feasibility.yml
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: java-feasibility-source-${{ github.sha }}
@@ -52,7 +53,9 @@ jobs:
         with:
           python-version: '3.13.5'
       - name: Test evidence and process-capture behavior
-        run: python3 -m unittest discover -s sdk/java-guest/tests -v
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -m unittest discover -s sdk/java-guest/tests -v
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
@@ -87,15 +90,10 @@ jobs:
         run: |
           set -o pipefail
           cargo run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm" --typed 2>&1 | tee "$RUNNER_TEMP/java-guest-bindings/runtime-probe.log"
-      - name: Compile nine actual standalone Java SDK packages
-        run: python3 tools/build_java_guest_capsules.py --output "$RUNNER_TEMP/java-sdk" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
-      - name: Execute actual Java capability and ownership fixtures
-        env:
-          LSF_GUEST_CAPSULES: ${{ runner.temp }}/java-sdk
-          LSF_GUEST_SDK_LANGUAGE: java
+      - name: Qualify standalone Java projects, nine SDK components, signed node and printed guide
         run: |
           set -o pipefail
-          cargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee "$RUNNER_TEMP/java-sdk/runtime-tests.log"
+          python3 tools/qualify_java_capsules.py --output "$RUNNER_TEMP/java-capsule-authoring" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-capsule-authoring.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -118,17 +116,21 @@ jobs:
             ${{ runner.temp }}/java-guest-bindings/runtime-probe.log
             ${{ runner.temp }}/java-guest-bindings/compiled/bindings/
             ${{ runner.temp }}/java-guest-bindings/compiled/component.wasm
-            ${{ runner.temp }}/java-sdk/SDK-BUILD.json
-            ${{ runner.temp }}/java-sdk/runtime-tests.log
-            ${{ runner.temp }}/java-sdk/logs/
-            ${{ runner.temp }}/java-sdk/java-*/BUILD-*.json
-            ${{ runner.temp }}/java-sdk/java-*/build-observation.json
-            ${{ runner.temp }}/java-sdk/java-*/source-inputs.json
-            ${{ runner.temp }}/java-sdk/java-*/recipe-inputs.json
-            ${{ runner.temp }}/java-sdk/java-*/compiler-inputs.json
-            ${{ runner.temp }}/java-sdk/java-*/component.wasm
-            ${{ runner.temp }}/java-sdk/java-*/bindings.json
-            ${{ runner.temp }}/java-sdk/java-*/compiler-logs/
-            ${{ runner.temp }}/java-sdk/java-*/logs/
+            ${{ runner.temp }}/java-capsule-authoring.log
+            ${{ runner.temp }}/java-capsule-authoring/*.json
+            ${{ runner.temp }}/java-capsule-authoring/logs/**
+            ${{ runner.temp }}/java-capsule-authoring/builds/**
+            ${{ runner.temp }}/java-capsule-authoring/sdk-guests/*.json
+            ${{ runner.temp }}/java-capsule-authoring/sdk-guests/logs/**
+            ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/*.json
+            ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/component.wasm
+            ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/compiler-logs/**
+            ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/logs/**
+            ${{ runner.temp }}/java-capsule-authoring/node/**
+            ${{ runner.temp }}/java-capsule-authoring/releases/**
+            ${{ runner.temp }}/java-capsule-authoring/guide/guide.json
+            ${{ runner.temp }}/java-capsule-authoring/guide/guide.sh
+            ${{ runner.temp }}/java-capsule-authoring/guide/logs/**
+            ${{ runner.temp }}/java-capsule-authoring/guide/projects/results/**
           if-no-files-found: warn
           retention-days: 14

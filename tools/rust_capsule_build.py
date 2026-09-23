@@ -23,15 +23,19 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
 
 
 class Commands:
-    def __init__(self, root: Path, output: Path, environment: dict[str, str]):
+    def __init__(self, root: Path, output: Path, environment: dict[str, str], *, deadline_seconds=900, command_seconds=600):
+        if (type(deadline_seconds) is not int or type(command_seconds) is not int
+                or not 1 <= command_seconds <= min(deadline_seconds, 1800) or not 1 <= deadline_seconds <= 7200):
+            raise ValueError("invalid bounded build command limits")
         self.root, self.output, self.environment = root, output, environment
-        self.deadline = time.monotonic() + 900
+        self.deadline = time.monotonic() + deadline_seconds
+        self.command_seconds = command_seconds
         self.records = []
         self.retained = 0
         (output / "logs").mkdir()
 
     def run(self, stage: str, *command: str) -> bytes:
-        timeout = min(600, self.deadline - time.monotonic())
+        timeout = min(self.command_seconds, self.deadline - time.monotonic())
         if timeout <= 0:
             raise ValueError("standalone build deadline exceeded")
         start = time.monotonic()

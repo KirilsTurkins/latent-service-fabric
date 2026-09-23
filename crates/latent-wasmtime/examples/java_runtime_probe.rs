@@ -139,7 +139,7 @@ fn linker(
             Ok(())
         })
     })?;
-    random.func_new_async("u64", |_, _, _, results| {
+    random.func_new_async("u64-value", |_, _, _, results| {
         Box::new(async move {
             tokio::task::yield_now().await;
             results[0] = Val::Result(Ok(Some(Box::new(Val::U64(u64::MAX)))));

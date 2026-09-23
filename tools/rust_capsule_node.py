@@ -154,11 +154,14 @@ def grant_http(client, node, fixture, publication, target, port):
                   grants=target["grants"] + [{"capability": descriptor["capability"], "policy": "http-allow"}])
 
 
-def start_call(client, target, template, function, arguments, activation, *, wall=None):
+def start_call(client, target, template, function, arguments, activation, *, wall=None, memory=None):
     path = client.directory / f"{activation}-input.json"
     budget_path = client.directory / f"{activation}-budget.json"
     write_json(path, arguments)
     budget = dict(target["budget"])
+    if memory is not None:
+        require(type(memory) is int and 0 < memory <= budget["memoryBytes"], "authoring-memory-budget")
+        budget["memoryBytes"] = memory
     if wall is not None:
         budget["wallTimeLimitMillis"] = wall
     write_json(budget_path, budget)

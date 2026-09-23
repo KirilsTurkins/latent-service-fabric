@@ -35,7 +35,9 @@ def retain_logs(source: Path, output: Path) -> None:
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path,
-          repository: str, wasi_sdk: Path, *, gradle="gradle") -> Path:
+          repository: str, wasi_sdk: Path, *, gradle="gradle", timeout=900) -> Path:
+    if type(timeout) not in {int, float} or not 0 < timeout <= 900:
+        raise ValueError("Java build deadline must be positive and at most 900 seconds")
     project_path, output = checked_path(project_path), checked_path(output)
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
@@ -60,10 +62,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_bytes(data)
                 commands = Commands(work, output, build_environment(temporary))
+                commands.deadline = start + timeout
                 stage = "compiler-inputs"
                 compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
                     sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
-                    config=pins, timeout=900 - (time.monotonic() - start))
+                    config=pins, timeout=timeout - (time.monotonic() - start))
                 (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
                 materials = list(compiler.materials)
                 paths = {"contracts-tool": checked_path(contracts_tool), "packager": checked_path(packager)}
@@ -114,7 +117,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     ("dependency-lock", files["vendor/lsf/sdk/java-guest/feasibility/dependencies.lock.json"]),
                     ("generated-bindings", read_file(output / "bindings.json"))))
                 finished = int(time.time())
-                if finished < started or finished - started > 900 or time.monotonic() - start > 900:
+                if finished < started or finished - started > 900 or time.monotonic() - start > timeout:
                     raise ValueError("Java build clock or overall deadline invalid")
                 write_json(output / "build-observation.json", {"formatVersion": 1, "buildType": BUILD_TYPE,
                     "source": {"repository": repository, "revision": digest(source_inputs)[7:], "snapshotDigest": digest(source_inputs),

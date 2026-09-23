@@ -54,8 +54,10 @@ def compile_all(output: Path, wasi_sdk: Path) -> None:
             if time.monotonic() >= deadline: raise ValueError("Java SDK matrix deadline exceeded")
             source = project(output / "projects" / name, name)
             build(source, output / ("java-" + name), target / "debug/examples/capsule_contracts",
-                  target / "debug/examples/package", "https://github.com/KirilsTurkins/latent-service-fabric", wasi_sdk)
+                  target / "debug/examples/package", "https://github.com/KirilsTurkins/latent-service-fabric", wasi_sdk,
+                  timeout=min(900, deadline - time.monotonic()))
             report["builds"].append(name)
+        if time.monotonic() >= deadline: raise ValueError("Java SDK matrix deadline exceeded")
         report["status"] = "built-execution-required"
     finally:
         report["commands"] = commands.records

@@ -42,7 +42,9 @@ static void lsf_finish(lsf_wire *wire) { lsf_require(wire->cursor == wire->lengt
 static void lsf_dispose(lsf_wire *wire) { lsf_release(wire->data, wire->capacity); *wire = (lsf_wire){0}; }
 void *lsf_java_alloc(int32_t length) {
     lsf_require(length >= 0 && (uint32_t)length <= LSF_MAX_BYTES);
-    uint8_t *data = lsf_allocate((size_t)length + 4, 1);
+    /* The payload bound excludes this private four-byte frame header. */
+    uint8_t *data = calloc((size_t)length + 4, 1);
+    lsf_require(data != NULL);
     uint32_t size = (uint32_t)length; memcpy(data, &size, 4); return data;
 }
 void lsf_java_free(void *pointer) {

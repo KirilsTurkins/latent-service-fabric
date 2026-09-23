@@ -1,7 +1,10 @@
 # Guest SDK: build and run a capsule
 
 For a new independent project, follow [Create your own Rust capsule](rust-authoring.md)
-or [Create your own C capsule](c-authoring.md).
+or [Create your own C capsule](c-authoring.md). The bounded
+[Java authoring profile](java-authoring.md) uses maintained TeaVM and typed WIT
+bindings; its [SDK reference](../../sdk/java-guest/README.md) documents exact
+language, heap, clock-grant and ownership boundaries.
 That guide covers editable source, generated contracts, packaging, signing,
 enforced node admission and cleanup. This reference describes capability ownership.
 

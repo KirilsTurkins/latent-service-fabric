@@ -97,7 +97,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                         grant(client, node, fixture, targets, publications, result, language=language)
                     tutorials(client, targets, result)
                     result["samples"].append(sample(client, probe, "after-tutorials", len(names)))
-                    faults(client, targets["recovery"], probe, result, len(names))
+                    faults(client, targets["recovery"], probe, result, len(names), language=language)
                     http_cases(client, node, fixture, targets["http-status"], publications["http-status"],
                                port, work / "peer", probe, result, len(names))
                     delete_all(client, names)

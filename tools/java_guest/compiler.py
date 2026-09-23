@@ -7,12 +7,29 @@ import shutil
 import sys
 import time
 import tomllib
+import types
 
 from tools.build_observation import build_environment, file_identity
 from tools.build_process import run_bounded_result
 from tools.java_guest.bindings import generate
 from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_file, snapshot, write_json
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
+
+
+def source_module(path: Path):
+    """Load this captured SDK helper, never a prior project's module cache.
+
+    Executing the captured bytes avoids creating unobserved __pycache__ files
+    inside staging. Legacy diagnostic helpers may adjust sys.path; isolate it.
+    """
+    module = types.ModuleType("lsf_java_captured_" + path.stem)
+    module.__file__ = str(path)
+    search = list(sys.path)
+    try:
+        exec(compile(read_file(path), str(path), "exec"), module.__dict__)
+    finally:
+        sys.path[:] = search
+    return module
 
 
 def sdk_snapshot(root: Path) -> dict:
@@ -67,8 +84,7 @@ class Compiler:
         if (self.wasi_sdk / "VERSION").read_text().splitlines() != [
             "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
             raise ValueError("unreviewed WASI-SDK Java compiler")
-        sys.path.insert(0, str(self.sdk / "tools"))
-        from feasibility import verify_version
+        verify_version = source_module(self.sdk / "tools/feasibility.py").verify_version
         for name, selected, version in [
             ("java", "java", config["sdk"]["java"]), ("gradle", gradle, config["sdk"]["gradle"]),
             ("clang", str(self.wasi_sdk / "bin/clang"), "21.1.4-wasi-sdk"),
@@ -133,10 +149,10 @@ class Compiler:
         target = java_root / "dev/latent/generated/Bindings.java"
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
         self.run("java-to-c", "gradle", "--no-daemon", "generateC", cwd=project)
-        from dependencies import retain
+        retain = source_module(self.sdk / "tools/dependencies.py").retain
         retained = retain(self.directory / "gradle-home/caches/modules-2/files-2.1", project, destination, False)
         generated = project / "build/teavm-c/c"
-        from teavm_platform import adapt
+        adapt = source_module(self.sdk / "tools/teavm_platform.py").adapt
         adaptation = adapt(generated)
         core, component = destination / "core.wasm", destination / "component.wasm"
         self.run("c-to-wasm", "clang", "-target", "wasm32-wasip1", "-std=c11", "-O2",
