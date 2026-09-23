@@ -14,6 +14,9 @@ pub const ADMISSION_CURRENTNESS_REASONS: &[&str] = &[
     "admission-owner-retired",
     "admission-restart-clock-floor",
     "admission-verification-busy",
+    "signature-clock-regression",
+    "signature-trust-conflict",
+    "signature-stale-proof",
 ];
 
 /// Stable platform-level error classification.

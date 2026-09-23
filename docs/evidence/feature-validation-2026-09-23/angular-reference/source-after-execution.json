@@ -1,0 +1,11 @@
+{
+  "sourceRevision": "8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+  "originalGitBlobsUnchanged": 4361,
+  "trackedExtensionSha256": "0dc56d4ca443dab99a94e6194127cf0c3d4c0111815391c02cfa808c6d2c5f88",
+  "binaries": {
+    "cli": "b1c5f116110d53e8c5a8a6406487111056369050ba51e85c8dd4bdec41480250",
+    "node": "57e43e4bdc133ed44a7a060da40205ee358927d37d097ffc8131b6b178c7b426",
+    "compiler": "46600db7ab5f3a686dc85cc6d65b013eb05f8edd07e96e06feca7149d7f3ccba"
+  },
+  "passed": true
+}

@@ -1,5 +1,6 @@
 //! Ahead-of-time shell source only: no configuration, runtime, filesystem or child processes.
 
+mod fish;
 mod powershell;
 #[cfg(test)]
 mod tests;
@@ -66,6 +67,9 @@ fn write_script(
     clap_complete::generate(shell.generator(), &mut command, name, &mut bytes);
     if shell == CompletionShell::PowerShell {
         bytes = powershell::augment(&command, bytes)?;
+    }
+    if shell == CompletionShell::Fish {
+        bytes = fish::augment(&command, bytes)?;
     }
     writer.write_all(&bytes)?;
     writer.flush()

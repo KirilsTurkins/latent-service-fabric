@@ -40,6 +40,14 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 
 Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.4`; the resolved package may display `1.1.4+spec-1.1.0` in `Cargo.lock`.
 
+## Shell completion tests
+
+The Linux CLI completion suite executes generated scripts in Bash and Fish.
+Install both shells before `cargo test -p latent --test completions`; on the
+Ubuntu CI image, Fish is installed with `apt-get install fish`. The regression
+also passes with Fish 3.6.0. No interactive shell profile is loaded or changed.
+Generating Zsh or PowerShell output alone does not qualify its execution.
+
 ## Java 25 SDK baseline and migration
 
 The Java SDK now targets Java 25, including generated protocol classes, tests

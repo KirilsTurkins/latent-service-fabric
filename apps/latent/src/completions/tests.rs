@@ -39,6 +39,7 @@ fn test_only_command_extension_reaches_every_generator_without_a_command_table()
         assert!(!original.contains("grammar-probe"));
         let command = Cli::command().subcommand(
             Command::new("grammar-probe")
+                .arg(Arg::new("position-choice").value_parser(["position-alpha", "position-beta"]))
                 .arg(
                     Arg::new("test-choice")
                         .long("test-choice")
@@ -63,6 +64,8 @@ fn test_only_command_extension_reaches_every_generator_without_a_command_table()
             "probe-beta",
             "probe-file",
             "probe-dir",
+            "position-alpha",
+            "position-beta",
         ] {
             assert!(extended.contains(expected), "{shell:?}: missing {expected}");
         }
