@@ -472,7 +472,14 @@ fn invalid(message: &'static str) -> PlatformError {
     error(PlatformErrorCode::InvalidArgument, message)
 }
 fn unavailable(message: &'static str) -> PlatformError {
-    error(PlatformErrorCode::Unavailable, message)
+    let mut failure = error(PlatformErrorCode::Unavailable, message);
+    if latent_core::error::ADMISSION_CURRENTNESS_REASONS.contains(&message) {
+        failure.details.push(latent_core::ErrorDetail {
+            kind: "admission.currentness".into(),
+            fields: [("reason".into(), message.into())].into(),
+        });
+    }
+    failure
 }
 fn denied(message: &'static str) -> PlatformError {
     error(PlatformErrorCode::PermissionDenied, message)
