@@ -1,4 +1,4 @@
-# Phase 3 guest SDK and conformance workflow
+# Guest SDK: build and run a capsule
 
 The maintained guest SDK is [Rust `latent-guest`](../../sdk/rust-guest/README.md).
 A [C fixture](../../sdk/c-guest/README.md) checks generated canonical ABI ownership.
@@ -67,7 +67,7 @@ threading, snapshots or fusion. Outputs remain temporary, not source artifacts.
 
 The [admission helper](../../crates/latent-wasmtime/tests/guest_sdk/package.rs)
 checks the completed build marker and source inventory, then uses the production
-Phase 2 packager with an embedded bounded inventory. Ephemeral test publisher and
+capsule packager with an embedded bounded inventory. Ephemeral test publisher and
 builder keys sign the exact package and observed component. Production verifiers
 check both signatures and current policy before `open_enforced` catalog admission.
 The inventory describes these package inputs; it does not assert a complete

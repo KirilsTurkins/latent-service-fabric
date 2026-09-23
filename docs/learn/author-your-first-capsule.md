@@ -63,7 +63,7 @@ make echo-capsule
 ```
 
 The two validation commands require the CLI built in the
-[first-node prerequisites](../start/first-node.md#build-the-exact-inputs).
+[first-node prerequisites](../start/first-node.md#1-get-the-source-and-build-lsf).
 Expected: a Component Model artifact plus computed-digest manifest, typed contracts,
 deployment and input. The builder compiles a self-contained core and componentizes
 it; it is not an arbitrary package-script runner or a node activation.

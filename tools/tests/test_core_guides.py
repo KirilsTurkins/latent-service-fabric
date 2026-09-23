@@ -50,7 +50,7 @@ def fences(text):
 
 class CoreGuides(unittest.TestCase):
     def test_six_existing_outcomes_reference_guides_and_validation_owner(self):
-        rows = json.loads((ROOT / 'website/content/coverage.json').read_text())['rows']
+        rows = json.loads((ROOT / 'website/content/coverage.json').read_text(encoding='utf-8'))['rows']
         selected = {row['id']: row for row in rows if row['guideIssue'] == 357}
         self.assertEqual(set(selected), set(GUIDES))
         for identifier, paths in GUIDES.items():
@@ -69,13 +69,13 @@ class CoreGuides(unittest.TestCase):
                             and item['status'] == 'available-not-run' for item in evidence))
 
     def test_real_guest_region_is_referenced_without_copying_implementation(self):
-        guide = (ROOT / 'docs/learn/author-your-first-capsule.md').read_text()
+        guide = (ROOT / 'docs/learn/author-your-first-capsule.md').read_text(encoding='utf-8')
         self.assertEqual(guide.count('<!-- lsf-example: guest/rust-echo echo -->'), 1)
         self.assertNotIn('impl Guest for EchoCapsule', guide)
         self.assertIn('examples/guides/rust-echo/example.json', guide)
 
     def test_learning_sequence_links_are_present_and_bounded(self):
-        first = (ROOT / 'docs/start/first-node.md').read_text()
+        first = (ROOT / 'docs/start/first-node.md').read_text(encoding='utf-8')
         self.assertIn('../learn/author-your-first-capsule.md', first)
         self.assertIn('../learn/deliver-and-recover-a-capsule.md', first)
         for name in NEW_GUIDES:
@@ -89,7 +89,7 @@ class CoreGuides(unittest.TestCase):
     def test_published_shell_blocks_parse_without_executing_commands(self):
         checked = 0
         for name in NEW_GUIDES:
-            for language, source in fences((ROOT / name).read_text()):
+            for language, source in fences((ROOT / name).read_text(encoding='utf-8')):
                 if language != 'bash':
                     continue
                 result = subprocess.run(['bash', '-n'], input=source.encode(),
@@ -99,7 +99,7 @@ class CoreGuides(unittest.TestCase):
         self.assertGreaterEqual(checked, 8)
 
     def test_published_receipt_reader_accepts_only_complete_success(self):
-        text = (ROOT / 'docs/start/first-node.md').read_text()
+        text = (ROOT / 'docs/development/core-guide-validation.md').read_text(encoding='utf-8')
         match = re.search(r"<<'PY'\n(.*?)\nPY", text, re.S)
         self.assertIsNotNone(match)
         script = match[1]

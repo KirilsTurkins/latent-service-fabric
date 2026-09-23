@@ -1,0 +1,9 @@
+package examples:word-count@1.0.0;
+
+interface api {
+    count: func(text: string) -> result<u32, string>;
+}
+
+world service {
+    export api;
+}

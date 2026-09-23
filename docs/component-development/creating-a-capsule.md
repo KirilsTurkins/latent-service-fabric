@@ -1,98 +1,202 @@
 # Creating a capsule
 
-A capsule project defines a versioned WIT world, implements its exported interfaces in a supported guest language, declares only the platform imports it requires, compiles to a Component Model binary, and packages immutable metadata.
+Build three small programs and run them on your LSF node: greet a visitor,
+count words, and calculate a shipping price. Each has its own service name and
+purpose. Together they show how to accept input, return an answer and explain
+an invalid request.
 
-The [Phase 3 guest SDK workflow](guest-sdk.md) builds maintained Rust capability
-examples and a generated C ownership fixture, packages and signs their exact
-outputs, and executes them with enforced admission. It documents the supported
-host ABI, least-privilege deployment compositions and close/drop semantics.
+Complete steps 1–7 of [Run your first node](../start/first-node.md) first.
+Keep that terminal open: this tutorial uses its running node, `cli`, `field`
+and `answer` helpers. Run commands from the same repository root.
 
-## Phase 1 assets and workflow
+The capsule implementations below use Rust. The small `component` section
+connects each ordinary Rust function to LSF. Your application can call the
+resulting capsule from any of the six [client SDK languages](../learn/use-a-client.mdx).
 
-The completed Phase 1 workflow publishes locally trusted component bytes with a
-validated capsule manifest and typed contract metadata. A deployment manifest
-selects the release and its routes. Follow the executable
-[standalone quickstart](../development/standalone-quickstart.md) for the maintained
-echo component and the [management reference](../reference/management-services.md)
-for publication validation.
+## 1. A greeting capsule
 
-The [echo fixture](../../examples/echo-contract/README.md) includes a Rust guest,
-pinned build tooling and reproducibility checks. Its generated package is
-executable on the standalone node; the checked-in `publish-release.json` is only
-a schema-shape example with placeholder digests.
+This capsule accepts a name and returns a greeting. An empty name produces a
+helpful error instead. Open
+[`component.rs`](../../tools/toolchain-smoke/examples/tutorial_greeting/component.rs)
+to see or edit the complete implementation:
 
-## Phase 2 packaging
+<!-- lsf-example: guest/tutorial-greeting capsule -->
 
-The [deterministic packaging workflow](packaging.md) now builds and inspects
-supplied components, capsule metadata, typed contracts and pinned WIT sources.
-OCI transfer, publisher and independent builder verification, SBOM policy,
-release lifecycle and rollout controls are implemented alongside it. The
-packager consumes existing build output; it does not compile source, execute
-package scripts, sign bytes or invent build provenance. The
-[completed Phase 2 gate](../phase-2-completion.md) records the accepted scope,
-validation evidence and limitations.
+Its contract says the input is a string and the result is either a string
+answer or a string error:
 
-```text
-component.wasm
-capsule manifest
-WIT package and lock graph
-SBOM
-detached publisher signature and builder provenance
+```wit
+greet: func(name: string) -> result<string, string>;
 ```
 
-Use the [operator CLI](../reference/operator-cli.md) with explicit input roots:
+That line lives in
+[`world.wit`](../../tools/toolchain-smoke/examples/tutorial_greeting/world.wit).
+The `wit_bindgen` line generates the connection between this contract and the
+Rust function. The node uses the same contract to check incoming calls.
+
+## 2. A word-count capsule
+
+This example processes a document instead of greeting a person. It counts
+groups of characters separated by spaces, tabs or newlines. An empty document
+contains zero words. Very long input returns a readable error.
+
+<!-- lsf-example: guest/tutorial-word-count capsule -->
+
+The [contract](../../tools/toolchain-smoke/examples/tutorial_word_count/world.wit)
+returns a whole number on success:
+
+```wit
+count: func(text: string) -> result<u32, string>;
+```
+
+## 3. A shipping calculator
+
+This capsule accepts two arguments: the number of items and whether the
+customer chose express delivery. It returns a price in cents, so `650` means
+6.50 units of currency. This tutorial uses a simple example price rule:
+500 cents for standard delivery or 1200 for express, plus 75 per item.
+
+<!-- lsf-example: guest/tutorial-shipping capsule -->
+
+The [contract](../../tools/toolchain-smoke/examples/tutorial_shipping/world.wit)
+accepts a whole number and a boolean:
+
+```wit
+quote: func(items: u32, express: bool) -> result<u32, string>;
+```
+
+These programs do not need network access, files, secrets or another running
+service. Start here before adding [capabilities](../learn/use-capabilities.md).
+
+## 4. Build the three capsules
 
 ```bash
-latent package build --source package-source.json --input-root build-inputs \
-  --sbom-inputs sbom-inputs.json --output-dir package
-latent package inspect package --output json
-latent package verify package --evidence-index evidence/index.json \
-  --evidence-root evidence --policy admission-policy.json --tenant examples \
-  --output json
+python3 tools/build_tutorial_capsules.py
+TUTORIAL_PACKAGES="$PWD/target/tutorial-capsules"
 ```
 
-The output directory must be new. Its `manifest.json`, `config.json` and declared
-`layers/` form an immutable package. Detached evidence has a separate bounded
-index and directory. Inspect establishes content and supported contract
-structure, not publisher trust or execution authorization. Verify evaluates the
-explicit local policy once; it opens no node catalog, issues no execution grant
-and does not check the target node's runtime profile or durable policy floors.
-The node independently applies its current policy and release lifecycle.
+Wait for `Ready: greeting`, `Ready: word-count` and `Ready: shipping`.
+Each output directory contains:
 
-Transfer a package and its evidence through an explicit registry profile with
-`package push`/`package pull`; retain returned immutable digests when a transfer
-is partial or uncertain. Publish to an enforced node with
-`release publish-package PACKAGE --evidence EVIDENCE/index.json --operation-id ID
---expected-generation 0`. That command reads evidence files relative to the
-index's parent. Node tokens and registry credentials use separate private files;
-the CLI never mounts or edits the node's authoritative catalogs. See
-[operator workflows](../phase-2-operator-workflows.md) for exact formats and bounds.
+| File | What it is for |
+| --- | --- |
+| `component.wasm` | The compiled program that the node runs |
+| `capsule.json` | Its name, exported contract and resource limits |
+| `contracts.json` | The machine-readable input and output types |
+| `deployment.json` | The service name used to reach this program |
+| `input.json` | An example call |
 
-A deployment selects the admitted component digest, grants and resource limits.
-Managed Apply/Delete requires both an object generation and the catalog state
-version returned by `deployment get ID --operation-snapshot`. A rollout Start
-also requires the candidate manifest's `spec.route.weight` to equal the first
-declared stage; the CLI does not rewrite it. Compatibility checks and a successful
-local verification do not override revocation or authorize a rollback target.
+The builder fills in the generated identifiers. You do not need to calculate
+or copy them. If you already built these examples, choose a fresh directory
+with `--output target/tutorial-capsules-second` and set `TUTORIAL_PACKAGES`
+to that directory.
 
-The [bounded operator workflow](../development/standalone-quickstart.md#bounded-phase-2-operator-workflow)
-builds two tiny compatible packages and checks actual registry, CLI and node
-behavior. Its fresh signatures accompany synthetic test observations. Use the
-separate observed-build workflow when evaluating real source and tool evidence.
+## 5. Publish and deploy each program
 
-## Design rules
+The following helper repeats the publish and deploy steps from the first-node
+guide. It reads the publication returned by your node and puts it into the
+deployment file. Run it once per capsule:
 
-- No background threads or listeners.
-- No assumption that process-local state survives a call.
-- No unrestricted filesystem, environment, network, or secret access.
-- Every external dependency is an imported WIT contract.
-- Domain errors are explicit WIT variants.
-- Platform failures remain separate.
+```bash
+deploy_tutorial() {
+    local name=$1 package="$TUTORIAL_PACKAGES/$1"
+    cli release publish --manifest "$package/capsule.json" \
+        --component "$package/component.wasm" --contracts "$package/contracts.json" \
+        >"$RESULTS/$name-published.json"
+    python3 - "$package/deployment.json" "$RESULTS/$name-published.json" \
+        "$RESULTS/$name-deployment.json" <<'PY'
+import json, sys
+deployment = json.load(open(sys.argv[1]))
+release = json.load(open(sys.argv[2]))["data"]["release"]
+deployment["spec"]["release"] = release["digest"]
+deployment["spec"]["publication"] = release["publication"]["id"]
+with open(sys.argv[3], "x") as output:
+    json.dump(deployment, output)
+PY
+    cli deployment apply "$RESULTS/$name-deployment.json" --expected-generation 0 \
+        >"$RESULTS/$name-applied.json"
+    printf 'Deployed %s\n' "$name"
+}
+deploy_tutorial greeting
+deploy_tutorial word-count
+deploy_tutorial shipping
+```
 
-The current runtime provides activation context, clocks, resource budgets and
-structured logging. Calls execute within finite activation budgets; persistent
-guest state and background work are unavailable. Phase 2 packaging of browser
-assets or SSR content does not launch a browser or renderer. General providers,
-including blob storage and shared application ingress, remain planned Phase 3
-work. Stable idempotency for state/effects and durable workflow suspension belong
-to later phases; see the [roadmap](../roadmap.md).
+Your one node can now answer calls to all three services.
+
+## 6. Try the inputs and see the answers
+
+Greet Ada:
+
+```bash
+cli invoke --service examples/greeting --contract examples:greeting/api@1.0.0 \
+    --function greet --activation-id tutorial-greeting \
+    --input "$TUTORIAL_PACKAGES/greeting/input.json" >"$RESULTS/greeting-answer.json"
+answer "$RESULTS/greeting-answer.json"
+```
+
+Expected: `[{"ok":"Hello, Ada!"}]`.
+
+Count the words in `LSF runs small programs`:
+
+```bash
+cli invoke --service examples/word-count --contract examples:word-count/api@1.0.0 \
+    --function count --activation-id tutorial-word-count \
+    --input "$TUTORIAL_PACKAGES/word-count/input.json" >"$RESULTS/words-answer.json"
+answer "$RESULTS/words-answer.json"
+```
+
+Expected: `[{"ok":4}]`.
+
+Calculate standard shipping for two items:
+
+```bash
+cli invoke --service examples/shipping --contract examples:shipping/api@1.0.0 \
+    --function quote --activation-id tutorial-shipping \
+    --input "$TUTORIAL_PACKAGES/shipping/input.json" >"$RESULTS/shipping-answer.json"
+answer "$RESULTS/shipping-answer.json"
+```
+
+Expected: `[{"ok":650}]`. To try express delivery, write `[2, true]` into
+a new input file and invoke with a new activation ID. The result is `1350`.
+
+Now request zero items to see how an application reports invalid input:
+
+```bash
+printf '[0, false]\n' >"$RESULTS/invalid-shipping.json"
+cli invoke --service examples/shipping --contract examples:shipping/api@1.0.0 \
+    --function quote --activation-id tutorial-invalid-shipping \
+    --input "$RESULTS/invalid-shipping.json" >"$RESULTS/invalid-answer.json"
+answer "$RESULTS/invalid-answer.json"
+```
+
+Expected: `[{"err":"Choose between 1 and 100 items."}]`. The node is still
+running and can accept the next valid request.
+
+## 7. Change a program
+
+Open the greeting's `component.rs` and change `Hello` to `Welcome`.
+Build into a fresh directory:
+
+```bash
+python3 tools/build_tutorial_capsules.py --output target/tutorial-capsules-welcome
+```
+
+The new `greeting/component.wasm` contains your change. To replace the running
+version, continue with [delivery and updates](../learn/deliver-and-recover-a-capsule.md).
+A running deployment keeps its previous publication until you explicitly update it.
+
+## 8. Clean up
+
+When you finish, remove the three deployments:
+
+```bash
+for name in greeting word-count shipping; do
+    generation=$(field "$RESULTS/$name-applied.json" data deployment generation)
+    cli deployment delete "tutorial-$name" --expected-generation "$generation"
+done
+```
+
+You can keep the node running for another tutorial, or return to the
+[first-node cleanup](../start/first-node.md#8-continue-or-stop) to stop it.
+Your source files and built capsules remain available for the next experiment.
