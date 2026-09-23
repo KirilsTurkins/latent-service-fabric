@@ -1119,6 +1119,36 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 tools/ci_cargo_cache.py --github-output \"$GITHUB_OUTPUT\" > \"$RUNNER_TEMP/lsf-cargo-cache-identity.json\""
+    },
+    ".github/workflows/developer-tools.yml:contracts:Exercise controller boundaries and actual owned subprocesses": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "contracts",
+      "name": "Exercise controller boundaries and actual owned subprocesses",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_build_process"
+    },
+    ".github/workflows/developer-tools.yml:windows:Install exact hashed frontend build inputs": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Install exact hashed frontend build inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m pip install --require-hashes -r tools/dev-frontend-windows.lock"
+    },
+    ".github/workflows/developer-tools.yml:windows:Build native frontend and isolated Linux helper": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Build native frontend and isolated Linux helper",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/build_dev_frontend.py --output target/dev-candidate"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2674,6 +2704,9 @@
     },
     "tools/ci_cargo_cache.py": {
       "sha256": "8f58517d55f91fbfc5ac4b6dd65853a8c43ba17b315a41286ea0a261863106e1"
+    },
+    "tools/build_dev_frontend.py": {
+      "sha256": "ad57dc15e345069ba46b3e62f21df7b9383887efff0d73026c281ed407e75beb"
     }
   },
   "pythonCases": {
@@ -2999,6 +3032,62 @@
       "BrowserArtifactTests.test_skipped_or_unreached_producer_never_uploads",
       "BrowserArtifactTests.test_unselected_renderer_never_uploads"
     ],
+    "tools/tests/test_ci_cargo.py": [
+      "CargoRecipeTests.test_all_five_host_guest_binding_checks_are_retained",
+      "CargoRecipeTests.test_cli_plan_is_json_and_execution_errors_return_failure",
+      "CargoRecipeTests.test_every_command_has_a_coverage_tuple",
+      "CargoRecipeTests.test_failed_first_build_removes_stale_inventory",
+      "CargoRecipeTests.test_failure_stops_later_commands",
+      "CargoRecipeTests.test_format_and_clippy_policy_are_retained",
+      "CargoRecipeTests.test_independent_production_feature_resolution_is_retained",
+      "CargoRecipeTests.test_invalid_or_unsuccessful_stream_never_publishes",
+      "CargoRecipeTests.test_inventory_cannot_overwrite_source_or_follow_symlinks",
+      "CargoRecipeTests.test_inventory_option_is_exclusive_to_preparation",
+      "CargoRecipeTests.test_missing_toolchain_declaration_fails_without_executing",
+      "CargoRecipeTests.test_msrv_is_independent_and_comes_from_workspace_declaration",
+      "CargoRecipeTests.test_no_cache_hit_short_circuit",
+      "CargoRecipeTests.test_options_precede_rustc_separator",
+      "CargoRecipeTests.test_overlong_inventory_line_fails",
+      "CargoRecipeTests.test_partial_inventory_is_removed_on_cargo_failure",
+      "CargoRecipeTests.test_signal_exit_is_a_failure",
+      "CargoRecipeTests.test_successful_inventory_is_published_atomically",
+      "CargoRecipeTests.test_tests_doctests_and_compatibility_negative_controls_are_retained",
+      "CargoRecipeTests.test_timings_do_not_change_formatting",
+      "CargoRecipeTests.test_unknown_recipes_and_configurations_fail_closed",
+      "CargoRecipeTests.test_workflow_keeps_required_recipes_and_runtime_inventory_handoff",
+      "CargoRecipeTests.test_workspace_build_and_check_are_not_assumed_redundant",
+      "FoundationRecipeTests.test_comment_cannot_replace_binding_execution",
+      "FoundationRecipeTests.test_conditionally_skipped_binding_step_does_not_satisfy_foundation",
+      "FoundationRecipeTests.test_real_invocations_satisfy_foundation",
+      "FoundationRecipeTests.test_recipe_must_contain_host_and_guest_binding_checks",
+      "FoundationRecipeTests.test_workspace_locked_scope_is_not_optional"
+    ],
+    "tools/tests/test_ci_cargo_aot_handoff.py": [
+      "AotRecipeHandoffTests.test_missing_preparation_is_not_a_valid_merge",
+      "AotRecipeHandoffTests.test_only_aot_selectors_are_exported_from_the_prepared_manifest",
+      "AotRecipeHandoffTests.test_preparation_after_tests_is_not_a_valid_merge",
+      "AotRecipeHandoffTests.test_same_inventory_reaches_authenticated_preparation_before_tests",
+      "AotRecipeHandoffTests.test_skipped_or_ignored_preparation_is_not_a_valid_merge"
+    ],
+    "tools/tests/test_ci_cargo_cache.py": [
+      "CacheIdentityTests.test_cache_scope_is_dependencies_not_evidence_or_workspace_outputs",
+      "CacheIdentityTests.test_candidate_rejects_unknown_or_msrv_profile_combinations",
+      "CacheIdentityTests.test_candidate_rejects_unobserved_compiler_or_linker_overrides",
+      "CacheIdentityTests.test_credentials_and_unrelated_environment_are_not_retained",
+      "CacheIdentityTests.test_every_build_input_changes_its_hash",
+      "CacheIdentityTests.test_full_compatibility_digest_is_in_the_nonfallback_prefix",
+      "CacheIdentityTests.test_identity_is_deterministic_and_order_independent",
+      "CacheIdentityTests.test_inactive_profile_is_not_a_baseline_build_input",
+      "CacheIdentityTests.test_input_count_and_size_are_bounded",
+      "CacheIdentityTests.test_missing_deleted_foreign_and_symlinked_inputs_fail",
+      "CacheIdentityTests.test_observation_failure_cannot_produce_a_key",
+      "CacheIdentityTests.test_only_trusted_refs_may_write",
+      "CacheIdentityTests.test_opt_in_profile_preserves_correctness_and_never_overrides_release",
+      "CacheIdentityTests.test_recipe_feature_and_target_changes_invalidate",
+      "CacheIdentityTests.test_toolchain_architecture_profile_flags_and_lock_invalidate",
+      "CacheIdentityTests.test_unrelated_workflow_docs_and_source_changes_do_not_invalidate",
+      "CacheIdentityTests.test_workflow_cache_writes_and_scope_match_the_reviewed_policy"
+    ],
     "tools/tests/test_ci_coverage.py": [
       "CoverageTests.test_changed_nested_owner_requires_explicit_inventory_review",
       "CoverageTests.test_duplicate_required_step_identity_fails_closed",
@@ -3144,6 +3233,34 @@
       "DeterministicMeasurementTests.test_exact_nonempty_count_is_required",
       "DeterministicMeasurementTests.test_failed_process_is_not_retried_or_accepted",
       "DeterministicMeasurementTests.test_process_deadline_is_not_retried"
+    ],
+    "tools/tests/test_dev_contracts.py": [
+      "Projects.test_descriptor_rejects_unknown_fields_abi_and_output_loops",
+      "Projects.test_recipe_and_tool_changes_invalidate_trust",
+      "Projects.test_six_owner_mapping_and_compiler_host_boundary",
+      "Recovery.test_bounded_history_and_no_cross_workspace_identity",
+      "Recovery.test_lost_response_restart_looks_up_original_id_without_replay",
+      "Recovery.test_unknown_expired_wrong_tenant_and_conflicts_never_release_intent",
+      "ScenarioReports.test_arbitrary_candidate_policy_is_not_runtime_release_approval",
+      "ScenarioReports.test_missing_qualification_never_passes",
+      "ScenarioReports.test_portable_required_linux_checks_fail_without_invoking",
+      "Transports.test_helper_digest_is_checked_before_hello",
+      "Transports.test_ssh_identity_options_and_constant_command"
+    ],
+    "tools/tests/test_dev_workflow.py": [
+      "Documents.test_duplicate_and_unknown_fields_are_rejected",
+      "Documents.test_protocol_target_abi_and_response_association",
+      "Documents.test_unknown_remote_outcome_is_not_success",
+      "OwnedCommands.test_no_ambient_credentials",
+      "OwnedCommands.test_output_flood_and_deadline_are_finite",
+      "OwnedCommands.test_stdin_and_nonzero_result_reap",
+      "SourceSnapshots.test_changed_transfer_is_not_coherent",
+      "SourceSnapshots.test_exact_bytes_unicode_spaces_exclusions_and_deletions",
+      "SourceSnapshots.test_links_and_hardlinks_rejected",
+      "SourceSnapshots.test_private_state_and_competing_controller",
+      "SourceSnapshots.test_tampered_snapshot_is_rejected_before_writes",
+      "SourceSnapshots.test_traversal_windows_devices_and_aliases",
+      "SourceSnapshots.test_unicode_collision_rejected"
     ],
     "tools/tests/test_docs_pages.py": [
       "DocsPagesPolicyTests.test_archive_digest_is_verified_before_parsing",
@@ -5355,62 +5472,6 @@
     ],
     "tools/tests/test_zig_cache_boundary.py": [
       "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation"
-    ],
-    "tools/tests/test_ci_cargo.py": [
-      "CargoRecipeTests.test_all_five_host_guest_binding_checks_are_retained",
-      "CargoRecipeTests.test_cli_plan_is_json_and_execution_errors_return_failure",
-      "CargoRecipeTests.test_every_command_has_a_coverage_tuple",
-      "CargoRecipeTests.test_failed_first_build_removes_stale_inventory",
-      "CargoRecipeTests.test_failure_stops_later_commands",
-      "CargoRecipeTests.test_format_and_clippy_policy_are_retained",
-      "CargoRecipeTests.test_independent_production_feature_resolution_is_retained",
-      "CargoRecipeTests.test_invalid_or_unsuccessful_stream_never_publishes",
-      "CargoRecipeTests.test_inventory_cannot_overwrite_source_or_follow_symlinks",
-      "CargoRecipeTests.test_inventory_option_is_exclusive_to_preparation",
-      "CargoRecipeTests.test_missing_toolchain_declaration_fails_without_executing",
-      "CargoRecipeTests.test_msrv_is_independent_and_comes_from_workspace_declaration",
-      "CargoRecipeTests.test_no_cache_hit_short_circuit",
-      "CargoRecipeTests.test_options_precede_rustc_separator",
-      "CargoRecipeTests.test_overlong_inventory_line_fails",
-      "CargoRecipeTests.test_partial_inventory_is_removed_on_cargo_failure",
-      "CargoRecipeTests.test_signal_exit_is_a_failure",
-      "CargoRecipeTests.test_successful_inventory_is_published_atomically",
-      "CargoRecipeTests.test_tests_doctests_and_compatibility_negative_controls_are_retained",
-      "CargoRecipeTests.test_timings_do_not_change_formatting",
-      "CargoRecipeTests.test_unknown_recipes_and_configurations_fail_closed",
-      "CargoRecipeTests.test_workflow_keeps_required_recipes_and_runtime_inventory_handoff",
-      "CargoRecipeTests.test_workspace_build_and_check_are_not_assumed_redundant",
-      "FoundationRecipeTests.test_comment_cannot_replace_binding_execution",
-      "FoundationRecipeTests.test_conditionally_skipped_binding_step_does_not_satisfy_foundation",
-      "FoundationRecipeTests.test_real_invocations_satisfy_foundation",
-      "FoundationRecipeTests.test_recipe_must_contain_host_and_guest_binding_checks",
-      "FoundationRecipeTests.test_workspace_locked_scope_is_not_optional"
-    ],
-    "tools/tests/test_ci_cargo_cache.py": [
-      "CacheIdentityTests.test_cache_scope_is_dependencies_not_evidence_or_workspace_outputs",
-      "CacheIdentityTests.test_candidate_rejects_unknown_or_msrv_profile_combinations",
-      "CacheIdentityTests.test_candidate_rejects_unobserved_compiler_or_linker_overrides",
-      "CacheIdentityTests.test_credentials_and_unrelated_environment_are_not_retained",
-      "CacheIdentityTests.test_every_build_input_changes_its_hash",
-      "CacheIdentityTests.test_full_compatibility_digest_is_in_the_nonfallback_prefix",
-      "CacheIdentityTests.test_identity_is_deterministic_and_order_independent",
-      "CacheIdentityTests.test_inactive_profile_is_not_a_baseline_build_input",
-      "CacheIdentityTests.test_input_count_and_size_are_bounded",
-      "CacheIdentityTests.test_missing_deleted_foreign_and_symlinked_inputs_fail",
-      "CacheIdentityTests.test_observation_failure_cannot_produce_a_key",
-      "CacheIdentityTests.test_only_trusted_refs_may_write",
-      "CacheIdentityTests.test_opt_in_profile_preserves_correctness_and_never_overrides_release",
-      "CacheIdentityTests.test_recipe_feature_and_target_changes_invalidate",
-      "CacheIdentityTests.test_toolchain_architecture_profile_flags_and_lock_invalidate",
-      "CacheIdentityTests.test_unrelated_workflow_docs_and_source_changes_do_not_invalidate",
-      "CacheIdentityTests.test_workflow_cache_writes_and_scope_match_the_reviewed_policy"
-    ],
-    "tools/tests/test_ci_cargo_aot_handoff.py": [
-      "AotRecipeHandoffTests.test_missing_preparation_is_not_a_valid_merge",
-      "AotRecipeHandoffTests.test_only_aot_selectors_are_exported_from_the_prepared_manifest",
-      "AotRecipeHandoffTests.test_preparation_after_tests_is_not_a_valid_merge",
-      "AotRecipeHandoffTests.test_same_inventory_reaches_authenticated_preparation_before_tests",
-      "AotRecipeHandoffTests.test_skipped_or_ignored_preparation_is_not_a_valid_merge"
     ]
   },
   "pythonTestModules": [
@@ -5452,6 +5513,8 @@
     "tools/tests/test_ci_suite_inventory.py",
     "tools/tests/test_core_guides.py",
     "tools/tests/test_deterministic_tests.py",
+    "tools/tests/test_dev_contracts.py",
+    "tools/tests/test_dev_workflow.py",
     "tools/tests/test_docs_pages.py",
     "tools/tests/test_echo_cli_package.py",
     "tools/tests/test_first_node_guide.py",
@@ -5662,6 +5725,7 @@
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
-    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b"
+    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
+    ".github/workflows/developer-tools.yml": "5955321a192edc8a3ee315993ea0844c39b8859b045991213c4f39073df5ec6e"
   }
 }
