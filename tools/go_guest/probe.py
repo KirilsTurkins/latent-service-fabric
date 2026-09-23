@@ -85,7 +85,7 @@ def probe(output: Path, go: Path, componentize: Path, wasm_tools: Path) -> None:
         (source / "world.wit").write_text(
             "package lsf:go-probe@1.0.0;\n\n"
             "interface probe {\n"
-            "    record payload { value: u64, text: string, bytes: list<u8> }\n"
+            "    record payload { value: u64, signed: s64, unsigned: u32, text: string, bytes: list<u8> }\n"
             "    check: async func(input: payload) -> result<payload, string>;\n"
             "}\n\nworld capsule {\n" + imports + "\n    export probe;\n}\n")
         wit = output / "wit"

@@ -17,11 +17,24 @@ async fn main() -> wasmtime::Result<()> {
     let component = Component::from_file(&engine, path)?;
     println!("diagnostic compile millis: {}", began.elapsed().as_millis());
     let linker = linker(&engine)?;
-    for text in ["Hello, 世界! 🚚", "", "panic", "Hello again"] {
+    for (text, signed) in [
+        ("Hello, 世界!\0 🚚", i64::MIN),
+        ("Signed maximum", i64::MAX),
+        ("", 0),
+        ("panic", -1),
+        ("Hello again", 0),
+    ] {
+        let bytes = if signed == i64::MAX {
+            Vec::new()
+        } else {
+            vec![Val::U8(0), Val::U8(255)]
+        };
         let input = Val::Record(vec![
             ("value".into(), Val::U64(u64::MAX)),
+            ("signed".into(), Val::S64(signed)),
+            ("unsigned".into(), Val::U32(u32::MAX)),
             ("text".into(), Val::String(text.into())),
-            ("bytes".into(), Val::List(vec![Val::U8(0), Val::U8(255)])),
+            ("bytes".into(), Val::List(bytes)),
         ]);
         let started = Instant::now();
         let result = invoke(&engine, &component, &linker, input.clone()).await;

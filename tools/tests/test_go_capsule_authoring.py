@@ -76,6 +76,8 @@ class GoAuthoringTests(unittest.TestCase):
                 project, lock, _pins = validate(files)
                 self.assertEqual(project["world"], f"examples:{template}/service@1.0.0")
                 self.assertEqual(lock["language"], "go")
+                for name in ("go.mod", "go.sum"):
+                    self.assertEqual(files[name], files["vendor/lsf/sdk/go-guest/runtime-deps/" + name])
                 self.assertTrue(files["src/main.go"].startswith(b"// lsf-example-begin:"))
                 for capability in RUNTIME_IMPORTS:
                     self.assertIn(("import " + capability + ";").encode(), files["wit/world.wit"])
@@ -87,6 +89,18 @@ class GoAuthoringTests(unittest.TestCase):
             files["vendor/lsf/sdk/go-guest/runtime/deny-wasi.wat"] += b"\n;; changed\n"
             with self.assertRaisesRegex(ValueError, "vendored SDK changed"):
                 validate(files)
+
+    def test_module_template_rejects_unreviewed_application_dependencies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            files = snapshot(create(Path(temporary) / "project", "greeting"))
+            for name in ("go.mod", "go.sum"):
+                changed = dict(files)
+                changed[name] += b"\nexample.invalid/unreviewed v1.0.0\n"
+                with self.subTest(name=name), self.assertRaisesRegex(ValueError, "unreviewed Go module inputs"):
+                    validate(changed)
+                del changed[name]
+                with self.subTest(missing=name), self.assertRaisesRegex(ValueError, "incomplete Go capsule project"):
+                    validate(changed)
 
     def test_source_and_wit_remain_editable_but_budget_types_are_closed(self):
         with tempfile.TemporaryDirectory() as temporary:

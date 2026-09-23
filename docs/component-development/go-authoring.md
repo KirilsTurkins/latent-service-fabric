@@ -4,6 +4,9 @@ Create an independent Go project, edit its typed contract, and run its signed
 package on a local node. Your application lives outside the LSF checkout and
 uses a pinned copy of the maintained guest SDK.
 
+Compiler decisions, source identities and measured validation belong to the
+[developer qualification record](../development/go-capsule-qualification.md).
+
 The examples allow up to 120 seconds for a cold invocation, including component
 compilation. Warm calls still start with fresh guest state. This is an explicit
 example budget, not a change to the node's default execution limits.
@@ -60,6 +63,9 @@ path escapes and unsupported contract shapes. Put additional `.go` sources in `s
 from your WIT. The supported build captures source, not arbitrary Go modules or
 external include paths. The SDK's reviewed dependency graph is vendored and
 checked; it does not silently download application dependencies.
+The root `go.mod` and `go.sum` are the exact reviewed module inputs used during
+the build. Keep that dependency graph unchanged; generated WIT packages are
+assembled into it by the capsule builder.
 
 The `word-count` and `shipping` templates provide equivalent Go implementations
 of [Creating a capsule](creating-a-capsule.md). Choose another project directory
