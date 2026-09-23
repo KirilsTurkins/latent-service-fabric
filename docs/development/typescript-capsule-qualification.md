@@ -73,8 +73,25 @@ receipt and epoch association remain fenced; invocation paths never renew.
 Five deterministic regression cases cover preparation beyond five seconds,
 shared ownership, policy replacement and both role revocations, expiry,
 retirement, clock regression, failed durability and invalid-input cleanup.
-Native compilation includes the new test bodies; authoritative Linux execution
-and successful full-node qualification remain required.
+The registered cases compiled natively and passed in the authoritative Linux
+workspace test step of [run 35934224754](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934224754)
+at `cb3aab64377eea4a5cb26220a6593b5ca2f8351d`. The separate TypeScript
+full-node qualifier was still running when this milestone was recorded.
+
+The next [Go cross-gate run 35934224433](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934224433)
+passed all ten SDK cases in 82.46 seconds, all 5/9/17 dormant checks, the tutorials
+and trap/memory recovery. Its old continuous four-goroutine scheduling fixture
+then trapped at 734,111,290 fuel instead of exhausting the one-billion budget;
+artifact `10782339103` retains that failed strict classification. The corrected
+fixture rendezvouses with four workers and retains their blocked channels while
+the main goroutine exhausts fuel, avoiding unrelated unbounded clock-call churn.
+It keeps the same fuel/grants, actual blocked-worker cleanup and strict node
+classification. The correction requires a new complete cross-language run.
+The Go-only qualifier additionally checks the actual compiled recovery component
+for fresh state, a genuine `OutOfFuel` trap and another fresh state, with bounded
+clock/random import counts. This diagnostic supplements, not replaces, the
+strict admitted node cases. The paired probe WIT and host check also retain
+signed/unsigned full-width integers, embedded NUL and empty/nonempty bytes.
 
 The shared Go cross-language gate on the TypeScript branch,
 [run 35930223804](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35930223804),
