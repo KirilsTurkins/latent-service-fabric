@@ -3,10 +3,13 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tools import c_capsule_project as project
 from tools.c_capsule_build import build
 from tools.c_guest.bindings import aliases
+from tools.rust_capsule_node import RecordingClient
+from tools.phase2_operator_process import Client, WorkflowError
 
 
 class CAuthoringTests(unittest.TestCase):
@@ -78,6 +81,44 @@ class CAuthoringTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     project.create(output, "greeting", name)
                 self.assertFalse(output.exists())
+
+
+class ControlDiagnosticsTests(unittest.TestCase):
+    def test_paginated_evidence_never_retries_or_changes_the_failed_mutation(self):
+        requests = []
+        def invoke(client, *arguments, **_kwargs):
+            requests.append(arguments)
+            client.calls += 1
+            if arguments[:2] == ("deployment", "apply"):
+                return {"category": "platform-failure", "outcomeKnown": False, "data": {}}
+            token = "next" if arguments[0] == "audit" and "--page-token" not in arguments else None
+            return {"category": "success", "data": {"nextPageToken": token}}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            client = RecordingClient("unused", root, None, 0, evidence=root / "evidence")
+            with patch.object(Client, "call", invoke), self.assertRaisesRegex(WorkflowError, "authoring-control-1-4"):
+                client.call("deployment", "apply", "public.json", "--operation-id", "test-operation")
+            evidence = json.loads((root / "evidence/unexpected-control-diagnostics.json").read_text())
+            self.assertEqual(sum(args[:2] == ("deployment", "apply") for args in requests), 1)
+            self.assertEqual(len(evidence["audit"]), 2)
+            self.assertTrue(evidence["auditComplete"])
+            self.assertEqual(evidence["failedCall"], 1)
+            self.assertIn("--page-token", requests[-1])
+
+    def test_cyclic_audit_cursor_stops_without_hiding_the_original_failure(self):
+        def invoke(client, *arguments, **_kwargs):
+            client.calls += 1
+            return {"category": "platform-failure" if client.calls == 1 else "success",
+                    "data": {"nextPageToken": "cycle"}}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            client = RecordingClient("unused", root, None, 0, evidence=root / "evidence")
+            with patch.object(Client, "call", invoke), self.assertRaisesRegex(WorkflowError, "authoring-control-1-4"):
+                client.call("node", "get", "test")
+            evidence = json.loads((root / "evidence/unexpected-control-diagnostics.json").read_text())
+            self.assertFalse(evidence["auditComplete"])
+            self.assertEqual(evidence["auditFailure"], "WorkflowError")
+            self.assertEqual(client.calls, 3)
 
 
 if __name__ == "__main__":
