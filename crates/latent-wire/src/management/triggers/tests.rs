@@ -70,6 +70,29 @@ fn trigger_wire_derives_actor_and_preserves_explicit_cas_and_publication() {
     assert_eq!(target.deployment_generation, Some(1));
     assert!(target.publication.is_some());
     let limits = super::super::ManagementLimits::default();
+    for kind in [proto::TriggerTargetKind::Unspecified as i32, 999] {
+        let mut invalid = request();
+        invalid
+            .trigger
+            .as_mut()
+            .unwrap()
+            .target
+            .as_mut()
+            .unwrap()
+            .kind = kind;
+        assert_eq!(
+            validation::apply(invalid.clone(), principal(), &limits)
+                .unwrap_err()
+                .code(),
+            tonic::Code::InvalidArgument
+        );
+        assert_eq!(
+            conversion::manifest(invalid.trigger.unwrap())
+                .unwrap_err()
+                .code(),
+            tonic::Code::InvalidArgument
+        );
+    }
     let mut missing = request();
     missing.operation.as_mut().unwrap().expected_state_version = None;
     assert!(validation::apply(missing, principal(), &limits).is_err());

@@ -62,10 +62,7 @@ pub(super) fn target_matches(
     receipt: &proto::TriggerOperationReceipt,
     expected: &proto::TriggerTarget,
 ) -> bool {
-    let application = matches!(
-        proto::TriggerTargetKind::try_from(expected.kind),
-        Ok(proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application)
-    );
+    let application = expected.kind == proto::TriggerTargetKind::Application as i32;
     match receipt.target.as_ref() {
         Some(target) if target.publication == expected.publication => {
             if application {
