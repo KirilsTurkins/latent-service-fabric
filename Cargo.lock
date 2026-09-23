@@ -1915,6 +1915,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-portable-test-host"
+version = "0.1.0-alpha.4"
+dependencies = [
+ "base64 0.23.1",
+ "latent-activation",
+ "latent-artifacts",
+ "latent-core",
+ "latent-executor",
+ "latent-manifest",
+ "latent-routing",
+ "latent-wasmtime",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokio",
+]
+
+[[package]]
 name = "latent-protected-files"
 version = "0.1.0-alpha.4"
 dependencies = [

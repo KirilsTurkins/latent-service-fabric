@@ -73,8 +73,25 @@ limits, not a claim of hostile compiler or whole-process memory containment.
 and supports focused selections plus JUnit rendering. Tests must explicitly
 choose `node` or `portable`; unsupported required checks fail coverage.
 The current node runner requires an explicitly selected `test-` workspace.
-The portable runtime and capability fixture set are still pending and cannot
-count as passing node evidence.
+The native portable host reuses the production component engine, WIT surface,
+canonical value codec, fresh-store ownership, logging, context and clock imports.
+It executes prebuilt controlled development components without Linux. Its
+initial exercised Windows subset is Rust typed success/declared error,
+missing-import denial, cancellation, traps, fuel/memory/deadline interruption,
+and subsequent fresh-state success. Random, metrics, HTTP fixtures, C guests
+and real-node differential qualification remain required work.
+
+The selected verified Windows bundle must contain the portable executable.
+Use `dev test --environment portable --controlled-development --workspace NAME
+--portable-bundle DIGEST --project PATH --artifacts PATH`. Artifact paths are the
+descriptor's relative output paths beneath `--artifacts`. Execution uses exact
+component/manifest/contract bytes, does not invoke a guest compiler, and never
+falls back to Linux. Scenario `execution.grants` explicitly names the supported
+builtin imports; absent grants grant nothing. Optional decimal-string `fuel`
+and `memoryBytes`, Boolean `cancelBeforeStart`, and `timeoutMillis` narrow the
+selected component's limits. Required Linux-only checks remain failures.
+The report states actual OS, architecture, Wasmtime version, component digest,
+cleanup, system-clock nondeterminism and omitted node/security behavior.
 
 ## Executed evidence and remaining acceptance
 
@@ -85,10 +102,13 @@ tests cover protected state, exact-byte snapshots, command ownership, transport
 contracts and one-shot recovery. The maintained workflow repeats these checks on
 Windows and Linux and builds the Windows executable separately.
 
-The observed host is Windows 11 build 26200.9448, WSL 2.5.10 and kernel
-6.6.87.2. Actual CPU and memory PSI files exist. The currently qualified native
-runtime installer requires Ubuntu 24.04 and kernel 6.8 or newer; no kernel
-version check, pressure observation or execution profile was weakened.
+The observed host is Windows 11 build 26200.9448. With separate maintainer
+consent, its Microsoft-signed WSL installer was updated from 2.5.10 to 2.7.14;
+the actual guest then reported kernel 6.18.33.2. This host maintenance is not an
+automatic controller action. The native runtime installer still requires Ubuntu
+24.04 and kernel 6.8 or newer; no kernel version check, pressure observation or
+execution profile was weakened. These observations are not a managed-node
+qualification receipt.
 
 | Child | Remaining Windows acceptance |
 | --- | --- |
@@ -98,7 +118,7 @@ version check, pressure observation or execution profile was weakened.
 | #563 | Integrate and execute all six merged language-owner recipes; authenticated template/tool bundles. |
 | #564 | Actual A/B redeploy, compile/admission failure, concurrent generation and lost-response injection on a real node. |
 | #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |
-| #566 | Native portable host, minimum capability subset and real Linux differential execution. |
+| #566 | Complete C/provider/clock coverage, verified native distribution and real Linux differential execution; Rust native subset now runs in Windows CI. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
 | #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
 

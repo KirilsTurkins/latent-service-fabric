@@ -23,7 +23,17 @@ def atomic(root: Path, name: str, value: dict) -> None:
         with paths.directory(root):
             if (root / name).exists():
                 paths.read(root, name, MAX_DOCUMENT)
-            os.replace(temporary, root / name)
+            # Windows scanners may briefly hold a non-delete-sharing handle.
+            # Retry only this atomic local rename, before any external mutation.
+            deadline = time.monotonic() + 1
+            while True:
+                try:
+                    os.replace(temporary, root / name)
+                    break
+                except OSError as error:
+                    if os.name != "nt" or error.winerror not in {5, 32, 33} or time.monotonic() >= deadline:
+                        raise
+                    time.sleep(0.02)
             if os.name != "nt":
                 with paths.directory(root) as descriptor:
                     os.fsync(descriptor)

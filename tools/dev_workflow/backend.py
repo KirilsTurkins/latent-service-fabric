@@ -83,10 +83,9 @@ class Backend:
         if operation != "hello" and not self.negotiated:
             protocol.negotiate(self.call("hello", {}))
             self.negotiated = True
-        if operation == "hello":
-            checked = process.run(command(self.config, verify=True), self.cwd, timeout=20, maximum=4096)
-            require(checked.returncode == 0 and checked.stdout.strip().decode("ascii") == self.config["helperSha256"],
-                    "helper-identity-mismatch-before-execution")
+        checked = process.run(command(self.config, verify=True), self.cwd, timeout=20, maximum=4096)
+        require(checked.returncode == 0 and checked.stdout.strip().decode("ascii") == self.config["helperSha256"],
+                "helper-identity-mismatch-before-execution")
         request = protocol.request(operation, self.workspace, arguments)
         try:
             completed = process.run(command(self.config), self.cwd, timeout=timeout,

@@ -14,7 +14,7 @@ def prune_snapshots(root: Path, *, incoming: str) -> None:
     for name in ("last-deployment.json", "last-build.json", "project.json"):
         if (root / name).exists():
             value = state.load(root, name)
-            protected.add(value.get("source", value.get("snapshot", value.get("receipt", {}).get("source"))))
+            protected.add(value.get("snapshot", value.get("source", value.get("receipt", {}).get("source"))))
     if (root / "operations.json").exists():
         pending = state.load(root, "operations.json")["pending"]
         if pending:
@@ -43,7 +43,7 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
         status = service.request(root, "status")
     except (FileNotFoundError, ConnectionRefusedError):
         status = state.load(root, "lifecycle.json") if (root / "lifecycle.json").exists() else {"state": "stopped"}
-    require(status["state"] == "stopped", "stop-and-confirm-cleanup-before-purge")
+    require(status["state"] in {"stopped", "purged"}, "stop-and-confirm-cleanup-before-purge")
     layout = Layout.local(root / "runtime")
     installed = lifecycle.read_state(layout)
     require(installed is not None, "owned-runtime-state-required")

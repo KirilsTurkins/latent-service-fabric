@@ -115,6 +115,15 @@ class SourceSnapshots(unittest.TestCase):
         state.atomic(workspace, "result.json", {"state": "stopped"})
         self.assertEqual(state.load(workspace, "result.json"), {"state": "stopped"})
 
+    @unittest.skipUnless(os.name == "nt", "Windows DACL enforcement")
+    def test_private_state_rejects_access_for_unrelated_users(self):
+        paths.private_root(self.root)
+        icacls = Path(os.environ["SystemRoot"]) / "System32/icacls.exe"
+        result = process.run([str(icacls), str(self.root), "/grant", "*S-1-1-0:(OI)(CI)R"], self.root)
+        self.assertEqual(result.returncode, 0)
+        with self.assertRaisesRegex(common.DevError, "acl-too-broad"):
+            paths.private_root(self.root)
+
 
 class OwnedCommands(unittest.TestCase):
     def test_stdin_and_nonzero_result_reap(self):

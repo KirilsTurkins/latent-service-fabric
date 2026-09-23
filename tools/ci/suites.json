@@ -3471,6 +3471,31 @@
     },
     {
       "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-portable-test-host.bin.latent-portable-test-host",
+      "ignoredLeaves": [],
+      "kind": "bin",
+      "manifest": "tools/portable-test-host/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-portable-test-host",
+      "platforms": [
+        "linux-x86_64",
+        "windows-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/main.rs",
+      "target": "latent-portable-test-host",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
       "expectedCases": [
         "rooted::tests::content_or_permission_change_after_open_is_rejected",
         "rooted::tests::replacement_and_removal_during_read_never_return_old_bytes",

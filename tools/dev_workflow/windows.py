@@ -86,9 +86,16 @@ def check_private(path: Path) -> None:
                 ctypes.byref(text), None), "windows-dacl-inspection-failed")
         sddl = text.value
         import re
-        match = re.match(r"O:(S-[0-9-]+)D:", sddl)
-        require(match is not None, "windows-private-owner-required")
-        owner_sid = match[1]
+        advapi.ConvertSidToStringSidW.argtypes = [ctypes.c_void_p, ctypes.POINTER(wintypes.LPWSTR)]
+        advapi.ConvertSidToStringSidW.restype = wintypes.BOOL
+        def sid_string(sid):
+            converted = wintypes.LPWSTR()
+            require(advapi.ConvertSidToStringSidW(sid, ctypes.byref(converted)), "windows-token-sid")
+            try:
+                return converted.value
+            finally:
+                kernel.LocalFree(converted)
+        owner_sid = sid_string(owner)
         # Verify current identity using a process token, not localized whoami text.
         advapi.OpenProcessToken.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.POINTER(wintypes.HANDLE)]
         advapi.OpenProcessToken.restype = wintypes.BOOL
@@ -96,21 +103,23 @@ def check_private(path: Path) -> None:
         token = wintypes.HANDLE()
         require(advapi.OpenProcessToken(kernel.GetCurrentProcess(), 8, ctypes.byref(token)), "windows-token-open")
         try:
-            needed = wintypes.DWORD()
             advapi.GetTokenInformation.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p,
                                                   wintypes.DWORD, ctypes.POINTER(wintypes.DWORD)]
-            advapi.GetTokenInformation(token, 1, None, 0, ctypes.byref(needed))
-            require(0 < needed.value <= 65536, "windows-token-size")
-            buffer = ctypes.create_string_buffer(needed.value)
-            require(advapi.GetTokenInformation(token, 1, buffer, needed, ctypes.byref(needed)), "windows-token-read")
-            sid = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_void_p))[0]
-            sid_text = wintypes.LPWSTR()
-            advapi.ConvertSidToStringSidW.argtypes = [ctypes.c_void_p, ctypes.POINTER(wintypes.LPWSTR)]
-            require(advapi.ConvertSidToStringSidW(sid, ctypes.byref(sid_text)), "windows-token-sid")
-            try:
-                require(sid_text.value == owner_sid, "private-state-owner-mismatch")
-            finally:
-                kernel.LocalFree(sid_text)
+            advapi.GetTokenInformation.restype = wintypes.BOOL
+            def token_sid(information_class):
+                needed = wintypes.DWORD()
+                advapi.GetTokenInformation(token, information_class, None, 0, ctypes.byref(needed))
+                require(0 < needed.value <= 65536, "windows-token-size")
+                buffer = ctypes.create_string_buffer(needed.value)
+                require(advapi.GetTokenInformation(token, information_class, buffer, needed,
+                        ctypes.byref(needed)), "windows-token-read")
+                return sid_string(ctypes.cast(buffer, ctypes.POINTER(ctypes.c_void_p))[0])
+            user_sid, default_owner = token_sid(1), token_sid(4)
+            # Elevated Windows tokens normally create Administrators-owned files.
+            # Accept that owner only when it is this token's actual default owner;
+            # do not infer ownership from a localized account name or SDDL alias.
+            require(owner_sid == user_sid or owner_sid == default_owner == "S-1-5-32-544",
+                    "private-state-owner-mismatch")
         finally:
             kernel.CloseHandle(token)
         aces = re.findall(r"\(([^()]+)\)", sddl)
@@ -118,7 +127,7 @@ def check_private(path: Path) -> None:
         for ace in aces:
             fields = ace.split(";")
             require(len(fields) == 6 and fields[0] == "A"
-                    and fields[5] in {owner_sid, "OW", "SY", "BA"}, "windows-state-acl-too-broad")
+                    and fields[5] in {user_sid, "OW", "SY", "BA"}, "windows-state-acl-too-broad")
     finally:
         if text:
             kernel.LocalFree(text)

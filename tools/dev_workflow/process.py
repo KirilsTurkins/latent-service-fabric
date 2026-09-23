@@ -31,14 +31,15 @@ def run(command: list[str], cwd: Path, *, timeout: float = 30, maximum: int = MA
     selected = environment() if env is None else env
     argv = build_process._validate(command, cwd, selected, timeout, maximum)
     owner, failure, result = None, None, None
+    deadline = time.monotonic() + timeout
     with tempfile.TemporaryFile() as source, owned_cancellation() as cancellation:
         source.write(stdin)
         source.seek(0)
         try:
             with cancellation.defer():
                 owner = build_process._new_owner()
-                owner.spawn(argv, cwd, selected, time.monotonic() + timeout, stdin=source)
-            output, errors = build_process._capture(owner, time.monotonic() + timeout, maximum, cancellation)
+                owner.spawn(argv, cwd, selected, deadline, stdin=source)
+            output, errors = build_process._capture(owner, deadline, maximum, cancellation)
             result = subprocess.CompletedProcess(argv, owner.process.returncode, output, errors)
         except BaseException as error:
             failure = error

@@ -1149,6 +1149,36 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python tools/build_dev_frontend.py --output target/dev-candidate"
+    },
+    ".github/workflows/developer-tools.yml:windows:Install pinned component manifest validator": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Install pinned component manifest validator",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -m pip install jsonschema==4.26.0"
+    },
+    ".github/workflows/developer-tools.yml:windows:Build native portable host and maintained compiled Rust guests": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Build native portable host and maintained compiled Rust guests",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo build -p latent-portable-test-host --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_echo_capsule.py --output-dir target/dev-echo\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build -p latent-toolchain-smoke --example generic-capsule --target wasm32-unknown-unknown --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }"
+    },
+    ".github/workflows/developer-tools.yml:windows:Exercise native production Wasmtime and shared scenario assertions outside checkout": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Exercise native production Wasmtime and shared scenario assertions outside checkout",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/run_portable_dev_tests.py --host target/debug/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --output target/dev-portable-smoke.json"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2707,6 +2737,9 @@
     },
     "tools/build_dev_frontend.py": {
       "sha256": "ad57dc15e345069ba46b3e62f21df7b9383887efff0d73026c281ed407e75beb"
+    },
+    "tools/run_portable_dev_tests.py": {
+      "sha256": "1ca92f9e27978cacb841d0a28a565f591b4e35f030eecb3e0478a7251a3842d3"
     }
   },
   "pythonCases": {
@@ -3258,6 +3291,7 @@
       "SourceSnapshots.test_exact_bytes_unicode_spaces_exclusions_and_deletions",
       "SourceSnapshots.test_links_and_hardlinks_rejected",
       "SourceSnapshots.test_private_state_and_competing_controller",
+      "SourceSnapshots.test_private_state_rejects_access_for_unrelated_users",
       "SourceSnapshots.test_tampered_snapshot_is_rejected_before_writes",
       "SourceSnapshots.test_traversal_windows_devices_and_aliases",
       "SourceSnapshots.test_unicode_collision_rejected"
@@ -5726,6 +5760,6 @@
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/developer-tools.yml": "5955321a192edc8a3ee315993ea0844c39b8859b045991213c4f39073df5ec6e"
+    ".github/workflows/developer-tools.yml": "f44bf025b57d65e1916cbdf2943a3abed1f339600492d4464a0a3995d55bcdc5"
   }
 }

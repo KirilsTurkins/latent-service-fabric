@@ -10,6 +10,13 @@ on:
       - tools/dev-frontend-windows.lock
       - tools/build_process*.py
       - tools/tests/test_dev_*.py
+      - tools/portable-test-host/**
+      - tools/run_portable_dev_tests.py
+      - Cargo.toml
+      - Cargo.lock
+      - crates/**
+      - tools/toolchain-smoke/**
+      - wit/**
   workflow_dispatch:
 
 permissions:
@@ -39,9 +46,9 @@ jobs:
         run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_build_process
 
   windows:
-    name: Packaged Windows frontend
+    name: Windows frontend and actual portable capsules
     runs-on: windows-2025
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -53,6 +60,33 @@ jobs:
         run: python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
       - name: Build native frontend and isolated Linux helper
         run: python tools/build_dev_frontend.py --output target/dev-candidate
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install pinned component manifest validator
+        run: python -m pip install jsonschema==4.26.0
+      - name: Build native portable host and maintained compiled Rust guests
+        run: |
+          cargo build -p latent-portable-test-host --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/build_echo_capsule.py --output-dir target/dev-echo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo build -p latent-toolchain-smoke --example generic-capsule --target wasm32-unknown-unknown --release --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          wasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Exercise native production Wasmtime and shared scenario assertions outside checkout
+        run: python tools/run_portable_dev_tests.py --host target/debug/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --output target/dev-portable-smoke.json
+      - name: Retain actual native subset receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: windows-portable-subset-${{ github.sha }}
+          path: target/dev-portable-smoke.json
+          if-no-files-found: error
+          retention-days: 7
 
 # These hosted checks prove contracts and native executable startup. They do not
-# authorize publication or count as managed-WSL2/portable clean-host qualification.
+# authorize publication or count as full managed-WSL2/portable clean-host qualification.

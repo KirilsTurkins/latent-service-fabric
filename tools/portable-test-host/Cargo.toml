@@ -1,0 +1,25 @@
+[package]
+name = "latent-portable-test-host"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Explicit controlled-development Component Model test host, without a production node."
+
+[lints]
+workspace = true
+
+[dependencies]
+base64.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+latent-activation = { path = "../../crates/latent-activation" }
+latent-artifacts = { path = "../../crates/latent-artifacts" }
+latent-core = { path = "../../crates/latent-core" }
+latent-executor = { path = "../../crates/latent-executor" }
+latent-manifest = { path = "../../crates/latent-manifest" }
+latent-routing = { path = "../../crates/latent-routing" }
+latent-wasmtime = { path = "../../crates/latent-wasmtime" }

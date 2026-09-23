@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+import re
 from pathlib import Path
 import time
 import xml.etree.ElementTree as ET
@@ -21,7 +22,7 @@ def validate(value: dict, environment: str) -> dict:
     names = set()
     for case in value["scenarios"]:
         members(case, {"id", "service", "contract", "function", "input", "mediaType", "expect", "requires",
-                       "timeoutMillis", "required", "fixtures"})
+                       "timeoutMillis", "required", "fixtures"}, {"execution"})
         identifier(case["id"])
         require(case["id"] not in names, "duplicate-scenario")
         names.add(case["id"])
@@ -33,6 +34,15 @@ def validate(value: dict, environment: str) -> dict:
         if "payload" in expected:
             paths.relative(expected["payload"])
         require(type(case["required"]) is bool, "scenario-required-flag")
+        if "execution" in case:
+            execution = members(case["execution"], {"grants"}, {"fuel", "memoryBytes", "cancelBeforeStart"})
+            require(isinstance(execution["grants"], list) and len(execution["grants"]) <= 32
+                    and all(isinstance(item, str) and len(item) <= 512 for item in execution["grants"]),
+                    "scenario-explicit-grants")
+            for key in {"fuel", "memoryBytes"} & execution.keys():
+                require(isinstance(execution[key], str) and re.fullmatch(r"[1-9][0-9]{0,10}", execution[key]),
+                        "scenario-budget-format")
+            require(type(execution.get("cancelBeforeStart", False)) is bool, "scenario-cancellation-format")
         integer(case["timeoutMillis"], 1, 30000)
         require(isinstance(case["requires"], list) and len(case["requires"]) <= 32
                 and len(set(case["requires"])) == len(case["requires"])

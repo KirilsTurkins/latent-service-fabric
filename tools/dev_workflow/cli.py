@@ -64,6 +64,10 @@ def parser() -> argparse.ArgumentParser:
         if name == "test":
             command.add_argument("--environment", choices=("node", "portable"), required=True)
             command.add_argument("--select", action="append", default=[])
+            command.add_argument("--project", type=Path)
+            command.add_argument("--artifacts", type=Path)
+            command.add_argument("--portable-bundle")
+            command.add_argument("--controlled-development", action="store_true")
     return result
 
 
@@ -144,6 +148,9 @@ def dispatch(args) -> dict:
             return wsl.doctor()
         return {"host": sys.platform, "architecture": platform.machine(), "nodeReadiness": "not-checked"}
     root = _root(args.state_root)
+    if args.command == "test" and args.environment == "portable":
+        from . import portable
+        return portable.run(root, args)
     if args.command == "acquire":
         selected = bundle.authenticate(args.bundle_directory.absolute(), args.publisher_policy.absolute(),
             args.trusted_root.absolute(), args.verifier.absolute(), args.verifier_sha256,
@@ -206,7 +213,6 @@ def dispatch(args) -> dict:
             return connection.call("invoke", {"service": args.service, "contract": args.contract, "function": args.function,
                 "mediaType": args.media_type, "input": base64.b64encode(paths.read(args.input.absolute().parent, args.input.name, 1048576)).decode()})
         if args.command == "test":
-            require(args.environment == "node", "portable-host-not-qualified-node-fallback-prohibited")
             return connection.call("test", {"environment": args.environment, "selection": args.select})
         return connection.call(args.command, {})
 
