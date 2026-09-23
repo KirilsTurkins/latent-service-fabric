@@ -3203,6 +3203,7 @@
       "BuildProvenanceSchemaTests.test_explicit_builder_requirements_and_revocations",
       "BuildProvenanceSchemaTests.test_observation_profile_and_material_constraints",
       "BuildProvenanceSchemaTests.test_repository_grammar_matches_observation_and_policy",
+      "BuildProvenanceSchemaTests.test_signed_recipes_match_every_standalone_profile_and_builder_choice",
       "BuildProvenanceSchemaTests.test_statement_subject_and_signed_shape"
     ],
     "tools/tests/test_build_snapshot.py": [
