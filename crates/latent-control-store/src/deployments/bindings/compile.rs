@@ -3,7 +3,7 @@ use super::{
     capacity, denied, error, invalid, model::StoredBinding, BindingCatalog, CompilerOwner,
 };
 use crate::deployments::compiler::{CompiledCatalog, RevisionRecord};
-use latent_artifacts::{ArtifactRepository, ReleaseUseEligibility};
+use latent_artifacts::{AdmissionAuthority, ArtifactRepository, ReleaseUseEligibility};
 use latent_capabilities::broker::{
     CapabilityBindingSpec, InvocationBindingTarget, LOCAL_SERVICE_INVOCATION_PROFILE,
     SERVICE_INVOCATION_CAPABILITY,
@@ -27,6 +27,7 @@ pub(super) async fn compile(
     owner: Option<Arc<CompilerOwner>>,
     artifacts: &dyn ArtifactRepository,
     strict: bool,
+    control_authority: Option<&dyn AdmissionAuthority>,
 ) -> Result<BindingCatalog, PlatformError> {
     let limits = owner
         .as_ref()
@@ -91,6 +92,7 @@ pub(super) async fn compile(
             artifacts,
             deadline,
             &mut consumer,
+            control_authority,
         )
         .await;
         match result {
@@ -358,6 +360,10 @@ struct Import<'a> {
     policies: Vec<String>,
     restriction: Vec<u8>,
 }
+#[expect(
+    clippy::too_many_arguments,
+    reason = "authenticated control renewal accompanies the existing bounded binding inputs"
+)]
 async fn plan<'a>(
     catalog: &CompiledCatalog,
     record: &'a RevisionRecord,
@@ -366,6 +372,7 @@ async fn plan<'a>(
     artifacts: &dyn ArtifactRepository,
     deadline: Instant,
     cached: &mut Option<(&'a RevisionRecord, PackageBundle)>,
+    control_authority: Option<&dyn AdmissionAuthority>,
 ) -> Result<Arc<latent_capabilities::broker::CompiledCapabilityPlan>, PlatformError> {
     if Instant::now() >= deadline {
         return Err(error(
@@ -373,15 +380,24 @@ async fn plan<'a>(
             "binding-compile-deadline",
         ));
     }
+    let new_package = cached
+        .as_ref()
+        .is_none_or(|(previous, _)| package_key(previous) != package_key(record));
+    // Binding compilation reads the packages again after metadata compilation.
+    // Refresh only at an explicit control boundary, before checking eligibility
+    // and reading a new bounded package. Recovery/read-only callers pass None;
+    // failed renewals never repeat a package read, plan, or deployment effect.
+    if new_package {
+        if let Some(authority) = control_authority {
+            authority.renew_control_lease()?;
+        }
+    }
     let publication = eligibility(catalog, record)?;
     if publication.web_projection().is_some() {
         return web::compile(catalog, record, definitions, owner, &publication, deadline);
     }
     let comparison = PackageComparisonLimits::default();
-    if cached
-        .as_ref()
-        .is_none_or(|(previous, _)| package_key(previous) != package_key(record))
-    {
+    if new_package {
         // Drop the preceding package before reading another bounded package.
         *cached = None;
         *cached = Some((record, bundle(record, owner, artifacts).await?));
@@ -405,6 +421,9 @@ async fn plan<'a>(
                 || target.deployment.service != provider.service
             {
                 return Err(denied());
+            }
+            if let Some(authority) = control_authority {
+                authority.renew_control_lease()?;
             }
             dependencies.push(eligibility(catalog, target)?);
             let provider_bundle = bundle(target, owner, artifacts).await?;

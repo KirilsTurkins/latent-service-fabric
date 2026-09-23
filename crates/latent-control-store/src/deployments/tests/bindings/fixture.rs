@@ -22,6 +22,7 @@ pub(super) type Store = crate::DirectoryDeploymentRepository;
 const CAP: &str = "latent:clock/monotonic@0.1.0";
 pub(super) struct Fixture {
     pub store: Store,
+    pub authority: Arc<authority::Authority>,
     pub releases: Arc<DirectoryArtifactRepository>,
     pub broker: Arc<ActivationCapabilityBroker>,
     pub provider: ProviderRegistration,
@@ -62,7 +63,7 @@ impl Fixture {
                 &roots[0].0,
                 Default::default(),
                 Default::default(),
-                authority,
+                authority.clone(),
             )
             .unwrap(),
         );
@@ -162,6 +163,7 @@ impl Fixture {
             .unwrap();
         Self {
             store,
+            authority,
             releases,
             broker,
             provider,

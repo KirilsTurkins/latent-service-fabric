@@ -63,6 +63,8 @@ impl State {
 
 pub struct Authority {
     pub state: Arc<State>,
+    pub control_renewals: AtomicU64,
+    pub fail_control_renewal: AtomicU64,
     artifacts: Vec<CapsuleArtifact>,
 }
 impl Authority {
@@ -72,6 +74,8 @@ impl Authority {
     pub fn new_many(artifacts: Vec<CapsuleArtifact>) -> Arc<Self> {
         Arc::new(Self {
             artifacts,
+            control_renewals: AtomicU64::new(0),
+            fail_control_renewal: AtomicU64::new(0),
             state: Arc::new(State {
                 active: AtomicBool::new(true),
                 now: AtomicU64::new(100),
@@ -140,6 +144,19 @@ impl AdmissionGrant for Grant {
     }
 }
 impl AdmissionAuthority for Authority {
+    fn renew_control_lease(&self) -> Result<(), PlatformError> {
+        let renewal = self.control_renewals.fetch_add(1, Ordering::SeqCst) + 1;
+        if renewal == self.fail_control_renewal.load(Ordering::SeqCst) {
+            return Err(PlatformError {
+                code: PlatformErrorCode::Unavailable,
+                message: "fixture-control-lease-unavailable".into(),
+                retryable: true,
+                details: Vec::new(),
+            });
+        }
+        self.state.check()
+    }
+
     fn verify(
         &self,
         tenant: &TenantId,
