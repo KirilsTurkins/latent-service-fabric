@@ -1,7 +1,6 @@
 use super::fixture::*;
 use latent_artifacts::{
-    LifecycleScope, PublicationRef, PublicationSelector, ReleaseLifecycleAction,
-    ReleaseLifecycleReason,
+    LifecycleScope, PublicationRef, ReleaseLifecycleAction, ReleaseLifecycleReason,
 };
 use latent_core::TenantId;
 use latent_ingress::http;
@@ -112,10 +111,10 @@ async fn actual_http_component_cache_preserves_admission_revocation_and_owner_re
         .artifacts
         .change_publication_lifecycle(
             context("revoke-cache", 1),
-            &PublicationSelector::Publication(PublicationRef {
+            &PublicationRef {
                 id: publication,
                 scope: LifecycleScope::Tenant(TenantId("tests".into())),
-            }),
+            },
             ReleaseLifecycleAction::Revoke,
             ReleaseLifecycleReason::OperatorRevocation,
             &mut |_| Ok(()),

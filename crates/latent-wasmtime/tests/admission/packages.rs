@@ -1,8 +1,8 @@
 //! The injected host verifier owns test grants; policy crypto has its own tests.
 use super::*;
 use latent_artifacts::{
-    LifecycleScope, ManagedPublicationUpload, PublicationRef, PublicationSelector, ReleaseActor,
-    ReleaseActorKind, ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseMutationContext,
+    LifecycleScope, ManagedPublicationUpload, PublicationRef, ReleaseActor, ReleaseActorKind,
+    ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseMutationContext,
     ReleaseOperationPrecondition,
 };
 
@@ -107,7 +107,7 @@ async fn same_wasm_packages_and_tenants_keep_independent_enforced_runtime_grants
     repository
         .change_publication_lifecycle(
             context("tests", "retire-original", 1),
-            &PublicationSelector::Publication(first),
+            &first,
             ReleaseLifecycleAction::Retire,
             ReleaseLifecycleReason::OperatorRetirement,
             &mut |_| Ok(()),

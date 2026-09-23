@@ -121,11 +121,14 @@ impl DirectoryArtifactRepository {
         scope: &LifecycleScope,
         release: &ReleaseDigest,
     ) -> Result<Option<ReleaseLifecycleStatus>, PlatformError> {
-        let Some(reference) = self.resolve_publication(
-            scope,
-            &crate::PublicationSelector::LegacyComponent(release.clone()),
-        )?
-        else {
+        scope.validate()?;
+        let reference = self
+            .index
+            .read()
+            .map_err(lock_error)?
+            .legacy_component(Some(scope), release)?
+            .map(|entry| entry.publication.clone());
+        let Some(reference) = reference else {
             return Ok(None);
         };
         self.publication_lifecycle_status(&reference)

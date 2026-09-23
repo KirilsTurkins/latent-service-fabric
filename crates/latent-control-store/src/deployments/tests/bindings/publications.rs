@@ -129,7 +129,7 @@ fn identical_checked_package_has_independent_tenant_plans_and_revocation() {
                     expected_generation: 1,
                 }),
             },
-            &PublicationSelector::Publication(reference),
+            &reference,
             ReleaseLifecycleAction::Revoke,
             ReleaseLifecycleReason::OperatorRevocation,
             &mut |_| Ok(()),

@@ -2,7 +2,7 @@
 use super::lifecycle::{accept, context, scope};
 use super::*;
 use crate::{
-    LifecycleScope, ManagedPublicationReceipt, ManagedPublicationUpload, PublicationSelector,
+    LifecycleScope, ManagedPublicationReceipt, ManagedPublicationUpload, PublicationRef,
     ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseLifecycleState,
 };
 use latent_core::{PlatformError, TenantId};
@@ -19,8 +19,8 @@ fn publish(
     ))
     .unwrap()
 }
-fn selector(receipt: &ManagedPublicationReceipt) -> PublicationSelector {
-    PublicationSelector::Publication(receipt.publication.clone())
+fn selector(receipt: &ManagedPublicationReceipt) -> PublicationRef {
+    receipt.publication.clone()
 }
 
 #[test]
@@ -170,8 +170,9 @@ fn same_component_metadata_revisions_keep_independent_authority_and_legacy_repla
         .publication_execution_eligibility(&p2.publication)
         .unwrap();
     assert_eq!(repo.fetch_publication(&p2.publication).unwrap(), second);
-    let legacy = PublicationSelector::LegacyComponent(first.descriptor.release_digest.clone());
-    let ambiguous = repo.resolve_publication(&scope(), &legacy).unwrap_err();
+    let ambiguous =
+        block_on(repo.get_release_lifecycle(&scope(), &first.descriptor.release_digest))
+            .unwrap_err();
     assert_eq!(ambiguous.code, PlatformErrorCode::StateConflict);
     assert!(!ambiguous.retryable);
     assert!(ambiguous.message.contains("publication-selector-ambiguous"));
@@ -213,7 +214,7 @@ fn same_component_metadata_revisions_keep_independent_authority_and_legacy_repla
         1
     );
     assert!(
-        repo.resolve_publication(&scope(), &legacy).is_err(),
+        block_on(repo.get_release_lifecycle(&scope(), &first.descriptor.release_digest)).is_err(),
         "retirement does not resolve ambiguity"
     );
     drop(repo);
@@ -257,15 +258,13 @@ fn tenant_selection_never_reveals_or_reuses_foreign_publications() {
     let value = artifact("scope-a", b"same wasm");
     let first = publish(&repo, value.clone(), "create-a");
     let foreign_scope = LifecycleScope::Tenant(TenantId("foreign".into()));
-    let legacy = PublicationSelector::LegacyComponent(value.descriptor.release_digest.clone());
     assert!(repo
-        .resolve_publication(&foreign_scope, &legacy)
-        .unwrap()
-        .is_none());
+        .resolve_publication(&foreign_scope, &first.publication)
+        .is_err());
     let mut forged = first.publication.clone();
     forged.scope = foreign_scope.clone();
     assert!(repo
-        .resolve_publication(&foreign_scope, &PublicationSelector::Publication(forged))
+        .resolve_publication(&foreign_scope, &forged)
         .unwrap()
         .is_none());
     let mut foreign_value = value.clone();
@@ -288,11 +287,13 @@ fn tenant_selection_never_reveals_or_reuses_foreign_publications() {
     ))
     .unwrap();
     assert_eq!(
-        repo.resolve_publication(&scope(), &legacy).unwrap(),
+        repo.resolve_publication(&scope(), &first.publication)
+            .unwrap(),
         Some(first.publication.clone())
     );
     assert_eq!(
-        repo.resolve_publication(&foreign_scope, &legacy).unwrap(),
+        repo.resolve_publication(&foreign_scope, &second.publication)
+            .unwrap(),
         Some(second.publication.clone())
     );
     assert_ne!(first.publication.id, second.publication.id);

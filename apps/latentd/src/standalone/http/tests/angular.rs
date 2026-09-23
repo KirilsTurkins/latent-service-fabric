@@ -2,8 +2,7 @@
 //! HTTP cancellation handoff and guarded publication start.
 use super::fixture::*;
 use latent_artifacts::{
-    LifecycleScope, PublicationRef, PublicationSelector, ReleaseLifecycleAction,
-    ReleaseLifecycleReason,
+    LifecycleScope, PublicationRef, ReleaseLifecycleAction, ReleaseLifecycleReason,
 };
 use latent_core::TenantId;
 use latent_executor::ExecutionBackend;
@@ -123,10 +122,10 @@ async fn actual_angular_http_queue_disconnect_recovery_and_revocation() {
         .artifacts
         .change_publication_lifecycle(
             context("revoke-angular", 1),
-            &PublicationSelector::Publication(PublicationRef {
+            &PublicationRef {
                 id: revision.publication.unwrap(),
                 scope: LifecycleScope::Tenant(TenantId("tests".into())),
-            }),
+            },
             ReleaseLifecycleAction::Revoke,
             ReleaseLifecycleReason::OperatorRevocation,
             &mut |_| Ok(()),

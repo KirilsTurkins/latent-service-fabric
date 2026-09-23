@@ -1,7 +1,7 @@
 //! Resolve explicit input authority before compiling a normalized deployment.
 use latent_artifacts::{
     web::WebPublicationStatus, ArtifactRepository, DirectoryArtifactRepository, LifecycleScope,
-    PublicationRef, PublicationSelector,
+    PublicationRef,
 };
 use latent_core::{ArtifactBlobDigest, TenantId};
 use prost::Message;
@@ -71,7 +71,7 @@ pub(in crate::management) async fn input(
         scope: scope.clone(),
     };
     let entry = repository
-        .get_selected_catalog_entry(&scope, &PublicationSelector::Publication(reference.clone()))
+        .get_selected_catalog_entry(&scope, &reference)
         .await
         .map_err(|error| platform_status(error, &limits))?;
     let component = if let Some(entry) = entry {

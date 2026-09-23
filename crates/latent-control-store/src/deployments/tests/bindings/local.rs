@@ -186,7 +186,7 @@ fn local_publication_revocation_is_independent_of_consumer_admission() {
                     expected_generation: 1,
                 }),
             },
-            &PublicationSelector::Publication(publication),
+            &publication,
             ReleaseLifecycleAction::Revoke,
             ReleaseLifecycleReason::OperatorRevocation,
             &mut |_| Ok(()),

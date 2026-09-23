@@ -86,7 +86,7 @@ fn http_prepared_mutation_fences_deployment_edits_and_revocation() {
         .unwrap();
     repo.change_publication_lifecycle(
         publication_context("alice", "revoke", 1),
-        &PublicationSelector::Publication(publication),
+        &publication,
         ReleaseLifecycleAction::Revoke,
         ReleaseLifecycleReason::OperatorRevocation,
         &mut |_| Ok(()),
@@ -131,7 +131,7 @@ fn http_publications_sharing_bytes_and_tenants_keep_independent_routes_and_revoc
     let held = selected(&store, "alice", "/old").unwrap();
     repo.change_publication_lifecycle(
         publication_context("alice", "revoke", 1),
-        &PublicationSelector::Publication(first),
+        &first,
         ReleaseLifecycleAction::Revoke,
         ReleaseLifecycleReason::OperatorRevocation,
         &mut |_| Ok(()),

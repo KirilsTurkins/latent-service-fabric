@@ -1,7 +1,7 @@
 use super::*;
 use latent_artifacts::{
-    LifecycleScope, ManagedPublicationUpload, PublicationRef, PublicationSelector, ReleaseActor,
-    ReleaseActorKind, ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseMutationContext,
+    LifecycleScope, ManagedPublicationUpload, PublicationRef, ReleaseActor, ReleaseActorKind,
+    ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseMutationContext,
     ReleaseOperationPrecondition,
 };
 use latent_core::{RevisionId, RouteGeneration};
@@ -127,7 +127,7 @@ async fn independent_ready_and_warm_owners_check_publication_at_real_guest_start
     repository
         .change_publication_lifecycle(
             context("revoke-original", 1),
-            &PublicationSelector::Publication(first),
+            &first,
             ReleaseLifecycleAction::Revoke,
             ReleaseLifecycleReason::OperatorRevocation,
             &mut |_| Ok(()),

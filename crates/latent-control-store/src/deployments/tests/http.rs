@@ -18,9 +18,9 @@ use latent_artifacts::{
     AdmissionAuthority, AdmissionBinding, AdmissionEvidence, AdmissionRecheck,
     AdmissionStorageLimits, ArtifactRepository, DirectoryArtifactRepository,
     DirectoryArtifactRepositoryConfig, LifecycleScope, ManagedPublicationUpload,
-    PackageAdmissionUpload, PublicationRef, PublicationSelector, ReleaseActor, ReleaseActorKind,
-    ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseMutationContext,
-    ReleaseOperationPrecondition, VerifiedAdmission,
+    PackageAdmissionUpload, PublicationRef, ReleaseActor, ReleaseActorKind, ReleaseLifecycleAction,
+    ReleaseLifecycleReason, ReleaseMutationContext, ReleaseOperationPrecondition,
+    VerifiedAdmission,
 };
 use latent_core::{
     ContractId, DeploymentId, FunctionId, InterfaceId, PlatformError, PlatformErrorCode, TenantId,
