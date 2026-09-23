@@ -2,7 +2,8 @@
 
 This is developer execution evidence for #546, separate from the beginner
 [TypeScript authoring guide](../component-development/typescript-authoring.md).
-Complete SDK, signed-node and printed-guide qualification is still pending.
+All ten actual SDK cases have passed; signed-node and printed-guide
+qualification is still pending.
 This report does not authorize a release or replace newcomer review #345.
 
 ## Supported experiment
@@ -43,6 +44,37 @@ with `unsupported-resource-identity`; no component or completion marker was
 produced. This is explicit negative authoring evidence, not runtime admission.
 
 ## Retained attempts and compiler boundary fixes
+
+[Run 35930223705](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35930223705)
+at `e40fc4bc89aa2bd302489bb3575ee4286d90ee5d` passed all ten actual SDK tests
+in 890.74 seconds, including the compiled secret zeroization/copy checks and
+opaque resource owners. The nested service succeeded cold in 95.002 seconds
+and warm in 7.852 and 6.933 milliseconds. Denied service invocations remained
+denied. Both CI memory diagnostics ran three fresh Stores, with 9,502,720 bytes
+initial and peak linear memory for each caller and callee. Caller compilation
+took 41.189 seconds and callee compilation 41.324 seconds; diagnostic fuel was
+5,484,599 and 2,018,628 respectively. Their SHA-256 identities were
+`e75e45ed21b7ccea85fad2f92d001d59f7c83c9f65e3fad5de1d4fc0fb3eaf4f` and
+`1a1c2605a5dde43598d16b0b1c19a6bdc1f7f5c6cf781cf5fcd868c1bf4fcfed`.
+
+That run subsequently failed the real node's first signed publication at
+control 004 with `unavailable`, `outcomeKnown: false` and `audit-unavailable`;
+the bounded diagnostic query retained four audit records, including the
+expected unsigned denial and the signed verification failure. No mutation was
+retried. Artifact `10781926229` retains the failed run, which reached neither
+dormant-service measurements nor the printed guide. This is distinct from the
+Go demo-proof failure below. Capsule structural inspection held the authority's
+currentness fence across component decoding, preventing the sampler from
+renewing its unchanged five-second durable lease. Capsule admission and recovery
+now follow the existing web path: one bounded verification reservation owns
+structural work outside the fence, then current policy/signatures are checked
+under the renewed finite control lease before any grant is created. Retained
+receipt and epoch association remain fenced; invocation paths never renew.
+Five deterministic regression cases cover preparation beyond five seconds,
+shared ownership, policy replacement and both role revocations, expiry,
+retirement, clock regression, failed durability and invalid-input cleanup.
+Native compilation includes the new test bodies; authoritative Linux execution
+and successful full-node qualification remain required.
 
 The shared Go cross-language gate on the TypeScript branch,
 [run 35930223804](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35930223804),
