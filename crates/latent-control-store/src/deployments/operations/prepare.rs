@@ -142,6 +142,13 @@ impl DirectoryDeploymentRepository {
                 versions.remove(&id);
                 (None, digest, component, generation)
             };
+        // Authenticated control preparation may refresh its finite durable
+        // clock lease. A busy control worker cannot rely on a sampler tick
+        // having run between consecutive catalog mutations. This performs no
+        // deployment effect and never retries preparation or an uncertain write.
+        if let Some(authority) = &self.admission {
+            authority.renew_control_lease()?;
+        }
         let next_routes = Arc::new(
             compile_catalog_with_runtime(
                 desired,

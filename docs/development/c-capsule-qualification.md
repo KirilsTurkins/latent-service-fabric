@@ -75,6 +75,18 @@ used fresh nodes; read-only operation/audit diagnostics were added to retain
 more context if that control failure recurs. The successful experiment does
 not establish that the earlier intermittent control condition is fixed.
 
+The later [retained failure at `797e068c`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35886661009)
+identified `admission-clock-lease-uncovered`, rather than a compiler or guest
+ownership failure. Managed deployment preparation and commit now renew the
+existing finite durable clock lease at their authenticated control boundaries,
+before entering currentness fences. They still recheck policy and time, perform
+each mutation once, and fail closed on renewal/persistence errors. Historical
+operation replay performs no renewal. A deterministic control-store regression
+checks failure-before-effect and unchanged replay; Linux CI and the full
+real-node experiment must validate this change. The old failure's audit-page
+completeness flag was incorrect because its cursor is nested under `data.page`;
+the collector and its tests now use the actual wire shape.
+
 This is a finite, experimental single-node profile, not 100k-scale sizing,
 cluster placement, throughput or transactional-state qualification. Build
 observations are operator assertions, not authenticated source, hermetic
