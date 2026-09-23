@@ -1,5 +1,5 @@
 //! Exact data-only bindings published by the existing deployment transaction.
-mod compile;
+pub(in crate::deployments) mod compile;
 mod inspection;
 pub(in crate::deployments) mod model;
 mod source;

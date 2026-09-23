@@ -101,6 +101,7 @@ impl ExecutionCancellation for Control {
     }
 }
 pub struct Fixture {
+    _guest_runtime: support::guest_runtime::Runtime,
     pub ceiling: latent_core::ResourceBudget,
     pub plan: Arc<CompiledCapabilityPlan>,
     plans: Arc<Plans>,
@@ -263,13 +264,22 @@ impl Fixture {
             route_generation: RouteGeneration(1),
             attributes: Metadata::new(),
         };
-        let plan = configuration::compile(&broker, &revision, &publication, &provider.reference());
+        let guest_runtime =
+            support::guest_runtime::Runtime::new(&broker, &policies, &publication, component::CAP);
+        let plan = configuration::compile_with_runtime(
+            &broker,
+            &revision,
+            &publication,
+            &provider.reference(),
+            &guest_runtime,
+        );
         let plans = Arc::new(Plans(Mutex::new(vec![plan.clone()])));
         let runtime = Arc::new(ActivationCapabilityRuntime::new(
             broker.clone(),
             plans.clone(),
         ));
         runtime.install_metrics(provider.clone()).unwrap();
+        guest_runtime.install(&runtime);
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             support::config(),
             WasmtimeHostServices {
@@ -290,6 +300,7 @@ impl Fixture {
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
+            _guest_runtime: guest_runtime,
             ceiling,
             plan,
             plans,

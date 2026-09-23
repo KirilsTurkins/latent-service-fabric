@@ -1,13 +1,23 @@
 # Guest SDK: build and run a capsule
 
 For a new independent project, follow [Create your own Rust capsule](rust-authoring.md)
-or [Create your own C capsule](c-authoring.md).
+or [Create your own C capsule](c-authoring.md), or
+[Create your own Go capsule](go-authoring.md), or
+[Create your own TypeScript capsule](typescript-authoring.md).
 That guide covers editable source, generated contracts, packaging, signing,
 enforced node admission and cleanup. This reference describes capability ownership.
 
 The maintained guest SDK is [Rust `latent-guest`](../../sdk/rust-guest/README.md).
 The [C guest SDK](../../sdk/c-guest/README.md) provides explicit allocation and
 async ownership helpers over generated canonical ABI bindings.
+The [Go guest SDK](../../sdk/go-guest/README.md) adds typed capability packages
+with shared owner state, explicit close and no finalizer-driven release. Its
+runtime needs separately granted LSF clocks and entropy, including for pure
+application functions. See its guide for exact compiler and dependency pins.
+The [TypeScript guest SDK](../../sdk/typescript-guest/README.md) generates typed
+WIT imports/exports and supplies affine resource owners with explicit close.
+Its SpiderMonkey heap belongs to one activation; no Node process, timer loop,
+ambient WASI or initialized dormant heap is introduced.
 External client interfaces in Go, TypeScript, Java, .NET, C and Rust are separate
 from guest execution profiles. They do not establish general Go/JVM/.NET/JS guest
 support or a Node.js/WASI environment inside an LSF activation.
@@ -80,7 +90,7 @@ The inventory describes these package inputs; it does not assert a complete
 transitive dependency inventory. The helper contains no fixed private keys,
 trusted-local admission switch or injectable eligibility proof.
 
-The two separately approved [guest build profiles](../reference/build-provenance.md#phase-3-guest-recipes)
+The separately approved [guest build profiles](../reference/build-provenance.md#phase-3-guest-recipes)
 identify explicit worktree inputs. Their revision is a source-inventory hash,
 not a Git commit claim. Existing echo builder approvals do not authorize them.
 For an application, inspect its package and configure real publisher/builder

@@ -175,6 +175,160 @@ fn standalone() -> BuildObservation {
     value
 }
 
+fn standalone_go() -> BuildObservation {
+    let mut value = standalone();
+    value.build_type = GO_CAPSULE_BUILD_TYPE.into();
+    value.parameters = BuildRecipe::GoCapsule(GoCapsuleBuildParameters {
+        go_package: "my-greeting".into(),
+        compiler: "componentize-go".into(),
+        target: "wasm32-wasip1".into(),
+        runtime: "go-component-async-v1".into(),
+        locked: true,
+        ambient_wasi: false,
+    });
+    value
+        .materials
+        .retain(|material| !matches!(material.name.as_str(), "cargo" | "rustc" | "wit-bindgen"));
+    for name in ["go", "componentize-go"] {
+        value.materials.push(BuildMaterial {
+            name: name.into(),
+            digest: value.source.snapshot_digest.clone(),
+            size: 1,
+        });
+    }
+    value
+}
+
+#[test]
+fn go_capsules_require_source_bound_go_builder_approval_and_closed_runtime_claims() {
+    let (signer, public, _) = signer(BUILDER);
+    let value = standalone_go();
+    let evidence = signed(&signer, &value);
+    let mut policy = policy_value(&public);
+    assert!(verifier(&policy)
+        .verify_package(&subject(), evidence.as_ref(), NOW)
+        .is_err());
+    policy["requirements"][0]["buildType"] = GO_CAPSULE_BUILD_TYPE.into();
+    policy["requirements"][0]["sourceRevision"] = value.source.revision.clone().into();
+    policy["requirements"][0]["sourceSnapshotDigest"] = value.source.snapshot_digest.clone().into();
+    verifier(&policy)
+        .verify_package(&subject(), evidence.as_ref(), NOW)
+        .unwrap();
+    let original = serde_json::to_value(&value).unwrap();
+    for (field, invalid) in [
+        ("goPackage", "../escape"),
+        ("compiler", "cargo"),
+        ("target", "native"),
+        ("runtime", "ambient-wasi"),
+    ] {
+        let mut changed = original.clone();
+        changed["parameters"][field] = invalid.into();
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&changed).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+    for field in ["locked", "ambientWasi"] {
+        let mut changed = original.clone();
+        changed["parameters"][field] = (field != "locked").into();
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&changed).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+    for tool in ["go", "componentize-go", "dependency-lock", "package-inputs"] {
+        let mut changed = original.clone();
+        changed["materials"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|m| m["name"] != tool);
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&changed).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+}
+
+#[test]
+fn typescript_capsules_have_a_closed_separately_approved_compiler_profile() {
+    let mut value = standalone();
+    value.build_type = TYPESCRIPT_CAPSULE_BUILD_TYPE.into();
+    value.parameters = BuildRecipe::TypeScriptCapsule(TypeScriptCapsuleBuildParameters {
+        compiler: "componentize-js".into(),
+        bindings: "jco".into(),
+        language: "typescript".into(),
+        target: "wasm32-component".into(),
+        runtime: "spidermonkey".into(),
+        ambient_wasi: false,
+    });
+    for name in ["node", "compiler-inputs"] {
+        value.materials.push(BuildMaterial {
+            name: name.into(),
+            digest: value.source.snapshot_digest.clone(),
+            size: 1,
+        });
+    }
+    let (signer, public, _) = signer(BUILDER);
+    let evidence = signed(&signer, &value);
+    let mut policy = policy_value(&public);
+    assert_eq!(
+        verifier(&policy)
+            .verify_package(&subject(), evidence.as_ref(), NOW)
+            .unwrap_err()
+            .reason(),
+        SignatureFailure::PredicateDisallowed
+    );
+    policy["requirements"][0]["buildType"] = TYPESCRIPT_CAPSULE_BUILD_TYPE.into();
+    verifier(&policy)
+        .verify_package(&subject(), evidence.as_ref(), NOW)
+        .unwrap();
+    let encoded = serde_json::to_value(&value).unwrap();
+    for field in [
+        "compiler",
+        "bindings",
+        "language",
+        "target",
+        "runtime",
+        "unreviewedOption",
+    ] {
+        let mut invalid = encoded.clone();
+        invalid["parameters"][field] = "different".into();
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&invalid).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+    let mut ambient = encoded.clone();
+    ambient["parameters"]["ambientWasi"] = true.into();
+    assert!(
+        decode_build_observation(&serde_json::to_vec(&ambient).unwrap(), Default::default())
+            .is_err()
+    );
+    for name in [
+        "node",
+        "compiler-inputs",
+        "dependency-lock",
+        "contracts-tool",
+        "packager",
+        "package-inputs",
+    ] {
+        let mut invalid = encoded.clone();
+        invalid["materials"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|row| row["name"] != name);
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&invalid).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+}
+
 #[test]
 fn standalone_capsules_require_their_own_source_bound_builder_approval() {
     let (signer, public, _) = signer(BUILDER);

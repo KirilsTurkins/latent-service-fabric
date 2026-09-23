@@ -8,7 +8,7 @@ use latent_packaging::{
 };
 use latent_signing::{
     decode_build_observation, BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE,
-    RUST_CAPSULE_BUILD_TYPE,
+    GO_CAPSULE_BUILD_TYPE, RUST_CAPSULE_BUILD_TYPE, TYPESCRIPT_CAPSULE_BUILD_TYPE,
 };
 use serde_json::{json, Value};
 
@@ -32,7 +32,10 @@ pub(super) fn load(root: &Path) -> Result<Build> {
     let observation = decode_build_observation(&raw, ProvenanceLimits::default())?;
     if !matches!(
         observation.build_type.as_str(),
-        RUST_CAPSULE_BUILD_TYPE | C_GUEST_BUILD_TYPE
+        RUST_CAPSULE_BUILD_TYPE
+            | C_GUEST_BUILD_TYPE
+            | GO_CAPSULE_BUILD_TYPE
+            | TYPESCRIPT_CAPSULE_BUILD_TYPE
     ) || marker["formatVersion"] != 1
         || marker["observationDigest"] != artifact_blob_digest(&raw).as_str()
     {
@@ -84,6 +87,8 @@ pub(super) fn load(root: &Path) -> Result<Build> {
     match &observation.parameters {
         BuildRecipe::RustCapsule(recipe) if input.name == recipe.cargo_package => {}
         BuildRecipe::C(recipe) if recipe.fixture == "application" => {}
+        BuildRecipe::GoCapsule(recipe) if input.name == recipe.go_package => {}
+        BuildRecipe::TypeScriptCapsule(_) => {}
         _ => return Err("standalone recipe and matching package identity required".into()),
     }
     let inventory = sbom(&input, &observation)?;

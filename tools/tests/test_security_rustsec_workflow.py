@@ -13,7 +13,7 @@ import yaml
 
 from tools.ci_profile import classify_paths
 from tools.security_common import ROOT
-from tools.security_scope import classify, select, validate_results
+from tools.security_scope import classify, select
 from tools.validate_workflow_actions import validate_repository
 
 
@@ -85,34 +85,42 @@ class SecurityWorkflowTests(unittest.TestCase):
         self.assertGreaterEqual(workflows, 7)
         self.assertEqual(failures, [])
 
-    def test_exact_selected_result_cannot_pass_after_failure_or_cancellation(self) -> None:
+    def aggregate_status(self, results: dict) -> int:
+        script = self.baseline["jobs"]["result"]["steps"][0]["run"]
+        program = script.split("\n", 1)[1].rsplit("\nPY", 1)[0]
+        process = subprocess.run([sys.executable, "-c", program],
+                                 env={**os.environ, "SECURITY_RESULTS": json.dumps(results)},
+                                 capture_output=True, timeout=10, check=False)
+        return process.returncode
+
+    def test_actual_aggregate_checks_selected_results_and_rejects_failures(self) -> None:
         for enabled in (True, False):
             outputs = dict.fromkeys(("rustsec", "dependencies", "static", "selftest"), str(enabled).lower())
             results = {"scope": {"result": "success", "outputs": outputs}, "secrets": {"result": "success"}}
             results.update({name: {"result": "success" if enabled else "skipped"}
                             for name in ("rustsec", "dependencies", "static", "self-test")})
-            self.assertTrue(validate_results(results))
+            self.assertEqual(self.aggregate_status(results), 0)
             for job in results:
-                for failure in ("failure", "cancelled", "unknown"):
+                for failure in ("success", "skipped", "failure", "cancelled", "unknown"):
+                    if failure == results[job]["result"]:
+                        continue
                     mutated = copy.deepcopy(results)
                     mutated[job]["result"] = failure
-                    self.assertFalse(validate_results(mutated))
-            results["scope"]["outputs"]["rustsec"] = "unknown"
-            self.assertFalse(validate_results(results))
-
-    def test_actual_aggregate_script_checks_the_same_results(self) -> None:
-        script = self.baseline["jobs"]["result"]["steps"][0]["run"]
-        program = script.split("\n", 1)[1].rsplit("\nPY", 1)[0]
-        results = {"scope": {"result": "success", "outputs": dict.fromkeys(
-            ("rustsec", "dependencies", "static", "selftest"), "false")}, "secrets": {"result": "success"}}
-        results.update({name: {"result": "skipped"} for name in ("rustsec", "dependencies", "static", "self-test")})
-        for expected in (0, 1):
-            if expected:
-                results["secrets"]["result"] = "skipped"
-            process = subprocess.run([sys.executable, "-c", program],
-                                     env={**os.environ, "SECURITY_RESULTS": json.dumps(results)},
-                                     capture_output=True, timeout=10, check=False)
-            self.assertEqual(process.returncode, expected)
+                    with self.subTest(enabled=enabled, job=job, result=failure):
+                        self.assertNotEqual(self.aggregate_status(mutated), 0)
+                missing = copy.deepcopy(results)
+                del missing[job]
+                with self.subTest(enabled=enabled, missing_job=job):
+                    self.assertNotEqual(self.aggregate_status(missing), 0)
+            for output in outputs:
+                for invalid in (None, "unknown"):
+                    mutated = copy.deepcopy(results)
+                    if invalid is None:
+                        del mutated["scope"]["outputs"][output]
+                    else:
+                        mutated["scope"]["outputs"][output] = invalid
+                    with self.subTest(enabled=enabled, output=output, value=invalid):
+                        self.assertNotEqual(self.aggregate_status(mutated), 0)
 
     def test_pr_uses_complete_git_diff_not_api_first_page(self) -> None:
         event = {"pull_request": {"base": {"sha": "b" * 40}, "head": {"repo": {"fork": True}}}}

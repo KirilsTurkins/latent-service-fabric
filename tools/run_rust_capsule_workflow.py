@@ -2,7 +2,8 @@
 """Exercise independently compiled, signed Rust capsules on an enforced node.
 
 Linux with readable pressure metrics, Python 3.13; one node, one bounded HTTP
-peer, at most 384 controls, 48 activations, 17 deployments, a 180-second deadline.
+peer, at most 384 controls, 48 activations, 17 deployments. Native guests use a
+180-second overall deadline; TypeScript's cold engine compilation allows 900.
 Credentials are public test-only values confined to private temporary files.
 """
 from __future__ import annotations
@@ -31,7 +32,7 @@ TEMPLATES = {"greeting", "word-count", "shipping", "http-status", "recovery"}
 
 
 def run(cli, node_binary, fixture, evidence, *, language="rust"):
-    require(language in {"rust", "c"}, "authoring-language")
+    require(language in {"rust", "c", "go", "typescript"}, "authoring-language")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -51,7 +52,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                 and metadata["expiresAtUnixSeconds"] > time.time() + 180, "authoring-demo-trust")
         records = {record["name"].removeprefix("my-"): record for record in metadata["releases"]}
         require(set(records) == TEMPLATES and len(metadata["releases"]) == len(TEMPLATES), "authoring-template-set")
-        build_type = f"https://latent.dev/build/{'rust-capsule' if language == 'rust' else 'c-guest'}/v1"
+        build_type = f"https://latent.dev/build/{'c-guest' if language == 'c' else language + '-capsule'}/v1"
         require(all(record["buildType"] == build_type for record in records.values()), "authoring-guest-language")
         result["releaseSet"] = metadata
         with owned_cancellation() as cancellation:
@@ -59,10 +60,13 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                 work = Path(temporary)
                 for name in ("client", "node", "peer"):
                     (work / name).mkdir(mode=0o700)
-                client = RecordingClient(cli, work / "client", cancellation, time.monotonic() + 180,
-                                         evidence=evidence / "controls")
+                seconds = 900 if language == "typescript" else 180
+                invocation_millis = 120000 if language == "typescript" else 5000
+                result["limits"] = {"overallSeconds": seconds, "invocationMillis": invocation_millis}
+                client = RecordingClient(cli, work / "client", cancellation, time.monotonic() + seconds,
+                                         evidence=evidence / "controls", invocation_timeout_millis=invocation_millis)
                 peer, port = start_provider(client, work / "peer")
-                config, settings = configure(work / "node", fixture, port)
+                config, settings = configure(work / "node", fixture, port, runtime_grants=language == "go", language=language)
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
                 # stay private and no token is copied into the exported receipt.
@@ -91,6 +95,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                         result["releases"][template] = published["data"]["operation"]
                         targets[template] = deploy(client, source / "deployment.json", publication)
                     names = population(client, fixture, targets, publications, probe, result)
+                    if language == "go":
+                        from tools.guest_runtime_grants import grant
+                        grant(client, node, fixture, targets, publications, result)
                     tutorials(client, targets, result)
                     result["samples"].append(sample(client, probe, "after-tutorials", len(names)))
                     faults(client, targets["recovery"], probe, result, len(names))

@@ -42,19 +42,6 @@ FIXTURE = ROOT / "crates/latent-oci/tests/fixtures/registry/htpasswd"
 WEB_TEST = "supply_chain::tests::web_catalog::registry::authenticated_web_registry_admission_roundtrip"
 
 
-def test_target(web: bool) -> list[str]:
-    """Build and run the same target; web mode selects exactly one required test."""
-    return (["-p", "latent-policy", "--lib"] if web else
-            ["-p", "latent-oci", "--test", "registry"])
-
-
-def test_filters(web: bool, observed: bool) -> list[str]:
-    if web:
-        return ["--exact", WEB_TEST]
-    filters = ["--skip", "bearer::real_harbor_bearer_roundtrip"]
-    return filters if observed else [*filters, "--skip", "real_observed_build_provenance_roundtrip"]
-
-
 def command(arguments: list[str], *, timeout: float = 30) -> str:
     """Only fixed local tooling uses captured output; never print command arguments."""
     owner = ACTIVE_RUN.get()

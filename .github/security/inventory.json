@@ -3,6 +3,8 @@
   "manifests": [
     {"path": "Cargo.toml", "kind": "cargo", "lock": "Cargo.lock"},
     {"path": "tools/native-fixture/Cargo.toml", "kind": "cargo", "lock": "tools/native-fixture/Cargo.lock", "isolated": true, "manifest_sha256": "7b43528d2c654a4cd136a5584a452406a4b67285aa1e99c8d96da57126639751", "absent_when_directory_missing": "tools/native-fixture"},
+    {"path": "sdk/typescript-guest/package.json", "kind": "no-external-packages", "sha256": "0d90346664579fc1b3da836a6d1290d47c7f748a476219b712936c7fc5c346ef", "absent_when_directory_missing": "sdk/typescript-guest"},
+    {"path": "sdk/typescript-guest/tools/package.json", "kind": "npm", "lock": "sdk/typescript-guest/tools/package-lock.json", "absent_when_directory_missing": "sdk/typescript-guest/tools"},
     {"path": "sdk/typescript-client/package.json", "kind": "npm", "lock": "sdk/typescript-client/package-lock.json"},
     {"path": "examples/renderer-profile/package.json", "kind": "npm", "lock": "examples/renderer-profile/package-lock.json", "absent_when_directory_missing": "examples/renderer-profile"},
     {"path": "website/package.json", "kind": "npm", "lock": "website/package-lock.json", "absent_when_directory_missing": "website"},
@@ -10,6 +12,7 @@
     {"path": "tools/requirements.lock", "kind": "pypi"},
     {"path": ".github/security/requirements.txt", "kind": "pypi", "absent_when_directory_missing": ".github/security"},
     {"path": "sdk/go/go.mod", "kind": "go-locked", "lock": "sdk/go/dependencies.lock.json", "sum": "sdk/go/go.sum", "module": "latent.dev/sdk/go", "legacy_sha256": "c4f1425518140f59773083b82a768a3783befd47246460586999d32fa8d3b28f"},
+    {"path": "sdk/go-guest/runtime-deps/go.mod", "kind": "go-locked", "lock": "sdk/go-guest/runtime-deps/dependencies.lock.json", "sum": "sdk/go-guest/runtime-deps/go.sum", "module": "wit_component", "absent_when_directory_missing": "sdk/go-guest/runtime-deps"},
     {"path": "sdk/java-client/build.gradle.kts", "kind": "maven-locked", "lock": "sdk/java-client/dependencies.lock.json", "legacy_sha256": "ce07cded5f7ba84687df95129a62fef32c4ba55b4e1ef3fcca69c0c63b86dbdc", "manifest_sha256": "3edeca5be99ddeb9a76ffb3439bc33d428912398f03f5982b6323f651348a010"},
     {"path": "sdk/java-client/settings.gradle.kts", "kind": "no-external-packages", "sha256": "d2bec319296b4d77e1218274e3fecd04bd47d07c92c0064f06876393c49df01b"},
     {"path": "sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj", "kind": "no-external-packages", "sha256": "48bcd87dca0595c0146b10aeb35c0870a7d4c858d9ae263e232f3fa0dc048d8f"},

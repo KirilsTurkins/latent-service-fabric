@@ -23,15 +23,21 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
 
 
 class Commands:
-    def __init__(self, root: Path, output: Path, environment: dict[str, str]):
+    def __init__(self, root: Path, output: Path, environment: dict[str, str], *,
+                 deadline_seconds=900, command_seconds=600):
+        if (type(deadline_seconds) is not int or type(command_seconds) is not int
+                or not 1 <= command_seconds <= min(deadline_seconds, 1800)
+                or not 1 <= deadline_seconds <= 7200):
+            raise ValueError("finite build command and overall deadlines required")
         self.root, self.output, self.environment = root, output, environment
-        self.deadline = time.monotonic() + 900
+        self.deadline = time.monotonic() + deadline_seconds
+        self.command_seconds = command_seconds
         self.records = []
         self.retained = 0
         (output / "logs").mkdir()
 
     def run(self, stage: str, *command: str) -> bytes:
-        timeout = min(600, self.deadline - time.monotonic())
+        timeout = min(self.command_seconds, self.deadline - time.monotonic())
         if timeout <= 0:
             raise ValueError("standalone build deadline exceeded")
         start = time.monotonic()
@@ -142,6 +148,10 @@ def binding_check(work: Path, pins: dict, command: Commands, bindgen: Path) -> s
 def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, bytes], component: bytes) -> None:
     manifest = read_json(ROOT / "examples/echo-contract/capsule.json")
     manifest["metadata"] = {"name": project["service"], "tenant": project["tenant"]}
+    if project["tenant"] is None:
+        # The public manifest's optional field is absent, never JSON null.
+        # This reusable capsule acquires an explicit tenant at admission.
+        del manifest["metadata"]["tenant"]
     manifest["component"] = {"digest": digest(component), "version": project["version"], "world": project["world"]}
     manifest["exports"] = surface["exports"]
     manifest["imports"] = [{"contract": name, "optional": False} for name in surface["imports"]]
@@ -165,6 +175,8 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
     })
     deployment = read_json(ROOT / "examples/echo-contract/deployment.json")
     deployment["metadata"] = {"name": project["name"], "tenant": project["tenant"]}
+    if project["tenant"] is None:
+        del deployment["metadata"]["tenant"]
     deployment["spec"].update(service=project["service"], release=digest(component), grants=[], resources=project["limits"])
     write_json(output / "deployment.json", deployment)
 

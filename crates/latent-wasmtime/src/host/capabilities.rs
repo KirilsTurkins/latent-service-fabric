@@ -216,9 +216,19 @@ impl HostCapabilities {
             .map_err(host_error)
     }
 }
+#[derive(Debug)]
+pub(crate) struct HostCapabilityFailure(pub(crate) latent_core::PlatformErrorCode);
+
+impl std::fmt::Display for HostCapabilityFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "capability admission: {:?}", self.0)
+    }
+}
+impl std::error::Error for HostCapabilityFailure {}
+
 pub(super) fn host_error(error: PlatformError) -> wasmtime::Error {
     // No policy document, token, provider location or untrusted detail in traps.
     let code = error.code;
     drop(error);
-    wasmtime::Error::msg(format!("capability admission: {code:?}"))
+    wasmtime::Error::new(HostCapabilityFailure(code))
 }

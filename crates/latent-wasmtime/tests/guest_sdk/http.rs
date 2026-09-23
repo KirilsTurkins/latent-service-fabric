@@ -17,7 +17,7 @@ use tokio::{
 #[tokio::test]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn buffered_http_success_and_denial_use_the_real_provider() {
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         let root = tempfile::tempdir().unwrap();
         let publication = package::publish(root.path(), &format!("{language}-http")).await;
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();

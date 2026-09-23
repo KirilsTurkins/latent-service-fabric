@@ -155,6 +155,27 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
                                      for index in range(count - len(MATERIALS))]
             self.assertEqual(self.validators["build-observation"].is_valid(changed), count == 64)
 
+        typescript = copy.deepcopy(original)
+        typescript.update(buildType="https://latent.dev/build/typescript-capsule/v1",
+            dependencyCompleteness="declared-inputs-incomplete",
+            parameters={"compiler": "componentize-js", "bindings": "jco", "language": "typescript",
+                        "target": "wasm32-component", "runtime": "spidermonkey", "ambientWasi": False})
+        typescript["source"].update(revision="b" * 64, capture="explicit-input-files")
+        typescript["materials"] += [{"name": name, "digest": DIGEST, "size": 1} for name in
+                                    ("node", "compiler-inputs", "contracts-tool", "packager", "package-inputs")]
+        self.validators["build-observation"].validate(typescript)
+        statement = samples()["package-provenance-statement"]
+        statement["predicate"]["observation"] = typescript
+        self.validators["package-provenance-statement"].validate(statement)
+        for field in typescript["parameters"]:
+            wrong = copy.deepcopy(typescript)
+            wrong["parameters"][field] = True if field == "ambientWasi" else "different"
+            self.invalid("build-observation", wrong)
+        for name in ("node", "compiler-inputs", "dependency-lock", "contracts-tool", "packager", "package-inputs"):
+            wrong = copy.deepcopy(typescript)
+            wrong["materials"] = [row for row in wrong["materials"] if row["name"] != name]
+            self.invalid("build-observation", wrong)
+
     def test_statement_subject_and_signed_shape(self):
         original = samples()["package-provenance-statement"]
         for subjects in ([], original["subject"] * 2):

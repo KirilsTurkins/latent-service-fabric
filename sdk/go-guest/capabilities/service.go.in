@@ -1,0 +1,9 @@
+package service
+
+import raw "wit_component/@raw@"
+
+// Call retains success, declared error and platform failure as distinct variants.
+// The child shares the parent activation's deadline and host-authorized budget.
+func Call(target Target, payload []byte, mediaType string, options CallOptions) InvocationOutcome {
+	return raw.Call(target, payload, mediaType, options)
+}
