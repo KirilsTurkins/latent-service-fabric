@@ -111,6 +111,27 @@ binary identities and rejects any difference. The local-service fixture also
 publishes a current synthetic load sample before each new request because it
 has no node monitor; production freshness limits are unchanged.
 
+[Run 35929606980](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35929606980),
+head `54772d797e6d47732deb170a031b9ddf1f07dc91`, passed the expanded ABI probe,
+built all fourteen components and passed all ten real SDK cases in 151.39
+seconds. The finite binding-lease correction passed the former fifth-deploy
+boundary. The node then retained three samples each at five and nine dormant
+deployments, with one process, seven threads, one TCP listener, no UDP listener
+and zero active or service-resident owners. These observations do not establish
+the required seventeen-deployment population, invocation or guide results.
+
+The next dormant deployment failed closed with `signature-stale-proof`, a
+known unsuccessful outcome recorded in the durable audit. The isolated demo
+policy allowed only 60 seconds of proof freshness, contradicting the guide's
+existing 30-minute experiment and 1800-second signatures. Both demo proof ages
+now use the same finite 1800-second window; production defaults, revocation,
+currentness, five-second control leases and signature expiry are unchanged.
+Two registered cryptographic tests retain success after 60 seconds, rejection
+at exact signature expiry and independent publisher/builder proof-age limits.
+No operation retry or automatic proof refresh hides this retained failure.
+The separate source artifact for the failed run was independently matched to
+all 4,039 archived Git blobs at that head; it cannot qualify the later fix.
+
 ## Reproduction and delivery boundary
 
 Install the exact Linux tools from the beginner guide, then use a fresh output

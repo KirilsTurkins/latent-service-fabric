@@ -111,7 +111,9 @@ This policy lasts for this experiment and accepts only the captured source and
 builder recipe. For a maintained deployment, use your organization's publisher,
 builder and revocation policies through the [package workflow](packaging.md).
 Finish the steps below within 30 minutes of signing; otherwise sign into a new
-directory and start a new experiment.
+directory and start a new experiment. This isolated demo gives both publisher
+and builder proofs the same finite 30-minute window as their signatures;
+production proof-age, revocation and currentness checks are unchanged.
 
 ## 4. Start a node with enforced admission
 
