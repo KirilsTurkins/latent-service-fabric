@@ -4896,6 +4896,84 @@
     },
     {
       "boundary": "runtime",
+      "expectedCases": [
+        "tests::greets_trimmed_names_and_explains_invalid_input"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.tutorial-greeting",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/tutorial_greeting/component.rs",
+      "target": "tutorial-greeting",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "tests::quotes_standard_and_express_shipping_and_rejects_invalid_quantities"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.tutorial-shipping",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/tutorial_shipping/component.rs",
+      "target": "tutorial-shipping",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "tests::counts_whitespace_separated_words_including_unicode"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.tutorial-word-count",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/tutorial_word_count/component.rs",
+      "target": "tutorial-word-count",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
       "id": "latent-toolchain-smoke.example.web-contract",
