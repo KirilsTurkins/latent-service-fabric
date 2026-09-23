@@ -10,7 +10,7 @@ import time
 import tomllib
 
 from tools.build_observation import build_environment, file_identity
-from tools.build_process import run_bounded_result
+from tools.build_process import BuildProcessError, run_bounded_result
 from tools.java_guest.bindings import generate
 from tools.java_guest.surface import surface as wit_surface
 from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_file, snapshot, write_json
@@ -122,6 +122,7 @@ class Compiler:
         started = time.monotonic()
         argv = [str(path), *map(str, arguments)]
         exit_code = None
+        failure = None
         try:
             result = run_bounded_result(argv, cwd or self.directory, self.environment,
                                  timeout_seconds=min(remaining, 600), max_output_bytes=4 * 1024 * 1024)
@@ -134,9 +135,17 @@ class Compiler:
             if result.returncode:
                 raise ValueError("Java compiler stage failed: " + stage + "; see retained log")
             return log.decode("utf-8")
+        except BuildProcessError as error:
+            failure = error.reason
+            raise
         finally:
-            self.records.append({"stage": stage, "command": argv, "exitCode": exit_code,
-                                 "seconds": round(time.monotonic() - started, 6)})
+            record = {"stage": stage, "command": argv, "exitCode": exit_code,
+                      "seconds": round(time.monotonic() - started, 6)}
+            if failure is not None: record["processFailure"] = failure
+            self.records.append(record)
+            # __init__ can fail before the caller receives the Compiler. Keep
+            # each command's bounded exit/cleanup record beside its log anyway.
+            write_json(self.directory / (str(len(self.records) - 1) + "-" + stage + ".command.json"), record)
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path) -> tuple[Path, dict]:
         destination.mkdir(parents=True, exist_ok=False)

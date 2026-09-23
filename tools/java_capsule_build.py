@@ -27,7 +27,7 @@ def retain_logs(source: Path, output: Path) -> None:
     target = output / "compiler-logs"
     target.mkdir(exist_ok=True)
     total = 0
-    for path in sorted(source.glob("*.log")):
+    for path in sorted((*source.glob("*.log"), *source.glob("*.command.json"))):
         data = read_file(path)
         total += len(data)
         if total > 16 * 1024 * 1024: raise ValueError("Java compiler log retention exceeded")
