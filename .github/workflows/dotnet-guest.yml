@@ -36,7 +36,7 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
           components: rustfmt
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           prefix-key: lsf-ci-dependencies-v1
           key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
@@ -71,8 +71,9 @@ jobs:
         run: |
           set -o pipefail
           dotnet --info > "$RUNNER_TEMP/dotnet-guest/dotnet-info.txt"
-          dotnet restore probes/smoke/Smoke.csproj --configfile nuget.config 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/restore.log"
-          /usr/bin/time -f '{"wallSeconds":%e,"maxRssKiB":%M,"exitCode":%x}' -o "$RUNNER_TEMP/dotnet-guest/compilation-cost.json" dotnet build probes/smoke/Smoke.csproj -c Release --no-restore 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/build.log"
+          dotnet restore probes/smoke/Smoke.csproj --configfile nuget.config --locked-mode 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/restore.log"
+          export LSF_WIT_BINDGEN="$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen" LSF_WASM_TOOLS=wasm-tools
+          /usr/bin/time -f '{"wallSeconds":%e,"maxRssKiB":%M,"exitCode":%x}' -o "$RUNNER_TEMP/dotnet-guest/compilation-cost.json" dotnet build probes/smoke/Smoke.csproj -c Release --no-restore -p:WitBindgenExe="python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py" 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/build.log"
           cp probes/smoke/packages.lock.json "$RUNNER_TEMP/dotnet-guest/packages.lock.json"
       - name: Compose capability-constrained compiler support
         shell: bash

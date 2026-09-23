@@ -28,7 +28,10 @@ async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_h
         &[CONTRACT],
     );
     assert!(backend
-        .prepare(&raw, &factory.preparation_key(raw.descriptor.release_digest.clone()))
+        .prepare(
+            &raw,
+            &factory.preparation_key(raw.descriptor.release_digest.clone())
+        )
         .await
         .is_err());
     assert_eq!(backend.resource_snapshot().stores_created, 0);
@@ -36,7 +39,11 @@ async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_h
         std::fs::read(directory.join("component.wasm")).unwrap(),
         &[CONTRACT],
     );
-    artifact.manifest.execution.resource_budget_ceiling.memory_bytes = MEMORY;
+    artifact
+        .manifest
+        .execution
+        .resource_budget_ceiling
+        .memory_bytes = MEMORY;
     // The package must describe the compiler's real dependency, not fabricate
     // an optional grant or relax the node's supported-import allowlist.
     artifact.manifest.imports.push(ContractImport {
@@ -45,26 +52,58 @@ async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_h
     });
     let started = std::time::Instant::now();
     let prepared = backend
-        .prepare(&artifact, &factory.preparation_key(artifact.descriptor.release_digest.clone()))
+        .prepare(
+            &artifact,
+            &factory.preparation_key(artifact.descriptor.release_digest.clone()),
+        )
         .await
         .unwrap();
-    println!("dotnet cold prepare: {:?}; component bytes: {}", started.elapsed(), artifact.component_bytes.len());
+    println!(
+        "dotnet cold prepare: {:?}; component bytes: {}",
+        started.elapsed(),
+        artifact.component_bytes.len()
+    );
     assert_eq!(backend.resource_snapshot().stores_created, 0);
     let mut budget = support::budget();
     budget.memory_bytes = MEMORY;
     let denied = support::Cancellation::new("dotnet-clock-denied");
-    let request = support::request(prepared.clone(), &denied.id, CONTRACT, "echo", b"[\"denied\"]", budget.clone());
+    let request = support::request(
+        prepared.clone(),
+        &denied.id,
+        CONTRACT,
+        "echo",
+        b"[\"denied\"]",
+        budget.clone(),
+    );
     assert!(support::run(&backend, request, &denied).await.is_err());
     assert_eq!(backend.resource_snapshot().stores_created, 0);
     support::idle(&backend);
     for (index, (function, input, expected)) in [
-        ("echo", serde_json::json!(["Hello, 世界! 🚚"]), serde_json::json!(["Hello, 世界! 🚚"])),
-        ("wide", serde_json::json!(["18446744073709551615"]), serde_json::json!(["18446744073709551615"])),
+        (
+            "echo",
+            serde_json::json!(["Hello, 世界! 🚚"]),
+            serde_json::json!(["Hello, 世界! 🚚"]),
+        ),
+        (
+            "wide",
+            serde_json::json!(["18446744073709551615"]),
+            serde_json::json!(["18446744073709551615"]),
+        ),
         ("next", serde_json::json!([]), serde_json::json!([1])),
         ("next", serde_json::json!([]), serde_json::json!([1])),
-    ].into_iter().enumerate() {
+    ]
+    .into_iter()
+    .enumerate()
+    {
         let control = support::Cancellation::new(&format!("dotnet-{index}"));
-        let mut request = support::request(prepared.clone(), &control.id, CONTRACT, function, &serde_json::to_vec(&input).unwrap(), budget.clone());
+        let mut request = support::request(
+            prepared.clone(),
+            &control.id,
+            CONTRACT,
+            function,
+            &serde_json::to_vec(&input).unwrap(),
+            budget.clone(),
+        );
         request.imports.push(BoundImport {
             capability: CapabilityId(CLOCK.to_owned()),
             contract: CLOCK.to_owned(),
@@ -78,36 +117,53 @@ async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_h
     }
 }
 
-#[test]
+#[tokio::test]
 #[ignore = "Requires the compiled .NET qualification component; diagnostic only"]
-fn diagnostic_dotnet_component_requires_only_the_declared_clock() {
+async fn diagnostic_dotnet_component_requires_only_the_declared_clock() {
     use wasmtime::component::{Component, Linker, Val};
     use wasmtime::{Config, Engine, Store, StoreLimitsBuilder, WasmBacktraceDetails};
     let directory = std::path::PathBuf::from(
         std::env::var_os("LSF_DOTNET_PROBE").expect("compiled probe path"),
     );
     let mut config = Config::new();
-    config.wasm_component_model(true).consume_fuel(true);
+    config.wasm_component_model_async(true).consume_fuel(true);
     config.wasm_backtrace_details(WasmBacktraceDetails::Enable);
     let engine = Engine::new(&config).unwrap();
-    let component = Component::new(&engine, std::fs::read(directory.join("component.wasm")).unwrap()).unwrap();
+    let component = Component::new(
+        &engine,
+        std::fs::read(directory.join("component.wasm")).unwrap(),
+    )
+    .unwrap();
     let mut linker = Linker::new(&engine);
     let epoch = std::time::Instant::now();
     // A diagnostic linker is not admission evidence. The backend test above
     // independently proves that the absent clock grant rejects before a store.
-    linker.instance(CLOCK).unwrap().func_wrap("now-nanos", move |_, (): ()| {
-        Ok((u64::try_from(epoch.elapsed().as_nanos()).unwrap(),))
-    }).unwrap();
-    let limits = StoreLimitsBuilder::new().memory_size(MEMORY as usize).build();
+    linker
+        .instance(CLOCK)
+        .unwrap()
+        .func_wrap("now-nanos", move |_, (): ()| {
+            Ok((u64::try_from(epoch.elapsed().as_nanos()).unwrap(),))
+        })
+        .unwrap();
+    let limits = StoreLimitsBuilder::new()
+        .memory_size(MEMORY as usize)
+        .build();
     let mut store = Store::new(&engine, limits);
     store.limiter(|limits| limits);
     store.set_fuel(1_000_000_000).unwrap();
-    let instance = linker.instantiate(&mut store, &component).unwrap();
+    let instance = linker
+        .instantiate_async(&mut store, &component)
+        .await
+        .unwrap();
     let (_, interface) = instance.get_export(&mut store, None, CONTRACT).unwrap();
-    let (_, index) = instance.get_export(&mut store, Some(&interface), "echo").unwrap();
+    let (_, index) = instance
+        .get_export(&mut store, Some(&interface), "echo")
+        .unwrap();
     let function = instance.get_func(&mut store, index).unwrap();
     let mut output = [Val::String(String::new())];
-    let result = function.call(&mut store, &[Val::String("hello".to_owned())], &mut output);
+    let result = function
+        .call_async(&mut store, &[Val::String("hello".to_owned())], &mut output)
+        .await;
     assert!(result.is_ok(), "NativeAOT startup failed: {result:?}");
     assert!(matches!(&output[0], Val::String(value) if value == "hello"));
 }

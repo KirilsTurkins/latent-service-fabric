@@ -149,13 +149,17 @@ impl filesystem::types::GuestDescriptor for ClosedDescriptor {
     fn append_via_stream(&self) -> Result<io::streams::OutputStream, filesystem::types::ErrorCode> {
         Err(filesystem::types::ErrorCode::NotPermitted)
     }
-    fn get_flags(&self) -> Result<filesystem::types::DescriptorFlags, filesystem::types::ErrorCode> {
+    fn get_flags(
+        &self,
+    ) -> Result<filesystem::types::DescriptorFlags, filesystem::types::ErrorCode> {
         Err(filesystem::types::ErrorCode::NotPermitted)
     }
     fn stat(&self) -> Result<filesystem::types::DescriptorStat, filesystem::types::ErrorCode> {
         Err(filesystem::types::ErrorCode::NotPermitted)
     }
-    fn metadata_hash(&self) -> Result<filesystem::types::MetadataHashValue, filesystem::types::ErrorCode> {
+    fn metadata_hash(
+        &self,
+    ) -> Result<filesystem::types::MetadataHashValue, filesystem::types::ErrorCode> {
         Err(filesystem::types::ErrorCode::NotPermitted)
     }
 }
