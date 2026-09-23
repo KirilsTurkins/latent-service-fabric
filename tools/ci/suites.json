@@ -7977,6 +7977,64 @@
       "source": "tests/standalone_shutdown.rs",
       "target": "standalone_shutdown",
       "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.dotnet-closed-runtime",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/dotnet_closed_runtime.rs",
+      "target": "dotnet-closed-runtime",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "expectedIgnored": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "id": "latent-wasmtime.test.dotnet-guest",
+      "ignoredLeaves": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 2,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/dotnet_guest.rs",
+      "target": "dotnet_guest",
+      "timeoutSeconds": 900
     }
   ],
   "processContracts": {

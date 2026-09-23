@@ -158,7 +158,7 @@ doc = false
 
 [[example]]
 name = "dotnet-closed-runtime"
-path = "../../sdk/dotnet-guest/runtime/component.rs"
+path = "examples/dotnet_closed_runtime.rs"
 crate-type = ["cdylib"]
 test = false
 bench = false
