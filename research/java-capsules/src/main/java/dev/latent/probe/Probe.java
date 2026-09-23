@@ -1,14 +1,12 @@
 package dev.latent.probe;
 
 import org.teavm.interop.Export;
-import org.teavm.jso.JSExport;
 
 /** Actual Java source; not a handwritten C replacement or a guest SDK claim. */
 public final class Probe {
     private Probe() { }
 
     @Export(name = "java_probe")
-    @JSExport
     public static long exercise(long seed) {
         long[] owned = new long[] {seed, Long.MIN_VALUE, Long.MAX_VALUE};
         String text = new String(new char[] {'\u03bb', '\uD83D', '\uDE80', '\u0000'});
