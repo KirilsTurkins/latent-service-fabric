@@ -3,8 +3,7 @@ use latent_artifacts::{
     InterfaceDescriptor,
 };
 use latent_core::{
-    ArtifactReference, ContractId, FunctionId, InterfaceId, Metadata, ReleaseDigest,
-    ResourceBudget, TenantId,
+    ArtifactReference, ContractId, FunctionId, InterfaceId, Metadata, ResourceBudget, TenantId,
 };
 use latent_manifest::{
     CapsuleManifest, ContractExport, ExecutionBackendKind, ExecutionRequirements, ObjectMetadata,
@@ -84,10 +83,10 @@ pub(in super::super) fn deployment(
     id: &str,
     tenant: &str,
     service: &str,
-    digest: &ReleaseDigest,
+    publication: &proto::PublicationRef,
 ) -> proto::Deployment {
     proto::Deployment {
-        publication: None,
+        publication: Some(publication.clone()),
         requested_publication: None,
         id: id.to_owned(),
         metadata: Some(proto::ObjectMetadata {
@@ -98,7 +97,7 @@ pub(in super::super) fn deployment(
             annotations: [("inert.auth.claim".to_owned(), "operator=true".to_owned())].into(),
         }),
         service: service.to_owned(),
-        release_digest: digest.0.clone(),
+        release_digest: String::new(),
         route_weight: 1,
         grants: Vec::new(),
         resources: Some(latent_wire::management::control_budget_to_proto(&budget())),

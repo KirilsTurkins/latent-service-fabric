@@ -1,8 +1,7 @@
-use latent_artifacts::ArtifactRepository;
 use latent_wire::management::{proto, ManagementLimits};
 use tonic::{Code, Status};
 
-use super::super::support::{artifact, deployment, request, Harness};
+use super::super::support::{artifact, deployment, publish_artifact, request, Harness};
 use super::{apply, delete};
 
 #[tokio::test]
@@ -75,16 +74,13 @@ async fn seed_pages(harness: &Harness) {
         ("acme", "other", "paging-other", &["d"][..], "alice"),
         ("other", "echo", "paging-foreign", &["foreign"][..], "bob"),
     ] {
-        let release = harness
-            .artifacts
-            .publish(artifact(tenant, service, marker))
-            .await
-            .unwrap();
+        let (publication, _component) =
+            publish_artifact(&harness, artifact(tenant, service, marker)).await;
         for id in ids {
             apply(
                 harness,
                 identity,
-                deployment(id, tenant, service, &release.release_digest),
+                deployment(id, tenant, service, &publication),
                 Some(0),
             )
             .await

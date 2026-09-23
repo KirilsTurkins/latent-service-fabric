@@ -195,7 +195,6 @@ fn request_manifest(request: &mut proto::ApplyDeploymentRequest) -> Result<Strin
         return Err(invalid_input());
     }
     match (&value.publication, &request.expected_component_digest) {
-        (None, None) => manifest_digest(value),
         (Some(reference), Some(component)) if value.release_digest.is_empty() => {
             if component.len() != 71 || reference.id.len() != 83 || reference.tenant.len() > 512 {
                 return Err(invalid_input());
