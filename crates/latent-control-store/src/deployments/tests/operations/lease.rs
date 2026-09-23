@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize};
 struct Lease {
     renewals: AtomicUsize,
     unavailable: AtomicBool,
+    fail_at: AtomicUsize,
 }
 
 fn unavailable() -> PlatformError {
@@ -23,8 +24,9 @@ fn unavailable() -> PlatformError {
 
 impl AdmissionAuthority for Lease {
     fn renew_control_lease(&self) -> Result<()> {
-        self.renewals.fetch_add(1, Ordering::SeqCst);
-        if self.unavailable.load(Ordering::SeqCst) {
+        let renewal = self.renewals.fetch_add(1, Ordering::SeqCst) + 1;
+        if self.unavailable.load(Ordering::SeqCst) || self.fail_at.load(Ordering::SeqCst) == renewal
+        {
             Err(unavailable())
         } else {
             Ok(())
@@ -98,4 +100,53 @@ fn managed_lease_failure_never_mutates_or_renews_a_historical_replay() {
     assert_eq!(replay.value().receipt, receipt);
     assert_eq!(bytes(&root), committed_bytes);
     assert_eq!(authority.renewals.load(Ordering::SeqCst), 5);
+}
+
+#[test]
+fn managed_preparation_renews_each_distinct_package_without_retry_or_partial_effect() {
+    let root = TempRoot::new();
+    let releases = Arc::new(Releases::default());
+    let one = releases.add("control-window-one");
+    let two = releases.add("control-window-two");
+    let three = releases.add("control-window-three");
+    let mut store = open(&root, &releases);
+    for (state, id, release) in [
+        (0, "blue", &one),
+        (1, "green", &two),
+        (2, "red", &three),
+        (3, "clone", &one),
+    ] {
+        drop(execute(&store, apply(id, state, id, 0, release)));
+    }
+    let authority = Arc::new(Lease::default());
+    store.admission = Some(authority.clone());
+    let original = bytes(&root);
+    let request = delete("remove-clone", 4, "clone", 4);
+    let fetched = releases.fetches.load(Ordering::SeqCst);
+
+    // Initial preparation renewal, first distinct package, then fail before
+    // reading the second package. Neither that read nor any effect is retried.
+    authority.fail_at.store(3, Ordering::SeqCst);
+    assert_eq!(
+        run(store.prepare_operation(request.clone()))
+            .err()
+            .unwrap()
+            .message,
+        "test-control-lease-unavailable"
+    );
+    assert_eq!(authority.renewals.load(Ordering::SeqCst), 3);
+    assert_eq!(releases.fetches.load(Ordering::SeqCst), fetched + 1);
+    assert_eq!(bytes(&root), original);
+    assert!(matches!(
+        lookup(&store, "remove-clone").value(),
+        DeploymentOperationLookup::Unknown { .. }
+    ));
+
+    authority.fail_at.store(0, Ordering::SeqCst);
+    let prepared = run(store.prepare_operation(request)).unwrap();
+    assert_eq!(authority.renewals.load(Ordering::SeqCst), 7);
+    assert_eq!(releases.fetches.load(Ordering::SeqCst), fetched + 4);
+    assert_eq!(bytes(&root), original);
+    drop(prepared); // Cancellation before commit has no deployment effect.
+    assert_eq!(bytes(&root), original);
 }
