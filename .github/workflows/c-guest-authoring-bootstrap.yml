@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: 3.13.5
+      - name: Test C authoring input boundaries
+        run: python3 -m unittest tools.tests.test_c_guest_authoring
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
           components: rustfmt
