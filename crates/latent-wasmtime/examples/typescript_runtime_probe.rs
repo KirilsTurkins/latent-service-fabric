@@ -1,8 +1,8 @@
 //! Compiler diagnostic only; this linker does not replace signed LSF admission.
 use std::{
     sync::{
-        Arc,
         atomic::{AtomicUsize, Ordering},
+        Arc,
     },
     time::{Duration, Instant},
 };
@@ -36,9 +36,9 @@ async fn main() -> wasmtime::Result<()> {
     let mut linker = Linker::new(&engine);
     linker
         .instance("lsf:typescript-probe/host@1.0.0")?
-        .func_wrap_async("echo", move |_, (text,): (String,)| {
+        .func_wrap_concurrent("echo", move |_, (text,): (String,)| {
             let count = count.clone();
-            Box::new(async move {
+            Box::pin(async move {
                 count.fetch_add(1, Ordering::SeqCst);
                 let _owner = Pending(count);
                 let delay = if text == "cancel" { 60_000 } else { 20 };
@@ -55,11 +55,9 @@ async fn main() -> wasmtime::Result<()> {
         let started = Instant::now();
         let future = invoke(&engine, &component, &linker, input.clone());
         if text == "cancel" {
-            assert!(
-                tokio::time::timeout(Duration::from_millis(100), future)
-                    .await
-                    .is_err()
-            );
+            assert!(tokio::time::timeout(Duration::from_millis(100), future)
+                .await
+                .is_err());
         } else {
             let actual = future.await;
             println!("diagnostic invocation: {text:?}; result: {actual:?}");
