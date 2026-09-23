@@ -3436,6 +3436,7 @@
         "supply_chain::tests::catalog::malformed_or_missing_evidence_never_creates_preparation_authority",
         "supply_chain::tests::catalog::revocation_blocks_source_and_original_evidence_can_reverify_after_approved_update",
         "supply_chain::tests::catalog::signed_package_roundtrips_metadata_and_sealed_preparation_source",
+        "supply_chain::tests::clock::mutation_renewal_persists_a_full_window_even_before_the_sampler_margin",
         "supply_chain::tests::clock::renewal_post_sync_regression_cannot_forget_newly_covered_observation",
         "supply_chain::tests::clock::renewal_without_persistence_retains_covered_clock_observation",
         "supply_chain::tests::clock_renewal::current_grants_remain_available_during_clock_floor_persistence",
@@ -3509,7 +3510,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 95,
+      "minimumCases": 96,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -6862,6 +6863,7 @@
         "invocation::cleanup::tests::shutdown_timeout_aborts_and_joins_before_returning",
         "invocation::conversion::tests::absent_pin_is_exactly_empty_empty_zero_for_platform_failure",
         "invocation::conversion::tests::all_outcomes_preserve_fields_and_generated_wire_encoding",
+        "invocation::conversion::tests::bounds::currentness_details_only_publish_closed_reasons_and_no_private_fields",
         "invocation::conversion::tests::bounds::generated_catalog_identity_is_independent_of_short_caller_name_limit",
         "invocation::conversion::tests::bounds::omitted_response_fields_and_spare_capacity_are_bounded_before_conversion",
         "invocation::conversion::tests::bounds::owned_public_conversion_moves_payload_effect_and_metadata_allocations",
@@ -6968,7 +6970,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 117,
+      "minimumCases": 118,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -7320,14 +7322,15 @@
         "all_shells_work_without_inputs_and_leave_the_home_directory_untouched",
         "invalid_arguments_help_version_and_existing_json_errors_keep_their_exit_contracts",
         "quiet_preserves_script_bytes_and_json_is_never_a_success_envelope",
-        "real_bash_completion_smoke_in_a_clean_shell"
+        "real_bash_completion_smoke_in_a_clean_shell",
+        "real_fish_completion_smoke_in_a_clean_shell"
       ],
       "expectedIgnored": [],
       "id": "latent.test.completions",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 5,
+      "minimumCases": 6,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
@@ -7335,7 +7338,8 @@
       ],
       "prerequisites": [
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
+        "successful source-matched Cargo artifact inventory",
+        "Bash and Fish installed for actual offline shell execution"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
