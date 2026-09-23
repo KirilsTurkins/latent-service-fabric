@@ -1,0 +1,55 @@
+name: .NET guest qualification
+
+on:
+  push:
+    branches: [feat/549-dotnet-capsule-authoring]
+  pull_request:
+    paths:
+      - 'sdk/dotnet-guest/**'
+      - '.github/workflows/dotnet-guest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dotnet-guest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  toolchain:
+    name: NativeAOT component qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '10.0.100'
+      - name: Retain the exact qualification source
+        run: |
+          mkdir -p "$RUNNER_TEMP/dotnet-guest"
+          git archive --format=zip HEAD -o "$RUNNER_TEMP/dotnet-guest/source.zip"
+          git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest/revision.txt"
+      - name: Compile the actual C# probe
+        working-directory: sdk/dotnet-guest
+        shell: bash
+        run: |
+          set -o pipefail
+          dotnet --info > "$RUNNER_TEMP/dotnet-guest/dotnet-info.txt"
+          dotnet restore probes/smoke/Smoke.csproj --configfile nuget.config 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/restore.log"
+          dotnet build probes/smoke/Smoke.csproj -c Release --no-restore 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/build.log"
+      - name: Retain output and failed attempts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dotnet-guest-qualification-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/dotnet-guest/
+            sdk/dotnet-guest/probes/smoke/packages.lock.json
+            sdk/dotnet-guest/probes/smoke/bin/
+            sdk/dotnet-guest/probes/smoke/obj/
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,11 @@
+package example:dotnetprobe@1.0.0;
+
+interface operations {
+    echo: func(value: string) -> string;
+    wide: func(value: u64) -> u64;
+    next: func() -> u32;
+}
+
+world probe {
+    export operations;
+}
