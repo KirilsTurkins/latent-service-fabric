@@ -97,7 +97,10 @@ def grant_http(client, node, fixture, publication, target, port):
         "services": [target["service"]], "publications": [publication], "capability": descriptor["capability"],
         "operations": ["send"], "resources": {"kind": "http", "origins": [{"scheme": "http", "host": "localhost", "port": port}],
             "methods": ["GET"], "paths": ["/allowed"], "pathPrefixes": []},
-        "ceiling": {"operations": 1, "inputBytes": 4096, "outputBytes": 8192, "wallTimeMillis": 5000}}]})
+        # The provider reserves body + two header copies + header descriptors
+        # + canonical-lowering overhead before dispatch (14336 bytes here).
+        # The encoded wire limit (8192) alone is not this ownership ceiling.
+        "ceiling": {"operations": 1, "inputBytes": 4096, "outputBytes": 16384, "wallTimeMillis": 5000}}]})
     client.call("policy", "apply", "--id", "http-allow", "--file", policy,
                 "--operation-id", "grant-http", "--expected-generation", "0")
     return deploy(client, fixture / "my-http-status/deployment.json", publication, generation=str(target["generation"]),
