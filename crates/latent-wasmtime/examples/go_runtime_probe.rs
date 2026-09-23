@@ -1,5 +1,5 @@
 //! Compiler diagnostic only: this linker does not replace signed LSF admission.
-use std::{io::Read, time::Instant};
+use std::time::Instant;
 use wasmtime::component::{Component, Linker, Val};
 use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder};
 
@@ -68,11 +68,15 @@ fn linker(engine: &Engine) -> wasmtime::Result<Linker<StoreLimits>> {
         })?;
     linker
         .instance("latent:random/random@0.1.0")?
-        .func_new("u64-value", |_, _, _, output| {
-            let mut bytes = [0; 8];
-            std::fs::File::open("/dev/urandom")?.read_exact(&mut bytes)?;
-            output[0] = Val::Result(Ok(Some(Box::new(Val::U64(u64::from_le_bytes(bytes))))));
-            Ok(())
+        .func_new_async("u64-value", |_, _, _, output| {
+            Box::new(async move {
+                tokio::task::yield_now().await;
+                let mut bytes = [0; 8];
+                getrandom::fill(&mut bytes)
+                    .map_err(|_| wasmtime::Error::msg("system entropy unavailable"))?;
+                output[0] = Val::Result(Ok(Some(Box::new(Val::U64(u64::from_le_bytes(bytes))))));
+                Ok(())
+            })
         })?;
     Ok(linker)
 }

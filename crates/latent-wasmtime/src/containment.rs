@@ -260,12 +260,22 @@ pub(crate) fn classify_runtime_error(
     if let Some(kind) = stop.observe() {
         return Ok(interrupted_outcome(kind, stop.reason(kind), consumption));
     }
-    classify_runtime_failure(
+    let mut outcome = classify_runtime_failure(
         None,
         memory_exhausted,
         error.downcast_ref::<Trap>(),
         consumption,
-    )
+    )?;
+    if let (GuestOutcome::Trapped { trap, .. }, Some(failure)) = (
+        &mut outcome,
+        error.downcast_ref::<crate::host::capabilities::HostCapabilityFailure>(),
+    ) {
+        // Only a typed, closed host code survives. Never expose the original
+        // provider message, policy document, Wasmtime context or guest input.
+        trap.metadata
+            .insert("capabilityFailure".into(), format!("{:?}", failure.0));
+    }
+    Ok(outcome)
 }
 
 fn classify_runtime_failure(
@@ -415,6 +425,34 @@ mod tests {
     fn bounded_text_preserves_utf8_boundaries() {
         assert_eq!(bounded_text("aéz", 2), "a");
         assert_eq!(bounded_text("aéz", 3), "aé");
+    }
+
+    #[test]
+    fn typed_capability_failure_retains_only_its_closed_code() {
+        let error = wasmtime::Error::new(crate::host::capabilities::HostCapabilityFailure(
+            PlatformErrorCode::PermissionDenied,
+        ))
+        .context("secret provider context must not escape");
+        let stop = StopControl::new(None, None);
+        let outcome = classify_runtime_error(&error, &stop, false, consumption()).unwrap();
+        let GuestOutcome::Trapped { trap, .. } = outcome else {
+            panic!("closed host failure must retain the existing trapped outcome");
+        };
+        assert_eq!(trap.code, "guest-runtime-error");
+        assert_eq!(trap.metadata["capabilityFailure"], "PermissionDenied");
+        assert!(!format!("{trap:?}").contains("secret"));
+        assert!(trap.guest_backtrace.is_empty());
+        let untyped = wasmtime::Error::msg("capability admission: fake secret");
+        let outcome = classify_runtime_error(&untyped, &stop, false, consumption()).unwrap();
+        let GuestOutcome::Trapped { trap, .. } = outcome else {
+            panic!("untyped component error must retain its generic classification");
+        };
+        assert!(!trap.metadata.contains_key("capabilityFailure"));
+        assert!(!format!("{trap:?}").contains("secret"));
+        assert_interruption(
+            classify_runtime_error(&error, &stop, true, consumption()).unwrap(),
+            GuestInterruptionKind::MemoryExhausted,
+        );
     }
 
     #[test]

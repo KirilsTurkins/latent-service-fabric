@@ -5376,6 +5376,7 @@
         "containment::tests::fuel_exhaustion_precedes_generic_guest_trap_classification",
         "containment::tests::injected_monotonic_clock_controls_deadline_without_wall_clock_or_sleep",
         "containment::tests::memory_precedes_fuel_and_guest_trap_classification",
+        "containment::tests::typed_capability_failure_retains_only_its_closed_code",
         "factory::tests::busy_shutdown_preserves_backend_epoch_progress_until_last_owner_drop",
         "factory::tests::explicit_ticker_stop_wakes_a_long_interval_and_is_idempotent",
         "factory::tests::input_observer_is_shared_without_retaining_factory_or_workers",
@@ -5511,7 +5512,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 284,
+      "minimumCases": 285,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
