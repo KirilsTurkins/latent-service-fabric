@@ -5939,6 +5939,7 @@
         "async_io::canonical_async_guest_retains_store_and_cell_cleanup_until_consumer_retires",
         "async_io::completed_async_consumers_allow_reuse_and_unpolled_guests_start_no_io",
         "cancellation_in_a_provider_prevents_the_next_guest_call_and_reclaims_owners",
+        "clock_charges_bound_native_fuel_and_preserve_exhaustion_classification",
         "managed_factories_and_shutdown_enforce_catalog_and_policy_owners",
         "real_guest_calls_use_fresh_sessions_on_the_same_warm_cell",
         "real_guest_runs_with_the_original_phase3_ledger_and_unused_counters_stay_zero",
@@ -5950,7 +5951,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 9,
+      "minimumCases": 10,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

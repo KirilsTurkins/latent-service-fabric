@@ -9,7 +9,7 @@ use wasmtime::{ResourceLimiter, StoreLimits, StoreLimitsBuilder};
 pub(crate) mod accounting;
 pub(crate) mod blob;
 pub(crate) mod capabilities;
-mod clock;
+pub(crate) mod clock;
 mod context;
 pub(crate) mod events;
 pub(crate) mod http;

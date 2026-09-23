@@ -41,10 +41,7 @@ pub(crate) fn install_context_log_clock(linker: &mut Linker<HostState>) -> wasmt
         state
     })?;
     latent::log::log::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| state)?;
-    latent::clock::monotonic::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| {
-        state
-    })?;
-    latent::clock::wall::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| state)
+    crate::host::clock::install(linker)
 }
 
 /// Canonical recognition/shape identity, independently of grants or availability.
