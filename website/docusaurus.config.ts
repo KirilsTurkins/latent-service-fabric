@@ -22,7 +22,8 @@ const repositoryRemark = () => (tree: unknown, file: {path: string}) => remarkRe
 const repositoryRehype = () => (tree: unknown, file: {path: string}) => rehypeRepositoryLinks({...selected(file), baseUrl: prepared.baseUrl})(tree, file);
 const examplesRemark = () => (tree: unknown, file: {path: string}) => {
   const version = selected(file);
-  return remarkExamples({bundle: version.examples.bundle, documentVersion: version.index.channel})(tree);
+  const includeVerification = file.path.replaceAll('\\', '/').includes('/development/');
+  return remarkExamples({bundle: version.examples.bundle, documentVersion: version.index.channel, includeVerification})(tree);
 };
 const inputIdentity = {fingerprint: sha256(JSON.stringify({revision: prepared.index.revision, pages: prepared.manifest.pages, assets: prepared.assets, baseUrl: prepared.baseUrl, examples: prepared.examples.identity, versions: prepared.manifest.versions}))};
 const commonDocs = {

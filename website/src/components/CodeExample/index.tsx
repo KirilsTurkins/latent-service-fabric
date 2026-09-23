@@ -14,13 +14,12 @@ type Props = {example: string; region: string; documentVersion: string};
 
 function Verification({variant}: {variant: ExampleVariant}): ReactNode {
   const proof = variant.verification;
-  return <>
-    <p className="lsf-example-verification">{proof.level === 'source-extracted'
+  return <details className="lsf-example-details"><summary>Source and validation details</summary>
+    <p>{proof.level === 'source-extracted'
       ? 'Source extraction only; compilation and real-node execution are unverified.'
       : proof.level === 'real-node'
         ? 'Real-node validation from a matching reviewed record.'
         : 'Compilation or local tests from a matching reviewed record; not real-node proof.'}</p>
-    <details><summary>Source and validation details</summary>
       <p>Source revision: <code>{variant.source.revision}</code></p>
       <p>Source SHA-256: <code>{variant.source.sha256}</code></p>
       <p>Snippet SHA-256: <code>{variant.snippet.sha256}</code></p>
@@ -28,12 +27,11 @@ function Verification({variant}: {variant: ExampleVariant}): ReactNode {
       {variant.validation.instructions && <p><a href={variant.validation.instructions}>Owner instructions</a></p>}
       {proof.level === 'source-extracted' ? <p>Evidence state: <code>{proof.reason}</code>.</p>
         : <p>Execution: {proof.execution}. Toolchain: {proof.toolchain}. Run: {proof.run}. Scope: {proof.scope}.</p>}
-    </details>
-  </>;
+    </details>;
 }
 
-function Panel({variant, group, query, identifier, tabIdentifier, version}: {
-  variant: ExampleVariant; group: string; query: string; identifier: string; tabIdentifier: string; version: string;
+function Panel({variant, group, query, identifier, tabIdentifier, version, developerPage}: {
+  variant: ExampleVariant; group: string; query: string; identifier: string; tabIdentifier: string; version: string; developerPage: boolean;
 }): ReactNode {
   const ref = useRef<HTMLDivElement>(null);
   const [copyStatus, setCopyStatus] = useState('');
@@ -63,29 +61,38 @@ function Panel({variant, group, query, identifier, tabIdentifier, version}: {
     {requested && requested !== variant.language && <p className="lsf-example-selection" role="status">
       The requested language is unavailable for this example in {version}. Showing {language} ({variant.environment}).
     </p>}
-    <p><strong>{language}</strong> · {variant.environment} · {variant.kind === 'synthetic' ? 'Synthetic UI fixture; not an SDK implementation' : variant.kind}</p>
-    <button className="button button--secondary button--sm" type="button" onClick={copy}>Copy {language} snippet</button>
+    <div className="lsf-example-toolbar">
+      <span>{variant.kind === 'synthetic' ? 'UI demonstration' : language}</span>
+      <button className="button button--secondary button--sm" type="button" onClick={copy} aria-label={`Copy ${language} snippet`}>Copy code</button>
+    </div>
     <span className="lsf-example-copy-status" role="status">{copyStatus}</span>
     <div className="lsf-example-code"><CodeBlock language={variant.language}>{variant.snippet.code}</CodeBlock></div>
-    <p>{variant.source.url ? <a href={variant.source.url}>Complete {language} source at {variant.source.revision.slice(0, 12)}</a>
-      : 'Working-copy source; no commit-bound source link is available.'}</p>
-    <Verification variant={variant} />
+    <div className="lsf-example-footer">
+    {variant.source.url ? <a href={variant.source.url}>View complete {language} source</a>
+      : <span>Working-copy source</span>}
+    {developerPage && <Verification variant={variant} />}
+    </div>
   </div>;
 }
 
 export function ExampleView({bundle, ...request}: Props & {bundle: ExampleBundle}): ReactNode {
   const identifier = useId();
+  const developerPage = useLocation().pathname.includes('/docs/development/');
   const example = resolveExample(bundle, request);
   const group = `lsf-example-${example.target}`;
   const query = `lsf-${example.target}-language`;
   return <section className="lsf-code-example" aria-label={example.title} data-example={example.id} data-document-version={request.documentVersion}>
-    <p><strong>{example.title}</strong> · {example.target} · {request.documentVersion}</p>
+    <header className="lsf-example-heading">
+      <strong>{example.title}</strong>
+      {example.variants.length > 1 && <span>Choose a language</span>}
+    </header>
     <Tabs groupId={group} queryString={query} defaultValue={example.variants[0].language} lazy={false}
+      className="lsf-example-languages" aria-label={`${example.title}: programming language`}
       values={example.variants.map(variant => ({value: variant.language, label: labels[variant.language],
         attributes: {id: `${identifier}-${variant.language}-tab`, 'aria-controls': `${identifier}-${variant.language}-panel`}}))}>
       {example.variants.map(variant => <TabItem key={variant.language} value={variant.language} label={labels[variant.language]}>
         <Panel variant={variant} group={group} query={query} version={request.documentVersion}
-          identifier={`${identifier}-${variant.language}-panel`} tabIdentifier={`${identifier}-${variant.language}-tab`} />
+          identifier={`${identifier}-${variant.language}-panel`} tabIdentifier={`${identifier}-${variant.language}-tab`} developerPage={developerPage} />
       </TabItem>)}
     </Tabs>
   </section>;

@@ -32,15 +32,19 @@ const text = value => ({type: 'text', value});
 const paragraph = value => ({type: 'paragraph', children: [text(value)]});
 const link = (label, url) => ({type: 'link', url, children: [text(label)]});
 
-export function exampleNodes(bundle, request) {
+export function exampleNodes(bundle, request, {includeVerification = true} = {}) {
   const selected = resolveExample(bundle, request);
-  const nodes = [paragraph(`${selected.title} — ${selected.target}; ${selected.audience}.`)];
+  const nodes = [paragraph(selected.title)];
   for (const variant of selected.variants) {
     const {source, snippet, verification} = variant;
-    nodes.push(paragraph(`${labels[variant.language]} · ${variant.environment} · ${variant.kind}.`));
+    nodes.push(paragraph(labels[variant.language]));
     // Code is a value in an mdast code node, never an HTML node, MDX expression,
     // evaluated import or interpolated Markdown fence. Preserve the exact bytes.
     nodes.push({type: 'code', lang: variant.language, meta: null, value: snippet.code});
+    if (!includeVerification) {
+      if (source.url) nodes.push({type: 'paragraph', children: [link('View complete source', source.url)]});
+      continue;
+    }
     nodes.push(paragraph(`Source SHA-256: ${source.sha256}. Snippet SHA-256: ${snippet.sha256}.`));
     nodes.push({type: 'paragraph', children: [
       ...(source.url ? [link(`Complete source at ${source.revision.slice(0, 12)}`, source.url), text(' · ')] : [text('Uncommitted working copy; no commit-bound source link. ')]),
@@ -53,13 +57,13 @@ export function exampleNodes(bundle, request) {
   }
   return nodes;
 }
-export function remarkExamples({bundle, documentVersion}) {
+export function remarkExamples({bundle, documentVersion, includeVerification = true}) {
   return tree => {
     function transform(parent) {
       if (!parent.children) return;
       parent.children = parent.children.flatMap(node => {
         const request = reference(node);
-        if (request) return exampleNodes(bundle, {...request, documentVersion});
+        if (request) return exampleNodes(bundle, {...request, documentVersion}, {includeVerification});
         const component = componentRequest(node);
         if (component) {
           resolveExample(bundle, {...component, documentVersion});
