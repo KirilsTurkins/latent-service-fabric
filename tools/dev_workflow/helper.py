@@ -42,15 +42,16 @@ def install(root: Path, arguments: dict) -> dict:
     from tools.native_runtime import lifecycle, verify
     from tools.native_runtime.layout import Layout
     members(arguments, {"releaseDirectory", "version", "publisherPolicy", "trustedRoot", "verifier",
-                        "profile", "allowCandidate", "consent", "port"}, {"trustPolicy"})
+                        "profile", "allowCandidate", "consent", "port"}, {"trustPolicy", "resume"})
     require(arguments["consent"] is True, "explicit-runtime-install-consent-required")
     require(arguments["profile"] in {"local-experimental-v1", "external-capsule-v1"}, "explicit-node-profile-required")
+    require(type(arguments.get("resume", False)) is bool, "explicit-installer-resume-required")
     trust = verify.PublisherTrust(Path(arguments["publisherPolicy"]), Path(arguments["trustedRoot"]),
                                   Path(arguments["verifier"]), arguments["allowCandidate"])
     with verify.release(Path(arguments["releaseDirectory"]), arguments["version"], trust) as release:
         return lifecycle.install(Layout.local(root / "runtime"), release, profile=arguments["profile"],
             policy=Path(arguments["trustPolicy"]) if arguments.get("trustPolicy") else None,
-            port=arguments["port"], start=False, enable=False, upgrade=False, resume=False,
+            port=arguments["port"], start=False, enable=False, upgrade=False, resume=arguments.get("resume", False),
             acknowledge=arguments["profile"] == "local-experimental-v1", approved_compiler=None)
 
 
@@ -144,7 +145,7 @@ def dispatch(request: dict) -> dict:
     if operation == "hello":
         members(arguments, set())
         return protocol.hello()
-    root = state.workspace(root_directory(), request["workspace"], create=operation == "install")
+    root = state.workspace(root_directory(), request["workspace"], create=operation in {"install", "asset-begin", "purge"})
     if operation in {"status", "logs", "down", "up"}:
         from . import service
         members(arguments, set())
@@ -154,10 +155,11 @@ def dispatch(request: dict) -> dict:
         try:
             return service.request(root, operation)
         except (FileNotFoundError, ConnectionRefusedError):
-            prior = state.load(root, "lifecycle.json") if (root / "lifecycle.json").exists() else {"state": "stopped"}
-            require(prior["state"] == "stopped", "supervisor-disconnected-cleanup-unknown")
-            return {"state": "stopped", "dataRetained": True}
+            return service.disconnected(root)
     with state.lock(root):
+        if operation.startswith("asset-"):
+            from .assets import receive
+            return receive(root, operation, arguments)
         if operation == "install":
             return install(root, arguments)
         if operation == "doctor":
@@ -241,40 +243,27 @@ def test(root: Path, arguments: dict) -> dict:
     return report
 
 
-def create_user() -> int:
-    from . import process
-    require(os.geteuid() == 0, "wsl-user-provision-requires-owned-image-root")
-    value = decode(sys.stdin.buffer.read(8193), 8192)
-    members(value, {"workspace", "user", "helperSha256"})
-    require(re.fullmatch(r"lsfd-[a-f0-9]{12}", value["user"]), "invalid-owned-user")
-    require(digest(paths.read(Path(sys.argv[0]).parent, Path(sys.argv[0]).name)) == value["helperSha256"], "helper-image-mismatch")
-    try:
-        pwd.getpwnam(value["user"])
-    except KeyError:
-        pass
-    else:
-        raise DevError("refuse-adopting-existing-linux-user")
-    result = process.run(["/usr/sbin/useradd", "--create-home", "--user-group", "--shell", "/usr/sbin/nologin",
-                          "--home-dir", "/home/" + value["user"], value["user"]], Path("/"), timeout=10)
-    require(result.returncode == 0, "owned-linux-user-creation-failed")
-    user = pwd.getpwnam(value["user"])
-    Path(user.pw_dir).chmod(0o700)
-    print(encode({"user": value["user"], "uid": user.pw_uid}).decode(), end="")
-    return 0
-
-
 def main() -> int:
+    from tools.native_runtime.common import InstallError
     if len(sys.argv) >= 2 and sys.argv[1] == "supervise":
         from .service import supervise
         return supervise(Path(sys.argv[2]))
-    if len(sys.argv) == 2 and sys.argv[1] == "create-user":
-        return create_user()
+    if len(sys.argv) == 2 and sys.argv[1] in {"create-user", "user-status", "remove-user"}:
+        from .guest_users import main as users
+        return users(sys.argv[1])
     require(len(sys.argv) == 2 and sys.argv[1] == "rpc", "helper-protocol-required")
     request = protocol.validate_request(decode(sys.stdin.buffer.read(MAX_SNAPSHOT * 2 + 1), MAX_SNAPSHOT * 2))
     try:
         result = protocol.response(request, dispatch(request))
     except DevError as error:
         result = protocol.response(request, {}, code=error.code, uncertain=error.uncertain)
+    except InstallError as error:
+        code = str(error)
+        # The installer owns fixed diagnostics. Never render arbitrary stderr or
+        # dynamic file contents as an error, and preserve interrupted mutation state.
+        if not re.fullmatch(r"[a-z][a-z0-9-]{0,100}", code):
+            code = "native-installer-input-or-host-check-failed"
+        result = protocol.response(request, {}, code=code, uncertain=request["operation"] in {"install", "purge"})
     except Exception:
         result = protocol.response(request, {}, code="helper-operation-failed", uncertain=request["operation"] not in
                                    {"hello", "doctor", "status", "logs"})

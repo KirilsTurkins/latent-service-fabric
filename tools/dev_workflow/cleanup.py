@@ -46,12 +46,18 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
     require(status["state"] in {"stopped", "purged"}, "stop-and-confirm-cleanup-before-purge")
     layout = Layout.local(root / "runtime")
     installed = lifecycle.read_state(layout)
-    require(installed is not None, "owned-runtime-state-required")
-    if installed["status"] not in {"removed", "purged"}:
-        lifecycle.remove(layout)
-    receipt = lifecycle.remove(layout, purge=installed["installationId"])
+    if installed is None:
+        require(not layout.prefix.exists(), "interrupted-native-install-requires-explicit-resume")
+        receipt = {"state": "not-installed"}
+    else:
+        if installed["status"] not in {"removed", "purged"}:
+            lifecycle.remove(layout)
+        receipt = lifecycle.remove(layout, purge=installed["installationId"])
     snapshots = root / "snapshots"
     if snapshots.exists():
         files.remove_tree(snapshots, maximum=32768)
+    assets = root / "assets"
+    if assets.exists():
+        files.remove_tree(assets, maximum=256)
     state.atomic(root, "lifecycle.json", {"state": "purged", "dataRetained": False, "reaped": True})
     return {"workspace": workspace, "state": "purged", "runtime": receipt, "sourceTreeRetained": True}

@@ -4,10 +4,11 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import platform
+import re
 import secrets
 
 from . import backend, paths, process, state
-from .common import DevError, decode, digest, encode, members, require, sha
+from .common import DevError, decode, encode, members, require, sha
 
 
 def registrations() -> dict:
@@ -57,13 +58,42 @@ def _owned(record: dict) -> dict:
     return registration
 
 
-def provision(root: Path, image: Path, expected_sha256: str, *, consent: bool) -> dict:
+def _record(root: Path) -> dict:
+    record = state.load(root, "wsl.json")
+    require(record.get("schemaVersion") == "latent.dev.wsl.v1"
+            and re.fullmatch(r"LSF-Dev-[a-f0-9]{16}", record["distribution"])
+            and Path(record["directory"]) == root / record["distribution"], "invalid-owned-wsl-record")
+    sha(record["helperSha256"])
+    return record
+
+
+def _user_call(root: Path, record: dict, mode: str, value: dict) -> dict:
+    _owned(record)
+    completed = process.run([backend.wsl_executable(), "--distribution", record["distribution"], "--user", "root",
+        "--exec", *backend.guest_command(backend.GUEST_PYTHON, backend.HELPER, record["helperSha256"], mode)],
+        root, stdin=encode(value), timeout=30, maximum=8192)
+    require(completed.returncode == 0, "wsl-workspace-operation-unconfirmed-recover")
+    result = decode(completed.stdout)
+    require(result.get("user") == value["user"], "wsl-user-response-identity")
+    return result
+
+
+def verify_workspace(root: Path, name: str, config: dict) -> None:
+    record = _record(root)
+    _owned(record)
+    require(record["state"] == "provisioned" and name in record["workspaces"], "unrecorded-wsl-workspace")
+    value = record["workspaces"][name]
+    require(value["state"] == "ready" and config == {"kind": "wsl2", "distribution": record["distribution"],
+            "user": value["owner"]["user"], "helperSha256": record["helperSha256"]}, "wsl-workspace-owner-mismatch")
+
+
+def provision(root: Path, image: Path, expected_sha256: str, helper_sha256: str, *, consent: bool) -> dict:
     require(consent, "explicit-wsl-provision-consent-required")
     doctor()
     paths.private_root(root)
-    with state.lock(root, "wsl.lock"):
+    with state.lock(root, "wsl.lock"), paths.opened(image.parent, image.name):
         require(not (root / "wsl.json").exists(), "wsl-provision-already-recorded-inspect-status")
-        require(digest(paths.read(image.parent, image.name, 1024 * 1024 * 1024)) == sha(expected_sha256),
+        require(paths.digest_file(image.parent, image.name, 1024 * 1024 * 1024)[0] == sha(expected_sha256),
                 "wsl-verified-image-mismatch")
         distribution = "LSF-Dev-" + secrets.token_hex(8)
         require(distribution not in registrations(), "wsl-distribution-collision")
@@ -71,9 +101,11 @@ def provision(root: Path, image: Path, expected_sha256: str, *, consent: bool) -
         paths.new_directory(directory)
         record = {"schemaVersion": "latent.dev.wsl.v1", "distribution": distribution,
                   "directory": str(directory), "imageSha256": expected_sha256,
+                  "helperSha256": sha(helper_sha256),
                   "registration": None, "state": "provisioning", "workspaces": {}}
         state.atomic(root, "wsl.json", record)
         try:
+            # The Windows read handle forbids replacement or writing throughout import.
             result = process.run([backend.wsl_executable(), "--import", distribution, str(directory), str(image),
                                   "--version", "2"], root, timeout=300, maximum=65536)
             require(result.returncode == 0, "wsl-import-failed-inspect-recorded-distribution")
@@ -87,45 +119,91 @@ def provision(root: Path, image: Path, expected_sha256: str, *, consent: bool) -
 
 
 def status(root: Path) -> dict:
-    record = state.load(root, "wsl.json")
+    record = _record(root)
+    if record["state"] == "purged":
+        require(record["distribution"] not in registrations(), "purged-wsl-distribution-reappeared")
+        return {"distribution": record["distribution"], "state": "purged", "registered": False}
+    if record["distribution"] not in registrations():
+        return {"distribution": record["distribution"], "state": record["state"], "registered": False,
+                "uncertain": record["state"] not in {"purged"}}
     observed = _owned(record)
     return {"distribution": record["distribution"], "state": record["state"],
-            "registered": True, "wslVersion": observed["version"], "workspaces": sorted(record["workspaces"])}
+            "registered": True, "wslVersion": observed["version"],
+            "workspaces": {name: value["state"] for name, value in sorted(record["workspaces"].items())}}
 
 
 def workspace(root: Path, name: str, helper_sha256: str) -> dict:
     from .common import identifier
     identifier(name)
     with state.lock(root, "wsl.lock"):
-        record = state.load(root, "wsl.json")
+        record = _record(root)
         _owned(record)
         require(record["state"] == "provisioned", "wsl-provisioning-needs-recovery")
+        require(sha(helper_sha256) == record["helperSha256"], "helper-does-not-match-authenticated-image")
         workspaces = record["workspaces"]
         if name not in workspaces:
-            require(len(workspaces) < 8, "wsl-workspace-count-limit")
+            require(sum(value["state"] != "removed" for value in workspaces.values()) < 8, "wsl-workspace-count-limit")
             user = "lsfd-" + secrets.token_hex(6)
             # The root provisioning helper is part of the already verified guest image.
-            value = {"workspace": name, "user": user, "helperSha256": sha(helper_sha256)}
-            workspaces[name] = {**value, "state": "creating"}
+            value = {"workspace": name, "user": user, "helperSha256": sha(helper_sha256), "nonce": secrets.token_hex(16)}
+            workspaces[name] = {"owner": value, "state": "creating"}
             state.atomic(root, "wsl.json", record)
-            completed = process.run([backend.wsl_executable(), "--distribution", record["distribution"],
-                "--user", "root", "--exec", backend.GUEST_PYTHON, "-I", backend.HELPER, "create-user"], root,
-                stdin=encode(value), timeout=30, maximum=8192)
-            require(completed.returncode == 0 and decode(completed.stdout).get("user") == user,
+            result = _user_call(root, record, "create-user", value)
+            require(result["state"] == "ready",
                     "wsl-workspace-provision-failed-no-adoption")
             workspaces[name]["state"] = "ready"
             state.atomic(root, "wsl.json", record)
         require(workspaces[name]["state"] == "ready", "wsl-workspace-creation-uncertain")
         return {"kind": "wsl2", "distribution": record["distribution"],
-                "user": workspaces[name]["user"], "helperSha256": helper_sha256}
+                "user": workspaces[name]["owner"]["user"], "helperSha256": helper_sha256}
+
+
+def recover(root: Path, confirmation: str) -> dict:
+    with state.lock(root, "wsl.lock"):
+        record = _record(root)
+        require(confirmation == record["distribution"], "confirm-exact-owned-wsl-distribution")
+        if record["state"] == "purging" and record["distribution"] not in registrations():
+            record["state"] = "purged"
+        else:
+            observed = _owned(record)
+            if record["state"] == "provisioning":
+                record.update(state="provisioned", registration=observed["registration"])
+            for name, value in record["workspaces"].items():
+                if value["state"] in {"creating", "removing"}:
+                    actual = _user_call(root, record, "user-status" if value["state"] == "creating" else "remove-user", value["owner"])
+                    require(actual["state"] in {"ready", "removed"}, "linux-user-provisioning-incomplete-inspect-owned-image")
+                    value["state"] = actual["state"]
+                    if actual["state"] == "removed":
+                        state.atomic(state.workspace(root, name), "purged.json", {"workspace": name, "state": "purged"})
+        state.atomic(root, "wsl.json", record)
+    return status(root)
+
+
+def remove_workspace(root: Path, name: str) -> dict:
+    with state.lock(root, "wsl.lock"):
+        record = _record(root)
+        _owned(record)
+        value = record["workspaces"][name]
+        require(value["state"] in {"ready", "removing", "removed"}, "recover-wsl-workspace-before-removal")
+        value["state"] = "removing"
+        state.atomic(root, "wsl.json", record)
+        result = _user_call(root, record, "remove-user", value["owner"])
+        require(result["state"] == "removed", "wsl-user-removal-unconfirmed")
+        value["state"] = "removed"
+        state.atomic(root, "wsl.json", record)
+        return result
 
 
 def purge(root: Path, confirmation: str) -> dict:
     with state.lock(root, "wsl.lock"):
-        record = state.load(root, "wsl.json")
+        record = _record(root)
         require(confirmation == record["distribution"], "confirm-exact-owned-wsl-distribution")
+        if record["state"] == "purged":
+            return status(root)
         _owned(record)
-        require(not record["workspaces"], "purge-each-workspace-before-wsl-removal")
+        require(all(value["state"] == "removed" for value in record["workspaces"].values()), "purge-each-workspace-before-wsl-removal")
+        record["state"] = "purging"
+        state.atomic(root, "wsl.json", record)
         completed = process.run([backend.wsl_executable(), "--unregister", record["distribution"]], root,
                                 timeout=60, maximum=65536)
         require(completed.returncode == 0 and record["distribution"] not in registrations(), "wsl-purge-unconfirmed")

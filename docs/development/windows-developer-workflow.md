@@ -14,7 +14,8 @@ compilers remain separate, explicitly selected build inputs.
 
 - `dev doctor` reads Windows/WSL prerequisites without opening a project or
   executing recipes. Its result explicitly distinguishes host observation from
-  authenticated node readiness.
+  authenticated node readiness. `--workspace NAME` runs the existing Linux
+  filesystem/profile checks under the selected node identity.
 - `dev acquire` authenticates provisioned offline developer inputs using the
   existing runtime publisher-policy format and GitHub attestation verification
   command. The separately provisioned policy selects an exact source revision.
@@ -27,6 +28,10 @@ compilers remain separate, explicitly selected build inputs.
 - `dev wsl-workspace` creates a distinct unprivileged Linux user per workspace
   within the owned distro. Node configuration, tokens, catalogs and build outputs
   stay in private Linux storage; source synchronization contains none of these.
+  `wsl-status` observes the actual recorded registration. `wsl-recover` reconciles
+  the original registration and Linux user nonce; it never repeats an import.
+  Both recovery and `wsl-purge` require `--confirm-distribution LSF-Dev-...`.
+  Distro purge refuses to run until every owned workspace user has been removed.
 - `dev connect` selects a preprovisioned direct Linux or explicit SSH backend.
   SSH requires a selected identity file and known-hosts file, strict host-key
   checking and no agent forwarding, proxy command or connection multiplexing.
@@ -36,6 +41,13 @@ compilers remain separate, explicitly selected build inputs.
 - `dev install` delegates to the maintained [native installer](../../packaging/linux/INSTALL.md).
   `up` runs its real configuration and authenticated readiness checks. Profile
   changes and runtime upgrades are never automatic.
+  Versioned offline input documents transfer only the named release files,
+  independent publisher policy, trusted roots and independently pinned Linux
+  verifier. Transfers use 1 MiB chunks, at most 16 files/768 MiB per selection,
+  and at most two selections per workspace. Identical byte retransmission is
+  allowed; changed bytes and gaps fail. Installer execution follows final hashes
+  and its existing publisher verification. Set `resume: true` explicitly to use
+  the existing installer's interrupted-install recovery.
 - Build, immutable source transfer, deployment and watch use bounded resources.
   A persisted mutation intent contains the original operation identity and
   observed preconditions. Recovery looks up that identity and does not replay
@@ -49,6 +61,9 @@ compilers remain separate, explicitly selected build inputs.
   A reaped node is reported separately from a clean shutdown: the latter requires
   a zero exit and the node's complete `stopped` record. A bounded reader drains
   diagnostics during readiness/shutdown and redacts credentials before retention.
+  A changed guest boot/PID namespace proves old processes were reaped, while
+  reporting that their shutdown was interrupted. A lost connection in the same
+  guest instance remains uncertain.
 
 These implementations still need the packaged integration runs below. An
 adapter unit test is not a WSL provisioning receipt.
@@ -65,6 +80,8 @@ The Linux helper uses pinned Python 3.13.5, negotiated before any operation.
 The managed guest provides it at `/usr/local/bin/python3.13`; the distro's own
 system Python is separate. A preprovisioned SSH host needs that same reviewed
 helper/interpreter layout. Direct Linux connections explicitly select both paths.
+Each RPC authenticates the helper before loading it and uses that same opened
+file for imports. No shell program or project recipe is supplied by RPC data.
 
 Source snapshots retain exact bytes, including CRLF. A second observation checks
 the full selected tree before accepting a coherent snapshot. Absolute paths,
@@ -106,6 +123,20 @@ cleanup, system-clock nondeterminism and omitted node/security behavior.
 
 ## Executed evidence and remaining acceptance
 
+The developer-tools workflow builds nonpublishing Windows and WSL candidates.
+The Windows bundle contains the standalone frontend, helper and release-mode
+portable host, with the existing Rust SPDX/license inventory and the actual
+Python/bootloader license texts. The Ubuntu image pins both OCI input digests and
+additional Ubuntu package versions, retains its observed package licenses, and
+disables automatic drive mounts and Windows executable interop. It does not
+contain an LSF runtime, guest compiler, kernel or user credentials. Docker is a
+contributor image-build tool; the end-user Windows backend uses WSL2 directly.
+
+Candidate checksum inventories are attested only on branch/manual workflow runs.
+Pull-request runs remain unsigned. Offline verification additionally requires an
+independently approved exact-commit identity policy, independent Sigstore roots
+and a pinned GitHub verifier. Attestation alone is not approval or qualification.
+
 The first native Windows build ran `dev doctor` outside the checkout with Python
 removed from `PATH`. Its receipt is an unsigned contributor build, not an
 authenticated candidate or a clean-host application workflow. Focused Windows
@@ -124,7 +155,7 @@ qualification receipt.
 | Child | Remaining Windows acceptance |
 | --- | --- |
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
-| #561 | Verified WSL guest image with documented prerequisites; actual provisioning, workspace isolation, stop/restart and purge schedule. |
+| #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #562 | Mac/native ARM64 requirements deferred by maintainer; no ARM64 support claim. |
 | #563 | Integrate and execute all six merged language-owner recipes; authenticated template/tool bundles. |
 | #564 | Actual A/B redeploy, compile/admission failure, concurrent generation and lost-response injection on a real node. |

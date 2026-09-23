@@ -78,7 +78,8 @@ def workspace(root: Path, name: str, *, create: bool = False) -> Path:
     path = root / name
     if create and not path.exists():
         with lock(root, "registry.lock"):
-            require(sum(1 for item in root.iterdir() if item.is_dir()) < MAX_WORKSPACES, "workspace-count-limit")
+            require(sum(1 for item in root.iterdir() if item.is_dir() and (item / "owner.json").exists()
+                        and not (item / "purged.json").exists()) < MAX_WORKSPACES, "workspace-count-limit")
             paths.new_directory(path)
             atomic(path, "owner.json", {"schemaVersion": "latent.dev.owner.v1", "id": name,
                                         "nonce": secrets.token_hex(16)})

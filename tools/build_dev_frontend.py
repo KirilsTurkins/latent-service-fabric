@@ -20,6 +20,39 @@ from tools.dev_workflow.common import HOST_ABI, PROTOCOL, digest, encode, requir
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def python_inventory(output: Path) -> None:
+    """Retain actual Python and bootloader license texts, including vendored terms."""
+    import shutil
+    import re
+    licenses = output / "licenses"
+    licenses.mkdir()
+    shutil.copyfile(Path(sys.base_prefix) / "LICENSE.txt", licenses / "CPython-3.13.5.txt")
+    shutil.copyfile(ROOT / "LICENSE", licenses / "LSF.txt")
+    packages = []
+    for line in (ROOT / "tools/dev-frontend-windows.lock").read_text().splitlines():
+        match = re.fullmatch(r"([a-z0-9-]+)==([^ ]+) --hash=sha256:([a-f0-9]{64})", line)
+        require(match is not None, "frontend-wheel-lock-format")
+        name, version, checksum = match.groups()
+        distribution = importlib.metadata.distribution(name)
+        require(distribution.version == version, "frontend-build-dependency-version")
+        retained = []
+        for entry in distribution.files or []:
+            if not any(part.lower().startswith(("license", "licence", "copying", "notice")) for part in entry.parts):
+                continue
+            source = Path(distribution.locate_file(entry))
+            if source.is_file():
+                directory = licenses / (name + "-" + version)
+                directory.mkdir(exist_ok=True)
+                destination = directory / (str(len(retained)) + "-" + source.name)
+                shutil.copyfile(source, destination)
+                retained.append(destination.relative_to(output).as_posix())
+        require(retained, "frontend-dependency-license-missing-" + name)
+        packages.append({"name": name, "version": version, "wheelSha256": checksum, "licenses": retained,
+                         "licenseDeclared": distribution.metadata.get("License-Expression") or "NOASSERTION"})
+    (output / "python-inventory.json").write_bytes(encode({"python": platform.python_version(), "packages": packages,
+        "pythonLicense": "licenses/CPython-3.13.5.txt", "scope": "CPython distribution and exact bootloader build inputs"}))
+
+
 def helper(output: Path) -> str:
     entries = {"__main__.py": b"from tools.dev_workflow.helper import main\nraise SystemExit(main())\n",
                "tools/__init__.py": b""}
@@ -56,6 +89,7 @@ def main() -> int:
     require(sys.platform == "win32" and platform.machine().lower() == "amd64"
             and sys.version_info[:3] == (3, 13, 5), "windows-x64-python-3-13-5-required")
     require(importlib.metadata.version("pyinstaller") == "6.22.3", "pinned-pyinstaller-required")
+    python_inventory(output)
     subprocess.run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir",
         "--noupx", "--name", "latent-dev", "--distpath", str(output / "dist"),
         "--workpath", str(output / "work"), "--specpath", str(output), str(ROOT / "tools/latent_dev.py")],

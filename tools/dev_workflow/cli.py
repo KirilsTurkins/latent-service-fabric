@@ -18,7 +18,8 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--state-root", type=Path, help="private controller state outside project sources")
     commands = result.add_subparsers(dest="group", required=True)
     dev = commands.add_parser("dev").add_subparsers(dest="command", required=True)
-    dev.add_parser("doctor", help="read-only Windows/WSL prerequisite observation; executes no project recipe")
+    doctor = dev.add_parser("doctor", help="read-only prerequisite observation; executes no project recipe")
+    doctor.add_argument("--workspace", help="inspect the selected node identity, filesystem and actual profile")
     configure = dev.add_parser("connect", help="select a separately provisioned owned backend")
     configure.add_argument("--workspace", required=True)
     configure.add_argument("--backend-config", type=Path, required=True)
@@ -43,6 +44,10 @@ def parser() -> argparse.ArgumentParser:
     attach = dev.add_parser("wsl-workspace", help="create an isolated Linux user in the managed WSL distro")
     attach.add_argument("--workspace", required=True)
     attach.add_argument("--helper-sha256", required=True)
+    dev.add_parser("wsl-status", help="observe the exact owned WSL registration and workspace states")
+    for name in ("wsl-recover", "wsl-purge"):
+        command = dev.add_parser(name)
+        command.add_argument("--confirm-distribution", required=True)
     for name in ("install", "up", "status", "logs", "down", "purge", "build", "deploy", "recover", "invoke", "test"):
         command = dev.add_parser(name)
         command.add_argument("--workspace", required=True)
@@ -143,11 +148,17 @@ def watch(workspace: Path, connection, source: Path, tool_root: str) -> dict:
 
 
 def dispatch(args) -> dict:
-    if args.command == "doctor":
+    if args.command == "doctor" and not args.workspace:
         if os.name == "nt":
             return wsl.doctor()
         return {"host": sys.platform, "architecture": platform.machine(), "nodeReadiness": "not-checked"}
     root = _root(args.state_root)
+    if args.command == "wsl-status":
+        return wsl.status(root)
+    if args.command == "wsl-recover":
+        return wsl.recover(root, args.confirm_distribution)
+    if args.command == "wsl-purge":
+        return wsl.purge(root, args.confirm_distribution)
     if args.command == "test" and args.environment == "portable":
         from . import portable
         return portable.run(root, args)
@@ -160,8 +171,15 @@ def dispatch(args) -> dict:
             paths.new_directory(cache)
         name = selected["archive"]["sha256"][7:]
         with state.lock(root, "bundle.lock"):
-            require(sum(1 for _ in cache.iterdir()) < 2, "verified-cache-full-explicit-removal-required")
-            bundle.extract(args.bundle_directory.absolute(), selected, cache / name)
+            destination = cache / name
+            if destination.exists():
+                require(decode(paths.read(destination, "verified-bundle.json")) == selected, "partial-or-different-bundle-cache")
+                for entry in selected["files"]:
+                    require(paths.digest_file(destination, entry["path"], bundle.MAX_BUNDLE) == (entry["sha256"], entry["size"]),
+                            "verified-bundle-cache-changed")
+            else:
+                require(sum(1 for _ in cache.iterdir()) < 2, "verified-cache-full-explicit-removal-required")
+                bundle.extract(args.bundle_directory.absolute(), selected, destination)
         return {"bundle": name, "target": selected["target"], "sourceCommit": selected["sourceCommit"], "purpose": "candidate"}
     if args.command in {"provision", "init"}:
         require(len(args.bundle) == 64 and all(c in "0123456789abcdef" for c in args.bundle), "bundle-id-required")
@@ -171,15 +189,24 @@ def dispatch(args) -> dict:
             require(selected["target"] == "linux-x86_64-wsl-rootfs", "verified-wsl-image-required")
             entry = next((item for item in selected["files"] if item["path"] == "rootfs.tar"), None)
             require(entry is not None, "verified-wsl-rootfs-missing")
-            return wsl.provision(root, cache / "rootfs.tar", entry["sha256"], consent=args.consent_provision)
+            inventory = next((item for item in selected["files"] if item["path"] == "rootfs-inventory.json"), None)
+            require(inventory is not None, "verified-wsl-inventory-missing")
+            raw = paths.read(cache, inventory["path"])
+            require(digest(raw) == inventory["sha256"], "verified-wsl-inventory-changed")
+            return wsl.provision(root, cache / "rootfs.tar", entry["sha256"], decode(raw)["helperSha256"],
+                                 consent=args.consent_provision)
         identifier(args.template)
         template = cache / "templates" / args.template
         manifest = decode(paths.read(template, "template.json"))
         return project.scaffold(template, args.destination.absolute(), manifest, args.template_sha256)
     if args.command == "wsl-workspace":
         workspace = state.workspace(root, args.workspace, create=True)
-        config = wsl.workspace(root, args.workspace, args.helper_sha256)
-        state.atomic(workspace, "backend.json", config)
+        with state.lock(workspace):
+            config = wsl.workspace(root, args.workspace, args.helper_sha256)
+            if (workspace / "backend.json").exists():
+                require(state.load(workspace, "backend.json") == config, "backend-already-selected-no-implicit-migration")
+            else:
+                state.atomic(workspace, "backend.json", config)
         return {"workspace": args.workspace, "backend": "wsl2", "user": config["user"]}
     if args.command == "connect":
         config = backend.validate(decode(paths.read(args.backend_config.absolute().parent, args.backend_config.name)))
@@ -192,12 +219,21 @@ def dispatch(args) -> dict:
         return {"workspace": args.workspace, "backend": config["kind"]}
     workspace, connection = _backend(root, args.workspace)
     with state.lock(workspace):
+        if (workspace / "purged.json").exists():
+            require(args.command in {"purge", "status"}, "workspace-purged-create-new-workspace")
+            if args.command == "purge":
+                require(args.confirm_workspace == args.workspace, "confirm-exact-workspace-required")
+            return state.load(workspace, "purged.json")
         if args.command == "trust":
             descriptor, _identity = project.load(args.project.absolute())
             state.atomic(workspace, "trust.json", {"project": str(args.project.absolute()), "recipe": project.trust_identity(descriptor)})
             return {"workspace": args.workspace, "trustedRecipe": project.trust_identity(descriptor)}
         if args.command == "install":
-            return connection.call("install", decode(paths.read(args.runtime_inputs.absolute().parent, args.runtime_inputs.name)), timeout=180)
+            inputs = decode(paths.read(args.runtime_inputs.absolute().parent, args.runtime_inputs.name))
+            if "schemaVersion" in inputs:
+                from .assets import install_inputs
+                inputs = install_inputs(connection, inputs)
+            return connection.call("install", inputs, timeout=180)
         if args.command == "build":
             return _build(workspace, connection, args.project, args.tool_root)
         if args.command == "up":
@@ -208,7 +244,11 @@ def dispatch(args) -> dict:
             return result
         if args.command == "purge":
             require(args.confirm_workspace == args.workspace, "confirm-exact-workspace-required")
-            return connection.call("purge", {"confirmWorkspace": args.confirm_workspace})
+            result = connection.call("purge", {"confirmWorkspace": args.confirm_workspace})
+            if connection.config["kind"] == "wsl2":
+                result["linuxUser"] = wsl.remove_workspace(root, args.workspace)
+            state.atomic(workspace, "purged.json", result)
+            return result
         if args.command == "invoke":
             return connection.call("invoke", {"service": args.service, "contract": args.contract, "function": args.function,
                 "mediaType": args.media_type, "input": base64.b64encode(paths.read(args.input.absolute().parent, args.input.name, 1048576)).decode()})

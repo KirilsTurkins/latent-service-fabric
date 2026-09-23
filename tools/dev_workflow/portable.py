@@ -64,7 +64,7 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
         lambda case, _raw: results[case["id"]],
         {"host": host_identity, "runtime": runtime, "hostAbi": HOST_ABI,
          "artifacts": {name: digest(raw) for name, raw in content.items()},
-         "trust": "controlled-development-test", "productionNode": False}, supported=SUPPORTED)
+         "trust": "controlled-development-test", "productionNode": False}, supported=SUPPORTED, execution_controls=True)
     report["cleanup"] = "owned-native-host-reaped" if calls else "no-native-host-started"
     return report
 

@@ -12,12 +12,34 @@ from .common import DevError, MAX_SNAPSHOT, decode, digest, encode, members, req
 
 HELPER = "/opt/latent-dev/helper.pyz"
 GUEST_PYTHON = "/usr/local/bin/python3.13"
-VERIFY_HELPER = ("import hashlib,os,stat,sys; p=sys.argv[1]; "
-                 "f=os.open(p,os.O_RDONLY|os.O_NOFOLLOW); s=os.fstat(f); "
-                 "assert stat.S_ISREG(s.st_mode) and s.st_nlink==1 and s.st_size<=16777216; "
-                 "assert s.st_uid in (0,os.geteuid()) and s.st_mode & 18 == 0; "
-                 "b=os.read(f,16777217); os.close(f); "
-                 "assert len(b)==s.st_size; print('sha256:'+hashlib.sha256(b).hexdigest())")
+EXEC_HELPER = """import hashlib,os,pathlib,stat,sys,zipfile
+p,expected=sys.argv[1:3]
+try:
+    parts=pathlib.PurePosixPath(p).parts
+    assert parts[0]=='/' and '..' not in parts
+    d=os.open('/',os.O_RDONLY|os.O_DIRECTORY)
+    for part in parts[1:-1]:
+        n=os.open(part,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=d)
+        os.close(d); d=n; s=os.fstat(d)
+        assert s.st_uid in (0,os.geteuid()) and (s.st_mode&18==0 or s.st_uid==0 and s.st_mode&stat.S_ISVTX)
+    f=os.open(parts[-1],os.O_RDONLY|os.O_NOFOLLOW,dir_fd=d); os.close(d); s=os.fstat(f)
+    assert stat.S_ISREG(s.st_mode) and s.st_nlink==1 and s.st_size<=16777216
+    assert s.st_uid in (0,os.geteuid()) and s.st_mode&18==0
+    with os.fdopen(os.dup(f),'rb') as stream:
+        assert 'sha256:'+hashlib.file_digest(stream,'sha256').hexdigest()==expected
+    z='/proc/self/fd/'+str(f)
+    with zipfile.ZipFile(z) as archive:
+        entry=archive.read('__main__.py')
+except (AssertionError,OSError,ValueError,KeyError,zipfile.BadZipFile):
+    sys.exit(126)
+sys.path.insert(0,z); sys.argv=[p,*sys.argv[3:]]
+exec(compile(entry,p,'exec'),{'__name__':'__main__','__file__':p})
+"""
+
+
+def guest_command(python: str, helper: str, expected: str, mode: str) -> list[str]:
+    require(mode in {"rpc", "create-user", "user-status", "remove-user"}, "helper-mode")
+    return [python, "-I", "-c", EXEC_HELPER, helper, sha(expected), mode]
 
 
 def validate(value: dict) -> dict:
@@ -53,17 +75,15 @@ def wsl_executable() -> str:
     return str(path)
 
 
-def command(config: dict, *, verify: bool = False) -> list[str]:
+def command(config: dict) -> list[str]:
     validate(config)
     # SSH transmits only this constant remote command. Untrusted data stays on stdin.
-    guest = ([GUEST_PYTHON, "-I", "-c", VERIFY_HELPER, HELPER] if verify
-             else [GUEST_PYTHON, "-I", HELPER, "rpc"])
+    guest = guest_command(GUEST_PYTHON, HELPER, config["helperSha256"], "rpc")
     if config["kind"] == "wsl2":
         return [wsl_executable(), "--distribution", config["distribution"], "--user", config["user"], "--exec", *guest]
     if config["kind"] == "linux":
         require(sys.platform == "linux", "direct-backend-requires-linux")
-        return ([config["python"], "-I", "-c", VERIFY_HELPER, config["helper"]] if verify
-                else [config["python"], "-I", config["helper"], "rpc"])
+        return guest_command(config["python"], config["helper"], config["helperSha256"], "rpc")
     return [config["ssh"], "-F", "NUL" if os.name == "nt" else "/dev/null", "-T", "-a",
             "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes", "-o", "IdentitiesOnly=yes",
             "-o", "ForwardAgent=no", "-o", "ClearAllForwardings=yes", "-o", "PermitLocalCommand=no",
@@ -81,16 +101,17 @@ class Backend:
         self.negotiated = False
 
     def call(self, operation: str, arguments: dict, *, timeout: int = 60) -> dict:
+        if self.config["kind"] == "wsl2":
+            from .wsl import verify_workspace
+            verify_workspace(self.cwd.parent, self.workspace, self.config)
         if operation != "hello" and not self.negotiated:
             protocol.negotiate(self.call("hello", {}))
             self.negotiated = True
-        checked = process.run(command(self.config, verify=True), self.cwd, timeout=20, maximum=4096)
-        require(checked.returncode == 0 and checked.stdout.strip().decode("ascii") == self.config["helperSha256"],
-                "helper-identity-mismatch-before-execution")
         request = protocol.request(operation, self.workspace, arguments)
         try:
             completed = process.run(command(self.config), self.cwd, timeout=timeout,
                                     stdin=encode(request), maximum=4 * 1024 * 1024)
+            require(completed.returncode != 126, "helper-identity-mismatch-before-execution")
             require(completed.returncode == 0, "backend-helper-exit")
             return protocol.result(decode(completed.stdout, 4 * 1024 * 1024), request)
         except (DevError, OSError) as error:

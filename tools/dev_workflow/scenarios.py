@@ -57,7 +57,8 @@ def validate(value: dict, environment: str) -> dict:
 
 
 def run(document: dict, root: Path, environment: str, selection: list[str], adapter,
-        identity: dict, *, supported: set[str], initialized_fixtures: set[str] | None = None) -> dict:
+        identity: dict, *, supported: set[str], initialized_fixtures: set[str] | None = None,
+        execution_controls: bool = False) -> dict:
     validate(document, environment)
     require(environment in {"node", "portable"}, "explicit-test-environment-required")
     available = {case["id"] for case in document["scenarios"]}
@@ -73,6 +74,8 @@ def run(document: dict, root: Path, environment: str, selection: list[str], adap
     fixtures = initialized_fixtures or set()
     for case, raw, expected_payload in prepared:
         missing = set(case["requires"]) - supported
+        if "execution" in case and not execution_controls:
+            missing.add("per-invocation-execution-controls")
         if environment == "portable":
             missing |= set(case["requires"]) & NODE_ONLY
         missing_fixtures = {entry["id"] for entry in case["fixtures"]} - fixtures

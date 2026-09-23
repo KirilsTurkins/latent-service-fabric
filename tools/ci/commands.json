@@ -1168,7 +1168,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "cargo build -p latent-portable-test-host --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_echo_capsule.py --output-dir target/dev-echo\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build -p latent-toolchain-smoke --example generic-capsule --target wasm32-unknown-unknown --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }"
+      "run": "cargo build -p latent-portable-test-host --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_echo_capsule.py --output-dir target/dev-echo\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build -p latent-toolchain-smoke --example generic-capsule --target wasm32-unknown-unknown --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }"
     },
     ".github/workflows/developer-tools.yml:windows:Exercise native production Wasmtime and shared scenario assertions outside checkout": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -1178,7 +1178,57 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python tools/run_portable_dev_tests.py --host target/debug/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --output target/dev-portable-smoke.json"
+      "run": "python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --output target/dev-portable-smoke.json"
+    },
+    ".github/workflows/developer-tools.yml:windows:Record exact portable output for candidate assembly": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows",
+      "name": "Record exact portable output for candidate assembly",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python -c \"from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-candidate/portable'); d.mkdir(); p=d/'latent-portable-test-host.exe'; shutil.copyfile('target/release/latent-portable-test-host.exe',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'windows-x86_64','profile':'release'}))\""
+    },
+    ".github/workflows/developer-tools.yml:wsl-image:Build reviewed image and observed package license inventory": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "wsl-image",
+      "name": "Build reviewed image and observed package license inventory",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/build_dev_rootfs.py --output target/dev-wsl"
+    },
+    ".github/workflows/developer-tools.yml:wsl-image:Retain offline image attestation": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "wsl-image",
+      "name": "Retain offline image attestation",
+      "jobIf": "success()",
+      "stepIf": "github.event_name != 'pull_request'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-wsl/candidate/attestation.json"
+    },
+    ".github/workflows/developer-tools.yml:windows-bundle:Assemble Windows candidate using existing dependency inventory owner": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows-bundle",
+      "name": "Assemble Windows candidate using existing dependency inventory owner",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python tools/build_dev_bundle.py --frontend target/windows-input --portable target/windows-input/portable/latent-portable-test-host.exe --output target/dev-windows"
+    },
+    ".github/workflows/developer-tools.yml:windows-bundle:Retain offline Windows attestation": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "windows-bundle",
+      "name": "Retain offline Windows attestation",
+      "jobIf": "success()",
+      "stepIf": "github.event_name != 'pull_request'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-windows/candidate/attestation.json"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2736,10 +2786,16 @@
       "sha256": "8f58517d55f91fbfc5ac4b6dd65853a8c43ba17b315a41286ea0a261863106e1"
     },
     "tools/build_dev_frontend.py": {
-      "sha256": "ad57dc15e345069ba46b3e62f21df7b9383887efff0d73026c281ed407e75beb"
+      "sha256": "c8e8959a795e1d207cbead426acb255cb23839cd7424fd1e5633bd69046a6888"
     },
     "tools/run_portable_dev_tests.py": {
       "sha256": "1ca92f9e27978cacb841d0a28a565f591b4e35f030eecb3e0478a7251a3842d3"
+    },
+    "tools/build_dev_bundle.py": {
+      "sha256": "aa9f74f6d3c48e5b748163a56747b46208405f2c3c34ffb42d134d1a7b347d13"
+    },
+    "tools/build_dev_rootfs.py": {
+      "sha256": "dc8fc789bc52f5aecc1e50d030566dde0a8a995526822a041db6e022c1b0ebad"
     }
   },
   "pythonCases": {
@@ -3268,6 +3324,8 @@
       "DeterministicMeasurementTests.test_process_deadline_is_not_retried"
     ],
     "tools/tests/test_dev_contracts.py": [
+      "OfflineInputs.test_manifest_rejects_oversized_aliases_and_paths",
+      "OfflineInputs.test_transfer_replays_only_identical_bytes_and_rechecks_completed_cache",
       "Projects.test_descriptor_rejects_unknown_fields_abi_and_output_loops",
       "Projects.test_recipe_and_tool_changes_invalidate_trust",
       "Projects.test_six_owner_mapping_and_compiler_host_boundary",
@@ -3280,8 +3338,10 @@
       "ScenarioReports.test_arbitrary_candidate_policy_is_not_runtime_release_approval",
       "ScenarioReports.test_missing_qualification_never_passes",
       "ScenarioReports.test_portable_required_linux_checks_fail_without_invoking",
+      "Transports.test_actual_helper_digest_and_parent_checks_precede_execution",
       "Transports.test_helper_digest_is_checked_before_hello",
-      "Transports.test_ssh_identity_options_and_constant_command"
+      "Transports.test_ssh_identity_options_and_constant_command",
+      "WslOwnership.test_recovery_observes_original_registration_and_user_nonce_without_reimport"
     ],
     "tools/tests/test_dev_workflow.py": [
       "Documents.test_duplicate_and_unknown_fields_are_rejected",
@@ -3290,6 +3350,7 @@
       "OwnedCommands.test_live_node_output_drains_flood_redacts_before_retention_and_requires_complete_status",
       "OwnedCommands.test_no_ambient_credentials",
       "OwnedCommands.test_output_flood_and_deadline_are_finite",
+      "OwnedCommands.test_restart_confirms_reaping_without_claiming_clean_shutdown",
       "OwnedCommands.test_stdin_and_nonzero_result_reap",
       "SourceSnapshots.test_changed_transfer_is_not_coherent",
       "SourceSnapshots.test_exact_bytes_unicode_spaces_exclusions_and_deletions",
@@ -5764,6 +5825,6 @@
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/developer-tools.yml": "f44bf025b57d65e1916cbdf2943a3abed1f339600492d4464a0a3995d55bcdc5"
+    ".github/workflows/developer-tools.yml": "da5a274e9843c7cdfb1226ef2eacbf68b8bf263d2b8f0a2711f00fb78b19ee99"
   }
 }

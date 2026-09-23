@@ -34,6 +34,30 @@ def socket_path(root: Path) -> Path:
     return result
 
 
+def guest_instance() -> dict:
+    # A distro restart can replace its PID namespace without rebooting the shared
+    # WSL kernel. Record both; a stale numeric PID is never an ownership proof.
+    boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
+    init = Path("/proc/1/stat").read_text().rsplit(")", 1)[1].split()
+    return {"bootId": boot, "pidNamespace": str(Path("/proc/self/ns/pid").stat().st_ino), "initStartTicks": init[19]}
+
+
+def disconnected(root: Path) -> dict:
+    prior = state.load(root, "lifecycle.json") if (root / "lifecycle.json").exists() else {"state": "stopped", "dataRetained": True}
+    if prior["state"] in {"stopped", "purged"}:
+        return prior
+    previous = prior.get("guestInstance")
+    if previous and previous != guest_instance():
+        # No process from an old boot/PID namespace can survive here. Confirm
+        # that a new controller has not already acquired this workspace.
+        with state.lock(root, "supervisor.lock"), state.lock(root / "runtime", "run.lock"):
+            prior.update(state="stopped", reaped=True, cleanShutdown=False,
+                         failure="guest-restarted-inspect-operation-receipts", dataRetained=True)
+            state.atomic(root, "lifecycle.json", prior)
+        return prior
+    raise DevError("supervisor-disconnected-cleanup-unknown", uncertain=True)
+
+
 def request(root: Path, operation: str, *, timeout: float = 30) -> dict:
     require(operation in {"status", "logs", "down"}, "supervisor-command")
     paths.private_root(root)
@@ -59,10 +83,11 @@ def start(root: Path, helper: Path) -> dict:
         require(current.get("state") == "ready", "existing-supervisor-not-ready")
         return current
     except (FileNotFoundError, ConnectionRefusedError):
-        pass
+        disconnected(root)
     # The durable record is diagnostic only; it never authorizes killing a PID.
     node_config = decode(paths.read(layout.node.parent, layout.node.name))
-    state.atomic(root, "lifecycle.json", {"state": "starting", "profile": node_config["securityProfile"]})
+    state.atomic(root, "lifecycle.json", {"state": "starting", "profile": node_config["securityProfile"],
+                                         "guestInstance": guest_instance()})
     child = subprocess.Popen([sys.executable, "-I", str(helper), "supervise", str(root)],
                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              close_fds=True, start_new_session=True, env=process.environment())
@@ -90,7 +115,7 @@ def supervise(root: Path) -> int:
     selected_socket = socket_path(root)
     node_config = decode(paths.read(layout.node.parent, layout.node.name))
     profile = node_config["securityProfile"]
-    current = {"state": "starting", "profile": profile, "node": node_config["nodeId"]}
+    current = {"state": "starting", "profile": profile, "node": node_config["nodeId"], "guestInstance": guest_instance()}
     with state.lock(root, "supervisor.lock"), state.lock(layout.prefix, "run.lock"):
         if selected_socket.exists():
             require(selected_socket.is_socket() and selected_socket.lstat().st_uid == os.geteuid(), "unsafe-control-socket")

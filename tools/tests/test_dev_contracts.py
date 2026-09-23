@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools.dev_workflow import backend, bundle, common, effects, journal, paths, project, qualification, scenarios, state
+from tools.dev_workflow import assets, backend, bundle, common, effects, journal, paths, project, qualification, scenarios, state, wsl
 
 
 def descriptor():
@@ -158,19 +160,118 @@ class Transports(unittest.TestCase):
         command = backend.command(config)
         for required in ("StrictHostKeyChecking=yes", "BatchMode=yes", "IdentitiesOnly=yes", "ForwardAgent=no", "ProxyCommand=none"):
             self.assertIn(required, command)
-        self.assertEqual(command[-1], "/usr/local/bin/python3.13 -I /opt/latent-dev/helper.pyz rpc")
+        import shlex
+        remote = shlex.split(command[-1])
+        self.assertEqual(remote[:3], ["/usr/local/bin/python3.13", "-I", "-c"])
+        self.assertEqual(remote[-3:], ["/opt/latent-dev/helper.pyz", config["helperSha256"], "rpc"])
+        self.assertIn("hashlib.file_digest", remote[3])
         with self.assertRaises(common.DevError):
             backend.command({**config, "host": "node;do-bad-things"})
 
     def test_helper_digest_is_checked_before_hello(self):
         import subprocess
-        config = {"kind": "wsl2", "distribution": "LSF-Dev-" + "a" * 16, "user": "lsfd-" + "b" * 12,
+        config = {"kind": "linux", "python": str(Path("python").absolute()), "helper": str(Path("helper.pyz").absolute()),
                   "helperSha256": "sha256:" + "c" * 64}
         with patch.object(backend, "command", return_value=["wsl-test"]), patch.object(backend.process, "run",
-              return_value=subprocess.CompletedProcess([], 0, b"wrong digest", b"")) as run:
+              return_value=subprocess.CompletedProcess([], 126, b"", b"")) as run:
             with self.assertRaisesRegex(common.DevError, "identity-mismatch"):
                 backend.Backend(config, "test", Path.cwd()).call("hello", {})
             self.assertEqual(run.call_count, 1)
+
+    @unittest.skipUnless(sys.platform == "linux", "Linux verified descriptor execution")
+    def test_actual_helper_digest_and_parent_checks_precede_execution(self):
+        import zipfile
+        from tools.dev_workflow import process
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            executable = root / "helper.pyz"
+            with zipfile.ZipFile(executable, "w") as archive:
+                archive.writestr("__main__.py", "import proof,sys; print(proof.answer); print(sys.argv[0])")
+                archive.writestr("proof.py", "answer='executed-verified-bytes'")
+            identity = common.digest(executable.read_bytes())
+            argv = backend.guest_command(sys.executable, str(executable), identity, "rpc")
+            completed = process.run(argv, root)
+            self.assertEqual(completed.returncode, 0)
+            self.assertEqual(completed.stdout.decode().splitlines(), ["executed-verified-bytes", str(executable)])
+            with executable.open("ab") as stream:
+                stream.write(b"changed")
+            rejected = process.run(argv, root)
+            self.assertEqual(rejected.returncode, 126)
+            self.assertEqual(rejected.stdout, b"")
+            identity = common.digest(executable.read_bytes())
+            unsafe = root / "alias"
+            unsafe.symlink_to(root, target_is_directory=True)
+            rejected = process.run(backend.guest_command(sys.executable, str(unsafe / executable.name), identity, "rpc"), root)
+            self.assertEqual(rejected.returncode, 126)
+            self.assertEqual(rejected.stdout, b"")
+
+
+class OfflineInputs(unittest.TestCase):
+    def test_manifest_rejects_oversized_aliases_and_paths(self):
+        for names in (("release/A", "release/a"), ("trust/../escape",), ("unrelated/input",)):
+            files = [{"path": name, "size": 1, "sha256": common.digest(b"a"), "executable": False} for name in names]
+            value = {"schemaVersion": "latent.dev.inputs.v1", "files": files}
+            value["identity"] = common.digest(common.encode(value))
+            with self.assertRaises(common.DevError):
+                assets.manifest(value)
+
+    @unittest.skipUnless(sys.platform == "linux", "Linux private input transfer")
+    def test_transfer_replays_only_identical_bytes_and_rechecks_completed_cache(self):
+        import base64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            raw = b"first-second"
+            value = {"schemaVersion": "latent.dev.inputs.v1", "files": [{"path": "trust/gh", "size": len(raw),
+                "sha256": common.digest(raw), "executable": True}]}
+            value["identity"] = common.digest(common.encode(value))
+            assets.receive(root, "asset-begin", value)
+            first = {"identity": value["identity"], "path": "trust/gh", "offset": 0,
+                     "bytes": base64.b64encode(raw[:6]).decode()}
+            assets.receive(root, "asset-chunk", first)
+            self.assertEqual(assets.receive(root, "asset-chunk", first)["offset"], 6)
+            with self.assertRaisesRegex(common.DevError, "conflicting-replay"):
+                assets.receive(root, "asset-chunk", {**first, "bytes": base64.b64encode(b"wrong!").decode()})
+            with self.assertRaisesRegex(common.DevError, "chunk-gap"):
+                assets.receive(root, "asset-chunk", {**first, "offset": 7, "bytes": "YQ=="})
+            with self.assertRaisesRegex(common.DevError, "content-mismatch"):
+                assets.receive(root, "asset-finish", {"identity": value["identity"]})
+            assets.receive(root, "asset-chunk", {**first, "offset": 6, "bytes": base64.b64encode(raw[6:]).decode()})
+            result = assets.receive(root, "asset-finish", {"identity": value["identity"]})
+            path = Path(result["directory"]) / "trust/gh"
+            self.assertEqual(path.read_bytes(), raw)
+            self.assertEqual(path.stat().st_mode & 0o777, 0o700)
+            path.write_bytes(b"tampered")
+            with self.assertRaisesRegex(common.DevError, "content-mismatch"):
+                assets.receive(root, "asset-finish", {"identity": value["identity"]})
+
+
+class WslOwnership(unittest.TestCase):
+    def test_recovery_observes_original_registration_and_user_nonce_without_reimport(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            distribution = "LSF-Dev-" + "a" * 16
+            identity = {"workspace": "test-a", "user": "lsfd-" + "b" * 12,
+                        "helperSha256": "sha256:" + "c" * 64, "nonce": "d" * 32}
+            record = {"schemaVersion": "latent.dev.wsl.v1", "distribution": distribution,
+                "directory": str(root / distribution), "helperSha256": identity["helperSha256"],
+                "state": "provisioning", "registration": None,
+                "workspaces": {"test-a": {"owner": identity, "state": "creating"}}}
+            state.atomic(root, "wsl.json", record)
+            registration = {distribution: {"path": str(root / distribution), "version": 2, "registration": "original"}}
+            with patch.object(wsl, "registrations", return_value=registration), patch.object(wsl, "_user_call",
+                return_value={"user": identity["user"], "state": "ready"}) as user_call, patch.object(wsl.process, "run") as external:
+                result = wsl.recover(root, distribution)
+                self.assertEqual(result["state"], "provisioned")
+                self.assertEqual(user_call.call_args.args[2:], ("user-status", identity))
+                external.assert_not_called()
+                config = {"kind": "wsl2", "distribution": distribution, "user": identity["user"], "helperSha256": identity["helperSha256"]}
+                wsl.verify_workspace(root, "test-a", config)
+                registration[distribution]["registration"] = "replacement"
+                with self.assertRaisesRegex(common.DevError, "registration-replaced"):
+                    wsl.verify_workspace(root, "test-a", config)
+                with self.assertRaises(common.DevError):
+                    wsl.purge(root, "docker-desktop")
+                external.assert_not_called()
 
 
 class ScenarioReports(unittest.TestCase):

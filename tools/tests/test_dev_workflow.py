@@ -126,6 +126,23 @@ class SourceSnapshots(unittest.TestCase):
 
 
 class OwnedCommands(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "linux", "Linux guest namespace ownership")
+    def test_restart_confirms_reaping_without_claiming_clean_shutdown(self):
+        from tools.dev_workflow import service
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            paths.new_directory(root / "runtime")
+            previous = {"bootId": "previous", "pidNamespace": "old", "initStartTicks": "1"}
+            state.atomic(root, "lifecycle.json", {"state": "ready", "guestInstance": previous})
+            with patch.object(service, "guest_instance", return_value=previous):
+                with self.assertRaisesRegex(common.DevError, "cleanup-unknown"):
+                    service.disconnected(root)
+            result = service.disconnected(root)
+            self.assertEqual(result["state"], "stopped")
+            self.assertTrue(result["reaped"])
+            self.assertFalse(result["cleanShutdown"])
+            self.assertEqual(service.disconnected(root), result)
+
     def test_stdin_and_nonzero_result_reap(self):
         result = process.run([sys.executable, "-I", "-c",
                               "import sys; print(sys.stdin.read()); sys.exit(3)"], Path.cwd(), stdin=b"private input")
