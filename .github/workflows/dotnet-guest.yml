@@ -40,6 +40,7 @@ jobs:
       CARGO_BUILD_JOBS: 2
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: 0
+      PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -125,11 +126,17 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          probe="$RUNNER_TEMP/dotnet-probe-source"
+          mkdir "$probe"
+          cp probes/smoke/Smoke.csproj probes/smoke/Operations.cs \
+            probes/smoke/component.wit probes/smoke/packages.lock.json \
+            global.json nuget.config "$probe/"
+          cd "$probe"
           dotnet --info > "$RUNNER_TEMP/dotnet-guest/dotnet-info.txt"
-          dotnet restore probes/smoke/Smoke.csproj --configfile nuget.config --locked-mode 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/restore.log"
+          dotnet restore Smoke.csproj --configfile nuget.config --locked-mode 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/restore.log"
           export LSF_WIT_BINDGEN="$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen" LSF_WASM_TOOLS=wasm-tools
-          /usr/bin/time -f '{"wallSeconds":%e,"maxRssKiB":%M,"exitCode":%x}' -o "$RUNNER_TEMP/dotnet-guest/compilation-cost.json" dotnet build probes/smoke/Smoke.csproj -c Release --no-restore -p:WasiSdkRoot="$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" -p:WitBindgenExe="python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py" 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/build.log"
-          cp probes/smoke/packages.lock.json "$RUNNER_TEMP/dotnet-guest/packages.lock.json"
+          /usr/bin/time -f '{"wallSeconds":%e,"maxRssKiB":%M,"exitCode":%x}' -o "$RUNNER_TEMP/dotnet-guest/compilation-cost.json" dotnet build Smoke.csproj -c Release --no-restore -p:WasiSdkRoot="$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" -p:WitBindgenExe="python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py" 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/build.log"
+          cp packages.lock.json "$RUNNER_TEMP/dotnet-guest/packages.lock.json"
       - name: Compose capability-constrained compiler support
         shell: bash
         run: |
@@ -137,7 +144,7 @@ jobs:
           cargo build --quiet --locked -p latent-toolchain-smoke --example dotnet-closed-runtime --target wasm32-unknown-unknown --release
           wasm-tools component new target/wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm -o "$RUNNER_TEMP/dotnet-guest/runtime.wasm"
           tools="$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64"
-          cp sdk/dotnet-guest/probes/smoke/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm "$RUNNER_TEMP/dotnet-guest/raw.wasm"
+          cp "$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm" "$RUNNER_TEMP/dotnet-guest/raw.wasm"
           "$tools/wac" plug "$RUNNER_TEMP/dotnet-guest/raw.wasm" --plug "$RUNNER_TEMP/dotnet-guest/runtime.wasm" -o "$RUNNER_TEMP/dotnet-guest/component.wasm"
           wasm-tools validate "$RUNNER_TEMP/dotnet-guest/component.wasm"
           wasm-tools component wit "$RUNNER_TEMP/dotnet-guest/component.wasm" | tee "$RUNNER_TEMP/dotnet-guest/admitted.wit"

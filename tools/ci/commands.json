@@ -788,7 +788,7 @@
       "stepIf": "success()",
       "workingDirectory": "sdk/dotnet-guest",
       "shell": "bash",
-      "run": "set -o pipefail\ndotnet --info > \"$RUNNER_TEMP/dotnet-guest/dotnet-info.txt\"\ndotnet restore probes/smoke/Smoke.csproj --configfile nuget.config --locked-mode 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/restore.log\"\nexport LSF_WIT_BINDGEN=\"$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen\" LSF_WASM_TOOLS=wasm-tools\n/usr/bin/time -f '{\"wallSeconds\":%e,\"maxRssKiB\":%M,\"exitCode\":%x}' -o \"$RUNNER_TEMP/dotnet-guest/compilation-cost.json\" dotnet build probes/smoke/Smoke.csproj -c Release --no-restore -p:WasiSdkRoot=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" -p:WitBindgenExe=\"python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py\" 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/build.log\"\ncp probes/smoke/packages.lock.json \"$RUNNER_TEMP/dotnet-guest/packages.lock.json\""
+      "run": "set -o pipefail\nprobe=\"$RUNNER_TEMP/dotnet-probe-source\"\nmkdir \"$probe\"\ncp probes/smoke/Smoke.csproj probes/smoke/Operations.cs \\\n  probes/smoke/component.wit probes/smoke/packages.lock.json \\\n  global.json nuget.config \"$probe/\"\ncd \"$probe\"\ndotnet --info > \"$RUNNER_TEMP/dotnet-guest/dotnet-info.txt\"\ndotnet restore Smoke.csproj --configfile nuget.config --locked-mode 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/restore.log\"\nexport LSF_WIT_BINDGEN=\"$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen\" LSF_WASM_TOOLS=wasm-tools\n/usr/bin/time -f '{\"wallSeconds\":%e,\"maxRssKiB\":%M,\"exitCode\":%x}' -o \"$RUNNER_TEMP/dotnet-guest/compilation-cost.json\" dotnet build Smoke.csproj -c Release --no-restore -p:WasiSdkRoot=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" -p:WitBindgenExe=\"python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py\" 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/build.log\"\ncp packages.lock.json \"$RUNNER_TEMP/dotnet-guest/packages.lock.json\""
     },
     ".github/workflows/dotnet-guest.yml:toolchain:Compose capability-constrained compiler support": {
       "workflow": ".github/workflows/dotnet-guest.yml",
@@ -798,7 +798,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "bash",
-      "run": "set -o pipefail\ncargo build --quiet --locked -p latent-toolchain-smoke --example dotnet-closed-runtime --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm -o \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\"\ntools=\"$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64\"\ncp sdk/dotnet-guest/probes/smoke/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm \"$RUNNER_TEMP/dotnet-guest/raw.wasm\"\n\"$tools/wac\" plug \"$RUNNER_TEMP/dotnet-guest/raw.wasm\" --plug \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\" -o \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools component wit \"$RUNNER_TEMP/dotnet-guest/component.wasm\" | tee \"$RUNNER_TEMP/dotnet-guest/admitted.wit\""
+      "run": "set -o pipefail\ncargo build --quiet --locked -p latent-toolchain-smoke --example dotnet-closed-runtime --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm -o \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\"\ntools=\"$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64\"\ncp \"$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm\" \"$RUNNER_TEMP/dotnet-guest/raw.wasm\"\n\"$tools/wac\" plug \"$RUNNER_TEMP/dotnet-guest/raw.wasm\" --plug \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\" -o \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools component wit \"$RUNNER_TEMP/dotnet-guest/component.wasm\" | tee \"$RUNNER_TEMP/dotnet-guest/admitted.wit\""
     },
     ".github/workflows/dotnet-guest.yml:toolchain:Execute LSF authority and fresh-heap qualification": {
       "workflow": ".github/workflows/dotnet-guest.yml",
@@ -6083,7 +6083,7 @@
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/dotnet-guest.yml": "42a5454ddba6fa3220989c0df53ca1c0e8658826a583609fbdb7a0ba29b08a5b",
+    ".github/workflows/dotnet-guest.yml": "f06805b301ab28a83b7b81aa04d68b5eea05048f66c035c157653451512eddfc",
     ".github/workflows/go-guest.yml": "c2ee0bfab0fa66a341dda62aeee6dfdf4c77691cd9a1a926ce1fbfb5fdae48cd",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",

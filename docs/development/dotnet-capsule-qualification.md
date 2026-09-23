@@ -2,9 +2,9 @@
 
 This is developer execution evidence for #549, separate from the beginner
 [C# authoring guide](../component-development/dotnet-authoring.md). It does not
-authorize a release or replace human newcomer review #345. The complete
-qualification is still pending: successful compiler diagnostics are not a
-substitute for all SDK, signed-node and printed-guide stages.
+authorize a release or replace human newcomer review #345. The complete finite
+qualification passed at the source recorded below. Final delivery still requires
+the reporting/source-hygiene changes and all exact-head PR gates to pass.
 
 ## Supported experiment
 
@@ -32,7 +32,68 @@ The supported guest ceiling is 128 MiB, one billion fuel and 120 seconds for a
 cold invocation. Deliberately multi-operation SDK tests use ten billion fuel.
 These are finite experiment bounds, not throughput or production sizing claims.
 
-## Retained attempts
+## Successful finite qualification
+
+[Run 35932426366](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35932426366)
+passed at `57fbc36690d9ccad65b6a18d2c49a4188e1ff061`. Artifact `10782416468`
+retains five standalone builds, nine actual SDK builds, seven ownership checks,
+all ten admitted SDK cases (78.33 seconds), 27 signed-node invocation receipts,
+24 resource observations, 123 recorded control calls and all six printed Bash
+steps (22.29 seconds). Typed results, secret alias zeroization and closed owners,
+allowed/denied HTTP, trap, fuel/memory exhaustion, deadline, cancellation,
+disconnect, fresh subsequent state and final deployment deletion passed.
+The node and HTTP peer were reaped cleanly; all three held HTTP operations closed,
+with no unexpected requests or remaining activation/provider/compiler owners.
+
+The runtime source identity is
+`sha256:f6ae16771985517c7a3acecb542f2ad98b9b9683f8663c6d3b466a87b20c6c2a`
+(2,180 files, 13,671,845 bytes). Independent Git-blob comparison verified 2,340
+runtime/SDK/WIT/schema/helper/guide inputs. The immutable source archive separately
+matched all 4,083 expected files and executable modes (SHA-256
+`f30b75bf8eaaf18a6cb6d7516334e6b8b275861cb4712e0b00615734879a4406`).
+The qualification marker digest is
+`sha256:41b2b076737de5a88d3dab2e1102f8102504df8d0f35c3f71ba69b3be6be6c0b`;
+the source and tool inventories remained unchanged through node and guide execution.
+
+The first receipt's SDK inventory also records 74 generated probe `bin`/`obj`
+and Python-cache outputs (26,009,700 bytes). These are explicitly not Git source
+inputs. The workflow now builds that diagnostic probe in its own temporary
+directory and disables Python bytecode writes, so the final SDK source inventory
+must match the reviewed tree exactly without an output exception.
+
+Node startup measured 55.17 ms. Word-count and shipping cold requests took
+2,927.95 and 2,914.49 ms; their warm repeats took 23.78 and 23.87 ms.
+The first recorded greeting was already warm after the explicit runtime-grant
+denial check and is not a cold-compilation measurement. Ordinary activations
+peaked at 54,067,200 charged guest-memory bytes. The memory-exhaustion case
+reached 121,765,888 bytes within the 128 MiB ceiling and the following fresh
+invocation succeeded. The fuel-exhaustion receipt charged exactly one billion.
+
+| Observation | Processes / threads / listeners | Node RSS bytes | Active cells / cache entries |
+| --- | --- | --- | --- |
+| Empty node | 1 / 8 / 1 | 56,139,776 | 0 / 0 |
+| 5 dormant deployments | 1 / 7 / 1 | 67,682,304 | 0 / 0 |
+| 9 dormant deployments | 1 / 7 / 1 | 67,686,400 | 0 / 0 |
+| 17 dormant deployments | 1 / 7 / 1 | 67,686,400 | 0 / 0 |
+| Held HTTP activation | 1 / 8 / 1 | 176,046,080 | 1 / 2 |
+| After cancellation | 1 / 8 / 1 | 125,153,280 | 0 / 2 |
+| After all deployment deletion | 1 / 7 / 1 | 125,169,664 | 0 / 2 |
+
+Each dormant population has three settled samples, zero application-owned
+resources and no active activation, quota or execution-cell ownership. Shared
+compiled images remain bounded at two entries and one preparation; they are not
+per-deployment heaps. RSS is a non-atomic process observation, not an allocator
+release guarantee, and deleting deployments does not promise that RSS becomes
+the initial baseline. Clean shutdown joined the fixed compiler/cleanup workers.
+
+Standalone captured builds took 15.88–16.27 seconds including source inventories,
+binding checks and packaging. The larger 5,050,538-byte diagnostic component
+compiled in 13.79 seconds with maximum compiler RSS of 305,296 KiB; its separate
+cold-backend probe prepared in 35.99 seconds. That diagnostic is distinct from
+the managed node's cold/warm observations above. None is a throughput, 100k-scale
+or arbitrary-.NET-application qualification.
+
+## Retained earlier attempts
 
 [Run 35919449058](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35919449058)
 at `7a69352177fee84c2edf1d976fcd0e3523797aab` passed the initial actual-compiler
@@ -59,7 +120,7 @@ depth remains capped at 64. All 71 packaging unit tests and inspection of the
 retained actual greeting pass locally. Linux qualification must still validate
 the final source; this local inspection is not node execution evidence.
 
-## Required final evidence
+## Earlier SDK and node failures
 
 [Run 35929987442](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35929987442)
 at `c844116196341fdb373f3bcbca6a61499ed189a8` passed all ten admitted SDK
@@ -75,7 +136,7 @@ seven threads, one listener and no active activation/cell ownership. Applying
 `dormant-09` then failed closed with `signature-stale-proof`: the isolated demo
 signer's 60-second proof age contradicted its 30-minute signed experiment.
 Artifact `10780739918` preserves that failed run; the 17-deployment, invocation,
-cleanup and printed-guide stages remain unqualified. The exact source archive
+cleanup and printed-guide stages were not qualified by that attempt. The exact source archive
 independently matched all 4,082 expected Git blobs (archive SHA-256
 `da8aa0ff351fcb26809ecb699d7f7c3967f43f639f61674836b77d191c08dde4`).
 The broad Rust gate also caught a shared test-module dependency, now corrected
@@ -87,7 +148,17 @@ The isolated demo signer now aligns both proof-age ceilings with its existing
 proofs at 61, 900 and 1,799 seconds, exact rejection at 1,800, and independent
 enforcement of a shorter publisher or builder proof age. This does not change
 production policy defaults, revocation/currentness enforcement or the finite
-five-second durable clock lease. The node and guide still need a complete rerun.
+five-second durable clock lease. The successful full run above includes this
+correction through the node and printed-guide stages.
+
+[Rust regression run 35932426453](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35932426453)
+at `57fbc36690d9ccad65b6a18d2c49a4188e1ff061` reached dormant populations
+5, 9 and 17 and passed all four greeting invocations. The first word-count
+invocation then failed closed with `admission-authority-busy`, a known outcome
+before execution with zero fuel, memory and effects. Artifact `10782136500`
+retains this attempt. The authority intentionally rejects currentness checks
+while its fence is held; the qualification does not retry that request or relax
+the fence. A new isolated final-head run must pass the complete regression.
 
 [Run 35928271057](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35928271057)
 at `79ef782ab9f3440baa10123a3581ed727c875c87` passed the expanded actual
@@ -98,7 +169,7 @@ retains two admission failures: the nested caller declared its required
 256 MiB ceiling, but the signing fixture still advertised a 128 MiB runtime.
 The fixture now uses the same explicit nested-service ceiling as the node
 composition; ordinary package profiles remain at 128 MiB. No production
-delegation rule or authority is widened. The next run must execute both
+delegation rule or authority is widened. The successful full run above includes
 the nested service and complete signed-node/printed-guide stages.
 
 [Run 35926712630](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35926712630)
@@ -110,7 +181,7 @@ category and exact payload separately. A local diagnostic of that unchanged
 compiled component also traced member lookup through `String.GetHashCode`
 to the closed runtime's ambient-entropy denial. Reflection lookup is therefore
 an explicit negative test, separate from supported library/task/GC checks.
-The following successful fresh invocation must still pass.
+The successful full run above also passes the following fresh invocations.
 
 [Run 35922933562](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35922933562)
 at `2dc9ed406cfb0975024b4454e749677d3d4b6f55` built all five standalone and
@@ -128,8 +199,8 @@ native diagnostic. Its full backtrace identifies unsupported
 from exception reporting, not the secret provider. Local owned bytes now use
 non-elidable volatile zero stores with an additional alias-observation test.
 The compiled SDK diagnostic checks success/disposal and all four typed errors.
-The closed runtime still denies ambient entropy. These changes require a new
-complete Linux run; they are not a claim that the failed run passed.
+The closed runtime still denies ambient entropy. The successful full Linux run
+above covers these changes; the failed attempt remains a failure.
 
 `tools/qualify_dotnet_capsules.py` must retain five standalone builds, nine
 actual SDK builds, seven explicit disposable-owner/zeroization checks and all ten
