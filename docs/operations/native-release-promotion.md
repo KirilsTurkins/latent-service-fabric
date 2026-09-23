@@ -14,6 +14,14 @@ digests and successful release-identity runs still require parent approval and
 observation. Neither a version name nor a green candidate authorizes release.
 The historical `0.1.0-alpha.3` tag remains unchanged and source-only.
 
+The current rc.2 foundation is now qualified in
+[release run 35811188306](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35811188306), at source
+`a53b7b219a46f6ca91ae7bc7830669f8aa4bbe2e`. Its
+[authenticated receipt](../evidence/native-foundation-35811188306.json) supplies the actual
+archive identity committed for `0.1.0-alpha.4`. Final compatible-pair VM
+acceptance and protected publication remain pending; the steps below retain
+their separate exact-source and artifact checks.
+
 The earlier unpublished `0.1.0-alpha.4-rc.1` foundation and its receipts remain
 historical evidence. Its HTTP table format is now obsolete, so it is no longer
 a declared upgrade source. Qualify the distinct rc.2 foundation with current

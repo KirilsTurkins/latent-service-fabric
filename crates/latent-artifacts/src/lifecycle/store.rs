@@ -7,7 +7,7 @@ use latent_core::{ArtifactBlobDigest, PackageDigest, PlatformError, PublicationI
 use serde::{Deserialize, Serialize};
 use std::{
     cell::Cell,
-    collections::{BTreeMap, BTreeSet},
+    collections::BTreeMap,
     path::{Path, PathBuf},
     sync::{Arc, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
@@ -76,24 +76,7 @@ struct Head {
 struct State {
     head: Head,
     entries: BTreeMap<PublicationId, Entry>,
-    by_component: BTreeMap<ReleaseDigest, BTreeSet<PublicationId>>,
-    by_scope: BTreeMap<(LifecycleScope, ReleaseDigest), BTreeSet<PublicationId>>,
     receipts: BTreeMap<usize, StoredReceipt>,
-}
-
-impl State {
-    fn index_identity(&mut self, identity: &LifecycleIdentity) -> Result<(), PlatformError> {
-        let id = identity.publication()?.id;
-        self.by_component
-            .entry(identity.release.clone())
-            .or_default()
-            .insert(id.clone());
-        self.by_scope
-            .entry((identity.scope.clone(), identity.release.clone()))
-            .or_default()
-            .insert(id);
-        Ok(())
-    }
 }
 
 pub(crate) struct LifecycleStore {
@@ -187,33 +170,12 @@ impl LifecycleStore {
             .get(release)
             .map(|entry| entry.stored.identity.clone()))
     }
-    pub(crate) fn resolve_legacy(
-        &self,
-        scope: Option<&LifecycleScope>,
-        release: &ReleaseDigest,
-    ) -> Result<Option<PublicationId>, PlatformError> {
-        crate::publication::validate_component(release)?;
-        if let Some(scope) = scope {
-            scope.validate()?;
-        }
-        self.owner.check()?;
-        let state = self.state.try_read().map_err(lock_error)?;
-        let rows = match scope {
-            Some(scope) => state.by_scope.get(&(scope.clone(), release.clone())),
-            None => state.by_component.get(release),
-        };
-        match rows {
-            None => Ok(None),
-            Some(rows) if rows.len() == 1 => Ok(rows.first().cloned()),
-            Some(_) => Err(crate::publication::ambiguous()),
-        }
-    }
     #[cfg(test)]
     pub(crate) fn record(
         &self,
         release: &ReleaseDigest,
     ) -> Result<Option<ReleaseLifecycleRecord>, PlatformError> {
-        match self.resolve_legacy(None, release)? {
+        match self.fixture_publication(None, release)? {
             Some(key) => self.record_publication(&key),
             None => Ok(None),
         }
@@ -223,7 +185,7 @@ impl LifecycleStore {
         &self,
         release: &ReleaseDigest,
     ) -> Result<Option<LifecycleIdentity>, PlatformError> {
-        match self.resolve_legacy(None, release)? {
+        match self.fixture_publication(None, release)? {
             Some(key) => self.identity_publication(&key),
             None => Ok(None),
         }
@@ -274,7 +236,7 @@ impl LifecycleStore {
         let _fence = self.owner.read()?;
         self.make_eligibility(
             &self
-                .resolve_legacy(None, release)?
+                .fixture_publication(None, release)?
                 .ok_or_else(unavailable)?,
             admission,
         )
@@ -307,7 +269,7 @@ impl LifecycleStore {
         let publication = if let Some(identity) = &identity {
             Some(identity.publication()?.id)
         } else if let Some(release) = &receipt.component_digest {
-            self.resolve_legacy(Some(&receipt.scope), release)?
+            self.fixture_publication(Some(&receipt.scope), release)?
         } else {
             None
         };
@@ -422,7 +384,7 @@ impl LifecycleReadFence<'_> {
         self.store.make_eligibility(
             &self
                 .store
-                .resolve_legacy(None, release)?
+                .fixture_publication(None, release)?
                 .ok_or_else(unavailable)?,
             admission,
         )

@@ -2,5 +2,11 @@
   "installerFormat": 1,
   "nodeConfigFormat": 1,
   "migration": "none",
-  "upgradeFrom": []
+  "upgradeFrom": [
+    {
+      "version": "0.1.0-alpha.4-rc.2",
+      "sourceCommit": "a53b7b219a46f6ca91ae7bc7830669f8aa4bbe2e",
+      "archiveSha256": "3479b32fb3181066572d61cc6a65abb38bafb2311188b358fac7e7e365195ee3"
+    }
+  ]
 }

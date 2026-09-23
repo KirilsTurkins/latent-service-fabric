@@ -151,8 +151,10 @@ expired, revoked or unavailable evidence cannot create current eligibility.
 No registry connection is required when all exact bytes and fresh approved
 snapshots are already local.
 
-Recovery and `DirectoryArtifactRepository::reverify_retained(tenant, release)`
-are explicit synchronous control operations. They may wait for the private
+Recovery and `DirectoryArtifactRepository::reverify_publication(publication)`
+are explicit synchronous control operations. Re-verification requires an exact
+scoped publication reference; a component digest cannot select the proof to refresh.
+These operations may wait for the private
 authority fence, then renew the clock lease and verify retained evidence under
 one guard. Publication and re-verification share one nonblocking catalog work
 slot. Re-verification returns the historical catalog summary and refreshes only

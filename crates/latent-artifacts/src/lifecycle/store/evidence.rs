@@ -170,7 +170,7 @@ impl LifecycleStore {
         &self,
         release: &ReleaseDigest,
     ) -> Result<Option<(AdmissionBinding, ReleaseEvidenceUpload)>, PlatformError> {
-        match self.resolve_legacy(None, release)? {
+        match self.fixture_publication(None, release)? {
             Some(id) => self.read_publication_evidence(&id),
             None => Ok(None),
         }

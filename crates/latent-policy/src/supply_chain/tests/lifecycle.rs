@@ -296,6 +296,7 @@ fn lifecycle_revocation_is_terminal_for_reverify_republication_renewal_and_resta
         release,
         package,
     } = Setup::new();
+    let publication = publication(&repo, &release);
     let held = repo.execution_eligibility(&release).unwrap().unwrap();
     let revoked = revoke(&repo, &release, "terminal-revoke", 1);
     assert_eq!(
@@ -303,7 +304,7 @@ fn lifecycle_revocation_is_terminal_for_reverify_republication_renewal_and_resta
         ReleaseLifecycleState::Revoked
     );
     assert!(held.check_current().is_err());
-    assert!(repo.reverify_retained(&tenant(), &release).is_err());
+    assert!(repo.reverify_publication(&publication).is_err());
     assert!(ready(repo.admit_package(&tenant(), fixture.upload(), &mut |_| Ok(()))).is_err());
     assert!(renew(
         &repo,
@@ -326,7 +327,7 @@ fn lifecycle_revocation_is_terminal_for_reverify_republication_renewal_and_resta
     assert_eq!(observed.eligibility, ReleaseLiveEligibility::Denied);
     assert!(reopened.execution_eligibility(&release).is_err());
     assert!(ready(reopened.fetch(&release)).is_err());
-    assert!(reopened.reverify_retained(&tenant(), &release).is_err());
+    assert!(reopened.reverify_publication(&publication).is_err());
     let snapshot = ready(reopened.historical_execution_snapshot(&release)).unwrap();
     assert!(matches!(
         snapshot.into_parts().1,

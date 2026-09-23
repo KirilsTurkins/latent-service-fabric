@@ -161,18 +161,11 @@ pub(super) fn open(
         return Err(corrupt());
     }
     let receipts = read_receipts(root, limits, &head)?;
-    let mut state = State {
-        by_component: BTreeMap::new(),
-        by_scope: BTreeMap::new(),
+    let state = State {
         head,
         entries,
         receipts,
     };
-    for identity in identities.values() {
-        if state.entries.contains_key(&identity.publication()?.id) {
-            state.index_identity(identity)?;
-        }
-    }
     for value in state.receipts.values() {
         if let Some(id) = &value.publication {
             let Some(entry) = state.entries.get(id) else {
@@ -410,7 +403,6 @@ pub(super) fn commit(
             entry.bytes = bytes;
         } else {
             let row = Row::new(&stored.record, stored.identity.publication()?.id);
-            state.index_identity(&stored.identity)?;
             state.entries.insert(
                 stored.identity.publication()?.id,
                 Entry { stored, row, bytes },

@@ -2,11 +2,12 @@
 
 **Delivery status:** native packaging and fail-closed installer delivery for
 [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
-Both native candidate profiles have passed real clean-VM reboot, retained
-invocation, backup/recovery and removal/purge; rootless evaluation also passed.
-The [recorded evidence and acceptance gaps](development/native-release-gate.md#acceptance-handoff)
-distinguish those results from untested cross-version and release gates.
-This page does not claim a published publisher-authenticated binary release.
+The current-format `0.1.0-alpha.4-rc.2` foundation passed both clean-VM profiles
+under the exact release-workflow identity: real reboot, retained invocation,
+backup/recovery and removal/purge, plus rootless evaluation in the local profile.
+The [authenticated receipt](evidence/native-foundation-35811188306.json) records that unpublished
+foundation. The selected final `0.1.0-alpha.4` still requires its own compatible
+upgrade checks and protected publication; no published binary release is claimed.
 The historical
 [`0.1.0-alpha.3` release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3)
 remains source-only. Do not install an unsigned candidate as an authenticated
@@ -22,12 +23,12 @@ release or infer production/hostile-multitenant certification.
 | Develop an application/capsule | [Guest SDK](component-development/guest-sdk.md) and [operator CLI](reference/operator-cli.md); this does not install the node runtime. |
 | Build or contribute to LSF itself | [Pinned toolchain](development/toolchain.md) and [development quickstart](development/standalone-quickstart.md), not a server installer. |
 
-The narrow first candidate matrix is Ubuntu Server 24.04/x86_64, kernel 6.8+,
+The narrow qualified foundation matrix is Ubuntu Server 24.04/x86_64, kernel 6.8+,
 glibc 2.39+, SSE2 and Python 3.12+. Actual pressure observations, local filesystem
 locking/directory synchronization, protected-file semantics, dynamic libraries
 and, for external capsules, the approved Landlock ABI 3/seccomp compiler are
 checked under the intended node identity. This matrix is tested for the exact
-recorded **candidate** archive, not for every newer source or an unselected release.
+recorded **foundation** archive, not for every newer source or an unselected release.
 There is no container-runtime prerequisite or alternative container installation
 mode. Capsule OCI transport remains independent of native runtime distribution.
 
