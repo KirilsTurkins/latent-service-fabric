@@ -307,14 +307,14 @@ impl Fixture {
             &[
                 guest_runtime::Scope {
                     services: &["caller"],
-                    publications: &[caller_publication.clone()],
+                    publications: std::slice::from_ref(&caller_publication),
                     principal: ("user", "alice"),
                 },
                 // Local invocation deliberately derives a service principal;
                 // the child does not inherit Alice's user authority.
                 guest_runtime::Scope {
                     services: &["callee"],
-                    publications: &[callee_publication.clone()],
+                    publications: std::slice::from_ref(&callee_publication),
                     principal: ("service", "service:8:tenant-a:6:caller"),
                 },
             ],
