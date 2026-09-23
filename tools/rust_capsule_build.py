@@ -142,6 +142,10 @@ def binding_check(work: Path, pins: dict, command: Commands, bindgen: Path) -> s
 def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, bytes], component: bytes) -> None:
     manifest = read_json(ROOT / "examples/echo-contract/capsule.json")
     manifest["metadata"] = {"name": project["service"], "tenant": project["tenant"]}
+    if project["tenant"] is None:
+        # The public manifest's optional field is absent, never JSON null.
+        # This reusable capsule acquires an explicit tenant at admission.
+        del manifest["metadata"]["tenant"]
     manifest["component"] = {"digest": digest(component), "version": project["version"], "world": project["world"]}
     manifest["exports"] = surface["exports"]
     manifest["imports"] = [{"contract": name, "optional": False} for name in surface["imports"]]
@@ -165,6 +169,8 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
     })
     deployment = read_json(ROOT / "examples/echo-contract/deployment.json")
     deployment["metadata"] = {"name": project["name"], "tenant": project["tenant"]}
+    if project["tenant"] is None:
+        del deployment["metadata"]["tenant"]
     deployment["spec"].update(service=project["service"], release=digest(component), grants=[], resources=project["limits"])
     write_json(output / "deployment.json", deployment)
 

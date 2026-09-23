@@ -34,6 +34,18 @@ class GoAuthoringTests(unittest.TestCase):
                 self.assertEqual(value["name"], "guest-" + name)
                 self.assertEqual(value["limits"]["memoryBytes"], 67108864)
                 self.assertEqual(value["tenant"], None if name in {"service", "callee"} else "tests")
+                from tools.rust_capsule_build import package_inputs
+                from tools.go_capsule_project import ROOT
+                from jsonschema import Draft202012Validator
+                output = Path(temporary) / "packaged"
+                output.mkdir()
+                package_inputs(output, value, {"imports": [], "exports": []}, files, b"component")
+                metadata = json.loads((output / "capsule.json").read_text())["metadata"]
+                schema = json.loads((ROOT / "schemas/capsule-manifest.schema.json").read_text())
+                # Exercise the actual closed field schema; semantic WIT checks
+                # and component validation are exercised by the real packager.
+                Draft202012Validator(schema["properties"]["metadata"]).validate(metadata)
+                self.assertEqual("tenant" in metadata, value["tenant"] is not None)
                 for identity in RUNTIME_IMPORTS:
                     self.assertEqual(files["wit/world.wit"].count(("import " + identity + ";").encode()), 1)
 
