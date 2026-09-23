@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from tools.dotnet_guest.project import create, validate
+from tools.dotnet_guest.compiler import packages
 from tools.build_dotnet_guest_capsules import NAMES, project
 from tools.rust_capsule_project import TEMPLATES, snapshot
 
@@ -72,6 +73,21 @@ class DotnetAuthoringTests(unittest.TestCase):
             config, _, _ = validate(snapshot(project(self.root / name, name)))
             self.assertEqual(config["tenant"], None if name in {"service", "callee"} else "tests")
             self.assertEqual(config["limits"]["cpuFuel"], 10_000_000_000)
+
+    def test_nuget_uses_verified_content_identity_not_raw_signed_zip_hash(self):
+        directory = self.root / "packages/test/1.0.0"
+        directory.mkdir(parents=True)
+        archive = directory / "test.1.0.0.nupkg"
+        archive.write_bytes(b"synthetic archive; no compiler authority")
+        lock = {"dependencies": {"net10.0": {"Test": {"resolved": "1.0.0", "contentHash": "verified-content"}}}}
+        seen = []
+        def verified(path):
+            seen.append(path)
+            return "verified-content"
+        self.assertEqual(packages(lock, self.root / "packages", verified), {"nuget/test/1.0.0": directory})
+        self.assertEqual(seen, [archive])
+        with self.assertRaisesRegex(ValueError, "content hash differs"):
+            packages(lock, self.root / "packages", lambda _: "different")
 
 
 if __name__ == "__main__":

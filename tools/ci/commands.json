@@ -2855,7 +2855,7 @@
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
     },
     "tools/dotnet_capsule.py": {
-      "sha256": "6ef267479966baa7142bb85e55ffcadb18d0ebc1a9c90ade325ad8d59aa0c32b"
+      "sha256": "5f91abb33e0e81a962c1dd3305adcefba477a2bbb51bbb2f42b901cead9a49af"
     },
     "tools/dotnet_guest_bindings.py": {
       "sha256": "6c51ffa8c2cd39b9f57f3cc4d48303d734a845c15a476038a6289b77d0efbc82"
@@ -3583,6 +3583,7 @@
       "DotnetAuthoringTests.test_budgets_reject_overflow_boolean_and_zero_required_dimensions",
       "DotnetAuthoringTests.test_compiler_configuration_is_closed",
       "DotnetAuthoringTests.test_names_and_existing_directories_are_rejected",
+      "DotnetAuthoringTests.test_nuget_uses_verified_content_identity_not_raw_signed_zip_hash",
       "DotnetAuthoringTests.test_sdk_capture_cannot_drift"
     ],
     "tools/tests/test_echo_cli_package.py": [

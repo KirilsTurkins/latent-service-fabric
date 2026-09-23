@@ -34,7 +34,7 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     source = (ROOT / "tools/toolchain-smoke/examples" / ("tutorial_" + template.replace("-", "_"))
               if template in TUTORIALS else ROOT / "examples/rust-capsules" / template)
     vendor = {}
-    for folder in ("sdk/dotnet-guest/runtime", "sdk/dotnet-guest/ownership",
+    for folder in ("sdk/dotnet-guest/runtime", "sdk/dotnet-guest/ownership", "sdk/dotnet-guest/tools",
                    "sdk/dotnet-guest/capabilities", "wit/platform"):
         vendor.update({folder + "/" + path: data for path, data in snapshot(ROOT / folder).items()})
     for path in ("Cargo.toml", "Cargo.lock", "tools/toolchain.toml", "LICENSE", "NOTICE",

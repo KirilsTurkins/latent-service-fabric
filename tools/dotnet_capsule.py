@@ -10,7 +10,7 @@ import sys
 import tomllib
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.rust_capsule_project import ROOT, TEMPLATES, fresh, read_file, write_json
+from tools.rust_capsule_project import ROOT, TEMPLATES, fresh, read_file, snapshot, write_json
 from tools.rust_capsule_build import Commands
 from tools.build_observation import build_environment
 from tools.dotnet_guest.project import create
@@ -46,6 +46,13 @@ def install(directory: Path, wasi_sdk: Path):
     command.run("runtime-compiler-version", "rustc", "--version")
     command.run("locked-restore", dotnet, "restore", directory / "Smoke.csproj", "--configfile", directory / "nuget.config",
         "--locked-mode", "--packages", directory / "packages", "--disable-parallel")
+    for name, data in snapshot(sdk / "tools/package-hash").items():
+        path = directory / "package-hash-source" / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    command.run("package-hash-build", dotnet, "build", directory / "package-hash-source/PackageHash.csproj",
+        "-c", "Release", "--output", directory / "package-hash", "--artifacts-path", directory / "package-hash-artifacts",
+        "-p:NuGetAudit=false", "-nodeReuse:false")
     command.run("closed-runtime-compile", "cargo", "build", "--quiet", "--locked",
         "--manifest-path", ROOT / "tools/toolchain-smoke/Cargo.toml", "-p", "latent-toolchain-smoke",
         "--example", "dotnet-closed-runtime", "--target", "wasm32-unknown-unknown", "--release", "--target-dir", target)

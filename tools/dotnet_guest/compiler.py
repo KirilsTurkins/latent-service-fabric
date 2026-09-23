@@ -1,7 +1,5 @@
 """Pinned C# NativeAOT build with exact WIT and closed, explicitly clocked WASI."""
 from __future__ import annotations
-import base64
-import hashlib
 import json
 from pathlib import Path
 import platform
@@ -54,7 +52,7 @@ def tree_identity(roots: dict[str, Path]) -> dict:
     return {"files": rows, "bytes": total}
 
 
-def packages(lock: dict, directory: Path) -> dict[str, Path]:
+def packages(lock: dict, directory: Path, content_hash) -> dict[str, Path]:
     result = {}
     for target in lock["dependencies"].values():
         for name, value in target.items():
@@ -63,11 +61,7 @@ def packages(lock: dict, directory: Path) -> dict[str, Path]:
             archive = path / (name.lower() + "." + value["resolved"] + ".nupkg")
             if not archive.is_file() or archive.is_symlink() or archive.stat().st_size > 512 * 1024 * 1024:
                 raise ValueError("missing or oversized locked NuGet archive:" + identity)
-            h = hashlib.sha512()
-            with archive.open("rb") as source:
-                for chunk in iter(lambda: source.read(65536), b""):
-                    h.update(chunk)
-            if base64.b64encode(h.digest()).decode() != value["contentHash"]:
+            if content_hash(archive) != value["contentHash"]:
                 raise ValueError("NuGet content hash differs from the exact dependency lock:" + identity)
             result["nuget/" + identity] = path
     return result
@@ -101,7 +95,11 @@ class Compiler:
                       "dotnet-runtime": installation / "shared/Microsoft.NETCore.App/10.0.0",
                       "dotnet-ref": installation / "packs/Microsoft.NETCore.App.Ref/10.0.0",
                       "dotnet-hostfxr": installation / "host/fxr"}
-        self.roots.update(packages(json.loads(read_file(self.sdk / "probes/smoke/packages.lock.json")), tools / "packages"))
+        self.roots["package-hash"] = tools / "package-hash"
+        if snapshot(tools / "package-hash-source") != snapshot(self.sdk / "tools/package-hash"):
+            raise ValueError("NuGet content-hash source differs from the captured SDK")
+        self.roots.update(packages(json.loads(read_file(self.sdk / "probes/smoke/packages.lock.json")), tools / "packages",
+            lambda archive: commands.run("nuget-content-hash", self.dotnet, tools / "package-hash/PackageHash.dll", archive).decode().strip()))
         self.wasi_sdk = Path(json.loads(read_file(tools / "wasi-sdk.json"))["path"]).resolve(strict=True)
         if read_file(self.wasi_sdk / "VERSION").decode().splitlines() != [
                 "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
