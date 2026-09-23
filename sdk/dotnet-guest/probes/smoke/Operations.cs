@@ -1,4 +1,4 @@
-namespace ProbeWorld.wit.Exports.example.dotnetprobe.v1_0_0;
+namespace ProbeWorld.wit.Exports.example.dotnetprobe;
 
 // A compiler qualification probe, not an external RPC client.
 public class OperationsExportsImpl : IOperationsExports
