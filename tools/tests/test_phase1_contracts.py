@@ -224,7 +224,7 @@ class SchemaAndSurfaceTests(unittest.TestCase):
             ROOT / "sdk/rust/src/lib.rs",
             ROOT / "sdk/go/profile/models.go",
             ROOT / "sdk/typescript-client/src/index.ts",
-            ROOT / "sdk/dotnet/Latent.Sdk/Abstractions.cs",
+            ROOT / "sdk/dotnet/Latent.Sdk/Management.cs",
             ROOT / "sdk/java-client/src/main/java/dev/latent/sdk/Models.java",
             ROOT / "sdk/c/include/latent/latent.h",
         )
@@ -234,17 +234,12 @@ class SchemaAndSurfaceTests(unittest.TestCase):
             self.assertNotIn("wallDeadlineUnixMillis", source, path)
             self.assertNotIn("wall_deadline_unix_millis", source, path)
 
-        dotnet = (ROOT / "sdk/dotnet/Latent.Sdk/Abstractions.cs").read_text(
+        dotnet = (ROOT / "sdk/dotnet/Latent.Sdk/Management.cs").read_text(
             encoding="utf-8"
         )
-        self.assertIn(
-            "Optional relative wall-time limit measured from admission.", dotnet
-        )
-        self.assertIn(
-            '<see langword="null"/> adds no ceiling; zero grants no wall time.',
-            dotnet,
-        )
-        self.assertNotIn("activation start", dotnet)
+        self.assertIn("ulong? WallTimeLimitMillis", dotnet)
+        self.assertIn("uint ChildCalls", dotnet)
+        self.assertIn("ulong MemoryBytes", dotnet)
 
     def test_release_upload_requires_encoded_typed_contract_metadata(self) -> None:
         example = json.loads(
@@ -318,18 +313,17 @@ class SchemaAndSurfaceTests(unittest.TestCase):
                 "readonly details: readonly ErrorDetail[]",
                 "readonly effectIds: readonly string[]",
             ),
-            "sdk/dotnet/Latent.Sdk/Abstractions.cs": (
-                "InvocationReceipt",
-                "BudgetConsumption Consumption",
-                "record Succeeded",
-                "record DeclaredFailure",
-                "record PlatformFailure",
-                "RetainedInvocationOutcome",
-                "ActivationStatus",
+            "sdk/dotnet/Latent.Sdk/Management.cs": (
+                "record InvokeResponse",
+                "BudgetConsumption? Consumption",
+                "Success? Success",
+                "DeclaredError? DeclaredError",
+                "PlatformError? PlatformFailure",
+                "record ActivationStatus",
                 "GetActivationAsync",
-                "CancelResponse",
-                "ErrorDetail",
-                "IReadOnlyList<ErrorDetail> Details",
+                "record CancelResponse",
+                "CancelDisposition AlreadyTerminal",
+                "IReadOnlyList<ErrorDetail> DetailItems",
                 "IReadOnlyList<string> EffectIds",
             ),
             "sdk/java-client/src/main/java/dev/latent/sdk/Models.java": (

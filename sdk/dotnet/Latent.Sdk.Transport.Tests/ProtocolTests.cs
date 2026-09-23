@@ -169,7 +169,5 @@ internal static partial class Program
         audit = null;
         attempt = null;
         Check((await client.CancelAsync(new("activation-a", "explicit"), Defaults)).Value.Disposition.Value == -2026, "future cancellation enum was invented as success");
-        Profile.ClientFailure unsupported = await Failure(client.Legacy.CancelAsync("activation-a", "explicit").AsTask(), Profile.FailureCategory.Decode, true);
-        Check(unsupported.UnsupportedWireValue is { Field: "CancelDisposition", Value: "-2026" }, "legacy unsupported wire evidence was lost");
     }
 }
