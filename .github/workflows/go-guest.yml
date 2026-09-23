@@ -134,10 +134,10 @@ jobs:
         run: |
           set -o pipefail
           cargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example go_runtime_probe -- "$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm" 2>&1 | tee "$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log"
-      - name: Check standalone project source boundaries
+      - name: Check standalone project source boundaries and closed provenance
         run: |
           python3 -m pip install -r tools/requirements.lock
-          python3 -m unittest tools.tests.test_go_capsule_authoring
+          python3 -m unittest tools.tests.test_go_capsule_authoring tools.tests.test_build_provenance_schemas
       - name: Qualify editable projects, all SDK owners, enforced node and printed guide
         run: python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
       - name: Retain successful and failed upstream observations
