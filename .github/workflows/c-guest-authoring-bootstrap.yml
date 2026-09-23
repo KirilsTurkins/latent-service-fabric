@@ -4,31 +4,34 @@ on:
     branches: [feat/545-c-capsule-authoring]
     paths: [.github/workflows/c-guest-authoring-bootstrap.yml]
 permissions:
-  contents: read
+  contents: write
 jobs:
   capture:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
-        with:
-          components: rustfmt, clippy
-          targets: wasm32-wasip2,wasm32-unknown-unknown
-      - name: Fetch exact locked dependency sources
-        run: cargo fetch --locked
-      - name: Capture compiler and dependency cache without credentials
+      - name: Locate maintained authoring and validation inputs
         run: |
-          mkdir -p "$RUNNER_TEMP/compiler/rust" "$RUNNER_TEMP/compiler/cargo"
-          cp -a "$(rustc --print sysroot)/bin" "$(rustc --print sysroot)/lib" "$RUNNER_TEMP/compiler/rust/"
-          cp -a "$HOME/.cargo/registry" "$RUNNER_TEMP/compiler/cargo/"
-          find "$RUNNER_TEMP/compiler/cargo" -name .git -type d -prune -exec rm -rf {} +
-          tar -czf "$RUNNER_TEMP/c-guest-rust.tar.gz" -C "$RUNNER_TEMP/compiler" .
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: c-guest-authoring-rust
-          path: ${{ runner.temp }}/c-guest-rust.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          git ls-files | grep -E '(greeting|word.?count|shipping|guide.*\.py$|guest_sdk|stage_runtime_wit|sdk.*generat|contract.*generat)' | head -160
+      - name: Install verified guest binding generator
+        run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Generate authoritative C reference ABI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from tools.stage_runtime_wit import stage
+          stage(Path('target/c-authoring-wit'), Path('wit/platform/runtime-phase3-blobs'))
+          PY
+          mkdir -p sdk/c-guest/generated
+          wit-bindgen c target/c-authoring-wit --rename-world capsule --out-dir sdk/c-guest/generated
+      - name: Retain generated public source for review on the feature branch
+        run: |
+          test "$GITHUB_REF" = refs/heads/feat/545-c-capsule-authoring
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sdk/c-guest/generated/capsule.h sdk/c-guest/generated/capsule.c
+          if ! git diff --cached --quiet; then
+            git commit -m 'feat(c-guest): generate authoritative public C capability bindings'
+            git push origin HEAD:refs/heads/feat/545-c-capsule-authoring
+          fi
