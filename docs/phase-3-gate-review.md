@@ -4,16 +4,17 @@
 [#240](https://github.com/KirilsTurkins/latent-service-fabric/issues/240), not a
 Phase 3 completion declaration or runtime release. The implementation receipts
 below retain their original source and measurement identities. Required guide
-reviews, public Wiki cutover, native delivery and the static-site extension
-remain separate acceptance work. Security-monitoring activation #282 and the
-actual Angular reference workflow #236 are complete.
+reviews, public website deployment, final integration and native delivery
+remain acceptance work. Security-monitoring activation #282, the actual Angular
+reference workflow #236 and static-site delivery #495/#496/#497 are complete.
+Wiki removal follows Phase 3 completion and verified website deployment.
 
 This review starts from development
 `6c63b68064ae44284d931e80d76d1e9012189b2b`, after the integrated security and
 guide-execution changes were merged. It does not certify a later integration
 commit merely because that commit contains the same documentation.
 Delivery status was refreshed against development
-`aa87df018c3c2c79069747cd353f146c979501a0` on September 22, 2026. The retained
+`d70abc7e94b445b4e3f54d91ddc52f2980166e01` on September 23, 2026. The retained
 receipts below keep their original execution identities.
 
 ## Dependency and evidence closure
@@ -28,7 +29,7 @@ receipts below keep their original execution identities.
 | Runtime security #277–#281 and #238 | [Source-clean manual receipt](evidence/phase3-security-2026-09-20/manual-current.json), with [checksum](evidence/phase3-security-2026-09-20/manual-current.json.sha256): 186 libtest entries, two compiler mains and four separate-node workflows. #374 merged at `2967a9a1f069aaa476e2a294137bf7843a632a88` after all 17 checks passed; #238 is closed. | #282 is closed: [activation and monitoring evidence](development/security-baseline-evidence.md) retains the approved default-branch workflow, scheduled run `35586505063`, manual run `35752339515`, both maintained refs and the required security aggregate. |
 | Resource equation #239 | [Provider recovery](testing/phase3-resource-recovery.md), [renderer memory/storage](testing/phase3-resource-renderer.md), [event and child ownership](testing/phase3-resource-events.md), and OCI qualification. #376 merged after exact-head CI passed; #239 is closed. | Keep profile-specific measurements, failed attempts and unexported counters explicit. |
 | Angular application/reference #44/#236 | [Actual Angular reference workflow](testing/angular-reference-workflow.md): real signed two-build publication, public/authenticated browser delivery, DOM-reusing hydration, provider denial/cancellation, canary/revocation/restart/rollback and cleanup. #372 merged as `ffa90dc3f76f4bc589be63d313103fdb67fb5f1b`; both tickets are closed. | Preserve the restricted profile, unchecked reproducibility and declared incomplete dependency coverage. Guide review #361 remains separate. |
-| Static web extension #495/#496/#497 | [Contract PR #498](https://github.com/KirilsTurkins/latent-service-fabric/pull/498) and [delivery PR #501](https://github.com/KirilsTurkins/latent-service-fabric/pull/501) merged after full CI; #495 and #496 are closed. [CSR/static-generator workflow PR #502](https://github.com/KirilsTurkins/latent-service-fabric/pull/502) supplies the adapter and actual OCI/browser qualification. | #497 remains open until its final integrated checks pass and #502 merges. This evidence supplements the SSR workflow. |
+| Static web extension #495/#496/#497 | [Contract PR #498](https://github.com/KirilsTurkins/latent-service-fabric/pull/498), [delivery PR #501](https://github.com/KirilsTurkins/latent-service-fabric/pull/501) and [CSR/static-generator workflow PR #502](https://github.com/KirilsTurkins/latent-service-fabric/pull/502) are merged; all three tickets are closed. #502 merged as `e4c9120b7d4c14220a4315bfd8e717505e37a5b4` after [CI run 35784029574](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35784029574) passed, including the actual OCI/browser qualification. | Preserve the final integrated static and SSR checks; human guide review remains separate. |
 | Native distribution #308 | [Nonpublishing foundation run 35763422270](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35763422270) passed both native VM profiles; merged [final-pair preparation #503](https://github.com/KirilsTurkins/latent-service-fabric/pull/503) binds the authenticated predecessor. | A foundation run without an upgrade pair is incomplete acceptance. Retain the genuine compatible-version pair and publish the authenticated bundle through the protected release owner. |
 | Runbooks and guides #237/#357/#358/#359/#361 | Executed first-node, delivery, provider and six-client receipts are retained. [Guide execution PR #467](https://github.com/KirilsTurkins/latent-service-fabric/pull/467) merged after all 17 checks passed. | Native bundle/upgrade evidence under #308, rendered newcomer walkthroughs and maintainer pedagogy review remain required. |
 | Finite documentation gate #345 | Foundation, theme, diagrams, examples, version binding, discovery and initial protected Pages publication are delivered. The [coverage contract](development/website.md#coverage-is-a-review-contract-not-a-page-counter) retains 27 required outcomes. | Complete their exact-revision human reviews, publish the complete reviewed site, verify live routes, and finish #356's content cutover; remove the Wiki and retire its writer after Phase 3 completion. |
@@ -88,7 +89,7 @@ not rewrite measured bytes or convert an earlier failed attempt into a pass.
 
 ## Final integration and publication checks
 
-1. Finish and review the current shared runtime fixes and static-site extension.
+1. Finish and review the remaining obsolete-alpha API removals and runtime fixes.
    Run the required checks on each exact head before squash merge.
    Inspect final development CI and retained six-client, browser, security and
    cleanup receipts for the resulting integration source.
