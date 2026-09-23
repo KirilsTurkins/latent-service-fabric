@@ -1310,15 +1310,15 @@
       "shell": "default",
       "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example typescript_runtime_probe -- \"$RUNNER_TEMP/typescript-guest-probe/component.wasm\" 2>&1 | tee \"$RUNNER_TEMP/typescript-guest-probe/runtime.log\""
     },
-    ".github/workflows/typescript-guest.yml:boundary:Execute typed value and ownership regressions": {
+    ".github/workflows/typescript-guest.yml:boundary:Execute supplementary value and ownership models": {
       "workflow": ".github/workflows/typescript-guest.yml",
       "job": "boundary",
-      "name": "Execute typed value and ownership regressions",
+      "name": "Execute supplementary value and ownership models",
       "jobIf": "success()",
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "bash",
-      "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log"
+      "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts sdk/typescript-guest/tests/model/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime/tests/model\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log"
     },
     ".github/workflows/typescript-guest.yml:boundary:Check captured sources and actual generated-resource owners": {
       "workflow": ".github/workflows/typescript-guest.yml",
@@ -5957,6 +5957,6 @@
     ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/typescript-guest.yml": "0daef3a640034d79103f45a4742a69119e5728d380d5f8a1de6ea2f224c4705f"
+    ".github/workflows/typescript-guest.yml": "6ad2bef64b7d73c79092ba99418f346cf37f85713932e55da3a20c26b2f65e93"
   }
 }

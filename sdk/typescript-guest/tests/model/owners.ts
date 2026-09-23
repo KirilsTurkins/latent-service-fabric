@@ -1,3 +1,4 @@
+/** Supplementary ownership model; actual SDK owners live in capabilities/. */
 import { BoundaryError, type Result, type Option, type Resource, type Scope } from './codec.js';
 
 /** Zeroizes the owned result; caller-created copies remain caller-owned. */

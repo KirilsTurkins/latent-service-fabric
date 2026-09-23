@@ -68,6 +68,12 @@ declared error crossing the generator's separate JavaScript realm. Error
 wrappers recognize only the generated error shape and closed declared payload;
 ordinary exceptions still trap.
 
+The obsolete draft synthetic-broker runtime export was removed. Its value and
+ownership models remain under `tests/model` solely for supplementary regression
+tests; independent projects vendor only the real capability wrappers and text
+helpers. The unused ambient-API guard was removed. The checksum-pinned compiler
+disables ambient runtime features and rejects surviving WASI imports.
+
 Inspection of actual generated blob glue found references to opaque resource
 classes that the generator had not defined. A pinned-shape adapter supplies
 only those exact owners and one-shot canonical destructors. It invalidates

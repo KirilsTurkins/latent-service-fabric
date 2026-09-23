@@ -88,6 +88,8 @@ the guide's six printed Bash steps.
 
 Only `qualification.json` with `status: passed` is complete execution evidence.
 `BUILD-COMPLETE.json` proves a build, not execution. Failed attempts keep their
-own diagnostics. Older synthetic value/broker unit tests remain supplementary,
-not provider or node qualification. Newcomer review #345 and release publication
+own diagnostics. Synthetic value/broker models live only under `tests/model`;
+they are neither exported by the SDK nor captured in application projects.
+Their unit tests are supplementary, not provider or node qualification.
+Newcomer review #345 and release publication
 approval remain separate requirements.
