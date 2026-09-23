@@ -193,6 +193,10 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
             commands.run("typescript-sdk-resources", paths["cargo"], *cargo_options, "run", "--locked", "-p", "latent-wasmtime",
                 "--example", "typescript_runtime_probe", "--", output / "sdk-guests/typescript-blob/component.wasm",
                 "speed", "sdk-blob")
+            for role in ("service", "callee"):
+                commands.run("typescript-sdk-" + role + "-memory", paths["cargo"], *cargo_options,
+                    "run", "--locked", "-p", "latent-wasmtime", "--example", "typescript_runtime_probe", "--",
+                    output / f"sdk-guests/typescript-{role}/component.wasm", "speed", "sdk-" + role + "-memory")
         commands.run("sdk-runtime-tests", paths["cargo"], *cargo_options, "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
                      "--", "--ignored", "--test-threads=1", "--show-output")
         stage = "sign-demo"

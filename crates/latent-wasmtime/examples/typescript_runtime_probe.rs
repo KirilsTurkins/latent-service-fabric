@@ -9,6 +9,9 @@ use std::{
 use wasmtime::component::{Component, Linker, Val};
 use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder};
 
+#[path = "typescript_runtime_probe/service_memory.rs"]
+mod service_memory;
+
 struct Pending(Arc<AtomicUsize>);
 
 impl Drop for Pending {
@@ -43,6 +46,11 @@ async fn main() -> wasmtime::Result<()> {
     }
     if std::env::args().nth(3).as_deref() == Some("sdk-blob") {
         return sdk_blob(&engine, &component).await;
+    }
+    match std::env::args().nth(3).as_deref() {
+        Some("sdk-service-memory") => return service_memory::run(&engine, &component, true).await,
+        Some("sdk-callee-memory") => return service_memory::run(&engine, &component, false).await,
+        _ => (),
     }
     let pending = Arc::new(AtomicUsize::new(0));
     let count = pending.clone();

@@ -5,6 +5,7 @@ on:
     paths:
       - 'sdk/typescript-guest/**'
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe.rs'
+      - 'crates/latent-wasmtime/examples/typescript_runtime_probe/**'
       - 'tools/typescript_guest/**'
       - 'tools/typescript_capsule.py'
       - 'tools/build_typescript_guest_capsules.py'
@@ -26,6 +27,7 @@ on:
     paths:
       - 'sdk/typescript-guest/**'
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe.rs'
+      - 'crates/latent-wasmtime/examples/typescript_runtime_probe/**'
       - 'tools/typescript_guest/**'
       - 'tools/typescript_capsule.py'
       - 'tools/build_typescript_guest_capsules.py'

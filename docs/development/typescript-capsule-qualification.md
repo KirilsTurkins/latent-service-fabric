@@ -46,6 +46,21 @@ components without changing the production half-remaining delegation rule.
 Caller/child terminal observations and per-invocation elapsed time are retained
 in subsequent SDK logs. This failed attempt remains distinct from success.
 
+A Windows diagnostic ran the retained Linux-built caller and callee in three
+fresh successful Stores each. Both initialized and peaked at 9,502,720 linear
+memory bytes; caller fuel was 13,949,625 and callee fuel was 10,485,358. The
+caller component SHA-256 was
+`128601601beea2d0dcaa53acba955846953d6a0e0fdda37c161f9e4bb9db4b1b`;
+the callee was
+`ee99027302b1da43cb01ddff38d064daa1eb0e7d102a6afa12a4fe3724744886`.
+With a 128 MiB parent, the unchanged half-remaining memory grant exceeds the
+observed child memory, so no TypeScript memory ceiling was raised. The first
+caller diagnostic incorrectly registered a synchronous component signature
+and failed before instantiation; the corrected diagnostic uses the original
+async signature. Its synthetic reply is only for memory measurement, not
+admission or authorization proof. CI retains the same two actual-component
+memory probes in addition to the production caller/child terminal observations.
+
 The matching [broad CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35922509604)
 also caught an unintended expansion of ordinary buffered-web parser limits when
 the larger TypeScript capsule envelope was introduced. Web profile selection
