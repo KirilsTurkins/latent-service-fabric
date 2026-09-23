@@ -13,10 +13,13 @@ static void lsf_zero(void *value, size_t size) {
     volatile uint8_t *bytes = value;
     while (size--) *bytes++ = 0;
 }
-static void lsf_release(void *value, size_t size) { if (value) { lsf_zero(value, size); free(value); } }
+/* Canonical empty strings/lists may use a non-null dangling sentinel. Such
+ * pointers own no allocation and must never be passed to the C allocator. */
+static void lsf_release(void *value, size_t size) { if (value && size) { lsf_zero(value, size); free(value); } }
 static void *lsf_allocate(size_t count, size_t size) {
     lsf_require(size && count <= LSF_MAX_BYTES / size);
-    void *value = calloc(count ? count : 1, size);
+    if (!count) return NULL;
+    void *value = calloc(count, size);
     lsf_require(value != NULL); return value;
 }
 static uint64_t lsf_get(lsf_wire *wire, size_t width) {

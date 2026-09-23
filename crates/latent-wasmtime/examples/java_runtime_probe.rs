@@ -13,6 +13,7 @@ async fn main() -> wasmtime::Result<()> {
         .nth(1)
         .ok_or_else(|| wasmtime::Error::msg("component path required"))?;
     let typed = std::env::args().any(|value| value == "--typed");
+    let sdk_random = std::env::args().any(|value| value == "--sdk-random");
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
     #[cfg(feature = "java-guest-diagnostic")]
@@ -48,9 +49,17 @@ async fn main() -> wasmtime::Result<()> {
         let outcome = async {
             let instance = linker.instantiate_async(&mut store, &component).await?;
             let (_, interface) = instance
-                .get_export(&mut store, None, "tests:java-feasibility/probe@1.0.0")
+                .get_export(
+                    &mut store,
+                    None,
+                    if sdk_random {
+                        "tests:random/api@1.0.0"
+                    } else {
+                        "tests:java-feasibility/probe@1.0.0"
+                    },
+                )
                 .ok_or_else(|| wasmtime::Error::msg("missing Java export interface"))?;
-            for (name, input, expected) in cases(typed) {
+            for (name, input, expected) in cases(typed, sdk_random) {
                 let (_, index) = instance
                     .get_export(&mut store, Some(&interface), name)
                     .ok_or_else(|| wasmtime::Error::msg("missing Java export function"))?;
@@ -82,11 +91,31 @@ async fn main() -> wasmtime::Result<()> {
         drop(store);
     }
     assert!(calls.load(Ordering::SeqCst) >= 4);
-    println!("Java integer, UTF-8, caught-exception, GC and fresh-state diagnostic passed; signed node qualification remains required");
+    if sdk_random {
+        println!(
+            "Actual Java random component diagnostic passed; signed node qualification remains required"
+        );
+    } else {
+        println!(
+            "Java integer, UTF-8, caught-exception, GC and fresh-state diagnostic passed; signed node qualification remains required"
+        );
+    }
     Ok(())
 }
 
-fn cases(typed: bool) -> Vec<(&'static str, Vec<Val>, Val)> {
+fn cases(typed: bool, sdk_random: bool) -> Vec<(&'static str, Vec<Val>, Val)> {
+    if sdk_random {
+        return [(0, 32), (1, 8), (2, 10), (0, 32)]
+            .into_iter()
+            .map(|(which, expected)| {
+                (
+                    "run",
+                    vec![Val::U32(which), Val::String(String::new()), Val::U64(0)],
+                    Val::U64(expected),
+                )
+            })
+            .collect();
+    }
     let mut cases = vec![
         ("identity", vec![Val::S64(i64::MIN)], Val::S64(i64::MIN)),
         ("identity", vec![Val::S64(i64::MAX)], Val::S64(i64::MAX)),
@@ -96,6 +125,11 @@ fn cases(typed: bool) -> Vec<(&'static str, Vec<Val>, Val)> {
     ];
     if typed {
         cases.extend([
+            (
+                "text",
+                vec![Val::String(String::new())],
+                Val::String(String::new()),
+            ),
             ("unsigned", vec![Val::U64(u64::MAX)], Val::U64(u64::MAX)),
             (
                 "text",
@@ -132,6 +166,13 @@ fn linker(
             let [Val::U32(length)] = arguments else {
                 return Err(wasmtime::Error::msg("random-input"));
             };
+            if *length == u32::MAX {
+                results[0] = Val::Result(Err(Some(Box::new(Val::Variant(
+                    "invalid-length".into(),
+                    None,
+                )))));
+                return Ok(());
+            }
             if *length != 32 {
                 return Err(wasmtime::Error::msg("random-budget"));
             }
