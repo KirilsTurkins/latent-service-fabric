@@ -758,7 +758,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --example go_runtime_probe -- \"$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm\" 2>&1 | tee \"$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log\""
+      "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example go_runtime_probe -- \"$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm\" 2>&1 | tee \"$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log\""
     },
     ".github/workflows/go-guest.yml:upstream-probe:Check standalone project source boundaries": {
       "workflow": ".github/workflows/go-guest.yml",
@@ -2705,7 +2705,7 @@
       "sha256": "497409dd0d4c072b12a64c84e9ef1dbc804eb888c62ccae6fb8a27b9e64e97ce"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "00fbefd129146130eec342b4728a47360214166be2d73395ba1c7c98decbbd63"
+      "sha256": "9c6aef620938b12b70a90012514d85f75840df6cfa8c37e96c035a90b8e99b5c"
     },
     "tools/reset_validation_echo.py": {
       "sha256": "7bfdd62d41f709ccee0de64e0c2b14868d4033444ca4e2b0a959424019108d2e"
@@ -5847,7 +5847,7 @@
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/go-guest.yml": "b909d8af060cdba427e009c9ab34a52c2559efdf71238fa3d6d47453ec7209f5",
+    ".github/workflows/go-guest.yml": "c2ee0bfab0fa66a341dda62aeee6dfdf4c77691cd9a1a926ce1fbfb5fdae48cd",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",

@@ -43,7 +43,7 @@ def inputs(language="rust"):
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py",
-                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py")
+                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
             "guide": file_identity(ROOT / f"docs/component-development/{language}-authoring.md"),
@@ -114,10 +114,12 @@ def qualify(output: Path, *, offline=False, language="rust"):
             environment["CARGO_NET_OFFLINE"] = "true"
         paths, materials = resolve_tools(pins, ROOT, environment)
         environment["RUSTC"] = str(paths["rustc"])
-        commands = Commands(ROOT, output, environment)
+        cargo_options = ["--config", ROOT / ".cargo/managed-guest.toml"] if language == "go" else []
+        commands = Commands(ROOT, output, environment, **(
+            {"deadline_seconds": 3600, "command_seconds": 1800} if language == "go" else {}))
         result["tools"] = materials
         stage = "host-build"
-        commands.run(stage, paths["cargo"], "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
+        commands.run(stage, paths["cargo"], *cargo_options, "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
             "-p", "latent-packaging", "--example", "package", "--example", "capsule_contracts",
             "-p", "latent-policy", "--example", "capsule_authoring")
         if inputs(language) != before:
@@ -154,7 +156,7 @@ def qualify(output: Path, *, offline=False, language="rust"):
         commands.environment["LSF_GUEST_CAPSULES"] = str(output / "sdk-guests")
         if language == "go":
             commands.environment["LSF_GUEST_SDK_LANGUAGE"] = "go"
-        commands.run("sdk-runtime-tests", paths["cargo"], "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
+        commands.run("sdk-runtime-tests", paths["cargo"], *cargo_options, "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
                      "--", "--ignored", "--test-threads=1")
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)

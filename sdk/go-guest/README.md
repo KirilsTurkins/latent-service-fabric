@@ -86,7 +86,7 @@ admit and execute every compiled fixture through actual provider owners:
 ```sh
 python3 tools/build_go_guest_capsules.py --output /tmp/lsf-go-sdk-attempt
 LSF_GUEST_CAPSULES=/tmp/lsf-go-sdk-attempt LSF_GUEST_SDK_LANGUAGE=go \
-  cargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1
+  cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1
 ```
 
 Always use a fresh output directory. Native ownership tests are smaller and do

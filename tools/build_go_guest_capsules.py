@@ -59,7 +59,7 @@ def compile_all(output: Path) -> None:
     commands.environment.update(CARGO_TARGET_DIR=str(target), CARGO_INCREMENTAL="0", CARGO_PROFILE_DEV_DEBUG="0")
     report = {"language": "go", "status": "failed", "runtimeQualified": False, "builds": []}
     try:
-        commands.run("packaging-tools", "cargo", "build", "--locked", "-p", "latent-packaging",
+        commands.run("packaging-tools", "cargo", "--config", ROOT / ".cargo/managed-guest.toml", "build", "--locked", "-p", "latent-packaging",
                      "--example", "package", "--example", "capsule_contracts")
         (output / "projects").mkdir()
         for name in NAMES:
