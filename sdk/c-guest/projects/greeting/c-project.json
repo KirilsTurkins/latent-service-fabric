@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "name": "greeting",
+  "version": "1.0.0",
+  "world": "examples:greeting/component@1.0.0",
+  "sources": ["component.c"],
+  "memoryBytes": 4194304
+}

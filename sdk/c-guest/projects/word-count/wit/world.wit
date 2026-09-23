@@ -1,0 +1,7 @@
+package examples:word-count@1.0.0;
+interface api {
+  variant error { invalid-text, too-long, }
+  // Words are nonempty runs separated by ASCII space, tab or line controls.
+  count: func(text: string) -> result<u64, error>;
+}
+world component { export api; }

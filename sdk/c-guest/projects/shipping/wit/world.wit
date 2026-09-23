@@ -1,0 +1,8 @@
+package examples:shipping@1.0.0;
+interface api {
+  record parcel { grams: u64, express: bool, destination: string, }
+  record quote { total-cents: u64, currency: string, eta-days: u32, }
+  variant error { invalid-weight, unsupported-destination, overflow, }
+  price: func(input: parcel) -> result<quote, error>;
+}
+world component { export api; }

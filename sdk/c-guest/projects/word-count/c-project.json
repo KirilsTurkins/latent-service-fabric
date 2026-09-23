@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "name": "word-count",
+  "version": "1.0.0",
+  "world": "examples:word-count/component@1.0.0",
+  "sources": ["component.c"],
+  "memoryBytes": 4194304
+}

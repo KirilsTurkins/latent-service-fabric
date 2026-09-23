@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "greeting": {
+    "function": "greet",
+    "success": [["Kirils"], ["世界"]],
+    "declaredError": [[""]],
+    "invalidWire": [[42], []]
+  },
+  "word-count": {
+    "function": "count",
+    "success": [["one two\nthree"], [""]],
+    "declaredError": [["bad\u0000text"]],
+    "invalidWire": [[false], []]
+  },
+  "shipping": {
+    "function": "price",
+    "success": [[{"grams": "1000", "express": false, "destination": "DE"}], [{"grams": "9007199254740993", "express": true, "destination": "LV"}]],
+    "declaredError": [[{"grams": "0", "express": false, "destination": "DE"}], [{"grams": "18446744073709551615", "express": false, "destination": "DE"}], [{"grams": "1", "express": false, "destination": "XX"}]],
+    "invalidWire": [[{"grams": -1, "express": false, "destination": "DE"}], []]
+  }
+}

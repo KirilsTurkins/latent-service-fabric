@@ -1,0 +1,6 @@
+package examples:greeting@1.0.0;
+interface api {
+  variant error { invalid-name, too-long, }
+  greet: func(name: string) -> result<string, error>;
+}
+world component { export api; }
