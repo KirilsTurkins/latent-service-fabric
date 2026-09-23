@@ -68,7 +68,7 @@ impl DirectoryArtifactRepository {
             return Ok(receipt);
         }
         let prepared = match (|| {
-            let mut old = self.scoped_record(&mut request)?;
+            let mut old = self.scoped_record(&request)?;
             request.package = old
                 .package
                 .as_ref()
@@ -178,7 +178,7 @@ impl DirectoryArtifactRepository {
             return Ok(receipt);
         }
         let candidate = (|| {
-            let mut record = self.scoped_record(&mut request)?;
+            let mut record = self.scoped_record(&request)?;
             request.check_generation(Some(&record))?;
             if record.state != ReleaseLifecycleState::Admitted {
                 return Err(error(
@@ -337,17 +337,8 @@ impl DirectoryArtifactRepository {
     }
     fn scoped_record(
         &self,
-        request: &mut Request,
+        request: &Request,
     ) -> Result<crate::ReleaseLifecycleRecord, PlatformError> {
-        if request.publication.is_none() {
-            request.publication = self.life_store().resolve_legacy(
-                Some(&request.context.scope),
-                request
-                    .component
-                    .as_ref()
-                    .ok_or_else(|| corrupt("operation-release-missing"))?,
-            )?;
-        }
         let id = request
             .publication
             .as_ref()

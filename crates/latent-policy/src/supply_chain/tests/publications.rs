@@ -126,6 +126,29 @@ fn corrected_embedded_inventory_and_two_tenants_share_wasm_without_sharing_autho
             .unwrap(),
         Some(other.publication.clone())
     );
+    // Proof refresh selects the retained publication even when component bytes
+    // have two package associations in this tenant and another tenant's row.
+    for publication in [
+        &first.publication,
+        &correction.publication,
+        &other.publication,
+    ] {
+        assert_eq!(
+            repo.reverify_publication(publication)
+                .unwrap()
+                .publication
+                .as_ref(),
+            Some(&publication.id)
+        );
+    }
+    let foreign = latent_artifacts::PublicationRef {
+        scope: scope("other"),
+        id: first.publication.id.clone(),
+    };
+    assert_eq!(
+        repo.reverify_publication(&foreign).unwrap_err().code,
+        latent_core::PlatformErrorCode::NotFound
+    );
     let original_selector = first.publication.clone();
     let renewed = repo
         .renew_publication_evidence(
@@ -160,6 +183,9 @@ fn corrected_embedded_inventory_and_two_tenants_share_wasm_without_sharing_autho
         &mut |_| Ok(()),
     )
     .unwrap();
+    assert!(repo.reverify_publication(&first.publication).is_err());
+    repo.reverify_publication(&correction.publication).unwrap();
+    repo.reverify_publication(&other.publication).unwrap();
     other_token.check_current().unwrap();
     correction_token.check_current().unwrap();
     repo.reclaim_uncommitted_content(32).unwrap();
