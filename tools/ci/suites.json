@@ -3091,6 +3091,7 @@
         "semantics::wasm::tests::alias_names_are_bounded_in_sections_and_nested_type_declarations",
         "semantics::wasm::tests::all_core_bodies_are_validated_including_unused_modules",
         "semantics::wasm::tests::bounded_vectors_and_recursive_types_fail_before_validation",
+        "semantics::wasm::tests::conservative_alias_expansion_has_an_independent_finite_ceiling",
         "semantics::wasm::tests::flat_transitive_type_chains_are_bounded_before_wit_decoding",
         "semantics::wasm::tests::hidden_package_docs_and_huge_local_counts_have_independent_preflight_limits",
         "semantics::wasm::tests::lowered_limits_and_truncated_nested_extents_are_rejected",
@@ -3106,7 +3107,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 70,
+      "minimumCases": 71,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [
