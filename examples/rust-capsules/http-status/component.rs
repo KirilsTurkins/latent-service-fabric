@@ -18,7 +18,7 @@ impl exports::examples::http_status::api::Guest for Capsule {
             body: None,
             body_media_type: None,
             idempotency_key: None,
-            timeout_millis: Some(500),
+            timeout_millis: Some(4000),
         })
         .await?;
         Ok(response.status)
