@@ -3,8 +3,12 @@
 ## Status
 
 Accepted; Phase 3 #224. Extends ADR-0002, ADR-0004, ADR-0006, ADR-0007,
-ADR-0017, ADR-0026 and ADR-0035. This selects a renderer implementation direction;
-the production runtime and build adapters remain #233 and #234.
+ADR-0017, ADR-0026 and ADR-0035. This records the original renderer qualification.
+The runtime adapter and observed builder subsequently delivered by #233/#234 are
+described in [ADR-0040](0040-run-the-closed-angular-adapter-in-fresh-generic-stores.md).
+The original measurements below retain their tested boundary; the
+[integrated Angular workflow](../docs/testing/angular-reference-workflow.md)
+records the later browser, provider and lifecycle checks.
 
 ## Context
 

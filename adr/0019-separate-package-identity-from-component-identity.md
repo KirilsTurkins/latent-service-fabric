@@ -6,6 +6,12 @@
 
 ## Context
 
+Current reading: [ADR-0027](0027-separate-publication-authority-from-component-identity.md)
+supersedes the original one-component/one-publication rule.
+[ADR-0044](0044-remove-obsolete-alpha-compatibility.md) supersedes preservation
+of obsolete catalog layouts. Package and component identities remain distinct;
+the historical format transition below is not a current migration procedure.
+
 Phase 1 `ReleaseDigest` identifies component bytes. Its locally trusted catalog
 completion record separately protects the immutable manifest and typed contract
 metadata. An OCI manifest identifies a larger graph: configuration, component,
@@ -42,8 +48,9 @@ admission and runtime adoption remain separate Phase 2 deliveries.
 
 ## Consequences
 
-- Existing locally trusted publications remain byte-identical and usable. They
-  do not acquire signed-package trust merely by being re-opened.
+- Locally trusted publications do not acquire signed-package trust merely by
+  being reopened. Current-format recovery preserves their immutable bytes;
+  obsolete roots are rejected under ADR-0044.
 - Packaging the same component with changed metadata produces a different
   package identity. Existing immutable metadata conflicts remain conflicts;
   package import must define its catalog association explicitly.

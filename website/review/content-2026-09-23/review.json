@@ -61,309 +61,406 @@
       "source": "adr/0001-use-rust-for-the-runtime.md",
       "words": 78,
       "sha256": "b44b7bc0ff079c39ea5f581a1449bbfec3f873ca605b725e698ad13f5d33b68b",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Rust runtime decision remains current."
+      ]
     },
     {
       "source": "adr/0002-use-the-webassembly-component-model.md",
-      "words": 85,
-      "sha256": "619e4102c444febdddeed466e4e2fe849c831ede645b4ae126f5f624d83ba376",
-      "status": "pending",
-      "findings": []
+      "words": 94,
+      "sha256": "a8c2daa64f54b962e230c37480e8eb2f724036790798b0c53e36fab9a355d0eb",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Replaced stale completion status; native fallback remains unsupported."
+      ]
     },
     {
       "source": "adr/0003-use-wit-as-the-capsule-contract-authority.md",
       "words": 56,
       "sha256": "0a21423ac61d538d6170d139bfe1e2dbfd8420dc4c0e17b4c7d0a50c46d8cb7f",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "WIT remains the authoritative capsule contract."
+      ]
     },
     {
       "source": "adr/0004-use-wasmtime-as-the-first-execution-engine.md",
       "words": 65,
       "sha256": "79e345bec902568b131fa006a0b22b77ce4179f0b527b4a2c0b836fea91e8e05",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Wasmtime remains the first execution engine."
+      ]
     },
     {
       "source": "adr/0005-forbid-per-service-idle-execution-allocation.md",
       "words": 61,
       "sha256": "7a29b56bbfaefc55c365e8bb263b592e8114614461d7e390d20e198b35642209",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "No per-service idle execution allocation remains the resource invariant."
+      ]
     },
     {
       "source": "adr/0006-use-reusable-generic-execution-cells.md",
       "words": 50,
       "sha256": "47a804c897b1087e794be69c2ce06efea914a742c344c07b13b6bdb150290f77",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Generic execution cell ownership remains current."
+      ]
     },
     {
       "source": "adr/0007-distribute-capsules-as-oci-artifacts.md",
-      "words": 126,
-      "sha256": "ec803a2120e9869f6f52cf313461f20c7faaeea2b2abe887236775f201b299a9",
-      "status": "pending",
-      "findings": []
+      "words": 92,
+      "sha256": "fa8ec35c180cabd1f1d3a26245afdb2fd42d73a605df67a9e8e3cdfd141c9b89",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Replaced obsolete OCI delivery status with current static and Bearer profile links."
+      ]
     },
     {
       "source": "adr/0008-compile-aot-artifacts-only-in-a-trusted-boundary.md",
-      "words": 277,
-      "sha256": "b0c63b28c99cebd1ab08561cc8412bfe6f14d069fd700c969094a0f98269c324",
-      "status": "pending",
-      "findings": []
+      "words": 243,
+      "sha256": "24909a27988a773130a9a89d2f30d72ecb59f5c8a01c3afeeba4ce3732cf51b0",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Clarified implemented isolated compiler and node-local authenticated reuse; no distributed cache claim."
+      ]
     },
     {
       "source": "adr/0009-use-capability-based-host-access.md",
-      "words": 90,
-      "sha256": "b5ff6b453a2aba12d741cfaeb5d3aead6007f9665dfd31630a6ea4d9b19af631",
-      "status": "pending",
-      "findings": []
+      "words": 119,
+      "sha256": "420679025a3940f7fb229cbf21929aafbfd80b37a4c092b8d005356c4d8b84d0",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Corrected implemented broker/providers and standalone versus Rust embedding availability."
+      ]
     },
     {
       "source": "adr/0010-separate-immutable-capsule-metadata-from-deployment-policy.md",
       "words": 63,
       "sha256": "fc0c2d01d5edb071a22f45e627774c2158222694968bba52b7688220c833be9b",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Immutable capsule metadata and mutable deployment policy remain separate."
+      ]
     },
     {
       "source": "adr/0011-keep-the-control-plane-out-of-the-invocation-hot-path.md",
-      "words": 113,
-      "sha256": "ef766fd7934e0fb25a165776e32ad37ee5c6fbf51c048281ccfcc813e5fe08fe",
-      "status": "pending",
-      "findings": []
+      "words": 130,
+      "sha256": "ac2c978b796bc19212fdbcfacc0ce90308e007c41a0c19633f2c97107871727d",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Separated implemented standalone snapshots from planned clustered control."
+      ]
     },
     {
       "source": "adr/0012-place-remote-invocation-behind-a-wit-native-transport-abstraction.md",
-      "words": 96,
-      "sha256": "b11528d6a68211904da2450912a7e1e5108210b5661236281639dd1eba64362f",
-      "status": "pending",
-      "findings": []
+      "words": 109,
+      "sha256": "7e12001e1b0c074c1732a3a41f9c60036df68bd2577e06fa4a9b688b19e12ad1",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Separated six external clients and local guest calls from planned cross-node routing."
+      ]
     },
     {
       "source": "adr/0013-use-explicit-state-transactions-and-effect-intents.md",
-      "words": 88,
-      "sha256": "a4320abc1c3a4e738a65df3a9c3bca16c8c5a0eb34560bbe38a28cbd389f6f51",
-      "status": "pending",
-      "findings": []
+      "words": 96,
+      "sha256": "959a3ac755495ba3f64e1aab53ced0dd7ccad19b80aafaeaba69f2b19798ed0b",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Linked the immediate-effects supersession; application transactions remain planned."
+      ]
     },
     {
       "source": "adr/0014-do-not-promise-universal-exactly-once-external-effects.md",
-      "words": 78,
-      "sha256": "e4e1ee433ac31841ea21810d60abdbebb60ac4cd1dff423de7bb615730803845",
-      "status": "pending",
-      "findings": []
+      "words": 91,
+      "sha256": "a5d4b6c0f1ece6a53a1f189ce83afaef0bf8e7095bfed59437400889ae9bfb4b",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Distinguished current uncertain provider outcomes from planned durable intents."
+      ]
     },
     {
       "source": "adr/0015-build-a-single-node-stateless-fabric-before-clustering.md",
       "words": 56,
       "sha256": "6187df0be298a2acf7478aa1ad5b44c33e49eb6f88c782d6a7c3bf8f17b6f25d",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Single-node stateless architecture remains current; clustering stays planned."
+      ]
     },
     {
       "source": "adr/0016-keep-paging-continuation-eviction-and-fusion-optional.md",
       "words": 56,
       "sha256": "ce082c5c4bd7cde4d8128e38064ef3137067e61321821addb44b465a3568af6f",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Paging, continuation eviction and fusion remain optional research; promotion requires a later ADR and conformance evidence."
+      ]
     },
     {
       "source": "adr/0017-use-fixed-trust-class-execution-hosts-for-stronger-containment.md",
       "words": 125,
       "sha256": "7768147521d8342bb71b2cf0a9b930cca8b108b9efa73d9e2da539328fc7296e",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Fixed trust-class hosts remain planned and do not imply current process-compromise containment."
+      ]
     },
     {
       "source": "adr/0018-treat-latent-service-fabric-as-a-working-name.md",
       "words": 66,
       "sha256": "e7dc0a4eb62f0271876547a7536f4b96966f0b89d81a7c000a28c02c2defcfbf",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Working-name status, current binary identifiers and the need for explicit contract namespace migration remain applicable."
+      ]
     },
     {
       "source": "adr/0019-separate-package-identity-from-component-identity.md",
-      "words": 453,
-      "sha256": "a46db5b991212beadf64b0832c6f057425735b421efb9b7978666a7d2488e8c3",
-      "status": "pending",
-      "findings": []
+      "words": 491,
+      "sha256": "786ff83e94cd1cf9673c43f09ee6e36c45bd675363669e8c6d6be2d32acf5f2a",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Marked publication uniqueness and obsolete catalog preservation superseded."
+      ]
     },
     {
       "source": "adr/0020-validate-supplied-components-without-executing-guests.md",
-      "words": 560,
-      "sha256": "11ea13fda53ae5e44394a534944e673ba35397f8ce244960cbc41e129091546d",
-      "status": "pending",
-      "findings": []
+      "words": 609,
+      "sha256": "df49715ad7a0e717d913e1c370129eb2f717e24645477750002f9157bedb07e6",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Distinguished original validator pins/subset from current ABI and packaging reference."
+      ]
     },
     {
       "source": "adr/0021-bound-registry-authority-and-transfer-ownership.md",
-      "words": 601,
-      "sha256": "092d10ba6a998849f23dc88bfec000eb2ca36b1abc5d48ddc90b17203e5f0979",
-      "status": "pending",
-      "findings": []
+      "words": 616,
+      "sha256": "dda96564217baab79acc07229a9e9aad4c587796a4448913e46f2c12cc9a0da3",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Removed obsolete claims that implemented Bearer, DNS and redirect support is pending."
+      ]
     },
     {
       "source": "adr/0022-bind-publisher-proofs-to-current-explicit-trust.md",
-      "words": 501,
-      "sha256": "0cf7964c1679e79328e0596e6dc2359c69775d342bc7683695fae4f3a44ff8b9",
-      "status": "pending",
-      "findings": []
+      "words": 515,
+      "sha256": "a2927eccbde525bb632b5ad8e21d44a9e703e5b22d1fcd9d2a09e7a75c21173b",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Updated current build/compiler and CLI integration while preserving separate trust roles."
+      ]
     },
     {
       "source": "adr/0023-bind-build-attestations-to-observed-inputs-and-builder-trust.md",
-      "words": 452,
-      "sha256": "b24d50f612e955bcb71999373c556f85486d3e9e94a9282827cfcf3341b52d84",
-      "status": "pending",
-      "findings": []
+      "words": 493,
+      "sha256": "90a65896f4b7f8c48e7dd4d4c614f626474d409036fab62b1cebfc6d91f17696",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Linked delivered guest and Angular observed-build extensions; supplied files are not compiler provenance."
+      ]
     },
     {
       "source": "adr/0024-bind-sbom-inventory-through-package-content.md",
       "words": 528,
       "sha256": "4e6d3a2f68ed9fe5ee337961a7fe208b26a947650a65c18217a96ad75d9b1ccf",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Package-bound SBOM identity and distinct inventory/trust policy remain current."
+      ]
     },
     {
       "source": "adr/0025-separate-immediate-capability-operations-from-transactional-effect-intents.md",
       "words": 893,
       "sha256": "a2a797e76b888764e3763eff1fa4d98b7d413776df046b14bba8503f533dad1e",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Immediate capability outcomes and future transactional intents remain distinct."
+      ]
     },
     {
       "source": "adr/0026-require-explicit-execution-isolation-profiles.md",
-      "words": 833,
-      "sha256": "d8de7c0a947c21c10c47b7ac26b69968dab314f5bf9dae861863e278e47d698c",
-      "status": "pending",
-      "findings": []
+      "words": 857,
+      "sha256": "af50cf15310448d49a12975613a8ef3a2a308f23c05c5e0c0aae5861a21792ea",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Corrected installed provider/renderer status while keeping fixed-host and T2/T3 unsupported."
+      ]
     },
     {
       "source": "adr/0027-separate-publication-authority-from-component-identity.md",
-      "words": 509,
-      "sha256": "a6be05e8c24137b92e22b15b2d1a1ea1ca67320ce6141ba778e9dca34d9bb66b",
-      "status": "pending",
-      "findings": []
+      "words": 453,
+      "sha256": "595c8e665a73b0944503cda2d992f2a0dd2afaf77eeed31f4f4c2e259dc253c4",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Replaced superseded migration and fallback rules with exact selectors and preserved rejection of obsolete roots."
+      ]
     },
     {
       "source": "adr/0028-retain-activation-ownership-across-asynchronous-waits.md",
       "words": 1219,
       "sha256": "33317cdd91cf44402f5f174783f434c433fd317f98db5e03954c1f0deeddfcca",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Retained async activation, child reservation and physical cleanup ownership semantics."
+      ]
     },
     {
       "source": "adr/0029-separate-registry-authority-from-transport-profile.md",
-      "words": 889,
-      "sha256": "66dbea8db5e64c9086e1c49177bc638cf28960d246f6003699c3847c03ee3303",
-      "status": "pending",
-      "findings": []
+      "words": 872,
+      "sha256": "fe60be4624f2ab4eefdacfe9862009934d678c1cb13182667c4a1051991f4556",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Reconciled implemented Harbor/DNS/TLS conformance with separately tested controlled redirects."
+      ]
     },
     {
       "source": "adr/0030-bound-disconnected-authorization-validity.md",
       "words": 377,
       "sha256": "f9dda2ccb3270f94b2997d6fc9a4b7b1f4b99a976e16fc3832c2191d3f36280c",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Explicit planned cluster freshness contract remains a design handoff, not distributed support."
+      ]
     },
     {
       "source": "adr/0031-version-host-abi-recognition-independently-of-provider-authority.md",
-      "words": 317,
-      "sha256": "a67d751308d96434e6b4827d30b42a6fc56e1e6f38735130e70236c4938f3438",
-      "status": "pending",
-      "findings": []
+      "words": 363,
+      "sha256": "ed4ca4107976919528f4ac2037485256077b8ddc9dad24f7d8eb3114c5058381",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Marked V2 selection superseded by V4 and exact subsequent async/resource extensions."
+      ]
     },
     {
       "source": "adr/0032-use-bounded-owned-resources-for-streaming-http.md",
-      "words": 340,
-      "sha256": "a8eaa92a8ab9a17c3d1605b7bf7b08378013b8b640c6d19eed8f7a8281fe2503",
-      "status": "pending",
-      "findings": []
+      "words": 367,
+      "sha256": "d295e2451512f768d81a525222c00d67db2122d311a18f2d2cce88b0f23c203d",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Marked V3 selection superseded while retaining HTTP resource ownership."
+      ]
     },
     {
       "source": "adr/0033-use-scoped-durable-local-blobs-with-owned-chunks.md",
       "words": 427,
       "sha256": "179138d5831a612434d5285ecaf970714392f34ce8144dba58a64d715490c723",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Current V4 local blob contract remains distinct from arbitrary resources and application transactions."
+      ]
     },
     {
       "source": "adr/0034-version-maintained-guest-build-provenance-profiles.md",
       "words": 440,
       "sha256": "97877b56c188f73d9c8b21fedc0568d1a5b0417a2b64b3536bd911a74a68f334",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Maintained Rust/C provenance recipes remain scoped to registered recipes; new SDK authoring is separate work."
+      ]
     },
     {
       "source": "adr/0035-bound-http-application-values-and-delivery-ownership.md",
-      "words": 476,
-      "sha256": "cd3412e2c808af1e9edf955bf811a9fd2630f940355ebb0f1e94e2b5723b22db",
-      "status": "pending",
-      "findings": []
+      "words": 479,
+      "sha256": "b5172f78c20f09a8d61068b90ae3cddf7bde653e93c5a7e144cc3be7d3d6623c",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Linked installed listener/route integrations and retained bounded application value semantics."
+      ]
     },
     {
       "source": "adr/0036-publish-http-triggers-with-exact-catalog-target-pins.md",
-      "words": 334,
-      "sha256": "023eb6fe9a23c56506183deee1a45832541c6692a4501b5f7d07ef5a4030acbb",
-      "status": "pending",
-      "findings": []
+      "words": 361,
+      "sha256": "0d31d3d478acbc64292b5e831e295f5951a6d2a6fb08894dbd2165383cdbda8e",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Linked static target extension and removed stale future-listener wording."
+      ]
     },
     {
       "source": "adr/0037-qualify-a-closed-angular-component-renderer-profile.md",
-      "words": 630,
-      "sha256": "6dd048d6e4753ae9790e62c34bab6c56c7f5b9fda737dcec18eac67b825a0a8f",
-      "status": "pending",
-      "findings": []
+      "words": 654,
+      "sha256": "96e7a4a4b1086689a015d2f068e400e8dbc97b2f081d2727b9550ccf7c0f0ba0",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Kept original renderer measurements historical and linked later runtime/browser qualification."
+      ]
     },
     {
       "source": "adr/0038-admit-web-packages-with-componentless-publication-authority.md",
-      "words": 644,
-      "sha256": "a03431d1c38d71b39477bbdfe103be2d0db49bc833e7d43c2cefed04c8138bca",
-      "status": "pending",
-      "findings": []
+      "words": 663,
+      "sha256": "95d506c209e9c17996229a2036beda0ef29b742e10e14cfd192d736d33efee25",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Updated delivered web admission, builder and async adapter status."
+      ]
     },
     {
       "source": "adr/0039-bound-the-shared-http-listener-and-preserve-selected-admission.md",
-      "words": 561,
-      "sha256": "f3980a15a4d0e56b220647188bfd871300f1f9068bf99a086963fefd52fce7e1",
-      "status": "pending",
-      "findings": []
+      "words": 569,
+      "sha256": "dfee162a56c7f6f3fdfc14d9ccb4d522bb342ff67ca7db4fee9902351299f25c",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Linked implemented web/Angular integration without expanding HTTP transport support."
+      ]
     },
     {
       "source": "adr/0040-run-the-closed-angular-adapter-in-fresh-generic-stores.md",
-      "words": 649,
-      "sha256": "1b28872542b3cb1fbfacba43f1fc6a72d16017499c2fbef25e111ff242b9692f",
-      "status": "pending",
-      "findings": []
+      "words": 678,
+      "sha256": "7aab2f7d9e0893a8bf209c0a8ed8cc5096631e6cc348cbbba3d38657e8f3983d",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Linked accepted backend extension and integrated browser qualification; original adapter limits remain scoped."
+      ]
     },
     {
       "source": "adr/0041-publish-single-source-version-bound-documentation.md",
-      "words": 1419,
-      "sha256": "e082f09e65a4a54092a685e90f66f4dc571a62c8a0300f8b84e24907d932213a",
-      "status": "pending",
-      "findings": []
+      "words": 1438,
+      "sha256": "61a99a71175150ddc17df9570aaa647e4b06f89289a669ee3aa0745240c33475",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Updated installed versioning, snippets, search and publishing workflow status; human review and deployment remain separate."
+      ]
     },
     {
       "source": "adr/0042-bound-angular-render-data-through-the-capability-broker.md",
-      "words": 510,
-      "sha256": "c0b0bad6280f74507696d5ed77249a3d3e4d7f28436e5648c8d87f362656bef0",
-      "status": "pending",
-      "findings": []
+      "words": 547,
+      "sha256": "572232bd80df329ca7885d9be9e1a7e8ccf3ee289ba490c34db9810cacbb1298",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Recorded accepted implementation backed by closed issue 236, source profile and retained actual integrated workflow."
+      ]
     },
     {
       "source": "adr/0043-select-static-web-publications-as-first-class-http-targets.md",
-      "words": 1391,
-      "sha256": "cd72dc043a9256b099d9cacbde83fff047a3e289b91b992219c4e229cc6a9655",
-      "status": "pending",
-      "findings": []
+      "words": 1354,
+      "sha256": "d11f157d3b2d808e2d5d2449414cd92449e636e6daa6d921ee808efa3dd5916e",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Removed contradictory format-v1 compatibility and pending static-runtime claims under ADR-0044."
+      ]
+    },
+    {
+      "source": "adr/0044-remove-obsolete-alpha-compatibility.md",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Recorded maintainer alpha compatibility decision; preserves rejected state, current semantics and historical evidence."
+      ],
+      "words": 510,
+      "sha256": "f4aa439da188ffc3b36f91f239cd410fd36b4d8d6d3f84323438a38f23335c2c"
     },
     {
       "source": "adr/README.md",
-      "words": 831,
-      "sha256": "c9a6160c30949d95be2f4c62947f14de053e55f4b0b3ee72d95e0aaa7d345fc1",
-      "status": "pending",
-      "findings": []
+      "words": 709,
+      "sha256": "080973777bf493c93604efbdce6d2956d1ff3c44a70f0f88d6160befb46129de",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Rebuilt decision index around implemented versus planned behavior and explicit supersession."
+      ]
     },
     {
       "source": "docs/activation-lifecycle.md",
@@ -1244,10 +1341,12 @@
     },
     {
       "source": "docs/reference/publication-catalog.md",
-      "words": 963,
-      "sha256": "528f52a848a7de7f1e7dc54b6c83421d03fa458ff6826e6db701ce648ef4909c",
-      "status": "pending",
-      "findings": []
+      "words": 961,
+      "sha256": "6826fdbd538cca567050b28be42607b9aa9b56f34594323309a623f9411a1afd",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Read complete current-format storage, selection, authority, retention and recovery contract; removed stale legacy replay and phase labels."
+      ]
     },
     {
       "source": "docs/reference/publication-runtime.md",
@@ -1586,8 +1685,10 @@
       "source": "docs/testing/angular-reference-workflow.md",
       "words": 473,
       "sha256": "731628645102d8c226bcb6931987eade2996dd69feacd23e4fa47e0816f92e1c",
-      "status": "pending",
-      "findings": []
+      "status": "reviewed-current",
+      "findings": [
+        "Retained qualification report is explicitly historical and bounded; linked evidence and failures retain original identities."
+      ]
     },
     {
       "source": "docs/testing/angular-renderer-qualification.md",
@@ -1800,6 +1901,33 @@
       "words": 1556,
       "sha256": "00612148dbae306dd2ad70146356a153457bcc01600e1ac7b26ec576b359b421",
       "status": "updated-source-reviewed"
+    },
+    {
+      "source": "website/docusaurus.config.ts",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Reviewed navigation, announcement, footer, source/plugin and publication boundaries; replaced gate-centric public chrome with task links."
+      ],
+      "words": 517,
+      "sha256": "397f597569ec44b6123804582f2890b9e7d82e68eb459f5421c775599743e255"
+    },
+    {
+      "source": "website/src/pages/index.tsx",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Reviewed all homepage sections and removed implementation-acceptance fixture language."
+      ],
+      "words": 197,
+      "sha256": "862da88ee86ce6dee9f980a2d6c9e648a8e47d1750feb3076e6255735630ee05"
+    },
+    {
+      "source": "website/src/theme/DocVersionBadge/index.tsx",
+      "status": "updated-source-reviewed",
+      "findings": [
+        "Reviewed support presentation and classified installation and existing root operator guides as learner pages."
+      ],
+      "words": 187,
+      "sha256": "2863674731c8a204a0e15904e03559b16910dc59d07cf2771678b4f1894326bf"
     }
   ],
   "hashEncoding": "UTF-8 source normalized to LF"

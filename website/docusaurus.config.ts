@@ -36,7 +36,7 @@ const commonDocs = {
 
 const config: Config = {
   title: 'Latent Service Fabric',
-  tagline: 'Source-backed documentation, with explicit support boundaries',
+  tagline: 'Create a node, build capsules and connect your applications',
   url: process.env.LSF_SITE_URL ?? 'https://kirilsturkins.github.io',
   baseUrl: prepared.baseUrl,
   trailingSlash: true,
@@ -82,7 +82,7 @@ const config: Config = {
       backgroundColor: 'var(--lsf-raised)',
       textColor: 'var(--lsf-text)',
       id: 'development-foundation',
-      content: 'LSF alpha documentation. Check each guide’s version and verification scope before following it.',
+      content: 'LSF is in alpha. Start with “Run your first node”; use the version menu to choose your documentation.',
       isCloseable: false,
     },
     navbar: {
@@ -99,9 +99,10 @@ const config: Config = {
         {type: 'search', position: 'right'},
       ],
     },
-    footer: {style: 'dark', links: [{title: 'Provenance', items: [
-      {label: 'Exact source revision', href: `${repositoryUrl}/tree/${prepared.index.revision}`},
-      {label: 'Finite documentation gate', href: `${repositoryUrl}/issues/345`},
+    footer: {style: 'dark', links: [{title: 'LSF', items: [
+      {label: 'Find a guide', to: '/guides/'},
+      {label: 'Contribute', to: '/docs/contribute/'},
+      {label: 'Source code', href: `${repositoryUrl}/tree/${prepared.index.revision}`},
     ]}]},
     prism: {theme: prismTheme(theme.palette.modes.light), darkTheme: prismTheme(theme.palette.modes.dark), additionalLanguages: ['bash', 'c', 'csharp', 'go', 'java', 'json', 'powershell', 'protobuf', 'rust', 'toml', 'typescript', 'yaml']},
   } satisfies ThemeConfig,

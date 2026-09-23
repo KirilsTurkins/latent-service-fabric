@@ -1,11 +1,17 @@
 # ADR-0042: Bound Angular render data through the capability broker
 
-- Status: Proposed; implementation and actual integrated qualification are required before acceptance.
+- Status: Accepted following implementation and the integrated #236 qualification.
 - Scope: Phase 3 Angular reference delivery, #236 and the preserved #44 criteria.
 - Builds on: [ADR-0040](0040-run-the-closed-angular-adapter-in-fresh-generic-stores.md)
   and [ADR-0038](0038-admit-web-packages-with-componentless-publication-authority.md).
 
 ## Context
+
+The [actual Angular reference workflow](../docs/testing/angular-reference-workflow.md)
+records the implemented allowed/denied backend calls, browser hydration and
+cancellation recovery. The [backend profile](../docs/runtime/angular-backend-profile.md)
+defines the current runtime limits. This acceptance does not extend that evidence
+to arbitrary JavaScript networking or stronger isolation profiles.
 
 The existing Angular component renders real hydratable HTML in a fresh generic
 Store, but its projected manifest requests only sealed context and zero outbound
