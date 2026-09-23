@@ -13,23 +13,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  source-inputs:
-    name: Capture tracked source inputs (not runtime conformance)
+  compiler-inputs:
+    name: Capture pinned compiler inputs (not runtime conformance)
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: Preserve only committed sources for reproducible qualification
-        run: |
-          mkdir -p "$RUNNER_TEMP/typescript-guest-inputs"
-          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/typescript-guest-inputs/source.tar.gz"
-          git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-inputs/revision.txt"
-          sha256sum "$RUNNER_TEMP/typescript-guest-inputs/source.tar.gz" > "$RUNNER_TEMP/typescript-guest-inputs/source.sha256"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          name: typescript-guest-source-${{ github.sha }}
+          node-version: 24.19.0
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Prepare reviewed compiler and adapter dependencies
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefix examples/renderer-profile
+          cargo build --locked -p latent-angular-renderer-adapter --target wasm32-unknown-unknown --release
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-bin"
+          python3 tools/stage_runtime_wit.py "$RUNNER_TEMP/guest-wit" --source wit/platform/runtime-phase3-blobs
+          mkdir -p "$RUNNER_TEMP/typescript-guest-inputs" "$RUNNER_TEMP/guest-toolchain"
+          wasm-tools component wit --help > "$RUNNER_TEMP/typescript-guest-inputs/wit-help.txt"
+          wasm-tools component wit --json "$RUNNER_TEMP/guest-wit" > "$RUNNER_TEMP/typescript-guest-inputs/host-wit.json"
+          "$RUNNER_TEMP/guest-bin/wit-bindgen" rust "$RUNNER_TEMP/guest-wit" --generate-all --out-dir "$RUNNER_TEMP/typescript-guest-inputs/bindings"
+      - name: Retain compiler-only inputs without credentials or worktree state
+        run: |
+          inputs="$RUNNER_TEMP/guest-toolchain"
+          cp -a "$(rustc --print sysroot)" "$inputs/rust"
+          mkdir -p "$inputs/cargo-home" "$inputs/bin" "$inputs/javascript"
+          cp -a "$HOME/.cargo/registry" "$inputs/cargo-home/registry"
+          cp "$(command -v node)" "$inputs/bin/node"
+          cp "$(command -v wasm-tools)" "$inputs/bin/wasm-tools"
+          cp "$RUNNER_TEMP/guest-bin/wit-bindgen" "$inputs/bin/wit-bindgen"
+          cp -a examples/renderer-profile/node_modules "$inputs/javascript/node_modules"
+          cp examples/renderer-profile/package.json examples/renderer-profile/package-lock.json "$inputs/javascript/"
+          tar -C "$inputs" -czf "$RUNNER_TEMP/typescript-guest-inputs/compiler-inputs.tar.gz" .
+          sha256sum "$RUNNER_TEMP/typescript-guest-inputs/compiler-inputs.tar.gz" > "$RUNNER_TEMP/typescript-guest-inputs/compiler-inputs.sha256"
+          git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-inputs/revision.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: typescript-guest-compiler-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-guest-inputs/
           if-no-files-found: error
           retention-days: 2
