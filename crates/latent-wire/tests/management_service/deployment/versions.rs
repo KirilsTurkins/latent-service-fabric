@@ -1,22 +1,18 @@
 use std::sync::atomic::Ordering;
 
-use latent_artifacts::ArtifactRepository;
 use latent_control_store::CompiledRouteStore;
 use latent_wire::management::{proto, ManagementLimits};
 use tonic::Code;
 
-use super::super::support::{artifact, deployment, request, Harness};
+use super::super::support::{artifact, deployment, publish_artifact, request, Harness};
 use super::{apply, delete, get};
 
 #[tokio::test]
 async fn versioned_rpc_round_trip_preserves_fields_and_delete_recreate_stamps() {
     let harness = Harness::new(ManagementLimits::default()).await;
-    let release = harness
-        .artifacts
-        .publish(artifact("acme", "echo", "round-trip"))
-        .await
-        .unwrap();
-    let mut desired = deployment("ship", "acme", "echo", &release.release_digest);
+    let (publication, component) =
+        publish_artifact(&harness, artifact("acme", "echo", "round-trip")).await;
+    let mut desired = deployment("ship", "acme", "echo", &publication);
     desired.generation = u64::MAX;
     let created = apply(&harness, "alice", desired.clone(), Some(0))
         .await
@@ -24,14 +20,15 @@ async fn versioned_rpc_round_trip_preserves_fields_and_delete_recreate_stamps() 
     assert!(created.generation > 0 && created.generation < u64::MAX);
     desired.generation = created.generation;
     assert!(created.publication.is_some());
-    assert!(created.requested_publication.is_none());
-    desired.publication = created.publication.clone();
+    assert_eq!(created.requested_publication, Some(publication.clone()));
+    desired.release_digest = component.0;
+    desired.requested_publication = Some(publication.clone());
     assert_eq!(created, desired);
     assert_eq!(get(&harness, "alice", "ship").await.unwrap(), created);
     apply(
         &harness,
         "alice",
-        deployment("other", "acme", "echo", &release.release_digest),
+        deployment("other", "acme", "echo", &publication),
         None,
     )
     .await
@@ -80,15 +77,12 @@ async fn versioned_rpc_round_trip_preserves_fields_and_delete_recreate_stamps() 
 #[tokio::test]
 async fn competing_rpc_versions_have_one_winner_and_return_its_exact_record() {
     let harness = Harness::new(ManagementLimits::default()).await;
-    let release = harness
-        .artifacts
-        .publish(artifact("acme", "echo", "race"))
-        .await
-        .unwrap();
+    let (publication, _component) =
+        publish_artifact(&harness, artifact("acme", "echo", "race")).await;
     let created = apply(
         &harness,
         "alice",
-        deployment("ship", "acme", "echo", &release.release_digest),
+        deployment("ship", "acme", "echo", &publication),
         Some(0),
     )
     .await

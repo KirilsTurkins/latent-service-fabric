@@ -2574,7 +2574,7 @@
       "sha256": "51e7fb9db3da64092a271a36fbf3c0ebec1202b956ed57e5e627df2ae6f23ef4"
     },
     "tools/run_optimization_benchmarks.py": {
-      "sha256": "617aa5c92161bd86fbdc24d791421d7b9db53059e622608ff3ce03b27cb7a716"
+      "sha256": "9bf9f29cdf3d27dc12c5e3b954e99ba210ec7f5e4f1637217d24da21c51dbaf9"
     },
     "tools/run_phase1_conformance.py": {
       "sha256": "aa2f0f830208a05781d771d721d4f43208bd9125c5214952c3760bece9bae8aa"
@@ -2586,7 +2586,7 @@
       "sha256": "4070912d23d0699f864e8d4e8570f7cc7a3480ecccb326ddf818ff6d18f42a1b"
     },
     "tools/run_phase2_offline_workflow.py": {
-      "sha256": "73e3f912eb5370bedf409a4f00cb9ca0622ac3434d2b7e7f1a9c2ac39975d7cd"
+      "sha256": "414c5d66589e10b567123889b02a0f637ae5dc24b99ab24ba6955eef5803cabb"
     },
     "tools/run_phase2_operator_workflow.py": {
       "sha256": "4419751f1167d74edb740ee3a849433f4ac05758d2e8a65dcd550fbdb7b121ff"
@@ -2610,7 +2610,7 @@
       "sha256": "99bd586c5df8f3ad03bd811fa86c10fde9034cd3c1a0de76731585b0d51ae7bf"
     },
     "tools/run_security_profile_workflow.py": {
-      "sha256": "44c0adea6394863101cb46febf251fd8f81a7f0a8d03fa780922f5be2e28c598"
+      "sha256": "a5652152f2d52549122a413ccab5726bea2c7fd2006ee8e89be1633cb95fa3d2"
     },
     "tools/run_vault_secret_tests.py": {
       "sha256": "81ab09bf676f22fca2e1cb923353586cef8d36361980cac4091677bcbe9abcf4"
@@ -5355,8 +5355,7 @@
     ],
     "tools/tests/test_zig_cache_boundary.py": [
       "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation"
-    ]
-,
+    ],
     "tools/tests/test_ci_cargo.py": [
       "CargoRecipeTests.test_all_five_host_guest_binding_checks_are_retained",
       "CargoRecipeTests.test_cli_plan_is_json_and_execution_errors_return_failure",

@@ -60,9 +60,8 @@ impl Cache {
         if asset.size > latent_artifacts::web::MAX_WEB_ASSET_BYTES {
             return Err(502);
         }
-        let cached = {
-            let mut entries = self.entries.try_lock().map_err(|_| 503u16)?;
-            entries
+        let cached = match self.entries.try_lock() {
+            Ok(mut entries) => entries
                 .iter()
                 .position(|(key, _)| key == &digest)
                 .map(|index| {
@@ -70,7 +69,11 @@ impl Cache {
                     let buffer = Arc::clone(&entry.1);
                     entries.push_back(entry);
                     buffer
-                })
+                }),
+            // Residency is optional. A busy cache must not reject an otherwise
+            // admissible read; the miss still reserves its full payload charge.
+            Err(std::sync::TryLockError::WouldBlock) => None,
+            Err(std::sync::TryLockError::Poisoned(_)) => return Err(503),
         };
         if let Some(buffer) = cached {
             if valid(&buffer.bytes, &digest, size) {
@@ -178,6 +181,34 @@ mod tests {
             })
             .unwrap();
         assert_eq!(next.bytes, b"two");
+    }
+    #[test]
+    fn cache_bookkeeping_contention_bypasses_residency_but_keeps_memory_charged() {
+        let cache = Cache::new(ENTRY_CHARGE + 3);
+        let entries = cache.entries.lock().unwrap();
+        let response = cache
+            .read(&asset(b"one"), |_, out| {
+                out.copy_from_slice(b"one");
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(response.bytes, b"one");
+        assert!(entries.is_empty());
+        assert_eq!(cache.entries_count.load(Ordering::Relaxed), 0);
+        assert_eq!(cache.retained_bytes(), ENTRY_CHARGE + 3);
+        assert!(matches!(
+            cache.read(&asset(b"two"), |_, _| panic!("must reserve before read")),
+            Err(503)
+        ));
+        drop(response);
+        assert_eq!(cache.retained_bytes(), 0);
+        drop(entries);
+        assert!(cache
+            .read(&asset(b"two"), |_, out| {
+                out.copy_from_slice(b"two");
+                Ok(())
+            })
+            .is_ok());
     }
     #[test]
     fn corruption_refetches_once_and_bad_source_never_becomes_a_cache_hit() {

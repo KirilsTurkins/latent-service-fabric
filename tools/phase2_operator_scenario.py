@@ -6,6 +6,7 @@ import re
 import time
 
 from tools.phase2_operator_process import (
+    write_selected_deployment,
     Process, file_digest, read_json, require, stopped_record, write_candidate_manifest, write_json,
 )
 from tools.phase2_operator_canary import invoke, positive_canary, rollback_target
@@ -133,8 +134,6 @@ def audit_pages(client, expected_operations):
 
 def node_workflow(client, binary, directory, fixture, outputs, summaries, metadata):
     tenant = metadata["tenant"]
-    candidate = write_candidate_manifest(fixture / "green/deployment.json",
-                                         client.directory / "candidate-1000.json", 1000)
     config = configure_node(directory, fixture, tenant)
     config_digest = file_digest(config, 262144, client.cancellation, client.deadline)
     node = connect(client, binary, directory, config, tenant, 1)
@@ -175,8 +174,13 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
         require(len(second["releases"]) == 1 and second["releases"][0]["digest"] != first["releases"][0]["digest"],
                 "release-page-disjoint")
 
+        blue = write_selected_deployment(fixture / "blue/deployment.json", client.directory / "blue-selected.json",
+                                         publications["blue"]["publication"]["id"])
+        green = write_selected_deployment(fixture / "green/deployment.json", client.directory / "green-selected.json",
+                                          publications["green"]["publication"]["id"])
+        candidate = write_candidate_manifest(green, client.directory / "candidate-1000.json", 1000)
         snapshot = client.call("deployment", "get", "blue", "--operation-snapshot", codes=(6,))["data"]
-        arguments = ["deployment", "apply", fixture / "blue/deployment.json", "--operation-id", "apply-blue",
+        arguments = ["deployment", "apply", blue, "--operation-id", "apply-blue",
                      "--expected-state-version", snapshot["stateVersion"], "--expected-generation", "0"]
         applied = receipt(client.call(*arguments), "apply-blue")
         replay = client.call(*arguments)
@@ -230,12 +234,12 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
         negative_rollback = receipt(change(client, "rollback", "canary", aborted["revision"], "canary-rollback",
                                           "--target-generation", negative_target), "canary-rollback")
 
-        canary_counts = positive_canary(client, metadata, input_path, fixture, summaries, receipt, change)
+        canary_counts = positive_canary(client, metadata, input_path, green, summaries, receipt, change)
 
         # An intentionally tiny transport deadline is not a retry policy. Inspect
         # the exact operation afterward whether this machine completed or timed out.
         snapshot = client.call("deployment", "get", "blue", "--operation-snapshot")["data"]
-        attempted = client.call("--rpc-timeout-ms", "1", "deployment", "apply", fixture / "blue/deployment.json",
+        attempted = client.call("--rpc-timeout-ms", "1", "deployment", "apply", blue,
                                 "--operation-id", "deadline-inspect", "--expected-state-version", snapshot["stateVersion"],
                                 "--expected-generation", snapshot["deployment"]["generation"], codes=(0, 4, 5))
         inspected = client.call("deployment", "operation", "deadline-inspect")

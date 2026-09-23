@@ -1,7 +1,7 @@
 use super::super::support::{artifact, deployment, publish_variant as publish, request, Harness};
-use latent_artifacts::{ArtifactRepository, LifecycleScope};
+use latent_artifacts::ArtifactRepository;
 use latent_audit::{AuditLimits, DirectoryPhase2AuditJournal};
-use latent_core::{ReleaseDigest, TenantId};
+use latent_core::ReleaseDigest;
 use latent_routing::RouteResolver;
 use latent_wire::management::{proto, ManagementLimits};
 use std::time::{Duration, Instant};
@@ -13,9 +13,7 @@ fn selected(
     publication: &proto::PublicationRef,
     component: &ReleaseDigest,
 ) -> proto::ApplyDeploymentRequest {
-    let mut value = deployment(id, &publication.tenant, "echo", component);
-    value.release_digest.clear();
-    value.publication = Some(publication.clone());
+    let value = deployment(id, &publication.tenant, "echo", publication);
     proto::ApplyDeploymentRequest {
         deployment: Some(value),
         expected_component_digest: Some(component.0.clone()),
@@ -82,8 +80,11 @@ async fn exact_deployment_selectors_keep_coexisting_publications_and_replay_iden
         .unwrap()
         .into_inner();
     assert_eq!(found.receipt, applied.receipt);
+    let mut legacy_deployment = deployment("legacy", "acme", "echo", &first);
+    legacy_deployment.publication = None;
+    legacy_deployment.release_digest = component.0;
     let legacy = proto::ApplyDeploymentRequest {
-        deployment: Some(deployment("legacy", "acme", "echo", &component)),
+        deployment: Some(legacy_deployment),
         expected_generation: Some(0),
         ..Default::default()
     };
@@ -94,7 +95,7 @@ async fn exact_deployment_selectors_keep_coexisting_publications_and_replay_iden
             .await
             .unwrap_err()
             .code(),
-        Code::Aborted
+        Code::InvalidArgument
     );
     harness.shutdown().await;
     audit.close();
@@ -173,70 +174,27 @@ async fn deployment_publication_response_limit_rejects_before_mutation() {
 }
 
 #[tokio::test]
-async fn unscoped_local_compatibility_does_not_invent_a_tenant_publication() {
-    let directory = TempDir::new().unwrap();
-    let (audit, mut journal) =
-        DirectoryPhase2AuditJournal::open(directory.path().join("audit"), AuditLimits::default())
-            .unwrap();
-    let harness = Harness::with_audit(ManagementLimits::default(), None, Some(audit.clone())).await;
+async fn component_only_local_publication_is_rejected_without_catalog_mutation() {
+    let harness = Harness::new(ManagementLimits::default()).await;
     let mut source = artifact("acme", "echo", "unscoped-local");
     source.manifest.metadata.tenant = None;
     let published = harness.artifacts.publish(source).await.unwrap();
-    let request_body = proto::ApplyDeploymentRequest {
-        deployment: Some(deployment(
-            "local",
-            "acme",
-            "echo",
-            &published.release_digest,
-        )),
-        operation: Some(proto::DeploymentOperationPrecondition {
-            operation_id: "local-apply".into(),
-            expected_state_version: Some(0),
-        }),
-        expected_generation: Some(0),
-        ..proto::ApplyDeploymentRequest::default()
-    };
-    let applied = harness
+    let mut desired = deployment("local", "acme", "echo", &proto::PublicationRef::default());
+    desired.publication = None;
+    desired.release_digest = published.release_digest.0;
+    let status = harness
         .deployments_client()
-        .apply_deployment(request("alice", request_body.clone()))
+        .apply_deployment(request(
+            "alice",
+            proto::ApplyDeploymentRequest {
+                deployment: Some(desired),
+                expected_generation: Some(0),
+                ..Default::default()
+            },
+        ))
         .await
-        .unwrap()
-        .into_inner();
-    let value = applied.deployment.as_ref().unwrap();
-    assert_eq!(value.release_digest, published.release_digest.0);
-    assert!(value.publication.is_none());
-    assert!(value.requested_publication.is_none());
-    assert!(applied.receipt.as_ref().unwrap().publication.is_none());
-    let stored = harness
-        .deployments
-        .get_operation_snapshot(
-            &TenantId("acme".into()),
-            &latent_core::DeploymentId("local".into()),
-        )
-        .await
-        .unwrap();
-    let captured = stored
-        .value()
-        .deployment
-        .as_ref()
-        .unwrap()
-        .publication
-        .as_ref()
-        .unwrap();
-    assert_eq!(captured.scope, LifecycleScope::LocalUnscoped);
-    let replay = harness
-        .deployments_client()
-        .apply_deployment(request("alice", request_body))
-        .await
-        .unwrap()
-        .into_inner();
-    assert!(replay.replayed);
-    assert_eq!(replay.receipt, applied.receipt);
-    assert_eq!(replay.deployment, applied.deployment);
-    drop(stored);
+        .unwrap_err();
+    assert_eq!(status.code(), Code::InvalidArgument);
+    assert_eq!(harness.deployments.generation().0, 0);
     harness.shutdown().await;
-    audit.close();
-    assert!(journal
-        .join_until(Instant::now() + Duration::from_secs(5))
-        .unwrap());
 }

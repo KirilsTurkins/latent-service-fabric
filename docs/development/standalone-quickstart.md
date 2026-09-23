@@ -170,12 +170,13 @@ PUBLICATION=$(field "$RESULTS/published.json" data release publication id)
 cli release get --publication "$PUBLICATION" >"$RESULTS/release.json"
 cli release list --service examples/echo --page-size 1 >"$RESULTS/releases.json"
 
-# Use the returned digest, even though the generated deployment already contains it.
-python3 - "$PACKAGE/deployment.json" "$RESULTS/deployment.json" "$DIGEST" <<'PY'
+# Select the admitted publication and assert its returned component digest.
+python3 - "$PACKAGE/deployment.json" "$RESULTS/deployment.json" "$DIGEST" "$PUBLICATION" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as source:
     deployment = json.load(source)
 deployment["spec"]["release"] = sys.argv[3]
+deployment["spec"]["publication"] = sys.argv[4]
 with open(sys.argv[2], "x", encoding="utf-8") as output:
     json.dump(deployment, output)
     output.write("\n")
