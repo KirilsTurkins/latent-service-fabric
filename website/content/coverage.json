@@ -1394,7 +1394,8 @@
         "web-developer"
       ],
       "outcomes": [
-        "Build the supported profile from full source with public/private separation and qualified compiler/runtime identities."
+        "Build the supported profile from full source with public/private separation and qualified compiler/runtime identities.",
+        "Build the maintained Angular CSR and finite static-generator references, observing the selected public files, signed routing policy and declared build limitations."
       ],
       "pages": [
         {
@@ -1412,6 +1413,10 @@
         {
           "path": "docs/runtime/angular-renderer-profile.md",
           "role": "reference-only"
+        },
+        {
+          "path": "docs/component-development/static-sites.md",
+          "role": "guide"
         }
       ],
       "sourceRefs": [
@@ -1420,12 +1425,19 @@
         "examples/angular-reference-application",
         "tools/build_angular_reference.py",
         "tools/run_angular_reference_workflow.py",
-        "tools/check_angular_reference.mjs"
+        "tools/check_angular_reference.mjs",
+        "examples/static-sites",
+        "tools/build_static_sites.py",
+        "tools/run_static_site_workflow.py",
+        "tools/static-sites/browser.mjs"
       ],
       "implementationPrerequisites": [
         44,
         232,
-        234
+        234,
+        495,
+        496,
+        497
       ],
       "evidence": [
         {
@@ -1446,6 +1458,12 @@
           "status": "executed",
           "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
           "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
+        },
+        {
+          "path": "tools/run_static_site_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained signed Angular CSR/static-generator OCI and real-browser workflow. Its retained runtime receipts are linked from the static-site guide; the website does not execute this source or provide human review."
         }
       ],
       "review": {
@@ -1465,7 +1483,8 @@
         "operator"
       ],
       "outcomes": [
-        "Associate publication, routes and immutable assets; exercise rollout and failures without crossing tenant authority."
+        "Associate publication, routes and immutable assets; exercise rollout and failures without crossing tenant authority.",
+        "Apply exact static publication targets, recover uncertain trigger operations, and exercise cutover, rollback and revocation with zero execution ownership."
       ],
       "pages": [
         {
@@ -1487,6 +1506,10 @@
         {
           "path": "docs/immutable-browser-assets.md",
           "role": "reference-only"
+        },
+        {
+          "path": "docs/component-development/static-sites.md",
+          "role": "guide"
         }
       ],
       "sourceRefs": [
@@ -1495,12 +1518,19 @@
         "examples/angular-reference-application",
         "tools/build_angular_reference.py",
         "tools/run_angular_reference_workflow.py",
-        "tools/check_angular_reference.mjs"
+        "tools/check_angular_reference.mjs",
+        "examples/static-sites",
+        "tools/build_static_sites.py",
+        "tools/run_static_site_workflow.py",
+        "tools/static-sites/browser.mjs"
       ],
       "implementationPrerequisites": [
         231,
         234,
-        236
+        236,
+        495,
+        496,
+        497
       ],
       "evidence": [
         {
@@ -1521,6 +1551,12 @@
           "status": "executed",
           "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
           "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
+        },
+        {
+          "path": "tools/run_static_site_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained signed Angular CSR/static-generator OCI and real-browser workflow. Its retained runtime receipts are linked from the static-site guide; the website does not execute this source or provide human review."
         }
       ],
       "review": {
@@ -1539,7 +1575,8 @@
         "web-developer"
       ],
       "outcomes": [
-        "Observe actual SSR/hydration/navigation, capability calls, denied/personalized paths and cancellation, not a browser-only mock."
+        "Observe actual SSR/hydration/navigation, capability calls, denied/personalized paths and cancellation, not a browser-only mock.",
+        "Verify CSR deep links, refresh, lazy assets and navigation, plus generator mounts, redirects and missing-resource failures through a real browser."
       ],
       "pages": [
         {
@@ -1557,6 +1594,10 @@
         {
           "path": "docs/testing/angular-renderer-qualification.md",
           "role": "reference-only"
+        },
+        {
+          "path": "docs/component-development/static-sites.md",
+          "role": "guide"
         }
       ],
       "sourceRefs": [
@@ -1565,12 +1606,19 @@
         "examples/angular-reference-application",
         "tools/build_angular_reference.py",
         "tools/run_angular_reference_workflow.py",
-        "tools/check_angular_reference.mjs"
+        "tools/check_angular_reference.mjs",
+        "examples/static-sites",
+        "tools/build_static_sites.py",
+        "tools/run_static_site_workflow.py",
+        "tools/static-sites/browser.mjs"
       ],
       "implementationPrerequisites": [
         232,
         235,
-        236
+        236,
+        495,
+        496,
+        497
       ],
       "evidence": [
         {
@@ -1591,6 +1639,12 @@
           "status": "executed",
           "sourceCommit": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
           "scope": "Complete current-source build, signed publication, real public/authenticated browser hydration/navigation, provider authority/cancellation, promotion, revoke/restart/cache-hit/rollback and owned cleanup; human newcomer review remains pending."
+        },
+        {
+          "path": "tools/run_static_site_workflow.py",
+          "kind": "test-source",
+          "status": "available-not-run",
+          "scope": "Maintained signed Angular CSR/static-generator OCI and real-browser workflow. Its retained runtime receipts are linked from the static-site guide; the website does not execute this source or provide human review."
         }
       ],
       "review": {
