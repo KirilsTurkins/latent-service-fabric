@@ -1,0 +1,85 @@
+name: Assemble reviewed Java inventory blob
+
+on:
+  push:
+    branches: [feat/548-java-inventory-assembly]
+    paths: [.github/workflows/java-548-inventory-assembly.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.event.before == 'e273655d4910785d5a2910ecf88c0bf193b5ae63'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Store the exact reviewed inventory without changing any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, os, urllib.request
+          # One-time publication plumbing. No repository code or dependency is executed.
+          # Both input and output are fixed to locally reviewed, tested byte identities.
+          delta = json.loads(r'''{
+            "repository": "KirilsTurkins/latent-service-fabric",
+            "base": "e273655d4910785d5a2910ecf88c0bf193b5ae63",
+            "path": "tools/ci/commands.json",
+            "beforeSha256": "b8a38c96843b27941d51963dd4eae5b4f159aa299d2cf5ec91f59456f8f60114",
+            "afterSha256": "deb1f685586186d8f45ffd842d34054aeba82a0744c52094d14b317922c6f2a1",
+            "expectedGitBlob": "aea7aa116821c98a4e5a7f11addf49de596fe7a3",
+            "workflow": ".github/workflows/java-guest-feasibility.yml",
+            "workflowSha256": "66eee50fae7e67e5e544354a31478e859d71f9dd167d51d22f8d29975a91fd08",
+            "after": {
+              ".github/workflows/java-guest-feasibility.yml:feasibility:Install checksum-pinned Gradle": {
+                "workflow": ".github/workflows/java-guest-feasibility.yml", "job": "feasibility", "name": "Install checksum-pinned Gradle", "jobIf": "success()", "stepIf": "success()", "workingDirectory": ".", "shell": "bash",
+                "run": "set -euo pipefail\nversion=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle\"])')\"\nchecksum=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle_sha256\"])')\"\ndestination=\"${RUNNER_TEMP}/java-guest-gradle\"\nmkdir \"$destination\"\ncurl --fail --location --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 180 \\\n  \"https://services.gradle.org/distributions/gradle-${version}-bin.zip\" -o \"$destination/gradle.zip\"\nprintf '%s  %s\\n' \"$checksum\" \"$destination/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$destination/gradle.zip\" -d \"$destination\"\necho \"$destination/gradle-${version}/bin\" >> \"$GITHUB_PATH\""
+              },
+              ".github/workflows/java-guest-feasibility.yml:feasibility:Verify observation integrity": {
+                "workflow": ".github/workflows/java-guest-feasibility.yml", "job": "feasibility", "name": "Verify observation integrity", "jobIf": "success()", "stepIf": "success()", "workingDirectory": ".", "shell": "default", "run": "python3 -m unittest discover -s research/java-capsules/tests -v"
+              },
+              ".github/workflows/java-guest-feasibility.yml:feasibility:probe": {
+                "workflow": ".github/workflows/java-guest-feasibility.yml", "job": "feasibility", "name": "probe", "jobIf": "success()", "stepIf": "success()", "workingDirectory": ".", "shell": "default", "run": "python3 research/java-capsules/probe.py --output \"$RUNNER_TEMP/java-guest-attempt\""
+              },
+              ".github/workflows/java-guest-feasibility.yml:feasibility:offline": {
+                "workflow": ".github/workflows/java-guest-feasibility.yml", "job": "feasibility", "name": "offline", "jobIf": "success()", "stepIf": "always() && steps.probe.outcome == 'failure'", "workingDirectory": ".", "shell": "default", "run": "python3 research/java-capsules/probe.py --offline-cache \"$RUNNER_TEMP/java-guest-attempt/gradle-home/caches/modules-2/files-2.1\" --output \"$RUNNER_TEMP/java-guest-offline\""
+              },
+              ".github/workflows/java-guest-feasibility.yml:feasibility:Capture resolved artifact identities and reproduction tools": {
+                "workflow": ".github/workflows/java-guest-feasibility.yml", "job": "feasibility", "name": "Capture resolved artifact identities and reproduction tools", "jobIf": "success()", "stepIf": "always() && steps.probe.outcome == 'failure'", "workingDirectory": ".", "shell": "bash",
+                "run": "set -euo pipefail\nkit=\"$RUNNER_TEMP/java-guest-reproduction\"\nmkdir \"$kit\"\n# Preserve declared compiler inputs, not unrelated benchmark archives or credentials.\npython3 -c 'import runpy; print(\"\\n\".join(runpy.run_path(\"research/java-capsules/probe.py\")[\"snapshot\"]()))' > \"$kit/source-paths.txt\"\nmapfile -t sources < \"$kit/source-paths.txt\"\ntest \"${#sources[@]}\" -gt 0\ngit archive --format=tar HEAD -- \"${sources[@]}\" | gzip -1 > \"$kit/source.tar.gz\"\ngit rev-parse HEAD > \"$kit/source-commit.txt\"\ntar -C \"$JAVA_HOME\" -czf \"$kit/jdk.tar.gz\" .\ngradle_home=\"$(dirname \"$(dirname \"$(readlink -f \"$(command -v gradle)\")\")\")\"\ntar -C \"$gradle_home\" -czf \"$kit/gradle.tar.gz\" .\nzig_home=\"$(dirname \"$(readlink -f \"$(command -v zig)\")\")\"\ntar -C \"$zig_home\" -czf \"$kit/zig.tar.gz\" .\ncp \"$(command -v wasm-tools)\" \"$kit/wasm-tools\"\ntar -C \"$RUNNER_TEMP/java-guest-attempt/gradle-home/caches/modules-2\" -czf \"$kit/dependencies.tar.gz\" files-2.1\n(cd \"$kit\" && sha256sum *.gz *.txt wasm-tools > SHA256SUMS)"
+              }
+            }
+          }''')
+          prefix = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          def request(path, payload=None):
+              data = None if payload is None else json.dumps(payload).encode()
+              req = urllib.request.Request(prefix + path, data=data, headers={
+                  'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                  'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json',
+                  'X-GitHub-Api-Version': '2022-11-28'})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  result = response.read(2 * 1024 * 1024 + 1)
+              if len(result) > 2 * 1024 * 1024:
+                  raise SystemExit('API response bound exceeded')
+              return json.loads(result)
+          original = request('/git/blobs/5cf5fa5aa23b343f57ce134700524509e87e0bc7')
+          if original.get('encoding') != 'base64':
+              raise SystemExit('Unexpected blob encoding')
+          content = base64.b64decode(original['content'])
+          if hashlib.sha256(content).hexdigest() != delta['beforeSha256']:
+              raise SystemExit('Reviewed base identity mismatch')
+          document = json.loads(content)
+          document['after'].update(delta['after'])
+          document['workflowIdentities'][delta['workflow']] = delta['workflowSha256']
+          result = (json.dumps(document, indent=2) + '\n').encode()
+          if hashlib.sha256(result).hexdigest() != delta['afterSha256']:
+              raise SystemExit('Reviewed output identity mismatch')
+          stored = request('/git/blobs', {'content': result.decode(), 'encoding': 'utf-8'})
+          if stored.get('sha') != delta['expectedGitBlob']:
+              raise SystemExit('Git blob identity mismatch')
+          print(json.dumps({'blobSha': stored['sha'], 'sha256': delta['afterSha256'],
+                            'bytes': len(result), 'branchChanged': False}))
+          PY
