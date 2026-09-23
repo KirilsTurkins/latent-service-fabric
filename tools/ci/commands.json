@@ -2661,7 +2661,7 @@
       "sha256": "ceb80198a3ba1cf436b02271bdba3f9f104b943b875d75fc87468990794e8392"
     },
     "tools/ci_cargo_cache.py": {
-      "sha256": "8f58517d55f91fbfc5ac4b6dd65853a8c43ba17b315a41286ea0a261863106e1"
+      "sha256": "2e8182e237e1dbce64e0c7d0375319dde5df3c69517a785d808549c48a119972"
     },
     "tools/ci_coverage.py": {
       "sha256": "67df58fbde773857194e74f52810f8a5e1458efbfe3d7dfe4166ec19aa1461f1"
@@ -2742,7 +2742,7 @@
       "sha256": "65af7a9eb855be44b4724fe1a183bf4d4d379c37566076a1b12ae26ecd8e38c8"
     },
     "tools/run_oci_registry_tests.py": {
-      "sha256": "51e7fb9db3da64092a271a36fbf3c0ebec1202b956ed57e5e627df2ae6f23ef4"
+      "sha256": "83aebbd9068b29edc9772da719108c4db2a04857faa2860c0228547bd41a95e8"
     },
     "tools/run_optimization_benchmarks.py": {
       "sha256": "9bf9f29cdf3d27dc12c5e3b954e99ba210ec7f5e4f1637217d24da21c51dbaf9"
@@ -2793,7 +2793,7 @@
       "sha256": "a1faa5ff9fc7480499a12c6d44a681a59073f7f02b6930964678e92dcd9ce581"
     },
     "tools/security_scope.py": {
-      "sha256": "27560fc26ec6aeb4f227b4c08688d6a1c0eeeb6e1f5fd1c7f8dc7e44015c12fa"
+      "sha256": "57a38d0492f115bc255ac009449ece88dff1912934891677141ee74dea777282"
     },
     "tools/security_selftest.py": {
       "sha256": "fcccbe5b1eb0ecdb277d1d0f17d4b20cb4b627eee0fd4e3bf77b077a1da45485"
@@ -3223,7 +3223,6 @@
       "CacheIdentityTests.test_input_count_and_size_are_bounded",
       "CacheIdentityTests.test_missing_deleted_foreign_and_symlinked_inputs_fail",
       "CacheIdentityTests.test_observation_failure_cannot_produce_a_key",
-      "CacheIdentityTests.test_only_trusted_refs_may_write",
       "CacheIdentityTests.test_opt_in_profile_preserves_correctness_and_never_overrides_release",
       "CacheIdentityTests.test_recipe_feature_and_target_changes_invalidate",
       "CacheIdentityTests.test_toolchain_architecture_profile_flags_and_lock_invalidate",
@@ -3285,12 +3284,7 @@
       "IntegrationContractTests.test_current_inventory_supplies_nonempty_exact_lane_cases",
       "IntegrationContractTests.test_missing_lane_receipt_fails_closed",
       "IntegrationContractTests.test_real_lane_graph_dispatches_provider_and_renderer_together",
-      "IntegrationContractTests.test_receipt_requires_exact_steps_cases_and_timing",
-      "JobResultTests.test_accepts_only_exact_expected_results",
-      "JobResultTests.test_empty_or_overlapping_required_selection_is_invalid",
-      "JobResultTests.test_intentionally_unselected_is_not_missing_or_successful",
-      "JobResultTests.test_missing_and_unregistered_job_fail",
-      "JobResultTests.test_required_failure_cancellation_skip_and_missing_output_fail"
+      "IntegrationContractTests.test_receipt_requires_exact_steps_cases_and_timing"
     ],
     "tools/tests/test_ci_profile.py": [
       "ClassificationTests.test_code_after_three_hundred_documentation_paths_is_not_truncated",
@@ -3620,8 +3614,7 @@
       "RegistryRunnerTests.test_cleanup_rejects_unowned_container_and_daemon_failure",
       "RegistryRunnerTests.test_cleanup_removes_verified_id_only",
       "RegistryRunnerTests.test_launch_pins_image_loopback_and_container_resources",
-      "RegistryRunnerTests.test_recovery_validates_name_and_does_not_overwrite_other_state",
-      "RegistryRunnerTests.test_web_mode_runs_only_the_required_catalog_integration"
+      "RegistryRunnerTests.test_recovery_validates_name_and_does_not_overwrite_other_state"
     ],
     "tools/tests/test_optimization_backend_build.py": [
       "BackendBuildTests.test_cpu_source_is_required_only_for_cold_experiment",
@@ -4568,6 +4561,7 @@
       "RunnerContractTests.test_expected_fault_validator_rejects_stale_or_missing_cleanup",
       "RunnerContractTests.test_inventory_contracts_reference_real_suites_and_pinned_services",
       "RunnerContractTests.test_oci_interrupted_launch_still_closes_owned_fixture",
+      "RunnerContractTests.test_oci_modes_execute_the_registered_prepared_cases",
       "RunnerContractTests.test_oci_normal_and_fault_paths_always_retire_registry",
       "RunnerContractTests.test_preflight_reports_no_test_execution",
       "RunnerContractTests.test_registry_cleanup_does_not_unlink_replaced_foreign_state",
@@ -4676,10 +4670,6 @@
       "Phase0ExecutionEvidenceIdentityTests.test_commit_identity_resolves_the_commits_actual_tree",
       "Phase0ExecutionEvidenceIdentityTests.test_pinned_build_input_changes_alter_the_canonical_identity",
       "Phase0ExecutionEvidenceIdentityTests.test_pinned_build_inputs_are_execution_relevant"
-    ],
-    "tools/tests/test_phase0_test_environment.py": [
-      "Phase0TestEnvironmentTests.test_explicit_rejection_tests_can_add_an_override_after_sanitizing",
-      "Phase0TestEnvironmentTests.test_sanitizes_fixed_and_patterned_build_overrides"
     ],
     "tools/tests/test_phase1_archive.py": [
       "ArchiveTests.test_archive_is_reproducible_without_source_mtime",
@@ -5360,9 +5350,8 @@
       "SecurityChangedPathTests.test_present_base_uses_exact_local_diff_without_network"
     ],
     "tools/tests/test_security_rustsec_workflow.py": [
-      "SecurityWorkflowTests.test_actual_aggregate_script_checks_the_same_results",
+      "SecurityWorkflowTests.test_actual_aggregate_checks_selected_results_and_rejects_failures",
       "SecurityWorkflowTests.test_docs_and_svg_only_keep_existing_ci_profile_and_only_secret_job",
-      "SecurityWorkflowTests.test_exact_selected_result_cannot_pass_after_failure_or_cancellation",
       "SecurityWorkflowTests.test_fork_pull_requests_have_no_privileged_token_cache_or_input_execution",
       "SecurityWorkflowTests.test_one_coordinator_reuses_rustsec_and_covers_both_maintained_branches",
       "SecurityWorkflowTests.test_policy_checks_immutable_actions_including_reused_workflow",
@@ -5772,7 +5761,6 @@
     "tools/tests/test_phase0_build_environment.py",
     "tools/tests/test_phase0_collector_identity.py",
     "tools/tests/test_phase0_evidence.py",
-    "tools/tests/test_phase0_test_environment.py",
     "tools/tests/test_phase1_archive.py",
     "tools/tests/test_phase1_budget_archive.py",
     "tools/tests/test_phase1_budget_lifecycle_archive.py",

@@ -76,7 +76,7 @@ impl TrackingLimiter {
     pub(crate) fn peak_memory_bytes(&self) -> u64 {
         u64::try_from(self.peak_memory_bytes).unwrap_or(u64::MAX)
     }
-    /// Wasmtime 47 does not expose GC growth to ResourceLimiter. Charge the
+    /// Wasmtime 47 does not expose GC growth to `ResourceLimiter`. Charge the
     /// complete fixed, nonmoving exception reservation before creating a Store;
     /// subsequent linear memories share the same aggregate activation budget.
     pub(crate) fn reserve_exception_heap(&mut self) -> Result<(), latent_core::PlatformError> {
