@@ -1189,6 +1189,66 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 -m unittest tools.tests.test_c_capsule_authoring\npython3 tools/qualify_c_capsules.py --output \"$RUNNER_TEMP/c-capsule-authoring\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Capture immutable qualification source inputs": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Capture immutable qualification source inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/typescript-guest-source.tar.gz\" HEAD\ntest \"$(stat --format=%s \"$RUNNER_TEMP/typescript-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/typescript-guest-source.sha\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Install the reviewed JavaScript compiler inputs": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Install the reviewed JavaScript compiler inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund"
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Install pinned component validator": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Install pinned component validator",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo install --locked wasm-tools --version 1.254.0"
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Compile the real async-boundary diagnostic": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Compile the real async-boundary diagnostic",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/typescript_guest/probe.py --output \"$RUNNER_TEMP/typescript-guest-probe\" --node \"$(command -v node)\" --wasm-tools \"$(command -v wasm-tools)\" --compiler \"$PWD/examples/renderer-profile/node_modules/@bytecodealliance/componentize-js/src/componentize.js\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Execute the compiled async-boundary diagnostic": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Execute the compiled async-boundary diagnostic",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo run --locked -p latent-wasmtime --example typescript_runtime_probe -- \"$RUNNER_TEMP/typescript-guest-probe/component.wasm\" 2>&1 | tee \"$RUNNER_TEMP/typescript-guest-probe/runtime.log\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Execute typed value and ownership regressions": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Execute typed value and ownership regressions",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode examples/renderer-profile/node_modules/typescript/bin/tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2750,6 +2810,9 @@
     },
     "tools/qualify_c_capsules.py": {
       "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
+    },
+    "tools/typescript_guest/probe.py": {
+      "sha256": "535a99c354e65b17b2bcf9d60a5cf9273634d130f23a243ed847aa678d02842c"
     }
   },
   "pythonCases": {
@@ -5777,6 +5840,7 @@
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
-    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b"
+    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
+    ".github/workflows/typescript-guest.yml": "e52140dbcf6199ad7cbe75ab7b7053fd4ca1eaf1497a63ebb37795425253464e"
   }
 }

@@ -1,0 +1,15 @@
+package lsf:typescript-probe@1.0.0;
+
+interface host {
+    echo: async func(value: string) -> string;
+}
+
+interface probe {
+    record payload { value: u64, text: string, bytes: list<u8> }
+    run: async func(input: payload) -> result<payload, string>;
+}
+
+world capsule {
+    import host;
+    export probe;
+}

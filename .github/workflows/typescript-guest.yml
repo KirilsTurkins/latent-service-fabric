@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'sdk/typescript-guest/**'
+      - 'crates/latent-wasmtime/examples/typescript_runtime_probe.rs'
       - 'tools/typescript_guest/**'
       - 'tools/typescript_capsule.py'
       - 'examples/typescript-capsules/**'
@@ -15,6 +16,7 @@ on:
     branches: [development]
     paths:
       - 'sdk/typescript-guest/**'
+      - 'crates/latent-wasmtime/examples/typescript_runtime_probe.rs'
       - 'tools/typescript_guest/**'
       - 'tools/typescript_capsule.py'
       - 'examples/typescript-capsules/**'
@@ -35,7 +37,11 @@ jobs:
   boundary:
     name: TypeScript guest value and ownership boundary
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -63,6 +69,18 @@ jobs:
           cache-dependency-path: examples/renderer-profile/package-lock.json
       - name: Install the reviewed JavaScript compiler inputs
         run: npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: typescript-guest-runtime
+      - name: Install pinned component validator
+        run: cargo install --locked wasm-tools --version 1.254.0
+      - name: Compile the real async-boundary diagnostic
+        run: python3 tools/typescript_guest/probe.py --output "$RUNNER_TEMP/typescript-guest-probe" --node "$(command -v node)" --wasm-tools "$(command -v wasm-tools)" --compiler "$PWD/examples/renderer-profile/node_modules/@bytecodealliance/componentize-js/src/componentize.js"
+      - name: Execute the compiled async-boundary diagnostic
+        run: |
+          set -o pipefail
+          cargo run --locked -p latent-wasmtime --example typescript_runtime_probe -- "$RUNNER_TEMP/typescript-guest-probe/component.wasm" 2>&1 | tee "$RUNNER_TEMP/typescript-guest-probe/runtime.log"
       - name: Execute typed value and ownership regressions
         shell: bash
         run: |
@@ -76,6 +94,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: typescript-guest-runtime-${{ github.sha }}
-          path: target/typescript-guest-runtime/runtime-tests.log
+          path: |
+            target/typescript-guest-runtime/runtime-tests.log
+            ${{ runner.temp }}/typescript-guest-probe/
           if-no-files-found: warn
           retention-days: 7
