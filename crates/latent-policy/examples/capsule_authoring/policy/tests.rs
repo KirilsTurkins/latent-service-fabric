@@ -31,7 +31,7 @@ impl Fixture {
         let digest = format!("sha256:{}", "b".repeat(64));
         let observation = BuildObservation {
             format_version: 1,
-            build_type: GO_CAPSULE_BUILD_TYPE.into(),
+            build_type: RUST_CAPSULE_BUILD_TYPE.into(),
             source: BuildSource {
                 repository: "https://example.com/source".into(),
                 revision: "b".repeat(64),
@@ -43,15 +43,16 @@ impl Fixture {
             component_size: subject.component_size().unwrap(),
             materials: [
                 "build-recipe",
-                "componentize-go",
+                "cargo",
                 "contracts-tool",
                 "dependency-lock",
-                "go",
                 "package-inputs",
                 "packager",
+                "rustc",
                 "source-snapshot",
                 "toolchain-config",
                 "wasm-tools",
+                "wit-bindgen",
             ]
             .into_iter()
             .map(|name| BuildMaterial {
@@ -60,13 +61,14 @@ impl Fixture {
                 size: 1,
             })
             .collect(),
-            parameters: BuildRecipe::GoCapsule(GoCapsuleBuildParameters {
-                go_package: "demo".into(),
-                compiler: "componentize-go".into(),
-                target: "wasm32-wasip1".into(),
-                runtime: "go-component-async-v1".into(),
+            parameters: BuildRecipe::RustCapsule(RustCapsuleBuildParameters {
+                cargo_package: "demo".into(),
+                manifest_path: "Cargo.toml".into(),
+                crate_type: "cdylib".into(),
+                target: "wasm32-unknown-unknown".into(),
+                profile: "release".into(),
                 locked: true,
-                ambient_wasi: false,
+                incremental: false,
             }),
             started_at: NOW - 10,
             finished_at: NOW - 1,
