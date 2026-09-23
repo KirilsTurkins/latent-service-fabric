@@ -45,12 +45,13 @@ jobs:
           owners = ci_coverage.delegated_owners(Path.cwd(), data['after'])
           assert all(owners[k] == v for k, v in data['delegatedOwners'].items()), 'existing owner changed'
           assert set(owners) - set(data['delegatedOwners']) == {'sdk/java-guest/tools/feasibility.py'}
-          data['delegatedOwners'] = owners
-          candidate = (json.dumps(data, indent=2, sort_keys=True) + '\n').encode()
+          data['delegatedOwners'].update({k: v for k, v in owners.items() if k not in data['delegatedOwners']})
+          candidate = (json.dumps(data, indent=2) + '\n').encode()
           out = Path(os.environ['RUNNER_TEMP']) / 'java-inventory-review'
           out.mkdir()
           (out / 'commands.json').write_bytes(candidate)
           diff = ''.join(difflib.unified_diff(original.decode().splitlines(True), candidate.decode().splitlines(True), fromfile='before/commands.json', tofile='after/commands.json'))
+          assert len(diff.splitlines()) < 100, 'unrelated inventory churn'
           (out / 'commands.diff').write_text(diff)
           print(diff)
           payload = json.dumps({'content': base64.b64encode(candidate).decode(), 'encoding': 'base64'}).encode()
