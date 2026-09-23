@@ -10,7 +10,23 @@ import platform
 from . import bundle, paths, process, project, scenarios, state
 from .common import HOST_ABI, decode, digest, encode, require
 
-SUPPORTED = {"context", "log", "clock", "fresh-state", "fuel", "memory"}
+SUPPORTED = scenarios.PORTABLE
+
+
+def fixture_inputs(source: Path, fixtures: list[dict]) -> dict | None:
+    selected = {}
+    for fixture in fixtures:
+        if fixture["kind"] not in {"test-adapter", "controlled-peer"} or "configuration" not in fixture:
+            return None
+        raw = paths.read(source, fixture["configuration"], 256 * 1024)
+        require(digest(raw) == fixture["identity"], "portable-fixture-identity")
+        value = decode(raw, 256 * 1024)
+        require(isinstance(value, dict) and value and value.keys() <= {"entropy", "metrics", "http"},
+                "portable-fixture-configuration")
+        require(not selected.keys() & value.keys(), "duplicate-portable-provider-fixture")
+        require((fixture["kind"] == "controlled-peer") == (set(value) == {"http"}), "portable-fixture-kind")
+        selected.update(value)
+    return selected
 
 
 def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
@@ -26,28 +42,36 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
     manifest = decode(content["capsule"])
     require(manifest.get("component", {}).get("digest") == digest(content["component"]), "portable-component-identity")
     ceiling = manifest["execution"]["limits"]
-    calls = []
+    groups, initialized = [], set()
     for case in document["scenarios"]:
         if selection and case["id"] not in selection:
             continue
         require(case["service"] == descriptor["service"], "scenario-service-outside-test-project")
         # Unsupported requirements never reach the guest and still fail required
         # coverage in the common report. No fixture is implicitly substituted.
-        if set(case["requires"]) - SUPPORTED or case["fixtures"]:
+        if set(case["requires"]) - SUPPORTED:
             continue
+        fixtures = fixture_inputs(source, case["fixtures"])
+        if fixtures is None:
+            continue
+        initialized.update(item["id"] for item in case["fixtures"])
         execution = case.get("execution", {"grants": []})
         require(case["timeoutMillis"] <= 5000, "portable-timeout-limit")
-        calls.append({"id": case["id"], "service": case["service"], "contract": case["contract"],
+        if not groups or groups[-1][0] != fixtures:
+            groups.append((fixtures, []))
+            require(len(groups) <= 8, "portable-fixture-group-limit")
+        groups[-1][1].append({"id": case["id"], "service": case["service"], "contract": case["contract"],
             "function": case["function"], "input": base64.b64encode(paths.read(source, case["input"], 1048576)).decode(),
-            "grants": execution["grants"], "fuel": execution.get("fuel", str(ceiling["cpuFuel"])),
+            "grants": execution["grants"], "deniedCapabilities": execution.get("deniedCapabilities", []),
+            "fuel": execution.get("fuel", str(ceiling["cpuFuel"])),
             "memoryBytes": execution.get("memoryBytes", str(ceiling["memoryBytes"])),
             "timeoutMillis": case["timeoutMillis"], "cancelBeforeStart": execution.get("cancelBeforeStart", False)})
-    results, runtime = {}, {"execution": "no-compatible-selected-scenarios"}
-    if calls:
+    results, runs = {}, []
+    for fixtures, calls in groups:
         request = {"schemaVersion": "latent.dev.portable-request.v1", "environment": "portable",
             "controlledDevelopment": True, "component": base64.b64encode(content["component"]).decode(),
             "manifest": base64.b64encode(content["capsule"]).decode(),
-            "contracts": base64.b64encode(content["contracts"]).decode(), "calls": calls}
+            "contracts": base64.b64encode(content["contracts"]).decode(), "calls": calls, "fixtures": fixtures}
         raw = encode(request)
         require(len(raw) <= 32 * 1024 * 1024, "portable-request-byte-limit")
         completed = process.run([str(executable)], source, stdin=raw,
@@ -59,13 +83,16 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
         require(isinstance(runtime.get("results"), list)
                 and [item["id"] for item in runtime["results"]] == [item["id"] for item in calls], "portable-result-association")
         require(all(item.get("cleanup") == "reusable" for item in runtime["results"]), "portable-cleanup-unconfirmed")
-        results = {item["id"]: item for item in runtime.pop("results")}
+        results.update({item["id"]: item for item in runtime.pop("results")})
+        runs.append(runtime)
+    runtime = {"execution": "actual-component-production-wasmtime" if runs else "no-compatible-selected-scenarios", "runs": runs}
     report = scenarios.run(document, source, "portable", selection,
         lambda case, _raw: results[case["id"]],
         {"host": host_identity, "runtime": runtime, "hostAbi": HOST_ABI,
          "artifacts": {name: digest(raw) for name, raw in content.items()},
-         "trust": "controlled-development-test", "productionNode": False}, supported=SUPPORTED, execution_controls=True)
-    report["cleanup"] = "owned-native-host-reaped" if calls else "no-native-host-started"
+         "trust": "controlled-development-test", "productionNode": False}, supported=SUPPORTED,
+         initialized_fixtures=initialized, execution_controls=True)
+    report["cleanup"] = "owned-native-host-reaped" if groups else "no-native-host-started"
     return report
 
 

@@ -20,6 +20,7 @@ def validate(value: dict, environment: str) -> dict:
     require(value["schemaVersion"] == "latent.dev.scenarios.v1" and environment in {"node", "portable"}, "scenario-environment")
     require(isinstance(value["scenarios"], list) and 0 < len(value["scenarios"]) <= 128, "scenario-count-limit")
     names = set()
+    fixtures_by_id = {}
     for case in value["scenarios"]:
         members(case, {"id", "service", "contract", "function", "input", "mediaType", "expect", "requires",
                        "timeoutMillis", "required", "fixtures"}, {"execution"})
@@ -35,10 +36,14 @@ def validate(value: dict, environment: str) -> dict:
             paths.relative(expected["payload"])
         require(type(case["required"]) is bool, "scenario-required-flag")
         if "execution" in case:
-            execution = members(case["execution"], {"grants"}, {"fuel", "memoryBytes", "cancelBeforeStart"})
+            execution = members(case["execution"], {"grants"}, {"fuel", "memoryBytes", "cancelBeforeStart", "deniedCapabilities"})
             require(isinstance(execution["grants"], list) and len(execution["grants"]) <= 32
                     and all(isinstance(item, str) and len(item) <= 512 for item in execution["grants"]),
                     "scenario-explicit-grants")
+            require(isinstance(execution.get("deniedCapabilities", []), list)
+                    and len(execution.get("deniedCapabilities", [])) <= 32
+                    and all(item in execution["grants"] for item in execution.get("deniedCapabilities", [])),
+                    "scenario-explicit-denied-capabilities")
             for key in {"fuel", "memoryBytes"} & execution.keys():
                 require(isinstance(execution[key], str) and re.fullmatch(r"[1-9][0-9]{0,10}", execution[key]),
                         "scenario-budget-format")
@@ -49,10 +54,14 @@ def validate(value: dict, environment: str) -> dict:
                 and set(case["requires"]) <= NODE_ONLY | PORTABLE, "scenario-requirements")
         require(isinstance(case["fixtures"], list) and len(case["fixtures"]) <= 8, "scenario-fixtures")
         for fixture in case["fixtures"]:
-            members(fixture, {"id", "kind", "identity"})
+            members(fixture, {"id", "kind", "identity"}, {"configuration"})
             identifier(fixture["id"])
             require(fixture["kind"] in {"real-provider", "controlled-peer", "test-adapter"}, "fixture-kind")
             require(isinstance(fixture["identity"], str) and 0 < len(fixture["identity"]) <= 512, "fixture-identity")
+            if "configuration" in fixture:
+                paths.relative(fixture["configuration"])
+            previous = fixtures_by_id.setdefault(fixture["id"], fixture)
+            require(previous == fixture, "fixture-id-has-conflicting-definitions")
     return value
 
 

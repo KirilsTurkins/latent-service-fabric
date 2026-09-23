@@ -1,7 +1,11 @@
 //! Reuses the production backend and value codec; never instantiates a node.
 
+mod http_fixture;
+mod providers;
 mod request;
 mod runtime;
+#[cfg(test)]
+mod tests;
 
 use std::io::{Read, Write};
 

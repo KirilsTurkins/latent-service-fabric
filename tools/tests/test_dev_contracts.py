@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools.dev_workflow import assets, backend, bundle, common, effects, journal, paths, project, qualification, scenarios, state, wsl
+from tools.dev_workflow import assets, backend, bundle, common, effects, journal, paths, portable, project, qualification, scenarios, state, wsl
 
 
 def descriptor():
@@ -346,6 +346,21 @@ class EditorDiagnostics(unittest.TestCase):
 
 
 class ScenarioReports(unittest.TestCase):
+    def test_portable_fixture_identity_and_kind_are_checked_before_execution(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            raw = common.encode({"entropy": "AQID"})
+            paths.write_new(root / "fixture.json", raw)
+            fixture = {"id": "entropy", "kind": "test-adapter", "identity": common.digest(raw), "configuration": "fixture.json"}
+            self.assertEqual(portable.fixture_inputs(root, [fixture]), {"entropy": "AQID"})
+            with self.assertRaisesRegex(common.DevError, "fixture-identity"):
+                portable.fixture_inputs(root, [{**fixture, "identity": "sha256:" + "0" * 64}])
+            with self.assertRaisesRegex(common.DevError, "fixture-kind"):
+                portable.fixture_inputs(root, [{**fixture, "kind": "controlled-peer"}])
+            with self.assertRaisesRegex(common.DevError, "duplicate-portable"):
+                portable.fixture_inputs(root, [fixture, fixture])
+            self.assertIsNone(portable.fixture_inputs(root, [{"id": "external", "kind": "real-provider", "identity": "external"}]))
+
     def test_portable_required_linux_checks_fail_without_invoking(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

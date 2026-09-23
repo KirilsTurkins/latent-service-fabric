@@ -3526,14 +3526,17 @@
     },
     {
       "boundary": "runtime",
-      "expectedCases": [],
+      "expectedCases": [
+        "tests::test_owner_rejects_mismatched_bytes_and_tenant",
+        "tests::test_owner_seals_are_distinct_and_retire_on_drop"
+      ],
       "expectedIgnored": [],
       "id": "latent-portable-test-host.bin.latent-portable-test-host",
       "ignoredLeaves": [],
       "kind": "bin",
       "manifest": "tools/portable-test-host/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
+      "minimumCases": 2,
+      "mode": "libtest",
       "package": "latent-portable-test-host",
       "platforms": [
         "linux-x86_64",

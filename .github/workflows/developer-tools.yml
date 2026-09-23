@@ -21,6 +21,9 @@ on:
       - tools/tests/test_dev_*.py
       - tools/portable-test-host/**
       - tools/run_portable_dev_tests.py
+      - tools/portable_dev_provider_tests.py
+      - tools/build_portable_dev_guests.py
+      - tools/build_guest_capsules.py
       - Cargo.toml
       - Cargo.lock
       - crates/**
@@ -87,8 +90,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           wasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/build_portable_dev_guests.py --output target/dev-providers
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Exercise native production Wasmtime and shared scenario assertions outside checkout
-        run: python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --output target/dev-portable-smoke.json
+        run: python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --providers target/dev-providers --output target/dev-portable-smoke.json
       - name: Record exact portable output for candidate assembly
         run: |
           python -c "from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-candidate/portable'); d.mkdir(); p=d/'latent-portable-test-host.exe'; shutil.copyfile('target/release/latent-portable-test-host.exe',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'windows-x86_64','profile':'release'}))"

@@ -102,12 +102,14 @@ and supports focused selections plus JUnit rendering. Tests must explicitly
 choose `node` or `portable`; unsupported required checks fail coverage.
 The current node runner requires an explicitly selected `test-` workspace.
 The native portable host reuses the production component engine, WIT surface,
-canonical value codec, fresh-store ownership, logging, context and clock imports.
+canonical value codec, fresh-store ownership and capability policy broker.
 It executes prebuilt controlled development components without Linux. Its
 initial exercised Windows subset is Rust typed success/declared error,
 missing-import denial, cancellation, traps, fuel/memory/deadline interruption,
-and subsequent fresh-state success. Random, metrics, HTTP fixtures, C guests
-and real-node differential qualification remain required work.
+and subsequent fresh-state success. Additional actual Rust SDK capsules cover
+random bytes and unsigned values, all four custom metric kinds, explicit policy
+denials, and buffered HTTP through the production provider and an owned loopback
+peer. C guests and real-node differential qualification remain required work.
 
 The selected verified Windows bundle must contain the portable executable.
 Use `dev test --environment portable --controlled-development --workspace NAME
@@ -115,11 +117,46 @@ Use `dev test --environment portable --controlled-development --workspace NAME
 descriptor's relative output paths beneath `--artifacts`. Execution uses exact
 component/manifest/contract bytes, does not invoke a guest compiler, and never
 falls back to Linux. Scenario `execution.grants` explicitly names the supported
-builtin imports; absent grants grant nothing. Optional decimal-string `fuel`
+imports; absent bindings fail before execution. `execution.deniedCapabilities`
+selects explicit deny policies for otherwise bound imports, using the same
+policy evaluator as the node. Optional decimal-string `fuel`
 and `memoryBytes`, Boolean `cancelBeforeStart`, and `timeoutMillis` narrow the
 selected component's limits. Required Linux-only checks remain failures.
 The report states actual OS, architecture, Wasmtime version, component digest,
 cleanup, system-clock nondeterminism and omitted node/security behavior.
+
+The closed `latent.dev.portable-request.v1` import profile is:
+
+| Import | Implementation and fixture boundary |
+| --- | --- |
+| `latent:context/context@0.1.0` | Production activation context, explicit per-call grant |
+| `latent:log/log@0.1.0` | Production bounded activation log sink |
+| `latent:clock/monotonic@0.1.0`, `latent:clock/wall@0.1.0` | Production system clocks; reported as nondeterministic |
+| `latent:random/random@0.1.0` | Production provider; system entropy or an explicitly selected repeatable byte fixture |
+| `latent:telemetry/custom@0.1.0` | Production metric provider, bounded declared metric/label sets and joined exporter |
+| `latent:http/client@0.2.0` | Production HTTP provider, one owned IPv4 loopback peer, exact approved methods/paths and reply bytes |
+
+No implicit WASI, filesystem, environment, other socket, secret or cloud import is
+installed. Imported streaming/resource interfaces outside this table are rejected
+before guest execution. Canonical arguments and results use the production value
+codec, including decimal-string unsigned 64-bit values and explicit absent values.
+One request runs at most 128 calls sequentially with fresh Stores, 16 MiB component
+bytes, 1 MiB input per call, 64 MiB guest memory, ten billion fuel, five seconds per
+call and 2 MiB aggregate results. Native compilation remains a controlled-workload
+operation; these guest limits are not compiler or whole-process RSS containment.
+
+A scenario fixture may include `configuration`, a relative project file, and its
+exact `sha256:` digest in `identity`. A `test-adapter` file contains `entropy`
+(base64 bytes, 1–4096 bytes) or `metrics` (up to 16 production metric descriptors).
+A `controlled-peer` file contains `http`, with an explicit unprivileged `port` and
+up to 16 `exchanges`. Each exchange declares `method`, `path`, base64 `requestBody`,
+`status`, and base64 `responseBody` (each body at most 32 KiB). The host binds the
+port before installing the provider; an occupied port fails the request. HTTP
+redirects, ambient roots and credentials are disabled. Denied requests cannot
+reach the peer. The receipt identifies selected fixtures and their digest.
+Fixture changes start a separate owned helper, preserve scenario order and never
+silently change an adjacent scenario's entropy or replies. At most eight such
+groups run in one selection. Shared scenario assertions remain byte-exact.
 
 ## Editor tasks and compiler locations
 

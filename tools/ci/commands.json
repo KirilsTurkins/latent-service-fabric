@@ -1208,7 +1208,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "cargo build -p latent-portable-test-host --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_echo_capsule.py --output-dir target/dev-echo\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build -p latent-toolchain-smoke --example generic-capsule --target wasm32-unknown-unknown --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }"
+      "run": "cargo build -p latent-portable-test-host --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_echo_capsule.py --output-dir target/dev-echo\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build -p latent-toolchain-smoke --example generic-capsule --target wasm32-unknown-unknown --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_portable_dev_guests.py --output target/dev-providers\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }"
     },
     ".github/workflows/developer-tools.yml:windows:Exercise native production Wasmtime and shared scenario assertions outside checkout": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -1218,7 +1218,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --output target/dev-portable-smoke.json"
+      "run": "python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --providers target/dev-providers --output target/dev-portable-smoke.json"
     },
     ".github/workflows/developer-tools.yml:windows:Record exact portable output for candidate assembly": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -2628,7 +2628,7 @@
       "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
     },
     "tools/build_guest_capsules.py": {
-      "sha256": "34e8ed5683bc9625a8c263c66a56d9af3e671e0f707d04971130fd902317316a"
+      "sha256": "5b7c25f375e59abdf5a6d88dc0d31e25fe60ab07f0839202b0d79bc7fdd2694f"
     },
     "tools/build_native_runtime.py": {
       "sha256": "8aa6e2df82afe7f69c4acc7ae4ddddcc339b0ee16681cfa0984df90623aa4732"
@@ -2832,13 +2832,16 @@
       "sha256": "c8e8959a795e1d207cbead426acb255cb23839cd7424fd1e5633bd69046a6888"
     },
     "tools/run_portable_dev_tests.py": {
-      "sha256": "1ca92f9e27978cacb841d0a28a565f591b4e35f030eecb3e0478a7251a3842d3"
+      "sha256": "090f2ef288e611d9ea52809c9d83fb6ad9ad43ffecc75e5b9a2fafd7daf453ad"
     },
     "tools/build_dev_bundle.py": {
       "sha256": "aa9f74f6d3c48e5b748163a56747b46208405f2c3c34ffb42d134d1a7b347d13"
     },
     "tools/build_dev_rootfs.py": {
       "sha256": "b0a0df997fc39bd4447f1afe825ce58c7ce6ae16a851fa7e3a8ad70bafe479c0"
+    },
+    "tools/build_portable_dev_guests.py": {
+      "sha256": "75deb7b113291d81a5cb1d2422df02964bdad8371178d99ec239c3dd1b2fb23f"
     }
   },
   "pythonCases": {
@@ -3385,6 +3388,7 @@
       "Recovery.test_unknown_expired_wrong_tenant_and_conflicts_never_release_intent",
       "ScenarioReports.test_arbitrary_candidate_policy_is_not_runtime_release_approval",
       "ScenarioReports.test_missing_qualification_never_passes",
+      "ScenarioReports.test_portable_fixture_identity_and_kind_are_checked_before_execution",
       "ScenarioReports.test_portable_required_linux_checks_fail_without_invoking",
       "Transports.test_actual_helper_digest_and_parent_checks_precede_execution",
       "Transports.test_helper_digest_is_checked_before_hello",
@@ -5901,6 +5905,6 @@
     ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/developer-tools.yml": "668e99c45c9a03fab3d73764d70831442d33405b4762f549bfd1f7034dd7d902"
+    ".github/workflows/developer-tools.yml": "098c3e3556007708aa6adf09d9a7bf18cd1760653946a467b9187e67c5ee6253"
   }
 }

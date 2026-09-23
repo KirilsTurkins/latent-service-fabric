@@ -1,11 +1,23 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-pub const IMPORTS: [&str; 4] = [
+pub const IMPORTS: [&str; 7] = [
     latent_wasmtime::CONTEXT_IMPORT,
     latent_wasmtime::LOG_IMPORT,
     latent_wasmtime::MONOTONIC_CLOCK_IMPORT,
     latent_wasmtime::WALL_CLOCK_IMPORT,
+    latent_capabilities::broker::random::RANDOM_CAPABILITY,
+    latent_capabilities::broker::metrics::METRICS_CAPABILITY,
+    latent_capabilities::broker::http::HTTP_CAPABILITY,
 ];
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Fixtures {
+    pub entropy: Option<String>,
+    #[serde(default)]
+    pub metrics: Vec<latent_telemetry::custom::CustomMetricDescriptor>,
+    pub http: Option<super::http_fixture::Fixture>,
+}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -17,6 +29,8 @@ pub struct Request {
     pub manifest: String,
     pub contracts: String,
     pub calls: Vec<Call>,
+    #[serde(default)]
+    pub fixtures: Fixtures,
 }
 
 #[derive(Deserialize)]
@@ -28,6 +42,8 @@ pub struct Call {
     pub function: String,
     pub input: String,
     pub grants: Vec<String>,
+    #[serde(default)]
+    pub denied_capabilities: Vec<String>,
     pub fuel: String,
     pub memory_bytes: String,
     pub timeout_millis: u64,
@@ -44,10 +60,26 @@ impl Request {
             || self.component.len() > 24 * 1024 * 1024
             || self.manifest.len() > 2 * 1024 * 1024
             || self.contracts.len() > 2 * 1024 * 1024
+            || self
+                .fixtures
+                .entropy
+                .as_ref()
+                .is_some_and(|value| value.is_empty() || value.len() > 5464)
+            || self.fixtures.metrics.len() > latent_policy::capability::MAX_SET_ENTRIES
+            || self
+                .calls
+                .iter()
+                .map(|call| &call.service)
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+                > latent_policy::capability::MAX_SET_ENTRIES
         {
             return Err("unsupported-portable-request");
         }
         let mut ids = std::collections::BTreeSet::new();
+        if let Some(http) = &self.fixtures.http {
+            http.validate()?;
+        }
         for call in &self.calls {
             if !ids.insert(&call.id)
                 || [&call.id, &call.service, &call.contract, &call.function]
@@ -57,6 +89,11 @@ impl Request {
                     })
                 || call.input.len() > 1_398_104
                 || call.grants.len() > IMPORTS.len()
+                || call.denied_capabilities.len() > IMPORTS.len()
+                || call
+                    .denied_capabilities
+                    .iter()
+                    .any(|capability| !call.grants.contains(capability))
                 || call
                     .grants
                     .iter()
@@ -80,6 +117,14 @@ impl Request {
 
 impl Call {
     pub fn budgets(&self) -> Result<(u64, u64), &'static str> {
+        if [&self.fuel, &self.memory_bytes].iter().any(|value| {
+            value.is_empty()
+                || value.len() > 20
+                || value.starts_with('0')
+                || !value.bytes().all(|b| b.is_ascii_digit())
+        }) {
+            return Err("canonical-decimal-budget-required");
+        }
         let fuel = self.fuel.parse::<u64>().map_err(|_| "fuel-format")?;
         let memory = self
             .memory_bytes

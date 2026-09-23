@@ -104,7 +104,7 @@ impl PolicyStore {
         check_deadline(deadline)?;
         let _fence = self.owner.fence.try_write().map_err(|_| unavailable())?;
         self.owner.check()?;
-        if let Err(error) = state.ledger.persist(&bytes, revision) {
+        if let Err(error) = state.persist(&bytes, revision) {
             self.owner.poison();
             return Err(error);
         }

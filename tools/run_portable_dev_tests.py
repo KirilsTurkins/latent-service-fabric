@@ -26,12 +26,14 @@ def call(name, function, raw=b"[]", *, grants=(), fuel="1000000", memory="419430
         "fuel": fuel, "memoryBytes": memory, "timeoutMillis": timeout, "cancelBeforeStart": cancel}
 
 
-def run(host: Path, cwd: Path, component: bytes, manifest: bytes, contracts: bytes, calls: list) -> dict:
+def run(host: Path, cwd: Path, component: bytes, manifest: bytes, contracts: bytes, calls: list, *, fixtures=None) -> dict:
     request = {"schemaVersion": "latent.dev.portable-request.v1", "environment": "portable",
         "controlledDevelopment": True, "component": base64.b64encode(component).decode(),
         "manifest": base64.b64encode(manifest).decode(), "contracts": base64.b64encode(contracts).decode(), "calls": calls}
+    if fixtures is not None:
+        request["fixtures"] = fixtures
     response = process.run([str(host)], cwd, stdin=encode(request), timeout=45, maximum=4 * 1024 * 1024)
-    require(response.returncode == 0, "actual-portable-test-execution-failed")
+    require(response.returncode == 0, "actual-portable-test-execution-failed:" + response.stdout[:512].decode("utf-8", errors="replace"))
     result = decode(response.stdout, 4 * 1024 * 1024)
     require(result["productionNode"] is False and result["environment"] == "portable", "portable-routing")
     require(result["component"] == digest(component), "portable-artifact-association")
@@ -47,7 +49,7 @@ def payload(item: dict) -> bytes:
     return raw
 
 
-def verify(host: Path, echo: Path, generic: Path) -> dict:
+def verify(host: Path, echo: Path, generic: Path, providers: Path | None = None) -> dict:
     with tempfile.TemporaryDirectory(prefix="lsf-portable-real-") as temporary:
         cwd = Path(temporary)
         # Cargo hard-links its build outputs. Stage the shipping executable as a
@@ -125,12 +127,17 @@ def verify(host: Path, echo: Path, generic: Path) -> dict:
         shared = portable.execute(host, cwd, cwd, selected, [], host_identity={"kind": "explicit-local-test-build"})
         require(shared["passed"] is False and [item["status"] for item in shared["results"]] ==
                 ["passed", "unsupported"], "required-linux-test-cannot-pass-portably")
+        provider_results = None
+        if providers is not None:
+            from tools.portable_dev_provider_tests import verify as verify_providers
+            provider_results = verify_providers(host, cwd, providers)
         return {"schemaVersion": "latent.dev.portable-smoke.v1", "os": platform.system(),
             "architecture": platform.machine(), "hostSha256": digest(paths.read(host.parent, host.name, 256 * 1024 * 1024)),
             "environment": "portable", "outsideCheckout": True, "compilerInExecutionPath": False,
             "execution": "actual-component-production-wasmtime", "publisherAuthenticated": False,
             "qualification": "rust-native-subset-only", "cleanup": "owned-processes-reaped",
-            "echo": result, "generic": generic_result, "sharedScenarioAdapter": shared, "unsupportedImportRejected": True}
+            "echo": result, "generic": generic_result, "providers": provider_results,
+            "sharedScenarioAdapter": shared, "unsupportedImportRejected": True}
 
 
 def main() -> int:
@@ -139,8 +146,9 @@ def main() -> int:
     parser.add_argument("--echo", type=Path, required=True)
     parser.add_argument("--generic", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--providers", type=Path)
     args = parser.parse_args()
-    receipt = verify(args.host.absolute(), args.echo.absolute(), args.generic.absolute())
+    receipt = verify(args.host.absolute(), args.echo.absolute(), args.generic.absolute(), args.providers.absolute() if args.providers else None)
     args.output.write_bytes(encode(receipt))
     print("Actual portable Rust subset passed: typed values/errors, log/context, deny, cancellation, fresh state, trap and budgets")
     return 0

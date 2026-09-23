@@ -3,11 +3,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::Engine;
 use latent_activation::{ActivationEnvelope, TraceContext};
-use latent_artifacts::{ArtifactDescriptor, CapsuleArtifact};
+use latent_artifacts::{ArtifactDescriptor, CapsuleArtifact, DevelopmentTestArtifact};
 use latent_core::{
-    ActivationId, ArtifactReference, CapabilityId, CellId, ContractId, FunctionId,
-    InvocationPrincipal, Metadata, PrincipalKind, ResourceBudget, ServiceId, SpanId, TenantId,
-    TraceId,
+    ActivationBudget, ActivationId, ArtifactReference, CapabilityId, CellId, ClockSample,
+    ContractId, EffectiveActivationBudget, FunctionId, InvocationPrincipal, Metadata,
+    PrincipalKind, ResourceBudget, ServiceId, SpanId, TenantId, TraceId,
 };
 use latent_executor::{
     BoundImport, ExecutionBackend, ExecutionCancellation, ExecutionCancellationProbe,
@@ -17,12 +17,12 @@ use latent_manifest::{
     JsonManifestCodec, ManifestCodec, ManifestValidator, Phase1ManifestValidator,
 };
 use latent_routing::InvocationTarget;
-use latent_wasmtime::{WasmtimeComponentEngineFactory, WasmtimeConfig};
+use latent_wasmtime::{WasmtimeComponentEngineFactory, WasmtimeConfig, WasmtimeHostServices};
 use serde_json::{json, Value};
 
 use crate::request::{Call, Request, IMPORTS};
 
-struct Cancellation(ActivationId, bool);
+struct Cancellation(ActivationId, bool, Arc<ActivationBudget>);
 
 impl ExecutionCancellationProbe for Cancellation {
     fn is_cancelled(&self) -> bool {
@@ -43,7 +43,10 @@ impl ExecutionCancellation for Cancellation {
         ExecutionCancellationProbe::reason(self)
     }
     fn probe(&self) -> Option<Arc<dyn ExecutionCancellationProbe>> {
-        Some(Arc::new(Self(self.0.clone(), self.1)))
+        Some(Arc::new(Self(self.0.clone(), self.1, self.2.clone())))
+    }
+    fn budget_accounting(&self) -> Option<&ActivationBudget> {
+        Some(&self.2)
     }
 }
 
@@ -102,6 +105,7 @@ fn execution(
     call: &Call,
     prepared: latent_executor::PreparedComponent,
     ceiling: &ResourceBudget,
+    owned: &DevelopmentTestArtifact,
 ) -> Result<ExecutionRequest, &'static str> {
     let (fuel, memory) = call.budgets()?;
     let id = ActivationId(call.id.clone());
@@ -111,7 +115,7 @@ fn execution(
         wall_time_limit_millis: Some(call.timeout_millis),
         log_bytes: ceiling.log_bytes.min(16384),
         child_calls: 0,
-        outbound_requests: 0,
+        outbound_requests: ceiling.outbound_requests.min(8),
         state_read_bytes: 0,
         state_write_bytes: 0,
         blob_read_bytes: 0,
@@ -136,18 +140,18 @@ fn execution(
             principal: InvocationPrincipal {
                 subject: "portable-test".into(),
                 kind: PrincipalKind::Service,
-                tenant: Some(TenantId("portable-test".into())),
+                tenant: owned.eligibility().tenant().cloned(),
                 service: Some(ServiceId(call.service.clone())),
                 claims: Metadata::new(),
             },
             target: InvocationTarget {
-                tenant: TenantId("portable-test".into()),
+                tenant: owned.eligibility().tenant().expect("test tenant").clone(),
                 service: ServiceId(call.service.clone()),
                 contract: ContractId(call.contract.clone()),
                 function: FunctionId(call.function.clone()),
                 route: None,
             },
-            resolved_revision: None,
+            resolved_revision: Some(crate::providers::revision(call, owned)),
             deadline_unix_millis: Some(deadline),
             priority: 0,
             trace: TraceContext {
@@ -174,7 +178,7 @@ fn execution(
             .grants
             .iter()
             .map(|grant| BoundImport {
-                capability: CapabilityId("explicit-test-fixture".into()),
+                capability: CapabilityId(grant.clone()),
                 contract: grant.clone(),
                 opaque_handle: call.id.clone(),
             })
@@ -188,32 +192,78 @@ fn payload(raw: &[u8], media: &str) -> Value {
         "byteLength":raw.len().to_string(), "mediaType":media})
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "retain the test artifact and provider owners through invocation, cleanup checks and receipt creation"
+)]
 pub async fn run(request: Request) -> Result<Value, &'static str> {
+    let fixture_digest = latent_artifacts::content_digest(
+        &serde_json::to_vec(&request.fixtures).map_err(|_| "portable-fixture-identity")?,
+    );
     let artifact = artifact(&request)?;
-    let factory = WasmtimeComponentEngineFactory::new(WasmtimeConfig {
-        maximum_memory_bytes: 64 * 1024 * 1024,
-        maximum_fuel: 10_000_000_000,
-        prepared_cache_maximum_entries: 1,
-        maximum_concurrent_preparations: 1,
-        ..WasmtimeConfig::default()
-    })
+    let tenant = artifact
+        .manifest
+        .metadata
+        .tenant
+        .clone()
+        .unwrap_or(TenantId("portable-test".into()));
+    let owned =
+        DevelopmentTestArtifact::new(artifact, tenant).map_err(|_| "portable-artifact-owner")?;
+    let artifact = owned.artifact();
+    let mut providers =
+        crate::providers::Providers::new(&owned, &request.fixtures, &request.calls)?;
+    let factory = WasmtimeComponentEngineFactory::with_catalog(
+        WasmtimeConfig {
+            maximum_memory_bytes: 64 * 1024 * 1024,
+            maximum_fuel: 10_000_000_000,
+            prepared_cache_maximum_entries: 1,
+            maximum_concurrent_preparations: 1,
+            ..WasmtimeConfig::default()
+        },
+        WasmtimeHostServices {
+            clock: providers.clock.clone(),
+            log_sink: None,
+            capabilities: Some(providers.runtime.clone()),
+        },
+        owned.authority(),
+    )
     .map_err(|_| "portable-engine-configuration")?;
     let backend = factory.create_backend_instance();
+    let mut key = factory.preparation_key(artifact.descriptor.release_digest.clone());
+    key.publication = Some(owned.eligibility().publication().clone());
     let prepared = backend
-        .prepare(
-            &artifact,
-            &factory.preparation_key(artifact.descriptor.release_digest.clone()),
-        )
-        .await
-        .map_err(|_| "portable-component-preparation-rejected")?;
+        .prepare_development_test(&owned, &key)
+        .map_err(|error| {
+            let message = error.message.chars().filter(|c| !c.is_control()).take(256).collect::<String>();
+            eprintln!("{}", json!({"stage":"component-preparation","code":error.code.wire_code(),"message":message}));
+            "portable-component-preparation-rejected"
+        })?;
     let mut results = Vec::with_capacity(request.calls.len());
     for call in request.calls {
-        let cancellation = Cancellation(ActivationId(call.id.clone()), call.cancel_before_start);
         let request = execution(
             &call,
             prepared.clone(),
             &artifact.manifest.execution.resource_budget_ceiling,
+            &owned,
         )?;
+        let accounting = ActivationBudget::with_profile(
+            EffectiveActivationBudget::admit_profile_at(
+                latent_core::BudgetProfile::Phase3,
+                &request.budget,
+                &request.budget,
+                &artifact.manifest.execution.resource_budget_ceiling,
+                request.activation.deadline_unix_millis,
+                ClockSample::system_now(),
+            )
+            .map_err(|_| "portable-activation-budget")?,
+            latent_core::BudgetProfile::Phase3,
+        )
+        .map_err(|_| "portable-activation-budget-profile")?;
+        let cancellation = Cancellation(
+            ActivationId(call.id.clone()),
+            call.cancel_before_start,
+            Arc::new(accounting),
+        );
         let report = backend.invoke_contained(request, &cancellation).await;
         if report.cleanup != ExecutionCleanup::Reusable {
             return Err("portable-cleanup-unconfirmed");
@@ -257,6 +307,7 @@ pub async fn run(request: Request) -> Result<Value, &'static str> {
             .log_sink()
             .snapshot_for(&ActivationId(call.id.clone()));
         backend.log_sink().clear();
+        providers.check_idle()?;
         let error = if category == "platform-failure" {
             data.clone()
         } else {
@@ -272,13 +323,20 @@ pub async fn run(request: Request) -> Result<Value, &'static str> {
             return Err("portable-aggregate-output-limit");
         }
     }
+    providers.shutdown().await?;
+    let metrics = providers.metrics.as_ref().map(|provider| {
+        let s = provider.snapshot(); json!({"accepted":s.accepted,"attempted":s.attempted,"invalid":s.invalid,"exhausted":s.exhausted})
+    });
     Ok(
         json!({"schemaVersion":"latent.dev.portable-result.v1","environment":"portable",
         "trust":"controlled-development-test", "productionNode":false,"category":"success",
-        "clock":"system-clock-nondeterministic","entropy":"unsupported","fixtureSubstitutions":[],
+        "clock":"system-clock-nondeterministic","entropy":providers.entropy,
+        "fixtures":{"sha256":fixture_digest.0,"random":request.fixtures.entropy.is_some(),
+            "metrics": !request.fixtures.metrics.is_empty(),"http":request.fixtures.http.is_some()},
+        "httpFixtureRequests": providers.http_requests,"metrics":metrics,
         "component":artifact.descriptor.release_digest.0,"os":std::env::consts::OS,"architecture":std::env::consts::ARCH,
         "wasmtime":latent_wasmtime::WASMTIME_VERSION,"supportedImports":IMPORTS,"results":results,
         "excludedChecks":["node-admission","deployment","management-authentication","linux-protected-files",
-            "PSI","isolated-compilation","native-cache","provider-fixtures","production-performance"]}),
+            "PSI","isolated-compilation","native-cache","production-performance"]}),
     )
 }
