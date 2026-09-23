@@ -20,6 +20,16 @@
       "shell": "default",
       "run": "set -o pipefail\npython3 tools/build_guest_capsules.py --output \"$LSF_GUEST_CAPSULES\" 2>&1 | tee \"$RUNNER_TEMP/c-guest-build.log\"\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/c-guest-runtime.log\"\ncargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee \"$RUNNER_TEMP/c-guest-provenance.log\"\ncargo test --locked -p latent-control-store --lib managed_lease_failure_never_mutates_or_renews_a_historical_replay 2>&1 | tee \"$RUNNER_TEMP/c-guest-control-lease.log\"\ncargo test --locked -p latent-policy --lib mutation_renewal_persists_a_full_window_even_before_the_sampler_margin 2>&1 | tee \"$RUNNER_TEMP/c-guest-clock-window.log\""
     },
+    ".github/workflows/c-guest-authoring.yml:runtime:Qualify standalone C projects and the printed guide": {
+      "workflow": ".github/workflows/c-guest-authoring.yml",
+      "job": "runtime",
+      "name": "Qualify standalone C projects and the printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_c_capsule_authoring\npython3 tools/qualify_c_capsules.py --output \"$RUNNER_TEMP/c-capsule-authoring\""
+    },
     ".github/workflows/ci.yml:profile:select": {
       "workflow": ".github/workflows/ci.yml",
       "job": "profile",
@@ -1189,16 +1199,6 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 controls/tools/security_scan.py rustsec --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
-    },
-    ".github/workflows/c-guest-authoring.yml:runtime:Qualify standalone C projects and the printed guide": {
-      "workflow": ".github/workflows/c-guest-authoring.yml",
-      "job": "runtime",
-      "name": "Qualify standalone C projects and the printed guide",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "python3 -m unittest tools.tests.test_c_capsule_authoring\npython3 tools/qualify_c_capsules.py --output \"$RUNNER_TEMP/c-capsule-authoring\""
     },
     ".github/workflows/typescript-guest.yml:boundary:Capture immutable qualification source inputs": {
       "workflow": ".github/workflows/typescript-guest.yml",
@@ -2695,6 +2695,9 @@
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
     },
+    "tools/qualify_c_capsules.py": {
+      "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
+    },
     "tools/qualify_rust_capsules.py": {
       "sha256": "8be1a3ed2d29898f66fefd9b7a8f801d4c15fb3fe994b0d2490eb9de555627c3"
     },
@@ -2791,6 +2794,9 @@
     "tools/test.py": {
       "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
     },
+    "tools/typescript_guest/probe.py": {
+      "sha256": "535a99c354e65b17b2bcf9d60a5cf9273634d130f23a243ed847aa678d02842c"
+    },
     "tools/validate_contracts.sh": {
       "sha256": "19a9c1c469cdf4ec6fd26b7d882ad979107f91e66ae50bcb72fb74d6890ea7ba"
     },
@@ -2817,12 +2823,6 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
-    },
-    "tools/qualify_c_capsules.py": {
-      "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
-    },
-    "tools/typescript_guest/probe.py": {
-      "sha256": "535a99c354e65b17b2bcf9d60a5cf9273634d130f23a243ed847aa678d02842c"
     }
   },
   "pythonCases": {
@@ -3121,6 +3121,17 @@
       "BuildSnapshotTests.test_executable_mode_changes_inventory",
       "BuildSnapshotTests.test_real_capture_uses_committed_bytes_excludes_evidence_and_is_repeatable",
       "BuildSnapshotTests.test_unsafe_members_cannot_escape_or_introduce_special_files"
+    ],
+    "tools/tests/test_c_capsule_authoring.py": [
+      "CAuthoringTests.test_all_templates_capture_editable_source_and_authoritative_contracts",
+      "CAuthoringTests.test_c_namespace_aliases_never_invent_or_hide_ambiguous_bindings",
+      "CAuthoringTests.test_fresh_output_does_not_overwrite_existing_project",
+      "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
+      "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project",
+      "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected",
+      "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs",
+      "ControlDiagnosticsTests.test_cyclic_audit_cursor_stops_without_hiding_the_original_failure",
+      "ControlDiagnosticsTests.test_paginated_evidence_never_retries_or_changes_the_failed_mutation"
     ],
     "tools/tests/test_capability_policy_schema.py": [
       "CapabilityPolicySchemaTests.test_capability_operation_and_resource_kinds_cannot_be_mixed",
@@ -5435,6 +5446,16 @@
       "TestkitDependencyTests.test_selected_graph_rejects_empty_or_heavy_results",
       "TestkitDependencyTests.test_target_specific_optional_and_build_cycles_remain_errors"
     ],
+    "tools/tests/test_typescript_capsule_authoring.py": [
+      "TypeScriptAuthoringTests.test_all_current_capability_fixtures_are_editable_typed_projects",
+      "TypeScriptAuthoringTests.test_every_template_captures_editable_sources_and_exact_sdk",
+      "TypeScriptAuthoringTests.test_fresh_project_and_safe_names_never_overwrite_source",
+      "TypeScriptAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
+      "TypeScriptAuthoringTests.test_import_identity_follows_selected_world_and_never_arena_indexes",
+      "TypeScriptAuthoringTests.test_sdk_wit_and_compiler_lock_drift_are_rejected",
+      "TypeScriptAuthoringTests.test_source_and_compiler_directory_overlap_is_rejected_before_execution",
+      "TypeScriptAuthoringTests.test_uncaptured_application_dependency_or_config_overrides_fail_closed"
+    ],
     "tools/tests/test_validate_docs.py": [
       "DocumentationValidationTests.test_code_examples_are_not_links_or_headings",
       "DocumentationValidationTests.test_dangling_symlink_cannot_satisfy_tracked_link",
@@ -5586,17 +5607,6 @@
     ],
     "tools/tests/test_zig_cache_boundary.py": [
       "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation"
-    ],
-    "tools/tests/test_c_capsule_authoring.py": [
-      "CAuthoringTests.test_all_templates_capture_editable_source_and_authoritative_contracts",
-      "CAuthoringTests.test_c_namespace_aliases_never_invent_or_hide_ambiguous_bindings",
-      "CAuthoringTests.test_fresh_output_does_not_overwrite_existing_project",
-      "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
-      "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project",
-      "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected",
-      "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs",
-      "ControlDiagnosticsTests.test_cyclic_audit_cursor_stops_without_hiding_the_original_failure",
-      "ControlDiagnosticsTests.test_paginated_evidence_never_retries_or_changes_the_failed_mutation"
     ]
   },
   "pythonTestModules": [
@@ -5827,6 +5837,7 @@
     "tools/tests/test_supply_chain_schemas.py",
     "tools/tests/test_svg_references.py",
     "tools/tests/test_testkit_dependencies.py",
+    "tools/tests/test_typescript_capsule_authoring.py",
     "tools/tests/test_validate_docs.py",
     "tools/tests/test_validate_issue_forms.py",
     "tools/tests/test_validate_phase0_gate.py",

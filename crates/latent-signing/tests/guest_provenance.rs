@@ -176,6 +176,83 @@ fn standalone() -> BuildObservation {
 }
 
 #[test]
+fn typescript_capsules_have_a_closed_separately_approved_compiler_profile() {
+    let mut value = standalone();
+    value.build_type = TYPESCRIPT_CAPSULE_BUILD_TYPE.into();
+    value.parameters = BuildRecipe::TypeScriptCapsule(TypeScriptCapsuleBuildParameters {
+        compiler: "componentize-js".into(),
+        bindings: "jco".into(),
+        language: "typescript".into(),
+        target: "wasm32-component".into(),
+        runtime: "spidermonkey".into(),
+        ambient_wasi: false,
+    });
+    for name in ["node", "compiler-inputs"] {
+        value.materials.push(BuildMaterial {
+            name: name.into(),
+            digest: value.source.snapshot_digest.clone(),
+            size: 1,
+        });
+    }
+    let (signer, public, _) = signer(BUILDER);
+    let evidence = signed(&signer, &value);
+    let mut policy = policy_value(&public);
+    assert_eq!(
+        verifier(&policy)
+            .verify_package(&subject(), evidence.as_ref(), NOW)
+            .unwrap_err()
+            .reason(),
+        SignatureFailure::PredicateDisallowed
+    );
+    policy["requirements"][0]["buildType"] = TYPESCRIPT_CAPSULE_BUILD_TYPE.into();
+    verifier(&policy)
+        .verify_package(&subject(), evidence.as_ref(), NOW)
+        .unwrap();
+    let encoded = serde_json::to_value(&value).unwrap();
+    for field in [
+        "compiler",
+        "bindings",
+        "language",
+        "target",
+        "runtime",
+        "unreviewedOption",
+    ] {
+        let mut invalid = encoded.clone();
+        invalid["parameters"][field] = "different".into();
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&invalid).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+    let mut ambient = encoded.clone();
+    ambient["parameters"]["ambientWasi"] = true.into();
+    assert!(
+        decode_build_observation(&serde_json::to_vec(&ambient).unwrap(), Default::default())
+            .is_err()
+    );
+    for name in [
+        "node",
+        "compiler-inputs",
+        "dependency-lock",
+        "contracts-tool",
+        "packager",
+        "package-inputs",
+    ] {
+        let mut invalid = encoded.clone();
+        invalid["materials"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|row| row["name"] != name);
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&invalid).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+}
+
+#[test]
 fn standalone_capsules_require_their_own_source_bound_builder_approval() {
     let (signer, public, _) = signer(BUILDER);
     let value = standalone();

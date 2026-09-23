@@ -57,6 +57,18 @@ pub enum BuildRecipe {
     Rust(BuildParameters),
     C(CBuildParameters),
     RustCapsule(RustCapsuleBuildParameters),
+    TypeScriptCapsule(TypeScriptCapsuleBuildParameters),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct TypeScriptCapsuleBuildParameters {
+    pub compiler: String,
+    pub bindings: String,
+    pub language: String,
+    pub target: String,
+    pub runtime: String,
+    pub ambient_wasi: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

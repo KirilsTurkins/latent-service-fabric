@@ -24,6 +24,13 @@ async fn main() -> wasmtime::Result<()> {
         .ok_or_else(|| wasmtime::Error::msg("component path required"))?;
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
+    let optimization = std::env::args().nth(2).unwrap_or_else(|| "speed".into());
+    config.cranelift_opt_level(match optimization.as_str() {
+        "none" => wasmtime::OptLevel::None,
+        "speed" => wasmtime::OptLevel::Speed,
+        _ => return Err(wasmtime::Error::msg("unsupported diagnostic optimization")),
+    });
+    println!("diagnostic compiler optimization: {optimization}");
     let engine = Engine::new(&config)?;
     let started = Instant::now();
     let component = Component::from_file(&engine, path)?;

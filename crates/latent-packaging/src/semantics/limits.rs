@@ -38,9 +38,12 @@ impl Default for SemanticLimits {
             max_sections: 8192,
             max_core_functions: 65_536,
             max_core_locals: 1_048_576,
-            max_operators: 2_000_000,
+            // General capsules may embed a bounded language runtime, including
+            // SpiderMonkey. Keep the same finite binary-work envelope already
+            // used for that engine by the closed renderer, not an exemption.
+            max_operators: 8_000_000,
             max_component_items: 16_384,
-            max_type_nodes: 65_536,
+            max_type_nodes: 262_144,
             max_type_depth: 64,
             max_type_members: 1024,
             max_name_bytes: 512,

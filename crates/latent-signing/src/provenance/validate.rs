@@ -1,6 +1,6 @@
 use super::{
     BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, PROVENANCE_BUILD_TYPE,
-    RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE,
+    RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE, TYPESCRIPT_CAPSULE_BUILD_TYPE,
 };
 use crate::{SignatureFailure, SignatureResult};
 use std::collections::BTreeSet;
@@ -162,6 +162,14 @@ pub(crate) fn validate_observation(
             "package-inputs",
         ],
         C_GUEST_BUILD_TYPE => &["zig", "wit-bindgen"],
+        TYPESCRIPT_CAPSULE_BUILD_TYPE => &[
+            "dependency-lock",
+            "node",
+            "compiler-inputs",
+            "contracts-tool",
+            "packager",
+            "package-inputs",
+        ],
         _ => unreachable!("profile checked above"),
     };
     for required in tool_materials {
@@ -232,6 +240,14 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
                 )
                 && p.target == "wasm32-wasi"
                 && p.optimization == "O2"
+        }
+        (TYPESCRIPT_CAPSULE_BUILD_TYPE, BuildRecipe::TypeScriptCapsule(p)) => {
+            p.compiler == "componentize-js"
+                && p.bindings == "jco"
+                && p.language == "typescript"
+                && p.target == "wasm32-component"
+                && p.runtime == "spidermonkey"
+                && !p.ambient_wasi
         }
         _ => false,
     };

@@ -4253,14 +4253,15 @@
         "guest_profiles_require_separate_builder_approval_and_preserve_legacy_echo",
         "mixed_recipes_missing_tools_and_unbounded_claims_are_rejected",
         "standalone_capsules_require_their_own_source_bound_builder_approval",
-        "standalone_recipes_cannot_lie_about_target_identity_or_observed_tools"
+        "standalone_recipes_cannot_lie_about_target_identity_or_observed_tools",
+        "typescript_capsules_have_a_closed_separately_approved_compiler_profile"
       ],
       "expectedIgnored": [],
       "id": "latent-signing.test.guest-provenance",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-signing/Cargo.toml",
-      "minimumCases": 4,
+      "minimumCases": 5,
       "mode": "libtest",
       "package": "latent-signing",
       "platforms": [

@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { basename, dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const [compiler, witPath, sourcePath, output] = process.argv.slice(2);
+const [compiler, witPath, sourcePath, output, world = 'capsule'] = process.argv.slice(2);
 const bytes = await readFile(compiler);
 if (createHash('sha256').update(bytes).digest('hex') !==
     'e58ef4f3b126f4a3fd07c61b368930bbf02dd0029f0f03e4c6928528e994e559') {
@@ -22,9 +22,10 @@ try {
   if (error.code !== 'EEXIST' || await readFile(path, 'utf8') !== adapted) throw error;
 }
 const { componentize } = await import(pathToFileURL(path));
+if (!witPath) process.exit(0); // Prepare and hash the reviewed adapter before the build.
 const result = await componentize({
   sourcePath, sourceName: basename(sourcePath),
-  witPath, worldName: 'capsule', enableAot: false, env: {},
+  witPath, worldName: world, enableAot: false, env: {},
   disableFeatures: ['stdio', 'random', 'clocks', 'http', 'fetch-event'],
 });
 if (!result.core || result.core.byteLength > 64 * 1024 * 1024) throw new Error('core-output-bound');
