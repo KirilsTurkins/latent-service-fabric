@@ -57,6 +57,13 @@ pub struct Runtime {
     random: Option<Arc<RandomProvider>>,
 }
 
+/// One exact caller identity and its allowed service/publication targets.
+pub struct Scope<'a> {
+    pub services: &'a [&'a str],
+    pub publications: &'a [PublicationId],
+    pub principal: (&'a str, &'a str),
+}
+
 impl Runtime {
     pub fn entropy_calls(&self) -> u64 {
         self.random
@@ -74,9 +81,11 @@ impl Runtime {
             broker,
             policies,
             "tests",
-            &["generic"],
-            &[publication.publication().clone()],
-            ("service", "generic-test"),
+            &[Scope {
+                services: &["generic"],
+                publications: &[publication.publication().clone()],
+                principal: ("service", "generic-test"),
+            }],
             main_capability == RANDOM,
         )
     }
@@ -85,9 +94,7 @@ impl Runtime {
         broker: &ActivationCapabilityBroker,
         policies: &PolicyStore,
         tenant: &str,
-        services: &[&str],
-        publications: &[PublicationId],
-        principal: (&str, &str),
+        scopes: &[Scope<'_>],
         existing_random: bool,
     ) -> Self {
         let mut owner = Self::default();
@@ -125,22 +132,19 @@ impl Runtime {
         }
         for entry in &owner.entries {
             let capability = entry.reference.capability();
+            let rules: Vec<_> = scopes.iter().enumerate().map(|(index, scope)| json!({
+                "id":format!("runtime-{index}"),"effect":"allow",
+                "principals":[{"kind":scope.principal.0,"subject":scope.principal.1}],
+                "services":scope.services,"publications":scope.publications.iter().map(PublicationId::as_str).collect::<Vec<_>>(),
+                "capability":capability,"operations":entry.operation,
+                "resources":{"kind":if capability == RANDOM {"random"} else {"clock"}},
+                "ceiling":{"operations":4096,"inputBytes":if capability == RANDOM {8} else {0},"outputBytes":32768,"wallTimeMillis":5000}
+            })).collect();
             for (id, kind, document) in [
                 (
                     entry.policy[0].as_str(),
                     RecordKind::Policy,
-                    json!({
-                        "formatVersion":1,"tenant":tenant,"rules":[{
-                            "id":"runtime","effect":"allow",
-                            "principals":[{"kind":principal.0,"subject":principal.1}],
-                            "services":services,"publications":publications.iter().map(PublicationId::as_str).collect::<Vec<_>>(),
-                            "capability":capability,"operations":entry.operation,
-                            "resources":{"kind":if capability == RANDOM {"random"} else {"clock"}},
-                            // The scalar random provider audits an eight-byte
-                            // requested-length input, even though WIT has no args.
-                            "ceiling":{"operations":4096,"inputBytes":if capability == RANDOM {8} else {0},"outputBytes":32768,"wallTimeMillis":5000}
-                        }]
-                    }),
+                    json!({"formatVersion":1,"tenant":tenant,"rules":rules}),
                 ),
                 (
                     entry.binding.as_str(),
