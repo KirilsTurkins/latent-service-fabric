@@ -9,6 +9,7 @@ export const probe = {
     if (!input.text.trim()) throw 'Please enter text.';
     if (input.text.length > 4096 || input.bytes.length > 1024) throw 'Input limit exceeded.';
     const [value, minimum, maximum] = roundtrip(input.value, input.minimum, input.maximum);
-    return { value, minimum, maximum, text: echo(input.text), bytes: input.bytes };
+    return { value, minimum, maximum, text: echo(input.text), bytes: input.bytes,
+      maybe: input.maybe, items: input.items };
   },
 };

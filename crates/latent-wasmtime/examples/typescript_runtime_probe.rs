@@ -64,13 +64,50 @@ async fn main() -> wasmtime::Result<()> {
             Box::pin(async move { Ok(((value, minimum, maximum),)) })
         },
     )?;
-    for text in ["Hello, \0世界! 🚚", "", "panic", "cancel", "Hello again"] {
+    for text in [
+        "Hello, \0世界! 🚚",
+        "no-option",
+        "zero-option",
+        "",
+        "panic",
+        "cancel",
+        "Hello again",
+    ] {
         let input = Val::Record(vec![
             ("value".into(), Val::U64(u64::MAX)),
             ("minimum".into(), Val::S64(i64::MIN)),
             ("maximum".into(), Val::S64(i64::MAX)),
             ("text".into(), Val::String(text.into())),
             ("bytes".into(), Val::List(vec![Val::U8(0), Val::U8(255)])),
+            (
+                "maybe".into(),
+                Val::Option(if text == "no-option" {
+                    None
+                } else {
+                    Some(Box::new(Val::U64(if text == "zero-option" {
+                        0
+                    } else {
+                        u64::MAX
+                    })))
+                }),
+            ),
+            (
+                "items".into(),
+                Val::List(if text == "no-option" {
+                    vec![]
+                } else {
+                    vec![
+                        Val::Record(vec![
+                            ("text".into(), Val::String(String::new())),
+                            ("amount".into(), Val::U64(0)),
+                        ]),
+                        Val::Record(vec![
+                            ("text".into(), Val::String("nested\0世界 🚚".into())),
+                            ("amount".into(), Val::U64(u64::MAX)),
+                        ]),
+                    ]
+                }),
+            ),
         ]);
         let started = Instant::now();
         let future = invoke(&engine, &component, &linker, "run", input.clone());
