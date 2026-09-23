@@ -141,7 +141,9 @@ def binding_check(work: Path, pins: dict, command: Commands, bindgen: Path) -> s
 
 def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, bytes], component: bytes) -> None:
     manifest = read_json(ROOT / "examples/echo-contract/capsule.json")
-    manifest["metadata"] = {"name": project["service"], "tenant": project["tenant"]}
+    manifest["metadata"] = {"name": project["service"]}
+    if project["tenant"] is not None:
+        manifest["metadata"]["tenant"] = project["tenant"]
     manifest["component"] = {"digest": digest(component), "version": project["version"], "world": project["world"]}
     manifest["exports"] = surface["exports"]
     manifest["imports"] = [{"contract": name, "optional": False} for name in surface["imports"]]

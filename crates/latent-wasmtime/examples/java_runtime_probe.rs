@@ -125,30 +125,27 @@ fn linker(
     calls: Arc<AtomicUsize>,
 ) -> wasmtime::Result<Linker<StoreLimits>> {
     let mut linker = Linker::new(engine);
-    linker
-        .instance("latent:random/random@0.1.0")?
-        .func_new_async("bytes", |_, _, arguments, results| {
-            Box::new(async move {
-                tokio::task::yield_now().await;
-                let [Val::U32(length)] = arguments else {
-                    return Err(wasmtime::Error::msg("random-input"));
-                };
-                if *length != 32 {
-                    return Err(wasmtime::Error::msg("random-budget"));
-                }
-                results[0] = Val::Result(Ok(Some(Box::new(Val::List(vec![Val::U8(7); 32])))));
-                Ok(())
-            })
-        })?;
-    linker
-        .instance("latent:random/random@0.1.0")?
-        .func_new_async("u64", |_, _, _, results| {
-            Box::new(async move {
-                tokio::task::yield_now().await;
-                results[0] = Val::Result(Ok(Some(Box::new(Val::U64(u64::MAX)))));
-                Ok(())
-            })
-        })?;
+    let mut random = linker.instance("latent:random/random@0.1.0")?;
+    random.func_new_async("bytes", |_, _, arguments, results| {
+        Box::new(async move {
+            tokio::task::yield_now().await;
+            let [Val::U32(length)] = arguments else {
+                return Err(wasmtime::Error::msg("random-input"));
+            };
+            if *length != 32 {
+                return Err(wasmtime::Error::msg("random-budget"));
+            }
+            results[0] = Val::Result(Ok(Some(Box::new(Val::List(vec![Val::U8(7); 32])))));
+            Ok(())
+        })
+    })?;
+    random.func_new_async("u64", |_, _, _, results| {
+        Box::new(async move {
+            tokio::task::yield_now().await;
+            results[0] = Val::Result(Ok(Some(Box::new(Val::U64(u64::MAX)))));
+            Ok(())
+        })
+    })?;
     let monotonic = Arc::clone(&calls);
     let origin = Instant::now();
     linker

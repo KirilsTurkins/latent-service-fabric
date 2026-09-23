@@ -16,7 +16,16 @@ from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
 
 def sdk_snapshot(root: Path) -> dict:
-    return {name: value for name, value in snapshot(root).items() if "__pycache__" not in Path(name).parts}
+    # Exact production compiler inputs; never capture local feasibility build
+    # output, Gradle caches, Python bytecode, or unreferenced diagnostic sources.
+    files = {name: read_file(root / name) for name in (
+        "compiler.gradle", "feasibility/settings.gradle", "feasibility/dependencies.lock.json",
+        "feasibility/gradle/verification-metadata.xml", "feasibility/platform.c",
+        "feasibility/closed-runtime.wat", "tools/feasibility.py", "tools/dependencies.py",
+        "tools/teavm_platform.py", "tools/capture.py")}
+    for folder in ("runtime", "templates"):
+        files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
+    return dict(sorted(files.items()))
 
 
 def tool_inventory(roots: dict[str, Path]) -> bytes:
@@ -40,7 +49,7 @@ def tool_inventory(roots: dict[str, Path]) -> bytes:
 
 class Compiler:
     def __init__(self, directory: Path, wasi_sdk: Path, *, gradle="gradle", sdk: Path | None = None,
-                 platform: Path | None = None, timeout=900):
+                 platform: Path | None = None, config: dict | None = None, timeout=900):
         self.directory, self.wasi_sdk = directory.resolve(), wasi_sdk.resolve()
         self.sdk = sdk or ROOT / "sdk/java-guest"
         self.platform = platform or ROOT / "wit/platform"
@@ -51,9 +60,10 @@ class Compiler:
         self.environment["GRADLE_USER_HOME"] = str(self.directory / "gradle-home")
         self.deadline = time.monotonic() + timeout
         self.records = []
+        self.retained_bytes = 0
         self.paths = {}
         self.materials = []
-        config = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
+        config = config or tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
         if (self.wasi_sdk / "VERSION").read_text().splitlines() != [
             "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
             raise ValueError("unreviewed WASI-SDK Java compiler")
@@ -85,6 +95,9 @@ class Compiler:
             result = run_bounded_result([str(path), *map(str, arguments)], cwd or self.directory, self.environment,
                                  timeout_seconds=min(remaining, 600), max_output_bytes=4 * 1024 * 1024)
             log = result.stdout + b"\n" + result.stderr
+            self.retained_bytes += len(log)
+            if self.retained_bytes > 16 * 1024 * 1024:
+                raise ValueError("Java build diagnostic retention exceeded 16 MiB")
             (self.directory / (str(len(self.records)) + "-" + stage + ".log")).write_bytes(log)
             if result.returncode:
                 raise ValueError("Java compiler stage failed: " + stage + "; see retained log")
