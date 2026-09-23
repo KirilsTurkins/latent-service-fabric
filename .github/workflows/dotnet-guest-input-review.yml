@@ -1,0 +1,74 @@
+name: .NET guest input review
+
+on:
+  push:
+    branches: [feat/549-dotnet-guest-workflow]
+    paths: [.github/workflows/dotnet-guest-input-review.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  review:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.actor == 'KirilsTurkins'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Retrieve the already executed generator output
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/10755287976/zip > "$RUNNER_TEMP/bindings.zip"
+      - name: Inspect public generated declarations and current source owners
+        env:
+          INPUT_ZIP: ${{ runner.temp }}/bindings.zip
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, re, zipfile
+          root = pathlib.Path('.')
+          data = json.loads((root / 'tools/ci/suites.json').read_text())
+          for suite in data['suites']:
+              if suite['id'] in {'latent-wasmtime.test.guest-sdk', 'latent-toolchain-smoke.example.guest-http'}:
+                  print('SUITE', json.dumps(suite, sort_keys=True))
+          for name in ('tools/ci/coverage.json', 'tools/ci_suite_inventory.py'):
+              text = (root / name).read_text()
+              if name.endswith('.json'):
+                  print('COVERAGE-KEYS', json.dumps(list(json.loads(text))))
+              else:
+                  for number, line in enumerate(text.splitlines(), 1):
+                      if any(word in line for word in ('expected', 'ignored', 'source', 'recipe')):
+                          print('INVENTORY', number, line)
+          patterns = ('greeting', 'word-count', 'shipping')
+          matched = 0
+          for path in sorted(root.rglob('*')):
+              if not path.is_file() or '.git' in path.parts or path.suffix not in {'.wit', '.rs', '.py', '.json'}:
+                  continue
+              if path.stat().st_size > 256 * 1024:
+                  continue
+              for number, line in enumerate(path.read_text(errors='replace').splitlines(), 1):
+                  if any(word in line.lower() for word in patterns):
+                      print('EXAMPLE', path, number, line[:240])
+                      matched += 1
+                      if matched >= 80:
+                          break
+              if matched >= 80:
+                  break
+          with zipfile.ZipFile(os.environ['INPUT_ZIP']) as archive:
+              printed = 0
+              for name in sorted(archive.namelist()):
+                  if name.endswith('packages.lock.json'):
+                      print('NUGET-LOCK', archive.read(name).decode())
+                  elif name.endswith('.cs') and '/generated/' in '/' + name:
+                      text = archive.read(name).decode()
+                      print('BINDING', name)
+                      for line in text.splitlines():
+                          if re.match(r'\s*(namespace |public (?:static |sealed |abstract |partial |readonly )*(?:class |struct |interface |enum |record |[A-Za-z0-9_<]))', line):
+                              print(line[:500])
+                              printed += len(line)
+                              if printed > 48000:
+                                  raise SystemExit('bounded declaration review complete')
+          PY
