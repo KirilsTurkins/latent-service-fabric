@@ -1296,6 +1296,7 @@
         "deployments::tests::operations::delete_recreate_and_late_apply_replay_preserve_original_result",
         "deployments::tests::operations::finite_receipt_eviction_cannot_replay_an_absent_object_creation",
         "deployments::tests::operations::lease::managed_lease_failure_never_mutates_or_renews_a_historical_replay",
+        "deployments::tests::operations::lease::managed_preparation_renews_each_distinct_package_without_retry_or_partial_effect",
         "deployments::tests::operations::managed_first_publication_replays_exact_history_after_restart_without_fetch",
         "deployments::tests::operations::mixed::every_legacy_writer_preserves_both_committed_histories",
         "deployments::tests::operations::mixed::intervening_legacy_publication_invalidates_sealed_managed_commit",
@@ -1434,7 +1435,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 238,
+      "minimumCases": 239,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [

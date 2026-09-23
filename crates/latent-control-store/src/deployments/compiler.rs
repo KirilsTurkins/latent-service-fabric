@@ -183,6 +183,7 @@ pub(super) async fn compile_versioned_inner(
         lifecycle,
         pins,
         true,
+        None,
     )
     .await
     .and_then(|catalog| super::persistence::encode(catalog, config, work));
@@ -207,6 +208,7 @@ pub(super) async fn compile_catalog_with_runtime(
     work: &mut Work,
     runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
     lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+    control_authority: Option<&dyn latent_artifacts::AdmissionAuthority>,
 ) -> Result<CompiledCatalog, PlatformError> {
     compile_catalog_with_pins(
         deployments,
@@ -220,6 +222,7 @@ pub(super) async fn compile_catalog_with_runtime(
         runtime_profile,
         lifecycle,
         None,
+        control_authority,
     )
     .await
 }
@@ -240,6 +243,7 @@ pub(super) async fn compile_catalog_with_pins(
     runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
     lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
     pins: Option<&PublicationPins>,
+    control_authority: Option<&dyn latent_artifacts::AdmissionAuthority>,
 ) -> Result<CompiledCatalog, PlatformError> {
     let result = compile_catalog_inner(
         deployments,
@@ -255,6 +259,7 @@ pub(super) async fn compile_catalog_with_pins(
         lifecycle,
         pins,
         true,
+        control_authority,
     )
     .await;
     finish_compilation(&result, work);
@@ -293,6 +298,7 @@ pub(super) async fn compile_catalog_for_bindings(
         lifecycle,
         None,
         false,
+        None,
     )
     .await;
     finish_compilation(&result, work);
@@ -336,6 +342,7 @@ pub(super) async fn compile_for_publication(
             work,
             runtime_profile,
             lifecycle,
+            None,
         )
         .await
         .map(super::persistence::PublicationCandidate::Combined)
@@ -375,6 +382,7 @@ async fn compile_catalog_inner(
     lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
     pins: Option<&PublicationPins>,
     inherit_bindings: bool,
+    control_authority: Option<&dyn latent_artifacts::AdmissionAuthority>,
 ) -> Result<CompiledCatalog, PlatformError> {
     count!(work, compiler_calls, 1);
     work.generation(generation.0);
@@ -526,6 +534,16 @@ async fn compile_catalog_inner(
                 drop(release.take());
                 drop(release_surface.take());
                 fingerprints.clear();
+                // This opt-in owner exists only for authenticated control
+                // preparation. Each distinct package is read and verified once
+                // within a fresh finite durable lease; a catalog of individually
+                // bounded reads may exceed one window in total. No invocation,
+                // recovery, cache lookup or historical replay renews here.
+                // Failure leaves this private catalog unpublished, and commit
+                // still rechecks every grant under its existing currentness fence.
+                if let Some(authority) = control_authority {
+                    authority.renew_control_lease()?;
+                }
                 let (artifact, execution) = execution::load(
                     artifacts,
                     &deployment.release,
