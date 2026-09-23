@@ -1,13 +1,15 @@
 # Operational topology
 
-The [standalone Linux node](../reference/standalone-node.md) combines stateless
-execution with durable local release, deployment and delivery control. Completed
-Phase 2 provides supply-chain checks, lifecycle revocation, bounded caches, audit and
-manual/canary/rollback operations. Its [completion review](../phase-2-completion.md)
-records the accepted scope and bounded resource evidence.
-Phase 3 capability providers and shared application ingress are forthcoming;
-cluster controllers, transactional state and durable workflows belong to later
-phases. The [Phase 0 spike](../phase-0-spike.md) keeps its separate evidence boundary.
+The [standalone Linux node](../reference/standalone-node.md) runs capsules and
+keeps their published versions, deployments and routes on local storage. It
+provides package verification, revocation, bounded caches, audit, canary updates
+and rollback. Optional [HTTP and blob providers](../reference/standalone-providers.md)
+let permitted capsules use external services and local objects. Shared application
+ingress serves [static sites](../component-development/static-sites.md) and
+[Angular applications](../component-development/angular-build.md).
+
+Cluster placement, transactional application state and durable workflows are
+not available. Plan this installation as one node.
 
 ## Implemented single-node topology
 
@@ -75,11 +77,11 @@ proof and exact compatibility. Cache files cannot restore revoked authority.
 Logical byte counters, native mappings and total process RSS describe different
 resources. Do not plan one heap, connection pool or listener per service.
 
-The [measured tuning guidance](../phase-1-extension-completion.md#tuning-and-closure)
-retains its original source revisions, workload controls and limitations. Those
-Phase 1 results do not measure the added Phase 2 audit, signing, OCI or native
-cache paths. The [bounded operator workflow](../development/standalone-quickstart.md#bounded-phase-2-operator-workflow)
-checks integration and cleanup; it is not a scale or production-capacity campaign.
+Measure capacity with your own workload, including the providers, auditing and
+package verification you enable. Cache sizes and execution-cell counts are
+limits to configure, not throughput guarantees. The
+[resource reports](../testing/phase3-resource-recovery.md) describe the workloads
+used for development measurements and their limitations.
 
 ## Observability and future production topology
 
@@ -90,8 +92,9 @@ prior-session loss. Healthy promotion uses sealed attributed observations, not
 arbitrary dashboard counters. No hosted dashboard or general OTLP exporter is
 included.
 
-Provider pools, outbound HTTP/blob/secrets/events, shared application ingress,
-service calls and web/SSR integration belong to [Phase 3](../roadmap.md).
-PostgreSQL-backed control, remote placement, state/effect providers and durable
-workflow suspension remain their later-phase work. Existing configuration does
-not instantiate any of those services.
+The standalone configuration installs only the providers listed in its
+[provider reference](../reference/standalone-providers.md). Additional providers
+have their own integration instructions; adding an arbitrary provider name to
+the node configuration does not install one. PostgreSQL-backed control, remote
+placement, transactional state and durable workflow suspension are planned
+features; see the [roadmap](../roadmap.md).

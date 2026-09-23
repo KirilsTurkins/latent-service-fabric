@@ -43,7 +43,7 @@ export function pageRecords(html, page, profile) {
 }
 
 export function searchDocument(output, manifest) {
-  const profiles = new Map([['development', 'Development; Phase 3 work in progress'], ...manifest.versions.map(version => [version.version, `${version.runtimeVersion} / ${version.profile}`])]);
+  const profiles = new Map([['development', 'Development preview'], ...manifest.versions.map(version => [version.version, `Version ${version.runtimeVersion}`])]);
   const records = [];
   let indexedPages = 0;
   for (const page of manifest.pages) {

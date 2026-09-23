@@ -1,4 +1,4 @@
-# Phase 2 audit
+# Durable administrative audit
 
 Phase 3 [capability audit and inspection](runtime/capability-audit.md) extends this
 same owner with typed capability grant/call/provider evidence and optional

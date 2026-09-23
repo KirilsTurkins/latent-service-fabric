@@ -38,7 +38,7 @@ try {
       await audit('home-light');
       await page.locator('main').getByRole('link', {name: 'Start', exact: true}).click();
       await page.waitForURL(`${prefix}docs/start/`);
-      await page.locator('main').getByRole('link', {name: 'First node and retained invocation', exact: true}).click();
+      await page.locator('main').getByRole('link', {name: 'Run your first node', exact: true}).click();
       await page.waitForURL(`${prefix}docs/start/first-node/`);
       await page.locator('[data-doc-version="development"]').waitFor();
       assert.equal((await page.reload({waitUntil: 'networkidle'})).status(), 200);

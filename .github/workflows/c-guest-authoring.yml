@@ -1,0 +1,96 @@
+name: C guest authoring
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - 'sdk/c-guest/**'
+      - 'tools/**'
+      - 'crates/**'
+      - 'wit/**'
+      - 'schemas/**'
+      - 'Cargo.*'
+      - 'docs/component-development/c-authoring.md'
+      - '.github/workflows/c-guest-authoring.yml'
+  push:
+    branches: [development]
+    paths:
+      - 'sdk/c-guest/**'
+      - 'tools/**'
+      - 'crates/**'
+      - 'wit/**'
+      - 'schemas/**'
+      - 'Cargo.*'
+      - 'docs/component-development/c-authoring.md'
+      - '.github/workflows/c-guest-authoring.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: c-guest-authoring-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime:
+    name: Admitted C capability ownership
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - name: Install pinned validation and bindings
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Build and execute signed C and Rust capability packages
+        env:
+          LSF_GUEST_CAPSULES: ${{ runner.temp }}/c-guest-capsules
+        run: |
+          set -o pipefail
+          python3 tools/build_guest_capsules.py --output "$LSF_GUEST_CAPSULES" 2>&1 | tee "$RUNNER_TEMP/c-guest-build.log"
+          cargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee "$RUNNER_TEMP/c-guest-runtime.log"
+          cargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee "$RUNNER_TEMP/c-guest-provenance.log"
+      - name: Qualify standalone C projects and the printed guide
+        run: |
+          python3 -m unittest tools.tests.test_c_capsule_authoring
+          python3 tools/qualify_c_capsules.py --output "$RUNNER_TEMP/c-capsule-authoring"
+      - name: Retain compiler and ownership results including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: c-guest-ownership-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/c-guest-*.log
+            ${{ runner.temp }}/c-guest-capsules/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-guest-capsules/c-*/*.json
+            ${{ runner.temp }}/c-capsule-authoring/*.json
+            ${{ runner.temp }}/c-capsule-authoring/logs/**
+            ${{ runner.temp }}/c-capsule-authoring/builds/**
+            ${{ runner.temp }}/c-capsule-authoring/node/**
+            ${{ runner.temp }}/c-capsule-authoring/releases/**
+            ${{ runner.temp }}/c-capsule-authoring/guide/guide.json
+            ${{ runner.temp }}/c-capsule-authoring/guide/guide.sh
+            ${{ runner.temp }}/c-capsule-authoring/guide/logs/**
+            ${{ runner.temp }}/c-capsule-authoring/guide/projects/results/**
+          if-no-files-found: warn
+          retention-days: 7

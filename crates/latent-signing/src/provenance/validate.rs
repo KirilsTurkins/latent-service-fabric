@@ -1,6 +1,6 @@
 use super::{
     BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, PROVENANCE_BUILD_TYPE,
-    RUST_GUEST_BUILD_TYPE,
+    RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE,
 };
 use crate::{SignatureFailure, SignatureResult};
 use std::collections::BTreeSet;
@@ -152,6 +152,15 @@ pub(crate) fn validate_observation(
     let tool_materials: &[&str] = match value.build_type.as_str() {
         PROVENANCE_BUILD_TYPE => &["dependency-lock", "cargo", "rustc"],
         RUST_GUEST_BUILD_TYPE => &["dependency-lock", "cargo", "rustc", "wit-bindgen"],
+        RUST_CAPSULE_BUILD_TYPE => &[
+            "dependency-lock",
+            "cargo",
+            "rustc",
+            "wit-bindgen",
+            "contracts-tool",
+            "packager",
+            "package-inputs",
+        ],
         C_GUEST_BUILD_TYPE => &["zig", "wit-bindgen"],
         _ => unreachable!("profile checked above"),
     };
@@ -189,9 +198,38 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
                 && p.locked
                 && !p.incremental
         }
+        (RUST_CAPSULE_BUILD_TYPE, BuildRecipe::RustCapsule(p)) => {
+            !p.cargo_package.is_empty()
+                && p.cargo_package.len() <= 64
+                && p.cargo_package.as_bytes()[0].is_ascii_lowercase()
+                && p.cargo_package.split('-').all(|part| {
+                    !part.is_empty()
+                        && part
+                            .bytes()
+                            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
+                })
+                && p.manifest_path == "Cargo.toml"
+                && p.crate_type == "cdylib"
+                && p.target == "wasm32-unknown-unknown"
+                && p.profile == "release"
+                && p.locked
+                && !p.incremental
+        }
         (C_GUEST_BUILD_TYPE, BuildRecipe::C(p)) => {
             p.compiler == "zig-cc"
-                && p.fixture == "blob"
+                && matches!(
+                    p.fixture.as_str(),
+                    "blob"
+                        | "callee"
+                        | "events"
+                        | "http"
+                        | "metrics"
+                        | "random"
+                        | "secrets"
+                        | "service"
+                        | "streaming"
+                        | "application"
+                )
                 && p.target == "wasm32-wasi"
                 && p.optimization == "O2"
         }

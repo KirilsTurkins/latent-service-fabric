@@ -36,7 +36,7 @@ below keep their original execution identities and measurement scopes.
 | Resource equation #239 | [Provider recovery](testing/phase3-resource-recovery.md), [renderer memory/storage](testing/phase3-resource-renderer.md), [event and child ownership](testing/phase3-resource-events.md), and OCI qualification. #376 merged after exact-head CI passed; #239 is closed. | Keep profile-specific measurements, failed attempts and unexported counters explicit. |
 | Angular application/reference #44/#236 | [Actual Angular reference workflow](testing/angular-reference-workflow.md): real signed two-build publication, public/authenticated browser delivery, DOM-reusing hydration, provider denial/cancellation, canary/revocation/restart/rollback and cleanup. #372 merged as `ffa90dc3f76f4bc589be63d313103fdb67fb5f1b`; both tickets are closed. | Preserve the restricted profile, unchecked reproducibility and declared incomplete dependency coverage. Guide review #361 remains separate. |
 | Static web extension #495/#496/#497 | [Contract PR #498](https://github.com/KirilsTurkins/latent-service-fabric/pull/498), [delivery PR #501](https://github.com/KirilsTurkins/latent-service-fabric/pull/501) and [CSR/static-generator workflow PR #502](https://github.com/KirilsTurkins/latent-service-fabric/pull/502) are merged; all three tickets are closed. #502 merged as `e4c9120b7d4c14220a4315bfd8e717505e37a5b4` after [CI run 35784029574](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35784029574) passed, including the actual OCI/browser qualification. | Preserve the final integrated static and SSR checks; human guide review remains separate. |
-| Native distribution #308 | [Current-format foundation run 35811188306](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35811188306) passed both release-purpose VM profiles. Its [authenticated receipt](evidence/native-foundation-35811188306.json) binds the actual rc.2 source, archive, boot identities and verification. The distinct final source declares this exact predecessor without obsolete storage compatibility. | Qualify the final compatible-version pair with its own exact CI and real VM upgrade/downgrade checks, then publish the authenticated bundle through the protected release owner. |
+| Native distribution #308 | [Authenticated alpha.4 rehearsal](evidence/native-upgrade-35821200294/README.md) passed both real VM profiles with complete acceptance, including genuine rc.2 upgrade, unsupported downgrade rejection, reboot, retained invocation and recovery/removal; local rootless evaluation also passed. The historical source and harness are `193d52c37635026de416feffd4a2dfd57d082451`. | Publication is on hold. The premature final tag was removed and run 35822633436 cancelled. Complete requirements, merge development into release, obtain explicit maintainer approval, then recreate the final tag and qualify/publish that exact release commit. |
 | Runbooks and guides #237/#357/#358/#359/#361 | Executed first-node, delivery, provider and six-client receipts are retained. [Guide execution PR #467](https://github.com/KirilsTurkins/latent-service-fabric/pull/467) merged after all 17 checks passed. | Native bundle/upgrade evidence under #308, rendered newcomer walkthroughs and maintainer pedagogy review remain required. |
 | Finite documentation gate #345 | Foundation, theme, diagrams, examples, version binding, discovery and initial protected Pages publication are delivered. The [coverage contract](development/website.md#coverage-is-a-review-contract-not-a-page-counter) retains 27 required outcomes. | Complete their exact-revision human reviews, publish the complete reviewed site, verify live routes, and finish #356's content cutover; remove the Wiki and retire its writer after Phase 3 completion. |
 
@@ -99,9 +99,12 @@ not rewrite measured bytes or convert an earlier failed attempt into a pass.
    fixes are merged. Preserve the successful exact-source integration above and
    its retained six-client, browser, security and cleanup receipts. Any further
    runtime change needs its own required checks and review.
-2. Preserve #282's activated monitoring and scheduled-ref evidence. Complete
-   #308's verified compatible native bundle pair and installer/upgrade evidence
-   through its existing protected publisher.
+2. Preserve #282's activated monitoring and scheduled-ref evidence and #308's
+   successful historical native rehearsal. Publication remains on hold. Complete
+   all requirements, merge development into release and obtain explicit
+   maintainer approval before recreating the final tag. Qualify the resulting
+   release source and verify its actual published assets through the protected
+   publisher; the earlier rehearsal does not qualify later runtime changes.
 3. Have the named reviewers execute the rendered guide paths at an exact source
    revision. Record each required outcome, expected failure, cleanup, version
    and reviewer in the coverage inventory. Automation cannot create a human
@@ -113,7 +116,8 @@ not rewrite measured bytes or convert an earlier failed attempt into a pass.
 5. Complete the [Wiki content migration](development/wiki-migration.md): verify
    maintained replacement routes and switch entry links to the deployed site.
    Legacy Wiki URLs, anchors and archive notices are not required.
-6. Resolve the remaining guide/runbook, documentation, static-site and native
+6. Complete the required six-language capsule-authoring extension below and
+   resolve the remaining guide/runbook, documentation, static-site and native
    criteria, including removal of obsolete Phase 1/2 compatibility, then publish
    the final #240 decision with immutable evidence and accepted residual limits.
    That decision closes #201 and changes the roadmap's phase-completion status.
@@ -121,6 +125,32 @@ not rewrite measured bytes or convert an earlier failed attempt into a pass.
    writer through a reviewed change, disable the repository Wiki, verify both
    actions and close #356. This final administrative removal follows the gate;
    content migration and live site readiness remain gate prerequisites.
+
+## Required six-language capsule authoring
+
+The maintainer's September 23 decision requires all six existing client
+languages to support creating capsules before this gate closes:
+
+- [Rust #544](https://github.com/KirilsTurkins/latent-service-fabric/issues/544)
+- [C #545](https://github.com/KirilsTurkins/latent-service-fabric/issues/545)
+- [TypeScript #546](https://github.com/KirilsTurkins/latent-service-fabric/issues/546)
+- [Go #547](https://github.com/KirilsTurkins/latent-service-fabric/issues/547)
+- [Java #548](https://github.com/KirilsTurkins/latent-service-fabric/issues/548)
+- [C#/.NET #549](https://github.com/KirilsTurkins/latent-service-fabric/issues/549)
+
+Each ticket requires actual language sources, typed WIT imports and exports,
+guest capability APIs, a usable create/build/package/deploy/invoke workflow,
+equivalent runnable examples, and real-node error, authority, cancellation,
+resource and cleanup checks. The existing external client matrix and #221's
+original Rust/C scope remain valid for their recorded work; they do not
+complete this new guest-authoring requirement. Java and C# compiler feasibility
+is part of their required delivery, not permission to omit those languages.
+
+The implementation must preserve fresh activation state and bounded shared
+resources. A dormant deployment must not own a language process, thread,
+listener, persistent guest heap, execution cell or provider pool. New guest
+profiles need their own validation and useful language-selectable tutorials.
+All six tickets are open; this gate remains incomplete.
 
 ## Later-phase exclusions
 

@@ -34,7 +34,7 @@ try {
   f.write('.gitignore', 'website/.generated/\n');
   f.write('docs/fixture.md', '# Synthetic fixture owner\n\n## Fixture owner instructions\n\nUI regression only; no runtime support or execution claim.\n');
   f.write('website/src/components/CodeExample/index.tsx', '// Reviewed authoring import; the actual component is supplied by the site.\n');
-  for (const name of ['development/standalone-quickstart', 'learn/fixture', 'operations/fixture', 'reference/fixture', 'architecture/overview'])
+  for (const name of ['start/index', 'development/standalone-quickstart', 'learn/fixture', 'operations/fixture', 'reference/fixture', 'architecture/overview'])
     f.write(`docs/${name}.md`, '# Synthetic version navigation fixture\n\nUI regression only; no runtime support or execution claim.\n');
   f.write('docs/development/website-code-examples.mdx', 'import CodeExample from "@site/src/components/CodeExample";\n\n# Synthetic version browser fixture\n\nNo runtime qualification.\n\n<CodeExample example="client/specimen" region="invoke" />\n\n![Synthetic version asset](../assets/specimen.svg)\n\n[Owner](../fixture.md#fixture-owner-instructions)\n');
   const policy = {schema: 1, assets: [{path: 'docs/assets/specimen.svg', kind: 'illustration', maxBytes: 65536}]};
