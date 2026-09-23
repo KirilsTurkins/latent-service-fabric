@@ -35,17 +35,19 @@ HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py"
     "sdk_provider_http_fixture.py", "stage_runtime_wit.py", "build_guest_capsules.py")
 
 
-def inputs():
-    return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / "sdk/rust-guest"),
+def inputs(language="rust"):
+    helpers = HELPERS if language == "rust" else (*HELPERS, "c_capsule.py", "c_capsule_project.py",
+        "c_capsule_build.py", "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py")
+    return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
-            "guide": file_identity(ROOT / "docs/component-development/rust-authoring.md"),
-            "helpers": {name: file_identity(ROOT / "tools" / name, 1024 * 1024) for name in HELPERS}}
+            "guide": file_identity(ROOT / f"docs/component-development/{language}-authoring.md"),
+            "helpers": {name: file_identity(ROOT / "tools" / name, 1024 * 1024) for name in helpers}}
 
 
-def guide(output: Path, environment: dict[str, str]):
+def guide(output: Path, environment: dict[str, str], language="rust"):
     """Execute only the reviewed guide's six printed Bash steps with built tools."""
     output = fresh(output)
-    source = ROOT / "docs/component-development/rust-authoring.md"
+    source = ROOT / f"docs/component-development/{language}-authoring.md"
     before = source.read_bytes()
     if len(before) > 32768:
         raise ValueError("authoring guide byte limit")
@@ -55,7 +57,7 @@ def guide(output: Path, environment: dict[str, str]):
     script = output / "guide.sh"
     script.write_text("\n".join(blocks), encoding="utf-8")
     projects = output / "projects"
-    commands = Commands(ROOT, output, dict(environment, LSF_RUST_PROJECTS=str(projects)))
+    commands = Commands(ROOT, output, dict(environment, **{f"LSF_{language.upper()}_PROJECTS": str(projects)}))
     bash = shutil.which("bash", path=environment["PATH"])
     if bash is None:
         raise ValueError("Bash is required to execute the printed authoring guide")
@@ -76,16 +78,22 @@ def guide(output: Path, environment: dict[str, str]):
     return result
 
 
-def qualify(output: Path, *, offline=False):
+def qualify(output: Path, *, offline=False, language="rust"):
+    if language not in {"rust", "c"}:
+        raise ValueError("unsupported authoring qualification language")
+    creator, builder = create, build
+    if language == "c":
+        from tools.c_capsule_project import create as creator
+        from tools.c_capsule_build import build as builder
     output = output.absolute()
     if output == ROOT or ROOT in output.parents:
         raise ValueError("qualification projects must be outside the runtime checkout")
     output = fresh(output)
-    result = {"schemaVersion": "latent.rust-capsule.qualification.v1", "status": "in-progress",
+    result = {"schemaVersion": f"latent.{language}-capsule.qualification.v1", "status": "in-progress",
               "releasePublication": "not-performed", "newcomerReview345": "pending-human-review"}
     stage = "source"
     try:
-        before = inputs()
+        before = inputs(language)
         write_json(output / "source-inputs.json", before)
         result["sourceIdentityDigest"] = digest((output / "source-inputs.json").read_bytes())
         pins = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
@@ -103,7 +111,7 @@ def qualify(output: Path, *, offline=False):
         commands.run(stage, paths["cargo"], "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
             "-p", "latent-packaging", "--example", "package", "--example", "capsule_contracts",
             "-p", "latent-policy", "--example", "capsule_authoring")
-        if inputs() != before:
+        if inputs(language) != before:
             raise ValueError("host sources changed during compilation")
         binaries = {name: target / "debug" / name for name in ("latent", "latentd", "examples/package", "examples/capsule_contracts", "examples/capsule_authoring")}
         result["binaries"] = {name: file_identity(path) for name, path in binaries.items()}
@@ -113,13 +121,19 @@ def qualify(output: Path, *, offline=False):
         (output / "projects").mkdir(mode=0o700)
         (output / "builds").mkdir(mode=0o700)
         for template in TEMPLATES:
-            project = create(output / "projects" / template, template)
-            artifact = build(project, output / "builds" / template, binaries["examples/capsule_contracts"],
-                             binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric", offline=offline)
+            project = creator(output / "projects" / template, template)
+            artifact = builder(project, output / "builds" / template, binaries["examples/capsule_contracts"],
+                binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric",
+                **({"offline": offline} if language == "rust" else {}))
             built.append(artifact)
             result["builds"][template] = read_json(artifact / "BUILD-COMPLETE.json")
         stage = "ownership"
-        result["ownership"] = ownership(output / "ownership", offline=offline)
+        if language == "rust":
+            result["ownership"] = ownership(output / "ownership", offline=offline)
+        else:
+            commands.run("c-scope-compile", "zig", "cc", "-std=c11", "-Wall", "-Wextra", "-Werror",
+                "-I", ROOT / "sdk/c-guest/include", ROOT / "sdk/c-guest/tests/ownership.c", "-o", output / "c-ownership")
+            commands.run("c-scope-runtime", output / "c-ownership")
         stage = "sdk-runtime-ownership"
         # Preserve the full Rust AND C guest gate. The optional Rust-only local
         # iteration switch is deliberately not used by qualification.
@@ -130,10 +144,10 @@ def qualify(output: Path, *, offline=False):
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"
-        result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node")
+        result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node", language=language)
         stage = "printed-guide"
-        result["guide"] = guide(output / "guide", environment)
-        if inputs() != before or {name: file_identity(path) for name, path in binaries.items()} != result["binaries"]:
+        result["guide"] = guide(output / "guide", environment, language)
+        if inputs(language) != before or {name: file_identity(path) for name, path in binaries.items()} != result["binaries"]:
             raise ValueError("qualification inputs changed")
         result.update(status="passed", commands=commands.records)
         # Large raw OS observations live in the node receipt rather than being

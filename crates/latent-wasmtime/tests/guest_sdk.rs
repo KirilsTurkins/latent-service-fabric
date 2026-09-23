@@ -7,19 +7,21 @@ mod package;
 #[tokio::test]
 #[ignore = "Requires compiled guests from tools/build_guest_capsules.py"]
 async fn all_rust_examples_are_exact_signed_phase2_packages() {
-    for name in [
-        "http",
-        "streaming",
-        "blob",
-        "secrets",
-        "events",
-        "random",
-        "metrics",
-        "service",
-        "callee",
-    ] {
-        let root = tempfile::tempdir().unwrap();
-        let _publication = package::publish(root.path(), &format!("rust-{name}")).await;
+    for language in ["rust", "c"] {
+        for name in [
+            "http",
+            "streaming",
+            "blob",
+            "secrets",
+            "events",
+            "random",
+            "metrics",
+            "service",
+            "callee",
+        ] {
+            let root = tempfile::tempdir().unwrap();
+            let _publication = package::publish(root.path(), &format!("{language}-{name}")).await;
+        }
     }
 }
 

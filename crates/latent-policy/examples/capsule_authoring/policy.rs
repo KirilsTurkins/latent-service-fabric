@@ -1,8 +1,6 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
 use latent_policy::supply_chain::SupplyChainPolicy;
-use latent_signing::{
-    BuilderPolicy, ProvenanceLimits, PublisherPolicy, SignatureLimits, RUST_CAPSULE_BUILD_TYPE,
-};
+use latent_signing::{BuilderPolicy, ProvenanceLimits, PublisherPolicy, SignatureLimits};
 use serde_json::json;
 
 use super::{inputs::Build, Result, BUILDER, PUBLISHER, TENANT};
@@ -24,9 +22,10 @@ pub(super) fn create(
                 source.repository.clone(),
                 source.revision.clone(),
                 source.snapshot_digest.clone(),
+                build.observation.build_type.clone(),
             ),
             json!({
-            "builderId":BUILDER,"buildType":RUST_CAPSULE_BUILD_TYPE,
+            "builderId":BUILDER,"buildType":build.observation.build_type,
             "sourceRepository":source.repository,"sourceRevision":source.revision,
             "sourceSnapshotDigest":source.snapshot_digest,"requireReproducible":false}),
         );

@@ -1,6 +1,39 @@
 use super::*;
 
 #[test]
+fn currentness_diagnostic_never_changes_mutation_certainty_or_exposes_peer_text() {
+    for reason in latent_core::error::ADMISSION_CURRENTNESS_REASONS
+        .iter()
+        .copied()
+        .chain(["unknown-private-reason"])
+    {
+        let error = proto::PlatformError {
+            code: "unavailable".into(),
+            message: "private".into(),
+            retryable: true,
+            detail_items: vec![proto::ErrorDetail {
+                kind: "admission.currentness".into(),
+                fields: [
+                    ("reason".into(), reason.into()),
+                    ("secret".into(), "private".into()),
+                ]
+                .into(),
+            }],
+        };
+        let status =
+            Status::with_details(Code::Unavailable, "private", error.encode_to_vec().into());
+        let result = Failure::from_status(&status);
+        assert!(!result.outcome_known);
+        assert!(!result.error.to_string().contains("private"));
+        if reason == "unknown-private-reason" {
+            assert_eq!(result.error["details"], serde_json::json!([]));
+        } else {
+            assert_eq!(result.error["details"][0]["fields"]["reason"], reason);
+        }
+    }
+}
+
+#[test]
 fn status_text_is_never_a_diagnostic_and_ambiguity_is_explicit() {
     for code in [
         Code::Unavailable,

@@ -1,5 +1,25 @@
 {
   "after": {
+    ".github/workflows/c-guest-authoring.yml:runtime:Install pinned validation and bindings": {
+      "workflow": ".github/workflows/c-guest-authoring.yml",
+      "job": "runtime",
+      "name": "Install pinned validation and bindings",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\""
+    },
+    ".github/workflows/c-guest-authoring.yml:runtime:Build and execute signed C and Rust capability packages": {
+      "workflow": ".github/workflows/c-guest-authoring.yml",
+      "job": "runtime",
+      "name": "Build and execute signed C and Rust capability packages",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\npython3 tools/build_guest_capsules.py --output \"$LSF_GUEST_CAPSULES\" 2>&1 | tee \"$RUNNER_TEMP/c-guest-build.log\"\ncargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/c-guest-runtime.log\"\ncargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee \"$RUNNER_TEMP/c-guest-provenance.log\"\ncargo test --locked -p latent-control-store --lib managed_lease_failure_never_mutates_or_renews_a_historical_replay 2>&1 | tee \"$RUNNER_TEMP/c-guest-control-lease.log\"\ncargo test --locked -p latent-policy --lib mutation_renewal_persists_a_full_window_even_before_the_sampler_margin 2>&1 | tee \"$RUNNER_TEMP/c-guest-clock-window.log\""
+    },
     ".github/workflows/ci.yml:profile:select": {
       "workflow": ".github/workflows/ci.yml",
       "job": "profile",
@@ -1169,6 +1189,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 controls/tools/security_scan.py rustsec --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
+    },
+    ".github/workflows/c-guest-authoring.yml:runtime:Qualify standalone C projects and the printed guide": {
+      "workflow": ".github/workflows/c-guest-authoring.yml",
+      "job": "runtime",
+      "name": "Qualify standalone C projects and the printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_c_capsule_authoring\npython3 tools/qualify_c_capsules.py --output \"$RUNNER_TEMP/c-capsule-authoring\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2528,7 +2558,7 @@
       "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
     },
     "tools/build_guest_capsules.py": {
-      "sha256": "34e8ed5683bc9625a8c263c66a56d9af3e671e0f707d04971130fd902317316a"
+      "sha256": "21e251919f1adf7d6a97f57f0ae4521bcd648a44c3532297387a412ef91eb99e"
     },
     "tools/build_native_runtime.py": {
       "sha256": "8aa6e2df82afe7f69c4acc7ae4ddddcc339b0ee16681cfa0984df90623aa4732"
@@ -2606,7 +2636,7 @@
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "e398d6069280aac5b6e7efef32cc71098cdd09626df42a53c8a1f920893a8630"
+      "sha256": "8be1a3ed2d29898f66fefd9b7a8f801d4c15fb3fe994b0d2490eb9de555627c3"
     },
     "tools/reset_validation_echo.py": {
       "sha256": "7bfdd62d41f709ccee0de64e0c2b14868d4033444ca4e2b0a959424019108d2e"
@@ -2727,6 +2757,9 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
+    },
+    "tools/qualify_c_capsules.py": {
+      "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
     }
   },
   "pythonCases": {
@@ -5479,6 +5512,17 @@
     ],
     "tools/tests/test_zig_cache_boundary.py": [
       "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation"
+    ],
+    "tools/tests/test_c_capsule_authoring.py": [
+      "CAuthoringTests.test_all_templates_capture_editable_source_and_authoritative_contracts",
+      "CAuthoringTests.test_c_namespace_aliases_never_invent_or_hide_ambiguous_bindings",
+      "CAuthoringTests.test_fresh_output_does_not_overwrite_existing_project",
+      "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
+      "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project",
+      "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected",
+      "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs",
+      "ControlDiagnosticsTests.test_cyclic_audit_cursor_stops_without_hiding_the_original_failure",
+      "ControlDiagnosticsTests.test_paginated_evidence_never_retries_or_changes_the_failed_mutation"
     ]
   },
   "pythonTestModules": [
@@ -5504,6 +5548,7 @@
     "tools/tests/test_build_provenance.py",
     "tools/tests/test_build_provenance_schemas.py",
     "tools/tests/test_build_snapshot.py",
+    "tools/tests/test_c_capsule_authoring.py",
     "tools/tests/test_capability_policy_schema.py",
     "tools/tests/test_check_tool_versions.py",
     "tools/tests/test_ci_browser_artifacts.py",
@@ -5722,6 +5767,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
+    ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",

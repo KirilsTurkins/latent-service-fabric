@@ -7,7 +7,7 @@ use latent_packaging::{
     SbomEntryKind, SbomEntryOrigin, SbomInventory, SbomInventoryEntry,
 };
 use latent_signing::{
-    decode_build_observation, BuildObservation, BuildRecipe, ProvenanceLimits,
+    decode_build_observation, BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE,
     RUST_CAPSULE_BUILD_TYPE,
 };
 use serde_json::{json, Value};
@@ -30,8 +30,10 @@ pub(super) fn load(root: &Path) -> Result<Build> {
     let marker: Value = serde_json::from_slice(&read(root, "BUILD-COMPLETE.json", 65536)?)?;
     let raw = read(root, "build-observation.json", 32768)?;
     let observation = decode_build_observation(&raw, ProvenanceLimits::default())?;
-    if observation.build_type != RUST_CAPSULE_BUILD_TYPE
-        || marker["formatVersion"] != 1
+    if !matches!(
+        observation.build_type.as_str(),
+        RUST_CAPSULE_BUILD_TYPE | C_GUEST_BUILD_TYPE
+    ) || marker["formatVersion"] != 1
         || marker["observationDigest"] != artifact_blob_digest(&raw).as_str()
     {
         return Err("completed standalone build observation required".into());
@@ -79,11 +81,10 @@ pub(super) fn load(root: &Path) -> Result<Build> {
         .as_str()
         .ok_or("world identity missing")?
         .to_owned();
-    let BuildRecipe::RustCapsule(recipe) = &observation.parameters else {
-        return Err("standalone recipe required".into());
-    };
-    if input.name != recipe.cargo_package {
-        return Err("Cargo package and packaged identity mismatch".into());
+    match &observation.parameters {
+        BuildRecipe::RustCapsule(recipe) if input.name == recipe.cargo_package => {}
+        BuildRecipe::C(recipe) if recipe.fixture == "application" => {}
+        _ => return Err("standalone recipe and matching package identity required".into()),
     }
     let inventory = sbom(&input, &observation)?;
     let bundle =

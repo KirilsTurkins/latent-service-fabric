@@ -9,14 +9,15 @@ Complete steps 1–7 of [Run your first node](../start/first-node.md) first.
 Keep that terminal open: this tutorial uses its running node, `cli`, `field`
 and `answer` helpers. Run commands from the same repository root.
 
-This tutorial uses Rust to write the programs that run inside your node. Each
-example below has one Rust implementation. The small `component` section
-connects its ordinary Rust function to LSF.
+Select Rust or C on each complete example below. Both implement the same typed
+contract and behavior. The commands on this page build the in-checkout Rust
+tutorials. For independent projects with packaging and enforced admission,
+follow [Rust authoring](rust-authoring.md) or [C authoring](c-authoring.md).
 
 The [client SDK guide](../learn/use-a-client.mdx) offers Rust, TypeScript, Go,
 C, Java and C# examples for a different task: calling these programs from an
 application outside the node. Those client SDKs do not compile capsules in
-all six languages. For lower-level C capsule examples, see the
+all six languages. For C ownership and capability examples, see the
 [C guest examples](../../sdk/c-guest/README.md).
 
 ## 1. A greeting capsule
