@@ -105,6 +105,11 @@ fn apply_receipts_match_variant_publication_and_application_revision() {
         };
         assert!(response::target_matches(&value, &expected));
         assert_eq!(response::target_matches(&receipt(), &expected), application);
+        for kind in [proto::TriggerTargetKind::Unspecified as i32, 999] {
+            let mut invalid = expected.clone();
+            invalid.kind = kind;
+            assert!(!response::target_matches(&value, &invalid));
+        }
         let mut changed = expected.clone();
         changed.kind = if application { 2 } else { 1 };
         assert!(!response::target_matches(&value, &changed));

@@ -29,7 +29,12 @@ pub(super) fn manifest(value: proto::Trigger) -> Result<TriggerManifest, Status>
         proto::TriggerTargetKind::StaticWeb => {
             TriggerTarget::StaticWeb(StaticWebTriggerTarget { publication })
         }
-        proto::TriggerTargetKind::Unspecified | proto::TriggerTargetKind::Application => {
+        proto::TriggerTargetKind::Unspecified => {
+            return Err(Status::invalid_argument(
+                "explicit trigger target kind is required",
+            ));
+        }
+        proto::TriggerTargetKind::Application => {
             TriggerTarget::Application(ApplicationTriggerTarget {
                 service: ServiceId(target.service),
                 contract: ContractId(target.contract),

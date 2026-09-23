@@ -34,7 +34,7 @@ target:
 
 It contains no service, contract, function, deployment route, component digest, deployment generation or deployment revision. The matching configuration is the closed `static-site-v1` profile with exactly `profile`, `scheme`, `host`, `path`, `pathMatch` and `method`. Static routes accept GET and HEAD only.
 
-JSON uses a discriminator for the static form while retaining the old application spelling. Protobuf adds an additive target-kind discriminator after the existing application field numbers. A missing discriminator is interpreted as the legacy application variant. Supplying static-web together with application fields is invalid.
+JSON uses a discriminator for the static form and the current canonical application spelling. Protobuf requires an explicit target-kind discriminator after the application field numbers. Missing, unspecified and unknown discriminator values are rejected. Supplying static-web together with application fields is invalid.
 
 ### Signed browser routing metadata
 
@@ -137,15 +137,15 @@ Dormant static routes retain bounded catalog metadata only. They do not allocate
 
 The only static-specific live owner introduced by control selection is the existing bounded `WebSelection` read/currentness owner for an accepted operation or request. Immutable bytes continue to use the node-wide web blob store and node-wide asset service/caches defined by ADR-0038 and the immutable-browser-assets profile.
 
-## Compatibility
+## Current alpha contract
 
-Existing `buffered-v1` application JSON remains in its prior canonical shape and preserves the same target pins and execution semantics.
+The `buffered-v1` application JSON retains its canonical shape and exact target pins and execution semantics.
 
-Existing Protobuf field numbers 1-7 on `TriggerTarget` and receipt fields 14-18 remain reserved for legacy application compatibility. New variant metadata is additive.
+Protobuf field numbers 1-7 on `TriggerTarget` describe the current application variant, which requires kind `APPLICATION`. Removed receipt fields 14-18 and their names are reserved; current receipts use the tagged target at field 21.
 
-Existing format-v1 persisted HTTP state is accepted only when it satisfies the old application invariants. New format-v2 state must be internally variant-consistent.
+Only format-v2 persisted HTTP tables and receipts are accepted and must be internally variant-consistent. Obsolete format-v1 readers and implicit application RPC selectors are removed under the alpha cleanup policy. Rejected stored state is preserved without an automatic upgrade.
 
-No compatibility path may infer a component, deployment or renderer for a static publication.
+No path may infer a component, deployment or renderer for a static publication.
 
 ## Consequences
 
