@@ -103,6 +103,13 @@ impl Fixture {
         Self::with_budget(support::budget()).await
     }
     pub async fn with_budget(ceiling: latent_core::ResourceBudget) -> Self {
+        Self::with_component(ceiling, component::bytes(), None).await
+    }
+    pub async fn with_component(
+        ceiling: latent_core::ResourceBudget,
+        bytes: Vec<u8>,
+        fuel_async_yield_interval: Option<u64>,
+    ) -> Self {
         let directory = tempfile::TempDir::new().unwrap();
         let catalog = Arc::new(
             DirectoryArtifactRepository::open(
@@ -111,7 +118,7 @@ impl Fixture {
             )
             .unwrap(),
         );
-        let mut artifact = support::artifact_bytes(component::bytes(), &[component::CONTRACT]);
+        let mut artifact = support::artifact_bytes(bytes, &[component::CONTRACT]);
         artifact.manifest.execution.resource_budget_ceiling = ceiling;
         artifact.manifest.imports.push(ContractImport {
             contract: ContractId(component::CAP.into()),
@@ -206,8 +213,10 @@ impl Fixture {
             broker.clone(),
             Arc::new(Plans(plan)),
         ));
+        let mut config = support::config();
+        config.fuel_async_yield_interval = fuel_async_yield_interval;
         let factory = WasmtimeComponentEngineFactory::with_catalog(
-            support::config(),
+            config,
             WasmtimeHostServices {
                 clock: clock.clone(),
                 log_sink: None,
