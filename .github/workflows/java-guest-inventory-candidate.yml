@@ -1,6 +1,5 @@
-# Temporary branch-only transport of independently reviewed, checksum-bound
-# candidates. This job creates blobs only, never commits or ref updates. Remove
-# this workflow in the same commit that applies the reviewed candidate set.
+# Temporary branch-only blob transport; creates no commit or ref update.
+# Delete in the same commit that applies the independently reviewed candidates.
 name: Java guest inventory candidate
 on:
   push:
@@ -14,7 +13,6 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write
-      actions: read
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -24,13 +22,7 @@ jobs:
           python-version: '3.13.5'
       - run: |
           python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: java-guest-feasibility-31e17f29abb0d0d9a6b64916fe2d098b28514cae
-          run-id: 35873112971
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/java-observed-inputs
-      - name: Prepare checksum-bound candidates without applying them
+      - name: Prepare but never apply the exact reviewed inventory delta
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -40,76 +32,42 @@ jobs:
           import urllib.request
           from tools import ci_coverage
           git_hash = lambda b: hashlib.sha1(b'blob ' + str(len(b)).encode() + b'\0' + b).hexdigest()
-          candidates = {}
-          observed = Path(os.environ['RUNNER_TEMP']) / 'java-observed-inputs'
-          for name, expected, target in [
-              ('dependencies.candidate.json', 'd199394c3834df378da8946712c4103582d2f744ab1fc615819ac984715827c8', 'sdk/java-guest/feasibility/dependencies.lock.json'),
-              ('verification-metadata.candidate.xml', 'a5a6c598357fd25f6eeb1df908a2d207ebbdaf91082fba251616400adc29ceac', 'sdk/java-guest/feasibility/gradle/verification-metadata.xml'),
-              ('report.json', 'ad59362bb1b9930740b00114b44133f6c48e68ead52a7089ec0b7ae2a4c77d09', 'sdk/java-guest/evidence/2026-09-23-teavm-c/report.json'),
-              ('c-to-wasm.log', 'eb401693b3c6e64d7f217362d3814649b6afbb653a1d981d4348902e698a3337', 'sdk/java-guest/evidence/2026-09-23-teavm-c/c-to-wasm.log'),
-          ]:
-              value = (observed / name).read_bytes()
-              assert hashlib.sha256(value).hexdigest() == expected, 'observed evidence changed'
-              candidates[target] = value
+          original = Path('tools/ci/commands.json').read_bytes()
+          assert git_hash(original) == '5cf5fa5aa23b343f57ce134700524509e87e0bc7'
           workflow = '.github/workflows/java-guest-feasibility.yml'
           text = Path(workflow).read_text()
           assert text.count(' --bootstrap-dependencies') == 1
           text = text.replace(' --bootstrap-dependencies', '')
-          candidates[workflow] = text.encode()
+          assert hashlib.sha256(text.encode()).hexdigest() == '8c716f98d551898d6543192b5d8c64b28f2b3e227ecc9b03109344a04391b90e'
           owner = 'sdk/java-guest/tools/feasibility.py'
           source = Path(owner).read_text()
           before = "shutil.copytree(ROOT / 'sdk/java-guest/feasibility', project)"
           assert source.count(before) == 1
           source = source.replace(before, "shutil.copytree(ROOT / 'sdk/java-guest/feasibility', project,\n                    ignore=shutil.ignore_patterns('build', '.gradle', '__pycache__'))")
-          candidates[owner] = source.encode()
-          path = Path('tools/ci/commands.json')
-          original = path.read_bytes()
-          assert git_hash(original) == '5cf5fa5aa23b343f57ce134700524509e87e0bc7', 'base inventory changed'
+          assert hashlib.sha256(source.encode()).hexdigest() == '362fe2675dc42bb426a7e4d4079b73e9f5eae95be234d24752aa78da059cbd19'
           data = json.loads(original)
           additions = ci_coverage.workflow_commands(workflow, text)
-          assert not (data['after'].keys() & additions.keys()), 'not additive'
+          assert not (data['after'].keys() & additions.keys())
           data['after'].update(additions)
           assert workflow not in data['workflowIdentities']
-          data['workflowIdentities'][workflow] = hashlib.sha256(candidates[workflow]).hexdigest()
+          data['workflowIdentities'][workflow] = hashlib.sha256(text.encode()).hexdigest()
           owners = ci_coverage.delegated_owners(Path.cwd(), data['after'])
-          assert all(owners[k] == v for k, v in data['delegatedOwners'].items()), 'existing owner changed'
+          assert all(owners[k] == v for k, v in data['delegatedOwners'].items())
           assert set(owners) - set(data['delegatedOwners']) == {owner}
-          data['delegatedOwners'][owner] = hashlib.sha256(candidates[owner]).hexdigest()
-          candidates[str(path)] = (json.dumps(data, indent=2) + '\n').encode()
-          java_test = 'tools/tests/test_java_toolchain.py'
-          text = Path(java_test).read_text()
-          before = 'self.assertEqual(java_workflows, ["ci.yml"])'
-          assert text.count(before) == 1
-          candidates[java_test] = text.replace(before, 'self.assertEqual(java_workflows, ["ci.yml", "java-guest-feasibility.yml"])').encode()
-          policy = '.github/security/inventory.json'
-          text = Path(policy).read_text()
-          needle = '    {"path": "sdk/java-client/settings.gradle.kts"'
-          assert text.count(needle) == 1
-          build = 'sdk/java-guest/feasibility/build.gradle'
-          settings = 'sdk/java-guest/feasibility/settings.gradle'
-          entries = [
-              {'path': build, 'kind': 'maven-locked', 'lock': 'sdk/java-guest/feasibility/dependencies.lock.json', 'manifest_sha256': hashlib.sha256(Path(build).read_bytes()).hexdigest(), 'absent_when_directory_missing': 'sdk/java-guest/feasibility'},
-              {'path': settings, 'kind': 'no-external-packages', 'sha256': hashlib.sha256(Path(settings).read_bytes()).hexdigest(), 'absent_when_directory_missing': 'sdk/java-guest/feasibility'},
-          ]
-          candidates[policy] = text.replace(needle, ''.join('    ' + json.dumps(e) + ',\n' for e in entries) + needle).encode()
+          data['delegatedOwners'][owner] = {'sha256': hashlib.sha256(source.encode()).hexdigest()}
+          candidate = (json.dumps(data, indent=2) + '\n').encode()
+          diff = ''.join(difflib.unified_diff(original.decode().splitlines(True), candidate.decode().splitlines(True)))
+          assert len(diff.splitlines()) < 100
+          print(diff)
           out = Path(os.environ['RUNNER_TEMP']) / 'java-inventory-review'
           out.mkdir()
-          receipts = []
-          for target, candidate in candidates.items():
-              destination = out / target
-              destination.parent.mkdir(parents=True, exist_ok=True)
-              destination.write_bytes(candidate)
-              if Path(target).exists():
-                  diff = ''.join(difflib.unified_diff(Path(target).read_text().splitlines(True), candidate.decode().splitlines(True), fromfile='before/' + target, tofile='after/' + target))
-                  assert len(diff.splitlines()) < 100, 'unrelated candidate churn'
-                  print(diff)
-              payload = json.dumps({'content': base64.b64encode(candidate).decode(), 'encoding': 'base64'}).encode()
-              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs', data=payload, method='POST', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'})
-              with urllib.request.urlopen(request, timeout=30) as response:
-                  blob = json.load(response)
-              assert blob['sha'] == git_hash(candidate)
-              receipts.append({'path': target, 'sha': blob['sha'], 'sha256': hashlib.sha256(candidate).hexdigest()})
-          result = {'files': receipts, 'checkout': os.environ['GITHUB_SHA'], 'applied': False, 'requiredRemoval': '.github/workflows/java-guest-inventory-candidate.yml'}
+          (out / 'commands.json').write_bytes(candidate)
+          payload = json.dumps({'content': base64.b64encode(candidate).decode(), 'encoding': 'base64'}).encode()
+          request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs', data=payload, method='POST', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'})
+          with urllib.request.urlopen(request, timeout=30) as response:
+              blob = json.load(response)
+          assert blob['sha'] == git_hash(candidate)
+          result = {'path': 'tools/ci/commands.json', 'sha': blob['sha'], 'sha256': hashlib.sha256(candidate).hexdigest(), 'applied': False, 'requiredRemoval': '.github/workflows/java-guest-inventory-candidate.yml'}
           (out / 'candidate.json').write_text(json.dumps(result, indent=2) + '\n')
           print(json.dumps(result))
           PY
