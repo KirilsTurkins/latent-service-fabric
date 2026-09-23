@@ -13,24 +13,22 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
-          version: 1.254.0
-      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29
-        with:
-          version: "0.16.0"
-      - name: Install verified guest binding generator
-        run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
-      - name: Capture pinned guest compiler inputs
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Fetch exact locked dependency sources
+        run: cargo fetch --locked
+      - name: Capture compiler and dependency cache without credentials
         run: |
-          mkdir -p "$RUNNER_TEMP/compiler/zig"
-          cp -a "$(dirname "$(realpath "$(command -v zig)")")/zig" "$RUNNER_TEMP/compiler/zig/"
-          cp -a "$(dirname "$(realpath "$(command -v zig)")")/lib" "$RUNNER_TEMP/compiler/zig/"
-          cp -L "$(command -v wit-bindgen)" "$(command -v wasm-tools)" "$RUNNER_TEMP/compiler/"
-          tar -czf "$RUNNER_TEMP/c-guest-tools.tar.gz" -C "$RUNNER_TEMP/compiler" .
+          mkdir -p "$RUNNER_TEMP/compiler/rust" "$RUNNER_TEMP/compiler/cargo"
+          cp -a "$(rustc --print sysroot)/bin" "$(rustc --print sysroot)/lib" "$RUNNER_TEMP/compiler/rust/"
+          cp -a "$HOME/.cargo/registry" "$RUNNER_TEMP/compiler/cargo/"
+          find "$RUNNER_TEMP/compiler/cargo" -name .git -type d -prune -exec rm -rf {} +
+          tar -czf "$RUNNER_TEMP/c-guest-rust.tar.gz" -C "$RUNNER_TEMP/compiler" .
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: c-guest-authoring-tools
-          path: ${{ runner.temp }}/c-guest-tools.tar.gz
+          name: c-guest-authoring-rust
+          path: ${{ runner.temp }}/c-guest-rust.tar.gz
           if-no-files-found: error
           retention-days: 1
