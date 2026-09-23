@@ -88,6 +88,33 @@ try {
         await block.getByRole('button', {name: 'Copy Go snippet', exact: true}).click();
         await block.getByText('Clipboard unavailable. Select and copy the code below.', {exact: true}).waitFor();
       } finally { await denied.close(); }
+      // Exercise the actual learning page, not only developer UI specimens.
+      await page.goto(server.origin + built.manifest.baseUrl + 'docs/learn/use-a-client/', {waitUntil: 'networkidle'});
+      const invocation = page.locator('[data-example="client/provider-invoke"]');
+      assert.equal(await invocation.getByText('Choose a language', {exact: true}).count(), 1);
+      for (const language of ['Rust', 'TypeScript', 'Go', 'C', 'Java', 'C#/.NET']) {
+        const tab = invocation.getByRole('tab', {name: language, exact: true});
+        await tab.click();
+        assert.equal(await tab.getAttribute('aria-selected'), 'true');
+        const panel = invocation.locator('[role="tabpanel"]:not([hidden])');
+        await panel.getByRole('button', {name: `Copy ${language} snippet`, exact: true}).click();
+        await panel.getByText(`${language} snippet copied.`, {exact: true}).waitFor();
+        assert.doesNotMatch(await panel.innerText(), /SHA-256|validation details|Source revision|source extraction only/i);
+      }
+      for (const width of [390, 1280]) {
+        await page.setViewportSize({width, height: 900});
+        const boxes = await invocation.getByRole('tab').evaluateAll(tabs => tabs.map(tab => {
+          const box = tab.getBoundingClientRect(); return {left: box.left, right: box.right, width: box.width};
+        }));
+        assert.ok(boxes.every(box => box.width > 0 && box.left >= 0 && box.right <= width + 1));
+        await invocation.screenshot({path: path.join(output, `${variant}-sdk-${width}.png`)});
+      }
+      await page.goto(server.origin + built.manifest.baseUrl + 'docs/learn/build-and-deliver-angular/', {waitUntil: 'networkidle'});
+      const angular = page.locator('[data-example="guest/angular-dependency"]');
+      assert.equal(await angular.getByRole('tab').count(), 1);
+      assert.equal(await angular.getByRole('tab', {name: 'TypeScript', exact: true}).count(), 1);
+      assert.doesNotMatch(await angular.innerText(), /SHA-256|validation details|Source revision|source extraction only/i);
+      await angular.screenshot({path: path.join(output, `${variant}-angular.png`)});
       assert.deepEqual(errors, []);
       results.push({variant, sourceRevision: built.manifest.revision, documentVersion: examples.bundle.documentVersion, languages: 6,
         staticVariants: true, synchronizedBlocks: 2, separateTargets: true, exactCopyPayload: true, nativeClipboard: true, deniedApis: true,
