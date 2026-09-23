@@ -9,12 +9,14 @@ import os
 from pathlib import Path
 import shutil
 import sys
+import tempfile
 import time
 import tomllib
 
 if __name__ == "__main__" and not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.stage_runtime_wit import stage
+from tools.c_guest.compiler import Compiler, CAPABILITIES
 from tools.build_process import run_bounded
 from tools.build_observation import file_identity, build_environment, resolve_tools
 
@@ -57,13 +59,13 @@ def wit_bindgen_version() -> str:
     return config["rust"]["dependencies"]["wit-bindgen"]
 
 
-def check_tools() -> None:
+def check_tools(*, include_c: bool = True) -> None:
     config = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
     paths, materials = resolve_tools(config, ROOT, BUILD_ENVIRONMENT)
     TOOL_PATHS.update(paths)
     TOOL_MATERIALS.update({item["name"]: item for item in materials})
     BUILD_ENVIRONMENT["RUSTC"] = str(paths["rustc"])
-    for tool in ("wit-bindgen", "zig"):
+    for tool in (("wit-bindgen", "zig") if include_c else ("wit-bindgen",)):
         located = shutil.which(tool, path=BUILD_ENVIRONMENT.get("PATH"))
         if located is None:
             raise ValueError(f"missing guest tool: {tool}")
@@ -72,6 +74,8 @@ def check_tools() -> None:
     for tool, version in (("wasm-tools", config["contracts"]["wasm-tools"]),
                           ("wit-bindgen", config["rust"]["dependencies"]["wit-bindgen"]),
                           ("zig", config["sdk"]["zig"])):
+        if tool == "zig" and not include_c:
+            continue
         actual = run(tool, "version" if tool == "zig" else "--version", capture=True).strip()
         if version not in actual.split():
             raise ValueError(f"{tool}: expected {version}, found {actual}")
@@ -85,10 +89,11 @@ def source_inputs() -> bytes:
                                      "tools/build_process.py", "tools/build_process_linux.py",
                                      "tools/build_process_windows.py", "tools/build_process_signals.py",
                                      "tools/build_observation.py", "tools/build_snapshot.py", "tools/guest_bindings.lock.json")]
-    for directory in ("sdk/rust-guest", "sdk/c-guest", "crates/latent-component-bindings",
+    for directory in ("sdk/rust-guest", "sdk/c-guest", "tools/c_guest", "crates/latent-component-bindings",
                       "tools/toolchain-smoke", "tools/optimization-workloads", "wit/platform"):
         files.extend(path for path in (ROOT / directory).rglob("*") if path.is_file()
-                     and "target" not in path.relative_to(ROOT / directory).parts)
+                     and not {"target", "__pycache__"}.intersection(path.relative_to(ROOT / directory).parts)
+                     and path.suffix != ".pyc")
     if len(files) > 4096:
         raise ValueError("guest source file count exceeded")
     records, size = {}, 0
@@ -122,7 +127,7 @@ def observation(output: Path, directory: Path, profile: dict, component: Path,
                      + [TOOL_MATERIALS[name] for name in commands],
         "parameters": {"cargoPackage": "latent-toolchain-smoke", "cargoExample": "guest-" + profile["name"],
                        "target": "wasm32-unknown-unknown", "profile": "release", "locked": True, "incremental": False}
-                      if language == "rust" else {"compiler": "zig-cc", "fixture": "blob", "target": "wasm32-wasi", "optimization": "O2"},
+                      if language == "rust" else {"compiler": "zig-cc", "fixture": profile["name"], "target": "wasm32-wasi", "optimization": "O2"},
         "startedAt": started, "finishedAt": int(time.time()), "reproducibility": "not-checked",
         "hermetic": False, "dependencyCompleteness": "declared-inputs-incomplete",
     })
@@ -238,7 +243,7 @@ def main() -> None:
     temporary.mkdir(exist_ok=True)
     BUILD_ENVIRONMENT.update(build_environment(temporary))
     BUILD_ENVIRONMENT.update({"CARGO_INCREMENTAL": "0", "CARGO_TARGET_DIR": str(Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")).resolve())})
-    check_tools()
+    check_tools(include_c=not args.skip_c)
     bindings(output, args.update_bindings)
     sources, started = source_inputs(), int(time.time())
     profiles = [json.loads(path.read_text()) for path in sorted(EXAMPLES.glob("guest_*/profile.json"))]
@@ -255,34 +260,40 @@ def main() -> None:
                        EXAMPLES / ("guest_" + profile["name"]) / "world.wit", component)
         observation(output, output / ("rust-" + profile["name"]), profile, component, started, sources, "rust")
     if not args.skip_c:
-        build_c(output, next(p for p in profiles if p["name"] == "blob"), sources)
+        build_c(output, profiles, sources)
     if sources != source_inputs():
         raise ValueError("guest sources changed before build completion")
     for name, path in TOOL_PATHS.items():
         if file_identity(path, name) != TOOL_MATERIALS[name]:
             raise ValueError("guest compiler tool changed during build")
-    names = ["rust-" + p["name"] for p in profiles] + ([] if args.skip_c else ["c-blob"])
+    names = ["rust-" + p["name"] for p in profiles] + ([] if args.skip_c else ["c-" + name for name in CAPABILITIES])
     write_json(marker, {"formatVersion": 1, "observations": {
         name: digest((output / name / "build-observation.json").read_bytes()) for name in names}})
     print(f"Guest package inputs: {output}")
 
 
-def build_c(output: Path, profile: dict, sources: bytes) -> None:
-    started = int(time.time())
-    source = EXAMPLES / "guest_blob/world.wit"
-    wit = output / "c-wit"
-    stage(wit, source.parent)
-    generated = output / "c-bindings"
-    generated.mkdir(exist_ok=True)
-    run("wit-bindgen", "c", str(wit), "--world", profile["world"], "--rename-world", "probe", "--out-dir", str(generated))
-    core, component = output / "c-blob.core.wasm", output / "c-blob.wasm"
-    run("zig", "cc", "-target", "wasm32-wasi", "-O2", "-mexec-model=reactor", "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
-        "-I", str(generated), str(ROOT / "sdk/c-guest/blob.c"), str(generated / "probe.c"),
-        str(generated / "probe_component_type.o"), "-o", str(core))
-    run("wasm-tools", "component", "new", str(core), "-o", str(component))
-    run("wasm-tools", "validate", str(component))
-    package_inputs(output / "c-blob", profile, source, component)
-    observation(output, output / "c-blob", profile, component, started, sources, "c")
+def build_c(output: Path, profiles: list[dict], sources: bytes) -> None:
+    by_name = {profile["name"]: profile for profile in profiles}
+    if set(by_name) != set(CAPABILITIES):
+        raise ValueError("C and Rust guest capability inventories differ")
+    remaining = int(BUILD_DEADLINE - time.monotonic())
+    if remaining < 1:
+        raise ValueError("guest build deadline exceeded")
+    with tempfile.TemporaryDirectory(prefix="c-components-", dir=output) as temporary:
+        temporary = Path(temporary)
+        compiler = Compiler(temporary / "tmp", min(remaining, 900))
+        for name in CAPABILITIES:
+            started = int(time.time())
+            profile = by_name[name]
+            source = ROOT / "sdk/c-guest/blob.c" if name == "blob" else ROOT / "sdk/c-guest/examples" / (name + ".c")
+            component, lock = compiler.compile([source], EXAMPLES / ("guest_" + name),
+                profile["world"], temporary / name,
+                memory_bytes=4_194_304 if name in {"service", "callee"} else 16_777_216,
+                trap=name != "blob")
+            destination = output / ("c-" + name)
+            package_inputs(destination, profile, EXAMPLES / ("guest_" + name) / "world.wit", component)
+            write_json(destination / "bindings.json", lock)
+            observation(output, destination, profile, component, started, sources, "c")
 
 
 if __name__ == "__main__":

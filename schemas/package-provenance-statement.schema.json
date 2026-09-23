@@ -553,7 +553,18 @@
                         "const": "zig-cc"
                       },
                       "fixture": {
-                        "const": "blob"
+                        "enum": [
+                          "application",
+                          "blob",
+                          "callee",
+                          "events",
+                          "http",
+                          "metrics",
+                          "random",
+                          "secrets",
+                          "service",
+                          "streaming"
+                        ]
                       },
                       "target": {
                         "const": "wasm32-wasi"

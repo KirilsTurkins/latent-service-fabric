@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "id": "guest/tutorial-word-count",
+  "title": "Count the words in a document",
+  "audience": "guest-author",
+  "target": "guest",
+  "variants": [
+    {
+      "language": "rust",
+      "kind": "maintained",
+      "source": "tools/toolchain-smoke/examples/tutorial_word_count/component.rs",
+      "regions": [
+        "capsule"
+      ],
+      "validation": {
+        "target": "tools/build_tutorial_capsules.py",
+        "instructions": "docs/component-development/creating-a-capsule.md",
+        "evidence": null
+      }
+    },
+    {
+      "language": "c",
+      "kind": "maintained",
+      "source": "sdk/c-guest/templates/word-count.c",
+      "regions": [
+        "capsule"
+      ],
+      "validation": {
+        "target": "tools/qualify_c_capsules.py",
+        "instructions": "docs/component-development/c-authoring.md",
+        "evidence": null
+      }
+    }
+  ]
+}
