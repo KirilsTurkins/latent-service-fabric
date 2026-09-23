@@ -6,9 +6,9 @@ import "latent/control/v1/common.proto";
 import "latent/control/v1/release.proto";
 
 enum TriggerTargetKind {
+  // Omitted or unspecified target kinds are rejected.
   TRIGGER_TARGET_KIND_UNSPECIFIED = 0;
-  // Legacy buffered-v1 clients may omit this discriminator. When present,
-  // application fields 1-7 remain the wire-compatible application variant.
+  // Application fields 1-7 retain their current target identity meanings.
   TRIGGER_TARGET_KIND_APPLICATION = 1;
   // Carries only publication plus this discriminator. Application fields are
   // required to be absent/default and are rejected as a hybrid by validation.

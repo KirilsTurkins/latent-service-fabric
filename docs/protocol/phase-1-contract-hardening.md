@@ -454,8 +454,8 @@ for authorization, finite ownership, replay, recovery and listener boundaries.
 ### Phase 3 first-class static web targets (#495)
 
 `TriggerTarget` adds the `TriggerTargetKind` discriminator at field 8 while
-preserving application fields 1 through 7 and treating an omitted discriminator
-as the legacy application variant. `STATIC_WEB` carries only the exact
+preserving application fields 1 through 7. Both variants require an explicit
+discriminator; omitted, unspecified and unknown kinds are rejected. `STATIC_WEB` carries only the exact
 publication and rejects application-only fields, so older buffered-v1 clients
 retain their wire shape and new static targets cannot synthesize deployment or
 component identity.
