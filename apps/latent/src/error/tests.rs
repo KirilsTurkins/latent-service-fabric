@@ -1,4 +1,5 @@
 use super::*;
+use latent_core::ErrorDetail;
 
 #[test]
 fn currentness_diagnostic_never_changes_mutation_certainty_or_exposes_peer_text() {
@@ -31,6 +32,140 @@ fn currentness_diagnostic_never_changes_mutation_certainty_or_exposes_peer_text(
             assert_eq!(result.error["details"][0]["fields"]["reason"], reason);
         }
     }
+}
+
+#[test]
+fn guest_trap_currentness_keeps_known_invocation_failure_and_closed_details() {
+    for reason in latent_core::error::ADMISSION_CURRENTNESS_REASONS
+        .iter()
+        .copied()
+        .chain(["unknown-private-reason"])
+    {
+        let error = PlatformError {
+            code: PlatformErrorCode::GuestTrap,
+            message: "private provider context /private/path".into(),
+            retryable: false,
+            details: vec![
+                ErrorDetail {
+                    kind: "activation.guest-trap".into(),
+                    fields: [
+                        ("code".into(), "guest-runtime-error".into()),
+                        ("cell_id".into(), "private-cell".into()),
+                        ("capabilityFailure".into(), "Unavailable".into()),
+                        ("admissionCurrentnessReason".into(), reason.into()),
+                    ]
+                    .into(),
+                },
+                ErrorDetail {
+                    kind: "admission.currentness".into(),
+                    fields: [
+                        ("reason".into(), reason.into()),
+                        ("private-field".into(), "private-value".into()),
+                    ]
+                    .into(),
+                },
+            ],
+        };
+        let data = json!({"terminalState":"guest_trap", "consumption":{
+            "cpuFuel":u64::MAX.to_string(), "peakMemoryBytes":"53018624"}});
+        // This is the existing invocation-response projection, not an
+        // ambiguous transport Status. The diagnostic cannot change its result.
+        let outcome = crate::output::Outcome::platform_failure(data.clone(), &error);
+        assert_eq!(outcome.exit_code(), 4);
+        let details = if reason == "unknown-private-reason" {
+            json!([])
+        } else {
+            json!([{"kind":"admission.currentness", "fields":{"reason":reason}}])
+        };
+        assert_eq!(
+            outcome.document("invoke"),
+            json!({"schemaVersion":"latent.cli.result.v1", "command":"invoke",
+                "category":"platform-failure", "data":data,
+                "error":{"code":"guest-trap", "message":"The platform reported a failure.",
+                    "retryable":false, "details":details},
+                "requestDispatched":false, "outcomeKnown":true})
+        );
+        assert!(!outcome.document("invoke").to_string().contains("private"));
+    }
+}
+
+#[test]
+fn guest_trap_private_metadata_cannot_expand_public_diagnostic_vocabulary() {
+    for (kind, key, value) in [
+        (
+            "activation.guest-trap",
+            "capabilityFailure",
+            "Unavailable".to_owned(),
+        ),
+        (
+            "activation.guest-trap",
+            "classification",
+            "runtime-error".to_owned(),
+        ),
+        (
+            "activation.guest-trap",
+            "trap",
+            "unreachable-code".to_owned(),
+        ),
+        (
+            "admission.currentness",
+            "admissionCurrentnessReason",
+            "admission-authority-busy".to_owned(),
+        ),
+        (
+            "admission.currentness",
+            "reason",
+            "admission-authority-busy private".to_owned(),
+        ),
+        (
+            "admission.currentness",
+            "reason",
+            "admission-authority-busy ".to_owned(),
+        ),
+        ("admission.currentness", "reason", "private".repeat(172)),
+    ] {
+        let error = PlatformError {
+            code: PlatformErrorCode::GuestTrap,
+            message: "private".into(),
+            retryable: false,
+            details: vec![ErrorDetail {
+                kind: kind.into(),
+                fields: [(key.into(), value)].into(),
+            }],
+        };
+        let public = platform_value(&error);
+        assert_eq!(public["details"], json!([]));
+        assert_eq!(public["code"], "guest-trap");
+        assert_eq!(public["retryable"], false);
+        assert!(!public.to_string().contains("private"));
+    }
+}
+
+#[test]
+fn guest_trap_currentness_never_makes_an_ambiguous_transport_failure_known() {
+    let error = proto::PlatformError {
+        code: "guest-trap".into(),
+        message: "private runtime context".into(),
+        retryable: false,
+        detail_items: vec![proto::ErrorDetail {
+            kind: "admission.currentness".into(),
+            fields: [("reason".into(), "admission-authority-busy".into())].into(),
+        }],
+    };
+    let status = Status::with_details(Code::Internal, "private", error.encode_to_vec().into());
+    let failure = Failure::from_status(&status);
+    assert_eq!(failure.category, Category::PlatformError);
+    assert!(!failure.outcome_known);
+    assert!(failure.request_dispatched);
+    assert_eq!(failure.error["code"], "guest-trap");
+    assert_eq!(failure.error["retryable"], false);
+    assert_eq!(
+        failure.error["details"],
+        json!([
+            {"kind":"admission.currentness", "fields":{"reason":"admission-authority-busy"}}
+        ])
+    );
+    assert!(!failure.error.to_string().contains("private"));
 }
 
 #[test]
