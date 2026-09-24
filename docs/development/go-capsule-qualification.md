@@ -88,10 +88,77 @@ All three held HTTP peers physically closed, with eight authorized requests,
 zero unexpected requests and a reaped peer process. The reaped node's final
 record reported zero live Stores, host states, instances, temporary buffers,
 cancellation probes, provider sessions/handles/calls/results and compiler or
-cleanup jobs. Shared compiler and cleanup workers were joined. Integration
-adds a direct four-parked-application-goroutine assertion to the existing blob
-cancellation/fresh-state fixture; that newer assertion and the integrated
-source require a new complete exact-head qualification before merge.
+cleanup jobs. Shared compiler and cleanup workers were joined. That snapshot
+preceded the direct four-parked-application-goroutine assertion in the blob
+cancellation/fresh-state fixture; the following integrated run executes it.
+
+## Integrated source and cross-language gate
+
+[Run 35939625196](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35939625196)
+passed complete Go qualification at
+`2ba471f64fa6596fd9ed8a008908c70a00345821`, including the shared Java/.NET
+profiles, latest TypeScript authoring implementation and four parked Go workers
+before pending blob creation. All fourteen components built, all ten actual
+SDK cases passed in 152.96 seconds, and the enforced node completed all 27
+outcomes, 24 resource samples, dormant populations 5/9/17, six printed Bash
+steps and physical cleanup. The fuel fixture consumed exactly 1 billion fuel;
+subsequent invocations returned fresh state. All three held HTTP peers closed,
+with eight authorized requests and no unexpected request. Source and executable
+identities were unchanged through final integrity.
+
+Independent verification matched all 2,330 captured execution inputs and
+4,092 archived files to that exact Git head. Its CI merge
+`2df1ce44c38d22d6ceb17fe20e39f113eb7939f0` has the same tree as the candidate,
+`bdfdc2db2c41f912dafc6589c7d80252c4fdb146`. The retained
+[execution artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35939625196/artifacts/10785296375),
+[source archive](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35939625196/artifacts/10784675263)
+and [pinned tools](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35939625196/artifacts/10784452142)
+remain separate. `qualification.json` SHA-256 is
+`a456d64bec00b94d5c016a169c4aa97c8f8f6b0258331207b80b213a371d813c`;
+the source archive is
+`3e62a5d6dc2fb20df8700b51beaf737743ef97d8f9f601a9b2e0d578fdbdd0b7`.
+This does not attest uncaptured implicit compiler inputs.
+
+[Broad CI 35939625226](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35939625226)
+also passed every required job. Its
+[runtime discovery and execution artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35939625226/artifacts/10785733372)
+retains the actual clock-fuel, ordinary typed-function-reference and finite
+binding-lease regressions, in addition to the SDK/node qualification above.
+
+The same head is not an all-CI pass: its
+[cross-TypeScript run 35939625050](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35939625050)
+passed all ten SDK cases in 888.32 seconds, then the first node deployment apply
+failed after 5.940224427 seconds with `admission-clock-lease-uncovered` and an
+unknown public outcome. Durable audit attempt 7, bounded read-only diagnostics
+and the complete failed attempt are
+[retained](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35939625050/artifacts/10785326735).
+It was not retried. One full package inspection can itself exceed the existing
+five-second control lease. The integrated correction renews explicit control
+authority after that inspection, before the next plan/currentness check, while
+retaining finite lease/deadline bounds, revocation checks, one package read and
+no publication on failure. Startup, historical replay and invocation do not
+receive this control-only renewal.
+
+A separate [cross-TypeScript run 35938546318](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938546318)
+at .NET integration head `0c08d3f175f8cb58546208abe7f797cd27d6b61b` reached
+child admission after a 67.452-second cold parent start. The child's retained
+outcome is `Unavailable` at `Resolved`, with zero consumption. The fixture had
+no monitor and refreshed synthetic load only before the top-level request,
+while the unchanged freshness policy allows 60 seconds. Stale child load is a
+strong source/timing inference, not a captured private error reason. The fixture
+now samples the same fixed healthy profile at each admission, including nested
+children; production load observation, freshness limits, quotas, budgets and
+retry behavior are unchanged. Deterministic actual-component regressions inject
+a stale child sample without sleeping and require zero-use rejection, then
+require one successful parent/child execution with fresh samples. Final Linux
+execution of those regressions and every exact-head gate remains mandatory.
+
+These integration corrections and subsequent squash-ancestry reconciliation
+require a new full qualification. The earlier `7e670e06` attempt retained ten
+passing SDK cases and a verified 4,090-file source archive, but was superseded
+before final node/guide evidence; it is not another complete pass. The final PR
+and issue receipt must identify the successfully qualified head and actual
+merge tree. No earlier success automatically qualifies later source changes.
 
 ## Compiler and implementation decisions
 
@@ -194,9 +261,10 @@ the SDK builder as a required pair; standalone SDK builds retain their normal
 build command. Rebuilding those tools with a different Cargo feature set
 during qualification changes their bytes, even from the same sources, and is
 not permitted. The final integrity stage retains before/after source and
-binary identities and rejects any difference. The local-service fixture also
-publishes a current synthetic load sample before each new request because it
-has no node monitor; production freshness limits are unchanged.
+binary identities and rejects any difference. An initial local-service fixture
+correction published synthetic load before each new top-level request. The
+later integrated correction above covers nested admission after a cold parent
+as well; production freshness limits remain unchanged.
 
 [Run 35929606980](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35929606980),
 head `54772d797e6d47732deb170a031b9ddf1f07dc91`, passed the expanded ABI probe,

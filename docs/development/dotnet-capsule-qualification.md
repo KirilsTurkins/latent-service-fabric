@@ -58,6 +58,64 @@ that gate is not claimed green and its cause is not inferred from the successful
 .NET qualification. Final integrated CI must pass it with bounded failure
 diagnostics available.
 
+The later integrated head `0c08d3f175f8cb58546208abe7f797cd27d6b61b`
+failed [run 35938546333](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938546333)
+at the printed guide's final `deployment delete`. Artifact `10783703577`
+retains the complete attempt. All ten SDK cases and the separate signed-node
+workload passed: 27 invocations, 24 samples, the 5/9/17 dormant populations and
+clean node/HTTP-peer teardown. The guide also built, published and deployed its
+component and returned both expected greeting answers. Its deletion returned
+public `resource-exhausted`, with `requestDispatched: true` and
+`outcomeKnown: true`; no deletion was retried. The retained catalog still
+contains the deployment at generation 2. The exit trap stopped the guide's node
+cleanly, but that is not successful deployment cleanup or guide qualification.
+
+No delete attempt appears in the seven retained audit records. The last two
+records are the valid invocation's monotonic-clock grant/outcome observations,
+immediately before the rejected cleanup. The guide configures eight audit queue
+operations, which derive a 32 KiB byte allowance; each observation and a new
+control reservation occupy 16 KiB of that allowance until physically released.
+This supports audit-byte pressure as an explanation, but the private rejection
+reason was not retained and is not claimed proven. The source archive matches
+all 4,102 selected Git blobs and modes, SHA-256
+`37b335092e4d1aac855669e92c7594c98f07cd3ca7128d123b908ae6cb70fed8`.
+The failed attempt remains a failed gate regardless of earlier successful runs.
+
+The guide now makes bounded read-only observations of audit ownership before
+issuing its one deletion. Existing queued-byte, durable staging and recovery
+state are exposed through matching server/CLI counters; missing, malformed,
+closed or recovery-pending observations fail closed. The observation has a
+five-second deadline, at most 32 reads and finite process/output cleanup bounds.
+It neither reserves future capacity nor changes journal quotas, policy, leases
+or deletion checks. Local tests cover these boundaries; the deterministic
+two-observation/32 KiB journal regression and full guide still require Linux CI
+at the new source. This correction is not a retroactive pass for the failed run.
+
+The same integrated head's TypeScript cross-check also failed
+[run 35938546318](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938546318).
+Artifact `10784514997` retains nine passing SDK cases and the failed nested-call
+case. Its child stopped at `Resolved` with `Unavailable` and zero consumption;
+the parent failed after 67.45 seconds. This test composition sampled its
+synthetic healthy load only before the parent request, while normal admission
+rejects samples older than 60 seconds. Stale child load is a supported inference,
+not a recovered private rejection reason. The fixture now samples the same
+healthy profile at every admission; production health sources, freshness limits,
+quotas and invocation deadlines are unchanged. Deterministic real-WAT regressions
+retain both the stale-child rejection and the fresh parent/child path, without
+sleeping or retrying either admission. Linux execution remains required.
+
+The separate TypeScript candidate's
+[run 35938383435](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938383435)
+retained `admission-clock-lease-uncovered` in artifact `10784737181` after one
+bounded deployment preparation took 6.18 seconds. The existing
+authenticated control owner now renews its finite clock lease after successful
+package inspection, before compiling the binding plan. Initial eligibility and
+the existing final live-policy, proof-expiry, revocation and deadline checks
+remain; startup/recovery receives no renewal authority. Registered real-package
+tests advance a fake clock across that boundary and cover cancellation,
+revoked/expired proofs and startup failure. These shared changes need successful
+Linux CI at the new integrated source; they do not qualify the earlier failure.
+
 The following first-success measurements remain tied to their original source,
 not to the later integration head.
 

@@ -2993,7 +2993,7 @@
       "sha256": "54a371d38d626291fd1415e2ddda6841054c5ad34334869408459461d9788792"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "afe96e20fe2d9b8ab2f82771e490099ba8cdecefe37902404f65cef9b6a85606"
+      "sha256": "ad13d2378077ee097dfa8a904aad3e40858489b6c4d8724d2e36113be0a6dd4d"
     },
     "tools/qualify_typescript_capsules.py": {
       "sha256": "9ebcf28e77e5fa9bca9018d8e15afffac9e075427315ad334fa7fc7a8d4b4e44"
@@ -3679,6 +3679,16 @@
       "DocsPagesPolicyTests.test_unexpected_output_and_candidate_publisher_record_are_refused"
     ],
     "tools/tests/test_dotnet_capsule_authoring.py": [
+      "AuditDrainTests.test_busy_to_idle_observations_are_only_bounded_read_only_calls",
+      "AuditDrainTests.test_counter_values_reject_malformed_numbers_and_unsigned_overflow",
+      "AuditDrainTests.test_every_owner_counter_must_be_present_and_zero_before_idle",
+      "AuditDrainTests.test_failed_read_stops_once_and_cli_failure_discards_private_response",
+      "AuditDrainTests.test_helper_and_dependencies_are_captured_and_guide_deletes_only_once",
+      "AuditDrainTests.test_invalid_bounds_and_identifiers_do_not_spawn",
+      "AuditDrainTests.test_malformed_paginated_ambiguous_and_unbounded_responses_are_rejected",
+      "AuditDrainTests.test_missing_audit_owner_closed_and_recovery_states_fail_closed",
+      "AuditDrainTests.test_observation_limit_and_deadline_stop_without_effect_retries",
+      "AuditDrainTests.test_real_process_deadline_and_output_overflow_retire_owned_process",
       "DotnetAuthoringTests.test_all_real_sdk_sources_use_the_same_capture_path",
       "DotnetAuthoringTests.test_all_templates_capture_actual_source_and_pinned_sdk",
       "DotnetAuthoringTests.test_application_cannot_inject_msbuild_or_package_overrides",
@@ -6199,7 +6209,7 @@
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/dotnet-guest.yml": "f06805b301ab28a83b7b81aa04d68b5eea05048f66c035c157653451512eddfc",
+    ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
     ".github/workflows/go-guest.yml": "bb0a8f048724248e33fe72ebb9f153c0e82184cf8d7f99f53be05cfb97c8919e",
     ".github/workflows/java-guest-feasibility.yml": "6c1814b442abf741dc4dceb6ab707cf87b3cc161090a3b5b7a62c9334dc3f872",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",

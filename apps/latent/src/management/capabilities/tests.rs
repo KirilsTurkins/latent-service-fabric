@@ -148,12 +148,20 @@ fn protobuf_decoded_single_reason_keeps_bounded_allocation_and_closed_semantics(
 fn usage_reports_only_fixed_owner_counters_and_preserves_unavailable() {
     let usage = proto::CapabilityResourceUsage {
         scope: "node".into(),
-        counters: HashMap::from([("broker_calls".into(), u64::MAX)]),
+        counters: HashMap::from([
+            ("broker_calls".into(), u64::MAX),
+            ("audit_queued_bytes".into(), 16 * 1024),
+            ("audit_stage_bytes".into(), 68 * 1024),
+            ("audit_recovery_pending".into(), 1),
+        ]),
         unavailable: vec!["provider-io-no-retained-pool-owner".into()],
     };
     projection::checked(&usage, 4096).unwrap();
     let data = usage.clone().project();
     assert_eq!(data["counters"]["broker_calls"], u64::MAX.to_string());
+    assert_eq!(data["counters"]["audit_queued_bytes"], "16384");
+    assert_eq!(data["counters"]["audit_stage_bytes"], "69632");
+    assert_eq!(data["counters"]["audit_recovery_pending"], "1");
     assert_eq!(
         data["unavailable"],
         json!(["provider-io-no-retained-pool-owner"])

@@ -45,6 +45,69 @@ produced. This is explicit negative authoring evidence, not runtime admission.
 
 ## Retained attempts and compiler boundary fixes
 
+The integrated cross-check
+[run 35938546318](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938546318)
+at `0c08d3f175f8cb58546208abe7f797cd27d6b61b` passed nine SDK cases in
+1,007.91 seconds but failed its first permitted nested service call. The child
+stopped at `Resolved` with `DependencyFailed` / `Unavailable` and zero recorded
+consumption; the parent assertion trapped after 67.452685681 seconds. Artifact
+`10784514997` retains the failed attempt. Its child private rejection reason
+was not captured. The fixture refreshed its synthetic healthy load only at root
+request construction, while normal admission rejects a sample older than
+60 seconds. Stale load at child admission is therefore an evidence-backed
+inference, not a recovered private cause.
+
+This fixture now samples the same explicitly synthetic healthy profile at each
+admission, including nested children. No production health source, 60-second
+freshness limit, quota, invocation budget or retry behavior changes. Three
+registered regressions check per-read timestamps and run real parent/child WAT
+components with deterministic fresh and 61-second-old child observations. They
+require exactly one admission per activation, reproduce zero-consumption stale
+child rejection, and check cleanup. The native test bodies typechecked, but
+the real repository-backed cases still need authoritative Linux execution.
+
+[Run 35938383435](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938383435)
+at `f65820c5ac7a7265569e15fee52a3695a812c505` passed all ten SDK tests
+in 879.58 seconds. The nested service succeeded cold in 94.410 seconds, with
+9,502,720 bytes observed for the child and 19,005,440 bytes for the caller's
+aggregate peak. The node admitted its first signed greeting package, then the
+first deployment apply, control 006, failed after a directly measured
+6.179590237 seconds with `unavailable` / `admission-clock-lease-uncovered`.
+The new timing receipt confirms the explicit 125-second RPC and 130-second
+process bounds were selected; this is not the previous 15-second timeout.
+The mutation's `outcomeKnown` remained false, the read-only operation lookup
+reported `UNKNOWN`, and a complete eight-record audit retained the rejection.
+No mutation was retried. Artifact `10784737181` preserves the failed attempt;
+it provides no dormant population, printed-guide or final-cleanup pass.
+
+The exact retained greeting component SHA-256 was
+`a4e7d661cc418c466749e7ca3061d8a9766c826f70bcbe7a9b87e86c0b4ae7a1`.
+Its package passed an independent native inspection in 5.401 seconds. The
+inspecting binary SHA-256 was
+`c2209dfa0b91fd2f7e06ca57ee77625da5f7ead1a5635342abd934d5b6a3a5ea9`;
+this Windows measurement is diagnostic evidence, not Linux node qualification.
+Binding preparation already renewed before each package read, but its later
+broker checks could see an expired lease after one slow structural inspection.
+The explicit authenticated-control path now also renews after each successful,
+identity-matched inspection. The five-second lease, 30-second binding deadline,
+single preparation owner and latest policy/lifecycle checks are unchanged.
+Startup, recovery, invocation and historical replay do not gain this renewal.
+Three registered real-package regressions advance a fake clock by six seconds
+and cover cancellation/owner release, revoked or expired proofs despite a
+renewed clock, and startup without renewal. Their actual bodies typechecked
+locally with the Linux module temporarily exposed, then its platform guard was
+restored. They still require authoritative Linux execution; native catalog
+durability is unavailable, and a zero-case Windows command is not a pass.
+
+Source artifact `10783384481` matched all 4,096 selected Git blobs and
+40,094,211 source bytes at that exact head; its archive SHA-256 was
+`fd692386dc56d0e3d356195bb95c35d37ff62ae0cd78b8fa0295452a999e7d72`.
+The CI merge tree also exactly matched the head tree. The corrected Go
+[cross-language run 35938383432](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938383432)
+passed its complete SDK, node, recovery and printed-guide qualification on
+the same head. Neither that cross-language success nor exact source identity
+converts this TypeScript node failure into successful delivery.
+
 [Run 35934224469](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934224469)
 at `cb3aab64377eea4a5cb26220a6593b5ca2f8351d` passed all ten actual SDK
 tests in 680.29 seconds. The real node then admitted all four attempted signed
@@ -153,9 +216,10 @@ service invocation in 82.891 seconds, including a successful child in 42.388
 seconds. The child's observed peak was 9,502,720 bytes and the caller's aggregate
 peak, including the child, was 19,005,440 bytes. The next request correctly
 failed admission because the test fixture's one-shot synthetic load sample was
-older than the unchanged 60-second admission limit. The fixture now publishes
-its synthetic current load at each new request, like its missing node monitor;
-it neither retries the failed request nor weakens production freshness checks.
+older than the unchanged 60-second admission limit. That candidate refreshed
+its synthetic current load at each new root request, like its missing node
+monitor; it neither retried the failed request nor weakened production freshness
+checks. The later nested-child failure above exposes that correction's limit.
 The attempt passed nine of ten SDK tests in 669.71 seconds, but remained failed
 before full-node or guide qualification. Artifact `10779964328` retains it.
 
