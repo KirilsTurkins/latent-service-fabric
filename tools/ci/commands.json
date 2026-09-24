@@ -5634,6 +5634,17 @@
       "SchedulerSchemaTests.test_qualified_aggregate_requires_full_exact_population",
       "SchedulerSchemaTests.test_structural_plan_rejects_crossed_allocation_case_and_extra_fields"
     ],
+    "tools/tests/test_sdk_provider_lifetime.py": [
+      "ProviderLifetimeTests.test_authoring_profile_is_typescript_only_and_cleanup_cannot_erase_original_failure",
+      "ProviderLifetimeTests.test_child_rejects_invalid_or_startup_expired_deadline_before_opening_listener",
+      "ProviderLifetimeTests.test_default_explicit_and_shorter_owner_use_absolute_expiry_despite_startup_delay",
+      "ProviderLifetimeTests.test_failed_peer_lifecycle_is_reaped_without_exposing_raw_output_or_rechecking_reaped_pid",
+      "ProviderLifetimeTests.test_invalid_owner_or_lifetime_fails_before_process_creation",
+      "ProviderLifetimeTests.test_observation_and_cleanup_failure_or_cancellation_remain_closed_negative_facts",
+      "ProviderLifetimeTests.test_real_loop_keeps_default300_and_stops_at_explicit1200_without_reset",
+      "ProviderLifetimeTests.test_request_and_physical_close_wait_are_clipped_to_owner_without_widening_local_caps",
+      "ProviderLifetimeTests.test_request_count_bound_remains32_with_one_attempt_each"
+    ],
     "tools/tests/test_sdk_provider_matrix.py": [
       "ProviderMatrixTests.test_exact_six_language_contract",
       "ProviderMatrixTests.test_false_checks_leaks_and_invented_profiles_are_not_passes",
@@ -6176,6 +6187,7 @@
     "tools/tests/test_sbom_upstream.py",
     "tools/tests/test_scheduler_archive.py",
     "tools/tests/test_scheduler_schemas.py",
+    "tools/tests/test_sdk_provider_lifetime.py",
     "tools/tests/test_sdk_provider_matrix.py",
     "tools/tests/test_sdk_provider_rendezvous.py",
     "tools/tests/test_sdk_provider_scenario.py",

@@ -150,8 +150,38 @@ now samples the same fixed healthy profile at each admission, including nested
 children; production load observation, freshness limits, quotas, budgets and
 retry behavior are unchanged. Deterministic actual-component regressions inject
 a stale child sample without sleeping and require zero-use rejection, then
-require one successful parent/child execution with fresh samples. Final Linux
-execution of those regressions and every exact-head gate remains mandatory.
+require one successful parent/child execution with fresh samples.
+
+At shared integration head `9f51c60cdd686eb23aab5408f5dde75b4e7f7d09`,
+[broad Linux CI 35942901770](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901770)
+passed all seventeen local-service cases, including the actual stale/fresh
+parent-child regressions, and all three slow-package-preparation lease cases.
+Its [execution artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901770/artifacts/10786806256)
+also retains the 32 KiB audit-queue drain regression and both wire/CLI ownership
+counter projections. These are executed Linux tests, not only discovery or
+native compilation evidence.
+
+That head's [TypeScript qualification 35942901312](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901312)
+passed all ten SDK cases, all 5/9/17 dormant samples, twelve tutorial calls and
+seven fault/fresh-state calls. Its first allowed HTTP call instead returned the
+declared `connection-failed` result; the [failed artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901312/artifacts/10786577160)
+remains a failure, without complete node, shutdown or guide evidence. The
+sequential controls and prior invocations took at least 726.851 seconds after
+the fixture peer started, but that peer had an independent 300-second lifetime.
+Expiry is supported by source and timing, not a captured private socket error.
+No operation was retried.
+
+The integrated fixture correction uses an absolute monotonic peer expiry
+bounded by its qualification owner, including startup and socket waits.
+Ordinary peers still default to 300 seconds; their 32-request, two-second I/O
+and three-second physical-close ceilings are unchanged. Failed attempts retain
+bounded peer exit/reaping facts and closed diagnostic tokens. Measured
+TypeScript preparation costs also project about 153 seconds for deletion,
+beyond the old owner's remaining time; this is an estimate, not an observed
+TypeScript cleanup. Only that language's isolated qualification owner now
+allows 1,200 seconds. Go retains 900 seconds, and all production activation,
+compile, control-lease, proof, quota and cleanup bounds remain unchanged. The
+new finite profile still requires a complete executed qualification.
 
 These integration corrections and subsequent squash-ancestry reconciliation
 require a new full qualification. The earlier `7e670e06` attempt retained ten

@@ -45,6 +45,57 @@ produced. This is explicit negative authoring evidence, not runtime admission.
 
 ## Retained attempts and compiler boundary fixes
 
+[Run 35942901312](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901312)
+at `9f51c60cdd686eb23aab5408f5dde75b4e7f7d09` passed all ten SDK cases in
+872.12 seconds. The real node then passed all 5/9/17 dormant samples, all twelve
+valid/invalid/warm tutorial calls and seven trap, memory, fuel and fresh-state
+recovery calls. Dormant samples retained one node process, seven threads and one
+listener, with no service-resident execution owner. This is useful partial
+execution evidence, not complete node, cancellation, shutdown or guide evidence.
+
+The first allowed HTTP request instead returned the declared `connection-failed`
+error, with a known outcome, after 47.920462878 seconds. No request was retried.
+Artifact `10786577160` retains the failed receipt and observations. Its 63 prior
+controls took 535.478681897 seconds and the nineteen prior invocations took
+191.372620856 seconds, a sequential lower bound of 726.851302753 seconds before
+that HTTP request. The fixture listener had started before those operations but
+had an independent, hard-coded 300-second lifetime. Its private exit diagnostic
+was not captured, so fixture expiry is supported by source and measured timing,
+not a recovered private socket failure reason.
+
+The fixture now receives an absolute monotonic expiry bounded by its caller's
+owner. Process startup cannot extend it, and accept/read/send/held-socket
+waits are clipped to it. Ordinary peers retain their 300-second default, 32-request
+limit, two-second socket-I/O ceiling and three-second physical-close ceiling.
+Failed authoring attempts now retain bounded peer exit/reaping/cleanup facts and
+only closed diagnostic tokens; observation, cleanup or cancellation failures
+cannot erase the original failed receipt or turn it into a pass.
+
+The same measurements also leave at most 125.228234369 seconds of the old
+900-second qualification owner after the first HTTP attempt. Eighteen actual
+deployment applies took 471.348 seconds: the first five grew from 5.915 to
+29.451 seconds, and subsequent five-package preparations remained about
+29.45 seconds. The unchanged deletion path performs 26 remaining distinct-package
+inspections; the actual Go cleanup sequence confirms that count. Applying the
+measured TypeScript inspection cost estimates about 153 seconds for deletion
+alone. That estimate is not an observed TypeScript deletion result. The isolated
+TypeScript qualification owner now explicitly allows 1,200 seconds, including
+its fixture peer; other languages' owner bounds are unchanged. The 120-second
+activation limit, 125-second operator wait, 130-second process watchdog,
+30-second binding preparation ceiling, 1,800-second demo proof window and all
+case counts, policies and production limits remain unchanged. The next complete
+run must measure the corrected total rather than treating this estimate as a pass.
+
+Source artifact `10786025098` independently matched all 4,098 selected Git blobs
+and 40,106,559 source bytes at that head; archive SHA-256 was
+`2e4e47dca66b6d21eff08dfb845fb515b3bcd4d5e3b68c127c42155aed27f27a`.
+Its CI merge commit `b8fbb53c0d72072c40b65286a2a3210885eb53b8` had exactly
+the reviewed tree. The same head's
+[broad Linux run 35942901770](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901770)
+passed the three slow-binding-preparation regressions and all seventeen local
+service cases, including deterministic fresh/stale nested-child observations.
+These checks do not convert the retained HTTP failure into completed delivery.
+
 The integrated cross-check
 [run 35938546318](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938546318)
 at `0c08d3f175f8cb58546208abe7f797cd27d6b61b` passed nine SDK cases in
@@ -63,8 +114,8 @@ freshness limit, quota, invocation budget or retry behavior changes. Three
 registered regressions check per-read timestamps and run real parent/child WAT
 components with deterministic fresh and 61-second-old child observations. They
 require exactly one admission per activation, reproduce zero-consumption stale
-child rejection, and check cleanup. The native test bodies typechecked, but
-the real repository-backed cases still need authoritative Linux execution.
+child rejection, and check cleanup. The native test bodies typechecked before
+the authoritative Linux execution recorded above.
 
 [Run 35938383435](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938383435)
 at `f65820c5ac7a7265569e15fee52a3695a812c505` passed all ten SDK tests
@@ -96,8 +147,9 @@ Three registered real-package regressions advance a fake clock by six seconds
 and cover cancellation/owner release, revoked or expired proofs despite a
 renewed clock, and startup without renewal. Their actual bodies typechecked
 locally with the Linux module temporarily exposed, then its platform guard was
-restored. They still require authoritative Linux execution; native catalog
-durability is unavailable, and a zero-case Windows command is not a pass.
+restored. They subsequently passed in the authoritative Linux run recorded
+above; native catalog durability is unavailable, and a zero-case Windows
+command is not a pass.
 
 Source artifact `10783384481` matched all 4,096 selected Git blobs and
 40,094,211 source bytes at that exact head; its archive SHA-256 was

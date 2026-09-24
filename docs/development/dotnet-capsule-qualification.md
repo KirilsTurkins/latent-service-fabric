@@ -35,6 +35,55 @@ These are finite experiment bounds, not throughput or production sizing claims.
 
 ## Successful finite qualification
 
+The integrated head `9f51c60cdd686eb23aab5408f5dde75b4e7f7d09` passed
+[run 35942901339](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901339).
+Artifact `10785948026` matches 2,346 captured Git inputs with no generated SDK
+outputs. All ten SDK cases passed in 95.82 seconds, followed by 27 signed-node
+invocations, 24 resource observations, dormant populations 5/9/17 and clean
+node/HTTP-peer shutdown. All eight peer requests were authorized, none was
+unexpected and all three held operations closed. The six printed guide blocks
+passed in 28.47 seconds. Audit readiness took one 15 ms observation with every
+required counter zero; the guide's single deletion received a durable audit
+acknowledgment and the retained catalog has zero deployments.
+
+The before/after source and execution-tool inventories match. Runtime source
+identity is `sha256:b12a96b6e49b9ad36ae3326c35df5a19bc3930a30ce48c51ec51f41de5933653`
+(2,185 files, 13,727,514 bytes); qualification marker identity is
+`sha256:06140e5617cfc8f8117a519577bfb2ead26796f2291aaeb15932c4732c00c0c1`.
+The separate source archive matches all 4,105 selected Git blobs and modes,
+SHA-256 `e8f959828303f35dd1cefd3ed3de884e9552d78984718d413a5d74d6559fa7ee`.
+The CI merge `b8fbb53c0d72072c40b65286a2a3210885eb53b8` and reviewed head
+share tree `e6c317a0a28305291411ebab7966ac1521f54ea3`.
+
+That head also passed broad repository CI and the Rust, C, Java, Go and security
+workflows, but its TypeScript cross-check
+[run 35942901312](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901312)
+failed and still prevents merging. Artifact `10786577160` retains ten passing
+SDK cases (872.12 seconds), the 5/9/17 dormant populations, 20 invocation
+receipts and 18 resource samples. The first allowed HTTP invocation returned
+the declared `connection-failed` result with a known outcome after 47.92 seconds;
+HTTP cancellation, subsequent cleanup and the guide were not qualified.
+The test peer has a 300-second listener lifetime, but the preceding sequential
+control and invocation receipts total at least 726.85 seconds. This establishes
+a fixture lifetime mismatch with the existing 900-second authoring owner.
+The prior peer exit was not captured, so its exact private failure cause is not
+claimed recovered. No invocation or uncertain mutation was retried. A corrected
+fixture and every final-head CI gate remain required for delivery.
+
+The correction ties the peer to an absolute, finite owner deadline, including
+startup, request and held-socket work; ordinary peer use keeps its 300-second
+default. Only TypeScript's end-to-end qualification allowance becomes 1,200
+seconds. The retained first HTTP result already ends at least 774.77 seconds
+into the old 900-second allowance. Its 26 remaining package inspections are
+estimated to need about 153 seconds from the measured 5.9-second TypeScript
+inspection cost and independently observed Go deletion curve; this is not a
+measured TypeScript cleanup result. The 20-minute harness bound leaves finite
+room to execute the unchanged case set. Other language allowances, 120-second
+activations, the 30-second binding-compile deadline, control-call bounds,
+1,800-second demo proofs, resource quotas and authorization remain unchanged.
+Failed runs now retain bounded peer exit/reaping diagnostics. New exact-source
+execution remains required; no earlier failed run is reclassified as a pass.
+
 [Run 35934374519](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934374519)
 repeated the complete qualification successfully at
 `f8fff6bb1f0e854e6caff3a577848bd87a12a883`. Artifact `10782987086` contains all ten

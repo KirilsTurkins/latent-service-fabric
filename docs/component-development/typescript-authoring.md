@@ -237,7 +237,9 @@ be inspected before any retry.
 The explicit 125-second operator profile above covers both deployment controls
 and cold invocations. The isolated node still caps each request at 120 seconds;
 the automated experiment uses a 130-second CLI-process watchdog within its
-unchanged 900-second overall deadline. Ordinary operator defaults and production
+explicit 1,200-second overall deadline. Its fixture HTTP peer shares that same
+absolute deadline, including startup; ordinary peer defaults stay at 300 seconds.
+Ordinary operator defaults and production
 control leases are unchanged. A cancelled or timed-out mutation is not retried
 automatically and does not prove that no change occurred.
 
