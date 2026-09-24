@@ -313,3 +313,57 @@ fn pending_clock_rows_already_consume_the_original_per_session_handle_limit() {
     drop(ready(future).unwrap());
     f.idle(&session, before);
 }
+
+#[test]
+fn pending_clock_slot_collision_denies_without_clearing_the_foreign_live_row() {
+    let f = ClockFixture::new(HostClock::Wall, CapabilityBrokerLimits::default(), false);
+    let (request, control) = f.request();
+    let session = f.base.session(&request, &control);
+    let before = f.base.broker.snapshot();
+    let timer = Timer::new();
+    f.fence.hold_at.store(1, Ordering::SeqCst);
+    let mut pending_clock = Box::pin(session.begin_host_clock(f.clock, &timer));
+    pending(pending_clock.as_mut());
+    assert_eq!(session.observer().retained_handles(), 1);
+    assert!(session.core.state.lock().unwrap().slots[0].is_none());
+
+    // A separate legacy binding publishes the same previously empty slot.
+    // The pending clock owns a different incarnation, never this live row.
+    f.fence.hold_at.store(0, Ordering::SeqCst);
+    let foreign = session
+        .bind(
+            f.clock.capability(),
+            f.clock.operation(),
+            ResourceTarget::Clock,
+        )
+        .unwrap();
+    assert_eq!(foreign.wire_parts().0, 0);
+    assert_eq!(session.observer().retained_handles(), 2);
+    timer.advance(Duration::from_millis(10));
+    assert_eq!(
+        ready(pending_clock).err().unwrap().code,
+        PlatformErrorCode::PermissionDenied
+    );
+    assert_eq!(session.observer().retained_handles(), 1);
+    assert_eq!(session.observer().live_calls(), 0);
+    assert_eq!(timer.registrations.load(Ordering::SeqCst), 0);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
+    assert_eq!(f.base.broker.snapshot().handles, before.handles + 1);
+
+    let call = session
+        .dispatch(
+            foreign,
+            f.clock.operation(),
+            ResourceTarget::Clock,
+            b"",
+            CapabilityCallCost::new(8)
+                .with_charge(latent_core::BudgetDimension::CpuFuel, 100)
+                .unwrap(),
+            |call| call,
+        )
+        .unwrap();
+    call.require_host_mode().unwrap();
+    drop(call);
+    session.close_handle(foreign).unwrap();
+    f.idle(&session, before);
+}
