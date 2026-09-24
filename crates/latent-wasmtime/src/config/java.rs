@@ -29,7 +29,99 @@ impl WasmtimeConfig {
 mod tests {
     use super::*;
     use crate::config::DispatchMode;
-    use wasmtime::{Config, Engine};
+    use wasmtime::{component, Config, Engine, Module, Store};
+
+    fn typed_function_component() -> Vec<u8> {
+        use wasm_encoder::*;
+        let mut module = wasm_encoder::Module::new();
+        let mut types = TypeSection::new();
+        types.ty().function([], [ValType::I32]);
+        module.section(&types);
+        let mut functions = FunctionSection::new();
+        functions.function(0).function(0);
+        module.section(&functions);
+        let mut exports = ExportSection::new();
+        exports.export("run", ExportKind::Func, 1);
+        module.section(&exports);
+        let mut elements = ElementSection::new();
+        elements.declared(Elements::Functions(std::borrow::Cow::Borrowed(&[0])));
+        module.section(&elements);
+        let mut answer = Function::new([]);
+        answer.instruction(&Instruction::I32Const(42));
+        answer.instruction(&Instruction::End);
+        let mut run = Function::new([]);
+        run.instruction(&Instruction::RefFunc(0));
+        run.instruction(&Instruction::CallRef(0));
+        run.instruction(&Instruction::End);
+        let mut code = CodeSection::new();
+        code.function(&answer).function(&run);
+        module.section(&code);
+        let mut component = wasm_encoder::Component::new();
+        component.section(&ModuleSection(&module));
+        let mut instances = InstanceSection::new();
+        instances.instantiate(0, [] as [(&str, ModuleArg); 0]);
+        component.section(&instances);
+        let mut aliases = ComponentAliasSection::new();
+        aliases.alias(Alias::CoreInstanceExport {
+            instance: 0,
+            kind: ExportKind::Func,
+            name: "run",
+        });
+        component.section(&aliases);
+        let mut types = ComponentTypeSection::new();
+        types
+            .function()
+            .params([] as [(&str, ComponentValType); 0])
+            .result(Some(PrimitiveValType::U32.into()));
+        component.section(&types);
+        let mut canonical = CanonicalFunctionSection::new();
+        canonical.lift(0, 0, []);
+        component.section(&canonical);
+        let mut exports = ComponentExportSection::new();
+        exports.export("run", ComponentExportKind::Func, 0, None);
+        component.section(&exports);
+        component.finish()
+    }
+
+    fn gc_type_module() -> Vec<u8> {
+        let mut module = wasm_encoder::Module::new();
+        let mut types = wasm_encoder::TypeSection::new();
+        types.ty().struct_([]);
+        module.section(&types);
+        module.finish()
+    }
+
+    #[test]
+    fn ordinary_profile_preserves_typed_function_references_without_enabling_gc() {
+        let bytes = typed_function_component();
+        let mut config = Config::new();
+        let ordinary = WasmtimeConfig::default();
+        ordinary.apply_engine(&mut config).unwrap();
+        let engine = Engine::new(&config).unwrap();
+        let component = component::Component::new(&engine, &bytes)
+            .expect("the ordinary pre-Java profile accepted internal ref.func and call_ref");
+        let linker = component::Linker::<()>::new(&engine);
+        let mut store = Store::new(&engine, ());
+        store.set_fuel(10_000).unwrap();
+        store.set_epoch_deadline(1);
+        let instance = linker.instantiate(&mut store, &component).unwrap();
+        let run = instance
+            .get_typed_func::<(), (u32,)>(&mut store, "run")
+            .unwrap();
+        assert_eq!(run.call(&mut store, ()).unwrap(), (42,));
+        assert!(Module::new(&engine, gc_type_module()).is_err());
+
+        let java = WasmtimeConfig {
+            java_guest: true,
+            fuel_async_yield_interval: Some(10_000),
+            ..WasmtimeConfig::default()
+        };
+        let mut config = Config::new();
+        java.apply_engine(&mut config).unwrap();
+        let java_engine = Engine::new(&config).unwrap();
+        assert!(component::Component::new(&java_engine, &bytes).is_err());
+        assert!(Module::new(&java_engine, gc_type_module()).is_err());
+    }
 
     #[test]
     fn java_exception_profile_is_explicit_fixed_and_cache_distinct() {
@@ -47,6 +139,14 @@ mod tests {
             policy.configuration_digest(DispatchMode::Generic),
             before.configuration_digest(DispatchMode::Generic)
         );
+        for (profile, function_references, exceptions) in
+            [(&before, "true", "false"), (&policy, "false", "true")]
+        {
+            let fields = profile.profile(DispatchMode::Generic).configuration;
+            assert_eq!(fields["wasm-function-references"], function_references);
+            assert_eq!(fields["wasm-gc"], "false");
+            assert_eq!(fields["wasm-exceptions"], exceptions);
+        }
         let mut config = Config::new();
         policy.apply_engine(&mut config).unwrap();
         let engine = Engine::new(&config).unwrap();
