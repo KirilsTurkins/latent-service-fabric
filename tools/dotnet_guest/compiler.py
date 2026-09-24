@@ -123,9 +123,9 @@ class Compiler:
         command, source = self.commands, work / "wit"
         generated = output / "generated"
         binding = work / "vendor/lsf/tools/dotnet_guest_bindings.py"
-        command.run("bindings", sys.executable, binding, "c-sharp", source, "--world", world,
+        command.run("bindings", sys.executable, "-I", "-B", binding, "c-sharp", source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated)
-        command.run("bindings-drift", sys.executable, binding, "c-sharp", source, "--world", world,
+        command.run("bindings-drift", sys.executable, "-I", "-B", binding, "c-sharp", source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated, "--check")
         receipt = json.loads(read_file(generated / "bindings.json", 16 * 1024 * 1024))
         project = output / "project"
@@ -159,7 +159,7 @@ class Compiler:
         # This finite wrapper is private and retired after the owned process.
         with tempfile.TemporaryDirectory(prefix="lsf-dotnet-bindgen-", dir="/tmp") as wrapper_root:
             wrapper = Path(wrapper_root) / "wit-bindgen"
-            script = "#!/bin/sh\nexec " + shlex.join([sys.executable, str(binding)]) + ' "$@"\n'
+            script = "#!/bin/sh\nexec " + shlex.join([sys.executable, "-I", "-B", str(binding)]) + ' "$@"\n'
             if len(script.encode()) > 16384:
                 raise ValueError("binding wrapper path limit exceeded")
             wrapper.write_text(script, encoding="utf-8")

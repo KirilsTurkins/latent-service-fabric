@@ -107,6 +107,10 @@ def main() -> int:
             executables.update(distribution.binary_archive(archive, payload, name, source["sha256"][7:]))
     run("strip-contracts", "strip", "-o", payload / "sdk/bin/capsule-contracts", target / "debug/examples/capsule_contracts")
     executables.add("sdk/bin/capsule-contracts")
+    # Managed dependency capture invokes these exact staged tools before final
+    # bundle assembly. Archive extraction deliberately does not preserve modes.
+    for name in executables:
+        (payload / name).chmod(0o700)
     if args.language == "rust":
         distribution.registry(payload, Path(environment["CARGO_HOME"]))
     if args.language in {"java", "dotnet"}:

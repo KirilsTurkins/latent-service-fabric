@@ -3104,7 +3104,7 @@
       "sha256": "c8e8959a795e1d207cbead426acb255cb23839cd7424fd1e5633bd69046a6888"
     },
     "tools/build_dev_guest_tools.py": {
-      "sha256": "a33d7944c3d9a450994d2eabcc1d58b5411b43caf78656e19ba8934e2258a094"
+      "sha256": "8d237eb43e39348ec79cc779d2ea827b8c4f448c06ebc50a82631357149555ea"
     },
     "tools/build_dev_rootfs.py": {
       "sha256": "b0a0df997fc39bd4447f1afe825ce58c7ce6ae16a851fa7e3a8ad70bafe479c0"
