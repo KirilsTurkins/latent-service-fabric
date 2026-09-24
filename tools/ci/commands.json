@@ -3546,7 +3546,8 @@
       "PreparedInputsTests.test_stale_original_and_checkout_are_rejected",
       "PreparedInputsTests.test_symlink_copy_is_rejected",
       "PreparedInputsTests.test_validation_and_environment_do_not_build_strip_or_query_rustc",
-      "PreparedInputsTests.test_wrong_profile_and_missing_role_are_rejected"
+      "PreparedInputsTests.test_wrong_profile_and_missing_role_are_rejected",
+      "ProfileAgreement.test_python_producer_rust_consumer_and_cargo_feature_closure_agree"
     ],
     "tools/tests/test_artifact_identity_compression.py": [
       "ProfileCompressionTests.test_compressed_byte_bomb_and_truncated_trailer_are_rejected",
