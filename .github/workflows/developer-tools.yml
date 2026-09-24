@@ -304,8 +304,8 @@ jobs:
         run: cargo build -p latent-portable-test-host --release --locked
       - name: Assemble Linux frontend and portable host with the shared distribution owner
         run: |
-          python -c "from pathlib import Path; import subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; p=Path('target/release/latent-portable-test-host'); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'linux-x86_64','profile':'release'}))"
-          python tools/build_dev_bundle.py --target linux-x86_64 --frontend target/dev-linux-frontend --portable target/release/latent-portable-test-host --output target/dev-linux
+          python -c "from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-linux-frontend/portable'); d.mkdir(); p=d/'latent-portable-test-host'; shutil.copyfile('target/release/latent-portable-test-host',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'linux-x86_64','profile':'release'}))"
+          python tools/build_dev_bundle.py --target linux-x86_64 --frontend target/dev-linux-frontend --portable target/dev-linux-frontend/portable/latent-portable-test-host --output target/dev-linux
       - name: Execute all maintained tutorial applications on Linux
         run: |
           set -euo pipefail
