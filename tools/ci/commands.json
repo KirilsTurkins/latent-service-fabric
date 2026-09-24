@@ -3127,7 +3127,7 @@
       "sha256": "d344487bfab4850ef975861c249598ffa3c4aa9873204e05a14d383b274e9969"
     },
     "tools/build_dev_rootfs.py": {
-      "sha256": "b0a0df997fc39bd4447f1afe825ce58c7ce6ae16a851fa7e3a8ad70bafe479c0"
+      "sha256": "b118f20a188b1a737fb3b335c399b566ca2c5c4f741767738e8cbceb5d1a8a37"
     },
     "tools/build_echo_capsule.py": {
       "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
@@ -3274,7 +3274,7 @@
       "sha256": "7664b879113ad53073ba342eea41af3b7d6bb64b38a8443c7a573761162c1a85"
     },
     "tools/run_dev_guest_tools_tests.py": {
-      "sha256": "c9cc4d81871a7fbd2a3ac2f5a2d4208348bee82daa51617e9c1bb36377d62072"
+      "sha256": "b50c902ee92876553bb48089f78ff3be84eced8c34810c49d8bc7b115706536c"
     },
     "tools/run_native_vm.py": {
       "sha256": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12"
