@@ -3,9 +3,10 @@
 This is developer execution evidence for #546, separate from the beginner
 [TypeScript authoring guide](../component-development/typescript-authoring.md).
 All eight exact-head workflows passed at `aa269c04`, with independently verified
-SDK, signed-node and printed-guide evidence below. PR #555 nevertheless remains
-draft: separate Go qualification exposed two shared-runtime contention failures.
-Their corrections require new source-bound qualification before delivery.
+SDK, signed-node and printed-guide evidence below. PR #555 was nevertheless held
+at that checkpoint: separate Go qualification exposed two shared-runtime
+contention failures. Their corrections require new source-bound qualification
+before delivery; the passing older head cannot qualify a changed source tree.
 This report does not authorize a release or replace newcomer review #345.
 
 ## Reviewed candidate and shared-runtime hold
