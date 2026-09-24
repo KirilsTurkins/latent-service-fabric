@@ -50,8 +50,9 @@ The generated project includes the authoritative WIT, generated-at-build binding
 SDK under `vendor/lsf`, and `capsule-project.json`. Edit your `src` and `wit`
 files and update the selected world in `capsule-project.json` when renaming
 the contract. Keep the SDK files unchanged. The build rejects SDK drift,
-path escapes and unsupported contract shapes. Add relative TypeScript/JavaScript
-modules inside the project. The bundler accepts only captured relative imports
+path escapes and unsupported contract shapes. Add relative TypeScript modules
+inside the project. A JavaScript module also needs matching `.d.ts` declarations
+for strict typechecking; untyped JavaScript imports are rejected. The bundler accepts only captured relative imports
 or the exact versioned interfaces declared by your WIT. Arbitrary npm packages,
 dynamic imports, `require`, Node built-ins, and application compiler/config
 overrides are rejected. Vendoring an ordinary source module is supported; its
@@ -77,14 +78,17 @@ python3 tools/typescript_capsule.py build "$LSF_TYPESCRIPT_PROJECTS/my-greeting"
 
 Use your own public repository URL for an application you maintain. That label
 does not authenticate its source. The builder captures the actual project
-files, checks generated SDK bindings, builds the component, derives contracts
-from WIT, and inspects the package. `BUILD-COMPLETE.json` appears only after all
+files, derives contracts from WIT, checks generated SDK bindings, builds the
+component, and inspects the package. `BUILD-COMPLETE.json` appears only after all
 steps succeed. Use a fresh output directory for each new attempt.
 
 The output includes `component.wasm`, `capsule.json`, `contracts.json`,
 `wit-lock.json`, `deployment.json`, `package/` and `build-observation.json`.
 Full-width WIT integers retain their original types; application errors remain
 `result` values. Unsupported WIT types fail explicitly during contract derivation.
+Public RPC parameters/results cannot transfer owned or borrowed resource values,
+even inside records or lists. Blob and streaming capability imports keep their
+declared resource ownership; close those owners within the activation.
 
 ## 3. Sign for this local experiment
 
@@ -102,7 +106,9 @@ This policy lasts for this experiment and accepts only the captured source and
 builder recipe. For a maintained deployment, use your organization's publisher,
 builder and revocation policies through the [package workflow](packaging.md).
 Finish the steps below within 30 minutes of signing; otherwise sign into a new
-directory and start a new experiment.
+directory and start a new experiment. This isolated demo explicitly allows
+publisher and builder proofs for those same finite 1,800 seconds; it does not
+change production proof-age defaults, revocation or currentness checks.
 
 ## 4. Start a node with enforced admission
 
@@ -275,8 +281,11 @@ requires checking the deployment grant, provider binding and allowed destination
 
 The guest runs in an activation-owned SpiderMonkey heap in WebAssembly. It is
 not Node, a browser, or an application-owned JavaScript event loop. There is no
-ambient filesystem, process, clock, entropy, network, timer, worker or DOM API.
-Use a declared, configured LSF import for every host effect.
+ambient filesystem, process, clock, entropy, network, timer, worker or DOM
+authority. Disabled compiler features do not necessarily remove JavaScript
+symbols: `Math.random()` has a deterministic fallback, not approved entropy,
+and timer functions such as `setTimeout` trap. Use the declared LSF randomness
+wrapper for real random values and a configured LSF import for every host effect.
 
 The compiler generates a synchronous JavaScript calling convention, then the
 builder restores the original typed async WIT metadata. Wasmtime suspends the

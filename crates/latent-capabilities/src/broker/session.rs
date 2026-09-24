@@ -14,6 +14,9 @@ use std::sync::{
     Arc, Mutex, Weak,
 };
 
+mod pending;
+pub(super) use pending::PendingBinding;
+
 /// Wire lookup data. Knowing or constructing this value grants no authority.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GuestCapabilityHandle {
@@ -524,7 +527,13 @@ impl CapabilitySession {
         resource: ResourceTarget<'_>,
     ) -> Result<GuestCapabilityHandle, PlatformError> {
         let result = self.bind_inner(capability, operation, resource);
-        super::audit::observe_grant(&self.core, capability, operation, resource, &result);
+        super::audit::observe_grant(
+            &self.core,
+            capability,
+            operation,
+            resource,
+            result.as_ref().map(|_| ()),
+        );
         result
     }
     fn bind_inner(

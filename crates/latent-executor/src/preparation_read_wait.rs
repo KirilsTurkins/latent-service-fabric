@@ -9,6 +9,9 @@ use latent_core::BoxFuture;
 /// the returned future: dropping it must retire its registration without a
 /// detached task, worker or retained preparation. This interface cannot renew
 /// a grant, extend the caller's deadline or authorize replaying owned work.
+/// A host may also supply an owned instance to clock-call admission; it still
+/// only schedules currentness checks before a single committed operation.
+/// Its time domain must not be assumed to match a blocking worker's clock.
 pub trait PreparationReadWait: Send + Sync {
     fn now(&self) -> Instant;
 

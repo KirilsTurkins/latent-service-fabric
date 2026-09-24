@@ -23,6 +23,11 @@ and compares exact output. The SDK and its reviewed Go dependency are vendored,
 version-locked and hashed; application sources are captured before compilation
 and checked again afterward.
 
+The project includes the actual `go.mod` and `go.sum` used to assemble the
+generated `wit_component` module. They pin `go.bytecodealliance.org/pkg v0.2.3`;
+application dependency additions and `replace` directives are rejected. Run
+the capsule builder, not a standalone `go build` of the ungenerated source.
+
 WIT `u64` and `s64` are Go `uint64` and `int64`, not floating-point numbers.
 Strings preserve UTF-8, including embedded NUL. Lists and records retain their
 generated element and field types. `wit.Result[T,E]` distinguishes application
@@ -50,6 +55,20 @@ typed invalid random/metric arguments. They are compiled application code,
 not a substitute implementation of those providers.
 
 ## Ownership, concurrency and cancellation
+
+The supported profile is Linux x86-64 compilation to single-threaded Wasm with
+the exact patched Go compiler, ordinary Go source and the reviewed dependency
+graph. The examples exercise typed functions, generics, strings, slices,
+channels, goroutines, garbage collection and `runtime.KeepAlive`. Pure
+computation uses the Go standard library available for this target. `time` and
+runtime entropy cross the explicit LSF clock/random bridges; they gain no
+authority from a standard-library import. Filesystem access, sockets, process
+creation, dynamic libraries, CGo and arbitrary third-party module graphs are
+outside this profile. Unsupported ambient WASI operations fail closed; use the
+typed LSF capabilities for host effects. This is not unrestricted native Go.
+In particular, `time.Sleep` and timer-backed standard-library polling are not
+component waits: the closed adapter rejects `poll_oneoff`. Use the generated
+asynchronous capability calls; do not introduce a busy-wait workaround.
 
 Owners contain private, shared state. Copying a wrapper does not create a
 second host resource. A pending operation borrows its owner; closing, consuming
@@ -101,6 +120,9 @@ go test sdk/go-guest/ownership/owner.go sdk/go-guest/ownership/owner_test.go
 ```
 
 Keep failed attempt receipts and logs.
+The [developer qualification record](../../docs/development/go-capsule-qualification.md)
+records exact source, compiler decisions, failed attempts and measured runtime
+results separately from the beginner workflow.
 An uncertain deployment requires read-only operation inspection before any
 new action. This workflow does not authorize release publication or replace
 the separate human newcomer review.

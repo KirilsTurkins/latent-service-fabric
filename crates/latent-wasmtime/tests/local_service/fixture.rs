@@ -384,6 +384,7 @@ impl Fixture {
             WasmtimeHostServices {
                 clock: clock.clone(),
                 capabilities: Some(capabilities.clone()),
+                currentness_read_wait: Some(Arc::new(latent_node::CurrentnessReadTimer)),
                 log_sink: None,
             },
             catalog.lifecycle_authority(),

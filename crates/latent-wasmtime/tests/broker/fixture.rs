@@ -147,6 +147,22 @@ impl Fixture {
             .execution_eligibility_selected(&release, Some(&receipt.publication.id))
             .unwrap()
             .unwrap();
+        Self::from_publication(
+            directory,
+            catalog,
+            publication,
+            fuel_async_yield_interval,
+            None,
+        )
+        .await
+    }
+    pub async fn from_publication(
+        directory: tempfile::TempDir,
+        catalog: Arc<DirectoryArtifactRepository>,
+        publication: ReleaseUseEligibility,
+        fuel_async_yield_interval: Option<u64>,
+        currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,
+    ) -> Self {
         let policies = Arc::new(
             PolicyStore::open(
                 &directory.path().join("policies"),
@@ -189,8 +205,8 @@ impl Fixture {
                 route: None,
             },
             revision: RevisionId("revision-1".into()),
-            release,
-            publication: Some(receipt.publication.id),
+            release: publication.release().clone(),
+            publication: Some(publication.publication().clone()),
             route_generation: RouteGeneration(1),
             attributes: Metadata::new(),
         };
@@ -221,6 +237,7 @@ impl Fixture {
                 clock: clock.clone(),
                 log_sink: None,
                 capabilities: Some(runtime.clone()),
+                currentness_read_wait,
             },
             catalog.lifecycle_authority(),
         )
@@ -253,6 +270,7 @@ impl Fixture {
             clock: self.clock.clone(),
             log_sink: None,
             capabilities: Some(self.runtime.clone()),
+            currentness_read_wait: None,
         }
     }
     pub fn request(&self, id: &str) -> (ExecutionRequest, Control) {

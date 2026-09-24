@@ -1,6 +1,7 @@
 //! Fixed owned compiler threads, bounded coalescing and affine ready pins.
 
 mod acquire;
+mod control;
 mod metrics;
 mod ready;
 mod shutdown;
@@ -21,6 +22,7 @@ use crate::cache::{PrepareReservation, PreparedCache};
 use crate::preparation_observer::PreparationJob;
 use crate::{PreparationObserver, WasmtimeConfig};
 
+pub(crate) use control::JobControl;
 pub use metrics::CompilerObserver;
 use ready::ReadyGate;
 pub(crate) use ready::{ReadyPermit, ReadyPin};
@@ -70,6 +72,16 @@ pub(crate) struct CompilerPool<T: Send + Sync + 'static> {
 }
 
 impl<T: Send + Sync + 'static> CompilerPool<T> {
+    #[cfg(test)]
+    pub(crate) fn currentness_waits(&self) -> usize {
+        self.core
+            .lock()
+            .jobs
+            .iter()
+            .map(|job| job.control.waits())
+            .sum()
+    }
+
     pub(crate) fn new(
         config: &WasmtimeConfig,
         cache: Arc<PreparedCache<T>>,

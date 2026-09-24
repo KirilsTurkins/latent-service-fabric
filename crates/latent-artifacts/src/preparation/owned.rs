@@ -118,4 +118,23 @@ impl OwnedArtifactPreparationSource {
     ) -> Result<CapsuleArtifact, PlatformError> {
         self.repository.selected_fetch(release, publication, limits)
     }
+
+    /// Reads immutable bytes exactly once, allowing only failed pure currentness
+    /// observations to yield within the caller's finite worker-owned window.
+    /// The original publication grant is retained and rechecked, never renewed.
+    pub fn fetch_blocking_selected_with_wait(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+        limits: ArtifactPreparationReadLimits,
+        original: &crate::ReleaseUseEligibility,
+        wait: &dyn super::ArtifactPreparationReadWait,
+    ) -> Result<CapsuleArtifact, PlatformError> {
+        self.repository.selected_fetch_with_wait(
+            release,
+            publication,
+            limits,
+            Some(super::read_wait::ReadControl { original, wait }),
+        )
+    }
 }

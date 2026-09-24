@@ -42,7 +42,7 @@ pub use lifecycle::{
 };
 pub use preparation::{
     ArtifactPreparationIdentity, ArtifactPreparationReadBounds, ArtifactPreparationReadLimits,
-    ArtifactPreparationSource, OwnedArtifactPreparationSource,
+    ArtifactPreparationReadWait, ArtifactPreparationSource, OwnedArtifactPreparationSource,
 };
 pub use preparation_fingerprint::{
     preparation_metadata_fingerprint, PreparationMetadataFingerprint,

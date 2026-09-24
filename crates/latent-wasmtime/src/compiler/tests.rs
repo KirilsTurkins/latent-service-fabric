@@ -5,5 +5,6 @@ mod native_control;
 mod ownership;
 mod payload;
 mod population;
+mod read_control;
 mod support;
 mod teardown;

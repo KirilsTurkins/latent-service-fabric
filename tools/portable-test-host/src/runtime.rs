@@ -228,6 +228,7 @@ pub async fn run(request: Request) -> Result<Value, &'static str> {
         config,
         WasmtimeHostServices {
             clock: providers.clock.clone(),
+            currentness_read_wait: None,
             log_sink: None,
             capabilities: Some(providers.runtime.clone()),
         },

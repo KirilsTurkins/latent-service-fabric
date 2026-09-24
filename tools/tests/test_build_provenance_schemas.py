@@ -84,8 +84,9 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
         policy = self.validators["builder-policy"].schema["properties"]["requirements"]["items"]
         profiles = set(standalone["properties"]["buildType"]["enum"])
         self.assertEqual(profiles, set(embedded["properties"]["buildType"]["enum"]))
-        non_capsule = {"https://latent.dev/build/web-package-assembly/v1", "https://latent.dev/build/angular-component/v1"}
-        self.assertEqual(profiles | non_capsule, set(policy["properties"]["buildType"]["enum"]))
+        web = json.loads((ROOT / "schemas/web-build-observation.schema.json").read_bytes())
+        self.assertEqual(profiles | set(web["properties"]["buildType"]["enum"]),
+                         set(policy["properties"]["buildType"]["enum"]))
         def recipes(schema):
             rows = schema["allOf"]
             result = {row["if"]["properties"]["buildType"]["const"]: row for row in rows}
@@ -99,6 +100,44 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
         web = json.loads((ROOT / "schemas/web-build-observation.schema.json").read_bytes())["properties"]["buildType"]["enum"]
         policy = self.validators["builder-policy"].schema["properties"]["requirements"]["items"]["properties"]["buildType"]["enum"]
         self.assertEqual(set(observation) | set(web), set(policy))
+
+    def test_go_recipe_is_closed_and_each_compiler_input_is_required(self):
+        observation = samples()["build-observation"]
+        observation.update(buildType="https://latent.dev/build/go-capsule/v1",
+                           dependencyCompleteness="declared-inputs-incomplete")
+        observation["source"].update(capture="explicit-input-files", revision="b" * 64)
+        observation["parameters"] = {"goPackage": "my-greeting", "compiler": "componentize-go",
+            "target": "wasm32-wasip1", "runtime": "go-component-async-v1", "locked": True, "ambientWasi": False}
+        names = ("source-snapshot", "build-recipe", "toolchain-config", "wasm-tools", "go", "componentize-go",
+                 "dependency-lock", "contracts-tool", "packager", "package-inputs")
+        observation["materials"] = [{"name": name, "digest": DIGEST, "size": 1} for name in names]
+        self.validators["build-observation"].validate(observation)
+        statement = samples()["package-provenance-statement"]
+        statement["predicate"]["observation"] = observation
+        self.validators["package-provenance-statement"].validate(statement)
+        policy = samples()["builder-policy"]
+        policy["requirements"][0]["buildType"] = observation["buildType"]
+        self.validators["builder-policy"].validate(policy)
+        candidates = []
+        for field in observation["parameters"]:
+            changed = copy.deepcopy(observation)
+            del changed["parameters"][field]
+            candidates.append(changed)
+        for field, value in (("compiler", "tinygo"), ("target", "native"), ("locked", False),
+                             ("ambientWasi", True), ("runtime", "stock-go"), ("unrecognized", True)):
+            changed = copy.deepcopy(observation)
+            changed["parameters"][field] = value
+            candidates.append(changed)
+        for index in range(len(names)):
+            changed = copy.deepcopy(observation)
+            del changed["materials"][index]
+            candidates.append(changed)
+        for changed in candidates:
+            with self.subTest(parameters=changed["parameters"], materials=len(changed["materials"])):
+                self.invalid("build-observation", changed)
+                statement["predicate"]["observation"] = changed
+                self.invalid("package-provenance-statement", statement)
+
 
     def test_java_recipe_is_closed_and_each_compiler_input_is_required(self):
         observation = samples()["build-observation"]

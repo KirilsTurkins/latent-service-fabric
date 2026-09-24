@@ -31,11 +31,21 @@ error raised across the generator's separate JavaScript realm. The exact
 generated glue is retained with compiler diagnostics.
 
 WIT future/stream/map/fixed-size-list values, named/free-standing imports and
-colliding generated import filenames fail explicitly. There is no ambient
+colliding generated import filenames fail explicitly.
+Public RPC parameters/results cannot contain owned or borrowed resource values,
+including nested records/lists; authoritative contract derivation rejects them
+before guest compilation. This does not narrow the declared blob/streaming
+resource imports used by the capability wrappers. There is no ambient
 clock, entropy, filesystem, network, timer, worker, process or DOM authority.
+The compiler's disabled random feature leaves a deterministic `Math.random()`
+fallback, not approved entropy; use the LSF randomness wrapper for real random
+values. Disabled timers such as `setTimeout` trap rather than schedule work.
 Effects require configured, declared LSF imports and host grants. Dynamic
 imports, Node built-ins, `require`, npm dependencies and application compiler
 configuration overrides are outside this captured-source profile.
+Relative JavaScript source modules require matching `.d.ts` declarations;
+untyped imports fail the strict TypeScript check. TypeScript source modules
+can be imported directly within the captured project.
 
 ## Typed capability wrappers
 
@@ -88,6 +98,8 @@ the guide's six printed Bash steps.
 
 Only `qualification.json` with `status: passed` is complete execution evidence.
 `BUILD-COMPLETE.json` proves a build, not execution. Failed attempts keep their
-own diagnostics. Older synthetic value/broker unit tests remain supplementary,
-not provider or node qualification. Newcomer review #345 and release publication
+own diagnostics. Synthetic value/broker models live only under `tests/model`;
+they are neither exported by the SDK nor captured in application projects.
+Their unit tests are supplementary, not provider or node qualification.
+Newcomer review #345 and release publication
 approval remain separate requirements.

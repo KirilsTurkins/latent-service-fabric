@@ -29,9 +29,12 @@ The provider implements AWS Signature Version 4 for fully hashed payloads. It
 does not use an ambient SDK credential chain, DNS resolver, proxy, redirect,
 automatic token acquisition, transparent retry or response decompression.
 Preissued temporary session tokens are supported; automatic refresh is not.
-The wire profile is tested with
-`quay.io/minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2`
-(MinIO `RELEASE.2025-09-07T16-13-09Z`, Linux amd64). This is a tested S3 subset,
+The current Linux amd64 conformance fixture is built from pinned MinIO
+`RELEASE.2025-10-15T17-29-55Z` source, with an independently pinned Go compiler
+image. Its [build and identity boundary](../testing/s3-fixture.md) replaces the
+previously qualified September 2025 image, whose public registry access became
+unavailable. The replacement requires fresh actual conformance; old results do
+not qualify its new bytes. This is a tested S3 subset,
 not a compatibility claim for every server, vendor or AWS deployment policy.
 
 ## Writes, immutable references and reads
@@ -156,8 +159,8 @@ provide an outbox or promise exactly-once mutation.
 ```bash
 cargo test --locked -p latent-blobs --lib
 cargo test --locked -p latent-wasmtime --test s3_blobs
-docker pull quay.io/minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2
-python3 tools/run_s3_blob_tests.py
+python3 tools/build_s3_fixture.py --output target/s3-fixture-attempt
+python3 tools/run_s3_blob_tests.py --image-receipt target/s3-fixture-attempt/fixture.json
 ```
 
 The normal suite covers signing vectors, finite XML, tenant receipts, unsafe

@@ -40,8 +40,8 @@ describe their own release and may differ from the current source.
 | Deliver and recover changes | Signed packages, OCI transfer, admission, managed deployment, staged rollout, canary observation and rollback | [Delivery guide](docs/phase-2-delivery.md) |
 
 External client support and **capsule authoring** are separate: all six client
-languages can call LSF, while standalone capsule authoring in all six languages
-is still being completed before the next release. The
+languages can call LSF, and each has a dedicated guest authoring path with
+documented supported profiles and limitations. The
 [guest SDK guide](docs/component-development/guest-sdk.md) describes the available
 build paths without implying that every external client is also a guest SDK.
 

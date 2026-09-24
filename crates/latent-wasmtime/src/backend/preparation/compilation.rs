@@ -11,6 +11,7 @@ use super::{metadata_overflow, Compilation};
 use crate::aot::{
     image_budget::NativeImagePermit, loader::LoadedNative, supervisor::AotPreparedInput,
 };
+use crate::backend::readiness::worker_wait::WorkerWindow;
 use crate::backend::{bounded_error, PreparedRuntime};
 use crate::cache::PrepareReservation;
 use crate::config::PHASE0_BACKEND_ID;
@@ -95,17 +96,30 @@ impl super::super::PreparationContext {
         input: Compilation,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
+        self.build_runtime_with_wait(artifact, key, input, job, None)
+    }
+
+    pub(in crate::backend) fn build_runtime_with_wait(
+        &self,
+        artifact: &CapsuleArtifact,
+        key: &PreparationKey,
+        input: Compilation,
+        job: &PreparationJob,
+        wait: Option<&WorkerWindow>,
+    ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         if self.native_aot.is_some()
             || self.config.execution_isolation_profile
                 == crate::ExecutionIsolationProfile::ExternalCapsule
         {
             return Err(crate::backend::admission_association_error());
         }
-        self.check_eligibility(
-            input.eligibility.as_ref(),
-            &key.release,
-            key.publication.as_ref(),
-        )?;
+        WorkerWindow::check(wait, || {
+            self.check_eligibility(
+                input.eligibility.as_ref(),
+                &key.release,
+                key.publication.as_ref(),
+            )
+        })?;
         self.validate_renderer_component(artifact)?;
         let compilation = job.stage(PreparationStage::ComponentNew);
         let component = Component::new(&self.engine, &artifact.component_bytes);
@@ -121,7 +135,14 @@ impl super::super::PreparationContext {
                 false,
             )
         })?;
-        self.link_runtime(artifact, key, input, job, CompiledCode::Local(component))
+        self.link_runtime(
+            artifact,
+            key,
+            input,
+            job,
+            CompiledCode::Local(component),
+            wait,
+        )
     }
 
     pub(in crate::backend) fn build_native_runtime(
@@ -150,6 +171,7 @@ impl super::super::PreparationContext {
             input,
             job,
             CompiledCode::Native(code),
+            None,
         )?;
         checked.check()?;
         Ok(runtime)
@@ -162,13 +184,16 @@ impl super::super::PreparationContext {
         input: Compilation,
         job: &PreparationJob,
         code: CompiledCode,
+        wait: Option<&WorkerWindow>,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         let component = code.component();
-        self.check_eligibility(
-            input.eligibility.as_ref(),
-            &key.release,
-            key.publication.as_ref(),
-        )?;
+        WorkerWindow::check(wait, || {
+            self.check_eligibility(
+                input.eligibility.as_ref(),
+                &key.release,
+                key.publication.as_ref(),
+            )
+        })?;
         let linking = job.stage(PreparationStage::SurfaceLink);
         let surface = surface::validate_with_providers(
             component,
@@ -234,7 +259,7 @@ impl super::super::PreparationContext {
             _native_image: native_image,
         });
         linking.complete();
-        self.check_runtime(&runtime)?;
+        WorkerWindow::check(wait, || self.check_runtime(&runtime))?;
         Ok(runtime)
     }
 }

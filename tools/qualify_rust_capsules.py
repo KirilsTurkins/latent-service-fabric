@@ -148,12 +148,15 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                                    "perCommandSeconds": commands.command_seconds}
         result["tools"] = materials
         stage = "host-build"
+        go_diagnostic = ["-p", "latent-wasmtime", "--example", "go_runtime_probe"] if language == "go" else []
         commands.run(stage, paths["cargo"], *cargo_options, "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
             "-p", "latent-packaging", "--example", "package", "--example", "capsule_contracts",
-            "-p", "latent-policy", "--example", "capsule_authoring")
+            "-p", "latent-policy", "--example", "capsule_authoring", *go_diagnostic)
         if inputs(language) != before:
             raise ValueError("host sources changed during compilation")
         binaries = {name: target / "debug" / name for name in ("latent", "latentd", "examples/package", "examples/capsule_contracts", "examples/capsule_authoring")}
+        if language == "go":
+            binaries["examples/go_runtime_probe"] = target / "debug/examples/go_runtime_probe"
         result["binaries"] = {name: file_identity(path) for name, path in binaries.items()}
         stage = "standalone-builds"
         built = []
@@ -169,6 +172,10 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                    {"tools": dotnet_tools} if language == "dotnet" else {}))
             built.append(artifact)
             result["builds"][template] = read_json(artifact / "BUILD-COMPLETE.json")
+        if language == "go":
+            stage = "go-recovery-diagnostic"
+            commands.run(stage, binaries["examples/go_runtime_probe"],
+                         output / "builds/recovery/component.wasm", "--recovery")
         stage = "ownership"
         if language == "rust":
             result["ownership"] = ownership(output / "ownership", offline=offline)
@@ -215,6 +222,10 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
             commands.run("typescript-sdk-resources", paths["cargo"], *cargo_options, "run", "--locked", "-p", "latent-wasmtime",
                 "--example", "typescript_runtime_probe", "--", output / "sdk-guests/typescript-blob/component.wasm",
                 "speed", "sdk-blob")
+            for role in ("service", "callee"):
+                commands.run("typescript-sdk-" + role + "-memory", paths["cargo"], *cargo_options,
+                    "run", "--locked", "-p", "latent-wasmtime", "--example", "typescript_runtime_probe", "--",
+                    output / f"sdk-guests/typescript-{role}/component.wasm", "speed", "sdk-" + role + "-memory")
         if language == "dotnet":
             commands.run("dotnet-real-sdk-secret-cleanup", paths["cargo"], *cargo_options,
                 "run", "--locked", "-p", "latent-wasmtime", "--example", "typescript_runtime_probe", "--",
