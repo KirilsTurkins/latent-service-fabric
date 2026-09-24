@@ -14,6 +14,7 @@ mod packaging;
 #[allow(dead_code)]
 mod provenance;
 #[path = "../../../latent-packaging/tests/sbom_association/support.rs"]
+#[allow(dead_code)]
 mod sbom;
 
 struct Clock(AtomicU64);
@@ -159,6 +160,7 @@ fn bundle() -> latent_packaging::PackageBundle {
         ],
     };
     let mut input = packaging::capsule(Default::default());
+    input.version = artifact.manifest.semantic_version.clone();
     for layer in &mut input.layers {
         layer.bytes = match layer.path.as_str() {
             "component.wasm" => bytes.clone(),

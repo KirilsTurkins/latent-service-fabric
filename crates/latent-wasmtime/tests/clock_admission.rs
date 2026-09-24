@@ -2,6 +2,7 @@
 //! synthetic Busy provider. Every attempted guest invocation runs once.
 #![cfg(target_os = "linux")]
 #[path = "broker/component.rs"]
+#[allow(dead_code)]
 mod component;
 #[path = "broker/fixture.rs"]
 #[allow(dead_code)]
@@ -16,7 +17,7 @@ use fixture::*;
 use std::{
     future::Future,
     sync::Mutex,
-    task::{Context, Poll, Waker},
+    task::{Context, Waker},
 };
 
 #[tokio::test]
