@@ -6196,7 +6196,7 @@
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
-    ".github/workflows/dotnet-guest.yml": "f06805b301ab28a83b7b81aa04d68b5eea05048f66c035c157653451512eddfc",
+    ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
     ".github/workflows/go-guest.yml": "c2ee0bfab0fa66a341dda62aeee6dfdf4c77691cd9a1a926ce1fbfb5fdae48cd",
     ".github/workflows/java-guest-feasibility.yml": "6c1814b442abf741dc4dceb6ab707cf87b3cc161090a3b5b7a62c9334dc3f872",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",

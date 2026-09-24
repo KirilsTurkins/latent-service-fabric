@@ -11,6 +11,7 @@ on:
       - 'tools/*dotnet_capsule*.py'
       - 'tools/*rust_capsule*.py'
       - 'tools/guest_runtime_grants.py'
+      - 'tools/wait_capsule_audit_idle.py'
       - 'tools/tests/test_dotnet_capsule_authoring.py'
       - 'docs/component-development/dotnet-authoring.md'
       - 'crates/latent-signing/**'

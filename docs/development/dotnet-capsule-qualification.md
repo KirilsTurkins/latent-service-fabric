@@ -91,6 +91,31 @@ or deletion checks. Local tests cover these boundaries; the deterministic
 two-observation/32 KiB journal regression and full guide still require Linux CI
 at the new source. This correction is not a retroactive pass for the failed run.
 
+The same integrated head's TypeScript cross-check also failed
+[run 35938546318](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938546318).
+Artifact `10784514997` retains nine passing SDK cases and the failed nested-call
+case. Its child stopped at `Resolved` with `Unavailable` and zero consumption;
+the parent failed after 67.45 seconds. This test composition sampled its
+synthetic healthy load only before the parent request, while normal admission
+rejects samples older than 60 seconds. Stale child load is a supported inference,
+not a recovered private rejection reason. The fixture now samples the same
+healthy profile at every admission; production health sources, freshness limits,
+quotas and invocation deadlines are unchanged. Deterministic real-WAT regressions
+retain both the stale-child rejection and the fresh parent/child path, without
+sleeping or retrying either admission. Linux execution remains required.
+
+The separate TypeScript candidate's
+[run 35938383435](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938383435)
+retained `admission-clock-lease-uncovered` in artifact `10784737181` after one
+bounded deployment preparation took 6.18 seconds. The existing
+authenticated control owner now renews its finite clock lease after successful
+package inspection, before compiling the binding plan. Initial eligibility and
+the existing final live-policy, proof-expiry, revocation and deadline checks
+remain; startup/recovery receives no renewal authority. Registered real-package
+tests advance a fake clock across that boundary and cover cancellation,
+revoked/expired proofs and startup failure. These shared changes need successful
+Linux CI at the new integrated source; they do not qualify the earlier failure.
+
 The following first-success measurements remain tied to their original source,
 not to the later integration head.
 
