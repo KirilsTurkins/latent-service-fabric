@@ -66,6 +66,56 @@ def diagnostic_grpc(value):
     return code if isinstance(code, str) and code in allowed else "absent"
 
 
+def failed_call_record(value, call, status):
+    """One closed observation, never argv, identifiers, messages or details.
+
+    Commands/categories are from the CLI's existing fixed names. Public codes
+    are the platform vocabulary plus selected fixed CLI failures; unknown new
+    values stay unclassified. Missing certainty is not evidence of either bool.
+    The original error decision does not depend on this diagnostic projection.
+    """
+    commands = (
+        "package build", "package inspect", "package verify", "package push", "package pull",
+        "node get", "node list", "release publish", "release publish-package", "release get",
+        "release list", "release operation", "release lifecycle", "release revoke", "release retire",
+        "release renew-evidence", "deployment apply", "deployment get", "deployment list",
+        "deployment delete", "deployment operation", "route get", "invoke", "activation get",
+        "activation cancel", "rollout start", "rollout get", "rollout list", "rollout operation",
+        "rollout advance", "rollout pause", "rollout resume", "rollout abort", "rollout evaluate",
+        "rollout promote", "rollout rollback", "audit query",
+    )
+    categories = ("success", "local-error", "declared-error", "platform-failure",
+                  "transport-failure", "not-found", "interrupted")
+    codes = (
+        "unavailable", "deadline-exceeded", "cancelled", "resource-exhausted", "permission-denied",
+        "unauthenticated", "invalid-argument", "not-found", "already-exists", "incompatible-contract",
+        "state-conflict", "dependency-failed", "guest-trap", "corrupt-artifact", "route-unavailable",
+        "admission-rejected", "internal", "invalid-configuration", "invalid-error-response",
+        "rpc-failed", "unimplemented", "interrupted",
+    )
+    if not isinstance(value, dict) or value.get("schemaVersion") != "latent.cli.result.v1":
+        value = {}
+    error = value.get("error")
+    code = error.get("code") if isinstance(error, dict) else None
+
+    def selected(candidate, allowed):
+        return candidate if isinstance(candidate, str) and candidate in allowed else "unclassified"
+
+    def certainty(name):
+        observed = value.get(name)
+        return observed if type(observed) is bool else "unavailable"
+
+    return {
+        "call": call if type(call) is int and 0 < call < 2 ** 63 else None,
+        "exitStatus": status if type(status) is int and -(2 ** 31) <= status < 2 ** 31 else None,
+        "command": selected(value.get("command"), commands),
+        "category": selected(value.get("category"), categories),
+        "publicCode": selected(code, codes), "grpcCode": diagnostic_grpc(value),
+        "outcomeKnown": certainty("outcomeKnown"),
+        "requestDispatched": certainty("requestDispatched"),
+    }
+
+
 def read_json(path: Path, maximum=262144):
     require(path.is_file() and not path.is_symlink(), "fixture-file")
     with path.open("rb") as source:
@@ -245,6 +295,7 @@ class Client:
         self.config = None
         self.node = None
         self.calls = 0
+        self.failed_call = None
         self.environment = {"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(directory),
                             "LANG": "C.UTF-8", "RUST_BACKTRACE": "0"}
 
@@ -269,13 +320,24 @@ class Client:
             value = json.loads(result.stdout)
         except (ValueError, UnicodeError):
             value = None
-        require(result.returncode in codes,
-                f"cli-exit-call-{self.calls}-status-{result.returncode}-code-{diagnostic_code(value)}"
-                f"-grpc-{diagnostic_grpc(value)}")
-        require(isinstance(value, dict) and value.get("schemaVersion") == "latent.cli.result.v1",
-                "cli-result-schema")
-        require(isinstance(value.get("outcomeKnown"), bool), "cli-certainty")
-        require(isinstance(value.get("data"), dict), "cli-data")
-        if result.returncode == 0:
-            require(value["category"] == "success", "cli-success-category")
+        try:
+            require(result.returncode in codes,
+                    f"cli-exit-call-{self.calls}-status-{result.returncode}-code-{diagnostic_code(value)}"
+                    f"-grpc-{diagnostic_grpc(value)}")
+            require(isinstance(value, dict) and value.get("schemaVersion") == "latent.cli.result.v1",
+                    "cli-result-schema")
+            require(isinstance(value.get("outcomeKnown"), bool), "cli-certainty")
+            require(isinstance(value.get("data"), dict), "cli-data")
+            if result.returncode == 0:
+                require(value["category"] == "success", "cli-success-category")
+        except WorkflowError:
+            # The process's existing complete/close scope has already finished.
+            # Keep one fixed-size record, not an unbounded log or a retry plan.
+            try:
+                if self.failed_call is None:
+                    self.failed_call = failed_call_record(value, self.calls, result.returncode)
+            except Exception:
+                # Observation failure cannot replace the original CLI failure.
+                pass
+            raise
         return value

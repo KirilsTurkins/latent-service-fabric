@@ -3041,7 +3041,7 @@
       "sha256": "414c5d66589e10b567123889b02a0f637ae5dc24b99ab24ba6955eef5803cabb"
     },
     "tools/run_phase2_operator_workflow.py": {
-      "sha256": "4419751f1167d74edb740ee3a849433f4ac05758d2e8a65dcd550fbdb7b121ff"
+      "sha256": "84bfef7775efacb0bba2db710f2bec01c1eda2a144086b986c4e94fee86a1f1b"
     },
     "tools/run_phase3_management_workflow.py": {
       "sha256": "6cf2b176e39c74ccddc6ad5b3d9aee6812d3bf84a0dd9cc45a30ba0eb9d7c070"
@@ -5356,6 +5356,19 @@
       "OperatorCanaryTests.test_start_target_is_read_from_exact_matching_status"
     ],
     "tools/tests/test_phase2_operator_workflow.py": [
+      "FailedCallObservationTests.test_expected_nonzero_and_success_results_are_forwarded_without_a_failure_record",
+      "FailedCallObservationTests.test_failed_projection_cannot_replace_the_original_cli_error",
+      "FailedCallObservationTests.test_malformed_schema_and_non_boolean_certainty_never_infer_an_outcome",
+      "FailedCallObservationTests.test_only_first_failed_call_is_retained_without_replaying_any_process",
+      "FailedCallObservationTests.test_original_validation_failures_are_unchanged_and_observed_after_cleanup",
+      "FailedCallObservationTests.test_process_cleanup_failure_is_not_relabelled_as_completed_ownership",
+      "FailedCallObservationTests.test_process_failure_keeps_the_original_exception_and_runs_one_cleanup",
+      "FailedCallObservationTests.test_projection_has_closed_tokens_and_fixed_numeric_and_byte_bounds",
+      "FailedCallObservationTests.test_query_and_known_or_unknown_mutation_failures_keep_exact_certainty",
+      "FailedOperatorReceiptTests.test_failed_receipt_is_after_cleanup_has_identities_and_never_claims_clean_shutdown",
+      "FailedOperatorReceiptTests.test_failure_before_client_acquisition_retains_only_completed_identity_capture",
+      "FailedOperatorReceiptTests.test_interrupts_remain_authoritative_after_a_failed_receipt_and_existing_cleanup",
+      "FailedOperatorReceiptTests.test_receipt_sink_failure_does_not_replace_the_original_nonzero_failure",
       "OperatorWorkflowTests.test_binary_identity_hashes_exact_bytes_without_retaining_paths",
       "OperatorWorkflowTests.test_both_auth_tokens_pass_local_profile_grammar",
       "OperatorWorkflowTests.test_candidate_weights_are_explicit_client_copies_only",
