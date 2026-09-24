@@ -72,7 +72,7 @@ pub(super) fn observe_grant(
     capability: &str,
     operation: &str,
     resource: latent_policy::capability::ResourceTarget<'_>,
-    result: &Result<super::GuestCapabilityHandle, PlatformError>,
+    result: Result<(), &PlatformError>,
 ) {
     let Some(configuration) = core.owner.audit.as_ref().filter(|audit| audit.observations) else {
         return;

@@ -1,6 +1,14 @@
 //! One bounded row owner across pre-publication clock currentness contention.
-use super::*;
-use crate::broker::HostClock;
+use super::{
+    next_incarnation, CapabilitySession, GuestCapabilityHandle, HandleEntry, HandleLifetime,
+    SessionCore,
+};
+use crate::broker::{busy, capacity, denied, stopped, HostClock, Kind, PlatformError};
+use latent_policy::capability::{ResourceRequest, ResourceTarget};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
 pub(in crate::broker) struct PendingBinding {
     core: Arc<SessionCore>,
@@ -110,6 +118,10 @@ impl PendingBinding {
         &mut self,
         result: &Result<GuestCapabilityHandle, PlatformError>,
     ) {
+        self.observe_result(result.as_ref().map(|_| ()));
+    }
+
+    fn observe_result(&mut self, result: Result<(), &PlatformError>) {
         debug_assert!(!self.observed);
         self.observed = true;
         crate::broker::audit::observe_grant(
@@ -122,9 +134,8 @@ impl PendingBinding {
     }
 
     pub(in crate::broker) fn observe_failure(&mut self, failure: PlatformError) -> PlatformError {
-        let result = Err(failure);
-        self.observe(&result);
-        result.expect_err("original clock admission failure")
+        self.observe_result(Err(&failure));
+        failure
     }
 }
 
