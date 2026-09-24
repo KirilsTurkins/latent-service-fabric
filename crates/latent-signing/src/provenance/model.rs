@@ -59,6 +59,20 @@ pub enum BuildRecipe {
     RustCapsule(RustCapsuleBuildParameters),
     TypeScriptCapsule(TypeScriptCapsuleBuildParameters),
     GoCapsule(GoCapsuleBuildParameters),
+    DotnetCapsule(DotnetCapsuleBuildParameters),
+    JavaCapsule(JavaCapsuleBuildParameters),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DotnetCapsuleBuildParameters {
+    pub compiler: String,
+    pub bindings: String,
+    pub language: String,
+    pub target: String,
+    pub runtime: String,
+    pub locked: bool,
+    pub ambient_wasi: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -91,6 +105,18 @@ pub struct CBuildParameters {
     pub fixture: String,
     pub target: String,
     pub optimization: String,
+}
+
+/// Closed maintained TeaVM C recipe, never interpreted as a Cargo or C fixture.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct JavaCapsuleBuildParameters {
+    pub compiler: String,
+    pub entry_point: String,
+    pub target: String,
+    pub bindings: String,
+    pub optimization: String,
+    pub java_heap_bytes: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

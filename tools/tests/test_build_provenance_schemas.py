@@ -94,6 +94,49 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
             return result
         self.assertEqual(recipes(standalone), recipes(embedded))
 
+    def test_builder_policy_and_observation_recipes_stay_in_sync(self):
+        observation = self.validators["build-observation"].schema["properties"]["buildType"]["enum"]
+        web = json.loads((ROOT / "schemas/web-build-observation.schema.json").read_bytes())["properties"]["buildType"]["enum"]
+        policy = self.validators["builder-policy"].schema["properties"]["requirements"]["items"]["properties"]["buildType"]["enum"]
+        self.assertEqual(set(observation) | set(web), set(policy))
+
+    def test_java_recipe_is_closed_and_each_compiler_input_is_required(self):
+        observation = samples()["build-observation"]
+        observation.update(buildType="https://latent.dev/build/java-capsule/v1",
+                           dependencyCompleteness="declared-inputs-incomplete")
+        observation["source"].update(capture="explicit-input-files", revision="b" * 64)
+        observation["parameters"] = {"compiler": "teavm-c", "entryPoint": "dev.latent.app.Capsule",
+            "target": "wasm32-wasip1", "bindings": "lsf-java-wit-v1", "optimization": "O2", "javaHeapBytes": 4194304}
+        names = ("source-snapshot", "build-recipe", "toolchain-config", "wasm-tools", "java", "gradle", "clang",
+                 "wit-bindgen", "compiler-closure", "dependency-lock", "generated-bindings", "contracts-tool", "packager", "package-inputs")
+        observation["materials"] = [{"name": name, "digest": DIGEST, "size": 1} for name in names]
+        self.validators["build-observation"].validate(observation)
+        statement = samples()["package-provenance-statement"]
+        statement["predicate"]["observation"] = observation
+        self.validators["package-provenance-statement"].validate(statement)
+        policy = samples()["builder-policy"]
+        policy["requirements"][0]["buildType"] = observation["buildType"]
+        self.validators["builder-policy"].validate(policy)
+        candidates = []
+        for field in observation["parameters"]:
+            changed = copy.deepcopy(observation)
+            del changed["parameters"][field]
+            candidates.append(changed)
+        for field, value in (("javaHeapBytes", 4194305), ("javaHeapBytes", "4194304"),
+                             ("bindings", "obsolete-teavm-wasi"), ("unrecognized", True)):
+            changed = copy.deepcopy(observation)
+            changed["parameters"][field] = value
+            candidates.append(changed)
+        for index in range(len(names)):
+            changed = copy.deepcopy(observation)
+            del changed["materials"][index]
+            candidates.append(changed)
+        for changed in candidates:
+            with self.subTest(parameters=changed["parameters"], materials=len(changed["materials"])):
+                self.invalid("build-observation", changed)
+                statement["predicate"]["observation"] = changed
+                self.invalid("package-provenance-statement", statement)
+
     def test_all_closed_fields_required_recursively(self):
         def objects(value, path=()):
             if isinstance(value, dict):
@@ -189,6 +232,31 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
             self.invalid("build-observation", wrong)
         for name in ("node", "compiler-inputs", "dependency-lock", "contracts-tool", "packager", "package-inputs"):
             wrong = copy.deepcopy(typescript)
+            wrong["materials"] = [row for row in wrong["materials"] if row["name"] != name]
+            self.invalid("build-observation", wrong)
+
+    def test_dotnet_profile_requires_exact_recipe_materials_and_builder_choice(self):
+        current = samples()
+        value = current["build-observation"]
+        value.update(buildType="https://latent.dev/build/dotnet-capsule/v1",
+            dependencyCompleteness="declared-inputs-incomplete",
+            parameters={"compiler": "native-aot-llvm", "bindings": "wit-bindgen-csharp", "language": "csharp",
+                        "target": "wasi-wasm", "runtime": "native-aot", "locked": True, "ambientWasi": False})
+        value["source"].update(revision="b" * 64, capture="explicit-input-files")
+        names = ("dotnet", "wit-bindgen", "closed-runtime", "compiler-inputs", "contracts-tool", "packager", "package-inputs")
+        value["materials"] += [{"name": name, "digest": DIGEST, "size": 1} for name in names]
+        current["package-provenance-statement"]["predicate"]["observation"] = value
+        current["builder-policy"]["requirements"][0]["buildType"] = value["buildType"]
+        for name in ("build-observation", "package-provenance-statement", "builder-policy"):
+            self.validators[name].validate(current[name])
+        for field, expected in value["parameters"].items():
+            wrong = copy.deepcopy(value)
+            wrong["parameters"][field] = not expected if isinstance(expected, bool) else "different"
+            self.invalid("build-observation", wrong)
+            current["package-provenance-statement"]["predicate"]["observation"] = wrong
+            self.invalid("package-provenance-statement", current["package-provenance-statement"])
+        for name in (*names, "dependency-lock"):
+            wrong = copy.deepcopy(value)
             wrong["materials"] = [row for row in wrong["materials"] if row["name"] != name]
             self.invalid("build-observation", wrong)
 

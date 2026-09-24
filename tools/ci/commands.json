@@ -720,6 +720,106 @@
       "shell": "default",
       "run": "npm run test:build\nnpm run test:theme\nnpm run test:examples\nnpm run test:versions\nnpm run test:discovery"
     },
+    ".github/workflows/dotnet-guest.yml:toolchain:Capture immutable qualification source inputs": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Capture immutable qualification source inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/dotnet-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/dotnet-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/dotnet-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/dotnet-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/dotnet-guest-source.sha\""
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Test contract projection, output ownership and drift rejection": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Test contract projection, output ownership and drift rejection",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest discover -s sdk/dotnet-guest/tests -v"
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Retain exact inputs and check the clock contract": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Retain exact inputs and check the clock contract",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "mkdir -p \"$RUNNER_TEMP/dotnet-guest\"\ngit rev-parse HEAD > \"$RUNNER_TEMP/dotnet-guest/revision.txt\"\ncmp wit/platform/clock/package.wit sdk/dotnet-guest/runtime/wit/deps/latent-clock.wit"
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Install the pinned native compiler and closed runtime": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Install the pinned native compiler and closed runtime",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Check independent editable projects and closed provenance profiles": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Check independent editable projects and closed provenance profiles",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_build_provenance_schemas"
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Generate and independently check current typed guest bindings": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Generate and independently check current typed guest bindings",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-guest/tools\"\npython3 tools/stage_runtime_wit.py target/dotnet-binding-wit --source wit/platform/runtime-phase3-blobs\nexport LSF_WIT_BINDGEN=\"$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen\" LSF_WASM_TOOLS=wasm-tools\npython3 tools/dotnet_guest_bindings.py c-sharp target/dotnet-binding-wit --world capsule --runtime native-aot --with-wit-results --out-dir \"$RUNNER_TEMP/dotnet-guest/generated\"\npython3 tools/dotnet_guest_bindings.py c-sharp target/dotnet-binding-wit --world capsule --runtime native-aot --with-wit-results --out-dir \"$RUNNER_TEMP/dotnet-guest/generated\" --check"
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Compile the actual C# probe and measure build costs": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Compile the actual C# probe and measure build costs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": "sdk/dotnet-guest",
+      "shell": "bash",
+      "run": "set -o pipefail\nprobe=\"$RUNNER_TEMP/dotnet-probe-source\"\nmkdir \"$probe\"\ncp probes/smoke/Smoke.csproj probes/smoke/Operations.cs \\\n  probes/smoke/component.wit probes/smoke/packages.lock.json \\\n  global.json nuget.config \"$probe/\"\ncd \"$probe\"\ndotnet --info > \"$RUNNER_TEMP/dotnet-guest/dotnet-info.txt\"\ndotnet restore Smoke.csproj --configfile nuget.config --locked-mode 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/restore.log\"\nexport LSF_WIT_BINDGEN=\"$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen\" LSF_WASM_TOOLS=wasm-tools\n/usr/bin/time -f '{\"wallSeconds\":%e,\"maxRssKiB\":%M,\"exitCode\":%x}' -o \"$RUNNER_TEMP/dotnet-guest/compilation-cost.json\" dotnet build Smoke.csproj -c Release --no-restore -p:WasiSdkRoot=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" -p:WitBindgenExe=\"python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py\" 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/build.log\"\ncp packages.lock.json \"$RUNNER_TEMP/dotnet-guest/packages.lock.json\""
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Compose capability-constrained compiler support": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Compose capability-constrained compiler support",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -o pipefail\ncargo build --quiet --locked -p latent-toolchain-smoke --example dotnet-closed-runtime --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm -o \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\"\ntools=\"$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64\"\ncp \"$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm\" \"$RUNNER_TEMP/dotnet-guest/raw.wasm\"\n\"$tools/wac\" plug \"$RUNNER_TEMP/dotnet-guest/raw.wasm\" --plug \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\" -o \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools component wit \"$RUNNER_TEMP/dotnet-guest/component.wasm\" | tee \"$RUNNER_TEMP/dotnet-guest/admitted.wit\""
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Execute LSF authority and fresh-heap qualification": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Execute LSF authority and fresh-heap qualification",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -o pipefail\ncargo test --quiet -p latent-wasmtime --test dotnet_guest --locked -- --ignored --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/execution.log\""
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Qualify captured projects, all SDK owners, enforced node and printed guide": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Qualify captured projects, all SDK owners, enforced node and printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/qualify_dotnet_capsules.py --output \"$RUNNER_TEMP/dotnet-capsule-authoring\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\""
+    },
     ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": {
       "workflow": ".github/workflows/go-guest.yml",
       "job": "upstream-probe",
@@ -779,6 +879,86 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-capsule-authoring\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Retain the exact checked-out source revision": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Retain the exact checked-out source revision",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "git archive --format=tar.gz -o \"$RUNNER_TEMP/java-feasibility-source.tar.gz\" HEAD \\\n  apps crates sdk/java-guest sdk/rust tools wit/platform schemas examples \\\n  docs/component-development .cargo Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE \\\n  .github/workflows/java-guest-feasibility.yml"
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Test evidence and process-capture behavior": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Test evidence and process-capture behavior",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest discover -s sdk/java-guest/tests -v"
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Install pinned compiler tools": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Install pinned compiler tools",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Compile real Java sources and retain the first incompatible stage": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Compile real Java sources and retain the first incompatible stage",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 sdk/java-guest/tools/feasibility.py --output \"$RUNNER_TEMP/java-guest-feasibility\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Execute Java code, exceptions and GC without claiming node admission": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Execute Java code, exceptions and GC without claiming node admission",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-feasibility/probe.wasm\" 2>&1 | tee \"$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Compile generated typed Java bindings against async capability WIT": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Compile generated typed Java bindings against async capability WIT",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/qualify_java_bridge.py --output \"$RUNNER_TEMP/java-guest-bindings\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Execute typed Java values and async host suspension": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Execute typed Java values and async host suspension",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- \"$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm\" --typed 2>&1 | tee \"$RUNNER_TEMP/java-guest-bindings/runtime-probe.log\""
+    },
+    ".github/workflows/java-guest-feasibility.yml:compiler-component:Qualify standalone Java projects, nine SDK components, signed node and printed guide": {
+      "workflow": ".github/workflows/java-guest-feasibility.yml",
+      "job": "compiler-component",
+      "name": "Qualify standalone Java projects, nine SDK components, signed node and printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\npython3 tools/qualify_java_capsules.py --output \"$RUNNER_TEMP/java-capsule-authoring\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" 2>&1 | tee \"$RUNNER_TEMP/java-capsule-authoring.log\""
     },
     ".github/workflows/native-runtime-release.yml:gate:Prepare private exact-source host workspace": {
       "workflow": ".github/workflows/native-runtime-release.yml",
@@ -2685,8 +2865,11 @@
     "sdk/java-client/tools/java_toolchain.py": {
       "sha256": "3cc265b8f13f24ce08da3cf079d3e66ca072515b0741f8594b43d412a3b9cd9d"
     },
+    "sdk/java-guest/tools/feasibility.py": {
+      "sha256": "429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c"
+    },
     "tools/aot_test_inputs.py": {
-      "sha256": "01b7951763092dbf4c8a677122b90e841241feacdbfa5bb7d5913a4302a0ddbf"
+      "sha256": "6ecd32d5179423d76a4e675902fb33e821f56a23708e3a929ef7697d662dd214"
     },
     "tools/build_angular_package.py": {
       "sha256": "6355b56981461912e5aeea8c9cc69424b512d5d55a6d805516af6eae523a02a0"
@@ -2754,6 +2937,12 @@
     "tools/docs_pages.py": {
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
     },
+    "tools/dotnet_capsule.py": {
+      "sha256": "5f91abb33e0e81a962c1dd3305adcefba477a2bbb51bbb2f42b901cead9a49af"
+    },
+    "tools/dotnet_guest_bindings.py": {
+      "sha256": "6c51ffa8c2cd39b9f57f3cc4d48303d734a845c15a476038a6289b77d0efbc82"
+    },
     "tools/go_guest/probe.py": {
       "sha256": "1544feeca3a68bc152b4d2a339525d3c2a0166da744ca7f30ddb727180a40f90"
     },
@@ -2773,7 +2962,7 @@
       "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
     },
     "tools/phase3_security.py": {
-      "sha256": "5f904fc5c0ee5da777645fbc6b86215592a6bfe4fb98faf16bf147b3da7f7e41"
+      "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
     },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
@@ -2781,11 +2970,20 @@
     "tools/qualify_c_capsules.py": {
       "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
     },
+    "tools/qualify_dotnet_capsules.py": {
+      "sha256": "ee566c6eb8f1b8728db9f12f925f1abf60ab3687ed9bfbe59b3a2c2b4b821a30"
+    },
     "tools/qualify_go_capsules.py": {
       "sha256": "497409dd0d4c072b12a64c84e9ef1dbc804eb888c62ccae6fb8a27b9e64e97ce"
     },
+    "tools/qualify_java_bridge.py": {
+      "sha256": "f9f02c440195578fac1e1ccd297a6ba1824b5952b4c74f021475df2acac106ce"
+    },
+    "tools/qualify_java_capsules.py": {
+      "sha256": "54a371d38d626291fd1415e2ddda6841054c5ad34334869408459461d9788792"
+    },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "17bf899f2e7f965c2ee128fd4a728be478fb1b106289fe06657c4e862946e49c"
+      "sha256": "afe96e20fe2d9b8ab2f82771e490099ba8cdecefe37902404f65cef9b6a85606"
     },
     "tools/qualify_typescript_capsules.py": {
       "sha256": "9ebcf28e77e5fa9bca9018d8e15afffac9e075427315ad334fa7fc7a8d4b4e44"
@@ -3199,8 +3397,11 @@
     ],
     "tools/tests/test_build_provenance_schemas.py": [
       "BuildProvenanceSchemaTests.test_all_closed_fields_required_recursively",
+      "BuildProvenanceSchemaTests.test_builder_policy_and_observation_recipes_stay_in_sync",
+      "BuildProvenanceSchemaTests.test_dotnet_profile_requires_exact_recipe_materials_and_builder_choice",
       "BuildProvenanceSchemaTests.test_envelope_canonical_base64_and_exact_decoded_ceiling",
       "BuildProvenanceSchemaTests.test_explicit_builder_requirements_and_revocations",
+      "BuildProvenanceSchemaTests.test_java_recipe_is_closed_and_each_compiler_input_is_required",
       "BuildProvenanceSchemaTests.test_observation_profile_and_material_constraints",
       "BuildProvenanceSchemaTests.test_repository_grammar_matches_observation_and_policy",
       "BuildProvenanceSchemaTests.test_signed_recipes_match_every_standalone_profile_and_builder_choice",
@@ -3466,6 +3667,18 @@
       "DocsPagesPolicyTests.test_rollback_binds_prior_published_receipt_to_exact_artifact",
       "DocsPagesPolicyTests.test_unexpected_output_and_candidate_publisher_record_are_refused"
     ],
+    "tools/tests/test_dotnet_capsule_authoring.py": [
+      "DotnetAuthoringTests.test_all_real_sdk_sources_use_the_same_capture_path",
+      "DotnetAuthoringTests.test_all_templates_capture_actual_source_and_pinned_sdk",
+      "DotnetAuthoringTests.test_application_cannot_inject_msbuild_or_package_overrides",
+      "DotnetAuthoringTests.test_application_source_and_authoritative_wit_remain_editable",
+      "DotnetAuthoringTests.test_budgets_reject_overflow_boolean_and_zero_required_dimensions",
+      "DotnetAuthoringTests.test_compiler_configuration_is_closed",
+      "DotnetAuthoringTests.test_names_and_existing_directories_are_rejected",
+      "DotnetAuthoringTests.test_nuget_uses_verified_content_identity_not_raw_signed_zip_hash",
+      "DotnetAuthoringTests.test_public_contract_rejection_precedes_compiler_work",
+      "DotnetAuthoringTests.test_sdk_capture_cannot_drift"
+    ],
     "tools/tests/test_echo_cli_package.py": [
       "EchoCliPackageTests.test_generated_cli_inputs_use_actual_digest_and_positional_json",
       "EchoCliPackageTests.test_maintained_descriptor_hashes_and_shape_match_parsed_wit",
@@ -3507,7 +3720,8 @@
       "GeneratorArchive.test_pinned_generator_version_matches_toolchain_and_lock",
       "GeneratorArchive.test_verified_regular_binary_only",
       "GuestProfileSchemas.test_echo_snapshot_can_still_capture_every_workspace_member",
-      "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate"
+      "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate",
+      "GuestProfileSchemas.test_java_recipe_requires_its_closed_compiler_inputs_and_separate_type"
     ],
     "tools/tests/test_harbor_registry_runner.py": [
       "HarborRunnerTests.test_cleanup_rejects_foreign_or_malformed_ownership_before_removal",
@@ -5238,6 +5452,13 @@
       "ContainerTests.test_negative_inner_receipt_stops_the_container_and_exits_nonzero",
       "ContainerTests.test_unlabelled_unbounded_or_foreign_workspaces_are_not_owned",
       "ContainerTests.test_unowned_container_is_not_started_stopped_or_removed",
+      "FailedCommandTests.test_cleanup_or_deadline_failure_never_fabricates_a_completed_diagnostic",
+      "FailedCommandTests.test_cli_writes_negative_receipt_without_overwriting_or_escaping_owned_target",
+      "FailedCommandTests.test_failed_exact_command_retains_closed_diagnostics_without_retry_or_acceptance",
+      "FailedCommandTests.test_failure_extracts_only_closed_source_assertion_and_platform_fields",
+      "FailedCommandTests.test_fields_counts_coordinates_codes_and_integer_ranges_are_closed",
+      "FailedCommandTests.test_real_nonzero_child_is_reaped_and_never_exposes_raw_capture",
+      "FailedCommandTests.test_unknown_absolute_traversing_sources_and_noninteger_values_are_discarded",
       "InventoryTests.test_duplicate_json_keys_and_inventory_bounds_are_rejected",
       "InventoryTests.test_dynamic_links_stay_inside_the_owned_target_and_are_bounded",
       "InventoryTests.test_exact_integration_owner_ignores_stale_executable_neighbours",
@@ -5440,6 +5661,13 @@
       "SecurityChangedPathTests.test_failed_fetch_still_fails_closed_and_invalid_revisions_never_execute",
       "SecurityChangedPathTests.test_missing_base_is_fetched_before_exact_diff",
       "SecurityChangedPathTests.test_present_base_uses_exact_local_diff_without_network"
+    ],
+    "tools/tests/test_security_native_aot.py": [
+      "NativeAotInventoryTests.test_every_resolved_compiler_runtime_and_linker_package_is_scanned",
+      "NativeAotInventoryTests.test_missing_transitive_package_is_not_an_empty_success",
+      "NativeAotInventoryTests.test_project_lock_and_both_configuration_changes_fail_closed",
+      "NativeAotInventoryTests.test_unknown_rid_cannot_hide_in_a_reviewed_lock",
+      "NativeAotInventoryTests.test_unresolved_versions_and_missing_checksums_fail"
     ],
     "tools/tests/test_security_rustsec_workflow.py": [
       "SecurityWorkflowTests.test_actual_aggregate_checks_selected_results_and_rejects_failures",
@@ -5750,6 +5978,7 @@
     "tools/tests/test_core_guides.py",
     "tools/tests/test_deterministic_tests.py",
     "tools/tests/test_docs_pages.py",
+    "tools/tests/test_dotnet_capsule_authoring.py",
     "tools/tests/test_echo_cli_package.py",
     "tools/tests/test_first_node_guide.py",
     "tools/tests/test_go_capsule_authoring.py",
@@ -5930,6 +6159,7 @@
     "tools/tests/test_sdk_provider_scenario.py",
     "tools/tests/test_security_baseline.py",
     "tools/tests/test_security_changed_paths.py",
+    "tools/tests/test_security_native_aot.py",
     "tools/tests/test_security_rustsec_workflow.py",
     "tools/tests/test_security_sdk_graphs.py",
     "tools/tests/test_security_settings.py",
@@ -5957,7 +6187,9 @@
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
+    ".github/workflows/dotnet-guest.yml": "f06805b301ab28a83b7b81aa04d68b5eea05048f66c035c157653451512eddfc",
     ".github/workflows/go-guest.yml": "c2ee0bfab0fa66a341dda62aeee6dfdf4c77691cd9a1a926ce1fbfb5fdae48cd",
+    ".github/workflows/java-guest-feasibility.yml": "6c1814b442abf741dc4dceb6ab707cf87b3cc161090a3b5b7a62c9334dc3f872",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",

@@ -12,6 +12,10 @@ pub struct SemanticLimits {
     pub max_operators: usize,
     pub max_component_items: usize,
     pub max_type_nodes: usize,
+    /// Conservative reference expansion before validation. Whole-instance alias
+    /// summaries may revisit private members; actual type visits and allocations
+    /// still use max_type_nodes independently.
+    pub max_reference_work: usize,
     pub max_type_depth: usize,
     pub max_type_members: usize,
     pub max_name_bytes: usize,
@@ -45,6 +49,7 @@ impl Default for SemanticLimits {
             max_operators: 8_000_000,
             max_component_items: 16_384,
             max_type_nodes: 262_144,
+            max_reference_work: 2_097_152,
             max_type_depth: 64,
             max_type_members: 1024,
             max_name_bytes: 512,
@@ -82,6 +87,7 @@ impl SemanticLimits {
             max_operators,
             max_component_items,
             max_type_nodes,
+            max_reference_work,
             max_type_depth,
             max_type_members,
             max_name_bytes,

@@ -4,6 +4,86 @@ mod support;
 use latent_signing::*;
 use support::*;
 
+#[test]
+fn dotnet_capsules_require_the_closed_native_aot_recipe_and_separate_approval() {
+    let mut value = standalone();
+    value.build_type = DOTNET_CAPSULE_BUILD_TYPE.into();
+    value.parameters = BuildRecipe::DotnetCapsule(DotnetCapsuleBuildParameters {
+        compiler: "native-aot-llvm".into(),
+        bindings: "wit-bindgen-csharp".into(),
+        language: "csharp".into(),
+        target: "wasi-wasm".into(),
+        runtime: "native-aot".into(),
+        locked: true,
+        ambient_wasi: false,
+    });
+    for name in ["dotnet", "closed-runtime", "compiler-inputs"] {
+        value.materials.push(BuildMaterial {
+            name: name.into(),
+            digest: value.source.snapshot_digest.clone(),
+            size: 1,
+        });
+    }
+    let (signer, public, _) = signer(BUILDER);
+    let evidence = signed(&signer, &value);
+    let mut policy = policy_value(&public);
+    assert_eq!(
+        verifier(&policy)
+            .verify_package(&subject(), evidence.as_ref(), NOW)
+            .unwrap_err()
+            .reason(),
+        SignatureFailure::PredicateDisallowed
+    );
+    policy["requirements"][0]["buildType"] = DOTNET_CAPSULE_BUILD_TYPE.into();
+    verifier(&policy)
+        .verify_package(&subject(), evidence.as_ref(), NOW)
+        .unwrap();
+    let encoded = serde_json::to_value(&value).unwrap();
+    assert!(matches!(
+        decode_build_observation(&serde_json::to_vec(&encoded).unwrap(), Default::default())
+            .unwrap()
+            .parameters,
+        BuildRecipe::DotnetCapsule(_)
+    ));
+    for (field, invalid) in [
+        ("compiler", serde_json::json!("different")),
+        ("bindings", serde_json::json!("different")),
+        ("language", serde_json::json!("different")),
+        ("target", serde_json::json!("different")),
+        ("runtime", serde_json::json!("different")),
+        ("locked", serde_json::json!(false)),
+        ("ambientWasi", serde_json::json!(true)),
+        ("unreviewedOption", serde_json::json!(true)),
+    ] {
+        let mut wrong = encoded.clone();
+        wrong["parameters"][field] = invalid;
+        assert!(
+            decode_build_observation(&serde_json::to_vec(&wrong).unwrap(), Default::default())
+                .is_err()
+        );
+    }
+    for name in [
+        "dotnet",
+        "wit-bindgen",
+        "closed-runtime",
+        "compiler-inputs",
+        "dependency-lock",
+        "contracts-tool",
+        "packager",
+        "package-inputs",
+    ] {
+        let mut wrong = encoded.clone();
+        wrong["materials"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|row| row["name"] != name);
+        assert!(
+            decode_build_observation(&serde_json::to_vec(&wrong).unwrap(), Default::default())
+                .is_err()
+        );
+    }
+}
+
 fn guest(c: bool) -> BuildObservation {
     let mut value = observation();
     value.build_type = if c {
@@ -151,6 +231,120 @@ fn mixed_recipes_missing_tools_and_unbounded_claims_are_rejected() {
             );
         }
     }
+}
+
+fn java() -> BuildObservation {
+    let mut value = observation();
+    value.build_type = JAVA_CAPSULE_BUILD_TYPE.into();
+    value.source.capture = "explicit-input-files".into();
+    value.source.revision = value.source.snapshot_digest[7..].into();
+    value.dependency_completeness = "declared-inputs-incomplete".into();
+    value
+        .materials
+        .retain(|item| !matches!(item.name.as_str(), "cargo" | "rustc"));
+    for name in [
+        "java",
+        "gradle",
+        "clang",
+        "wit-bindgen",
+        "compiler-closure",
+        "generated-bindings",
+        "contracts-tool",
+        "packager",
+        "package-inputs",
+    ] {
+        value.materials.push(BuildMaterial {
+            name: name.into(),
+            digest: value.source.snapshot_digest.clone(),
+            size: 1,
+        });
+    }
+    value.parameters = BuildRecipe::JavaCapsule(JavaCapsuleBuildParameters {
+        compiler: "teavm-c".into(),
+        entry_point: "dev.latent.app.Capsule".into(),
+        target: "wasm32-wasip1".into(),
+        bindings: "lsf-java-wit-v1".into(),
+        optimization: "O2".into(),
+        java_heap_bytes: 4_194_304,
+    });
+    value
+}
+
+#[test]
+fn java_requires_separate_source_bound_builder_approval() {
+    let (signer, public, _) = signer(BUILDER);
+    let value = java();
+    let evidence = signed(&signer, &value);
+    let mut policy = policy_value(&public);
+    for old in [
+        PROVENANCE_BUILD_TYPE,
+        C_GUEST_BUILD_TYPE,
+        RUST_GUEST_BUILD_TYPE,
+        RUST_CAPSULE_BUILD_TYPE,
+    ] {
+        policy["requirements"][0]["buildType"] = old.into();
+        assert_eq!(
+            verifier(&policy)
+                .verify_package(&subject(), evidence.as_ref(), NOW)
+                .unwrap_err()
+                .reason(),
+            SignatureFailure::PredicateDisallowed
+        );
+    }
+    policy["requirements"][0]["buildType"] = JAVA_CAPSULE_BUILD_TYPE.into();
+    policy["requirements"][0]["sourceSnapshotDigest"] = value.source.snapshot_digest.clone().into();
+    verifier(&policy)
+        .verify_package(&subject(), evidence.as_ref(), NOW)
+        .unwrap();
+    policy["requirements"][0]["sourceSnapshotDigest"] = format!("sha256:{}", "0".repeat(64)).into();
+    assert_eq!(
+        verifier(&policy)
+            .verify_package(&subject(), evidence.as_ref(), NOW)
+            .unwrap_err()
+            .reason(),
+        SignatureFailure::SourceDisallowed
+    );
+}
+
+#[test]
+fn java_recipe_and_every_observed_compiler_input_are_closed() {
+    let original = serde_json::to_value(java()).unwrap();
+    decode_build_observation(&serde_json::to_vec(&original).unwrap(), Default::default()).unwrap();
+    for material in original["materials"].as_array().unwrap() {
+        let mut changed = original.clone();
+        changed["materials"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|item| item["name"] != material["name"]);
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&changed).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+    for key in [
+        "compiler",
+        "entryPoint",
+        "target",
+        "bindings",
+        "optimization",
+        "javaHeapBytes",
+        "unreviewedOption",
+    ] {
+        let mut changed = original.clone();
+        changed["parameters"][key] = "unreviewed".into();
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&changed).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
+    let mut changed = original;
+    changed["parameters"]["javaHeapBytes"] = 8_388_608.into();
+    assert!(
+        decode_build_observation(&serde_json::to_vec(&changed).unwrap(), Default::default())
+            .is_err()
+    );
 }
 
 fn standalone() -> BuildObservation {

@@ -38,7 +38,10 @@ pub fn input(name: &str) -> PathBuf {
 
 pub fn observation(name: &str) -> BuildObservation {
     let directory = input(name);
-    let standalone = name.starts_with("go-") || name.starts_with("typescript-");
+    let standalone = name.starts_with("go-")
+        || name.starts_with("typescript-")
+        || name.starts_with("dotnet-")
+        || name.starts_with("java-");
     let root = if standalone {
         &directory
     } else {
@@ -195,12 +198,16 @@ pub async fn publish(root: &Path, name: &str) -> Publication {
     let signers = Signers::new(&observation.build_type);
     let upload = signers.upload(&bundle, &observation);
     let release = bundle.layout().component_release().unwrap();
-    let catalog = catalog(root, signers.policy);
+    let memory_ceiling = (name == "dotnet-service").then_some(256 * 1024 * 1024);
+    let catalog = catalog(root, signers.policy, memory_ceiling);
     let receipt = catalog
         .publish_managed(
             ReleaseMutationContext {
                 scope: LifecycleScope::Tenant(TenantId(
-                    if (name.starts_with("go-") || name.starts_with("typescript-"))
+                    if (name.starts_with("go-")
+                        || name.starts_with("typescript-")
+                        || name.starts_with("dotnet-")
+                        || name.starts_with("java-"))
                         && (name.ends_with("-service") || name.ends_with("-callee"))
                     {
                         "tenant-a"
@@ -276,15 +283,26 @@ impl SupplyChainClock for FixtureClock {
     }
 }
 
-pub fn catalog(root: &Path, policy: SupplyChainPolicy) -> Arc<DirectoryArtifactRepository> {
+pub fn catalog(
+    root: &Path,
+    policy: SupplyChainPolicy,
+    memory_ceiling: Option<u64>,
+) -> Arc<DirectoryArtifactRepository> {
     let clock = Arc::new(FixtureClock(SystemSupplyChainClock.now().unwrap()));
+    let mut runtime = super::support::config();
+    if let Some(memory_ceiling) = memory_ceiling {
+        // Match the separately configured service fixture's explicit ceiling.
+        // In particular, a NativeAOT caller reserves 256 MiB to fund a child;
+        // ordinary SDK packages retain their original 128 MiB profile.
+        runtime.maximum_memory_bytes = memory_ceiling;
+    }
     let authority = Arc::new(
         SupplyChainAuthority::open_with_runtime(
             &root.join("trust"),
             policy,
             clock,
             5,
-            Arc::new(super::support::config().detected_runtime_profile().unwrap()),
+            Arc::new(runtime.detected_runtime_profile().unwrap()),
         )
         .unwrap(),
     );

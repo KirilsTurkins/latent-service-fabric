@@ -1,0 +1,173 @@
+name: .NET guest qualification
+
+on:
+  pull_request:
+    paths:
+      - 'sdk/dotnet-guest/**'
+      - 'tools/dotnet_guest*'
+      - 'tools/dotnet_guest/**'
+      - 'tools/dotnet_capsule.py'
+      - 'tools/*dotnet*guest*capsules.py'
+      - 'tools/*dotnet_capsule*.py'
+      - 'tools/*rust_capsule*.py'
+      - 'tools/guest_runtime_grants.py'
+      - 'tools/tests/test_dotnet_capsule_authoring.py'
+      - 'docs/component-development/dotnet-authoring.md'
+      - 'crates/latent-signing/**'
+      - 'crates/latent-packaging/**'
+      - 'crates/latent-policy/**'
+      - 'apps/latentd/**'
+      - '.cargo/managed-guest.toml'
+      - 'tools/toolchain-smoke/**'
+      - 'wit/**'
+      - 'crates/latent-wasmtime/**'
+      - '.github/workflows/dotnet-guest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dotnet-guest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  toolchain:
+    name: NativeAOT component qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Capture immutable qualification source inputs
+        shell: bash
+        run: |
+          git archive --format=tar.gz --output "$RUNNER_TEMP/dotnet-guest-source.tar.gz" HEAD -- \
+            apps sdk/dotnet-guest sdk/rust examples tools crates wit schemas docs .cargo \
+            Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/dotnet-guest.yml
+          test "$(stat --format=%s "$RUNNER_TEMP/dotnet-guest-source.tar.gz")" -le 134217728
+          git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest-source.sha"
+      - name: Retain the exact reviewed command contract input
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dotnet-guest-command-contract-${{ github.sha }}
+          path: |
+            tools/ci/commands.json
+            ${{ runner.temp }}/dotnet-guest-source.tar.gz
+            ${{ runner.temp }}/dotnet-guest-source.sha
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - name: Test contract projection, output ownership and drift rejection
+        run: python3 -m unittest discover -s sdk/dotnet-guest/tests -v
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Retain exact inputs and check the clock contract
+        run: |
+          mkdir -p "$RUNNER_TEMP/dotnet-guest"
+          git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest/revision.txt"
+          cmp wit/platform/clock/package.wit sdk/dotnet-guest/runtime/wit/deps/latent-clock.wit
+      - name: Install the pinned native compiler and closed runtime
+        shell: bash
+        run: |
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
+          export PATH="$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/dotnet-authoring-bindgen" >> "$GITHUB_PATH"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Check independent editable projects and closed provenance profiles
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_build_provenance_schemas
+      - name: Generate and independently check current typed guest bindings
+        run: |
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-guest/tools"
+          python3 tools/stage_runtime_wit.py target/dotnet-binding-wit --source wit/platform/runtime-phase3-blobs
+          export LSF_WIT_BINDGEN="$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen" LSF_WASM_TOOLS=wasm-tools
+          python3 tools/dotnet_guest_bindings.py c-sharp target/dotnet-binding-wit --world capsule --runtime native-aot --with-wit-results --out-dir "$RUNNER_TEMP/dotnet-guest/generated"
+          python3 tools/dotnet_guest_bindings.py c-sharp target/dotnet-binding-wit --world capsule --runtime native-aot --with-wit-results --out-dir "$RUNNER_TEMP/dotnet-guest/generated" --check
+      - name: Compile the actual C# probe and measure build costs
+        working-directory: sdk/dotnet-guest
+        shell: bash
+        run: |
+          set -o pipefail
+          probe="$RUNNER_TEMP/dotnet-probe-source"
+          mkdir "$probe"
+          cp probes/smoke/Smoke.csproj probes/smoke/Operations.cs \
+            probes/smoke/component.wit probes/smoke/packages.lock.json \
+            global.json nuget.config "$probe/"
+          cd "$probe"
+          dotnet --info > "$RUNNER_TEMP/dotnet-guest/dotnet-info.txt"
+          dotnet restore Smoke.csproj --configfile nuget.config --locked-mode 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/restore.log"
+          export LSF_WIT_BINDGEN="$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen" LSF_WASM_TOOLS=wasm-tools
+          /usr/bin/time -f '{"wallSeconds":%e,"maxRssKiB":%M,"exitCode":%x}' -o "$RUNNER_TEMP/dotnet-guest/compilation-cost.json" dotnet build Smoke.csproj -c Release --no-restore -p:WasiSdkRoot="$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" -p:WitBindgenExe="python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py" 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/build.log"
+          cp packages.lock.json "$RUNNER_TEMP/dotnet-guest/packages.lock.json"
+      - name: Compose capability-constrained compiler support
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo build --quiet --locked -p latent-toolchain-smoke --example dotnet-closed-runtime --target wasm32-unknown-unknown --release
+          wasm-tools component new target/wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm -o "$RUNNER_TEMP/dotnet-guest/runtime.wasm"
+          tools="$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64"
+          cp "$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm" "$RUNNER_TEMP/dotnet-guest/raw.wasm"
+          "$tools/wac" plug "$RUNNER_TEMP/dotnet-guest/raw.wasm" --plug "$RUNNER_TEMP/dotnet-guest/runtime.wasm" -o "$RUNNER_TEMP/dotnet-guest/component.wasm"
+          wasm-tools validate "$RUNNER_TEMP/dotnet-guest/component.wasm"
+          wasm-tools component wit "$RUNNER_TEMP/dotnet-guest/component.wasm" | tee "$RUNNER_TEMP/dotnet-guest/admitted.wit"
+      - name: Execute LSF authority and fresh-heap qualification
+        env:
+          LSF_DOTNET_PROBE: ${{ runner.temp }}/dotnet-guest
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test --quiet -p latent-wasmtime --test dotnet_guest --locked -- --ignored --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/execution.log"
+      - name: Qualify captured projects, all SDK owners, enforced node and printed guide
+        run: python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-authoring" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
+      - name: Retain output and failed attempts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dotnet-guest-qualification-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/dotnet-guest/
+            ${{ runner.temp }}/dotnet-capsule-authoring/
+            ${{ runner.temp }}/dotnet-authoring-tools/logs/
+            ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
+            ${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json
+            ${{ runner.temp }}/dotnet-authoring-tools/wasi-sdk.json
+          if-no-files-found: error
+          retention-days: 7

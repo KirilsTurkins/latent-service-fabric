@@ -217,7 +217,9 @@ The implementation must preserve fresh activation state and bounded shared
 resources. A dormant deployment must not own a language process, thread,
 listener, persistent guest heap, execution cell or provider pool. New guest
 profiles need their own validation and useful language-selectable tutorials.
-All six tickets are open; this gate remains incomplete.
+Delivery is tracked in those tickets and their language-specific developer
+qualification reports. This extension alone does not complete the remaining
+gate criteria, human newcomer review or development-to-release integration.
 
 ## Later-phase exclusions
 

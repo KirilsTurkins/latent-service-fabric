@@ -31,13 +31,20 @@ const CLOCKS: [(&str, &str, &str); 2] = [
 const RANDOM: &str = "latent:random/random@0.1.0";
 
 pub fn enabled() -> bool {
-    std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() == Ok("go")
+    matches!(
+        std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
+        Ok("go" | "dotnet" | "java")
+    )
+}
+
+pub fn java() -> bool {
+    std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() == Ok("java")
 }
 
 pub fn memory(default: u64) -> u64 {
     match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
-        Ok("go") => 64 * 1024 * 1024,
-        Ok("typescript") => 128 * 1024 * 1024,
+        Ok("go" | "java") => 64 * 1024 * 1024,
+        Ok("typescript" | "dotnet") => 128 * 1024 * 1024,
         _ => default,
     }
 }
@@ -55,15 +62,25 @@ pub fn service_memory(default: u64) -> u64 {
 
 pub fn fuel(default: u64) -> u64 {
     match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
-        Ok("go" | "typescript") => 10_000_000_000,
+        Ok("go" | "typescript" | "dotnet" | "java") => 10_000_000_000,
         _ => default,
     }
 }
 
 pub fn wall_time(default: u64) -> u64 {
     match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
-        Ok("go" | "typescript") => 120_000,
+        Ok("go" | "typescript" | "dotnet" | "java") => 120_000,
         _ => default,
+    }
+}
+
+fn runtime_capabilities() -> Vec<&'static str> {
+    if std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() == Ok("dotnet") {
+        vec![CLOCKS[0].0]
+    } else if java() {
+        vec![CLOCKS[0].0, CLOCKS[1].0]
+    } else {
+        vec![CLOCKS[0].0, CLOCKS[1].0, RANDOM]
     }
 }
 
@@ -137,6 +154,9 @@ impl Runtime {
             return owner;
         }
         for (capability, profile, operation) in CLOCKS {
+            if !runtime_capabilities().contains(&capability) {
+                continue;
+            }
             let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
             let registration = broker
                 .register_provider(ProviderConfiguration {
@@ -155,7 +175,7 @@ impl Runtime {
             owner.add(registration.reference(), operation);
             owner.clocks.push(registration);
         }
-        if !existing_random {
+        if !existing_random && runtime_capabilities().contains(&RANDOM) {
             let random = RandomProvider::system(
                 broker,
                 1,
@@ -294,7 +314,7 @@ pub fn grants() -> Vec<CapabilityGrantSpec> {
     if !enabled() {
         return vec![];
     }
-    [CLOCKS[0].0, CLOCKS[1].0, RANDOM]
+    runtime_capabilities()
         .iter()
         .enumerate()
         .map(|(i, capability)| {
@@ -310,7 +330,7 @@ pub fn imports(request: &mut latent_executor::ExecutionRequest) {
     if !enabled() {
         return;
     }
-    for capability in [CLOCKS[0].0, CLOCKS[1].0, RANDOM] {
+    for capability in runtime_capabilities() {
         if !request
             .imports
             .iter()

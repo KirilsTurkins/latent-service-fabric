@@ -27,6 +27,7 @@ async fn main() -> wasmtime::Result<()> {
         .ok_or_else(|| wasmtime::Error::msg("component path required"))?;
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
+    config.wasm_backtrace_max_frames(std::num::NonZeroUsize::new(128));
     let optimization = std::env::args().nth(2).unwrap_or_else(|| "speed".into());
     config.cranelift_opt_level(match optimization.as_str() {
         "none" => wasmtime::OptLevel::None,
@@ -50,6 +51,7 @@ async fn main() -> wasmtime::Result<()> {
     match std::env::args().nth(3).as_deref() {
         Some("sdk-service-memory") => return service_memory::run(&engine, &component, true).await,
         Some("sdk-callee-memory") => return service_memory::run(&engine, &component, false).await,
+        Some("sdk-dotnet-secrets") => return sdk_dotnet_secrets(&engine, &component).await,
         _ => (),
     }
     let pending = Arc::new(AtomicUsize::new(0));
@@ -322,6 +324,90 @@ async fn sdk_blob(engine: &Engine, component: &Component) -> wasmtime::Result<()
             ordinal + 1,
             "explicit canonical drop required before store cleanup"
         );
+    }
+    Ok(())
+}
+
+// Diagnostic only: supplied test values and clock, no admission or real secret.
+async fn sdk_dotnet_secrets(engine: &Engine, component: &Component) -> wasmtime::Result<()> {
+    let mut linker = Linker::new(engine);
+    let epoch = Instant::now();
+    linker
+        .instance("latent:clock/monotonic@0.1.0")?
+        .func_wrap("now-nanos", move |_, (): ()| {
+            Ok((u64::try_from(epoch.elapsed().as_nanos())?,))
+        })?;
+    linker
+        .instance("latent:secrets/reader@0.1.0")?
+        .func_new("read", |_, _, input, output| {
+            let Val::String(reference) = &input[0] else {
+                panic!("secret reference type")
+            };
+            println!("diagnostic secret host call: {reference}");
+            output[0] = if reference == "allowed" {
+                Val::Result(Ok(Some(Box::new(Val::Record(vec![
+                    (
+                        "bytes".into(),
+                        Val::List(b"Alpha".iter().map(|byte| Val::U8(*byte)).collect()),
+                    ),
+                    ("media-type".into(), Val::String("text/plain".into())),
+                    (
+                        "version".into(),
+                        Val::Option(Some(Box::new(Val::String("1".into())))),
+                    ),
+                    (
+                        "expires-at-unix-millis".into(),
+                        Val::Option(Some(Box::new(Val::U64(2000)))),
+                    ),
+                ])))))
+            } else {
+                Val::Result(Err(Some(Box::new(Val::Variant(
+                    match reference.as_str() {
+                        "opaque" => "permission-denied",
+                        "tenant-only" => "not-found",
+                        "expired" => "expired",
+                        _ => "unavailable",
+                    }
+                    .into(),
+                    None,
+                )))))
+            };
+            Ok(())
+        })?;
+    for (reference, expected) in [
+        ("allowed", 5),
+        ("opaque", 10),
+        ("tenant-only", 11),
+        ("expired", 12),
+        ("unavailable", 13),
+    ] {
+        let mut store = Store::new(
+            engine,
+            StoreLimitsBuilder::new()
+                .memory_size(128 * 1024 * 1024)
+                .build(),
+        );
+        store.limiter(|limits| limits);
+        store.set_fuel(1_000_000_000)?;
+        let instance = linker.instantiate_async(&mut store, component).await?;
+        let (_, interface) = instance
+            .get_export(&mut store, None, "tests:local-secrets/api@1.0.0")
+            .expect("secret API");
+        let (_, index) = instance
+            .get_export(&mut store, Some(&interface), "run")
+            .expect("run");
+        let function = instance.get_func(&mut store, index).expect("function");
+        let mut output = [Val::Bool(false)];
+        let result = function
+            .call_async(
+                &mut store,
+                &[Val::U32(0), Val::String(reference.into()), Val::U64(0)],
+                &mut output,
+            )
+            .await;
+        println!("diagnostic secret {reference}: {result:?}, output {output:?}");
+        result?;
+        assert_eq!(output, [Val::U64(expected)]);
     }
     Ok(())
 }

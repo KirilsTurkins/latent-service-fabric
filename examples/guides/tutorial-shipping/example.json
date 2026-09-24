@@ -6,6 +6,17 @@
   "target": "guest",
   "variants": [
     {
+      "language": "csharp",
+      "kind": "maintained",
+      "source": "sdk/dotnet-guest/templates/shipping.cs",
+      "regions": ["capsule"],
+      "validation": {
+        "target": "tools/qualify_dotnet_capsules.py",
+        "instructions": "docs/component-development/dotnet-authoring.md",
+        "evidence": null
+      }
+    },
+    {
       "language": "typescript",
       "kind": "maintained",
       "source": "sdk/typescript-guest/templates/shipping.ts",
@@ -50,6 +61,19 @@
       "validation": {
         "target": "tools/qualify_c_capsules.py",
         "instructions": "docs/component-development/c-authoring.md",
+        "evidence": null
+      }
+    },
+    {
+      "language": "java",
+      "kind": "maintained",
+      "source": "sdk/java-guest/templates/shipping.java",
+      "regions": [
+        "capsule"
+      ],
+      "validation": {
+        "target": "tools/qualify_java_capsules.py",
+        "instructions": "docs/component-development/java-authoring.md",
         "evidence": null
       }
     }
