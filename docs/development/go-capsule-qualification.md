@@ -6,7 +6,62 @@ requires the complete real-node and printed-guide gate at the final PR head.
 No partial observation below authorizes a release or replaces human newcomer
 review #345.
 
+## Qualified language profiles and retained operator failure
+
+The corrected candidate `76d6e202ef705be062ef376bb2d2ff8a873835ef`, tree
+`9d2b37157b58920bef680a69193fbabafc507215`, passed all six language workflows.
+Its [Go qualification 35996483273](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35996483273)
+passed ten actual SDK cases, 27 node outcomes, 24 resource samples and all six
+printed guide blocks, with unchanged source/tool identities and clean/reaped
+owners. [Source artifact 10806786009](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35996483273/artifacts/10806786009)
+matches 4,136 scoped Git files; [execution artifact 10806833930](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35996483273/artifacts/10806833930)
+matches 2,370 captured Git inputs. The qualification digest is
+`0a72b76065cd3c3ca9ac6faa7e1c8bdba7b4f06a2bccb251adae565cc80bcaf9`.
+
+That candidate's [broad CI 35996483602](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35996483602)
+nevertheless failed Phase 2 node management at CLI call 107, exit 4, public
+`resource-exhausted`, gRPC diagnostic absent. Its [Phase 2 artifact 10807956548](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35996483602/artifacts/10807956548)
+contains an empty operator receipt. The command, original dispatch/outcome
+certainty and exact capacity cause were not retained. Call counts vary with
+readiness and audit pagination; missing `grpcCode` can accompany a typed server
+failure. No particular operation or exhausted owner is attributed to this
+historical failure. Passing SDK cases and the independently passing TypeScript
+operator workflow do not turn that failed broad run into a successful one.
+
+Observation-only milestone `a1afc711ba66792a92f4edfe474feaba86eed552`
+retains the first failed CLI validation as a closed, fixed-size command,
+category, public-code and exact-boolean certainty record after the existing
+process cleanup. The outer failed receipt explicitly states `passed:false`,
+`identityRechecked:false` and `nodeShutdown:unverified`. Projection or receipt
+output failures cannot replace the original exception. Thirteen new cases cover
+privacy/bounds, success and expected nonzero outcomes, original failure/interrupt
+identity and cleanup. Root verification passed 36 operator/canary/offline tests
+and 51 lane/inventory/coverage tests. No runtime code, acceptance check, capacity,
+deadline or operation-retry behavior changed.
+
+One separate fresh Linux node-only diagnostic used newly built and frozen
+`76d6e202` executables with the exact `a1afc711` Python helpers. Their complete
+Git difference is the four reviewed Python/test/registry files. All 5,802 source
+files and three executable identities matched before and after execution. One
+fresh exact fixture export, byte-identical package/evidence copies and two real
+package inspections preceded the unchanged node workflow under its original
+300-second deadline. It passed 105 actual CLI calls and 18 invocations, both
+clean/reaped shutdowns, restart/deletion/revocation checks and temporary cleanup.
+There is no synthetic CI call offset. Result SHA-256:
+`0ebc0e6a932663c28ff9c099b2684d1e7cc2e3242ccb0381a8b7b01b5563c0bb`.
+This two-CPU, 8-GiB, network-none diagnostic excluded OCI build/push/pull/TLS and
+does not qualify the full operator workflow or recover the failed call's cause.
+No previous operation or uncertain state was reused, and no second attempt ran.
+
+The failed CI attempt remains immutable. The diagnostic improvement requires
+new exact-head CI and final source/execution review before delivery. It is an
+observability correction, not an asserted runtime root-cause fix. Runtime release
+HOLD and human newcomer review #345 remain separate.
+
 ## Current integration gate and retained contention failures
+
+This subsection retains the earlier `7376f206` gate snapshot and its linked
+failure evidence. The later qualification and operator diagnostic are above.
 
 The candidate `7376f20696e67982505e21b4356622260afbf4c9` is **not qualified
 for merge**. Its [Go run 35987802416](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987802416)
