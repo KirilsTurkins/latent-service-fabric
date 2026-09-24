@@ -281,7 +281,22 @@ be inspected before any retry.
 
 ## 6. Clean up and continue
 
+Wait for the completed calls' bounded audit work to drain before deleting the
+deployment once. This helper performs only read-only capability inspections,
+with a five-second observation deadline and at most 32 reads, and records the
+observed audit ownership counters, including queued and staging bytes.
+Missing audit counters, unavailable observations, a closed/recovering journal,
+or an expired deadline stop cleanup;
+inspect that failure instead of retrying an uncertain deletion. Each inspection
+has a one-second process bound plus at most five seconds for owned child cleanup.
+The idle snapshot is not a reservation or a guarantee of retained-disk capacity;
+concurrent work can still consume capacity. The single deletion still checks
+its current policy, generation and capacity.
+
 ```bash
+python3 tools/wait_capsule_audit_idle.py --cli "$BIN/latent" \
+  --config "$LSF_DOTNET_PROJECTS/client.json" --deployment my-greeting \
+  >"$LSF_DOTNET_PROJECTS/results/audit-idle.json"
 GENERATION=$(python3 -c 'import json,os; print(json.load(open(os.environ["LSF_DOTNET_PROJECTS"]+"/results/deployed.json"))["data"]["deployment"]["generation"])')
 dotnet_cli deployment delete my-greeting --expected-generation "$GENERATION"
 stop_dotnet_node

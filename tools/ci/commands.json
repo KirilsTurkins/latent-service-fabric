@@ -2983,7 +2983,7 @@
       "sha256": "54a371d38d626291fd1415e2ddda6841054c5ad34334869408459461d9788792"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "926ed89fa853e188db132807823846c0fa95ac8b4df5711d326a1315940c71db"
+      "sha256": "d06360d52a38c94841010b91d89aa05662a9037774125ab6e7d08e9b7494ad9f"
     },
     "tools/qualify_typescript_capsules.py": {
       "sha256": "9ebcf28e77e5fa9bca9018d8e15afffac9e075427315ad334fa7fc7a8d4b4e44"
@@ -3668,6 +3668,16 @@
       "DocsPagesPolicyTests.test_unexpected_output_and_candidate_publisher_record_are_refused"
     ],
     "tools/tests/test_dotnet_capsule_authoring.py": [
+      "AuditDrainTests.test_busy_to_idle_observations_are_only_bounded_read_only_calls",
+      "AuditDrainTests.test_counter_values_reject_malformed_numbers_and_unsigned_overflow",
+      "AuditDrainTests.test_every_owner_counter_must_be_present_and_zero_before_idle",
+      "AuditDrainTests.test_failed_read_stops_once_and_cli_failure_discards_private_response",
+      "AuditDrainTests.test_helper_and_dependencies_are_captured_and_guide_deletes_only_once",
+      "AuditDrainTests.test_invalid_bounds_and_identifiers_do_not_spawn",
+      "AuditDrainTests.test_malformed_paginated_ambiguous_and_unbounded_responses_are_rejected",
+      "AuditDrainTests.test_missing_audit_owner_closed_and_recovery_states_fail_closed",
+      "AuditDrainTests.test_observation_limit_and_deadline_stop_without_effect_retries",
+      "AuditDrainTests.test_real_process_deadline_and_output_overflow_retire_owned_process",
       "DotnetAuthoringTests.test_all_real_sdk_sources_use_the_same_capture_path",
       "DotnetAuthoringTests.test_all_templates_capture_actual_source_and_pinned_sdk",
       "DotnetAuthoringTests.test_application_cannot_inject_msbuild_or_package_overrides",

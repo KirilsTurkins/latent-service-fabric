@@ -253,10 +253,13 @@ fn usage_key(scope: &str, key: &str) -> bool {
                 | "unavailable_events"
                 | "pending_attempts"
                 | "queued_operations"
+                | "queued_bytes"
                 | "reserved_records"
                 | "reserved_bytes"
                 | "query_owners"
                 | "query_bytes"
+                | "recovery_pending"
+                | "stage_bytes"
         );
     }
     false
