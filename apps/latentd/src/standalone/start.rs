@@ -665,6 +665,7 @@ impl StandaloneNode {
         )?);
         let host_services = WasmtimeHostServices {
             capabilities: catalogs.capabilities.clone(),
+            currentness_read_wait: Some(Arc::new(latent_node::CurrentnessReadTimer)),
             clock: Arc::clone(&clock),
             log_sink: Some(Arc::new(TelemetryLogSink::new(
                 observer.clone(),
