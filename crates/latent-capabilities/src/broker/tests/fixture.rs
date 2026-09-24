@@ -102,7 +102,14 @@ impl Fixture {
         limits: CapabilityBrokerLimits,
         minimum_call_charges: &[ProviderBudgetRequirement<'_>],
     ) -> Self {
-        Self::configured(limits, minimum_call_charges, None, false, false)
+        Self::configured(
+            limits,
+            minimum_call_charges,
+            None,
+            false,
+            false,
+            Arc::new(SystemActivationClock),
+        )
     }
     pub fn audited(
         limits: CapabilityBrokerLimits,
@@ -110,7 +117,24 @@ impl Fixture {
         required: bool,
         observations: bool,
     ) -> Self {
-        Self::configured(limits, &[], Some(audit), required, observations)
+        Self::configured(
+            limits,
+            &[],
+            Some(audit),
+            required,
+            observations,
+            Arc::new(SystemActivationClock),
+        )
+    }
+    pub fn with_activation_clock(clock: Arc<dyn latent_core::ActivationClock>) -> Self {
+        Self::configured(
+            CapabilityBrokerLimits::default(),
+            &[],
+            None,
+            false,
+            false,
+            clock,
+        )
     }
     fn configured(
         limits: CapabilityBrokerLimits,
@@ -118,6 +142,7 @@ impl Fixture {
         audit: Option<latent_audit::AuditHandle>,
         required: bool,
         observations: bool,
+        clock: Arc<dyn latent_core::ActivationClock>,
     ) -> Self {
         let dir = TempDir::new().unwrap();
         let catalog = DirectoryArtifactRepository::open(
@@ -180,7 +205,7 @@ impl Fixture {
         let broker = ActivationCapabilityBroker::new(
             catalog.lifecycle_authority(),
             policies.clone(),
-            Arc::new(SystemActivationClock),
+            clock,
             limits,
         )
         .unwrap();

@@ -3,13 +3,13 @@ use latent_audit::*;
 use latent_core::{BudgetDimension, TenantId};
 use std::time::Instant;
 
-struct Journal {
-    handle: AuditHandle,
+pub(super) struct Journal {
+    pub(super) handle: AuditHandle,
     worker: AuditWorker,
     _dir: tempfile::TempDir,
 }
 impl Journal {
-    fn new(maximum_records: usize) -> Self {
+    pub(super) fn new(maximum_records: usize) -> Self {
         let dir = tempfile::tempdir().unwrap();
         let (handle, worker) = DirectoryPhase2AuditJournal::open(
             dir.path().join("audit"),
@@ -32,7 +32,7 @@ impl Journal {
             .join_until(Instant::now() + Duration::from_secs(2))
             .unwrap());
     }
-    async fn query(&self, tenant: &str) -> AuditPage {
+    pub(super) async fn query(&self, tenant: &str) -> AuditPage {
         let request = AuditQueryRequest {
             scope: AuditScope::Tenant(TenantId(tenant.into())),
             filter: AuditFilter::default(),
@@ -50,7 +50,7 @@ impl Journal {
             }
         }
     }
-    async fn drained(&self) {
+    pub(super) async fn drained(&self) {
         let deadline = Instant::now() + Duration::from_secs(2);
         while self.handle.snapshot().reserved_records != 0 && Instant::now() < deadline {
             tokio::task::yield_now().await;

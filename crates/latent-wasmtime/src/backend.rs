@@ -103,6 +103,7 @@ pub(crate) struct SharedRuntime {
     pub(crate) log_sink: BoundedLogSink,
     pub(crate) capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
     clock: Arc<dyn ActivationClock>,
+    currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,
     clock_origin: Instant,
     context_policy: Arc<ContextExposurePolicy>,
     resources: RuntimeResourceCounters,
@@ -187,6 +188,7 @@ impl SharedRuntime {
                 services.log_sink,
             ),
             capabilities: services.capabilities,
+            currentness_read_wait: services.currentness_read_wait,
             clock_origin: services.clock.monotonic_now(),
             clock: services.clock,
             context_policy: Arc::new(config.context_policy.clone()),
@@ -664,6 +666,7 @@ impl WasmtimeBackend {
         );
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
+        host_state.currentness_read_wait = self.shared.currentness_read_wait.clone();
         if self.config.java_guest {
             host_state.limiter.reserve_exception_heap()?;
         }
