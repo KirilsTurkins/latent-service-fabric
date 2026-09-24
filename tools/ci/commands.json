@@ -3247,7 +3247,7 @@
       "sha256": "f9cb042c1787805c8d31e4977f45d2079d5dcad0c02b732cd6994b56950b97ac"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "7bef04f6c9d0429aa95bbc53343de7ad94f20a4fc83e279341217efed1729455"
+      "sha256": "6e8f898736b6b7386dfd88e1c3c4faa00f6f831d03b80e96f99f29289ae23224"
     },
     "tools/qualify_typescript_capsules.py": {
       "sha256": "9ebcf28e77e5fa9bca9018d8e15afffac9e075427315ad334fa7fc7a8d4b4e44"

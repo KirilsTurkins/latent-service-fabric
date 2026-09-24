@@ -274,17 +274,22 @@ class AuditDrainTests(unittest.TestCase):
             self.assertFalse(_alive(owners[0].process.pid))
 
     def test_helper_and_dependencies_are_captured_and_guide_deletes_only_once(self):
+        from tools import qualify_java_capsules
         with patch.object(qualify_rust_capsules, "source_identity", return_value={}), \
                 patch.object(qualify_rust_capsules, "directory_identity", return_value={}), \
                 patch.object(qualify_rust_capsules, "file_identity", return_value={}):
-            helpers = qualify_rust_capsules.inputs("dotnet")["helpers"]
-        self.assertTrue({"wait_capsule_audit_idle.py", "build_process.py", "build_process_linux.py",
-                         "build_process_windows.py", "build_process_signals.py"}.issubset(helpers))
-        source = (qualify_rust_capsules.ROOT / "docs/component-development/dotnet-authoring.md").read_text()
-        blocks = re.findall(r"^```bash\n(.*?)^```$", source, re.M | re.S)
-        self.assertEqual(len(blocks), 6)
-        self.assertEqual(source.count("dotnet_cli deployment delete"), 1)
-        self.assertLess(blocks[-1].index("tools/wait_capsule_audit_idle.py"), blocks[-1].index("dotnet_cli deployment delete"))
+            captured = {language: qualify_rust_capsules.inputs(language)["helpers"] for language in ("dotnet", "go")}
+        captured["java"] = qualify_java_capsules.JAVA_HELPERS
+        for language, helpers in captured.items():
+            with self.subTest(language=language):
+                self.assertTrue({"wait_capsule_audit_idle.py", "build_process.py", "build_process_linux.py",
+                                 "build_process_windows.py", "build_process_signals.py"}.issubset(helpers))
+                source = (qualify_rust_capsules.ROOT / f"docs/component-development/{language}-authoring.md").read_text()
+                blocks = re.findall(r"^```bash\n(.*?)^```$", source, re.M | re.S)
+                self.assertEqual(len(blocks), 6)
+                deletion = language + "_cli deployment delete"
+                self.assertEqual(source.count(deletion), 1)
+                self.assertLess(blocks[-1].index("tools/wait_capsule_audit_idle.py"), blocks[-1].index(deletion))
 
 
 if __name__ == "__main__":
