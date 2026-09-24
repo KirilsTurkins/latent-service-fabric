@@ -6,6 +6,104 @@ requires the complete real-node and printed-guide gate at the final PR head.
 No partial observation below authorizes a release or replaces human newcomer
 review #345.
 
+## Current integration gate and retained contention failures
+
+The candidate `7376f20696e67982505e21b4356622260afbf4c9` is **not qualified
+for merge**. Its [Go run 35987802416](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987802416)
+passed all ten actual SDK cases in 75.45 seconds, including warm service calls
+that kept two owned fetch attempts and two completed compiler jobs while cache
+hits increased from zero to two and four. The enforced node subsequently failed
+the second word-count invocation with known, non-retryable `guest-trap` and the
+closed `admission.currentness` reason `admission-authority-busy`. Consumption was
+2,264 fuel, 2,424,832 peak guest-memory bytes, 1,808 receipt microseconds and no
+child calls. Four greeting calls and the first word-count call had completed.
+
+The [failed artifact 10803765513](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987802416/artifacts/10803765513)
+matches 2,353 pre-execution Git inputs. Its captured component imports and host
+error path identify one of the monotonic or wall-clock scalar admissions;
+random-provider errors do not use this host-trap path. The exact clock import,
+bind/dispatch checkpoint and concurrent authority-fence holder were not
+observed. This is an active host failure, not the older queued-readiness failure.
+It has no completed node/guide or after-execution integrity result. The separate
+[source archive](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987802416/artifacts/10802971929)
+matches 4,119 selected Git files and modes (40,181,202 bytes), SHA-256
+`045be106204c1568edc4e9f6af449f43ac1ead620ccc1ba269ef631e6bc19520`.
+CI merge `a702ffa587cf757052ca79dcdd7d8c86e740cd59` and the candidate share tree
+`c4dea742013870481039be6cb10b4476284df706`.
+
+A separate [development run 35987381210](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987381210)
+at actual squash `8f08f7a95dbd68aebc525120645a27dc5ab85e14` failed in the SDK
+service case before reaching node qualification. This is the same tree as the
+previously passing shared-runtime head `67763cdc`; the later failure is retained,
+not replaced by that earlier success. Its [artifact 10803795740](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987381210/artifacts/10803795740)
+matches 2,352 pre-execution inputs. Nine SDK cases passed and one failed in
+129.57 seconds. The first permitted child ended `DependencyFailed / Unavailable`
+at `Queued`, with zero fuel and memory, 656 receipt microseconds and the closed
+`AdmissionAuthorityBusy` diagnostic. Two cold jobs started: one completed and
+one failed before the child's metadata fingerprint. No worker or readiness
+gauges remained outstanding. Owned fetch-attempt counters increment before
+dispatch and do not prove a physical disk read occurred.
+
+The latter failure is confined to the original worker eligibility check or a
+source-fetch currentness checkpoint before metadata fingerprinting. It does not
+identify the exact checkpoint or competing holder. Neither attempt was rerun.
+The previously added caller-side readiness wait deliberately left worker checks
+and active host imports immediately fail-closed; these failures establish two
+additional boundaries that need separate corrections and fresh qualification.
+Changing the authority mutex, renewing proofs, replaying compilation or retrying
+an entire capability call would not establish a safe fix. In particular, bind
+and call setup can already own audit records, IDs and budget reservations.
+
+The unchanged TypeScript candidate's [Go cross-check 35987595339](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595339)
+passed all ten SDK cases (148.34 seconds), 27 node outcomes, 24 resource samples
+and six guide steps (18.06 seconds), with clean/reaped owners and unchanged
+source/tool identities. Its [artifact 10803063191](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595339/artifacts/10803063191)
+matches 2,353 captured inputs; that workflow does not retain a separate full
+source archive. This positive comparison does not qualify the failed Go head
+or remove the shared-runtime review hold on the two remaining PRs.
+
+## Bounded worker and clock correction
+
+The follow-up changes only two demonstrated pre-effect boundaries. Opt-in
+sealed-source compiler jobs retain one real-monotonic five-second window from
+job creation, including queue and compilation time. Only pure currentness
+checks wait; disk verification, hashing, compilation, linking and cache adoption
+are not replayed. The selected original grant cannot be upgraded by catalog
+renewal. The last waiter or pool shutdown signals the existing worker to stop
+waiting while real source/document owners remain retained until task retirement.
+Generic/native preparation and web inner fetches keep their existing behavior.
+
+Clock admission uses an explicitly supplied node timer and one deadline-capped
+window across binding and work admission. A bounded pending owner retains the
+same row, IDs, audit owner and refundable 100-fuel charge. An entered callback
+is never repeated, including when an authority returns Busy after invoking it.
+No clock sample, monotonic guest observation or provider effect is retried.
+Both APIs retain their legacy immediate paths when no timer is supplied.
+The detailed ownership and scope contract is in
+[package admission](../reference/package-admission.md#clock-leases-retries-and-fresh-admission).
+
+Worker source `6491ab56bca6a0f0a1e844fee3680d998a03274d`, tree
+`329eebbe9f9bf404c9de3ea0595ccd7936d672e4`, passed 55 focused Linux cases,
+including seventeen new regressions and 38 prior readiness, authority and
+compiler-ownership cases, with zero failures or ignored cases. The same actual
+signed-fence test failed when only worker opt-in was disabled, and passed with
+the correction. The successful path verified one physical component read/hash,
+one compilation/link and one completed job. Tests also cover queue-expired
+windows, cancellation/coalescing, original-grant expiry/revocation, foreign
+catalog grants, malformed errors and actual owner reclamation. The final green
+source archive SHA-256 is
+`70e4f26034c259450b39c77091b8faafc1b2d6519bef99f03750ca6076c0e7df`;
+its execution log is
+`ac4dd37f662b9946d78d6f5ae6af56085ee19ff1f4883c6acee18b47952e9daa`.
+This bounded run used the retained Linux image with two CPUs, 8 GiB memory,
+two Cargo jobs, no network and no image pull. The initial missing test-trait
+import and the deterministic negative run are retained separately.
+
+These are focused regression results, not SDK or final-head qualification.
+Clock Linux tests, integrated validation and fresh complete CI remain required
+before either pending ticket PR is merged. Runtime release HOLD and human
+newcomer review #345 are unchanged.
+
 ## Verified execution and measurements
 
 [Run 35935390363](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35935390363)

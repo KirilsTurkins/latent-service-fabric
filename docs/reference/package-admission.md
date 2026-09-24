@@ -210,15 +210,46 @@ stay pinned, and the original cancellation, transport stop and activation
 deadline still govern the same future. This wait does not renew a lease or
 refresh a grant. Revocation, expiry, poison and other failures remain immediate.
 
-Compiler admission, document reservations, job start/await, arbitrary repository
-callbacks, materialization and guest execution are not replayed. Synchronous
-compiler-worker currentness checks and final activation-start fences remain
-independently fail-closed; the caller-side wait does not cover those stages.
-A long cold compilation can exhaust the shared window before the final
-readiness check. The executor-neutral preparation API requires an explicit
-caller timer to opt in; the original API retains its nonblocking behavior and
-does not assume an ambient Tokio runtime. No detached task, per-release owner,
-new worker or additional execution reservation is created by the wait.
+An opt-in sealed-source compiler job has a separate real-monotonic five-second
+window, minted once when its bounded job owner is created. Queue and compilation
+time consume that window; coalesced callers cannot renew it. Only pure worker
+eligibility checks and sealed selected-source currentness observations before
+and after the one verified byte read may wait. The original grant is rechecked
+on both sides of each selected-source observation; catalog renewal cannot
+upgrade it. Each pause releases all guards and sleeps for at most ten
+milliseconds on the existing fixed worker. The last departing waiter or pool
+shutdown stops further waiting. A surviving coalesced waiter keeps the original
+job, not a replacement. Job/source/document ownership remains charged until
+the actual task retires; the fixed-size control is bounded by the existing job
+limit and is not cached runtime metadata or a dormant service owner.
+
+Compiler admission, document reservations, job start/await, byte reads and
+hashes, compilation, linking, cache adoption, arbitrary repository callbacks,
+materialization and guest execution are not replayed. Generic repository and
+native preparation, web inner fetches, materialization and final execution-start
+fences keep their existing immediate behavior. A long cold compilation can
+consume either readiness window before a later check. The executor-neutral
+preparation API requires an explicit caller timer to opt in; the original API
+retains its nonblocking behavior and does not assume an ambient Tokio runtime.
+No detached task, per-release owner, new worker or extra execution reservation
+is created. Worker scheduling never polls the caller's timer or assumes its
+time domain matches the worker's real monotonic clock.
+
+The managed node also supplies its existing executor timer explicitly to the
+two in-process clock imports. Their pre-effect binding and call admission may
+wait only for the same exact closed Busy reason, under one shared five-second
+window capped by the original activation and call deadlines. One bounded
+pending-call owner, handle, work ID, audit owner and refundable 100-fuel charge
+remain owned across those checks. The eight-byte output limit is unchanged.
+Each final authority callback has an entered latch: once entered, even a later
+Busy result cannot replay publication or budget commitment. No clock is sampled
+and no monotonic observation state advances until admission succeeds. Grant and
+work audit observations are emitted once, not once per read attempt. Cancellation,
+expiry, revocation, provider retirement and future drop retain their original
+authority/cleanup boundaries; waiting cannot renew proofs or extend deadlines.
+Required-audit clock policies are still rejected by the synchronous host
+contract. Other provider calls are not retried. Without an explicitly supplied
+timer, clock imports retain the original immediate fail-closed path.
 
 Internal lock diagnostics distinguish temporary `admission-authority-busy`
 contention from `admission-authority-poisoned`. Both preserve the existing public

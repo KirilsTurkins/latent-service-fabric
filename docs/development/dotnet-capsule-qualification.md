@@ -4,8 +4,48 @@ This is developer execution evidence for #549, separate from the beginner
 [C# authoring guide](../component-development/dotnet-authoring.md). It does not
 authorize a release or replace human newcomer review #345. The complete finite
 qualification and its clean-source repeat passed at the sources recorded below.
-Final delivery still requires the integrated development base and all exact-head
-PR gates to pass.
+PR #557 was squash/admin merged into `development` after all eight exact-head
+workflows and 24 PR check rows passed. Ticket #549 is closed with all thirteen
+criteria satisfied. Later shared-runtime regression failures remain separate
+retained evidence and do not authorize merging an unqualified follow-up.
+
+## Delivered source and evidence
+
+The final reviewed head `67763cdc122f270733d75639a6aa4eb9e4aaaa13` and actual
+development squash `8f08f7a95dbd68aebc525120645a27dc5ab85e14` have identical
+tree `9a63049d798845f70eeb1344b7a39ad0e131bb36`. The complete
+[.NET qualification 35981797862](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35981797862)
+and [broad CI 35981798865](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35981798865)
+passed together with all language and security cross-checks before the
+[PR #557 merge](https://github.com/KirilsTurkins/latent-service-fabric/pull/557).
+Source/execution evidence and the final gate audit were posted before closing
+[#549](https://github.com/KirilsTurkins/latent-service-fabric/issues/549).
+
+[Execution artifact 10800703843](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35981797862/artifacts/10800703843)
+matches 2,367 Git inputs, including exactly 45 SDK sources and no generated SDK
+files; before/after source and all five host-binary identities match. All fifteen
+builds, both NativeAOT probes, seven owner tests, ten actual SDK cases (96.06
+seconds), five secret assertions, 27 node outcomes, 24 resource samples and six
+printed Bash steps (29.01 seconds) passed. Seventeen node deployments and the
+guide deployment were each deleted once. Node, compiler, cleanup and HTTP-peer
+owners were cleanly reclaimed and joined. Qualification SHA-256 is
+`517332dd681f340e535018c7257625f24ab8de6a7028706c3bece267b9dc276f`.
+
+The separate [source archive 10799987822](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35981797862/artifacts/10799987822)
+matches 4,129 selected Git files and modes (40,127,766 bytes), SHA-256
+`5a1057186817fa6b10a3c2bb062c74abae38e34d1f5ede528093d07a16fa424d`.
+Broad CI's [discovery/execution artifact 10801848873](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35981798865/artifacts/10801848873)
+lists 175 registered targets and 2,812 active cases; those are discovery counts,
+not a claim that discovery itself executes tests. Its actual execution log
+separately confirms all twenty added readiness/timer/ownership regressions,
+17 local-service cases and seven closed-diagnostic integration cases.
+
+The later development Go run and final Go candidate exposed two additional
+currentness-contention boundaries despite the earlier green shared head. Their
+[retained failure analysis](go-capsule-qualification.md#current-integration-gate-and-retained-contention-failures)
+keeps the compiler-worker and active clock failures distinct. Neither is a
+reclassification of the older .NET shipping trap, whose private cause was not
+captured. Human newcomer review #345 and runtime release HOLD remain separate.
 
 ## Supported experiment
 
@@ -35,14 +75,17 @@ These are finite experiment bounds, not throughput or production sizing claims.
 
 ## Qualification history and current gate
 
-The follow-up readiness correction uses an explicitly supplied activation-owned
+The readiness correction delivered with PR #557 uses an explicitly supplied activation-owned
 timer for sealed, read-only currentness observations. Only the exact closed
 `admission-authority-busy` result can wait, within one shared five-second window
 and the unchanged original activation deadline and cancellation. Original grants
 are rechecked before the single pool acquisition; no compilation, fetch, mutation
 or invocation is replayed. Legacy callers remain executor-neutral and immediately
-fail closed. Compiler-worker, materialization and execution-start checks are
-unchanged. See [package admission](../reference/package-admission.md).
+fail closed. That delivered correction left compiler-worker, materialization and
+execution-start checks unchanged. The later worker/clock correction is recorded
+separately in the [Go qualification report](go-capsule-qualification.md#current-integration-gate-and-retained-contention-failures)
+and [package-admission contract](../reference/package-admission.md); its new
+source requires separate exact-head qualification.
 
 An actual signed-catalog fence reproduces a deterministic failing warm-readiness
 case without the opt-in wait and passes with it. Twelve new Linux regressions and
