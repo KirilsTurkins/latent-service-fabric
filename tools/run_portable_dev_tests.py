@@ -97,6 +97,14 @@ def verify(host: Path, echo: Path, generic: Path, providers: Path | None = None)
         require([item["error"]["code"] for item in actual[4:8]] ==
             ["guest-trap", "fuel-exhausted", "memory-exhausted", "deadline-exceeded"], "actual-budget-interruptions")
         require(actual[-1]["storesCreated"] == str(len(tests)), "fresh-store-count")
+        frozen = run(host, cwd, native, encode(manifest), paths.read(fixture, "generic-contracts.json"),
+            [call("fixed-clock-deadline", "spin", fuel="10000000000", timeout=20),
+             call("fixed-clock-cancelled", "bump", cancel=True), call("fixed-clock-recovered", "bump")],
+            fixtures={"clock": {"monotonicNanos": "0", "wallUnixMillis": "18446744073709551615"}})
+        require(frozen["clock"] == "fixed-guest-readings-fixture"
+                and frozen["controlClock"] == "system-clock-nondeterministic"
+                and [item["error"]["code"] for item in frozen["results"][:2]] == ["deadline-exceeded", "cancelled"]
+                and payload(frozen["results"][2]) == b"[1]", "fixed-guest-clock-must-not-freeze-deadline-or-cancellation")
         # A syntactically valid unsupported import is rejected before preparation,
         # even though the supplied component bytes themselves are executable.
         rejected = decode(echo_manifest)
@@ -142,7 +150,7 @@ def verify(host: Path, echo: Path, generic: Path, providers: Path | None = None)
             "environment": "portable", "outsideCheckout": True, "compilerInExecutionPath": False,
             "execution": "actual-component-production-wasmtime", "publisherAuthenticated": False,
             "qualification": "rust-native-subset-only", "cleanup": "owned-processes-reaped",
-            "echo": result, "generic": generic_result, "providers": provider_results,
+            "echo": result, "generic": generic_result, "fixedGuestClockControl": frozen, "providers": provider_results,
             "sharedScenarioAdapter": shared, "requiredLinuxScenario": blocked,
             "unsupportedImportRejected": True}
 

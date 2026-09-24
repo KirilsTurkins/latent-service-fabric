@@ -55,3 +55,49 @@ fn test_owner_rejects_mismatched_bytes_and_tenant() {
     changed.manifest.metadata.tenant = Some(TenantId("other".into()));
     assert!(DevelopmentTestArtifact::new(changed, TenantId("tests".into())).is_err());
 }
+
+#[test]
+fn guest_clock_fixture_is_explicit_full_width_and_rejects_ambiguous_values() {
+    use crate::request::ClockFixture;
+    let fixture = ClockFixture {
+        monotonic_nanos: u64::MAX.to_string(),
+        wall_unix_millis: "0".into(),
+    };
+    let readings = fixture.readings().unwrap();
+    assert_eq!(readings.monotonic_nanos, u64::MAX);
+    assert_eq!(readings.wall_unix_millis, 0);
+    for value in ["", "-1", "+1", "01", "1.0", "18446744073709551616"] {
+        assert!(ClockFixture {
+            monotonic_nanos: value.into(),
+            wall_unix_millis: "0".into(),
+        }
+        .readings()
+        .is_err());
+    }
+    assert!(
+        serde_json::from_str::<ClockFixture>(r#"{"monotonicNanos":0,"wallUnixMillis":"0"}"#)
+            .is_err()
+    );
+    assert!(serde_json::from_str::<ClockFixture>(
+        r#"{"monotonicNanos":"0","wallUnixMillis":"0","controlClock":true}"#
+    )
+    .is_err());
+}
+
+#[test]
+fn guest_clock_fixture_cannot_select_an_external_capsule_profile() {
+    use latent_wasmtime::{DevelopmentClockReadings, ExecutionIsolationProfile, WasmtimeConfig};
+    let mut config = WasmtimeConfig {
+        development_clock_readings: Some(DevelopmentClockReadings {
+            monotonic_nanos: 0,
+            wall_unix_millis: u64::MAX,
+        }),
+        ..WasmtimeConfig::default()
+    };
+    config.validate().unwrap();
+    config.execution_isolation_profile = ExecutionIsolationProfile::ExternalCapsule;
+    assert!(config.validate().is_err());
+    assert!(WasmtimeConfig::default()
+        .development_clock_readings
+        .is_none());
+}

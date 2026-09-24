@@ -214,6 +214,12 @@ pub async fn run(request: Request) -> Result<Value, &'static str> {
     let mut providers =
         crate::providers::Providers::new(&owned, &request.fixtures, &request.calls)?;
     let mut config = WasmtimeConfig {
+        development_clock_readings: request
+            .fixtures
+            .clock
+            .as_ref()
+            .map(super::request::ClockFixture::readings)
+            .transpose()?,
         maximum_memory_bytes: request.runtime_profile.maximum_memory(),
         maximum_fuel: 10_000_000_000,
         prepared_cache_maximum_entries: 1,
@@ -339,9 +345,10 @@ pub async fn run(request: Request) -> Result<Value, &'static str> {
         json!({"schemaVersion":"latent.dev.portable-result.v1","environment":"portable",
         "trust":"controlled-development-test", "productionNode":false,"category":"success",
         "runtimeProfile":request.runtime_profile,
-        "clock":"system-clock-nondeterministic","entropy":providers.entropy,
+        "clock":if request.fixtures.clock.is_some() { "fixed-guest-readings-fixture" } else { "system-clock-nondeterministic" },
+        "controlClock":"system-clock-nondeterministic", "entropy":providers.entropy,
         "fixtures":{"sha256":fixture_digest.0,"random":request.fixtures.entropy.is_some(),
-            "metrics": !request.fixtures.metrics.is_empty(),"http":request.fixtures.http.is_some()},
+            "clock":request.fixtures.clock,"metrics": !request.fixtures.metrics.is_empty(),"http":request.fixtures.http.is_some()},
         "httpFixtureRequests": providers.http_requests,"metrics":metrics,
         "component":artifact.descriptor.release_digest.0,"os":std::env::consts::OS,"architecture":std::env::consts::ARCH,
         "wasmtime":latent_wasmtime::WASMTIME_VERSION,"supportedImports":IMPORTS,"results":results,

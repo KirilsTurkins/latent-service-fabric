@@ -83,7 +83,12 @@ def main() -> int:
     pins = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
     tools, _ = resolve_tools(pins, ROOT, environment)
     node_arguments = ["-p", "latentd", "--bin", "latentd", "-p", "latent-wasmtime", "--bin", "latent-aot-compiler"] if args.node_tests else []
-    run("host-tools", tools["cargo"], "build", "--locked", "-p", "latent-packaging", "--example", "capsule_contracts",
+    # Reuse the language owner's reviewed compiler-hot-path profile. A plain
+    # unoptimized Cranelift build cannot prepare SpiderMonkey within the actual
+    # activation deadline; the debug assertions and guest budgets remain intact.
+    node_profile = ROOT / ".cargo/managed-guest.toml"
+    configuration = ["--config", node_profile] if args.node_tests else []
+    run("host-tools", tools["cargo"], *configuration, "build", "--locked", "-p", "latent-packaging", "--example", "capsule_contracts",
         "-p", "latent-policy", "--example", "capsule_authoring",
         "-p", "latent", "--bin", "latent", *node_arguments)
     run("strip-operator", "strip", "-o", output / "latent-test", target / "debug/latent")
@@ -98,6 +103,7 @@ def main() -> int:
         binaries = {name: file_digest(node / "bin" / name)[0] for name in ("latent", "latentd", "latent-aot-compiler")}
         record = {"purpose": "source-application-node-tests", "publisherAuthenticated": False,
             "sourceCommit": commit, "sourceDirty": dirty,
+            "buildProfile": {"name": "dev", "overrides": ".cargo/managed-guest.toml", "sha256": file_digest(node_profile)[0]},
             "version": tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"],
             "binaries": binaries, "helperSha256": helper(node / "helper.pyz"),
             "engine": {"hostAbiProfile": HOST_ABI, "wasmtimeVersion": pins["rust"]["dependencies"]["wasmtime"],

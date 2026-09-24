@@ -245,6 +245,8 @@ pub(crate) struct HostState {
     pub(crate) currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,
     clock_origin: Instant,
     last_monotonic_nanos: u64,
+    #[cfg(feature = "development-clock-fixture")]
+    development_clock_readings: Option<crate::config::DevelopmentClockReadings>,
     host_call_timing: HostCallTiming,
     pub(crate) capabilities: capabilities::HostCapabilities,
 }
@@ -290,6 +292,8 @@ impl HostState {
             currentness_read_wait: None,
             clock_origin,
             last_monotonic_nanos: 0,
+            #[cfg(feature = "development-clock-fixture")]
+            development_clock_readings: config.development_clock_readings,
             host_call_timing: HostCallTiming::default(),
             capabilities: capabilities::HostCapabilities::default(),
         }

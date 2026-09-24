@@ -3583,6 +3583,8 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "tests::guest_clock_fixture_cannot_select_an_external_capsule_profile",
+        "tests::guest_clock_fixture_is_explicit_full_width_and_rejects_ambiguous_values",
         "tests::test_owner_rejects_mismatched_bytes_and_tenant",
         "tests::test_owner_seals_are_distinct_and_retire_on_drop"
       ],
@@ -3591,7 +3593,7 @@
       "ignoredLeaves": [],
       "kind": "bin",
       "manifest": "tools/portable-test-host/Cargo.toml",
-      "minimumCases": 2,
+      "minimumCases": 4,
       "mode": "libtest",
       "package": "latent-portable-test-host",
       "platforms": [

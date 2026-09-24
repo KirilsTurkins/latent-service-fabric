@@ -6,10 +6,11 @@ from contextlib import ExitStack
 import os
 from pathlib import Path
 import platform
+import re
 import time
 
 from . import bundle, paths, process, project, scenarios, state
-from .common import HOST_ABI, decode, digest, encode, require
+from .common import HOST_ABI, decode, digest, encode, members, require
 
 SUPPORTED = scenarios.PORTABLE
 
@@ -22,10 +23,15 @@ def fixture_inputs(source: Path, fixtures: list[dict]) -> dict | None:
         raw = paths.read(source, fixture["configuration"], 256 * 1024)
         require(digest(raw) == fixture["identity"], "portable-fixture-identity")
         value = decode(raw, 256 * 1024)
-        require(isinstance(value, dict) and value and value.keys() <= {"entropy", "metrics", "http"},
+        require(isinstance(value, dict) and value and value.keys() <= {"clock", "entropy", "metrics", "http"},
                 "portable-fixture-configuration")
         require(not selected.keys() & value.keys(), "duplicate-portable-provider-fixture")
         require((fixture["kind"] == "controlled-peer") == (set(value) == {"http"}), "portable-fixture-kind")
+        if "clock" in value:
+            clock = members(value["clock"], {"monotonicNanos", "wallUnixMillis"})
+            require(all(isinstance(reading, str) and re.fullmatch(r"0|[1-9][0-9]{0,19}", reading)
+                        and int(reading) <= 18446744073709551615 for reading in clock.values()),
+                    "invalid-guest-clock-fixture")
         selected.update(value)
     return selected
 

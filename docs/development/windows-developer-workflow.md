@@ -211,7 +211,7 @@ policy evaluator as the node. Optional decimal-string `fuel`
 and `memoryBytes`, Boolean `cancelBeforeStart`, and `timeoutMillis` narrow the
 selected component's limits. Required Linux-only checks remain failures.
 The report states actual OS, architecture, Wasmtime version, component digest,
-cleanup, system-clock nondeterminism and omitted node/security behavior.
+cleanup, explicit guest clock/entropy fixtures and omitted node/security behavior.
 
 The closed `latent.dev.portable-request.v1` import profile is:
 
@@ -219,7 +219,7 @@ The closed `latent.dev.portable-request.v1` import profile is:
 | --- | --- |
 | `latent:context/context@0.1.0` | Production activation context, explicit per-call grant |
 | `latent:log/log@0.1.0` | Production bounded activation log sink |
-| `latent:clock/monotonic@0.1.0`, `latent:clock/wall@0.1.0` | Production system clocks; reported as nondeterministic |
+| `latent:clock/monotonic@0.1.0`, `latent:clock/wall@0.1.0` | Production authorization and accounting; system readings or explicit fixed guest readings |
 | `latent:random/random@0.1.0` | Production provider; system entropy or an explicitly selected repeatable byte fixture |
 | `latent:telemetry/custom@0.1.0` | Production metric provider, bounded declared metric/label sets and joined exporter |
 | `latent:http/client@0.2.0` | Production HTTP provider, one owned IPv4 loopback peer, exact approved methods/paths and reply bytes |
@@ -235,7 +235,7 @@ call and 2 MiB aggregate results. Native compilation remains a controlled-worklo
 operation; these guest limits are not compiler or whole-process RSS containment.
 
 A scenario fixture may include `configuration`, a relative project file, and its
-exact `sha256:` digest in `identity`. A `test-adapter` file contains `entropy`
+exact `sha256:` digest in `identity`. A `test-adapter` file contains `clock`, `entropy`
 (base64 bytes, 1–4096 bytes) or `metrics` (up to 16 production metric descriptors).
 A `controlled-peer` file contains `http`, with an explicit unprivileged `port` and
 up to 16 `exchanges`. Each exchange declares `method`, `path`, base64 `requestBody`,
@@ -246,6 +246,18 @@ reach the peer. The receipt identifies selected fixtures and their digest.
 Fixture changes start a separate owned helper, preserve scenario order and never
 silently change an adjacent scenario's entropy or replies. At most eight such
 groups run in one selection. Shared scenario assertions remain byte-exact.
+
+The optional `clock` object has exactly `monotonicNanos` and `wallUnixMillis`,
+both canonical decimal strings from `"0"` through `"18446744073709551615"`.
+Each guest clock import returns its selected constant after the ordinary
+capability authorization and budget charge. The report labels these as
+`fixed-guest-readings-fixture`; `controlClock` remains the real system clock.
+The `development-clock-fixture` Cargo feature is disabled by default and cannot
+be selected with an external-capsule profile. It does not change admission,
+certificate validity, provider currentness, scheduler time, activation deadlines,
+fuel or cancellation. Without a clock fixture, guest readings use the system
+clock. The current installed node adapter does not yet expose this fixture;
+portable clock results cannot establish node differential qualification.
 
 ## Editor tasks and compiler locations
 
@@ -468,6 +480,10 @@ the shared scenarios, and a retained restart without redeployment. The node and
 compiler test must use the same observed packager. Interrupted or uncertain
 cleanup retains the private workspace and fails the report. These source checks
 do not authenticate a candidate or establish clean-host qualification.
+The node build uses the existing `.cargo/managed-guest.toml` compiler-library
+optimization overrides, records their digest and retains host debug assertions.
+An earlier unoptimized TypeScript node exhausted its cold activation deadline;
+the test retains the same finite activation budget with the reviewed build profile.
 
 The Windows native owner consumes the exact compiled bytes and node reports with
 `--require-node-parity`. It compares typed values, platform errors, the explicit
@@ -479,6 +495,29 @@ failures and declared application errors are separate outcomes. The existing
 native Linux owner compares the same applications with Windows. A required
 Linux-only scenario prevents any portable execution; selecting only the common
 case is an explicit separate run.
+
+The later [common source observation](common-node-source-observation.json)
+records all six languages and all 18 tutorials: 72 shared node scenarios matched
+the exact component bytes on native Windows, and 18 retained restarts invoked
+without republishing or redeploying. This includes explicit runtime-policy denial
+and fresh-state recovery for Go, Java and C#. Compiler failure, cache reuse and
+changed-source checks ran in the same application-build owner. The receipt
+retains earlier assertion failures and the unoptimized TypeScript CI failure.
+These are source observations with the actual runtime and report identities;
+authenticated installation and clean-host qualification remain open.
+
+The later native clock-fixture checks execute the actual Rust and C capability
+components on Windows and the Rust component on Linux. Both extreme `u64`
+readings (`0` and `18446744073709551615`) retain their exact typed bytes in
+separate shared-scenario fixture groups. A frozen guest clock does not prevent
+the real deadline or cancellation from interrupting execution, and the next
+invocation starts with fresh state. The Windows executable digest is
+`sha256:6674ca8ada67edeeba1d8ec19c6dad376f3277ebecdaaf8305d4a66de70c1e3d`;
+the Linux executable digest is
+`sha256:22c207e081de73115ed4510d10db736b1ab23db4a256015394ec747ac46b1603`.
+These are source-built portable-host observations. The installed Linux node
+does not yet expose this clock fixture, so these runs do not establish the
+required node/portable deterministic-provider comparison.
 
 `tools/dev_node_fault_probe.py` is a contributor fault-injection harness, separate
 from the shipped helper. Run it only as the explicitly selected `test-` workspace's
@@ -498,7 +537,7 @@ not establish receipt expiration. The harness never marks qualification complete
 | #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
 | #564 | Complete malformed/admission failure, rapid edits, in-flight revision, revocation and expired-receipt cases; repeat the observed source watch/recovery schedule with final authenticated packages. |
 | #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |
-| #566 | Complete explicit clock fixtures, verified native distribution and real Linux-node differential execution; CI includes all six languages' native tutorial outputs. |
+| #566 | Complete node-side deterministic clock fixtures, verified native distribution and the provider/failure differential; all six languages have source tutorial comparisons. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
 | #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
 

@@ -495,6 +495,21 @@ class ScenarioReports(unittest.TestCase):
             self.assertFalse(calls)
             self.assertIn(b'<failure message="unsupported"', scenarios.junit(report))
 
+    def test_clock_fixture_preserves_u64_and_rejects_invalid_readings_before_execution(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for ordinal, reading in enumerate(("0", "18446744073709551615", "01", "-1", "+1", "", "18446744073709551616", 1, 1.0)):
+                value = {"clock": {"monotonicNanos": reading, "wallUnixMillis": "0"}}
+                raw = common.encode(value)
+                name = f"fixture-{ordinal}.json"
+                paths.write_new(root / name, raw)
+                fixture = {"id": "clock", "kind": "test-adapter", "identity": common.digest(raw), "configuration": name}
+                if ordinal < 2:
+                    self.assertEqual(portable.fixture_inputs(root, [fixture]), value)
+                else:
+                    with self.assertRaisesRegex(common.DevError, "invalid-guest-clock"):
+                        portable.fixture_inputs(root, [fixture])
+
     def test_missing_qualification_never_passes(self):
         with self.assertRaisesRegex(common.DevError, "receipts-missing"):
             qualification.validate({"schemaVersion": "latent.dev.qualification.v1", "scope": "windows-only",

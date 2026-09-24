@@ -35,10 +35,37 @@ pub const IMPORTS: [&str; 7] = [
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Fixtures {
+    pub clock: Option<ClockFixture>,
     pub entropy: Option<String>,
     #[serde(default)]
     pub metrics: Vec<latent_telemetry::custom::CustomMetricDescriptor>,
     pub http: Option<super::http_fixture::Fixture>,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ClockFixture {
+    pub monotonic_nanos: String,
+    pub wall_unix_millis: String,
+}
+
+impl ClockFixture {
+    pub fn readings(&self) -> Result<latent_wasmtime::DevelopmentClockReadings, &'static str> {
+        fn value(raw: &str) -> Result<u64, &'static str> {
+            if raw.is_empty()
+                || raw.len() > 20
+                || !raw.bytes().all(|byte| byte.is_ascii_digit())
+                || raw.len() > 1 && raw.starts_with('0')
+            {
+                return Err("invalid-guest-clock-fixture");
+            }
+            raw.parse().map_err(|_| "invalid-guest-clock-fixture")
+        }
+        Ok(latent_wasmtime::DevelopmentClockReadings {
+            monotonic_nanos: value(&self.monotonic_nanos)?,
+            wall_unix_millis: value(&self.wall_unix_millis)?,
+        })
+    }
 }
 
 #[derive(Deserialize)]
@@ -101,6 +128,9 @@ impl Request {
             return Err("unsupported-portable-request");
         }
         let mut ids = std::collections::BTreeSet::new();
+        if let Some(clock) = &self.fixtures.clock {
+            clock.readings()?;
+        }
         if let Some(http) = &self.fixtures.http {
             http.validate()?;
         }

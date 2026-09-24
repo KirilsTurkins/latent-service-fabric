@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import base64
+import errno
 import json
+import os
 from pathlib import Path
 import socket
 
@@ -31,6 +33,7 @@ def verify(host: Path, cwd: Path, guests: Path) -> dict:
     logged = json.loads(payload(builtins["results"][2]))[0]
     require(logged["outcome"] == {"ok": True} and int(logged["after"]) < int(logged["before"])
             and len(builtins["results"][2]["logs"]) == 1, "production-log-and-budget-observation")
+    fixed_clocks = clock_scenarios(host, cwd, directory, builtin_grants)
     def probe(name, which, text="", *, granted=True, cancel=False, denied=False):
         capability = {"random": "latent:random/random@0.1.0", "metrics": "latent:telemetry/custom@0.1.0",
                       "http": "latent:http/client@0.2.0"}[name]
@@ -88,9 +91,17 @@ def verify(host: Path, cwd: Path, guests: Path) -> dict:
     require(values[3]["error"]["code"] == "incompatible-contract" and values[4]["error"]["code"] == "cancelled", "http-binding-and-cancellation")
     require(payload(values[6]) == b'["10"]', "http-policy-denial")
     require(http["httpFixtureRequests"] == 3, "denied-and-cancelled-http-never-reached-peer")
-    # A completed helper must have released its bound port as well as its job.
+    # A completed helper must have released its listener as well as its job.
+    # Linux may retain closed connections in TIME_WAIT, so immediate rebinding
+    # does not distinguish a live listener from already released connections.
     with socket.socket() as reclaimed:
-        reclaimed.bind(("127.0.0.1", port))
+        if os.name == "nt":
+            reclaimed.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            reclaimed.bind(("127.0.0.1", port))
+        else:
+            reclaimed.settimeout(1)
+            require(reclaimed.connect_ex(("127.0.0.1", port)) == errno.ECONNREFUSED,
+                    "http-fixture-listener-not-released")
     # Exercise explicit fixture selection through the same scenario adapter used
     # by the packaged CLI; different entropy never leaks into an adjacent case.
     from tools.tests.test_dev_contracts import descriptor
@@ -116,4 +127,36 @@ def verify(host: Path, cwd: Path, guests: Path) -> dict:
     paths.write_new(root / "src/tests.json", encode({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": cases}))
     shared = portable.execute(host, root, root, selected, [], host_identity={"kind": "explicit-local-test-build"})
     require(shared["passed"] and len(shared["identity"]["runtime"]["runs"]) == 2, "scoped-scenario-fixture-switch")
-    return {"builtins": builtins, "random": random, "metrics": metrics, "http": http, "sharedFixtureScenarios": shared}
+    return {"builtins": builtins, "fixedClocks": fixed_clocks, "random": random, "metrics": metrics,
+            "http": http, "sharedFixtureScenarios": shared}
+
+
+def clock_scenarios(host: Path, cwd: Path, guests: Path, grants: list[str]) -> dict:
+    from tools.tests.test_dev_contracts import descriptor
+    root = cwd / "clock-fixture-project"
+    for path in (root, root / "src", root / "output"):
+        paths.new_directory(path)
+    selected = descriptor()
+    selected["service"] = "tests/clock"
+    for source, destination in (("component.wasm", "capsule.wasm"), ("capsule.json", "capsule.json"), ("contracts.json", "contracts.json")):
+        paths.write_new(root / "output" / destination, (guests / source).read_bytes())
+    paths.write_new(root / "src/input.json", b"[]")
+    cases = []
+    for index, value in enumerate(("18446744073709551615", "0")):
+        raw = encode({"clock": {"monotonicNanos": value, "wallUnixMillis": value}})
+        paths.write_new(root / f"src/clock-{index}.json", raw)
+        # The authoritative WIT codec uses decimal strings for u64 values.
+        expected = [[{"monotonic": value, "wall": value} for _ in range(3)]]
+        paths.write_new(root / f"src/expected-{index}.json", json.dumps(expected, separators=(",", ":")).encode())
+        cases.append({"id": f"clock-{index}", "service": selected["service"], "contract": "tests:capabilities/api@0.1.0",
+            "function": "clocks", "input": "src/input.json", "mediaType": "application/vnd.latent.wit-values.v1+json",
+            "expect": {"category": "success", "payload": f"src/expected-{index}.json"}, "requires": ["clock"],
+            "timeoutMillis": 1000, "required": True,
+            "fixtures": [{"id": f"clock-fixture-{index}", "kind": "test-adapter", "identity": digest(raw),
+                          "configuration": f"src/clock-{index}.json"}], "execution": {"grants": grants}})
+    paths.write_new(root / "src/tests.json", encode({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": cases}))
+    result = portable.execute(host, root, root, selected, [], host_identity={"kind": "explicit-local-test-build"})
+    require(result["passed"] and len(result["identity"]["runtime"]["runs"]) == 2
+            and all(run["clock"] == "fixed-guest-readings-fixture" and run["controlClock"] == "system-clock-nondeterministic"
+                    for run in result["identity"]["runtime"]["runs"]), "explicit-scoped-full-width-guest-clock-readings")
+    return result

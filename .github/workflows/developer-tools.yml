@@ -5,6 +5,7 @@ on:
     branches: [feat/559-cross-platform-dev]
   pull_request:
     paths:
+      - .cargo/managed-guest.toml
       - .github/workflows/developer-tools.yml
       - tools/dev_workflow/**
       - tools/latent_dev.py

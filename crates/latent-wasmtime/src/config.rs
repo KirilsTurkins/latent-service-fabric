@@ -63,6 +63,15 @@ impl InstanceAllocator {
 /// Compatibility name retained for the Phase 0 profiling facade.
 pub type Phase0InstanceAllocator = InstanceAllocator;
 
+/// Explicit test-only guest readings. Admission, budgets, cancellation and
+/// provider authority continue to use the independently supplied real clock.
+#[cfg(feature = "development-clock-fixture")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DevelopmentClockReadings {
+    pub monotonic_nanos: u64,
+    pub wall_unix_millis: u64,
+}
+
 /// Safe Cranelift optimization policies; neither choice changes containment.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompilerOptimization {
@@ -90,6 +99,8 @@ impl CompilerOptimization {
 pub struct WasmtimeConfig {
     /// Required immutable owners and compatibility; never a grant by itself.
     pub execution_isolation_profile: ExecutionIsolationProfile,
+    #[cfg(feature = "development-clock-fixture")]
+    pub development_clock_readings: Option<DevelopmentClockReadings>,
     /// Explicit installation of the closed Angular profile. Ordinary defaults
     /// never imply support for a JavaScript runtime or an ambient host surface.
     pub angular_renderer: bool,
@@ -157,6 +168,8 @@ impl Default for WasmtimeConfig {
     fn default() -> Self {
         Self {
             execution_isolation_profile: ExecutionIsolationProfile::LocalExperimental,
+            #[cfg(feature = "development-clock-fixture")]
+            development_clock_readings: None,
             angular_renderer: false,
             java_guest: false,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
@@ -209,6 +222,12 @@ impl Default for WasmtimeConfig {
 impl WasmtimeConfig {
     pub fn validate(&self) -> Result<(), PlatformError> {
         self.execution_isolation_profile.validate_platform()?;
+        #[cfg(feature = "development-clock-fixture")]
+        if self.development_clock_readings.is_some()
+            && self.execution_isolation_profile != ExecutionIsolationProfile::LocalExperimental
+        {
+            return Err(invalid_config());
+        }
         self.validate_renderer()?;
         self.validate_java()?;
         let positive = [
