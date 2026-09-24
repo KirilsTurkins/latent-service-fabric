@@ -87,6 +87,9 @@ def run(args) -> dict:
                     and re.fullmatch(r"[a-z0-9-]{1,80}", report["classification"]) is not None,
                     "container-failure-receipt")
             validate_failure_locations(report.get("failureLocations", []))
+            if report.get("failedCommand") is not None:
+                from tools.phase3_security_diagnostics import validate
+                validate(report["failedCommand"])
         else:
             require(report.get("schemaVersion") == "latent.phase3.security.v1"
                     and report.get("passed") is True, "container-run-receipt")
