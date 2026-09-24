@@ -2,11 +2,114 @@
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock, patch
 
 from tools.typescript_guest import project
 from tools.typescript_guest.build import build
 from tools.build_typescript_guest_capsules import NAMES, project as sdk_project
+
+
+class TypeScriptControlWaitTests(unittest.TestCase):
+    def test_selected_wait_preserves_ordinary_defaults_and_shorter_overall_deadline(self):
+        from tools.rust_capsule_node import RecordingClient
+        response = {"schemaVersion": "latent.cli.result.v1", "category": "success",
+                    "outcomeKnown": True, "data": {}}
+        for wait, expected_deadline in ((15000, 35), (125000, 40)):
+            with self.subTest(wait=wait), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                client = RecordingClient("unused", root, Mock(), 40, evidence=root / "evidence",
+                                         control_timeout_millis=wait)
+                process = Mock()
+                process.complete.return_value = SimpleNamespace(returncode=0, stdout=json.dumps(response).encode())
+                with patch("tools.phase2_operator_process.Process", return_value=process) as launch, \
+                     patch("tools.phase2_operator_process.time.monotonic", return_value=10), \
+                     patch("tools.rust_capsule_node.time.monotonic_ns", side_effect=(100, 125)):
+                    self.assertEqual(client.call("node", "get", "example"), response)
+                argv = launch.call_args.args[0]
+                self.assertEqual(argv, ["unused", "--output", "json"]
+                    + (["--rpc-timeout-ms", "125000"] if wait == 125000 else [])
+                    + ["node", "get", "example"])
+                process.complete.assert_called_once_with(expected_deadline)
+                process.close.assert_called_once_with()
+                self.assertEqual(json.loads((root / "evidence/001.json").read_text()), response)
+                self.assertEqual(json.loads((root / "evidence/timing-001.json").read_text()), {
+                    "schemaVersion": "latent.authoring-control-timing.v1", "attempt": 1,
+                    "elapsedNanos": "25", "rpcTimeoutMillis": wait,
+                    "processTimeoutMillis": 130000 if wait == 125000 else 25000})
+
+    def test_uncertain_apply_remains_one_attempt_with_separate_bounded_diagnostics(self):
+        from tools.phase2_operator_process import Client, WorkflowError
+        from tools.rust_capsule_node import RecordingClient
+        requests = []
+        def invoke(client, *arguments, **kwargs):
+            self.assertEqual(arguments[:2], ("--rpc-timeout-ms", "125000"))
+            self.assertEqual(kwargs["timeout"], 130)
+            arguments = arguments[2:]
+            requests.append(arguments)
+            client.calls += 1
+            return {"category": "transport-failure", "outcomeKnown": False, "data": {},
+                    "error": {"code": "rpc-failed", "grpcCode": "cancelled" if client.calls == 1 else "resource-exhausted"}}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            client = RecordingClient("unused", root, None, 0, evidence=root / "evidence",
+                                     control_timeout_millis=125000)
+            with patch.object(Client, "call", invoke), self.assertRaisesRegex(WorkflowError, "authoring-control-1-5"):
+                client.call("deployment", "apply", "public.json", "--operation-id", "test-operation")
+            self.assertEqual([args[:2] for args in requests], [
+                ("deployment", "apply"), ("deployment", "operation"), ("audit", "query")])
+            failed = json.loads((root / "evidence/001.json").read_text())
+            self.assertFalse(failed["outcomeKnown"])
+            self.assertNotIn("elapsedNanos", failed)
+            diagnostics = json.loads((root / "evidence/unexpected-control-diagnostics.json").read_text())
+            self.assertFalse(diagnostics["auditComplete"])
+            self.assertEqual(len(list((root / "evidence").glob("timing-*.json"))), 3)
+            self.assertEqual(client.control_attempts, 3)
+
+    def test_invalid_wait_count_and_output_bounds_fail_closed(self):
+        from tools.phase2_operator_process import Client, WorkflowError
+        from tools.rust_capsule_node import MAX_CALLS, RecordingClient
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for invalid in (True, 0, 15000.0, 120000, 125001, float("inf")):
+                with self.subTest(wait=invalid), self.assertRaisesRegex(WorkflowError, "authoring-control-watchdog"):
+                    RecordingClient("unused", root, None, 0, evidence=root / "evidence",
+                                    control_timeout_millis=invalid)
+            self.assertFalse((root / "evidence").exists())
+            client = RecordingClient("unused", root, None, 0, evidence=root / "evidence",
+                                     control_timeout_millis=125000)
+            for field in ("calls", "control_attempts"):
+                setattr(client, field, MAX_CALLS)
+                with patch.object(Client, "call") as invoke, self.assertRaisesRegex(WorkflowError, "authoring-control-count"):
+                    client.call("node", "get", "example")
+                invoke.assert_not_called()
+                setattr(client, field, 0)
+            with patch.object(Client, "call", return_value={"category": "success", "data": "x" * (4 * 1024 * 1024)}), \
+                 self.assertRaisesRegex(WorkflowError, "authoring-control-retention"):
+                client.call("node", "get", "example")
+            self.assertFalse((root / "evidence/000.json").exists())
+            self.assertEqual(len(list((root / "evidence").glob("timing-*.json"))), 1)
+
+    def test_process_deadline_keeps_one_timed_attempt_and_never_retries(self):
+        from tools.phase2_operator_process import WorkflowError
+        from tools.rust_capsule_node import RecordingClient
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            client = RecordingClient("unused", root, Mock(), 11, evidence=root / "evidence",
+                                     control_timeout_millis=125000)
+            process = Mock()
+            process.complete.side_effect = WorkflowError("process-deadline")
+            with patch("tools.phase2_operator_process.Process", return_value=process) as launch, \
+                 patch("tools.phase2_operator_process.time.monotonic", return_value=10), \
+                 self.assertRaisesRegex(WorkflowError, "process-deadline"):
+                client.call("deployment", "apply", "public.json", "--operation-id", "test-operation")
+            launch.assert_called_once()
+            process.complete.assert_called_once_with(11)
+            process.close.assert_called_once_with()
+            self.assertEqual(client.control_attempts, 1)
+            self.assertTrue((root / "evidence/timing-001.json").exists())
+            self.assertFalse((root / "evidence/001.json").exists())
 
 
 class TypeScriptAuthoringTests(unittest.TestCase):
