@@ -7,6 +7,7 @@ mod local;
 mod package_fixture;
 mod publications;
 mod rejections;
+mod slow_preparation;
 mod startup;
 use fixture::*;
 use latent_capabilities::broker::CapabilityPlanSource;

@@ -1260,6 +1260,9 @@
         "deployments::tests::bindings::rejections::retained_generations_and_preparation_owners_are_bounded",
         "deployments::tests::bindings::rejections::selection_denies_missing_cross_tenant_ambiguous_and_unsupported_providers",
         "deployments::tests::bindings::retiring_installation_denies_retained_plans_without_erasing_definitions",
+        "deployments::tests::bindings::slow_preparation::slow_control_package_preparation_cannot_renew_revoked_or_expired_proofs",
+        "deployments::tests::bindings::slow_preparation::slow_control_package_preparation_renews_before_plan_and_releases_cancelled_owners",
+        "deployments::tests::bindings::slow_preparation::slow_startup_package_preparation_never_renews_control_authority",
         "deployments::tests::bindings::startup::configured_provider_restart_preserves_exact_versions_and_durable_bytes",
         "deployments::tests::bindings::startup::startup_cannot_silently_replace_durable_bindings_or_install_foreign_provider_owners",
         "deployments::tests::compiler_publisher_and_coalescing_source_enforce_complete_generations",
@@ -1438,7 +1441,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 242,
+      "minimumCases": 245,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [
