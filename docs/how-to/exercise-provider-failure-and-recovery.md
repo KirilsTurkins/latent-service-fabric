@@ -74,10 +74,14 @@ Cargo target. Each runner rejects an oversized inventory, an ambiguous/missing
 executable or a path outside that target. Do not reuse another source's inventory
 or point a local manifest at another container's filesystem.
 
-Fetch the exact images chosen by the reviewed runner source, not moving tags:
+Prepare the [source-built S3 fixture](../testing/s3-fixture.md) in its own retained
+attempt directory. Its 1,500-second owner includes compiler cleanup; a failed
+attempt must not be reused. Then fetch the other exact images chosen by the
+reviewed runner source, not moving tags:
 
 ```bash
-for RUNNER_MODULE in run_s3_blob_tests run_vault_secret_tests run_nats_event_tests; do
+python3 tools/build_s3_fixture.py --output "$PROVIDER_REVIEW/s3-fixture"
+for RUNNER_MODULE in run_vault_secret_tests run_nats_event_tests; do
   PROVIDER_IMAGE=$(python3 -c 'import importlib, sys; sys.path.insert(0, "tools"); print(importlib.import_module(sys.argv[1]).IMAGE)' "$RUNNER_MODULE")
   timeout --kill-after=15s 300s docker pull "$PROVIDER_IMAGE"
 done
@@ -96,6 +100,7 @@ cleanup is a failure, not a successful test with warnings. Logs stay private.
 
 ```bash
 timeout --kill-after=30s 420s python3 tools/run_s3_blob_tests.py \
+  --image-receipt "$PROVIDER_REVIEW/s3-fixture/fixture.json" \
   --test-manifest "$PROVIDER_REVIEW/provider-tests.jsonl" \
   > "$PROVIDER_REVIEW/s3.log" 2>&1
 timeout --kill-after=30s 420s python3 tools/run_vault_secret_tests.py \

@@ -353,6 +353,7 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
                 clock: clock.clone(),
                 log_sink: None,
                 capabilities: Some(runtime.clone()),
+                currentness_read_wait: Some(Arc::new(latent_node::CurrentnessReadTimer)),
             },
             catalog.lifecycle_authority(),
         )

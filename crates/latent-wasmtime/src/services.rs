@@ -11,6 +11,10 @@ use crate::StructuredLogSink;
 #[derive(Clone)]
 pub struct WasmtimeHostServices {
     pub clock: Arc<dyn ActivationClock>,
+    /// Explicit executor-neutral timer for pre-effect host-clock admission.
+    /// None preserves immediate, nonblocking capability admission. This does
+    /// not grant authority, refresh proofs, or change activation deadlines.
+    pub currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,
     pub log_sink: Option<Arc<dyn StructuredLogSink>>,
     /// Explicit managed capability mode; requires the exact catalog owner.
     pub capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
@@ -20,6 +24,7 @@ impl Default for WasmtimeHostServices {
     fn default() -> Self {
         Self {
             clock: Arc::new(SystemActivationClock),
+            currentness_read_wait: None,
             log_sink: None,
             capabilities: None,
         }

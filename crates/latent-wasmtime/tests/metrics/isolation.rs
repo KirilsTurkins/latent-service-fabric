@@ -101,6 +101,7 @@ async fn uninstalled_metrics_import_is_rejected_before_a_store_is_created() {
             clock: f.clock.clone(),
             log_sink: None,
             capabilities: None,
+            currentness_read_wait: None,
         },
         f.catalog.lifecycle_authority(),
     )

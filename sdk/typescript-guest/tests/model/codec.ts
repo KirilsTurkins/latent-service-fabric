@@ -1,4 +1,4 @@
-/** Internal typed wire boundary. Never installed as a node capability transport. */
+/** Supplementary test model only. Never vendored or installed as an SDK transport. */
 export type Option<T> = { readonly tag: 'none' } | { readonly tag: 'some'; readonly val: T };
 export type Result<T, E> = { readonly tag: 'ok'; readonly val: T } | { readonly tag: 'err'; readonly val: E };
 export type Shape = {

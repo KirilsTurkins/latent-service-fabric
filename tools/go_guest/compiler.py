@@ -55,8 +55,11 @@ class Compiler:
         module = (generated / "go.mod").read_text()
         if module != "module wit_component\n\ngo 1.25\n\nrequire (\n    go.bytecodealliance.org/pkg v0.2.3\n)\n":
             raise ValueError("generated-go-module-drift")
-        (generated / "go.mod").write_bytes(read_file(self.sdk / "runtime-deps/go.mod"))
-        (generated / "go.sum").write_bytes(read_file(self.sdk / "runtime-deps/go.sum"))
+        for name in ("go.mod", "go.sum"):
+            module_input = read_file(source.parent / name)
+            if module_input != read_file(self.sdk / "runtime-deps" / name):
+                raise ValueError("unreviewed-go-module-input")
+            (generated / name).write_bytes(module_input)
         sources = snapshot(source)
         if not sources or any(not name.endswith(".go") for name in sources):
             raise ValueError("Go application source must contain only captured .go files")

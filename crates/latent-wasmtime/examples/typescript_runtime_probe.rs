@@ -9,6 +9,9 @@ use std::{
 use wasmtime::component::{Component, Linker, Val};
 use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder};
 
+#[path = "typescript_runtime_probe/service_memory.rs"]
+mod service_memory;
+
 struct Pending(Arc<AtomicUsize>);
 
 impl Drop for Pending {
@@ -45,8 +48,11 @@ async fn main() -> wasmtime::Result<()> {
     if std::env::args().nth(3).as_deref() == Some("sdk-blob") {
         return sdk_blob(&engine, &component).await;
     }
-    if std::env::args().nth(3).as_deref() == Some("sdk-dotnet-secrets") {
-        return sdk_dotnet_secrets(&engine, &component).await;
+    match std::env::args().nth(3).as_deref() {
+        Some("sdk-service-memory") => return service_memory::run(&engine, &component, true).await,
+        Some("sdk-callee-memory") => return service_memory::run(&engine, &component, false).await,
+        Some("sdk-dotnet-secrets") => return sdk_dotnet_secrets(&engine, &component).await,
+        _ => (),
     }
     let pending = Arc::new(AtomicUsize::new(0));
     let count = pending.clone();
@@ -68,13 +74,50 @@ async fn main() -> wasmtime::Result<()> {
             Box::pin(async move { Ok(((value, minimum, maximum),)) })
         },
     )?;
-    for text in ["Hello, \0世界! 🚚", "", "panic", "cancel", "Hello again"] {
+    for text in [
+        "Hello, \0世界! 🚚",
+        "no-option",
+        "zero-option",
+        "",
+        "panic",
+        "cancel",
+        "Hello again",
+    ] {
         let input = Val::Record(vec![
             ("value".into(), Val::U64(u64::MAX)),
             ("minimum".into(), Val::S64(i64::MIN)),
             ("maximum".into(), Val::S64(i64::MAX)),
             ("text".into(), Val::String(text.into())),
             ("bytes".into(), Val::List(vec![Val::U8(0), Val::U8(255)])),
+            (
+                "maybe".into(),
+                Val::Option(if text == "no-option" {
+                    None
+                } else {
+                    Some(Box::new(Val::U64(if text == "zero-option" {
+                        0
+                    } else {
+                        u64::MAX
+                    })))
+                }),
+            ),
+            (
+                "items".into(),
+                Val::List(if text == "no-option" {
+                    vec![]
+                } else {
+                    vec![
+                        Val::Record(vec![
+                            ("text".into(), Val::String(String::new())),
+                            ("amount".into(), Val::U64(0)),
+                        ]),
+                        Val::Record(vec![
+                            ("text".into(), Val::String("nested\0世界 🚚".into())),
+                            ("amount".into(), Val::U64(u64::MAX)),
+                        ]),
+                    ]
+                }),
+            ),
         ]);
         let started = Instant::now();
         let future = invoke(&engine, &component, &linker, "run", input.clone());

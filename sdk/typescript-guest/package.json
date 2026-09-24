@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Activation-scoped TypeScript component bindings; no external client transport",
   "exports": {
-    "./runtime": "./runtime/codec.ts"
+    "./capabilities/*": "./capabilities/*.ts",
+    "./text": "./runtime/text.ts"
   }
 }

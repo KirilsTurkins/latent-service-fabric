@@ -116,6 +116,20 @@ fn unsupported_nested_resource_async_value_flag_and_world_shapes_are_rejected() 
         .replace("value: u64", "value: row"),
         WIT.replace("interface api {", "interface api { resource handle;")
             .replace("value: u64", "value: borrow<handle>"),
+        WIT.replace("interface api {", "interface api { resource handle;")
+            .replace("value: u64", "value: own<handle>"),
+        WIT.replace("interface api {", "interface api { resource handle;")
+            .replace("result<string, string>", "result<own<handle>, string>"),
+        WIT.replace(
+            "interface api {",
+            "interface api { resource handle; record nested { items: list<own<handle>> }",
+        )
+        .replace("value: u64", "value: option<nested>"),
+        WIT.replace(
+            "interface api {",
+            "interface api { resource handle; record nested { items: list<own<handle>> }",
+        )
+        .replace("result<string, string>", "result<option<nested>, string>"),
         "package example:author@1.2.3; world service { export run: func(); }".into(),
         WIT.replace(
             "world service {",

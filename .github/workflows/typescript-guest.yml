@@ -5,6 +5,7 @@ on:
     paths:
       - 'sdk/typescript-guest/**'
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe.rs'
+      - 'crates/latent-wasmtime/examples/typescript_runtime_probe/**'
       - 'tools/typescript_guest/**'
       - 'tools/typescript_capsule.py'
       - 'tools/build_typescript_guest_capsules.py'
@@ -26,6 +27,7 @@ on:
     paths:
       - 'sdk/typescript-guest/**'
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe.rs'
+      - 'crates/latent-wasmtime/examples/typescript_runtime_probe/**'
       - 'tools/typescript_guest/**'
       - 'tools/typescript_capsule.py'
       - 'tools/build_typescript_guest_capsules.py'
@@ -106,14 +108,14 @@ jobs:
         run: |
           set -o pipefail
           cargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example typescript_runtime_probe -- "$RUNNER_TEMP/typescript-guest-probe/component.wasm" 2>&1 | tee "$RUNNER_TEMP/typescript-guest-probe/runtime.log"
-      - name: Execute typed value and ownership regressions
+      - name: Execute supplementary value and ownership models
         shell: bash
         run: |
           set -o pipefail
           mkdir -p target/typescript-guest-runtime
-          node "$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts
+          node "$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts sdk/typescript-guest/tests/model/*.ts
           printf '{"type":"module"}\n' > target/typescript-guest-runtime/package.json
-          LSF_TYPESCRIPT_RUNTIME="$PWD/target/typescript-guest-runtime" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log
+          LSF_TYPESCRIPT_RUNTIME="$PWD/target/typescript-guest-runtime/tests/model" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log
       - name: Check captured sources and actual generated-resource owners
         run: |
           set -euo pipefail

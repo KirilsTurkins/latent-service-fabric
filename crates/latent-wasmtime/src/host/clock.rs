@@ -38,12 +38,13 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
 impl monotonic::Host for HostState {
     async fn now_nanos(&mut self) -> wasmtime::Result<u64> {
         let started = Instant::now();
-        let mut call = self.capabilities.scalar(
-            "latent:clock/monotonic@0.1.0",
-            "now-nanos",
-            latent_policy::capability::ResourceTarget::Clock,
-            8,
-        )?;
+        let mut call = self
+            .capabilities
+            .clock(
+                latent_capabilities::broker::HostClock::Monotonic,
+                self.currentness_read_wait.as_deref(),
+            )
+            .await?;
         let value = monotonic_nanos(
             self.clock.as_ref(),
             self.clock_origin,
@@ -62,12 +63,13 @@ impl monotonic::Host for HostState {
 impl wall::Host for HostState {
     async fn now_unix_millis(&mut self) -> wasmtime::Result<u64> {
         let started = Instant::now();
-        let mut call = self.capabilities.scalar(
-            "latent:clock/wall@0.1.0",
-            "now-unix-millis",
-            latent_policy::capability::ResourceTarget::Clock,
-            8,
-        )?;
+        let mut call = self
+            .capabilities
+            .clock(
+                latent_capabilities::broker::HostClock::Wall,
+                self.currentness_read_wait.as_deref(),
+            )
+            .await?;
         // Wall-clock adjustments are observable; elapsed time and deadlines
         // remain based on the separate monotonic process clock.
         let value = self.clock.sample().unix_millis();

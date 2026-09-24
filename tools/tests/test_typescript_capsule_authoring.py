@@ -151,6 +151,10 @@ class TypeScriptAuthoringTests(unittest.TestCase):
                 self.assertEqual(value["world"], f"examples:{template}/service@1.0.0")
                 self.assertEqual(value["limits"]["outboundRequests"], int(template == "http-status"))
                 self.assertEqual(lock["template"]["sourceDigest"], project.digest(files["src/main.ts"]))
+                self.assertEqual(
+                    sorted(path for path in files if path.startswith("vendor/lsf/sdk/typescript-guest/runtime/")),
+                    ["vendor/lsf/sdk/typescript-guest/runtime/text.ts"])
+                self.assertFalse(any("tests/model" in path for path in files))
                 files["src/main.ts"] += b"\n// application edit\n"
                 files["wit/world.wit"] += b"\n// contract edit\n"
                 project.validate(files)
@@ -183,6 +187,22 @@ class TypeScriptAuthoringTests(unittest.TestCase):
             with self.subTest(compiler=compiler), self.assertRaisesRegex(ValueError, "compiler installation"):
                 build(self.root, self.root.parent / "output", Path("missing"), Path("missing"),
                       "https://example.invalid/source", tools=compiler)
+
+    def test_public_contract_rejection_precedes_guest_compiler_execution(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "rejected"
+            with patch("tools.typescript_guest.build.file_identity", return_value={}), \
+                 patch("tools.typescript_guest.build.Commands.run", side_effect=ValueError("unsupported-resource-identity")) as run, \
+                 patch("tools.typescript_guest.build.Compiler") as compiler, \
+                 self.assertRaisesRegex(ValueError, "unsupported-resource-identity"):
+                build(self.root, output, Path("contracts-tool"), Path("packager"),
+                      "https://example.invalid/source", tools=Path(temporary) / "compiler")
+            compiler.assert_not_called()
+            self.assertEqual(run.call_count, 1)
+            self.assertEqual(run.call_args.args[0], "contracts")
+            failure = json.loads((output / "BUILD-FAILED.json").read_text())
+            self.assertEqual(failure["stage"], "contracts")
+            self.assertFalse((output / "BUILD-COMPLETE.json").exists())
 
     def test_identity_budget_and_lock_formats_are_closed(self):
         for name, mutate in (

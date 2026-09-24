@@ -300,6 +300,16 @@
       "shell": "default",
       "run": "mkdir -p \"$RUNNER_TEMP/browser-component\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-component/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-component/application.wasm\""
     },
+    ".github/workflows/ci.yml:rust:s3_fixture": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "s3_fixture",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner\npython3 tools/build_s3_fixture.py --output \"$RUNNER_TEMP/s3-fixture\""
+    },
     ".github/workflows/ci.yml:rust:integration_lanes": {
       "workflow": ".github/workflows/ci.yml",
       "job": "rust",
@@ -308,7 +318,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\""
+      "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py tools/build_s3_fixture.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\""
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned operator workflow registry": {
       "workflow": ".github/workflows/ci.yml",
@@ -820,6 +830,16 @@
       "shell": "default",
       "run": "python3 tools/qualify_dotnet_capsules.py --output \"$RUNNER_TEMP/dotnet-capsule-authoring\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\""
     },
+    ".github/workflows/go-guest.yml:upstream-probe:Capture immutable qualification source inputs": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Capture immutable qualification source inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/go-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/go-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/go-guest-source.sha\""
+    },
     ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": {
       "workflow": ".github/workflows/go-guest.yml",
       "job": "upstream-probe",
@@ -860,15 +880,15 @@
       "shell": "default",
       "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example go_runtime_probe -- \"$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm\" 2>&1 | tee \"$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log\""
     },
-    ".github/workflows/go-guest.yml:upstream-probe:Check standalone project source boundaries": {
+    ".github/workflows/go-guest.yml:upstream-probe:Check standalone project source boundaries and closed provenance": {
       "workflow": ".github/workflows/go-guest.yml",
       "job": "upstream-probe",
-      "name": "Check standalone project source boundaries",
+      "name": "Check standalone project source boundaries and closed provenance",
       "jobIf": "success()",
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_capsule_authoring"
+      "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_capsule_authoring tools.tests.test_build_provenance_schemas"
     },
     ".github/workflows/go-guest.yml:upstream-probe:Qualify editable projects, all SDK owners, enforced node and printed guide": {
       "workflow": ".github/workflows/go-guest.yml",
@@ -1490,15 +1510,15 @@
       "shell": "default",
       "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example typescript_runtime_probe -- \"$RUNNER_TEMP/typescript-guest-probe/component.wasm\" 2>&1 | tee \"$RUNNER_TEMP/typescript-guest-probe/runtime.log\""
     },
-    ".github/workflows/typescript-guest.yml:boundary:Execute typed value and ownership regressions": {
+    ".github/workflows/typescript-guest.yml:boundary:Execute supplementary value and ownership models": {
       "workflow": ".github/workflows/typescript-guest.yml",
       "job": "boundary",
-      "name": "Execute typed value and ownership regressions",
+      "name": "Execute supplementary value and ownership models",
       "jobIf": "success()",
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "bash",
-      "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log"
+      "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts sdk/typescript-guest/tests/model/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime/tests/model\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log"
     },
     ".github/workflows/typescript-guest.yml:boundary:Check captured sources and actual generated-resource owners": {
       "workflow": ".github/workflows/typescript-guest.yml",
@@ -2541,9 +2561,9 @@
       "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned S3 conformance server": {
-      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "after": ".github/workflows/ci.yml:rust:s3_fixture",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Maintainer-approved pinned source build replaces the inaccessible image acquisition; immutable receipt and owned compiler cleanup preserve fixture preparation, with unchanged real S3 tests and negative control in the provider lane."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned Vault conformance server": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
@@ -2895,6 +2915,9 @@
     "tools/build_provenance.py": {
       "sha256": "03c1c677cb530fc6b762440dd3a7f762f945892909ad9034af7a115a17fbdb97"
     },
+    "tools/build_s3_fixture.py": {
+      "sha256": "b0b05d6c1b48c6f1f405db526e7883900e98137dd8a8436de9c0720d6b40dd86"
+    },
     "tools/build_static_sites.py": {
       "sha256": "5acd3d499791273271236d0e60077763b6e9dd22ccee58aaac46d2b69733035c"
     },
@@ -2920,7 +2943,7 @@
       "sha256": "62bbebe6115eb6932a4aaf92d68ab1794457a4c069c1d32a51eba82b7c829a44"
     },
     "tools/ci_lane_worker.py": {
-      "sha256": "eea815b98d48cc7af4207a3ff10ac94dd2d3ba6c6a88e83e4e826a59fc269537"
+      "sha256": "6212cd840e2bddfcd3feccfd01b7c07538362d821188085997934efe9c8b7261"
     },
     "tools/ci_profile.py": {
       "sha256": "63949a0f50b4b7e3554383ade3a5f0ab51fed79a182fa301478df31501359fc8"
@@ -2944,7 +2967,7 @@
       "sha256": "6c51ffa8c2cd39b9f57f3cc4d48303d734a845c15a476038a6289b77d0efbc82"
     },
     "tools/go_guest/probe.py": {
-      "sha256": "6a662ae08917327c27279bc9128231004683c27e8f4c539468e6c4637c886be2"
+      "sha256": "1544feeca3a68bc152b4d2a339525d3c2a0166da744ca7f30ddb727180a40f90"
     },
     "tools/install_guest_bindgen.py": {
       "sha256": "5b44bb8ee33f2d0b2466afa6a38b990fb1358fbd9818061b392ef960b535eca1"
@@ -2983,7 +3006,7 @@
       "sha256": "54a371d38d626291fd1415e2ddda6841054c5ad34334869408459461d9788792"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "d06360d52a38c94841010b91d89aa05662a9037774125ab6e7d08e9b7494ad9f"
+      "sha256": "ad13d2378077ee097dfa8a904aad3e40858489b6c4d8724d2e36113be0a6dd4d"
     },
     "tools/qualify_typescript_capsules.py": {
       "sha256": "9ebcf28e77e5fa9bca9018d8e15afffac9e075427315ad334fa7fc7a8d4b4e44"
@@ -3031,7 +3054,7 @@
       "sha256": "414c5d66589e10b567123889b02a0f637ae5dc24b99ab24ba6955eef5803cabb"
     },
     "tools/run_phase2_operator_workflow.py": {
-      "sha256": "4419751f1167d74edb740ee3a849433f4ac05758d2e8a65dcd550fbdb7b121ff"
+      "sha256": "84bfef7775efacb0bba2db710f2bec01c1eda2a144086b986c4e94fee86a1f1b"
     },
     "tools/run_phase3_management_workflow.py": {
       "sha256": "6cf2b176e39c74ccddc6ad5b3d9aee6812d3bf84a0dd9cc45a30ba0eb9d7c070"
@@ -3043,7 +3066,7 @@
       "sha256": "8db908658b41757e598285dd0c0a1bdf288dd706e56de5463ce9facc23d5fd42"
     },
     "tools/run_s3_blob_tests.py": {
-      "sha256": "44e5356b966b50f6788461b1bbb8b270b002609f232a8e240c55c23725bc2fc6"
+      "sha256": "b91f43999f1eebdf3c0180eecd7302a67ba45bba2c21b51a66eed4ecb365ea21"
     },
     "tools/run_sdk_provider_matrix.sh": {
       "sha256": "aba338b2f1b12e27ba14fa8b3ee0f9ee30c1f5f47b25cd7ab68de92239b3d6ae"
@@ -3401,6 +3424,7 @@
       "BuildProvenanceSchemaTests.test_dotnet_profile_requires_exact_recipe_materials_and_builder_choice",
       "BuildProvenanceSchemaTests.test_envelope_canonical_base64_and_exact_decoded_ceiling",
       "BuildProvenanceSchemaTests.test_explicit_builder_requirements_and_revocations",
+      "BuildProvenanceSchemaTests.test_go_recipe_is_closed_and_each_compiler_input_is_required",
       "BuildProvenanceSchemaTests.test_java_recipe_is_closed_and_each_compiler_input_is_required",
       "BuildProvenanceSchemaTests.test_observation_profile_and_material_constraints",
       "BuildProvenanceSchemaTests.test_repository_grammar_matches_observation_and_policy",
@@ -3719,6 +3743,7 @@
       "GoAuthoringTests.test_existing_source_and_overlapping_build_outputs_are_never_overwritten",
       "GoAuthoringTests.test_generated_resource_owners_have_no_gc_effects_and_reject_shape_drift",
       "GoAuthoringTests.test_guide_and_selectable_examples_cover_the_printed_workflow",
+      "GoAuthoringTests.test_module_template_rejects_unreviewed_application_dependencies",
       "GoAuthoringTests.test_readme_entrypoints_match_every_typed_capability_facade",
       "GoAuthoringTests.test_sdk_aliases_follow_generated_identity_without_exposing_resource_constructors",
       "GoAuthoringTests.test_sdk_builder_reuses_captured_tools_without_rebuilding_and_rejects_mutation",
@@ -5344,6 +5369,19 @@
       "OperatorCanaryTests.test_start_target_is_read_from_exact_matching_status"
     ],
     "tools/tests/test_phase2_operator_workflow.py": [
+      "FailedCallObservationTests.test_expected_nonzero_and_success_results_are_forwarded_without_a_failure_record",
+      "FailedCallObservationTests.test_failed_projection_cannot_replace_the_original_cli_error",
+      "FailedCallObservationTests.test_malformed_schema_and_non_boolean_certainty_never_infer_an_outcome",
+      "FailedCallObservationTests.test_only_first_failed_call_is_retained_without_replaying_any_process",
+      "FailedCallObservationTests.test_original_validation_failures_are_unchanged_and_observed_after_cleanup",
+      "FailedCallObservationTests.test_process_cleanup_failure_is_not_relabelled_as_completed_ownership",
+      "FailedCallObservationTests.test_process_failure_keeps_the_original_exception_and_runs_one_cleanup",
+      "FailedCallObservationTests.test_projection_has_closed_tokens_and_fixed_numeric_and_byte_bounds",
+      "FailedCallObservationTests.test_query_and_known_or_unknown_mutation_failures_keep_exact_certainty",
+      "FailedOperatorReceiptTests.test_failed_receipt_is_after_cleanup_has_identities_and_never_claims_clean_shutdown",
+      "FailedOperatorReceiptTests.test_failure_before_client_acquisition_retains_only_completed_identity_capture",
+      "FailedOperatorReceiptTests.test_interrupts_remain_authoritative_after_a_failed_receipt_and_existing_cleanup",
+      "FailedOperatorReceiptTests.test_receipt_sink_failure_does_not_replace_the_original_nonzero_failure",
       "OperatorWorkflowTests.test_binary_identity_hashes_exact_bytes_without_retaining_paths",
       "OperatorWorkflowTests.test_both_auth_tokens_pass_local_profile_grammar",
       "OperatorWorkflowTests.test_candidate_weights_are_explicit_client_copies_only",
@@ -5589,7 +5627,38 @@
       "S3RunnerTests.test_cleanup_verifies_label_and_immutable_id",
       "S3RunnerTests.test_daemon_failure_cannot_report_successful_cleanup",
       "S3RunnerTests.test_missing_or_ambiguous_cargo_artifacts_are_rejected",
-      "S3RunnerTests.test_reuses_only_the_named_harness_inside_the_cargo_target"
+      "S3RunnerTests.test_reuses_only_the_named_harness_inside_the_cargo_target",
+      "SourceBuiltImageRunnerTests.test_cli_requires_image_receipt_before_creating_temporary_state",
+      "SourceBuiltImageRunnerTests.test_harness_exception_is_forwarded_once_after_owned_server_cleanup",
+      "SourceBuiltImageRunnerTests.test_invalid_supplied_receipt_never_rebuilds_pulls_or_starts_server",
+      "SourceBuiltImageRunnerTests.test_missing_receipt_rejects_before_commands_certificates_or_harness",
+      "SourceBuiltImageRunnerTests.test_server_image_or_ownership_mismatch_stops_before_fixture_effects",
+      "SourceBuiltImageRunnerTests.test_supplied_receipt_runs_exact_image_without_pull_or_changed_server_limits"
+    ],
+    "tools/tests/test_s3_fixture_builder.py": [
+      "FixtureFilesTests.test_archive_accepts_only_the_authenticated_small_source_tree",
+      "FixtureFilesTests.test_archive_bounds_member_count_names_member_size_and_expansion",
+      "FixtureFilesTests.test_archive_rejects_links_special_files_and_duplicate_destinations",
+      "FixtureFilesTests.test_archive_rejects_traversal_absolute_foreign_and_ambiguous_paths",
+      "FixtureFilesTests.test_archive_requires_regular_inputs_and_matching_module_hashes",
+      "FixtureFilesTests.test_binary_accepts_a_bounded_static_amd64_elf_and_returns_exact_digest",
+      "FixtureFilesTests.test_binary_rejects_wrong_format_architecture_interpreter_and_header_bounds",
+      "FixtureFilesTests.test_recipe_binds_source_builder_go_and_helper_implementation",
+      "FixtureFilesTests.test_sha_is_exact_and_rejects_missing_empty_oversized_or_symlink_files",
+      "FixtureFilesTests.test_source_size_or_digest_failure_precedes_tar_parsing",
+      "FixtureOwnerTests.test_cleanup_cannot_report_success_when_owned_container_remains",
+      "FixtureOwnerTests.test_cleanup_distinguishes_confirmed_absence_from_daemon_failure",
+      "FixtureOwnerTests.test_cleanup_failure_preserves_original_build_failure_and_prevents_success",
+      "FixtureOwnerTests.test_cleanup_rejects_foreign_label_id_and_malformed_container_identity",
+      "FixtureOwnerTests.test_cleanup_uses_only_verified_immutable_container_id_even_after_reply_loss",
+      "FixtureOwnerTests.test_failed_removal_forwards_the_original_error_without_retry",
+      "FixtureOwnerTests.test_main_does_not_publish_success_when_compiler_retirement_is_unconfirmed",
+      "FixtureOwnerTests.test_main_publishes_success_only_after_verified_compiler_retirement",
+      "FixtureReceiptTests.test_current_retired_receipt_resolves_only_its_immutable_local_image",
+      "FixtureReceiptTests.test_image_inspection_requires_one_result_and_never_hides_daemon_failure",
+      "FixtureReceiptTests.test_image_must_match_id_platform_entrypoint_labels_and_rootfs",
+      "FixtureReceiptTests.test_receipt_rejects_stale_pins_failed_compiler_or_missing_retirement",
+      "FixtureReceiptTests.test_receipt_rejects_unknown_fields_malformed_shapes_and_forged_outputs"
     ],
     "tools/tests/test_sbom_policy_schema.py": [
       "SbomPolicySchemaTests.test_explicit_presence_and_role_choices",
@@ -5798,6 +5867,7 @@
       "TypeScriptAuthoringTests.test_fresh_project_and_safe_names_never_overwrite_source",
       "TypeScriptAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
       "TypeScriptAuthoringTests.test_import_identity_follows_selected_world_and_never_arena_indexes",
+      "TypeScriptAuthoringTests.test_public_contract_rejection_precedes_guest_compiler_execution",
       "TypeScriptAuthoringTests.test_qualification_watchdogs_remain_explicit_and_finite",
       "TypeScriptAuthoringTests.test_sdk_wit_and_compiler_lock_drift_are_rejected",
       "TypeScriptAuthoringTests.test_source_and_compiler_directory_overlap_is_rejected_before_execution",
@@ -6172,6 +6242,7 @@
     "tools/tests/test_run_aot_tests.py",
     "tools/tests/test_rust_capsule_authoring.py",
     "tools/tests/test_s3_blob_runner.py",
+    "tools/tests/test_s3_fixture_builder.py",
     "tools/tests/test_sbom_policy_schema.py",
     "tools/tests/test_sbom_schemas.py",
     "tools/tests/test_sbom_upstream.py",
@@ -6208,11 +6279,11 @@
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
-    ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
+    ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
-    ".github/workflows/go-guest.yml": "c2ee0bfab0fa66a341dda62aeee6dfdf4c77691cd9a1a926ce1fbfb5fdae48cd",
+    ".github/workflows/go-guest.yml": "bb0a8f048724248e33fe72ebb9f153c0e82184cf8d7f99f53be05cfb97c8919e",
     ".github/workflows/java-guest-feasibility.yml": "6c1814b442abf741dc4dceb6ab707cf87b3cc161090a3b5b7a62c9334dc3f872",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
@@ -6221,6 +6292,6 @@
     ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/typescript-guest.yml": "0daef3a640034d79103f45a4742a69119e5728d380d5f8a1de6ea2f224c4705f"
+    ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41"
   }
 }
