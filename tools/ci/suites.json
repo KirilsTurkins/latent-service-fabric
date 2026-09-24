@@ -6561,6 +6561,38 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "asynchronous_error_and_child_failure_forward_original_results_and_owners",
+        "closed_constructor_shapes_have_distinct_safe_reasons",
+        "dropping_unpolled_or_pending_invocations_preserves_inner_ownership",
+        "full_contended_or_poisoned_observation_storage_never_changes_invocation_results",
+        "successful_and_declared_outcomes_keep_payloads_and_owners_without_records",
+        "synchronous_start_failure_is_forwarded_once_without_cloning",
+        "unknown_malformed_and_missing_details_are_explicitly_unclassified"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.test.local-service-diagnostics",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 7,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/local_service_diagnostics.rs",
+      "target": "local_service_diagnostics",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
         "activation_allowance_resets_but_shared_cardinality_does_not",
         "all_four_kinds_use_shared_export_and_host_owned_identity_on_reused_cells",
         "audit::required_audit_records_capture_acceptance_and_rejection_but_not_export_durability",
