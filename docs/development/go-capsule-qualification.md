@@ -183,6 +183,36 @@ allows 1,200 seconds. Go retains 900 seconds, and all production activation,
 compile, control-lease, proof, quota and cleanup bounds remain unchanged. The
 new finite profile still requires a complete executed qualification.
 
+The later [combined-head Go run 35963178643](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178643)
+at `a880cfd731f82194c36265886a65a1374d0313fb` failed the SDK service case:
+nine of ten SDK tests passed in 130.53 seconds, and the enforced node and printed
+guide were not reached. The [failed execution artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178643/artifacts/10793745523)
+retains all fourteen component builds and the original failure. Independent
+verification matched 2,331 captured input files to that Git head; its CI merge
+`6f8a00cea1b00540c67f7aed53585308818518a6` has the same
+`a5c2f893805d286d9726d2a27d64172872ed9c7d` tree. The failed-stage receipt
+SHA-256 is `23dd8c0a68137749cd153f7a7a80796ea692cd35c9a36fe8395899aa60ab2c91`.
+This is explicit-input evidence for a failed attempt, not a source-archive or
+complete qualification claim.
+
+The first permitted child's terminal observation was `DependencyFailed` /
+`Unavailable` at `Queued`, with zero guest fuel, memory and effects and 438
+receipt microseconds. The parent then trapped with `stack-overflow` after
+7.095 seconds. The child had already passed resolution/admission; this is not
+the earlier stale-load rejection at `Resolved`. This direct SDK fixture also
+uses a fixed signing clock, so elapsed wall time alone cannot establish a
+five-second signing-lease expiry. Its private child failure reason was not
+captured, and no root cause is asserted.
+
+The test-only diagnostic follow-up retains at most 32 closed stage/code/reason
+records before guest lowering, with explicit incomplete/unclassified states.
+It does not retain private error text or payloads, retry work, or alter limits,
+outcomes, consumption or owner lifetimes. Seven native fake-invoker regressions
+passed, including original allocation identity, full/contended/poisoned
+recording and dropped pending futures. Actual Linux SDK execution of this
+observation-only change still requires new CI evidence; it is not a claimed
+fix for the captured failure.
+
 These integration corrections and subsequent squash-ancestry reconciliation
 require a new full qualification. The earlier `7e670e06` attempt retained ten
 passing SDK cases and a verified 4,090-file source archive, but was superseded
