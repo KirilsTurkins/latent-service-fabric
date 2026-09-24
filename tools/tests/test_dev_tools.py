@@ -15,6 +15,39 @@ from tools.dev_guest_tools import stage_registry
 from tools.tests.test_dev_contracts import descriptor
 
 
+class FrontendDistribution(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "linux", "Candidate assembly runs on Linux")
+    def test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly(self):
+        import json
+        from tools import build_dev_bundle as builder
+        from tools.dev_distribution import frontend_files
+        for mutation in ("change", "add", "remove"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                frontend = root / "frontend"
+                for name in ("dist/latent-dev/latent-dev", "dist/latent-dev/_internal/library.so",
+                             "licenses/terms.txt", "helper.pyz", "python-inventory.json"):
+                    path = frontend / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(name.encode())
+                record = {"sourceCommit": "a" * 40, "sourceDirty": False, "hostAbi": common.HOST_ABI,
+                          "protocol": common.PROTOCOL, "target": "linux-x86_64", "files": frontend_files(frontend)}
+                (frontend / "build.json").write_text(json.dumps(record))
+                library = frontend / "dist/latent-dev/_internal/library.so"
+                if mutation == "change":
+                    library.write_bytes(b"substituted native library")
+                elif mutation == "add":
+                    library.with_name("extra.so").write_bytes(b"unrecorded native library")
+                else:
+                    library.unlink()
+                with patch.object(sys, "argv", ["builder", "--target", "linux-x86_64", "--frontend", str(frontend),
+                        "--portable", str(root / "missing-host"), "--output", str(root / "output")]), \
+                        patch.object(builder.subprocess, "check_output", side_effect=["a" * 40, b"", b"1600000000"]):
+                    with self.assertRaisesRegex(common.DevError, "frontend-distribution-bytes-changed"):
+                        builder.main()
+                self.assertFalse((root / "output").exists())
+
+
 class CompanionInputs(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()

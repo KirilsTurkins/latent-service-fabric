@@ -23,6 +23,28 @@ def file_digest(path: Path) -> tuple[str, int]:
     return "sha256:" + checksum.hexdigest(), size
 
 
+def frontend_files(root: Path) -> dict:
+    """Bind every redistributed frontend byte across native build/assembly jobs."""
+    selected = [root / "helper.pyz", root / "python-inventory.json"]
+    for directory in (root / "dist/latent-dev", root / "licenses"):
+        require(directory.is_dir() and not directory.is_symlink() and not directory.is_junction(),
+                "frontend-inventory-directory")
+        for parent, directories, names in os.walk(directory, followlinks=False):
+            for name in [*directories, *names]:
+                path = Path(parent) / name
+                require(not path.is_symlink() and not path.is_junction(), "frontend-inventory-links-forbidden")
+            selected.extend(Path(parent) / name for name in names)
+    require(0 < len(selected) <= bundle.MAX_ENTRIES, "frontend-inventory-entry-limit")
+    result = {}
+    total = 0
+    for path in sorted(selected):
+        checksum, size = file_digest(path)
+        total += size
+        require(total <= bundle.MAX_BUNDLE * 2, "frontend-inventory-byte-limit")
+        result[paths.relative(path.relative_to(root).as_posix())] = {"sha256": checksum, "size": size}
+    return result
+
+
 def assemble(payload: Path, output: Path, *, commit: str, version: str, target: str, epoch: int,
              executables: set[str], archive_name: str | None = None) -> dict:
     require(not output.exists(), "new-candidate-directory-required")

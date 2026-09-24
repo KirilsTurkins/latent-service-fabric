@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Windows frontend and Linux helper, without publishing or signing."""
+"""Build a native Windows/Linux frontend and Linux helper, without publishing."""
 from __future__ import annotations
 
 import argparse
@@ -10,26 +10,31 @@ from pathlib import Path
 import platform
 import subprocess
 import sys
+import sysconfig
 import zipfile
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.dev_workflow.common import HOST_ABI, PROTOCOL, digest, encode, require
+from tools.dev_distribution import frontend_files
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def python_inventory(output: Path) -> None:
+def python_inventory(output: Path, lock: Path) -> None:
     """Retain actual Python and bootloader license texts, including vendored terms."""
     import shutil
     import re
     licenses = output / "licenses"
     licenses.mkdir()
-    shutil.copyfile(Path(sys.base_prefix) / "LICENSE.txt", licenses / "CPython-3.13.5.txt")
+    python_license = next((p for p in (Path(sys.base_prefix) / "LICENSE.txt",
+                          Path(sysconfig.get_path("stdlib")) / "LICENSE.txt") if p.is_file()), None)
+    require(python_license is not None, "frontend-python-license-required")
+    shutil.copyfile(python_license, licenses / "CPython-3.13.5.txt")
     shutil.copyfile(ROOT / "LICENSE", licenses / "LSF.txt")
     packages = []
-    for line in (ROOT / "tools/dev-frontend-windows.lock").read_text().splitlines():
+    for line in lock.read_text().splitlines():
         match = re.fullmatch(r"([a-z0-9-]+)==([^ ]+) --hash=sha256:([a-f0-9]{64})", line)
         require(match is not None, "frontend-wheel-lock-format")
         name, version, checksum = match.groups()
@@ -37,7 +42,8 @@ def python_inventory(output: Path) -> None:
         require(distribution.version == version, "frontend-build-dependency-version")
         retained = []
         for entry in distribution.files or []:
-            if not any(part.lower().startswith(("license", "licence", "copying", "notice")) for part in entry.parts):
+            if (not entry.name.lower().startswith(("license", "licence", "copying", "notice"))
+                    or entry.suffix.lower() in {".py", ".pyc", ".pyo"}):
                 continue
             source = Path(distribution.locate_file(entry))
             if source.is_file():
@@ -86,22 +92,31 @@ def main() -> int:
     if arguments.helper_only:
         print(encode({"helperSha256": helper_digest}).decode(), end="")
         return 0
-    require(sys.platform == "win32" and platform.machine().lower() == "amd64"
-            and sys.version_info[:3] == (3, 13, 5), "windows-x64-python-3-13-5-required")
+    require(sys.platform in {"win32", "linux"} and platform.machine().lower() in {"amd64", "x86_64"}
+            and sys.version_info[:3] == (3, 13, 5), "native-x64-python-3-13-5-required")
+    target = "windows-x86_64" if sys.platform == "win32" else "linux-x86_64"
+    lock = ROOT / ("tools/dev-frontend-windows.lock" if sys.platform == "win32" else "tools/dev-frontend-linux.lock")
     require(importlib.metadata.version("pyinstaller") == "6.22.3", "pinned-pyinstaller-required")
-    python_inventory(output)
+    python_inventory(output, lock)
     subprocess.run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir",
         "--noupx", "--name", "latent-dev", "--distpath", str(output / "dist"),
         "--workpath", str(output / "work"), "--specpath", str(output), str(ROOT / "tools/latent_dev.py")],
         cwd=ROOT, check=True, timeout=300)
-    executable = output / "dist/latent-dev/latent-dev.exe"
+    executable = output / "dist/latent-dev" / ("latent-dev.exe" if sys.platform == "win32" else "latent-dev")
     require(executable.is_file(), "native-frontend-output-missing")
+    native = None
+    if sys.platform == "linux":
+        from tools.dev_frontend_linux import collect
+        native = collect(output)
     # Run the packaged binary from outside the checkout, with no Python in PATH.
     import tempfile
     import os
     with tempfile.TemporaryDirectory(prefix="lsf-native-smoke-") as temporary:
-        environment = {"SystemRoot": os.environ["SystemRoot"], "WINDIR": os.environ["WINDIR"],
-                       "TEMP": temporary, "TMP": temporary, "PATH": str(Path(os.environ["SystemRoot"]) / "System32")}
+        environment = {"TEMP": temporary, "TMP": temporary, "TMPDIR": temporary, "HOME": temporary,
+                       "PATH": temporary, "LANG": "C.UTF-8"}
+        if sys.platform == "win32":
+            environment.update(SystemRoot=os.environ["SystemRoot"], WINDIR=os.environ["WINDIR"],
+                               PATH=str(Path(os.environ["SystemRoot"]) / "System32"))
         help_result = subprocess.run([str(executable), "--help"], cwd=temporary, env=environment,
                                      capture_output=True, timeout=30)
         require(help_result.returncode == 0 and b"latent-dev" in help_result.stdout, "packaged-frontend-start-failed")
@@ -112,14 +127,18 @@ def main() -> int:
     source = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT).strip())
     record = {"schemaVersion": "latent.dev.frontend-build.v1", "sourceCommit": source, "sourceDirty": dirty,
-              "target": "windows-x86_64", "hostAbi": HOST_ABI, "protocol": PROTOCOL,
+              "target": target, "hostAbi": HOST_ABI, "protocol": PROTOCOL,
               "frontendSha256": digest(executable.read_bytes()), "helperSha256": helper_digest,
               "python": platform.python_version(), "packager": "pyinstaller-6.22.3",
-              "lockSha256": digest((ROOT / "tools/dev-frontend-windows.lock").read_bytes()),
+              "lockSha256": digest(lock.read_bytes()),
               "doctor": json.loads(smoke.stdout), "publisherAuthenticated": False,
               "qualification": "native-frontend-smoke-only"}
+    if native is not None:
+        record["hostRequirements"] = native["hostRequirements"]
+    record["files"] = frontend_files(output)
     (output / "build.json").write_bytes(encode(record))
-    print(encode(record).decode(), end="")
+    print(encode({**{key: value for key, value in record.items() if key != "files"},
+                  "fileCount": len(record["files"])}).decode(), end="")
     return 0
 
 
