@@ -34,8 +34,9 @@ def retain_logs(source: Path, output: Path) -> None:
         with (target / path.name).open("xb") as retained: retained.write(data)
 
 
-def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path,
-          repository: str, wasi_sdk: Path, *, gradle="gradle", timeout=900) -> Path:
+def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
+          repository: str, wasi_sdk: Path, *, gradle="gradle", timeout=900,
+          offline_cache: Path | None = None) -> Path:
     if type(timeout) not in {int, float} or not 0 < timeout <= 900:
         raise ValueError("Java build deadline must be positive and at most 900 seconds")
     project_path, output = checked_path(project_path), checked_path(output)
@@ -66,12 +67,17 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 stage = "compiler-inputs"
                 compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
                     sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
-                    config=pins, timeout=timeout - (time.monotonic() - start))
+                    config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache)
                 (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
                 materials = list(compiler.materials)
-                paths = {"contracts-tool": checked_path(contracts_tool), "packager": checked_path(packager)}
+                paths = {"contracts-tool": checked_path(contracts_tool)}
+                if packager is not None:
+                    paths["packager"] = checked_path(packager)
                 materials.extend(file_identity(path, name) for name, path in paths.items())
                 stage = "compile"
+                write_json(output / "diagnostic-source.json", {
+                    "capturedSource": str(temporary / "compiled/project/src/main/java"),
+                    "requestedSource": str(project_path / "src")})
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled")
                 component = read_file(component_path, 64 * 1024 * 1024)
                 (output / "component.wasm").write_bytes(component)
@@ -94,9 +100,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 package_files = dict(files)
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
                 package_inputs(output, project, read_json(derived / "surface.json"), package_files, component)
-                stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                if packager is not None:
+                    stage = "package"
+                    commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
+                    commands.run("inspect", paths["packager"], "inspect", output / "package")
                 stage = "recheck"
                 if snapshot(project_path) != files or snapshot(work) != files:
                     raise ValueError("project changed during the observed Java build")
@@ -128,6 +135,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                     "dependencyCompleteness": "declared-inputs-incomplete"})
                 write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
+                    "packageAssembled": packager is not None,
                     "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                     "componentDigest": digest(component), "sdkBindingDigest": generated["bindings"]["digest"],
                     "buildSeconds": round(time.monotonic() - start, 6), "commands": compiler.records + commands.records})

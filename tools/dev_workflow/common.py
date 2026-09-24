@@ -43,7 +43,7 @@ def _object(pairs):
     return result
 
 
-def decode(raw: bytes, maximum: int = MAX_DOCUMENT):
+def decode(raw: bytes, maximum: int = MAX_DOCUMENT, *, maximum_items: int = 32768):
     require(0 < len(raw) <= maximum, "document-byte-limit")
     try:
         value = json.loads(raw.decode("utf-8"), object_pairs_hook=_object,
@@ -55,7 +55,7 @@ def decode(raw: bytes, maximum: int = MAX_DOCUMENT):
     while pending:
         item, depth = pending.pop()
         count += 1
-        require(depth <= 24 and count <= 32768, "document-complexity-limit")
+        require(depth <= 24 and count <= maximum_items, "document-complexity-limit")
         if isinstance(item, dict):
             pending.extend((child, depth + 1) for child in item.values())
         elif isinstance(item, list):

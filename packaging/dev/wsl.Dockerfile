@@ -6,6 +6,7 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     ca-certificates=20260601~24.04.1 openssl=3.0.13-0ubuntu3.15 \
     libexpat1=2.6.1-2ubuntu0.5 libgdbm6t64=1.23-5.1build1 \
     libgdbm-compat4t64=1.23-5.1build1 libreadline8t64=8.2-4build1 \
+    libicu74=74.2-1ubuntu3.1 \
     readline-common=8.2-4build1 libsqlite3-0=3.45.1-1ubuntu2.8 \
     python3=3.12.3-0ubuntu2.1 python3-minimal=3.12.3-0ubuntu2.1 \
     libpython3-stdlib=3.12.3-0ubuntu2.1 python3.12=3.12.3-1ubuntu0.17 \

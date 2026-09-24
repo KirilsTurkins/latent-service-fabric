@@ -23,6 +23,10 @@ def diagnostics(output: Path, language: str) -> None:
     if language == "c":
         c_diagnostics(output)
         return
+    if language in {"java", "dotnet"}:
+        from tools.dev_managed_tools import diagnostics as managed_diagnostics
+        managed_diagnostics(output, language)
+        return
     retained = 0
     for path in sorted((output / "logs").glob("*-compile.stdout.txt")):
         with path.open("rb") as source:
@@ -94,20 +98,48 @@ def compile_c(payload: Path, project: Path, output: Path, check) -> None:
     check()
 
 
+def compile_managed(payload: Path, project: Path, output: Path, check, language: str) -> None:
+    from tools.dev_managed_tools import unpack
+    require(sys.platform == "linux" and platform.machine() == "x86_64", "managed-adapter-requires-linux-x86-64")
+    cache = project.parent / "build-cache"
+    require(cache.is_dir() and output.parent == project.parent, "managed-adapter-owned-attempt-paths")
+    sdk = payload / "sdk"
+    staged = unpack(sdk, cache / "managed", check)
+    os.environ["PATH"] = str(sdk / "bin") + os.pathsep + os.defpath
+    repository = "https://github.com/KirilsTurkins/latent-service-fabric"
+    if language == "java":
+        from tools.java_capsule_build import build
+        os.environ.update(JAVA_HOME=str(staged / "jdk"), PATH=str(staged / "jdk/bin") + os.pathsep + os.environ["PATH"])
+        build(project, output, sdk / "bin/capsule-contracts", None, repository, staged / "wasi-sdk",
+              gradle=str(staged / "gradle/bin/gradle"), offline_cache=staged / "gradle-cache")
+    else:
+        from tools.dotnet_guest.build import build
+        os.environ["PATH"] = str(staged / "dotnet") + os.pathsep + os.environ["PATH"]
+        # The upstream installation receipt names its original absolute path.
+        # Only this private copy is relocated; the captured bundle is immutable.
+        (staged / "tools/wasi-sdk.json").write_bytes(encode({"path": str(staged / "wasi-sdk")}))
+        build(project, output, sdk / "bin/capsule-contracts", None, repository, tools=staged / "tools", offline=True)
+    check()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--language", choices=("rust", "c"), required=True)
+    parser.add_argument("--language", choices=("rust", "c", "java", "dotnet"), required=True)
     args = parser.parse_args()
     project, output = Path(os.path.abspath(args.project)), Path(os.path.abspath(args.output))
     # Distribution layout: <payload>/recipe/tools/dev_guest_recipe.py.
     payload = Path(__file__).resolve().parents[2]
-    result = {"schemaVersion": "latent.dev.compiler-result.v1", "language": args.language, "ownerIssue": {"rust": 544, "c": 545}[args.language],
+    result = {"schemaVersion": "latent.dev.compiler-result.v1", "language": args.language,
+              "ownerIssue": {"rust": 544, "c": 545, "java": 548, "dotnet": 549}[args.language],
               "cleanup": "reaped", "code": "success"}
     try:
         with owned_cancellation() as cancellation:
-            {"rust": compile_rust, "c": compile_c}[args.language](payload, project, output, cancellation.check)
+            if args.language in {"java", "dotnet"}:
+                compile_managed(payload, project, output, cancellation.check, args.language)
+            else:
+                {"rust": compile_rust, "c": compile_c}[args.language](payload, project, output, cancellation.check)
     except BuildProcessError as error:
         result["code"] = "compiler-process-failed"
         if error.reason in {"process-cleanup", "process-ownership"}:

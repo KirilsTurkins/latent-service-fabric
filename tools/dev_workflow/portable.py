@@ -73,6 +73,7 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
     results, runs = {}, []
     for fixtures, calls in groups:
         request = {"schemaVersion": "latent.dev.portable-request.v1", "environment": "portable",
+            "runtimeProfile": {"java": "java-linear-v1", "dotnet": "dotnet-native-aot-v1"}.get(descriptor["language"], "standard-v1"),
             "controlledDevelopment": True, "component": base64.b64encode(content["component"]).decode(),
             "manifest": base64.b64encode(content["capsule"]).decode(),
             "contracts": base64.b64encode(content["contracts"]).decode(), "calls": calls, "fixtures": fixtures}
@@ -83,7 +84,8 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
         runtime = decode(completed.stdout, 4 * 1024 * 1024)
         require(completed.returncode == 0 and runtime.get("schemaVersion") == "latent.dev.portable-result.v1"
                 and runtime.get("environment") == "portable" and runtime.get("productionNode") is False
-                and runtime.get("component") == digest(content["component"]), "portable-host-rejected-input")
+                and runtime.get("component") == digest(content["component"])
+                and runtime.get("runtimeProfile") == request["runtimeProfile"], "portable-host-rejected-input")
         require(isinstance(runtime.get("results"), list)
                 and [item["id"] for item in runtime["results"]] == [item["id"] for item in calls], "portable-result-association")
         require(all(item.get("cleanup") == "reusable" for item in runtime["results"]), "portable-cleanup-unconfirmed")

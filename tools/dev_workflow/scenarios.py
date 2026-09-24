@@ -111,6 +111,7 @@ def run(document: dict, root: Path, environment: str, selection: list[str], adap
         target_matches = (expected_revision is None or revision is not None
                           and all(revision.get(key) == value for key, value in expected_revision.items()))
         matched &= target_matches
+        payload_identity = None
         if expected_payload is not None:
             data = result.get("data", {})
             payload = data.get("payload") or (data.get("declaredError") or {}).get("payload", {})
@@ -118,6 +119,8 @@ def run(document: dict, root: Path, environment: str, selection: list[str], adap
                 actual = base64.b64decode(payload.get("data", ""), validate=True)
             except (ValueError, TypeError):
                 actual = None
+            if actual is not None:
+                payload_identity = digest(actual)
             matched &= (payload.get("encoding") == "base64" and actual == expected_payload
                         and payload.get("byteLength") == str(len(expected_payload))
                         and payload.get("mediaType") == case["mediaType"])
@@ -131,6 +134,7 @@ def run(document: dict, root: Path, environment: str, selection: list[str], adap
         results.append({"id": case["id"], "status": status, "required": case["required"],
                         "category": result.get("category"), "outcomeKnown": result.get("outcomeKnown"),
                         "activationId": result.get("data", {}).get("activationId"), "inputSha256": digest(raw),
+                        "payloadSha256": payload_identity,
                         "fixtures": case["fixtures"], "platformCode": code,
                         "resolvedRevision": revision, "targetMatches": target_matches})
     return {"schemaVersion": "latent.dev.test-report.v1", "environment": environment,

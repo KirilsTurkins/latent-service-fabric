@@ -16,7 +16,7 @@ import urllib.request
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools import dev_tool_distribution as distribution, native_runtime_build, rust_capsule_project
+from tools import dev_tool_distribution as distribution, dev_managed_distribution as managed, native_runtime_build, rust_capsule_project
 from tools.build_observation import build_environment, resolve_tools
 from tools.build_process import run_bounded
 from tools.dev_distribution import assemble, file_digest
@@ -53,7 +53,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--python-prefix", type=Path, required=True, help="/usr/local copied from the pinned Python OCI image")
     parser.add_argument("--allow-dirty", action="store_true", help="Unsigned local assembly testing only")
-    parser.add_argument("--language", choices=("rust", "c"), required=True)
+    parser.add_argument("--language", choices=("rust", "c", "java", "dotnet"), required=True)
     args = parser.parse_args()
     require(sys.platform == "linux", "guest-candidate-linux-builder-required")
     output = args.output.absolute()
@@ -91,7 +91,8 @@ def main() -> int:
     executables = distribution.python(payload, args.python_prefix.resolve(strict=True))
     if args.language == "rust":
         executables.update(distribution.rust(payload, tools["rustc"].parents[3]))
-    for name, source in SOURCES.items():
+    upstream = {name: source for name, source in SOURCES.items() if name != "zig" or args.language in {"rust", "c"}}
+    for name, source in upstream.items():
         archive = output / (name + ".archive")
         download(archive, source)
         if name == "zig":
@@ -108,6 +109,9 @@ def main() -> int:
     executables.add("sdk/bin/capsule-contracts")
     if args.language == "rust":
         distribution.registry(payload, Path(environment["CARGO_HOME"]))
+    if args.language in {"java", "dotnet"}:
+        managed.prepare(payload, output, args.language, download)
+        upstream.update(managed.sources(args.language))
     distribution.recipe(payload, args.language)
     for name in executables:
         (payload / name).chmod(0o700)
@@ -146,7 +150,9 @@ def main() -> int:
         "licenseConcluded": "NOASSERTION", "copyrightText": "NOASSERTION",
         "checksums": [{"algorithm": "SHA256", "checksumValue": source["sha256"][7:]}],
         "comment": "Upstream binary distribution; supplied license texts are retained. Zig includes its full archive and notices."}
-        for name, source in SOURCES.items()]
+        for name, source in upstream.items()]
+    if args.language in {"java", "dotnet"}:
+        extra.extend(managed.dependency_packages(args.language))
     for name, version, location, comment in (
         ("rust", distribution.RUST_VERSION, "https://static.rust-lang.org/dist/channel-rust-" + distribution.RUST_VERSION + ".toml",
          "Official installed compiler and stdlib; copyright manifests and license texts in licenses/rust."),
@@ -166,7 +172,7 @@ def main() -> int:
     (payload / "sbom.spdx.json").write_bytes(encode(sbom))
     (payload / "build-provenance.json").write_bytes(encode({"schemaVersion": "latent.dev.build-provenance.v1",
         "sourceCommit": commit, "sourceDirty": dirty, "target": "linux-x86_64", "hostAbi": HOST_ABI, "protocol": PROTOCOL,
-        "toolInventory": inventory["identity"], "pythonImage": PYTHON_IMAGE, "upstreamArchives": SOURCES,
+        "toolInventory": inventory["identity"], "pythonImage": PYTHON_IMAGE, "upstreamArchives": upstream,
         "language": args.language, "ownerIssue": LANGUAGES[args.language], "qualification": "assembly-only", "publicRelease": False}))
     version = tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"]
     value = assemble(payload, output / "candidate", commit=commit, version=version, target="linux-x86_64", epoch=epoch,

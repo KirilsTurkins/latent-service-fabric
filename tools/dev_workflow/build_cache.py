@@ -12,7 +12,9 @@ from .common import HOST_ABI, digest, encode, members, require, sha
 
 MAX_ATTEMPTS = 4
 MAX_ENTRIES = 32768
-MAX_BYTES = 2 * 1024 * 1024 * 1024
+# A private managed SDK plus compiler scratch must fit without sharing mutable
+# tool installations. The four-attempt retention bound remains independent.
+MAX_BYTES = 4 * 1024 * 1024 * 1024
 
 
 def identity(record: dict, descriptor: dict, recipe: str, host: str, packager: str) -> str:

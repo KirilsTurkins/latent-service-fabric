@@ -670,6 +670,36 @@
       "workflow": ".github/workflows/developer-tools.yml",
       "workingDirectory": "."
     },
+    ".github/workflows/developer-tools.yml:linux-portable:Build native production component execution host": {
+      "job": "linux-portable",
+      "jobIf": "success()",
+      "name": "Build native production component execution host",
+      "run": "cargo build -p latent-portable-test-host --release --locked",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-tools.yml:linux-portable:Execute all maintained tutorial applications on Linux": {
+      "job": "linux-portable",
+      "jobIf": "success()",
+      "name": "Execute all maintained tutorial applications on Linux",
+      "run": "set -euo pipefail\nfor language in rust c java dotnet; do\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host --language \"$language\" --applications \"target/dev-applications/developer-$language-applications-$GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\"\ndone",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-tools.yml:portable-differential:Compare component identities and actual typed success and error bytes": {
+      "job": "portable-differential",
+      "jobIf": "success()",
+      "name": "Compare component identities and actual typed success and error bytes",
+      "run": "set -euo pipefail\nfor language in rust c java dotnet; do\n  python tools/compare_portable_guest_tests.py --windows \"target/windows/dev-portable-$language-applications.json\" --linux \"target/linux/dev-portable-$language-applications.json\" --output \"target/$language-differential.json\"\ndone",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
     ".github/workflows/developer-tools.yml:windows-bundle:Assemble Windows candidate using existing dependency inventory owner": {
       "job": "windows-bundle",
       "jobIf": "success()",
@@ -715,6 +745,16 @@
       "jobIf": "success()",
       "name": "Execute actual C applications and SDK providers natively",
       "run": "python tools/run_portable_c_tests.py --host target/release/latent-portable-test-host.exe --providers target/dev-c-portable/providers --applications target/dev-c-portable/applications --output target/dev-portable-c-smoke.json",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-tools.yml:windows:Execute all maintained tutorial applications on Windows": {
+      "job": "windows",
+      "jobIf": "success()",
+      "name": "Execute all maintained tutorial applications on Windows",
+      "run": "foreach ($language in @('rust', 'c', 'java', 'dotnet')) {\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host.exe --language $language --applications \"target/dev-applications/developer-$language-applications-$env:GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\"\n  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n}",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -3049,7 +3089,7 @@
       "sha256": "429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c"
     },
     "tools/aot_test_inputs.py": {
-      "sha256": "64c876a2e43c8a2342c30fd5ef590329fefe43b4d7404b0a280e93aa66c88b4f"
+      "sha256": "01704caffff027525434188f4a5f1a1665c2beba54cdf58e527b95dc726ffc8a"
     },
     "tools/build_angular_package.py": {
       "sha256": "6355b56981461912e5aeea8c9cc69424b512d5d55a6d805516af6eae523a02a0"
@@ -3064,7 +3104,7 @@
       "sha256": "c8e8959a795e1d207cbead426acb255cb23839cd7424fd1e5633bd69046a6888"
     },
     "tools/build_dev_guest_tools.py": {
-      "sha256": "56c5ebd3418715a9ed72e5b8b3c97b60f92becd7c0e695d24b9e9ab7c9b64f7d"
+      "sha256": "a33d7944c3d9a450994d2eabcc1d58b5411b43caf78656e19ba8934e2258a094"
     },
     "tools/build_dev_rootfs.py": {
       "sha256": "b0a0df997fc39bd4447f1afe825ce58c7ce6ae16a851fa7e3a8ad70bafe479c0"
@@ -3131,6 +3171,9 @@
     },
     "tools/ci_suite_discovery.py": {
       "sha256": "9880f5400a645b52e6e618d5027eac10d3a558e14abe1697a7ae024a8d2e307a"
+    },
+    "tools/compare_portable_guest_tests.py": {
+      "sha256": "66faf86044c765b3a92c8f38ecb7fe30fda79df7cbe81ce5caeacb1d787ade3e"
     },
     "tools/docs_pages.py": {
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
@@ -3208,7 +3251,7 @@
       "sha256": "7664b879113ad53073ba342eea41af3b7d6bb64b38a8443c7a573761162c1a85"
     },
     "tools/run_dev_guest_tools_tests.py": {
-      "sha256": "a146f2eb6f1d26af018076e56ab0e022ce2c7f7e9f384eaa2bd2483557543a75"
+      "sha256": "8313e6981e2c5eadeaae98461f8926a5f09952881f6eb5523fad40584b242cd2"
     },
     "tools/run_native_vm.py": {
       "sha256": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12"
@@ -3248,6 +3291,9 @@
     },
     "tools/run_portable_dev_tests.py": {
       "sha256": "090f2ef288e611d9ea52809c9d83fb6ad9ad43ffecc75e5b9a2fafd7daf453ad"
+    },
+    "tools/run_portable_guest_tests.py": {
+      "sha256": "0abe4253229250f577abc1f9875b2e2d6ecc25d0ee67da92ccf4cf7f8bc7bd18"
     },
     "tools/run_publication_workflow.py": {
       "sha256": "8db908658b41757e598285dd0c0a1bdf288dd706e56de5463ce9facc23d5fd42"
@@ -3918,7 +3964,12 @@
       "CompanionInputs.test_unrecorded_importable_file_is_rejected",
       "CompanionInputs.test_verification_observes_cancellation",
       "CompanionInputs.test_wrong_owner_host_and_template_revision_fail_before_execution",
-      "LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound"
+      "LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound",
+      "ManagedCompilerInputs.test_changed_member_and_path_escape_are_rejected",
+      "ManagedCompilerInputs.test_distribution_materializes_internal_links_and_rejects_external_links",
+      "ManagedCompilerInputs.test_expansion_is_private_and_source_is_immutable",
+      "ManagedCompilerInputs.test_expansion_observes_cancellation_and_finite_byte_budget",
+      "NativeDifferential.test_actual_bytes_component_and_native_host_must_all_match"
     ],
     "tools/tests/test_dev_watch.py": [
       "BuildCancellation.test_exact_cancellation_and_workspace_stop_reap_real_compiler_descendants",
@@ -6514,7 +6565,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
-    ".github/workflows/developer-tools.yml": "e3c2cb6134675e6a5439f934114f210344ea6580c9512ecbdbc676574f23c9a8",
+    ".github/workflows/developer-tools.yml": "e7a90843e201c2a3c1ecc1c7e8098871dc515e3de957bf583013e3a77b009150",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",

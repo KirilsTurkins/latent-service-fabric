@@ -1,5 +1,25 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Copy, Default, Deserialize, Serialize)]
+pub enum RuntimeProfile {
+    #[default]
+    #[serde(rename = "standard-v1")]
+    Standard,
+    #[serde(rename = "java-linear-v1")]
+    Java,
+    #[serde(rename = "dotnet-native-aot-v1")]
+    Dotnet,
+}
+
+impl RuntimeProfile {
+    pub fn maximum_memory(self) -> u64 {
+        match self {
+            Self::Standard | Self::Java => 64 * 1024 * 1024,
+            Self::Dotnet => 128 * 1024 * 1024,
+        }
+    }
+}
+
 pub const IMPORTS: [&str; 7] = [
     latent_wasmtime::CONTEXT_IMPORT,
     latent_wasmtime::LOG_IMPORT,
@@ -25,6 +45,8 @@ pub struct Request {
     pub schema_version: String,
     pub environment: String,
     pub controlled_development: bool,
+    #[serde(default)]
+    pub runtime_profile: RuntimeProfile,
     pub component: String,
     pub manifest: String,
     pub contracts: String,
@@ -109,14 +131,14 @@ impl Request {
             {
                 return Err("invalid-portable-call");
             }
-            call.budgets()?;
+            call.budgets(self.runtime_profile)?;
         }
         Ok(())
     }
 }
 
 impl Call {
-    pub fn budgets(&self) -> Result<(u64, u64), &'static str> {
+    pub fn budgets(&self, profile: RuntimeProfile) -> Result<(u64, u64), &'static str> {
         if [&self.fuel, &self.memory_bytes].iter().any(|value| {
             value.is_empty()
                 || value.len() > 20
@@ -130,7 +152,10 @@ impl Call {
             .memory_bytes
             .parse::<u64>()
             .map_err(|_| "memory-format")?;
-        if fuel == 0 || fuel > 10_000_000_000 || !(65536..=64 * 1024 * 1024).contains(&memory) {
+        if fuel == 0
+            || fuel > 10_000_000_000
+            || !(65536..=profile.maximum_memory()).contains(&memory)
+        {
             return Err("portable-budget-limit");
         }
         Ok((fuel, memory))

@@ -43,7 +43,7 @@ compilers remain separate, explicitly selected build inputs.
   changes and runtime upgrades are never automatic.
   Versioned offline input documents transfer only the named release files,
   independent publisher policy, trusted roots and independently pinned Linux
-  verifier. Transfers use 1 MiB chunks, at most 16 files/768 MiB per selection,
+  verifier. Transfers use 1 MiB chunks, at most 16 files/1,152 MiB per selection,
   and at most three selections per workspace. Each transfer has a 900-second
   deadline. Identical byte retransmission is
   allowed; changed bytes and gaps fail. Installer execution follows final hashes
@@ -133,7 +133,7 @@ language recipe six seconds to reap its nested process groups, then allows five
 seconds for the outer group sweep. The transport allows twelve seconds for the
 helper to finish that cleanup. Exceeding the grace period remains uncertain.
 Four build attempts are retained, each monitored every 500 ms for a 32,768-entry,
-2 GiB ceiling. This is an observed limit, not a filesystem quota: temporary
+4 GiB ceiling. This is an observed limit, not a filesystem quota: temporary
 overshoot can occur before cancellation. Known failed or superseded attempts can
 be removed; accepted, deployed and uncertain attempts stay protected. A full
 cache of protected attempts rejects a new build. Package assembly shares the
@@ -156,7 +156,8 @@ missing-import denial, cancellation, traps, fuel/memory/deadline interruption,
 and subsequent fresh-state success. Additional actual Rust SDK capsules cover
 random bytes and unsigned values, all four custom metric kinds, explicit policy
 denials, and buffered HTTP through the production provider and an owned loopback
-peer. C guests and real-node differential qualification remain required work.
+peer. The C provider subset and four languages' tutorial applications are also
+exercised below; real-node differential qualification remains required work.
 
 The selected verified Windows bundle must contain the portable executable.
 Use `dev test --environment portable --controlled-development --workspace NAME
@@ -188,7 +189,8 @@ installed. Imported streaming/resource interfaces outside this table are rejecte
 before guest execution. Canonical arguments and results use the production value
 codec, including decimal-string unsigned 64-bit values and explicit absent values.
 One request runs at most 128 calls sequentially with fresh Stores, 16 MiB component
-bytes, 1 MiB input per call, 64 MiB guest memory, ten billion fuel, five seconds per
+bytes, 1 MiB input per call, 64 MiB guest memory (128 MiB for the explicitly
+selected .NET NativeAOT profile), ten billion fuel, five seconds per
 call and 2 MiB aggregate results. Native compilation remains a controlled-workload
 operation; these guest limits are not compiler or whole-process RSS containment.
 
@@ -320,7 +322,28 @@ confirmed cache reuse, mapped diagnostics, retention of the previous accepted
 build after invalid source, a new component after a fix, and reaped cleanup.
 The developer workflow repeats these application builds and emits separately
 attested compiler candidates on branch runs. This does not yet qualify an
-authenticated Windows installation or the other four language integrations.
+authenticated Windows installation or all six language integrations.
+
+The Java and C# integrations now reuse the merged #548/#549 creators and recipes.
+Their compiler bundles capture the pinned JDK/Gradle or .NET SDK, WASI SDK and
+locked dependency files. Each build verifies the captured files and extracts a
+private writable copy; Gradle uses offline mode and NuGet has no enabled feeds.
+The minimal WSL image includes the pinned ICU library required by .NET.
+Source locations map back to the original author directory, including spaces and
+Unicode. Guest staging uses the separately generated workspace paths: the pinned
+MSBuild cannot execute its temporary scripts when its own temporary root contains
+spaces. This does not constrain the Windows author folder.
+
+The [managed-language source observation](managed-developer-source-observation.json)
+records actual unprivileged, network-disabled builds of all three Java and C#
+templates. Cache reuse, mapped compiler failures, last-good artifact retention,
+changed-source output and cleanup passed. The same components then passed all
+nine shared tutorial cases on each native Windows and Linux host, with matching
+typed result bytes. Java selects its maintained linear-memory engine profile;
+C# selects its bounded NativeAOT memory profile. Required clock grants are explicit
+in the scenarios. CI repeats these native comparisons for Rust, C, Java and C#.
+These are source-integration and native-host comparisons; they do not qualify
+publisher identity, managed WSL installation or real Linux-node differential tests.
 
 The actual native Windows C run executes the three compiled applications through
 the common byte-exact success/declared-error scenarios. It also runs C probes for
@@ -381,10 +404,10 @@ not establish receipt expiration. The harness never marks qualification complete
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #562 | Mac/native ARM64 requirements deferred by maintainer; no ARM64 support claim. |
-| #563 | Authenticate/install Rust and C tools through the Windows workflow and integrate the other four language-owner recipes. |
+| #563 | Authenticate/install Rust, C, Java and C# tools through the Windows workflow; integrate the Go and TypeScript owners. |
 | #564 | Complete malformed/admission failure, rapid edits, in-flight revision, revocation and expired-receipt cases; repeat the observed source watch/recovery schedule with final authenticated packages. |
 | #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |
-| #566 | Complete explicit clock fixtures, verified native distribution and real Linux differential execution; Windows CI includes the locally exercised Rust/C subsets. |
+| #566 | Complete explicit clock fixtures, verified native distribution and real Linux-node differential execution; CI compares four languages' actual native tutorial outputs. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
 | #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
 

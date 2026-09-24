@@ -10,8 +10,10 @@ from . import paths, state
 from .common import decode, digest, encode, members, require, sha
 
 CHUNK = 1024 * 1024
-MAX_ASSET = 536870912
-MAX_TOTAL = 805306368
+# The captured .NET NativeAOT compiler is larger than the Rust/C bundles.
+# Transfers still admit one bounded bundle plus its verifier and trust inputs.
+MAX_ASSET = 1024 * 1024 * 1024
+MAX_TOTAL = MAX_ASSET + 128 * 1024 * 1024
 MAX_FILES = 16
 MAX_SETS = 3
 

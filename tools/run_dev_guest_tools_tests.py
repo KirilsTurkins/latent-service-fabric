@@ -20,7 +20,7 @@ from tools.dev_workflow.common import DevError, decode, encode, require
 
 
 def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict:
-    require(language in {"rust", "c"}, "unsupported-application-build-test-language")
+    require(language in {"rust", "c", "java", "dotnet"}, "unsupported-application-build-test-language")
     require(sys.platform == "linux" and os.geteuid() != 0 and not output.exists(), "unprivileged-linux-and-new-test-output-required")
     output.mkdir(mode=0o700, parents=True)
     temporary = Path(tempfile.mkdtemp(prefix="lsf-" + language + "-dev-tests-"))
@@ -41,7 +41,10 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
         for name, entry in index["templates"].items():
             case = temporary / (name + " spaces-\u00fc")
             case.mkdir(mode=0o700)
-            author, root = case / "author", case / "controller"
+            # The frontend captures an arbitrary author path into a separately
+            # named Linux workspace. Match that boundary: Unicode/spaces belong
+            # to the author path, while compiler staging uses the owned ID path.
+            author, root = case / "author", temporary / ("controller-" + name)
             root.mkdir(mode=0o700)
             (root / "snapshots").mkdir(mode=0o700)
             template = payload / entry["path"]
@@ -70,9 +73,10 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
             (retained / "latent.project.json").write_bytes(encode(descriptor))
             shutil.copytree(author / "tests", retained / "tests")
             shutil.copytree(source / "output", retained / "output")
-            receipt["templates"][name] = {"build": compiled, "cacheHit": True, "outsideCheckout": True}
+            receipt["templates"][name] = {"build": compiled, "cacheHit": True, "outsideCheckout": True,
+                                          "authorPathIncludesSpacesAndUnicode": True}
             if name == "greeting":
-                source_name = "app/src/" + {"rust": "lib.rs", "c": "main.c"}[language]
+                source_name = "app/src/" + {"rust": "lib.rs", "c": "main.c", "java": "dev/latent/app/Capsule.java", "dotnet": "Main.cs"}[language]
                 original = (author / source_name).read_bytes()
                 (author / source_name).write_bytes(original + b"\nthis is not valid source;\n")
                 try:
@@ -94,7 +98,7 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
                     failureDiagnosticsMapped=True, changedComponent=changed["artifacts"]["component"])
         receipt.update(passed=True, cleanup="reaped")
     finally:
-        attempts = list(temporary.glob("*/controller/builds/*"))
+        attempts = list(temporary.glob("controller-*/builds/*"))
         known = False
         try:
             known = all(build_cache.owner(path)["state"] in {"created", "failed", "complete"} for path in attempts)
@@ -105,6 +109,14 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
                     for name in ("output/BUILD-FAILED.json", "build-cache/compiler-stdout.log", "build-cache/compiler-stderr.log"):
                         if (attempt / "source" / name).is_file():
                             (retained / Path(name).name).write_bytes(paths.read(attempt / "source", name, 4 * 1024 * 1024))
+                    used = 0
+                    for directory in ("logs", "compiler-logs"):
+                        for log in sorted((attempt / "source/output" / directory).glob("*")):
+                            if log.is_file() and log.suffix in {".log", ".txt", ".json"}:
+                                raw = paths.read(log.parent, log.name, 4 * 1024 * 1024)
+                                used += len(raw)
+                                require(used <= 20 * 1024 * 1024, "failed-compiler-evidence-limit")
+                                (retained / (directory + "-" + log.name)).write_bytes(raw)
         except (DevError, OSError):
             known = False
         if known:
@@ -125,7 +137,7 @@ def main() -> int:
     parser.add_argument("--payload", type=Path, required=True)
     parser.add_argument("--packager", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--language", choices=("rust", "c"), required=True)
+    parser.add_argument("--language", choices=("rust", "c", "java", "dotnet"), required=True)
     args = parser.parse_args()
     receipt = exercise(args.payload.resolve(strict=True), args.packager.resolve(strict=True), args.output.absolute(), args.language)
     print(json.dumps({"passed": receipt["passed"], "cleanup": receipt["cleanup"], "templates": list(receipt["templates"]),

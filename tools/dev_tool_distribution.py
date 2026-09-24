@@ -8,7 +8,8 @@ import shutil
 import tarfile
 import tomllib
 
-from tools import c_capsule_build, c_capsule_project, rust_capsule_build, rust_capsule_project
+from tools import c_capsule_build, c_capsule_project, java_capsule_build, java_capsule_project, rust_capsule_build, rust_capsule_project
+from tools.dotnet_guest import build as dotnet_build, project as dotnet_project
 from tools.dev_distribution import file_digest
 from tools.dev_workflow import paths, project, scenarios, snapshot, tool_inventory
 from tools.dev_workflow.common import HOST_ABI, digest, encode, require
@@ -108,10 +109,12 @@ def registry(payload: Path, cargo_home: Path) -> None:
 
 
 def recipe(payload: Path, language: str) -> None:
-    owner = {"rust": rust_capsule_build, "c": c_capsule_build}[language]
+    owner = {"rust": rust_capsule_build, "c": c_capsule_build, "java": java_capsule_build, "dotnet": dotnet_build}[language]
     names = {*owner.RECIPE, "tools/dev_guest_recipe.py", "tools/dev_guest_tools.py",
              "tools/dev_workflow/__init__.py", "tools/dev_workflow/common.py", "tools/dev_workflow/paths.py",
              "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"}
+    if language in {"java", "dotnet"}:
+        names.add("tools/dev_managed_tools.py")
     for name in sorted(names):
         copy(ROOT / name, payload / "recipe" / name)
     (payload / "recipe/tools/__init__.py").write_bytes(b"")
@@ -133,7 +136,7 @@ def compiler_inventory(payload: Path, commit: str, language: str) -> dict:
 
 
 def templates(payload: Path, commit: str, language: str) -> dict:
-    creator = {"rust": rust_capsule_project, "c": c_capsule_project}[language]
+    creator = {"rust": rust_capsule_project, "c": c_capsule_project, "java": java_capsule_project, "dotnet": dotnet_project}[language]
     tools = [("python", "sdk/bin/python", "3.13.5"), ("recipe", "recipe/tools/dev_guest_recipe.py", "1"),
              ("contracts", "sdk/bin/capsule-contracts", commit),
              ("wasm-tools", "sdk/bin/wasm-tools", WASM_VERSION), ("wit-bindgen", "sdk/bin/wit-bindgen", BINDGEN_VERSION)]
@@ -159,6 +162,13 @@ def templates(payload: Path, commit: str, language: str) -> dict:
                 "input": f"tests/{ordinal}-input.json", "mediaType": "application/vnd.latent.wit-values.v1+json",
                 "expect": {"category": "success" if code == 0 else "declared-error", "payload": f"tests/{ordinal}-expected.json"},
                 "requires": [], "timeoutMillis": 5000, "required": True, "fixtures": []})
+            if language in {"java", "dotnet"}:
+                # These capabilities are declared by the maintained language
+                # runtime. A node still requires explicit operator policy.
+                clocks = ["latent:clock/monotonic@0.1.0"]
+                if language == "java":
+                    clocks.append("latent:clock/wall@0.1.0")
+                entries[-1].update(requires=["clock"], execution={"grants": clocks})
         document = {"schemaVersion": "latent.dev.scenarios.v1", "scenarios": entries}
         scenarios.validate(document, "node")
         (directory / "tests/scenarios.json").write_bytes(encode(document))

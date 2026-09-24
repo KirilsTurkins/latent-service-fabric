@@ -20,7 +20,7 @@ use latent_routing::InvocationTarget;
 use latent_wasmtime::{WasmtimeComponentEngineFactory, WasmtimeConfig, WasmtimeHostServices};
 use serde_json::{json, Value};
 
-use crate::request::{Call, Request, IMPORTS};
+use crate::request::{Call, Request, RuntimeProfile, IMPORTS};
 
 struct Cancellation(ActivationId, bool, Arc<ActivationBudget>);
 
@@ -106,8 +106,9 @@ fn execution(
     prepared: latent_executor::PreparedComponent,
     ceiling: &ResourceBudget,
     owned: &DevelopmentTestArtifact,
+    profile: RuntimeProfile,
 ) -> Result<ExecutionRequest, &'static str> {
-    let (fuel, memory) = call.budgets()?;
+    let (fuel, memory) = call.budgets(profile)?;
     let id = ActivationId(call.id.clone());
     let budget = ResourceBudget {
         cpu_fuel: fuel,
@@ -212,14 +213,19 @@ pub async fn run(request: Request) -> Result<Value, &'static str> {
     let artifact = owned.artifact();
     let mut providers =
         crate::providers::Providers::new(&owned, &request.fixtures, &request.calls)?;
+    let mut config = WasmtimeConfig {
+        maximum_memory_bytes: request.runtime_profile.maximum_memory(),
+        maximum_fuel: 10_000_000_000,
+        prepared_cache_maximum_entries: 1,
+        maximum_concurrent_preparations: 1,
+        ..WasmtimeConfig::default()
+    };
+    if matches!(request.runtime_profile, RuntimeProfile::Java) {
+        config.fuel_async_yield_interval = Some(100_000);
+        config.install_java_guest();
+    }
     let factory = WasmtimeComponentEngineFactory::with_catalog(
-        WasmtimeConfig {
-            maximum_memory_bytes: 64 * 1024 * 1024,
-            maximum_fuel: 10_000_000_000,
-            prepared_cache_maximum_entries: 1,
-            maximum_concurrent_preparations: 1,
-            ..WasmtimeConfig::default()
-        },
+        config,
         WasmtimeHostServices {
             clock: providers.clock.clone(),
             log_sink: None,
@@ -245,6 +251,7 @@ pub async fn run(request: Request) -> Result<Value, &'static str> {
             prepared.clone(),
             &artifact.manifest.execution.resource_budget_ceiling,
             &owned,
+            request.runtime_profile,
         )?;
         let accounting = ActivationBudget::with_profile(
             EffectiveActivationBudget::admit_profile_at(
@@ -330,6 +337,7 @@ pub async fn run(request: Request) -> Result<Value, &'static str> {
     Ok(
         json!({"schemaVersion":"latent.dev.portable-result.v1","environment":"portable",
         "trust":"controlled-development-test", "productionNode":false,"category":"success",
+        "runtimeProfile":request.runtime_profile,
         "clock":"system-clock-nondeterministic","entropy":providers.entropy,
         "fixtures":{"sha256":fixture_digest.0,"random":request.fixtures.entropy.is_some(),
             "metrics": !request.fixtures.metrics.is_empty(),"http":request.fixtures.http.is_some()},

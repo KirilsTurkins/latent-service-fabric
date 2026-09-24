@@ -8,6 +8,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 from tools.dev_workflow import build, bundle, common, paths, project, tool_inventory
 from tools.dev_guest_tools import stage_registry
@@ -125,6 +126,114 @@ class LargeInventory(unittest.TestCase):
             root = Path(temporary)
             paths.write_new(root / "verified-bundle.json", raw)
             self.assertEqual(bundle.cached(root), value)
+
+
+class ManagedCompilerInputs(unittest.TestCase):
+    def fixture(self, root):
+        from tools.dev_managed_distribution import pack
+        inputs, sdk = root / "input", root / "sdk"
+        (inputs / "lib").mkdir(parents=True)
+        sdk.mkdir()
+        (inputs / "lib/compiler.bin").write_bytes(b"captured compiler")
+        (inputs / "cache-entry").write_bytes(b"immutable dependency")
+        value = pack({"compiler": inputs}, sdk)
+        return inputs, sdk, value
+
+    def test_expansion_is_private_and_source_is_immutable(self):
+        from tools.dev_managed_tools import unpack
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            inputs, sdk, _value = self.fixture(root)
+            target = unpack(sdk, root / "attempt", lambda: None)
+            self.assertEqual((target / "compiler/lib/compiler.bin").read_bytes(), b"captured compiler")
+            (target / "compiler/cache-entry").write_bytes(b"private lock")
+            self.assertEqual((inputs / "cache-entry").read_bytes(), b"immutable dependency")
+            with self.assertRaisesRegex(common.DevError, "staging-must-be-fresh"):
+                unpack(sdk, root / "attempt", lambda: None)
+
+    def test_changed_member_and_path_escape_are_rejected(self):
+        from tools.dev_managed_tools import manifest, unpack
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _inputs, sdk, value = self.fixture(root)
+            for path in ("../outside", "/outside", "compiler/../outside"):
+                changed = copy.deepcopy(value)
+                changed["files"][0]["path"] = path
+                with self.assertRaises(common.DevError):
+                    manifest(changed)
+            value["files"][0]["sha256"] = "sha256:" + "a" * 64
+            value["identity"] = common.digest(common.encode({k: v for k, v in value.items() if k != "identity"}))
+            (sdk / "managed-inputs.json").write_bytes(common.encode(value))
+            with self.assertRaisesRegex(common.DevError, "file-digest"):
+                unpack(sdk, root / "attempt", lambda: None)
+
+    def test_expansion_observes_cancellation_and_finite_byte_budget(self):
+        from tools.dev_managed_tools import manifest, unpack
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _inputs, sdk, value = self.fixture(root)
+            def cancelled():
+                raise common.DevError("build-superseded")
+            with self.assertRaisesRegex(common.DevError, "build-superseded"):
+                unpack(sdk, root / "attempt", cancelled)
+            with patch("tools.dev_managed_tools.MAX_BYTES", 1):
+                with self.assertRaisesRegex(common.DevError, "expanded-limit"):
+                    manifest(value)
+
+    @unittest.skipUnless(os.name == "posix", "Linux compiler distribution symlinks")
+    def test_distribution_materializes_internal_links_and_rejects_external_links(self):
+        from tools.dev_managed_distribution import pack
+        from tools.dev_managed_tools import unpack
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            inputs = root / "inputs"
+            inputs.mkdir()
+            (inputs / "tool").write_bytes(b"actual compiler")
+            (inputs / "alias").symlink_to("tool")
+            sdk = root / "sdk"
+            sdk.mkdir()
+            pack({"compiler": inputs}, sdk)
+            target = unpack(sdk, root / "attempt", lambda: None)
+            self.assertFalse((target / "compiler/alias").is_symlink())
+            self.assertEqual((target / "compiler/alias").read_bytes(), b"actual compiler")
+            (root / "outside").write_bytes(b"not an input")
+            (inputs / "escaped").symlink_to(root / "outside")
+            other = root / "other"
+            other.mkdir()
+            with self.assertRaisesRegex(common.DevError, "link-escape"):
+                pack({"compiler": inputs}, other)
+
+
+class NativeDifferential(unittest.TestCase):
+    def report(self, operating_system):
+        applications = {}
+        for name in ("greeting", "word-count", "shipping"):
+            applications[name] = {"passed": True, "environment": "portable", "cleanup": "owned-native-host-reaped",
+                "identity": {"artifacts": {"component": "sha256:" + "a" * 64}, "hostAbi": common.HOST_ABI,
+                    "runtime": {"runs": [{"os": operating_system.lower(), "productionNode": False,
+                                          "runtimeProfile": "standard-v1"}]}},
+                "results": [{"id": name, "status": "passed", "outcomeKnown": True, "category": "success",
+                             "inputSha256": "sha256:" + "b" * 64, "payloadSha256": "sha256:" + "c" * 64,
+                             "platformCode": None}]}
+        return {"schemaVersion": "latent.dev.portable-applications.v1", "os": operating_system, "passed": True,
+            "execution": "actual-component-production-wasmtime", "compilerInExecutionPath": False,
+            "outsideCheckout": True, "cleanup": "owned-processes-reaped", "language": "rust", "ownerIssue": 544,
+            "applications": applications}
+
+    def test_actual_bytes_component_and_native_host_must_all_match(self):
+        from tools.compare_portable_guest_tests import compare
+        windows, linux = self.report("Windows"), self.report("Linux")
+        self.assertTrue(compare(common.encode(windows), common.encode(linux))["passed"])
+        for mutate in (
+            lambda r: r["applications"]["greeting"]["results"][0].update(payloadSha256="sha256:" + "d" * 64),
+            lambda r: r["applications"]["greeting"]["identity"]["artifacts"].update(component="sha256:" + "d" * 64),
+            lambda r: r["applications"]["greeting"]["results"][0].update(status="unsupported"),
+            lambda r: r["applications"]["greeting"]["identity"]["runtime"]["runs"][0].update(os="windows"),
+        ):
+            changed = copy.deepcopy(linux)
+            mutate(changed)
+            with self.assertRaises(common.DevError):
+                compare(common.encode(windows), common.encode(changed))
 
 
 if __name__ == "__main__":
