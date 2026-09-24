@@ -684,7 +684,7 @@
       "job": "linux-portable",
       "jobIf": "success()",
       "name": "Assemble Linux frontend and portable host with the shared distribution owner",
-      "run": "python -c \"from pathlib import Path; import subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; p=Path('target/release/latent-portable-test-host'); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'linux-x86_64','profile':'release'}))\"\npython tools/build_dev_bundle.py --target linux-x86_64 --frontend target/dev-linux-frontend --portable target/release/latent-portable-test-host --output target/dev-linux",
+      "run": "python -c \"from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-linux-frontend/portable'); d.mkdir(); p=d/'latent-portable-test-host'; shutil.copyfile('target/release/latent-portable-test-host',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'linux-x86_64','profile':'release'}))\"\npython tools/build_dev_bundle.py --target linux-x86_64 --frontend target/dev-linux-frontend --portable target/dev-linux-frontend/portable/latent-portable-test-host --output target/dev-linux",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -6709,7 +6709,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-tools.yml": "d42d6550a9f3b2c8d3345823d608d51863ef7911e217a4b803fdfe3e79fd5169",
+    ".github/workflows/developer-tools.yml": "abab47e2b6cdb170e1d1503deeeebe516343f12720206c4476d6e75a0ff67fe4",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
