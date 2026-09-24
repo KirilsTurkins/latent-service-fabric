@@ -1,6 +1,8 @@
 //! Sealed preparation provenance bound to one concrete repository owner.
 
 mod owned;
+pub(crate) mod read_wait;
+pub use read_wait::ArtifactPreparationReadWait;
 
 pub use owned::{
     ArtifactPreparationReadBounds, ArtifactPreparationReadLimits, OwnedArtifactPreparationSource,

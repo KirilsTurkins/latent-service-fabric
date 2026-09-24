@@ -17,6 +17,16 @@ pub(crate) struct PreparationWait<T: Send + Sync + 'static> {
 }
 
 impl<T: Send + Sync + 'static> PreparationWait<T> {
+    pub(crate) fn control(&self) -> Result<super::JobControl, PlatformError> {
+        self.core
+            .lock()
+            .jobs
+            .iter()
+            .find(|job| job.id == self.job)
+            .map(|job| job.control.clone())
+            .ok_or_else(|| capacity_error("compiler-job-no-longer-pending"))
+    }
+
     pub(crate) fn reserve_documents(&self, bytes: usize) -> Result<(), PlatformError> {
         let mut state = self.core.lock();
         if !state.accepting {
@@ -129,6 +139,7 @@ impl<T: Send + Sync + 'static> Drop for PreparationWait<T> {
             && matches!(state.jobs[index].phase, Phase::Assigned(_) | Phase::Queued)
         {
             let job = state.jobs.remove(index);
+            job.control.stop();
             state.documents -= job.documents;
             state.waiters -= job.waiters.len();
             if let Phase::Assigned(worker) = job.phase {
@@ -172,6 +183,7 @@ impl<T: Send + Sync + 'static> Drop for PreparationWait<T> {
         let phase = job.phase;
         if empty {
             job.abandoned = true;
+            job.control.stop();
             if let Some(control) = &job.native_control {
                 control.cancel();
             }
