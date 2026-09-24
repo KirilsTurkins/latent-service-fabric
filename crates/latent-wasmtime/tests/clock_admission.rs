@@ -61,11 +61,11 @@ async fn legacy_clock_without_explicit_timer_still_fails_closed_on_real_fence() 
     let report = f.backend.invoke_contained(request, &control).await;
     held.lock().unwrap().take().unwrap().release();
     assert_eq!(f.clock.calls.load(Ordering::Acquire), 1);
-    let GuestOutcome::Interrupted { metadata, .. } = report.outcome.unwrap() else {
+    let GuestOutcome::Trapped { trap, .. } = report.outcome.unwrap() else {
         panic!("legacy import must fail closed");
     };
     assert_eq!(
-        metadata
+        trap.metadata
             .get("admissionCurrentnessReason")
             .map(String::as_str),
         Some("admission-authority-busy")
@@ -109,7 +109,7 @@ async fn clock_wait_never_replaces_a_revoked_original_policy() {
     let report = invocation.await;
     assert!(matches!(
         report.outcome.unwrap(),
-        GuestOutcome::Interrupted { .. }
+        GuestOutcome::Trapped { .. }
     ));
     assert_eq!(f.clock.calls.load(Ordering::Acquire), 1);
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
@@ -130,11 +130,11 @@ async fn clock_wait_does_not_renew_an_expired_original_admission_lease() {
     signed.expire_original_lease();
     held.lock().unwrap().take().unwrap().release();
     let report = invocation.await;
-    let GuestOutcome::Interrupted { metadata, .. } = report.outcome.unwrap() else {
+    let GuestOutcome::Trapped { trap, .. } = report.outcome.unwrap() else {
         panic!("original lease must remain expired");
     };
     assert_eq!(
-        metadata
+        trap.metadata
             .get("admissionCurrentnessReason")
             .map(String::as_str),
         Some("admission-clock-lease-uncovered")
