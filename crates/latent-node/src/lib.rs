@@ -7,6 +7,7 @@ mod activation_runner;
 mod budgeted_activation;
 mod budgeted_execution;
 mod cancellation;
+mod currentness_read_timer;
 mod inventory;
 mod journal;
 
@@ -30,6 +31,7 @@ pub use cancellation::{
     ActivationCancellationRegistry, CancellationHandle, CancellationRegistration,
     CancellationRegistrySnapshot, CancellationToken,
 };
+pub use currentness_read_timer::CurrentnessReadTimer;
 pub use journal::{
     ActivationJournalSnapshot, LocalActivationJournal, LocalActivationJournalConfig,
 };
