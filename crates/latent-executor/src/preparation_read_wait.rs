@@ -12,5 +12,7 @@ use latent_core::BoxFuture;
 pub trait PreparationReadWait: Send + Sync {
     fn now(&self) -> Instant;
 
+    /// Completes only once `now()` reaches the supplied deadline. Polling an
+    /// unexpired wait must yield to the caller's executor rather than spin.
     fn wait_until(&self, deadline: Instant) -> BoxFuture<'_, ()>;
 }
