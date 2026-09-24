@@ -16,3 +16,6 @@ impl PreparationReadWait for Timer {
         Box::pin(tokio::time::sleep_until(deadline.into()))
     }
 }
+
+#[cfg(test)]
+mod tests;
