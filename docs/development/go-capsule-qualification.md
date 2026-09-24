@@ -6,6 +6,43 @@ requires the complete real-node and printed-guide gate at the final PR head.
 No partial observation below authorizes a release or replaces human newcomer
 review #345.
 
+## Fixture acquisition failure and approved replacement
+
+The observation-only candidate `6f33e3ad273aadfa15c48d609566328e17d94c6d`
+passed all six language workflows and the security workflow. Its
+[Go qualification 36003986176](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36003986176)
+retained ten actual SDK cases, 27 node outcomes, 24 resource samples and all six
+printed guide blocks, with unchanged source/tool identities and clean/reaped
+owners. The qualification digest is
+`ddf3b0209d965ebf5d73d06dc5be189eade07bbf25b728865da90ace95bb7110`.
+
+However, [broad CI 36003986490](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36003986490)
+failed before S3 execution: the first exact MinIO image pull returned
+`unauthorized`. The independently retained
+[lane artifact 10811930245](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36003986490/artifacts/10811930245)
+records the successful renderer lane and failed provider preparation. Phase 2
+operator and later gates were skipped; this run supplies neither a successful
+operator receipt nor an execution result for its 36 Python operator cases.
+Separate anonymous probes of that exact MinIO digest at both registries also
+returned unauthorized, while a public Quay control succeeded. This proves an
+acquisition failure, not image deletion or a runtime/provider defect.
+
+The maintainer approved replacing the unavailable fixture with the
+[pinned source-built S3 server](../testing/s3-fixture.md). Its source archive,
+compiler, binary, rootfs and local immutable image are checked, and a usable
+receipt is published only after verified compiler retirement. No registry
+credentials, mutable fallback, image publication or runtime limits changed.
+The two real S3 cases and wrong-harness negative control remain required.
+The build has a separate bounded preparation owner; the existing provider and
+renderer execution budgets are unchanged.
+
+Both remaining ticket PRs still require new exact-head CI, source/execution
+review and final merge checks after this fixture change. Prior successful
+language gates do not qualify a changed candidate. The historical call-107
+failure below remains unexplained and is not reclassified by this replacement;
+no operation or failed workflow is automatically replayed. Release publication
+and human newcomer review #345 remain outside this delivery.
+
 ## Qualified language profiles and retained operator failure
 
 The corrected candidate `76d6e202ef705be062ef376bb2d2ff8a873835ef`, tree
