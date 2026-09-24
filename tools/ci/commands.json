@@ -4077,6 +4077,11 @@
       "WatchTransitions.test_untrusted_build_is_actionable_before_tools_or_backend_are_used"
     ],
     "tools/tests/test_dev_workflow.py": [
+      "DevcontainerOwnership.test_changed_cache_during_copy_retains_incomplete_owner_without_runnable_configuration",
+      "DevcontainerOwnership.test_container_generation_copies_only_verified_bytes_and_executes_no_commands",
+      "DevcontainerOwnership.test_container_generation_rejects_tampering_before_writing_files",
+      "DevcontainerOwnership.test_container_generation_requires_consent_and_preserves_existing_configuration",
+      "DevcontainerOwnership.test_generated_tools_and_container_ownership_never_enter_guest_source_snapshots",
       "Documents.test_duplicate_and_unknown_fields_are_rejected",
       "Documents.test_protocol_target_abi_and_response_association",
       "Documents.test_unknown_remote_outcome_is_not_success",

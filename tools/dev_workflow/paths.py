@@ -9,7 +9,7 @@ import unicodedata
 
 from .common import DevError, MAX_FILE, require
 
-FORBIDDEN = {".git", ".latent", ".ssh", ".aws", ".azure", ".env", "node_modules", "target", "__pycache__"}
+FORBIDDEN = {".git", ".latent", ".devcontainer", ".ssh", ".aws", ".azure", ".env", "node_modules", "target", "__pycache__"}
 RESERVED = {"con", "prn", "aux", "nul", *(f"com{n}" for n in range(10)), *(f"lpt{n}" for n in range(10))}
 
 

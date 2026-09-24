@@ -281,6 +281,12 @@ portable clock results cannot establish node differential qualification.
 
 ## Editor tasks and compiler locations
 
+The [optional terminal devcontainer](../component-development/devcontainer.md)
+uses the same packaged frontend and explicit SSH backend. Its generated files
+require an authenticated Linux bundle and explicit consent; building and
+starting remain separate terminal actions. See the guide for the pinned inputs,
+private ownership locations, networking boundaries and exercised environment.
+
 After separately acquiring the frontend, connecting a workspace and selecting its
 guest tool inventory, run `dev editor --workspace NAME --project PATH --frontend
 ABSOLUTE_FRONTEND_PATH`. Tasks use the installed workspace compiler selection;
