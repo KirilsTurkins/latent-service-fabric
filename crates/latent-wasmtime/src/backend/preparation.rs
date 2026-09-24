@@ -73,7 +73,7 @@ impl WasmtimeBackend {
             // same owned readiness queue. Recheck the ORIGINAL capability after
             // the await so renewal cannot silently upgrade this request.
             let ready = self
-                .prepare_ready_repository(native.catalog(), key.clone())
+                .prepare_ready_repository(native.catalog(), key.clone(), None)
                 .await?;
             self.shared.preparation_context.check_eligibility(
                 eligibility.as_ref(),
