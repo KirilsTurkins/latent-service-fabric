@@ -23,7 +23,7 @@ def diagnostics(output: Path, language: str) -> None:
     if language == "c":
         c_diagnostics(output)
         return
-    if language in {"java", "dotnet"}:
+    if language in {"java", "dotnet", "go", "typescript"}:
         from tools.dev_managed_tools import diagnostics as managed_diagnostics
         managed_diagnostics(output, language)
         return
@@ -112,13 +112,21 @@ def compile_managed(payload: Path, project: Path, output: Path, check, language:
         os.environ.update(JAVA_HOME=str(staged / "jdk"), PATH=str(staged / "jdk/bin") + os.pathsep + os.environ["PATH"])
         build(project, output, sdk / "bin/capsule-contracts", None, repository, staged / "wasi-sdk",
               gradle=str(staged / "gradle/bin/gradle"), offline_cache=staged / "gradle-cache")
-    else:
+    elif language == "dotnet":
         from tools.dotnet_guest.build import build
         os.environ["PATH"] = str(staged / "dotnet") + os.pathsep + os.environ["PATH"]
         # The upstream installation receipt names its original absolute path.
         # Only this private copy is relocated; the captured bundle is immutable.
         (staged / "tools/wasi-sdk.json").write_bytes(encode({"path": str(staged / "wasi-sdk")}))
         build(project, output, sdk / "bin/capsule-contracts", None, repository, tools=staged / "tools", offline=True)
+    elif language == "go":
+        from tools.go_capsule_build import build
+        os.environ["PATH"] = str(staged / "go/bin") + os.pathsep + str(staged / "generator/bin") + os.pathsep + os.environ["PATH"]
+        build(project, output, sdk / "bin/capsule-contracts", None, repository, offline_cache=staged / "go-cache")
+    else:
+        from tools.typescript_guest.build import build
+        os.environ["PATH"] = str(staged / "node/bin") + os.pathsep + os.environ["PATH"]
+        build(project, output, sdk / "bin/capsule-contracts", None, repository, tools=staged / "tools")
     check()
 
 
@@ -126,17 +134,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--language", choices=("rust", "c", "java", "dotnet"), required=True)
+    parser.add_argument("--language", choices=("rust", "c", "go", "typescript", "java", "dotnet"), required=True)
     args = parser.parse_args()
     project, output = Path(os.path.abspath(args.project)), Path(os.path.abspath(args.output))
     # Distribution layout: <payload>/recipe/tools/dev_guest_recipe.py.
     payload = Path(__file__).resolve().parents[2]
     result = {"schemaVersion": "latent.dev.compiler-result.v1", "language": args.language,
-              "ownerIssue": {"rust": 544, "c": 545, "java": 548, "dotnet": 549}[args.language],
+              "ownerIssue": {"rust": 544, "c": 545, "typescript": 546, "go": 547, "java": 548, "dotnet": 549}[args.language],
               "cleanup": "reaped", "code": "success"}
     try:
         with owned_cancellation() as cancellation:
-            if args.language in {"java", "dotnet"}:
+            if args.language in {"java", "dotnet", "go", "typescript"}:
                 compile_managed(payload, project, output, cancellation.check, args.language)
             else:
                 {"rust": compile_rust, "c": compile_c}[args.language](payload, project, output, cancellation.check)

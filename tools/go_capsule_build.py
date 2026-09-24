@@ -23,7 +23,8 @@ RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsul
           "examples/echo-contract/deployment.json")
 
 
-def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path, repository: str) -> Path:
+def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
+          *, offline_cache: Path | None = None) -> Path:
     project_path, output = checked_path(project_path), checked_path(output)
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
@@ -47,9 +48,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
-            compiler = Compiler(temporary / "compiler", work / "vendor/lsf/sdk/go-guest", commands)
+            compiler = Compiler(temporary / "compiler", work / "vendor/lsf/sdk/go-guest", commands,
+                                offline_cache=offline_cache, source_root=project_path / "src")
             materials = list(compiler.materials.values())
-            paths = {"contracts-tool": checked_path(contracts_tool), "packager": checked_path(packager)}
+            paths = {"contracts-tool": checked_path(contracts_tool)}
+            if packager is not None:
+                paths["packager"] = checked_path(packager)
             materials.extend(file_identity(path, name) for name, path in paths.items())
             stage = "compile"
             component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled")
@@ -66,9 +70,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             package_inputs(output, project, read_json(derived / "surface.json"), files, component)
-            stage = "package"
-            commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-            commands.run("inspect", paths["packager"], "inspect", output / "package")
+            if packager is not None:
+                stage = "package"
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
+                commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
             if snapshot(project_path) != files or snapshot(work) != files:
                 raise ValueError("project changed during the observed Go build")
@@ -98,7 +103,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                "runtime": "go-component-async-v1", "locked": True, "ambientWasi": False},
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
-            write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
+            write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1, "packageAssembled": packager is not None,
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                 "componentDigest": digest(component), "sdkBindingDigest": binding_digest,
                 "buildSeconds": round(time.monotonic() - start, 6), "commands": commands.records})

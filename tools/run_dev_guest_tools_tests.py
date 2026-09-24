@@ -20,7 +20,7 @@ from tools.dev_workflow.common import DevError, decode, encode, require
 
 
 def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict:
-    require(language in {"rust", "c", "java", "dotnet"}, "unsupported-application-build-test-language")
+    require(language in project.LANGUAGES, "unsupported-application-build-test-language")
     require(sys.platform == "linux" and os.geteuid() != 0 and not output.exists(), "unprivileged-linux-and-new-test-output-required")
     output.mkdir(mode=0o700, parents=True)
     temporary = Path(tempfile.mkdtemp(prefix="lsf-" + language + "-dev-tests-"))
@@ -76,7 +76,8 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
             receipt["templates"][name] = {"build": compiled, "cacheHit": True, "outsideCheckout": True,
                                           "authorPathIncludesSpacesAndUnicode": True}
             if name == "greeting":
-                source_name = "app/src/" + {"rust": "lib.rs", "c": "main.c", "java": "dev/latent/app/Capsule.java", "dotnet": "Main.cs"}[language]
+                source_name = "app/src/" + {"rust": "lib.rs", "c": "main.c", "java": "dev/latent/app/Capsule.java",
+                    "dotnet": "Main.cs", "go": "main.go", "typescript": "main.ts"}[language]
                 original = (author / source_name).read_bytes()
                 (author / source_name).write_bytes(original + b"\nthis is not valid source;\n")
                 try:
@@ -137,7 +138,7 @@ def main() -> int:
     parser.add_argument("--payload", type=Path, required=True)
     parser.add_argument("--packager", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--language", choices=("rust", "c", "java", "dotnet"), required=True)
+    parser.add_argument("--language", choices=sorted(project.LANGUAGES), required=True)
     args = parser.parse_args()
     receipt = exercise(args.payload.resolve(strict=True), args.packager.resolve(strict=True), args.output.absolute(), args.language)
     print(json.dumps({"passed": receipt["passed"], "cleanup": receipt["cleanup"], "templates": list(receipt["templates"]),

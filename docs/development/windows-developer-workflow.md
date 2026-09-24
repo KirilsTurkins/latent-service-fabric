@@ -345,6 +345,17 @@ in the scenarios. CI repeats these native comparisons for Rust, C, Java and C#.
 These are source-integration and native-host comparisons; they do not qualify
 publisher identity, managed WSL installation or real Linux-node differential tests.
 
+The [Go and TypeScript source observation](go-typescript-developer-source-observation.json)
+records all three maintained templates building with pinned offline compiler
+bundles, an unprivileged Linux account and no network. Both languages passed
+cache reuse, mapped compiler failures, last-good retention, changed-source output
+and cleanup. Go retains its reviewed module graph; TypeScript retains its npm
+lock and gives Wizer private compiler configuration/cache paths. CI now builds
+and compares all six languages on native Windows and Linux. Native preparation
+has a separate 120-second allowance, each activation retains its declared
+deadline, and one scenario run is bounded to five minutes. The observation keeps
+failed native preparation attempts explicit until release-host execution passes.
+
 The actual native Windows C run executes the three compiled applications through
 the common byte-exact success/declared-error scenarios. It also runs C probes for
 context, log, clocks, random, metrics and buffered HTTP using the same assertions
@@ -404,10 +415,10 @@ not establish receipt expiration. The harness never marks qualification complete
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #562 | Mac/native ARM64 requirements deferred by maintainer; no ARM64 support claim. |
-| #563 | Authenticate/install Rust, C, Java and C# tools through the Windows workflow; integrate the Go and TypeScript owners. |
+| #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
 | #564 | Complete malformed/admission failure, rapid edits, in-flight revision, revocation and expired-receipt cases; repeat the observed source watch/recovery schedule with final authenticated packages. |
 | #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |
-| #566 | Complete explicit clock fixtures, verified native distribution and real Linux-node differential execution; CI compares four languages' actual native tutorial outputs. |
+| #566 | Complete explicit clock fixtures, verified native distribution and real Linux-node differential execution; CI includes all six languages' native tutorial outputs. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
 | #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
 

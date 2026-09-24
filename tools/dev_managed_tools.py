@@ -70,16 +70,37 @@ def unpack(sdk: Path, destination: Path, check) -> Path:
 def diagnostics(output: Path, language: str) -> None:
     """Forward only bounded source locations mapped by the maintained recipe."""
     import sys
+    if language == "go":
+        if not (output / "diagnostic-files.json").exists():
+            return
+        mapping = decode(paths.read(output, "diagnostic-files.json", 256 * 1024))
+        retained = 0
+        for path in sorted((output / "logs").glob("*-component-build.*.txt")):
+            for line in paths.read(path.parent, path.name, 4 * 1024 * 1024).splitlines():
+                if len(line) > 16384:
+                    continue
+                for origin, requested in mapping.items():
+                    prefix = (origin + ":").encode()
+                    if line.startswith(prefix):
+                        raw = (requested + ":").encode() + line[len(prefix):] + b"\n"
+                        retained += len(raw)
+                        if retained > 128 * 1024:
+                            return
+                        sys.stderr.buffer.write(raw)
+                        break
+        return
     if not (output / "diagnostic-source.json").exists():
         return
     mapping = decode(paths.read(output, "diagnostic-source.json", 16384))
     prefix = (mapping["capturedSource"] + "/").encode()
     replacement = (mapping["requestedSource"] + "/").encode()
     logs = sorted((output / "compiler-logs").glob("*-java-to-c.log")) if language == "java" else sorted(
-        (output / "logs").glob("*-native-aot.*.txt"))
+        (output / "logs").glob("*-typecheck.*.txt" if language == "typescript" else "*-native-aot.*.txt"))
     retained = 0
     for path in logs:
         for line in paths.read(path.parent, path.name, 4 * 1024 * 1024).splitlines():
+            if language == "typescript" and line.startswith(b"src/"):
+                line = prefix + line[4:]
             if len(line) > 16384 or prefix not in line:
                 continue
             raw = line.replace(prefix, replacement).strip() + b"\n"

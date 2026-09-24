@@ -61,9 +61,9 @@ def dependency_packages(language: str) -> list[dict]:
         for key, (name, version, location, algorithm, checksum) in sorted(rows.items())]
 
 
-def extract(archive: Path, destination: Path, name: str) -> Path:
+def extract(archive: Path, destination: Path, name: str, *, source: dict | None = None) -> Path:
     """Builder-only upstream extraction, after exact release checksum verification."""
-    require(file_digest(archive)[0] == SOURCES[name]["sha256"], "managed-upstream-digest")
+    require(file_digest(archive)[0] == (source or SOURCES[name])["sha256"], "managed-upstream-digest")
     destination.mkdir(mode=0o700)
     total = 0
     if name == "gradle":
@@ -85,7 +85,7 @@ def extract(archive: Path, destination: Path, name: str) -> Path:
                         shutil.copyfileobj(source, output, 1024 * 1024)
                     target.chmod(0o700 if mode & 0o111 else 0o600)
     else:
-        with tarfile.open(archive, "r:gz") as package:
+        with tarfile.open(archive, "r:*") as package:
             entries = package.getmembers()
             require(len(entries) <= MAX_FILES, "managed-upstream-file-limit")
             for entry in entries:

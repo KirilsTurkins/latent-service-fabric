@@ -17,6 +17,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import dev_tool_distribution as distribution, dev_managed_distribution as managed, native_runtime_build, rust_capsule_project
+from tools import dev_go_distribution, dev_typescript_distribution
 from tools.build_observation import build_environment, resolve_tools
 from tools.build_process import run_bounded
 from tools.dev_distribution import assemble, file_digest
@@ -53,7 +54,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--python-prefix", type=Path, required=True, help="/usr/local copied from the pinned Python OCI image")
     parser.add_argument("--allow-dirty", action="store_true", help="Unsigned local assembly testing only")
-    parser.add_argument("--language", choices=("rust", "c", "java", "dotnet"), required=True)
+    parser.add_argument("--language", choices=sorted(LANGUAGES), required=True)
     args = parser.parse_args()
     require(sys.platform == "linux", "guest-candidate-linux-builder-required")
     output = args.output.absolute()
@@ -113,9 +114,16 @@ def main() -> int:
         (payload / name).chmod(0o700)
     if args.language == "rust":
         distribution.registry(payload, Path(environment["CARGO_HOME"]))
+    compiler_sbom = None
     if args.language in {"java", "dotnet"}:
         managed.prepare(payload, output, args.language, download)
         upstream.update(managed.sources(args.language))
+    elif args.language == "go":
+        compiler_sbom = dev_go_distribution.prepare(payload, output, download, epoch)
+        upstream.update(dev_go_distribution.SOURCES)
+    elif args.language == "typescript":
+        dev_typescript_distribution.prepare(payload, output, download)
+        upstream.update(dev_typescript_distribution.SOURCES)
     distribution.recipe(payload, args.language)
     for name in executables:
         (payload / name).chmod(0o700)
@@ -157,6 +165,18 @@ def main() -> int:
         for name, source in upstream.items()]
     if args.language in {"java", "dotnet"}:
         extra.extend(managed.dependency_packages(args.language))
+    elif args.language == "typescript":
+        extra.extend(dev_typescript_distribution.dependency_packages())
+    if compiler_sbom is not None:
+        # Reuse the reviewed inventory owner for the generator's declared Rust
+        # closure. Keep its exact upstream source identities and dependency edges.
+        known = {item["SPDXID"]: item for item in sbom["packages"]}
+        for package in compiler_sbom["packages"]:
+            require(package["SPDXID"] not in known or known[package["SPDXID"]] == package,
+                    "conflicting-generator-dependency")
+            if package["SPDXID"] not in known:
+                extra.append(package)
+        sbom["relationships"].extend(compiler_sbom["relationships"])
     for name, version, location, comment in (
         ("rust", distribution.RUST_VERSION, "https://static.rust-lang.org/dist/channel-rust-" + distribution.RUST_VERSION + ".toml",
          "Official installed compiler and stdlib; copyright manifests and license texts in licenses/rust."),

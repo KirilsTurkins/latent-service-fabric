@@ -9,13 +9,15 @@ pub enum RuntimeProfile {
     Java,
     #[serde(rename = "dotnet-native-aot-v1")]
     Dotnet,
+    #[serde(rename = "typescript-spidermonkey-v1")]
+    TypeScript,
 }
 
 impl RuntimeProfile {
     pub fn maximum_memory(self) -> u64 {
         match self {
             Self::Standard | Self::Java => 64 * 1024 * 1024,
-            Self::Dotnet => 128 * 1024 * 1024,
+            Self::Dotnet | Self::TypeScript => 128 * 1024 * 1024,
         }
     }
 }

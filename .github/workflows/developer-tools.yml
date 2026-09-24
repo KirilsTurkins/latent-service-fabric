@@ -16,6 +16,8 @@ on:
       - tools/dev_guest_recipe.py
       - tools/dev_guest_tools.py
       - tools/dev_managed_*.py
+      - tools/dev_go_distribution.py
+      - tools/dev_typescript_distribution.py
       - tools/run_dev_guest_tools_tests.py
       - tools/run_portable_guest_tests.py
       - tools/compare_portable_guest_tests.py
@@ -26,6 +28,10 @@ on:
       - tools/dotnet_capsule.py
       - tools/dotnet_guest/**
       - tools/dotnet_guest_bindings.py
+      - tools/go_capsule*.py
+      - tools/go_guest/**
+      - tools/typescript_capsule.py
+      - tools/typescript_guest/**
       - tools/rust_capsule*.py
       - tools/rust_capsule.lock
       - tools/build_observation.py
@@ -50,6 +56,8 @@ on:
       - sdk/c-guest/**
       - sdk/java-guest/**
       - sdk/dotnet-guest/**
+      - sdk/go-guest/**
+      - sdk/typescript-guest/**
       - Cargo.toml
       - Cargo.lock
       - crates/**
@@ -90,7 +98,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [rust, c, java, dotnet]
+        language: [rust, c, java, dotnet, go, typescript]
     env:
       LSF_DEV_LANGUAGE: ${{ matrix.language }}
     permissions:
@@ -226,7 +234,7 @@ jobs:
           path: target/dev-applications/
       - name: Execute all maintained tutorial applications on Windows
         run: |
-          foreach ($language in @('rust', 'c', 'java', 'dotnet')) {
+          foreach ($language in @('rust', 'c', 'java', 'dotnet', 'go', 'typescript')) {
             python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host.exe --language $language --applications "target/dev-applications/developer-$language-applications-$env:GITHUB_SHA" --output "target/dev-portable-$language-applications.json"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
@@ -279,7 +287,7 @@ jobs:
       - name: Execute all maintained tutorial applications on Linux
         run: |
           set -euo pipefail
-          for language in rust c java dotnet; do
+          for language in rust c java dotnet go typescript; do
             python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host --language "$language" --applications "target/dev-applications/developer-$language-applications-$GITHUB_SHA" --output "target/dev-portable-$language-applications.json"
           done
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -312,7 +320,7 @@ jobs:
       - name: Compare component identities and actual typed success and error bytes
         run: |
           set -euo pipefail
-          for language in rust c java dotnet; do
+          for language in rust c java dotnet go typescript; do
             python tools/compare_portable_guest_tests.py --windows "target/windows/dev-portable-$language-applications.json" --linux "target/linux/dev-portable-$language-applications.json" --output "target/$language-differential.json"
           done
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

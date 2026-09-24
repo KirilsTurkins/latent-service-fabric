@@ -694,7 +694,7 @@
       "job": "linux-portable",
       "jobIf": "success()",
       "name": "Execute all maintained tutorial applications on Linux",
-      "run": "set -euo pipefail\nfor language in rust c java dotnet; do\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host --language \"$language\" --applications \"target/dev-applications/developer-$language-applications-$GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\"\ndone",
+      "run": "set -euo pipefail\nfor language in rust c java dotnet go typescript; do\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host --language \"$language\" --applications \"target/dev-applications/developer-$language-applications-$GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\"\ndone",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -704,7 +704,7 @@
       "job": "portable-differential",
       "jobIf": "success()",
       "name": "Compare component identities and actual typed success and error bytes",
-      "run": "set -euo pipefail\nfor language in rust c java dotnet; do\n  python tools/compare_portable_guest_tests.py --windows \"target/windows/dev-portable-$language-applications.json\" --linux \"target/linux/dev-portable-$language-applications.json\" --output \"target/$language-differential.json\"\ndone",
+      "run": "set -euo pipefail\nfor language in rust c java dotnet go typescript; do\n  python tools/compare_portable_guest_tests.py --windows \"target/windows/dev-portable-$language-applications.json\" --linux \"target/linux/dev-portable-$language-applications.json\" --output \"target/$language-differential.json\"\ndone",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -764,7 +764,7 @@
       "job": "windows",
       "jobIf": "success()",
       "name": "Execute all maintained tutorial applications on Windows",
-      "run": "foreach ($language in @('rust', 'c', 'java', 'dotnet')) {\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host.exe --language $language --applications \"target/dev-applications/developer-$language-applications-$env:GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\"\n  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n}",
+      "run": "foreach ($language in @('rust', 'c', 'java', 'dotnet', 'go', 'typescript')) {\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host.exe --language $language --applications \"target/dev-applications/developer-$language-applications-$env:GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\"\n  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n}",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -3124,7 +3124,7 @@
       "sha256": "c8e8959a795e1d207cbead426acb255cb23839cd7424fd1e5633bd69046a6888"
     },
     "tools/build_dev_guest_tools.py": {
-      "sha256": "8d237eb43e39348ec79cc779d2ea827b8c4f448c06ebc50a82631357149555ea"
+      "sha256": "161f248bf9da0a2401301caf1d5870b1b0981559102b4652aa12f3dbbc5914e1"
     },
     "tools/build_dev_rootfs.py": {
       "sha256": "b0a0df997fc39bd4447f1afe825ce58c7ce6ae16a851fa7e3a8ad70bafe479c0"
@@ -3274,7 +3274,7 @@
       "sha256": "7664b879113ad53073ba342eea41af3b7d6bb64b38a8443c7a573761162c1a85"
     },
     "tools/run_dev_guest_tools_tests.py": {
-      "sha256": "8313e6981e2c5eadeaae98461f8926a5f09952881f6eb5523fad40584b242cd2"
+      "sha256": "c9cc4d81871a7fbd2a3ac2f5a2d4208348bee82daa51617e9c1bb36377d62072"
     },
     "tools/run_native_vm.py": {
       "sha256": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12"
@@ -3316,7 +3316,7 @@
       "sha256": "090f2ef288e611d9ea52809c9d83fb6ad9ad43ffecc75e5b9a2fafd7daf453ad"
     },
     "tools/run_portable_guest_tests.py": {
-      "sha256": "0abe4253229250f577abc1f9875b2e2d6ecc25d0ee67da92ccf4cf7f8bc7bd18"
+      "sha256": "aa42377a892e8d574a61b41aa8d64bda27dc0504b240550556e670558088f268"
     },
     "tools/run_publication_workflow.py": {
       "sha256": "8db908658b41757e598285dd0c0a1bdf288dd706e56de5463ce9facc23d5fd42"
@@ -6636,7 +6636,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-tools.yml": "e7a90843e201c2a3c1ecc1c7e8098871dc515e3de957bf583013e3a77b009150",
+    ".github/workflows/developer-tools.yml": "6e9cb472ae56f77b4fa1194851eddcd278b17cc70c91f633fc5f312db9c12227",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",

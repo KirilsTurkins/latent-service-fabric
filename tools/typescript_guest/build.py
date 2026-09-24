@@ -18,12 +18,12 @@ RECIPE = ("tools/typescript_capsule.py", "tools/typescript_guest/project.py", "t
     "tools/typescript_guest/componentize.mjs", "tools/typescript_guest/signed64.mjs", "tools/typescript_guest/resources.mjs",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
     "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
-    "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
-    "tools/phase3_resource_identity.py", "tools/phase3_resource_profile.py",
+    "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py",
+    "tools/phase3_resource_identity.py", "tools/phase3_resource_profile.py", "tools/phase2_operator_process.py",
     "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json")
 
 
-def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path, repository: str, *, tools: Path):
+def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path):
     project_path, output, tools = map(checked_path, (project_path, output, tools))
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
@@ -47,7 +47,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
-            paths = {"contracts-tool": checked_path(contracts_tool), "packager": checked_path(packager)}
+            write_json(output / "diagnostic-source.json", {"capturedSource": str(work / "src"),
+                       "requestedSource": str(project_path / "src")})
+            paths = {"contracts-tool": checked_path(contracts_tool)}
+            if packager is not None:
+                paths["packager"] = checked_path(packager)
             materials = [file_identity(path, name) for name, path in paths.items()]
             # Check the production public-value profile before compiling the
             # embedded engine. Host resource imports remain legal, but public
@@ -74,9 +78,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             (output / "generated-bindings.js").write_bytes(read_file(temporary / "compiled/generated-bindings.js", 8 * 1024 * 1024))
             write_json(output / "bindings.json", generated)
             package_inputs(output, project, read_json(derived / "surface.json"), files, component)
-            stage = "package"
-            commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-            commands.run("inspect", paths["packager"], "inspect", output / "package")
+            if packager is not None:
+                stage = "package"
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
+                commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
             captured_after = {name: data for name, data in snapshot(work).items()
                               if not name.startswith("generated/") and name != "tsconfig.json"}
@@ -108,7 +113,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                "target": "wasm32-component", "runtime": "spidermonkey", "ambientWasi": False},
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
-            write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
+            write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1, "packageAssembled": packager is not None,
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                 "componentDigest": digest(component), "sdkBindingDigest": generated["filesDigest"],
                 "buildSeconds": round(time.monotonic() - start, 6), "commands": commands.records})

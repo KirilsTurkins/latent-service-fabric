@@ -6,6 +6,7 @@ from contextlib import ExitStack
 import os
 from pathlib import Path
 import platform
+import time
 
 from . import bundle, paths, process, project, scenarios, state
 from .common import HOST_ABI, decode, digest, encode, require
@@ -31,6 +32,7 @@ def fixture_inputs(source: Path, fixtures: list[dict]) -> dict | None:
 
 def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
             selection: list[str], *, host_identity: dict) -> dict:
+    deadline = time.monotonic() + 300
     project.validate(descriptor)
     documents = [scenarios.validate(decode(paths.read(source, name)), "portable")
                  for name in descriptor["scenarios"]]
@@ -73,14 +75,21 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
     results, runs = {}, []
     for fixtures, calls in groups:
         request = {"schemaVersion": "latent.dev.portable-request.v1", "environment": "portable",
-            "runtimeProfile": {"java": "java-linear-v1", "dotnet": "dotnet-native-aot-v1"}.get(descriptor["language"], "standard-v1"),
+            "runtimeProfile": {"java": "java-linear-v1", "dotnet": "dotnet-native-aot-v1",
+                               "typescript": "typescript-spidermonkey-v1"}.get(descriptor["language"], "standard-v1"),
             "controlledDevelopment": True, "component": base64.b64encode(content["component"]).decode(),
             "manifest": base64.b64encode(content["capsule"]).decode(),
             "contracts": base64.b64encode(content["contracts"]).decode(), "calls": calls, "fixtures": fixtures}
         raw = encode(request)
         require(len(raw) <= 32 * 1024 * 1024, "portable-request-byte-limit")
+        # Native preparation compiles the embedded language runtime as well as
+        # application code. Its finite host allowance is separate from every
+        # guest's unchanged activation deadline. All groups share one run bound.
+        remaining = deadline - time.monotonic()
+        require(remaining > 0, "portable-test-run-deadline")
         completed = process.run([str(executable)], source, stdin=raw,
-            timeout=30 + sum(case["timeoutMillis"] for case in calls) / 1000, maximum=4 * 1024 * 1024)
+            timeout=min(remaining, 120 + sum(case["timeoutMillis"] for case in calls) / 1000),
+            maximum=4 * 1024 * 1024)
         runtime = decode(completed.stdout, 4 * 1024 * 1024)
         require(completed.returncode == 0 and runtime.get("schemaVersion") == "latent.dev.portable-result.v1"
                 and runtime.get("environment") == "portable" and runtime.get("productionNode") is False

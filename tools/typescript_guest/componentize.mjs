@@ -1,6 +1,6 @@
 // Checksum-pinned compiler adapter: expose core output and normalize the
 // maintained generator's signed i64 lowering to the embedding's core ABI.
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { basename, dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -28,10 +28,17 @@ try {
 }
 const { componentize } = await import(pathToFileURL(path));
 if (!witPath) process.exit(0); // Prepare and hash the reviewed adapter before the build.
+// Wizer's host cache requires a home/config location even for an isolated UID
+// with no passwd entry. Keep it in this compiler attempt, without inheriting
+// the developer's environment or touching the immutable compiler prefix.
+const compilerHome = join(output, 'compiler-home');
+await mkdir(compilerHome);
+const compilerEnv = { HOME: compilerHome,
+  XDG_CONFIG_HOME: join(compilerHome, 'config'), XDG_CACHE_HOME: join(compilerHome, 'cache') };
 let generatedBindings;
 const result = await componentize({
   sourcePath, sourceName: basename(sourcePath),
-  witPath, worldName: world, enableAot: false, env: {},
+  witPath, worldName: world, enableAot: false, env: compilerEnv,
   lsfBindings(source) {
     generatedBindings = explicitResourceOwners(coreIntegerLowering(source));
     return generatedBindings;

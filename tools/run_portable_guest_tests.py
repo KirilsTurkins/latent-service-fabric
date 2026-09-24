@@ -43,6 +43,8 @@ def verify(host: Path, applications: Path, output: Path, language: str) -> dict:
                           phase="complete", cleanup="owned-processes-reaped")
         except DevError as error:
             report["failureCode"] = error.code
+            if not error.uncertain:
+                report["cleanup"] = "owned-processes-reaped"
             raise
         finally:
             output.write_bytes(encode(report))
