@@ -2,8 +2,9 @@
 
 This is developer execution evidence for #546, separate from the beginner
 [TypeScript authoring guide](../component-development/typescript-authoring.md).
-All ten actual SDK cases have passed; signed-node and printed-guide
-qualification is still pending.
+All ten actual SDK cases, the signed node and the printed guide passed at the
+integrated `a880cfd7` checkpoint below. The newer TypeScript PR #555 still needs
+its final reconciled exact-head CI and source/execution evidence before delivery.
 This report does not authorize a release or replace newcomer review #345.
 
 ## Supported experiment
@@ -42,6 +43,54 @@ A native builder attempt with a nested `list<own<handle>>` public result and
 an intentionally absent JavaScript compiler stopped at the real contract tool
 with `unsupported-resource-identity`; no component or completion marker was
 produced. This is explicit negative authoring evidence, not runtime admission.
+
+## Verified integrated full run
+
+[Run 35963178639](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178639)
+passed at `a880cfd731f82194c36265886a65a1374d0313fb`. Artifact `10794941119`
+retains the complete result. All ten actual SDK tests passed in 883.43 seconds.
+The signed node completed 27 invocations, 111 CLI calls and 24 resource samples,
+including the tutorial results, denied authority, deadline/cancellation and
+disconnect recovery, traps, fuel/memory exhaustion and subsequent fresh state.
+Each of the three samples at 5, 9 and 17 dormant deployments observed one
+process, seven threads and one listener, with zero active/queued activations,
+reserved fuel/memory and service-resident execution owners.
+
+All seventeen single-attempt deployment deletions succeeded in a summed
+150.476252123 seconds. The measured interval from the first empty-node OS scan
+start through the final after-delete scan finish was 921.197677609 seconds.
+This is a sample span, not an invented whole-owner duration; it already exceeds
+the old 900-second owner and confirms why the isolated 1,200-second bound was
+needed. The 120-second activation, 125-second RPC, 130-second process,
+30-second binding preparation and 1,800-second demo-proof limits were unchanged.
+The peer retained eight authorized requests, no unexpected request and three
+physically closed holds. The node stopped cleanly and was reaped, with guest,
+provider, admission and cleanup owners reclaimed and compiler workers joined.
+
+All six unchanged printed guide blocks passed in 80.117363 seconds. They
+returned the expected greeting and declared error, performed one known-success
+deletion and completed the bounded stop/wait path. The guide retained one clean
+stopped record with zero live guest and admission owners. No failed operation
+from an earlier attempt was replayed or reclassified by this success.
+
+Independent verification matched all 2,339 retained source inputs to Git,
+including 2,185 runtime inputs totaling 13,727,494 bytes. Runtime source identity
+was `sha256:ce7ae39f77472a059e8a76139a070bafcfa20aa4edd452e04dc447300e64c005`.
+Before/after source and captured tool identities were unchanged; no generated
+SDK output was counted as a reviewed Git source. The final qualification marker
+SHA-256 was `d65d968b0cc3b8284ca61dfc6fcc21544dc0c05cf75a2e2a2aae8a0f1b06a9ef`;
+the node receipt was `5597f5da212f77afd03ee58cfb49aa385e6e5638cfad266f2442e0db8ab77fe9`.
+
+Source artifact `10793445258` separately matched all 4,101 selected Git blobs
+and 40,105,953 bytes; its archive SHA-256 was
+`fb994f5b4588ca5d4d1f42fbd75a7e3851b34c9644ff23b00b242287909d2441`.
+CI merge `6f8a00cea1b00540c67f7aed53585308818518a6` had the same tree
+`a5c2f893805d286d9726d2a27d64172872ed9c7d` as the reviewed head.
+The evidence remains explicitly non-hermetic and does not attest implicit
+compiler inputs or general byte-for-byte reproducibility. This integrated
+checkpoint establishes the peer/owner correction; it does not replace the
+final PR #555 qualification of its newer TypeScript builder, probe and SDK
+changes, or the required PR/issue evidence links before closure.
 
 ## Retained attempts and compiler boundary fixes
 
@@ -83,8 +132,9 @@ TypeScript qualification owner now explicitly allows 1,200 seconds, including
 its fixture peer; other languages' owner bounds are unchanged. The 120-second
 activation limit, 125-second operator wait, 130-second process watchdog,
 30-second binding preparation ceiling, 1,800-second demo proof window and all
-case counts, policies and production limits remain unchanged. The next complete
-run must measure the corrected total rather than treating this estimate as a pass.
+case counts, policies and production limits remain unchanged. At this failed
+checkpoint, actual TypeScript deletion and complete workflow evidence remained
+unobserved; the later integrated full run above records the subsequent measurements.
 
 Source artifact `10786025098` independently matched all 4,098 selected Git blobs
 and 40,106,559 source bytes at that head; archive SHA-256 was
