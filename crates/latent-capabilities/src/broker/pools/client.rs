@@ -5,6 +5,8 @@ use super::{
 };
 use crate::broker::io::IoLease;
 use std::{collections::VecDeque, time::Duration};
+mod admission;
+use admission::{bookkeeping, ClientAccessError};
 
 pub(super) struct ClientCore {
     pub epoch: Arc<Epoch>,
@@ -147,6 +149,7 @@ impl<T: Send + 'static> ProviderClient<T> {
     ) -> Result<Option<PooledConnection<T>>, PlatformError> {
         call.check_client(&self.core)?;
         self.checkout_owned(Some(call.io.lease()), None)
+            .map_err(ClientAccessError::immediate)
     }
     pub fn checkout_ingress(
         self: &Arc<Self>,
@@ -154,13 +157,14 @@ impl<T: Send + 'static> ProviderClient<T> {
     ) -> Result<Option<PooledConnection<T>>, PlatformError> {
         request.check_client(&self.core)?;
         self.checkout_owned(None, Some(request.clone()))
+            .map_err(ClientAccessError::immediate)
     }
     fn checkout_owned(
         self: &Arc<Self>,
         activation: Option<IoLease>,
         ingress: Option<IngressRequest>,
-    ) -> Result<Option<PooledConnection<T>>, PlatformError> {
-        let mut idle = self.idle.try_lock().map_err(|_| busy())?;
+    ) -> Result<Option<PooledConnection<T>>, ClientAccessError> {
+        let mut idle = bookkeeping(&self.idle)?;
         let value = idle.pop_front();
         drop(idle);
         let Some(value) = value else {
@@ -192,6 +196,7 @@ impl<T: Send + 'static> ProviderClient<T> {
     ) -> Result<ConnectionReservation<T>, PlatformError> {
         call.check_client(&self.core)?;
         self.reserve_owned(Some(call.io.lease()), None, None)
+            .map_err(ClientAccessError::immediate)
     }
     /// Recovery connections retain their finite operator request until the
     /// actual resource is destroyed. They cannot become an idle guest client.
@@ -201,6 +206,7 @@ impl<T: Send + 'static> ProviderClient<T> {
     ) -> Result<ConnectionReservation<T>, PlatformError> {
         request.check_client(&self.core)?;
         self.reserve_owned(None, Some(request.clone()), None)
+            .map_err(ClientAccessError::immediate)
     }
     /// Inbound work cannot borrow another tenant/client's request capacity.
     pub fn reserve_ingress_connection(
@@ -209,26 +215,28 @@ impl<T: Send + 'static> ProviderClient<T> {
     ) -> Result<ConnectionReservation<T>, PlatformError> {
         request.check_client(&self.core)?;
         self.reserve_owned(None, None, Some(request.clone()))
+            .map_err(ClientAccessError::immediate)
     }
     fn reserve_owned(
         self: &Arc<Self>,
         activation: Option<IoLease>,
         maintenance: Option<MaintenanceRequest>,
         ingress: Option<IngressRequest>,
-    ) -> Result<ConnectionReservation<T>, PlatformError> {
+    ) -> Result<ConnectionReservation<T>, ClientAccessError> {
         let owner = self.core.owner.upgrade().ok_or_else(denied)?;
-        let _state = owner.state.try_lock().map_err(|_| busy())?;
+        let _state = bookkeeping(&owner.state)?;
         owner.check()?;
         let limits = owner.quotas.limits()?;
-        let mut backoff = self.core.backoff.try_lock().map_err(|_| busy())?;
+        let mut backoff = bookkeeping(&self.core.backoff)?;
         if backoff.dialing {
-            return Err(busy());
+            return Err(busy().into());
         }
         if backoff.next.is_some_and(|next| next > Instant::now()) {
             return Err(super::super::error(
                 latent_core::PlatformErrorCode::Unavailable,
                 "provider-backoff",
-            ));
+            )
+            .into());
         }
         let slot = owner.quotas.acquire(Kind::Connection, 1)?;
         let metadata = owner.quotas.acquire(Kind::Metadata, 4096)?;
