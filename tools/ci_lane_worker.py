@@ -25,7 +25,6 @@ from tools.test_run import TestRun, require
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "latent.ci-lane-run.v1"
 
-MINIO = "quay.io/minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2"
 VAULT = "hashicorp/vault@sha256:783103ba38c5e3edcaa9bbbcb0ff80fc93c690361f03fd487e89227da6c3efa9"
 NATS = "nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc"
 
@@ -112,14 +111,17 @@ def _wrong_s3_manifest(source: Path, destination: Path) -> None:
 def provider(run: TestRun, manifest: Path, data: dict) -> tuple[list[str], list[str]]:
     selected = _provider_cases(data)
     python = sys.executable
-    _command(run, ["docker", "pull", MINIO], stage="provider-s3-image", timeout=240)
-    _command(run, [python, "tools/run_s3_blob_tests.py", "--test-manifest", str(manifest)],
+    fixture = Path(os.environ["LSF_S3_FIXTURE_RECEIPT"])
+    run.artifact("s3-fixture-receipt", fixture)
+    _command(run, [python, "tools/run_s3_blob_tests.py", "--test-manifest", str(manifest),
+                   "--image-receipt", str(fixture)],
              stage="provider-s3", timeout=420)
 
     wrong = run.root / "wrong-s3-inventory.jsonl"
     _wrong_s3_manifest(manifest, wrong)
     negative = _command(
-        run, [python, "tools/run_s3_blob_tests.py", "--test-manifest", str(wrong)],
+        run, [python, "tools/run_s3_blob_tests.py", "--test-manifest", str(wrong),
+              "--image-receipt", str(fixture)],
         stage="provider-s3-invalid-prepared-harness", timeout=180, check=False,
     )
     require(negative.returncode != 0, "assertion-failure", "wrong-prepared-provider-harness-was-accepted")
