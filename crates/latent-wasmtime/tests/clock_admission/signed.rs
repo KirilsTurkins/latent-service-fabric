@@ -26,6 +26,7 @@ impl SupplyChainClock for Clock {
 pub struct Fixture {
     pub guest: super::fixture::Fixture,
     eligibility: ReleaseUseEligibility,
+    clock: Arc<Clock>,
     _authority: Arc<SupplyChainAuthority>,
 }
 impl Fixture {
@@ -51,7 +52,7 @@ impl Fixture {
             SupplyChainAuthority::open_with_runtime(
                 &root.path().join("trust"),
                 signers.policy,
-                clock,
+                clock.clone(),
                 5,
                 Arc::new(support::config().detected_runtime_profile().unwrap()),
             )
@@ -89,6 +90,7 @@ impl Fixture {
         Self {
             guest,
             eligibility,
+            clock,
             _authority: authority,
         }
     }
@@ -101,6 +103,10 @@ impl Fixture {
             *keep.lock().unwrap() = Some(Fence::hold(&eligibility));
         }));
         held
+    }
+
+    pub fn expire_original_lease(&self) {
+        self.clock.0.fetch_add(6, Ordering::AcqRel);
     }
 }
 
