@@ -2,6 +2,9 @@
 use latent_capabilities::broker::{CapabilityCallCost, CapabilitySession, ProviderCall};
 use latent_core::PlatformError;
 use latent_policy::capability::ResourceTarget;
+mod failure;
+pub(super) use failure::host_error;
+pub(crate) use failure::HostCapabilityFailure;
 
 #[derive(Default)]
 pub(crate) struct HostCapabilities {
@@ -226,20 +229,4 @@ impl HostCapabilities {
         self.begin_typed(capability, operation, resource, &[], cost)
             .map_err(host_error)
     }
-}
-#[derive(Debug)]
-pub(crate) struct HostCapabilityFailure(pub(crate) latent_core::PlatformErrorCode);
-
-impl std::fmt::Display for HostCapabilityFailure {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(formatter, "capability admission: {:?}", self.0)
-    }
-}
-impl std::error::Error for HostCapabilityFailure {}
-
-pub(super) fn host_error(error: PlatformError) -> wasmtime::Error {
-    // No policy document, token, provider location or untrusted detail in traps.
-    let code = error.code;
-    drop(error);
-    wasmtime::Error::new(HostCapabilityFailure(code))
 }
