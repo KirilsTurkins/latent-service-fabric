@@ -830,6 +830,16 @@
       "shell": "default",
       "run": "python3 tools/qualify_dotnet_capsules.py --output \"$RUNNER_TEMP/dotnet-capsule-authoring\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\""
     },
+    ".github/workflows/go-guest.yml:upstream-probe:Capture immutable qualification source inputs": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Capture immutable qualification source inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/go-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/go-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/go-guest-source.sha\""
+    },
     ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": {
       "workflow": ".github/workflows/go-guest.yml",
       "job": "upstream-probe",
@@ -870,15 +880,15 @@
       "shell": "default",
       "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example go_runtime_probe -- \"$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm\" 2>&1 | tee \"$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log\""
     },
-    ".github/workflows/go-guest.yml:upstream-probe:Check standalone project source boundaries": {
+    ".github/workflows/go-guest.yml:upstream-probe:Check standalone project source boundaries and closed provenance": {
       "workflow": ".github/workflows/go-guest.yml",
       "job": "upstream-probe",
-      "name": "Check standalone project source boundaries",
+      "name": "Check standalone project source boundaries and closed provenance",
       "jobIf": "success()",
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_capsule_authoring"
+      "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_capsule_authoring tools.tests.test_build_provenance_schemas"
     },
     ".github/workflows/go-guest.yml:upstream-probe:Qualify editable projects, all SDK owners, enforced node and printed guide": {
       "workflow": ".github/workflows/go-guest.yml",
@@ -3044,7 +3054,7 @@
       "sha256": "414c5d66589e10b567123889b02a0f637ae5dc24b99ab24ba6955eef5803cabb"
     },
     "tools/run_phase2_operator_workflow.py": {
-      "sha256": "4419751f1167d74edb740ee3a849433f4ac05758d2e8a65dcd550fbdb7b121ff"
+      "sha256": "84bfef7775efacb0bba2db710f2bec01c1eda2a144086b986c4e94fee86a1f1b"
     },
     "tools/run_phase3_management_workflow.py": {
       "sha256": "6cf2b176e39c74ccddc6ad5b3d9aee6812d3bf84a0dd9cc45a30ba0eb9d7c070"
@@ -3414,6 +3424,7 @@
       "BuildProvenanceSchemaTests.test_dotnet_profile_requires_exact_recipe_materials_and_builder_choice",
       "BuildProvenanceSchemaTests.test_envelope_canonical_base64_and_exact_decoded_ceiling",
       "BuildProvenanceSchemaTests.test_explicit_builder_requirements_and_revocations",
+      "BuildProvenanceSchemaTests.test_go_recipe_is_closed_and_each_compiler_input_is_required",
       "BuildProvenanceSchemaTests.test_java_recipe_is_closed_and_each_compiler_input_is_required",
       "BuildProvenanceSchemaTests.test_observation_profile_and_material_constraints",
       "BuildProvenanceSchemaTests.test_repository_grammar_matches_observation_and_policy",
@@ -3732,6 +3743,7 @@
       "GoAuthoringTests.test_existing_source_and_overlapping_build_outputs_are_never_overwritten",
       "GoAuthoringTests.test_generated_resource_owners_have_no_gc_effects_and_reject_shape_drift",
       "GoAuthoringTests.test_guide_and_selectable_examples_cover_the_printed_workflow",
+      "GoAuthoringTests.test_module_template_rejects_unreviewed_application_dependencies",
       "GoAuthoringTests.test_readme_entrypoints_match_every_typed_capability_facade",
       "GoAuthoringTests.test_sdk_aliases_follow_generated_identity_without_exposing_resource_constructors",
       "GoAuthoringTests.test_sdk_builder_reuses_captured_tools_without_rebuilding_and_rejects_mutation",
@@ -5357,6 +5369,19 @@
       "OperatorCanaryTests.test_start_target_is_read_from_exact_matching_status"
     ],
     "tools/tests/test_phase2_operator_workflow.py": [
+      "FailedCallObservationTests.test_expected_nonzero_and_success_results_are_forwarded_without_a_failure_record",
+      "FailedCallObservationTests.test_failed_projection_cannot_replace_the_original_cli_error",
+      "FailedCallObservationTests.test_malformed_schema_and_non_boolean_certainty_never_infer_an_outcome",
+      "FailedCallObservationTests.test_only_first_failed_call_is_retained_without_replaying_any_process",
+      "FailedCallObservationTests.test_original_validation_failures_are_unchanged_and_observed_after_cleanup",
+      "FailedCallObservationTests.test_process_cleanup_failure_is_not_relabelled_as_completed_ownership",
+      "FailedCallObservationTests.test_process_failure_keeps_the_original_exception_and_runs_one_cleanup",
+      "FailedCallObservationTests.test_projection_has_closed_tokens_and_fixed_numeric_and_byte_bounds",
+      "FailedCallObservationTests.test_query_and_known_or_unknown_mutation_failures_keep_exact_certainty",
+      "FailedOperatorReceiptTests.test_failed_receipt_is_after_cleanup_has_identities_and_never_claims_clean_shutdown",
+      "FailedOperatorReceiptTests.test_failure_before_client_acquisition_retains_only_completed_identity_capture",
+      "FailedOperatorReceiptTests.test_interrupts_remain_authoritative_after_a_failed_receipt_and_existing_cleanup",
+      "FailedOperatorReceiptTests.test_receipt_sink_failure_does_not_replace_the_original_nonzero_failure",
       "OperatorWorkflowTests.test_binary_identity_hashes_exact_bytes_without_retaining_paths",
       "OperatorWorkflowTests.test_both_auth_tokens_pass_local_profile_grammar",
       "OperatorWorkflowTests.test_candidate_weights_are_explicit_client_copies_only",
@@ -6258,7 +6283,7 @@
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
-    ".github/workflows/go-guest.yml": "c2ee0bfab0fa66a341dda62aeee6dfdf4c77691cd9a1a926ce1fbfb5fdae48cd",
+    ".github/workflows/go-guest.yml": "bb0a8f048724248e33fe72ebb9f153c0e82184cf8d7f99f53be05cfb97c8919e",
     ".github/workflows/java-guest-feasibility.yml": "6c1814b442abf741dc4dceb6ab707cf87b3cc161090a3b5b7a62c9334dc3f872",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",

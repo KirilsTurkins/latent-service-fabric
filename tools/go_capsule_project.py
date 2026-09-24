@@ -34,6 +34,8 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
                           "\n".join("    import " + value + ";" for value in RUNTIME_IMPORTS))
     files = {"vendor/lsf/" + path: data for path, data in vendor.items()}
     files.update({"src/main.go": read_file(ROOT / "sdk/go-guest/templates" / (template + ".go")),
+                  "go.mod": vendor["sdk/go-guest/runtime-deps/go.mod"],
+                  "go.sum": vendor["sdk/go-guest/runtime-deps/go.sum"],
                   "wit/world.wit": world.encode(), ".gitignore": b"/target/\n"})
     for package in ("clock", "random") + (("http-v2",) if template == "http-status" else ()):
         files.update({"wit/deps/" + package + "/" + path: data
@@ -51,6 +53,7 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
     files["README.md"] = (f"# {name}\n\nEdit `src/main.go` and `wit/world.wit`. Keep `vendor/lsf` unchanged.\n"
         "Build with `tools/go_capsule.py` from the SDK checkout. Generated export package names follow WIT.\n"
+        "The root `go.mod` and `go.sum` are the reviewed module template used by the builder; keep their exact dependency graph.\n"
         "No capability is granted by this project. The Go runtime requires explicit clock and random grants.\n").encode()
     directory = fresh(directory)
     for name, data in sorted(files.items()):
@@ -62,7 +65,7 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
 
 
 def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
-    if not {"capsule-project.json", "sdk-lock.json", "src/main.go", "wit/world.wit"} <= files.keys():
+    if not {"capsule-project.json", "sdk-lock.json", "src/main.go", "wit/world.wit", "go.mod", "go.sum"} <= files.keys():
         raise ValueError("incomplete Go capsule project")
     project, lock = (decode_json(files[name]) for name in ("capsule-project.json", "sdk-lock.json"))
     if (not isinstance(project, dict) or set(project) != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
@@ -80,6 +83,8 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
     if json.loads(inventory(vendor)) != lock["sdk"]:
         raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    if any(files[name] != vendor["sdk/go-guest/runtime-deps/" + name] for name in ("go.mod", "go.sum")):
+        raise ValueError("unreviewed Go module inputs; retain the pinned SDK dependency graph")
     limits = project["limits"]
     required = set(json.loads(read_file(ROOT / "examples/echo-contract/capsule.json"))["execution"]["limits"])
     if not isinstance(limits, dict) or set(limits) != required:
