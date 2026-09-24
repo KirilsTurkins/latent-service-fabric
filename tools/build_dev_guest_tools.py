@@ -55,6 +55,7 @@ def main() -> int:
     parser.add_argument("--python-prefix", type=Path, required=True, help="/usr/local copied from the pinned Python OCI image")
     parser.add_argument("--allow-dirty", action="store_true", help="Unsigned local assembly testing only")
     parser.add_argument("--language", choices=sorted(LANGUAGES), required=True)
+    parser.add_argument("--node-tests", action="store_true", help="Also stage source-built node executables for focused contributor tests")
     args = parser.parse_args()
     require(sys.platform == "linux", "guest-candidate-linux-builder-required")
     output = args.output.absolute()
@@ -81,10 +82,27 @@ def main() -> int:
         return result.stdout
     pins = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
     tools, _ = resolve_tools(pins, ROOT, environment)
+    node_arguments = ["-p", "latentd", "--bin", "latentd", "-p", "latent-wasmtime", "--bin", "latent-aot-compiler"] if args.node_tests else []
     run("host-tools", tools["cargo"], "build", "--locked", "-p", "latent-packaging", "--example", "capsule_contracts",
         "-p", "latent-policy", "--example", "capsule_authoring",
-        "-p", "latent", "--bin", "latent")
+        "-p", "latent", "--bin", "latent", *node_arguments)
     run("strip-operator", "strip", "-o", output / "latent-test", target / "debug/latent")
+    if args.node_tests:
+        from tools.build_dev_frontend import helper
+        node = output / "source-node"
+        node.mkdir(mode=0o700)
+        (node / "bin").mkdir(mode=0o700)
+        for name in ("latent", "latentd", "latent-aot-compiler"):
+            run("strip-node-" + name, "strip", "-o", node / "bin" / name, target / "debug" / name)
+            (node / "bin" / name).chmod(0o700)
+        binaries = {name: file_digest(node / "bin" / name)[0] for name in ("latent", "latentd", "latent-aot-compiler")}
+        record = {"purpose": "source-application-node-tests", "publisherAuthenticated": False,
+            "sourceCommit": commit, "sourceDirty": dirty,
+            "version": tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"],
+            "binaries": binaries, "helperSha256": helper(node / "helper.pyz"),
+            "engine": {"hostAbiProfile": HOST_ABI, "wasmtimeVersion": pins["rust"]["dependencies"]["wasmtime"],
+                       "compilerSha256": binaries["latent-aot-compiler"][7:]}}
+        (node / "source-node.json").write_bytes(encode(record))
     if args.language == "rust":
         fetch = rust_capsule_project.create(output / "dependency-inputs", "greeting")
         run("guest-dependencies", tools["cargo"], "fetch", "--locked", "--manifest-path", fetch / "Cargo.toml")

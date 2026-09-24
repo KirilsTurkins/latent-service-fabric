@@ -182,7 +182,9 @@ def run_prepared(prepared: list, unsupported: dict, environment: str, adapter, i
                         "activationId": result.get("data", {}).get("activationId"), "inputSha256": digest(raw),
                         "payloadSha256": payload_identity,
                         "fixtures": case["fixtures"], "platformCode": code,
-                        "resolvedRevision": revision, "targetMatches": target_matches})
+                        "execution": decode(encode(case["execution"])) if "execution" in case else None,
+                        "resolvedRevision": revision, "targetMatches": target_matches,
+                        "expectedRevision": dict(expected_target) if expected_target is not None else None})
         recovery = result.get("data", {}).get("recovery")
         if recovery is not None:
             results[-1]["recovery"] = recovery

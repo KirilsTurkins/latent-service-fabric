@@ -54,9 +54,15 @@ def compare(node: dict, portable: dict) -> dict:
             sha(actual.get("payloadSha256"))
         require(actual.get("targetMatches") is True and isinstance(actual.get("resolvedRevision"), dict)
                 and native.get("resolvedRevision") is None, "comparison-node-revision-required")
-        require(all(actual["resolvedRevision"].get(key) == value for key, value in left["expectedRevision"].items()),
+        expected = actual.get("expectedRevision", left["expectedRevision"])
+        require(isinstance(expected, dict)
+                and {"publicationId", "releaseDigest", "routeGeneration"} <= expected.keys()
+                <= {"publicationId", "releaseDigest", "routeGeneration", "revisionId"}
+                and all(expected[key] == left["expectedRevision"][key] for key in ("publicationId", "releaseDigest")),
+                "comparison-case-publication-identity")
+        require(all(actual["resolvedRevision"].get(key) == value for key, value in expected.items()),
                 "comparison-node-selected-revision")
-        keys = ("id", "inputSha256", "category", "payloadSha256", "platformCode", "fixtures")
+        keys = ("id", "inputSha256", "category", "payloadSha256", "platformCode", "fixtures", "execution")
         require(all(actual.get(key) == native.get(key) for key in keys), "comparison-typed-result-mismatch")
         rows.append({key: actual.get(key) for key in keys})
     return {"schemaVersion": "latent.dev.node-portable-comparison.v1", "passed": True,

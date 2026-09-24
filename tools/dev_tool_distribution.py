@@ -183,6 +183,16 @@ def templates(payload: Path, commit: str, language: str) -> dict:
                 entries[-1].update(requires=["clock"], execution={"grants": clocks})
                 if language == "go":
                     entries[-1]["requires"].append("random")
+        if language in {"java", "dotnet", "go"}:
+            grants = entries[0]["execution"]["grants"]
+            # The maintained runtimes cannot initialize when their required
+            # clock/entropy providers explicitly deny access. Their component
+            # initialization traps; this is distinct from a missing grant's
+            # admission/binding failure and from a declared application error.
+            entries.extend([{**entries[0], "id": name + "-runtime-denied",
+                             "execution": {"grants": grants, "deniedCapabilities": grants},
+                             "expect": {"category": "platform-failure", "platformCode": "guest-trap"}},
+                            {**entries[0], "id": name + "-after-runtime-denial"}])
         document = {"schemaVersion": "latent.dev.scenarios.v1", "scenarios": entries}
         scenarios.validate(document, "node")
         (directory / "tests/scenarios.json").write_bytes(encode(document))

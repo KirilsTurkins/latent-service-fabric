@@ -124,9 +124,15 @@ def verify(host: Path, echo: Path, generic: Path, providers: Path | None = None)
         document = {"schemaVersion": "latent.dev.scenarios.v1", "scenarios":
             [scenario, {**scenario, "id": "required-linux", "requires": ["deployment"]}]}
         paths.write_new(cwd / "src/tests.json", encode(document))
-        shared = portable.execute(host, cwd, cwd, selected, [], host_identity={"kind": "explicit-local-test-build"})
-        require(shared["passed"] is False and [item["status"] for item in shared["results"]] ==
-                ["passed", "unsupported"], "required-linux-test-cannot-pass-portably")
+        blocked = portable.execute(host, cwd, cwd, selected, [], host_identity={"kind": "explicit-local-test-build"})
+        require(blocked["passed"] is False and [item["status"] for item in blocked["results"]] ==
+                ["not-run", "unsupported"] and blocked["cleanup"] == "no-native-host-started"
+                and blocked["identity"]["runtime"]["runs"] == [],
+                "required-linux-test-must-block-all-portable-execution")
+        shared = portable.execute(host, cwd, cwd, selected, ["shared-success"],
+                                  host_identity={"kind": "explicit-local-test-build"})
+        require(shared["passed"] is True and len(shared["results"]) == 1,
+                "selected-common-scenario-must-execute")
         provider_results = None
         if providers is not None:
             from tools.portable_dev_provider_tests import verify as verify_providers
@@ -137,7 +143,8 @@ def verify(host: Path, echo: Path, generic: Path, providers: Path | None = None)
             "execution": "actual-component-production-wasmtime", "publisherAuthenticated": False,
             "qualification": "rust-native-subset-only", "cleanup": "owned-processes-reaped",
             "echo": result, "generic": generic_result, "providers": provider_results,
-            "sharedScenarioAdapter": shared, "unsupportedImportRejected": True}
+            "sharedScenarioAdapter": shared, "requiredLinuxScenario": blocked,
+            "unsupportedImportRejected": True}
 
 
 def main() -> int:

@@ -19,7 +19,7 @@ from tools.dev_workflow import build, build_cache, paths, project, snapshot, sta
 from tools.dev_workflow.common import DevError, decode, digest, encode, require
 
 
-def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict:
+def exercise(payload: Path, packager: Path, output: Path, language: str, *, source_node: Path | None = None) -> dict:
     require(language in project.LANGUAGES, "unsupported-application-build-test-language")
     require(sys.platform == "linux" and os.geteuid() != 0 and not output.exists(), "unprivileged-linux-and-new-test-output-required")
     output.mkdir(mode=0o700, parents=True)
@@ -36,6 +36,9 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
         shutil.copyfile(packager, cli)
         cli.chmod(0o700)
         receipt["packager"] = paths.digest_file(temporary, "latent", 256 * 1024 * 1024)[0]
+        if source_node is not None:
+            require(paths.digest_file(source_node, "bin/latent", 256 * 1024 * 1024)[0] == receipt["packager"],
+                    "source-node-requires-the-same-observed-packager")
         index = decode(paths.read(payload, "templates.json"))
         require(set(index["templates"]) == {"greeting", "word-count", "shipping"}, "maintained-language-tutorials-required")
         for name, entry in index["templates"].items():
@@ -44,7 +47,7 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
             # The frontend captures an arbitrary author path into a separately
             # named Linux workspace. Match that boundary: Unicode/spaces belong
             # to the author path, while compiler staging uses the owned ID path.
-            author, root = case / "author", temporary / ("controller-" + name)
+            author, root = case / "author", temporary / ("test-" + name)
             root.mkdir(mode=0o700)
             (root / "snapshots").mkdir(mode=0o700)
             template = payload / entry["path"]
@@ -58,6 +61,8 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
                 source = root / "snapshots" / record["identity"][7:]
                 if not source.exists():
                     snapshot.materialize(source, record, content)
+                state.atomic(root, "project.json", {"descriptor": descriptor, "trust": trusted,
+                    "source": str(source), "snapshot": record["identity"]})
                 return build.execute(root, source, descriptor, payload, trusted=trusted, cli=cli)
             compiled = compile_current()
             require(compile_current() == compiled, "unchanged-build-must-reuse-verified-attempt")
@@ -87,6 +92,9 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
             shutil.copytree(source / "output", retained / "output")
             receipt["templates"][name] = {"build": compiled, "cacheHit": True, "outsideCheckout": True,
                                           "authorPathIncludesSpacesAndUnicode": True}
+            if source_node is not None:
+                from tools.dev_node_application_probe import run as run_node
+                receipt["templates"][name]["node"] = run_node(root, source_node, payload, descriptor, output / name / "node")
             if name == "greeting":
                 source_name = "app/src/" + {"rust": "lib.rs", "c": "main.c", "java": "dev/latent/app/Capsule.java",
                     "dotnet": "Main.cs", "go": "main.go", "typescript": "main.ts"}[language]
@@ -111,10 +119,12 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
                     failureDiagnosticsMapped=True, changedComponent=changed["artifacts"]["component"])
         receipt.update(passed=True, cleanup="reaped")
     finally:
-        attempts = list(temporary.glob("controller-*/builds/*"))
+        attempts = list(temporary.glob("test-*/builds/*"))
         known = False
         try:
             known = all(build_cache.owner(path)["state"] in {"created", "failed", "complete"} for path in attempts)
+            for path in temporary.glob("test-*/source-node-probe.json"):
+                known &= decode(paths.read(path.parent, path.name))["cleanup"] == "owned-node-and-client-processes-reaped"
             if not receipt["passed"]:
                 for attempt in attempts:
                     retained = output / "failed-attempts" / attempt.name
@@ -151,8 +161,10 @@ def main() -> int:
     parser.add_argument("--packager", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--language", choices=sorted(project.LANGUAGES), required=True)
+    parser.add_argument("--source-node", type=Path, help="Explicit contributor node binaries/helper; never installed-artifact qualification")
     args = parser.parse_args()
-    receipt = exercise(args.payload.resolve(strict=True), args.packager.resolve(strict=True), args.output.absolute(), args.language)
+    receipt = exercise(args.payload.resolve(strict=True), args.packager.resolve(strict=True), args.output.absolute(), args.language,
+                       source_node=args.source_node.resolve(strict=True) if args.source_node else None)
     print(json.dumps({"passed": receipt["passed"], "cleanup": receipt["cleanup"], "templates": list(receipt["templates"]),
                       "publisherAuthenticated": False, "wslQualified": False}))
     return 0 if receipt["passed"] else 1

@@ -27,14 +27,18 @@ def projection(report: dict, expected_os: str) -> dict:
         require(runs and all(run["os"].casefold() == expected_os.casefold()
             and run["productionNode"] is False for run in runs), "cross-host-receipt-mismatch")
         require(app["results"] and all(case["status"] == "passed" and case["outcomeKnown"] is True
-            and case["category"] in {"success", "declared-error"} for case in app["results"]), "required-native-results-missing")
+            and case["category"] in {"success", "declared-error", "platform-failure"} for case in app["results"]), "required-native-results-missing")
         applications[name] = {"artifacts": app["identity"]["artifacts"], "hostAbi": app["identity"]["hostAbi"],
             "runtimeProfiles": [run["runtimeProfile"] for run in runs],
-            "cases": [{key: case[key] for key in ("id", "category", "inputSha256", "payloadSha256", "platformCode")}
+            "cases": [{key: case.get(key) for key in ("id", "category", "inputSha256", "payloadSha256", "platformCode", "execution")}
                       for case in app["results"]]}
         for case in applications[name]["cases"]:
             sha(case["inputSha256"])
-            sha(case["payloadSha256"])
+            if case["category"] in {"success", "declared-error"}:
+                sha(case["payloadSha256"])
+            else:
+                require(case["payloadSha256"] is None and isinstance(case["platformCode"], str),
+                        "native-platform-failure-code-required")
     return {"language": report["language"], "ownerIssue": report["ownerIssue"], "applications": applications}
 
 

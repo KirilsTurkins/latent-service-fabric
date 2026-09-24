@@ -20,6 +20,8 @@ on:
       - tools/dev_typescript_distribution.py
       - tools/guest_runtime_profiles.py
       - tools/run_dev_guest_tools_tests.py
+      - tools/dev_node_application_probe.py
+      - tools/compare_dev_node_portable.py
       - tools/run_portable_guest_tests.py
       - tools/compare_portable_guest_tests.py
       - tools/c_capsule*.py
@@ -133,9 +135,9 @@ jobs:
           docker cp "$container:/usr/local/." "$prefix"
           printf 'LSF_DEV_PYTHON_PREFIX=%s\n' "$prefix" >> "$GITHUB_ENV"
       - name: Assemble pinned compiler tools and maintained templates
-        run: python tools/build_dev_guest_tools.py --language "$LSF_DEV_LANGUAGE" --output target/dev-tools --python-prefix "$LSF_DEV_PYTHON_PREFIX"
+        run: python tools/build_dev_guest_tools.py --language "$LSF_DEV_LANGUAGE" --output target/dev-tools --python-prefix "$LSF_DEV_PYTHON_PREFIX" --node-tests
       - name: Compile actual projects with isolated tools and separate operator packaging
-        run: python tools/run_dev_guest_tools_tests.py --language "$LSF_DEV_LANGUAGE" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --output "$RUNNER_TEMP/dev-projects"
+        run: python tools/run_dev_guest_tools_tests.py --language "$LSF_DEV_LANGUAGE" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-projects"
       - name: Retain identical applications for both native execution hosts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -240,7 +242,7 @@ jobs:
       - name: Execute all maintained tutorial applications on Windows
         run: |
           foreach ($language in @('rust', 'c', 'java', 'dotnet', 'go', 'typescript')) {
-            python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host.exe --language $language --applications "target/dev-applications/developer-$language-applications-$env:GITHUB_SHA" --output "target/dev-portable-$language-applications.json"
+            python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host.exe --language $language --applications "target/dev-applications/developer-$language-applications-$env:GITHUB_SHA" --output "target/dev-portable-$language-applications.json" --require-node-parity
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
       - name: Record exact portable output for candidate assembly

@@ -460,6 +460,26 @@ typed result bytes, selected node revisions, environment labels and cleanup. Thi
 comparison covers the selected tutorial values; deterministic provider fixtures
 and the broader failure/ownership differential remain required work.
 
+The existing six-language compiler-bundle CI owner now also stages a separate
+source-built node and runs each of the three compiled tutorials through
+`tools/dev_node_application_probe.py`. Each application uses a private disposable
+workspace, explicit signed-test admission, public publication/deployment APIs,
+the shared scenarios, and a retained restart without redeployment. The node and
+compiler test must use the same observed packager. Interrupted or uncertain
+cleanup retains the private workspace and fails the report. These source checks
+do not authenticate a candidate or establish clean-host qualification.
+
+The Windows native owner consumes the exact compiled bytes and node reports with
+`--require-node-parity`. It compares typed values, platform errors, the explicit
+execution controls and each case's confirmed deployment generation. Managed
+language cases explicitly deny their required clock/entropy policies, then
+restore the allowed policies and invoke fresh state. A runtime unable to
+initialize under that denial reports a guest trap; missing-grant admission
+failures and declared application errors are separate outcomes. The existing
+native Linux owner compares the same applications with Windows. A required
+Linux-only scenario prevents any portable execution; selecting only the common
+case is an explicit separate run.
+
 `tools/dev_node_fault_probe.py` is a contributor fault-injection harness, separate
 from the shipped helper. Run it only as the explicitly selected `test-` workspace's
 unprivileged Linux owner, with its exact helper path and SHA-256. It requires the

@@ -338,6 +338,50 @@ class NodePortableComparison(unittest.TestCase):
             with self.assertRaises(common.DevError):
                 compare(node, portable)
 
+    def test_policy_changes_keep_the_expected_revision_for_each_case(self):
+        from tools.compare_dev_node_portable import compare
+        node, portable = self.reports()
+        original = dict(node["identity"]["expectedRevision"])
+        node["results"][0]["expectedRevision"] = original
+        node["identity"]["expectedRevision"] = {**original, "routeGeneration": "2"}
+        self.assertTrue(compare(node, portable)["passed"])
+        node["results"][0]["expectedRevision"] = {**original, "routeGeneration": "2"}
+        with self.assertRaisesRegex(common.DevError, "selected-revision"):
+            compare(node, portable)
+
+    def test_different_denial_policies_cannot_count_as_the_same_scenario(self):
+        from tools.compare_dev_node_portable import compare
+        node, portable = self.reports()
+        node["results"][0]["execution"] = {"grants": ["latent:clock/wall@0.1.0"],
+            "deniedCapabilities": ["latent:clock/wall@0.1.0"]}
+        portable["results"][0]["execution"] = {"grants": ["latent:clock/wall@0.1.0"]}
+        with self.assertRaisesRegex(common.DevError, "typed-result-mismatch"):
+            compare(node, portable)
+
+
+@unittest.skipUnless(os.name == "posix", "Actual node probe uses Linux ownership")
+class SourceNodeProbe(unittest.TestCase):
+    def test_uncertain_staging_keeps_an_explicit_private_cleanup_record(self):
+        from tools import dev_node_application_probe as probe
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            root = parent / "test-owned"
+            root.mkdir(mode=0o700)
+            other = parent / "another-node"
+            other.write_bytes(b"retain")
+            host = Mock()
+            host.name = "posix"
+            host.geteuid.return_value = os.geteuid() or 23001
+            with patch.object(probe, "os", host), \
+                    patch.object(probe, "stage_runtime", side_effect=common.DevError("owned-process-cleanup-unconfirmed", uncertain=True)), \
+                    patch.object(probe.service, "request") as stop, self.assertRaises(common.DevError):
+                probe.run(root, parent / "runtime", parent / "tools", {"language": "rust"}, parent / "output")
+            stop.assert_not_called()
+            report = state.load(root, "source-node-probe.json")
+            self.assertFalse(report["passed"])
+            self.assertEqual(report["cleanup"], "unconfirmed-private-workspace-retained")
+            self.assertEqual(other.read_bytes(), b"retain")
+
 
 class InvocationRecovery(unittest.TestCase):
     def test_unconfirmed_client_cleanup_retains_intent_and_starts_no_other_process(self):

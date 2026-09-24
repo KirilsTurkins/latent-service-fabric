@@ -634,7 +634,7 @@
       "job": "guest-tools",
       "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Assemble pinned compiler tools and maintained templates",
-      "run": "python tools/build_dev_guest_tools.py --language \"$LSF_DEV_LANGUAGE\" --output target/dev-tools --python-prefix \"$LSF_DEV_PYTHON_PREFIX\"",
+      "run": "python tools/build_dev_guest_tools.py --language \"$LSF_DEV_LANGUAGE\" --output target/dev-tools --python-prefix \"$LSF_DEV_PYTHON_PREFIX\" --node-tests",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -644,7 +644,7 @@
       "job": "guest-tools",
       "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Compile actual projects with isolated tools and separate operator packaging",
-      "run": "python tools/run_dev_guest_tools_tests.py --language \"$LSF_DEV_LANGUAGE\" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --output \"$RUNNER_TEMP/dev-projects\"",
+      "run": "python tools/run_dev_guest_tools_tests.py --language \"$LSF_DEV_LANGUAGE\" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-projects\"",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -764,7 +764,7 @@
       "job": "windows",
       "jobIf": "success()",
       "name": "Execute all maintained tutorial applications on Windows",
-      "run": "foreach ($language in @('rust', 'c', 'java', 'dotnet', 'go', 'typescript')) {\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host.exe --language $language --applications \"target/dev-applications/developer-$language-applications-$env:GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\"\n  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n}",
+      "run": "foreach ($language in @('rust', 'c', 'java', 'dotnet', 'go', 'typescript')) {\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host.exe --language $language --applications \"target/dev-applications/developer-$language-applications-$env:GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\" --require-node-parity\n  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n}",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -3124,7 +3124,7 @@
       "sha256": "ae21815a5df802139fbeb62d311ffc737b315d6c33ad7d8cb36f425af4923721"
     },
     "tools/build_dev_guest_tools.py": {
-      "sha256": "d344487bfab4850ef975861c249598ffa3c4aa9873204e05a14d383b274e9969"
+      "sha256": "32ba383baf588b451226d57487820cdce2b7b7bb4232c59a361060c2f35304d3"
     },
     "tools/build_dev_rootfs.py": {
       "sha256": "b118f20a188b1a737fb3b335c399b566ca2c5c4f741767738e8cbceb5d1a8a37"
@@ -3196,7 +3196,7 @@
       "sha256": "9880f5400a645b52e6e618d5027eac10d3a558e14abe1697a7ae024a8d2e307a"
     },
     "tools/compare_portable_guest_tests.py": {
-      "sha256": "66faf86044c765b3a92c8f38ecb7fe30fda79df7cbe81ce5caeacb1d787ade3e"
+      "sha256": "53d331d99878fa00a54a160c89ac2bbb629558364b0719352aa1409666c9656e"
     },
     "tools/docs_pages.py": {
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
@@ -3274,7 +3274,7 @@
       "sha256": "7664b879113ad53073ba342eea41af3b7d6bb64b38a8443c7a573761162c1a85"
     },
     "tools/run_dev_guest_tools_tests.py": {
-      "sha256": "b50c902ee92876553bb48089f78ff3be84eced8c34810c49d8bc7b115706536c"
+      "sha256": "73074d091d249186c7d787286b67ab8556b4c8966191d4454617dc8c87190c12"
     },
     "tools/run_native_vm.py": {
       "sha256": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12"
@@ -3313,10 +3313,10 @@
       "sha256": "b414676fd0ca60de27f7df9006965ac45309c45b47d5bf899b38209efa64120d"
     },
     "tools/run_portable_dev_tests.py": {
-      "sha256": "090f2ef288e611d9ea52809c9d83fb6ad9ad43ffecc75e5b9a2fafd7daf453ad"
+      "sha256": "7ecc103ee25f876328f8101bb4f9ebf6fba5f329170262513e3f9f4d00e5e38e"
     },
     "tools/run_portable_guest_tests.py": {
-      "sha256": "aa42377a892e8d574a61b41aa8d64bda27dc0504b240550556e670558088f268"
+      "sha256": "91847e3ddb5180a9e0c74676d4e1e3616d80ab858e6f02c6a7d7e31188d1e527"
     },
     "tools/run_publication_workflow.py": {
       "sha256": "8db908658b41757e598285dd0c0a1bdf288dd706e56de5463ce9facc23d5fd42"
@@ -3979,8 +3979,10 @@
       "InvocationRecovery.test_socket_backlog_retries_only_connect_before_sending_one_command",
       "InvocationRecovery.test_unconfirmed_client_cleanup_retains_intent_and_starts_no_other_process",
       "InvocationRecovery.test_unknown_receipt_retains_original_and_forbids_new_invocation",
+      "NodePortableComparison.test_different_denial_policies_cannot_count_as_the_same_scenario",
       "NodePortableComparison.test_exact_values_match_with_explicit_node_only_exclusions",
       "NodePortableComparison.test_native_report_cannot_replace_node_or_change_component_outcome_or_cleanup",
+      "NodePortableComparison.test_policy_changes_keep_the_expected_revision_for_each_case",
       "PolicyRecovery.test_existing_unowned_or_changed_policy_is_never_applied",
       "PolicyRecovery.test_lookup_queries_current_document_only_after_retained_operation",
       "PolicyRecovery.test_lost_apply_looks_up_original_and_records_before_clearing_intent",
@@ -3991,6 +3993,7 @@
       "ScenarioTargets.test_preflight_freezes_the_input_and_expected_bytes_used_for_assertions",
       "ScenarioTargets.test_required_unsupported_case_prevents_all_invocation_and_optional_is_separate",
       "ScenarioTargets.test_unknown_or_failed_adapter_stops_subsequent_calls_and_redacts_exception",
+      "SourceNodeProbe.test_uncertain_staging_keeps_an_explicit_private_cleanup_record",
       "TestProfile.test_interrupted_configuration_resumes_only_exact_before_or_after_bytes",
       "TestProfile.test_profile_requires_explicit_test_scope_and_preserves_credentials",
       "TestProfile.test_running_owner_and_existing_provider_configuration_are_preserved"
@@ -6660,7 +6663,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-tools.yml": "e5aa298151e00b273c26cedda462bf42975ab9e1b22b5e5ac343d636827c2b64",
+    ".github/workflows/developer-tools.yml": "51fb5c15d9532eae9c7e07cb426728f11a65b5080f110d4a3a0933c44357c5cb",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
