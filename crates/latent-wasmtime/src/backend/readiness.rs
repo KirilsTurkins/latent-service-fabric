@@ -3,6 +3,7 @@
 mod input;
 mod ownership;
 mod wait;
+pub(super) mod worker_wait;
 
 #[cfg(all(test, target_os = "linux"))]
 mod tests;
@@ -29,8 +30,8 @@ impl WasmtimeBackend {
         read_wait: Option<&dyn latent_executor::PreparationReadWait>,
     ) -> Result<PreparedReadiness, PlatformError> {
         // One finite caller-side read window, never one new window per check.
-        // Compiler workers, materialization and activation start retain their
-        // independent fail-closed checks; no owned work is replayed here.
+        // Opt-in sealed-source jobs have a separate real-clock worker window.
+        // Materialization and activation start remain immediate/fail-closed.
         let window = wait::Window::new(read_wait);
         let pool = self
             .shared
@@ -216,6 +217,13 @@ impl WasmtimeBackend {
                         input::ArtifactInput::Native(Some(job)) => Some(job.control()),
                         _ => None,
                     };
+                    let worker_wait = if read_wait.is_some()
+                        && matches!(&input, input::ArtifactInput::Source { .. })
+                    {
+                        Some(worker_wait::WorkerWindow::new(future.control()?))
+                    } else {
+                        None
+                    };
                     let build =
                         move |reservation| -> crate::compiler::Task<super::PreparedRuntime> {
                             Box::new(move |queue| {
@@ -226,6 +234,7 @@ impl WasmtimeBackend {
                                     authority,
                                     reservation,
                                     queue,
+                                    worker_wait,
                                 )
                             })
                         };

@@ -45,6 +45,7 @@ impl<T> Core<T> {
         while index < state.jobs.len() {
             let job = &mut state.jobs[index];
             job.abandoned = true;
+            job.control.stop();
             if let Some(control) = &job.native_control {
                 control.cancel();
             }
