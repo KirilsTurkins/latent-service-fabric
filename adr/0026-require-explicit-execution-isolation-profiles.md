@@ -20,7 +20,7 @@ The baseline matrix is defined by RFC-0001:
 - `isolated-aot-compiler-v1` is the delivered bounded Linux x86_64 compiler-child boundary. It isolates compiler work only.
 - `authenticated-native-aot-v1` is the delivered same-node authenticated native reuse/loading path. The native loader and node remain trusted; arbitrary external native artifacts are unsupported.
 - `external-capsule-v1` requires enforced package admission, exact ABI/profile compatibility, protected trust configuration, the reviewed runtime baseline and supported isolated compilation before it can be selected. Phase 3 #280 implements these requirements as documented in the [execution-profile reference](../docs/runtime/execution-security-profiles.md).
-- in-process provider and Component Model renderer profiles remain planned until their owning Phase 3 tickets implement and validate them.
+- in-process providers and the closed Angular Component Model renderer are implemented under their documented trusted computing base. Their capability or renderer identity does not add process-compromise containment.
 - work that requires containment after compromise of the process executing the guest/provider/renderer/native compatibility layer requires `fixed-execution-host-v1`, a separate node-owned fixed/bounded host pool. That profile is unsupported until implemented and tested.
 - host/kernel compromise and strong same-machine side-channel isolation remain outside the current standalone security boundary.
 
@@ -29,8 +29,11 @@ A package signature, compiler sandbox, guest `Store` limiter, profile label or c
 Implementation status: #280 delivers the `securityProfile` node selector for
 `local-experimental-v1` and `external-capsule-v1`, bounded compiler readiness in
 startup/check-config and a persisted restart requirement. The compiler/native
-subprofiles remain separately observable mechanisms. The provider, renderer and
-fixed-host profiles remain unavailable until their owning tickets implement them.
+subprofiles remain separately observable mechanisms. The
+[provider broker](../docs/runtime/capability-broker.md) and
+[Angular runtime](../docs/runtime/angular-renderer-runtime.md) document the
+installed in-process boundaries. The fixed execution-host profile remains
+unavailable.
 This status update does not change the accepted threat-class taxonomy.
 
 ## Ownership of follow-up implementation
@@ -56,7 +59,7 @@ messages rather than executing worker-supplied native code or callbacks.
 
 In-process activations retain current cancellation, deadline, fuel/epoch and affirmative cleanup semantics. A failure that cannot safely stop or clean an in-process guest cannot be promoted to a process-containment claim; the affected cell must not be reused and node-level recovery may be required.
 
-The isolated compiler retains child ownership and reservations through cancellation, kill and actual reap. Native deserialize remains a trusted synchronous node operation. Future provider/renderer/fixed-host profiles must define equivalent bounded ownership, quarantine, shutdown and crash recovery before support.
+The isolated compiler retains child ownership and reservations through cancellation, kill and actual reap. Native deserialize remains a trusted synchronous node operation. Installed providers and renderers retain their actual cleanup owners. Any future fixed-host profile must define bounded ownership, quarantine, shutdown and crash recovery before support.
 
 Guest store limits are not whole-process RSS limits. Runtime/embedder allocations, native code, allocator retention, provider state, caches and IPC have separate ownership and accounting domains.
 
@@ -74,6 +77,6 @@ Dormant deployments do not own processes, threads, listeners, sockets, provider 
 
 - Security-profile names become compatibility requirements, not informal descriptions.
 - Stronger claims require profile-specific evidence before they are documented as supported.
-- Existing Phase 1/2 behavior remains available with more precise boundaries.
+- Supported current contracts retain their documented guarantees. Obsolete alpha compatibility is removed under [ADR-0044](0044-remove-obsolete-alpha-compatibility.md).
 - Phase 3 can proceed under the documented in-process trust model without pretending that compiler isolation provides guest-process isolation.
 - Hostile-multitenant/native-compatibility workloads that require process-compromise resistance remain unsupported until a fixed execution-host backend exists and passes its evidence matrix.

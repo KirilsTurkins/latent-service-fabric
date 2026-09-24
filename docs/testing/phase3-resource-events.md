@@ -33,5 +33,7 @@ numbers do not claim durable JetStream acceptance, standalone node density or
 renderer-heap measurement. The shared Docker Desktop host allowed three CPUs
 and 6 GiB while other bounded qualification ran; non-atomic OS snapshots include
 the in-process peer. RSS and retained allocator bytes are different quantities.
-The OCI token/resolver/redirect, publication-deduplication and renderer-heap
-measurements remain required by #239.
+At this checkpoint, OCI token/resolver/redirect, publication-deduplication and
+renderer-heap measurements were still outstanding. Later results and the
+closure decision belong to [resource qualification #239](https://github.com/KirilsTurkins/latent-service-fabric/issues/239);
+this earlier record retains its original scope and measurements.

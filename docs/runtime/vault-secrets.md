@@ -4,14 +4,15 @@ The Linux x86_64 `vault-kv-v2-secrets-v1` adapter in `latent-vault`
 implements `latent:secrets/reader@0.1.0`. It returns an explicitly selected
 KV-v2 string field, its numeric version as a decimal string, media type, and
 optional expiry. UTF-8 and explicitly configured canonical base64 decoding
-are supported. The WIT package and current host ABI remain unchanged.
+are supported.
 
 Installation uses trusted Rust composition: shared [provider pools](provider-pools.md),
 `VaultConfig`, protected `ProviderCredential` bindings, a trusted `SecretClock`,
 and `VaultSecretProvider::install`. Register the resulting invoker with
 `ActivationCapabilityRuntime::install_secrets` and compile current capability
-bindings for its provider reference. Standalone configuration, management and
-CLI delivery remain #226; guest binding generation is tracked in #221.
+bindings for its provider reference. The current
+[standalone provider configuration](../reference/standalone-providers.md)
+has no Vault installation field; use the Rust embedding for this adapter.
 
 ## Endpoint and reference authority
 

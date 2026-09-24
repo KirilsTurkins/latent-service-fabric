@@ -3,14 +3,10 @@
 - **Status:** Accepted
 - **Date:** 2026-08-17
 
-## Implementation status at Phase 1 completion
+## Current implementation
 
-Phase 1 compiles verified portable components locally and retains bounded in-memory prepared entries. A trusted distributed/persistent AOT cache remains Phase 2 work.
-
-## Phase 2 isolated producer and authenticated native reuse
-
-These two Phase 2 deliveries are complete under the
-[collective gate](../docs/phase-2-completion.md). The implemented persistent cache
+LSF provides bounded in-memory preparation, an isolated compiler and authenticated
+native reuse. The implemented persistent cache
 is node-local and authenticated by a protected local key; this does not establish
 a distributed native-artifact trust or distribution service.
 

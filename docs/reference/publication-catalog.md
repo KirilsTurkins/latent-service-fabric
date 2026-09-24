@@ -98,7 +98,7 @@ implementation does not offer deletion of committed historical payloads.
 ## Supported storage and fresh state
 
 Current alpha builds accept the publication catalog and lifecycle format 2.
-The Phase 2 format-1 reader, offline migrator, retained migration associations
+The obsolete format-1 reader, offline migrator, retained migration associations
 and `latentd migrate-catalog` command have been removed. Obsolete roots and
 interrupted migration fences are rejected before temporary cleanup, publication
 indexing or lifecycle grants. Startup preserves their existing bytes.
@@ -113,13 +113,13 @@ node at an old root to force startup.
 
 Current-format reopen, crash recovery, policy denial and operation receipts
 retain their normal semantics. The qualified native upgrade pair uses current
-storage formats; it does not provide Phase 2 format conversion. Downgrading a
+storage formats; it does not convert obsolete catalog formats. Downgrading a
 binary does not undo storage changes. Preserve stopped backups independently.
 
 ## Validation
 
 Small Linux fixtures cover concurrent publications, scoped selection, independent
-revocation/retirement, successful legacy replay after coexistence, storage limits,
+revocation/retirement, exact operation replay after coexistence, storage limits,
 shared inode retention during orphan reclamation, preservation of rejected obsolete roots,
 empty catalogs and current lifecycle interruption recovery. Policy integration uses
 real publisher and builder signatures with corrected embedded inventories and

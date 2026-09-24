@@ -19,14 +19,13 @@ guest, and deploy its route for the client's tenant:
 - [Maintained Rust blob guest](../../tools/toolchain-smoke/examples/guest_blob/component.rs):
   `tests:local-blobs/api@1.0.0`, `run(0, "", "0")`, bounded write/seal/read/close.
 
-Both use the [guest SDK's supported WIT-value framing](../../docs/component-development/guest-sdk.md),
+Both use the [supported WIT-value framing](../../docs/protocol/wit-values.md),
 with `application/vnd.latent.wit-values.v1+json`, a three-value argument array
 and a decimal-string `u64` result. They are not the older generated test probes.
 
-Standalone provider configuration and real-node qualification are part of
-#226/#228; the ordinary default node does not grant either capability. These
-commands do not claim that prerequisite installation or qualification has
-already happened.
+[Standalone provider configuration](../../docs/reference/standalone-providers.md)
+is available for HTTP and local blobs. The default node grants neither capability;
+configure the provider, policy, binding and deployment before using this example.
 
 Use Linux x86-64 for the example's existing protected-file reader. Provision
 the node's **client bearer token**, with no trailing newline, in an owner-only

@@ -1,25 +1,24 @@
 # Identity and capability architecture
 
-The current node authenticates configured bearer credentials on its
-loopback RPC listener and applies tenant-scoped management, invocation, status
-and cancellation authorization. Its guest imports are limited to context, log
-and monotonic/wall clocks. See the [node credential model](../reference/standalone-node.md)
-and [capability implementation](../runtime/capabilities.md). Phase 2 also binds
-execution to current release lifecycle and, in enforced mode, verified signing
-authority. Phase 3 adds the [sealed activation broker](../runtime/capability-broker.md)
-in explicit managed embeddings; coherent standalone provider installation,
-bounded delegation and external providers remain in progress. Node workload mTLS remains part of the later cluster
-architecture. See the [security boundary](security.md) and [roadmap](../roadmap.md).
+The node authenticates configured bearer credentials on its loopback RPC
+listener and applies tenant-scoped management, invocation, status and
+cancellation authorization. Optional HTTP ingress uses its own explicit
+principal mapping. Guest context, logging, clocks and installed provider
+capabilities run under the current activation identity.
 
-The delivered [capability policy owner](../runtime/capability-policies.md) binds
-tenant-scoped immutable policy revisions and provider selections to real
-publication eligibility. Its sealed decisions require a final currentness check;
-updates/revocations invalidate held authority. Required policies and additional
-restrictions intersect. The broker connects these rows to activation-owned handle
-tables, guarded call admission, the original budget ledger and retained work/
-result ownership. The [binding compiler](../runtime/capability-bindings.md) now
-publishes exact host/local plans with deployment CAS. Standalone configuration
-and concrete external provider adapters remain subsequent Phase 3 work.
+The [capability policy owner](../runtime/capability-policies.md) binds
+immutable tenant policy revisions and provider selections to publication
+eligibility. Sealed decisions receive a final currentness check; policy updates
+and revocations invalidate held authority. The [broker](../runtime/capability-broker.md)
+connects these decisions to activation-owned handles, budget charges and retained
+work. The [binding compiler](../runtime/capability-bindings.md) publishes exact
+host/local plans with deployment preconditions.
+
+[Standalone configuration](../reference/standalone-providers.md) installs
+buffered HTTP and local immutable blobs. Other provider integrations use their
+documented trusted Rust embedding. [Local child calls](../runtime/local-service-invocation.md)
+derive a bounded service principal and conserve parent budgets; node workload
+mTLS and remote delegation are not implemented.
 
 ## Identity layers
 
@@ -32,7 +31,9 @@ LSF distinguishes:
 - delegated child-call identity,
 - administrator identity.
 
-A future remote child call must carry a bounded delegation rather than the caller's unrestricted original credential. Phase 1 root/parent IDs are correlation metadata and do not grant delegated authority.
+A local child call derives its service principal from the accepted parent and
+checked binding. Root/parent IDs are correlation metadata and do not grant
+authority. Planned remote calls must preserve that bounded delegation boundary.
 
 ## Broker authorization
 
@@ -40,8 +41,8 @@ Sealed decisions bind the trusted principal, exact operation/resource, service
 revision, route generation, publication, current policies and installed provider
 configuration. Policy ceilings narrow actual operation budgets; they do not
 create a new ledger. Bind and call start both recheck currentness. No authority
-fence crosses provider I/O or an await. Detailed provider audit, delegation and
-placement behavior remain their respective Phase 3 implementation tickets.
+fence crosses provider I/O or an await. [Capability audit](../runtime/capability-audit.md) records bounded decisions
+without including credentials or payloads. Remote placement remains unsupported.
 
 ## Capability intersection
 
@@ -55,8 +56,9 @@ operation and exact resource; every call rechecks current policy/provider
 revisions and the effective deadline. Session termination invalidates lookup
 slots, while actual provider work and result owners retain their charges until
 destruction. Cell reuse requires cleanup proof. Descriptive DTOs, claims and
-cached code are not grants. Explicit descendant delegation remains #208/#209.
+cached code are not grants. Local descendant delegation follows the checked target and conserved budget
+contracts described in the local-call reference.
 
 ## Node identity
 
-Node-to-node calls require mutually authenticated workload identity. Logical caller identity and node transport identity are carried and audited separately.
+Planned node-to-node calls require mutually authenticated workload identity. Logical caller identity and node transport identity are carried and audited separately.

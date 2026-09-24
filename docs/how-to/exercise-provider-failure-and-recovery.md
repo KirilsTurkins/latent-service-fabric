@@ -1,4 +1,4 @@
-# Exercise provider denial, rotation and uncertain recovery
+# Test provider denial and recovery
 
 ## Outcome and supported scope
 
@@ -8,13 +8,14 @@ things. Run the existing S3, Vault and NATS conformance scenarios, inspect their
 actual guest/provider ownership, and recognize when recovery must retain an
 uncertain outcome rather than retry a mutation.
 
-This is a Linux x86_64 **development contributor** learning path under
-[#359](https://github.com/KirilsTurkins/latent-service-fabric/issues/359).
+This is a Linux x86_64 **contributor test procedure** for changes to the provider
+implementations. For a failed installed-node request, start with
+[provider diagnostics](operate-capability-providers.md).
 It uses the maintained Rust embedding and actual Wasmtime guest fixtures;
 NATS triggers also use the real local activation manager. It is not a separate
 `latentd`/SDK walkthrough or instructions to configure a production provider.
-Standalone management composition remains with
-[#226](https://github.com/KirilsTurkins/latent-service-fabric/issues/226).
+Standalone JSON configuration supports [HTTP and local blobs](../reference/standalone-providers.md);
+these S3, Vault and NATS scenarios use their trusted Rust compositions.
 Passing policy CRUD alone does not install an external provider.
 
 Docker runs **only the owned external test services**. The LSF harness executes
@@ -24,21 +25,11 @@ No paid hosted provider, existing user container or operator credential is used.
 
 ## Prerequisites and complete source
 
-The commands select development source
-`55ba1c301518c670820d482bcc991780167e903c`, the merged base reviewed for this
-documentation handoff. Start in a new, clean, private checkout at that exact
-commit; do not reset an existing worktree. Use
-[Rust 1.97.1 and the pinned contributor tools](../development/toolchain.md),
-Python 3.13.5, OpenSSL, GNU `timeout` and a working Docker CLI/daemon. The selected
-real-provider targets are Linux x86_64 gated; a Windows build with zero matching
-tests is not execution evidence. Use only this checkout's Cargo target.
-
-The [current executed receipt](../evidence/provider-guide-2026-09-21.json)
-records all 19 selected tests and owned-service cleanup. Its CI merge commit
-`5f192095e761c5899626bc83eec77d128eba55f7` has the same Git tree as this reviewed
-base. The separate Angular T1 step failed; that result does not alter these
-completed provider steps. The earlier `05360c50` receipt remains historical.
-Standalone management composition has its own maintained node workflow.
+Run from a clean checkout of the source you are changing. Use the
+[pinned contributor tools](../development/toolchain.md), Python 3.13.5, OpenSSL,
+GNU `timeout` and a working Docker CLI/daemon. These real-provider targets
+require Linux x86_64. Record the actual source identity with the results; the
+historical receipts linked below do not certify a newer checkout.
 
 Follow these maintained sources while running the scenarios; do not copy their
 test credentials or synthetic package trust into an installed node:
@@ -67,8 +58,7 @@ umask 077
 test "$(uname -s)" = Linux
 test "$(uname -m)" = x86_64
 test -z "$(git status --porcelain=v1 --untracked-files=normal)"
-SOURCE_COMMIT=55ba1c301518c670820d482bcc991780167e903c
-test "$(git -c gc.auto=0 rev-parse HEAD)" = "$SOURCE_COMMIT"
+SOURCE_COMMIT=$(git -c gc.auto=0 rev-parse HEAD)
 export CARGO_TARGET_DIR="$PWD/target"
 PROVIDER_REVIEW=$(mktemp -d "${TMPDIR:-/tmp}/lsf-provider-guide.XXXXXXXX")
 timeout --kill-after=15s 1800s cargo test --locked --all-features \
@@ -119,7 +109,7 @@ timeout --kill-after=30s 420s python3 tools/run_nats_event_tests.py \
 grep -H -E '^test result:|^Removed owned ' "$PROVIDER_REVIEW"/*.log
 ```
 
-At the [current executed source](../evidence/provider-guide-2026-09-21.json),
+At the [September 21 reference source](../evidence/provider-guide-2026-09-21.json),
 the selected suites pass **2 S3, 3 Vault, 4 NATS publication and 10 NATS trigger
 tests**, with zero failures or ignored selected tests. Every runner confirms
 owned cleanup. Other test cases are deliberately filtered from these real-server
@@ -216,7 +206,7 @@ The [shared pool contract](../runtime/provider-pools.md) accounts for retired
 epochs and delayed consumers too. Audit reports what the node observed; it is
 not durable external action or a new execution grant.
 
-## Cleanup, evidence and next step
+## Cleanup and retained measurements
 
 Successful runners remove only their uniquely labelled service by immutable ID,
 its temporary payload/TLS/inventory files and their owned work. If Docker becomes
@@ -230,7 +220,7 @@ test outcomes and cleanup confirmations. After review, remove only that new,
 resolved review directory. Do not remove an installed node's state, credentials,
 provider inventory or another worktree's target.
 
-The retained evidence is actual CI execution at `05360c50eb6c40212111ad0d87198db5dead78a5`
+An older retained receipt records actual CI execution at `05360c50eb6c40212111ad0d87198db5dead78a5`
 for reviewed PR head `edec84fa`, not execution at the guide commit. The original
 check matches 18 source objects, including the complete relevant crate/WIT trees,
 runner/support files and lock/toolchain inputs, against guide source `22dc2f07`.

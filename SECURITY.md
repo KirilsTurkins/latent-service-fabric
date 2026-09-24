@@ -2,16 +2,19 @@
 
 LSF assumes capsule code, capsule inputs, remote invocation payloads, and external provider responses are untrusted unless an explicit policy says otherwise.
 
-Security-sensitive reports should not be opened as public issues. Until a private disclosure channel is established, document the issue locally and contact the repository maintainers through a private GitHub security advisory.
+Report suspected vulnerabilities through [private vulnerability reporting](https://github.com/KirilsTurkins/latent-service-fabric/security/advisories/new).
+Include the affected source/version, a minimal reproduction and the observed
+impact. Keep credentials, signing keys and sensitive payloads out of public
+issues and pull requests.
 
-The delivered Phase 1 trusted computing base includes the standalone node,
+The standalone trusted computing base includes the standalone node,
 Wasmtime and its local compiler, local artifact/catalog verification, scoped
 authentication and admission, activation capability hosts, and the host operating
 system. The management/invocation RPC listener is restricted to authenticated
 local loopback operation.
 Integrity verification of local artifacts does not establish publisher identity.
 
-Phase 2 adds bounded OCI transport, package publisher signatures, independently
+Package delivery uses bounded OCI transport, package publisher signatures, independently
 authorized builder provenance, SBOM policy, and enforced catalog admission.
 Enforced mode checks complete package semantics and current tenant/trust policy,
 with durable generation/clock floors and execution-time eligibility checks.
@@ -27,7 +30,7 @@ cannot alter admitted content. Uncertain persistence denies positive eligibility
 Historical receipts and locally admitted flags do not grant current authority.
 See [authenticated package admission](docs/reference/package-admission.md).
 
-Phase 2 also delivers an opt-in authenticated same-node isolated AOT path on its
+The runtime also offers an opt-in authenticated same-node isolated AOT path on its
 supported Linux x86_64 sandbox profile. Compilation runs in a bounded child and
 persistent native reuse accepts only locally authenticated output bound to exact
 engine, component and security configuration. The parent parser/validator,
@@ -46,7 +49,7 @@ than silently downgrade to a weaker boundary. The current trusted-local default
 is for operator-controlled workloads. Linux x86_64 configuration loading now has
 a descriptor-anchored protected-file policy for bearer credentials and enforced
 trust policy. The explicit `external-capsule-v1` selector now requires enforced
-admission, exact Phase 3 host ABI, the reviewed runtime and a supported approved
+admission, the exact supported host ABI, the reviewed runtime and a supported approved
 isolated compiler. `check-config` and startup verify those requirements; a
 protected persisted marker prevents weakening the profile on ordinary restart.
 Enforced admission alone still does not select compiler isolation. See
@@ -87,8 +90,14 @@ and cleanup pools on the configured node runtime. Retired epochs and unfinished
 physical resources retain their quotas; a timeout or dropped job waiter does not
 prove closure. Provider credentials are excluded from public pool observations.
 
-Additional provider backends, transactional state/effects, and cluster
-mTLS remain later work. They add trust boundaries when implemented. See the
-[security architecture](docs/architecture/security.md) and
-[Phase 1 completion scope](docs/phase-1-completion.md). This remains an
-experimental prerelease without a production security certification.
+HTTP, streaming HTTP, blobs, secrets, events, local calls, randomness and metrics
+have capability-specific authorization and cleanup contracts.
+[Standalone configuration](docs/reference/standalone-providers.md) accepts
+buffered HTTP and local immutable blobs; other integrations require their
+documented trusted Rust embedding. Installing a provider does not grant a
+capsule permission to use it.
+
+Application state transactions, effect outboxes and cluster mTLS are not
+implemented. See the [security architecture](docs/architecture/security.md)
+for the current supported boundaries. LSF remains an experimental prerelease
+without a production security certification.

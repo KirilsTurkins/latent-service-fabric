@@ -63,6 +63,12 @@ can render every document of that size.
 
 ## Consequences
 
+[ADR-0042](0042-bound-angular-render-data-through-the-capability-broker.md)
+extends the original context-only profile with one optional broker-mediated GET.
+The [integrated reference workflow](../docs/testing/angular-reference-workflow.md)
+records browser hydration, allowed/denied backend access and lifecycle behavior
+beyond this adapter's initial qualification.
+
 This initially installed the approved T0 profile. The integrated #234/#226 gate
 now permits Angular under explicit protected `external-capsule-v1` after testing
 the actual observed build, enforced publisher/builder/SBOM admission, isolated

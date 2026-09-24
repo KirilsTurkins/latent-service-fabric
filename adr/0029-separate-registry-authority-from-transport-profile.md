@@ -48,7 +48,7 @@ The permanent invariants from ADR-0021 are:
 - `lsf-oci-static-v1` is the **delivered** profile matching current
   `HttpOciRegistry`: operator-supplied addresses, anonymous/Basic/preissued Bearer,
   no runtime DNS/token exchange/redirects, and native OCI 1.1 referrers.
-- `lsf-oci-bearer-v1` is the explicitly selected Phase 3 profile.
+- `lsf-oci-bearer-v1` is the implemented explicitly selected Bearer profile.
   It adds explicitly approved Bearer token authorities, bounded DNS and
   operation-specific authorized redirects while retaining every permanent
   invariant above.
@@ -56,14 +56,13 @@ The permanent invariants from ADR-0021 are:
 The static profile keeps the pinned Zot minimal 2.1.18 fixture as its demonstrated
 complete push/pull/native-referrer baseline.
 
-Harbor 2.15.2 is selected as the additional real-registry conformance target for
-`lsf-oci-bearer-v1` because it uses Registry v2 token authentication. Selection is
-not a compatibility claim. #269/#270 must execute authenticated exact push,
-digest-pinned pull and native-referrer evidence discovery and record the tested
-fixture identities/topology before Harbor or `lsf-oci-bearer-v1` is documented as
-supported. The #269/#270 implementation now provides that owned-fixture path;
-its exact [network conformance boundary](../docs/reference/oci-network-profile.md)
-does not certify untested hosted storage topologies.
+Harbor 2.15.2 supplies the additional real-registry conformance target for
+`lsf-oci-bearer-v1`. The #269/#270 owned-fixture workflow exercises authenticated
+exact push, digest-pinned pull and native-referrer evidence discovery using
+explicit DNS and TLS. Its exact
+[network conformance boundary](../docs/reference/oci-network-profile.md) does not
+certify untested hosted storage topologies. Controlled-peer tests cover redirects
+separately; the Harbor local-storage fixture does not exercise object-store redirects.
 
 Distribution 3.1.1 remains an explicit complete-profile exclusion under the
 current LSF evidence-discovery requirement because the repository's existing
@@ -85,7 +84,7 @@ This ADR does not implement new network authority.
   credential-forwarding rules and completion of the selected real-registry
   conformance matrix.
 
-Existing callers remain on `lsf-oci-static-v1`. Future configuration must make
+Callers select a profile explicitly. Configuration must make
 profile selection explicit and fail before newly authorized network work if the
 requested profile is unknown, partially configured, unavailable or unsupported.
 
