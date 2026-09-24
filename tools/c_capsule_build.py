@@ -39,7 +39,8 @@ def binding_check(work: Path, lock: dict, commands: Commands, generator: Path) -
     return digest(inventory({path.name: read_file(path) for path in output.iterdir()}))
 
 
-def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path, repository: str) -> Path:
+def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
+          *, installed: dict[str, Path] | None = None) -> Path:
     project_path, output = checked_path(project_path), checked_path(output)
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
@@ -63,10 +64,14 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
+            if packager is None:
+                write_json(output / "diagnostic-source.json", {"capturedSource": str(work), "requestedSource": str(project_path)})
             compiler = Compiler(temporary / "compiler", 900, sdk=work / "vendor/lsf/sdk/c-guest",
-                                platform=None, config=pins, commands=commands)
+                                platform=None, config=pins, commands=commands, installed=installed)
             materials = list(compiler.materials.values())
-            paths = {"contracts-tool": checked_path(contracts_tool), "packager": checked_path(packager)}
+            paths = {"contracts-tool": checked_path(contracts_tool)}
+            if packager is not None:
+                paths["packager"] = checked_path(packager)
             materials.extend(file_identity(path, name) for name, path in paths.items())
             stage = "binding-drift"
             binding_digest = binding_check(work, lock, commands, compiler.paths["wit-bindgen"])
@@ -86,9 +91,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             package_inputs(output, project, read_json(derived / "surface.json"), files, component)
-            stage = "package"
-            commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-            commands.run("inspect", paths["packager"], "inspect", output / "package")
+            if packager is not None:
+                stage = "package"
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
+                commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
             if snapshot(project_path) != files or snapshot(work) != files:
                 raise ValueError("project changed during the observed C build")
@@ -119,7 +125,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                 "componentDigest": digest(component), "sdkBindingDigest": binding_digest,
-                "buildSeconds": round(time.monotonic() - start, 6), "commands": commands.records})
+                "buildSeconds": round(time.monotonic() - start, 6), "packageAssembled": packager is not None, "commands": commands.records})
         return output
     except BaseException as error:
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,

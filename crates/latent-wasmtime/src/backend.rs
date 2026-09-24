@@ -310,6 +310,27 @@ impl WasmtimeBackend {
             .map(|runtime| runtime.descriptor.clone())
     }
 
+    /// Compile immutable application-test bytes through the ordinary validation,
+    /// component linker, capacity gates and owner checks. This fixture capability
+    /// cannot match a production catalog or satisfy enforced signing admission.
+    #[cfg(feature = "development-test-host")]
+    pub fn prepare_development_test(
+        &self,
+        input: &latent_artifacts::DevelopmentTestArtifact,
+        key: &PreparationKey,
+    ) -> Result<PreparedComponent, PlatformError> {
+        let job = self.shared.preparation_observer.begin(&key.release);
+        let runtime = self.prepare_runtime_with_integrity(
+            input.artifact(),
+            key,
+            ComponentIntegrity::Verify,
+            Some(input.eligibility().clone()),
+            &job,
+        )?;
+        job.complete();
+        Ok(runtime.descriptor.clone())
+    }
+
     fn prepare_runtime(
         &self,
         artifact: &CapsuleArtifact,

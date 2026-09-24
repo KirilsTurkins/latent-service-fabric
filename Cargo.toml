@@ -50,6 +50,7 @@ members = [
     "tools/optimization-bench",
     "tools/renderer-profile",
     "tools/angular-renderer-adapter",
+    "tools/portable-test-host",
 ]
 
 [workspace.package]

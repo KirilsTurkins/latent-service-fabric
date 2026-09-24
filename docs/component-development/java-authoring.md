@@ -297,7 +297,16 @@ be inspected before any retry.
 
 ## 6. Clean up and continue
 
+Observe the completed calls' audit work before the single deletion. This
+read-only check waits at most five seconds and makes at most 32 inspections;
+unavailable counters, a closed or recovering journal, or an expired deadline
+stop cleanup. An idle observation does not reserve capacity. The deletion still
+checks the current generation, policy and capacity, and is never retried here.
+
 ```bash
+python3 tools/wait_capsule_audit_idle.py --cli "$BIN/latent" \
+  --config "$LSF_JAVA_PROJECTS/client.json" --deployment my-greeting \
+  >"$LSF_JAVA_PROJECTS/results/audit-idle.json"
 GENERATION=$(python3 -c 'import json,os; print(json.load(open(os.environ["LSF_JAVA_PROJECTS"]+"/results/deployed.json"))["data"]["deployment"]["generation"])')
 java_cli deployment delete my-greeting --expected-generation "$GENERATION"
 stop_java_node

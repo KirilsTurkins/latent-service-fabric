@@ -72,6 +72,11 @@ jobs:
         run: python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process
       - name: Execute complete outside-checkout authoring qualification
         run: python3 tools/qualify_rust_capsules.py --output "$RUNNER_TEMP/rust-capsule-authoring"
+      - name: Exercise developer cache with the actual operator and compiled Rust package inputs
+        run: >-
+          python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent
+          --inputs "$RUNNER_TEMP/rust-capsule-authoring/builds/greeting"
+          --output "$RUNNER_TEMP/dev-build-cache"
       - name: Test contract derivation and isolated provenance approvals
         if: success() || failure()
         run: |
@@ -83,6 +88,7 @@ jobs:
         with:
           name: rust-capsule-authoring-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/dev-build-cache/
             ${{ runner.temp }}/rust-capsule-authoring/*.json
             ${{ runner.temp }}/rust-capsule-authoring/*.log
             ${{ runner.temp }}/rust-capsule-authoring/*.stdout

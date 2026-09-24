@@ -30,7 +30,7 @@ impl Inputs {
         };
         let document = serde_json::json!({
             "schema": "latent.aot-test-inputs.v1",
-            "profile": "debug-all-features-v1",
+            "profile": prepared::PROFILE,
             "entries": {"compiler": {"original": record(&original), "prepared": record(&copy)}},
         });
         Self {

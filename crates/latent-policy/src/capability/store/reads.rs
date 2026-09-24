@@ -86,9 +86,7 @@ impl PolicyStore {
         let generation = state.image.generation;
         let now = self.started.elapsed().as_secs();
         let (mut offset, expires) = match request.cursor {
-            Some(cursor) => {
-                decode_cursor(cursor, request, generation, now, &state.ledger.cursor_key)?
-            }
+            Some(cursor) => decode_cursor(cursor, request, generation, now, &state.cursor_key)?,
             None => (0, now.checked_add(300).ok_or_else(capacity)?),
         };
         if offset > state.image.records.len() {
@@ -124,7 +122,7 @@ impl PolicyStore {
                 generation,
                 offset,
                 expires,
-                &state.ledger.cursor_key,
+                &state.cursor_key,
             )?);
         }
         check_deadline(request.deadline)?;

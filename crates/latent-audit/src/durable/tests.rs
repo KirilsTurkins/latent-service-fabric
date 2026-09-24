@@ -325,11 +325,7 @@ fn abandoned_before_and_after_start_have_distinct_durable_outcomes() {
         stop(&handle, &mut worker);
         let (reopened, mut reopened_worker) =
             open(directory.0.join("audit"), AuditLimits::default()).unwrap();
-        let page = reopened
-            .query(
-                query(attempt().scope),
-                Instant::now() + Duration::from_secs(2),
-            )
+        let page = admitted_query(&reopened, &query(attempt().scope))
             .unwrap()
             .blocking_wait()
             .unwrap();

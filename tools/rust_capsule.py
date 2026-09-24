@@ -24,14 +24,17 @@ def main() -> int:
     compile_.add_argument("--output", type=Path, required=True, help="Fresh directory; failed attempts are retained")
     compile_.add_argument("--repository", required=True, help="Public source label asserted by the builder; not authenticated")
     compile_.add_argument("--contracts-tool", type=Path, default=project.ROOT / "target/debug/examples/capsule_contracts")
-    compile_.add_argument("--packager", type=Path, default=project.ROOT / "target/debug/examples/package")
+    packaging = compile_.add_mutually_exclusive_group()
+    packaging.add_argument("--packager", type=Path, default=project.ROOT / "target/debug/examples/package")
+    packaging.add_argument("--package-inputs-only", action="store_true", help="Emit checked bytes for a separately invoked packager")
     compile_.add_argument("--offline", action="store_true", help="Use already-cached pinned Cargo dependencies only")
     args = parser.parse_args()
     try:
         if args.command == "new":
             result = project.create(args.directory, args.template, args.name)
         else:
-            result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository, offline=args.offline)
+            result = build(args.project, args.output, args.contracts_tool, None if args.package_inputs_only else args.packager,
+                           args.repository, offline=args.offline)
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError) as error:

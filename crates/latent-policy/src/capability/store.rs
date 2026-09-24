@@ -63,9 +63,21 @@ struct Loaded {
     document: Option<Arc<Compiled>>,
 }
 struct State {
-    ledger: ledger::Ledger,
+    ledger: Option<ledger::Ledger>,
+    cursor_key: [u8; 32],
     image: Image,
     loaded: Vec<Loaded>,
+}
+impl State {
+    fn persist(&self, bytes: &[u8], revision: u64) -> Result<(), PlatformError> {
+        match self.ledger.as_ref() {
+            Some(ledger) => ledger.persist(bytes, revision),
+            #[cfg(feature = "development-test-host")]
+            None => Ok(()), // Only constructed by the scoped volatile test factory.
+            #[cfg(not(feature = "development-test-host"))]
+            None => Err(unavailable()),
+        }
+    }
 }
 
 /// One configured node-owned store. Synchronous disk work belongs on the
@@ -110,12 +122,36 @@ impl PolicyStore {
             .collect::<Result<Vec<_>, PlatformError>>()?;
         Ok(Self {
             state: Mutex::new(State {
-                ledger,
+                cursor_key: ledger.cursor_key,
+                ledger: Some(ledger),
                 image,
                 loaded,
             }),
             owner: Owner::new(limits.maximum_read_owners),
             catalog,
+            limits,
+            started: Instant::now(),
+        })
+    }
+    /// Bounded volatile policy mutations for one controlled application-test
+    /// owner. No durable receipt or node storage claim is made. The argument
+    /// cannot name a production directory catalog; configuration cannot select it.
+    #[cfg(feature = "development-test-host")]
+    pub fn for_development_test(
+        artifact: &latent_artifacts::DevelopmentTestArtifact,
+        limits: PolicyStoreLimits,
+        cursor_key: [u8; 32],
+    ) -> Result<Self, PlatformError> {
+        limits.validate()?;
+        Ok(Self {
+            state: Mutex::new(State {
+                ledger: None,
+                cursor_key,
+                image: Image::empty(),
+                loaded: Vec::new(),
+            }),
+            owner: Owner::new(limits.maximum_read_owners),
+            catalog: artifact.authority(),
             limits,
             started: Instant::now(),
         })

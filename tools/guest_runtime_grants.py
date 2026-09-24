@@ -1,19 +1,7 @@
 """Explicit, finite runtime grants for managed-language authoring experiments."""
 from tools.phase2_operator_process import require, write_json
 from tools.rust_capsule_node import call, deploy
-
-RUNTIME = {
-    "clockMonotonic": ("latent:clock/monotonic@0.1.0", "activation-monotonic-v1", "now-nanos", "clock"),
-    "clockWall": ("latent:clock/wall@0.1.0", "activation-wall-v1", "now-unix-millis", "clock"),
-    "random": ("latent:random/random@0.1.0", "system-random-v1", "u64-value", "random"),
-}
-
-
-def profiles(language):
-    require(language in {"go", "dotnet", "java"}, "runtime-grant-language")
-    if language == "java":
-        return {name: value for name, value in RUNTIME.items() if name != "random"}
-    return RUNTIME if language == "go" else {"clockMonotonic": RUNTIME["clockMonotonic"]}
+from tools.guest_runtime_profiles import RUNTIME, profiles
 
 
 def configure(settings, templates, language="go"):

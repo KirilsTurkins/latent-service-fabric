@@ -6,10 +6,23 @@ uint64_t exports_tests_random_api_run(uint32_t which, probe_string_t *text,
     (void)handle;
     probe_string_free(text);
     latent_random_random_random_error_t error = {0};
-    if (which == 1) {
+    if (which == 1 || which == 3) {
         uint64_t value;
         lsf_require(latent_random_random_u64_value(&value, &error));
-        return 8;
+        return which == 1 ? 8 : value;
+    }
+    if (which == 4 || which == 5) {
+        probe_list_u8_t bytes = {0};
+        bool ok = latent_random_random_bytes(8, &bytes, &error);
+        if (which == 5) {
+            lsf_require(!ok && error.tag == LATENT_RANDOM_RANDOM_RANDOM_ERROR_UNAVAILABLE);
+            return 11;
+        }
+        lsf_require(ok && bytes.len == 8);
+        uint64_t value = 0;
+        for (size_t index = 0; index < 8; ++index) value |= (uint64_t)bytes.ptr[index] << (index * 8);
+        probe_list_u8_free(&bytes);
+        return value;
     }
     lsf_require(which == 0 || which == 2);
     probe_list_u8_t bytes = {0};

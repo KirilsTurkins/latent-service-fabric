@@ -7,6 +7,9 @@ license.workspace = true
 authors.workspace = true
 description = "Bounded supply-chain admission policy and runtime authorization contracts."
 
+[features]
+development-test-host = ["latent-artifacts/development-test-host"]
+
 [[example]]
 name = "capsule_authoring"
 path = "examples/capsule_authoring.rs"

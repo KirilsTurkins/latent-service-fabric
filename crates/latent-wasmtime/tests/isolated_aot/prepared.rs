@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 
 const MAX_EXECUTABLE: u64 = 512 * 1024 * 1024;
 const MAX_MANIFEST: u64 = 64 * 1024;
-const PROFILE: &str = "debug-all-features-v1";
+pub const PROFILE: &str = "debug-all-features-v4";
 const SCHEMA: &str = "latent.aot-test-inputs.v1";
 
 pub struct Executable {

@@ -79,9 +79,11 @@ def shared_license(package: dict, packages: list[dict], checksums: dict, policy:
 
 
 def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,
-                         license_policy: dict) -> tuple[dict, dict[str, Path]]:
+                         license_policy: dict, *, root_names: frozenset[str] = frozenset({"latent", "latentd", "latent-wasmtime"})) -> tuple[dict, dict[str, Path]]:
     packages = {entry["id"]: entry for entry in metadata["packages"]}
-    roots = {entry["id"] for entry in metadata["packages"] if entry["name"] in {"latent", "latentd", "latent-wasmtime"}}
+    roots = {entry["id"] for entry in metadata["packages"] if entry["name"] in root_names}
+    require({entry["name"] for entry in metadata["packages"] if entry["id"] in roots} == root_names,
+            "dependency-inventory-roots-missing")
     nodes = {entry["id"]: entry for entry in metadata["resolve"]["nodes"]}
     selected = set()
     pending = list(roots)
@@ -109,8 +111,9 @@ def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,
         if checksum:
             entry["checksums"] = [{"algorithm": "SHA256", "checksumValue": checksum}]
             directory = Path(package["manifest_path"]).parent
-            candidates = {path for pattern in ("LICENSE*", "LICENCE*", "COPYING*", "NOTICE*")
-                          for path in directory.glob(pattern) if path.is_file() and not path.is_symlink()}
+            candidates = {path for path in directory.iterdir()
+                          if path.name.upper().startswith(("LICENSE", "LICENCE", "COPYING", "NOTICE"))
+                          and path.is_file() and not path.is_symlink()}
             if package.get("license_file"):
                 declared = Path(package["license_file"])
                 declared = declared if declared.is_absolute() else directory / declared
@@ -137,7 +140,7 @@ def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,
             "documentNamespace": "https://github.com/KirilsTurkins/latent-service-fabric/native-sbom/" + commit,
             "creationInfo": {"creators": ["Tool: lsf-native-runtime-builder-v1"],
                              "created": datetime.fromtimestamp(epoch, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")},
-            "documentComment": "Resolved non-dev dependency closure of the three native release packages; includes build-time crates, not a static link map. System glibc/libgcc remain OS prerequisites.",
+            "documentComment": "Resolved non-dev dependency closure of " + ", ".join(sorted(root_names)) + "; includes build-time crates, not a static link map. System libraries remain OS prerequisites.",
             "packages": result, "relationships": relationships}
     return sbom, licenses
 

@@ -71,15 +71,26 @@ def tool_inventory(roots: dict[str, Path]) -> bytes:
 
 class Compiler:
     def __init__(self, directory: Path, wasi_sdk: Path, *, gradle="gradle", sdk: Path | None = None,
-                 platform: Path | None = None, config: dict | None = None, timeout=900):
+                 platform: Path | None = None, config: dict | None = None, timeout=900,
+                 offline_cache: Path | None = None):
         self.directory, self.wasi_sdk = directory.resolve(), wasi_sdk.resolve()
         self.sdk = sdk or ROOT / "sdk/java-guest"
         self.platform = platform or ROOT / "wit/platform"
         self.directory.mkdir(parents=True, exist_ok=False)
         self.environment = build_environment(self.directory)
+        # Native JVM launcher/agent paths must preserve non-ASCII workspace
+        # names as well as Java source encoding.
+        self.environment.update(LC_ALL="C.UTF-8", LANG="C.UTF-8")
         # An explicit JDK may be needed by Gradle's Java toolchain discovery.
         if "JAVA_HOME" in os.environ: self.environment["JAVA_HOME"] = os.environ["JAVA_HOME"]
         self.environment["GRADLE_USER_HOME"] = str(self.directory / "gradle-home")
+        self.offline = offline_cache is not None
+        if offline_cache is not None:
+            # Only a captured, checksummed dependency cache is accepted. Gradle
+            # locks and metadata updates belong to this private compilation.
+            offline_cache = offline_cache.resolve(strict=True)
+            tool_inventory({"gradle-cache": offline_cache})
+            shutil.copytree(offline_cache, self.directory / "gradle-home/caches/modules-2")
         self.deadline = time.monotonic() + timeout
         self.records = []
         self.retained_bytes = 0
@@ -178,7 +189,7 @@ class Compiler:
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(read_file(path))
         target = java_root / "dev/latent/generated/Bindings.java"
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
-        self.run("java-to-c", "gradle", "--no-daemon", "generateC", cwd=project)
+        self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)
         retain = source_module(self.sdk / "tools/dependencies.py").retain
         retained = retain(self.directory / "gradle-home/caches/modules-2/files-2.1", project, destination, False)
         generated = project / "build/teavm-c/c"

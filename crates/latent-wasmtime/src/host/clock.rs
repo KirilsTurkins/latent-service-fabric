@@ -45,11 +45,7 @@ impl monotonic::Host for HostState {
                 self.currentness_read_wait.as_deref(),
             )
             .await?;
-        let value = monotonic_nanos(
-            self.clock.as_ref(),
-            self.clock_origin,
-            &mut self.last_monotonic_nanos,
-        );
+        let value = self.guest_monotonic_nanos();
         if let Some(call) = &mut call {
             let _ = call.record_provider_outcome(
                 latent_capabilities::broker::AuditProviderOutcome::HostCompleted,
@@ -72,7 +68,7 @@ impl wall::Host for HostState {
             .await?;
         // Wall-clock adjustments are observable; elapsed time and deadlines
         // remain based on the separate monotonic process clock.
-        let value = self.clock.sample().unix_millis();
+        let value = self.guest_wall_millis();
         if let Some(call) = &mut call {
             let _ = call.record_provider_outcome(
                 latent_capabilities::broker::AuditProviderOutcome::HostCompleted,
@@ -80,6 +76,28 @@ impl wall::Host for HostState {
         }
         self.record_host_call(started);
         Ok(value)
+    }
+}
+
+impl HostState {
+    fn guest_monotonic_nanos(&mut self) -> u64 {
+        #[cfg(feature = "development-clock-fixture")]
+        if let Some(readings) = self.development_clock_readings {
+            return readings.monotonic_nanos;
+        }
+        monotonic_nanos(
+            self.clock.as_ref(),
+            self.clock_origin,
+            &mut self.last_monotonic_nanos,
+        )
+    }
+
+    fn guest_wall_millis(&self) -> u64 {
+        #[cfg(feature = "development-clock-fixture")]
+        if let Some(readings) = self.development_clock_readings {
+            return readings.wall_unix_millis;
+        }
+        self.clock.sample().unix_millis()
     }
 }
 

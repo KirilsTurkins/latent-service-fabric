@@ -3583,6 +3583,36 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "tests::guest_clock_fixture_cannot_select_an_external_capsule_profile",
+        "tests::guest_clock_fixture_is_explicit_full_width_and_rejects_ambiguous_values",
+        "tests::test_owner_rejects_mismatched_bytes_and_tenant",
+        "tests::test_owner_seals_are_distinct_and_retire_on_drop"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-portable-test-host.bin.latent-portable-test-host",
+      "ignoredLeaves": [],
+      "kind": "bin",
+      "manifest": "tools/portable-test-host/Cargo.toml",
+      "minimumCases": 4,
+      "mode": "libtest",
+      "package": "latent-portable-test-host",
+      "platforms": [
+        "linux-x86_64",
+        "windows-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/main.rs",
+      "target": "latent-portable-test-host",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
         "rooted::tests::content_or_permission_change_after_open_is_rejected",
         "rooted::tests::replacement_and_removal_during_read_never_return_old_bytes",
         "rooted::tests::retained_root_rejects_ancestor_replacement_and_permission_changes",

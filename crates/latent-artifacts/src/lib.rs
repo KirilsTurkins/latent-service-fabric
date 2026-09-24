@@ -17,6 +17,8 @@ mod raw_cache;
 mod retained_package;
 mod verification_statistics;
 mod verified_metadata;
+#[cfg(feature = "development-test-host")]
+pub use lifecycle::DevelopmentTestArtifact;
 pub mod web;
 pub use publication::PublicationRef;
 pub use publication_management::PublicationOperationReceipt;

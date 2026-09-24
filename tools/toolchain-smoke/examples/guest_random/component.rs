@@ -26,6 +26,17 @@ fn probe(which: u32, _text: String, _handle: u64) -> u64 {
             Err(random::RandomError::InvalidLength) => 10,
             other => panic!("unexpected result: {other:?}"),
         },
+        3 => random::u64_value().expect("exact entropy fixture value"),
+        4 => u64::from_le_bytes(
+            random::bytes(8)
+                .expect("exact entropy fixture bytes")
+                .try_into()
+                .expect("eight bytes"),
+        ),
+        5 => match random::bytes(8) {
+            Err(random::RandomError::Unavailable) => 11,
+            other => panic!("unexpected denied result: {other:?}"),
+        },
         _ => panic!("unknown probe"),
     }
 }

@@ -155,7 +155,7 @@ def bindings(output: Path, update: bool) -> None:
         raise ValueError("guest binding drift: review WIT/generator changes and use --update-bindings\n" + json.dumps(value, indent=2))
 
 
-def package_inputs(directory: Path, profile: dict, source: Path, component: Path) -> None:
+def package_inputs(directory: Path, profile: dict, source: Path, component: Path, *, maximum_fuel: int | None = None) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(component, directory / "component.wasm")
     # Uniform public probe types are intentionally small. The Phase 2 builder
@@ -185,6 +185,10 @@ def package_inputs(directory: Path, profile: dict, source: Path, component: Path
     fuel = 100_000_000 if profile["name"] in {"service", "callee"} else 1_000_000_000_000
     if profile["name"] in {"http", "blob"}:
         fuel = 10_000_000_000
+    if maximum_fuel is not None:
+        if type(maximum_fuel) is not int or not 1 <= maximum_fuel <= fuel:
+            raise ValueError("test package fuel narrowing must fit the maintained guest ceiling")
+        fuel = maximum_fuel
     limits.update(cpuFuel=fuel,
                   memoryBytes=4_194_304 if profile["name"] in {"service", "callee"} else 16_777_216, wallTimeLimitMillis=5000,
                   childCalls=16 if profile["name"] == "service" else 0,

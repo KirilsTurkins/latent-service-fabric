@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import math
 from pathlib import Path
 import tempfile
 import time
@@ -63,6 +64,7 @@ def preflight(layout: Layout, candidate: str | None = None) -> dict:
 
 
 def readiness(layout: Layout, timeout: float = 20) -> dict:
+    require(isinstance(timeout, (int, float)) and 0 < timeout <= 120, "readiness-timeout-bound")
     identity = service_identity(layout)
     node = load(layout, identity)
     validate_layout(layout, node, node.get("securityProfile"))
@@ -73,7 +75,9 @@ def readiness(layout: Layout, timeout: float = 20) -> dict:
     with tempfile.TemporaryDirectory(prefix=".lsf-ready-", dir=layout.cache) as directory:
         client = Path(directory) / "client.json"
         files.create(client, encode(client_document(node)))
-        for _attempt in range(10):
+        # Fast connection refusals must not exhaust a fixed attempt count before
+        # the requested startup deadline. Polls remain bounded at two per second.
+        for _attempt in range(math.ceil(timeout * 2)):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break

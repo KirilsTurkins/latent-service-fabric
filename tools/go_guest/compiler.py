@@ -10,12 +10,14 @@ import shutil
 from tools.build_observation import file_identity
 from tools.go_guest.runtime import overlay
 from tools.go_guest.sdk import install
-from tools.rust_capsule_project import inventory, read_file, snapshot
+from tools.rust_capsule_project import inventory, read_file, snapshot, write_json
 
 
 class Compiler:
-    def __init__(self, root: Path, sdk: Path, commands):
+    def __init__(self, root: Path, sdk: Path, commands, *, offline_cache: Path | None = None,
+                 source_root: Path | None = None):
         self.root, self.sdk, self.commands = root, sdk, commands
+        self.source_root = source_root
         self.pins = json.loads(read_file(sdk / "toolchain.lock.json"))
         self.paths = {}
         for name in ("go", "componentize-go", "wasm-tools"):
@@ -28,12 +30,31 @@ class Compiler:
         environment = commands.environment
         environment.update(GOTOOLCHAIN="local", GOWORK="off", GOFLAGS="-mod=readonly",
                            GOCACHE=str(root / "cache"), GOMODCACHE=str(root / "modules"))
+        if offline_cache is not None:
+            # Only module download records are copied. Go verifies their locked
+            # sums when expanding them into this fresh private module cache.
+            files, total = [], 0
+            for path in sorted(offline_cache.rglob("*")):
+                if path.is_symlink():
+                    raise ValueError("offline-Go-cache-link")
+                if path.is_dir():
+                    continue
+                raw = read_file(path, 32 * 1024 * 1024)
+                total += len(raw)
+                if len(files) >= 2048 or total > 64 * 1024 * 1024:
+                    raise ValueError("offline-Go-cache-bound")
+                files.append((path.relative_to(offline_cache), raw))
+            for relative, raw in files:
+                target = root / "modules/cache/download" / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(raw)
+            environment.update(GOPROXY="off", GOSUMDB="off")
         version = self.run("go-version", "go", "version").split()
         if len(version) < 3 or version[2] != self.pins["go"]["version"]:
             raise ValueError("unreviewed-go-toolchain")
         if self.run("generator-version", "componentize-go", "--version").strip() != "componentize-go " + self.pins["componentizeGo"]["version"]:
             raise ValueError("unreviewed-componentize-go")
-        if self.run("validator-version", "wasm-tools", "--version").strip() != "wasm-tools 1.254.0":
+        if self.run("validator-version", "wasm-tools", "--version").split()[:2] != ["wasm-tools", "1.254.0"]:
             raise ValueError("unreviewed-go-component-validator")
         self.goroot = Path(self.run("go-root", "go", "env", "GOROOT").strip())
 
@@ -63,7 +84,7 @@ class Compiler:
         sources = snapshot(source)
         if not sources or any(not name.endswith(".go") for name in sources):
             raise ValueError("Go application source must contain only captured .go files")
-        replaced = set()
+        replaced, source_locations = set(), {}
         for name, data in sources.items():
             text = data.decode("utf-8")
             package = re.search(r"(?m)^package\s+(export_[a-zA-Z0-9_]+)\s*$", text)
@@ -82,6 +103,12 @@ class Compiler:
             if target.exists():
                 raise ValueError("duplicate-or-generated-Go-application-filename")
             target.write_bytes(data)
+            if self.source_root is not None:
+                source_locations[str(target)] = str(self.source_root / name)
+                source_locations[target.relative_to(generated).as_posix()] = str(self.source_root / name)
+                source_locations["./" + target.relative_to(generated).as_posix()] = str(self.source_root / name)
+        if source_locations:
+            write_json(self.commands.output / "diagnostic-files.json", source_locations)
         if any('panic("not implemented")' in path.read_text() for path in generated.glob("export_*/*.go")):
             raise ValueError("unimplemented-Go-WIT-export")
         install(self.sdk, generated)

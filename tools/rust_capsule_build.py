@@ -181,8 +181,9 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
     write_json(output / "deployment.json", deployment)
 
 
-def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path,
-          repository: str, *, offline: bool = False) -> Path:
+def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
+          repository: str, *, offline: bool = False, host_linker: Path | None = None,
+          rust_bin: Path | None = None) -> Path:
     project_path, output = checked_path(project_path), checked_path(output)
     if output == project_path or output in project_path.parents:
         raise ValueError("build output overlaps source")
@@ -214,17 +215,23 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             environment = build_environment(temporary)
-            paths, materials = resolve_tools(pins["toolchain"], work, environment)
+            if offline:
+                environment.update(CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0")
+            paths, materials = resolve_tools(pins["toolchain"], work, environment, installed=rust_bin)
             bindgen_path = shutil.which("wit-bindgen", path=environment.get("PATH"))
             if bindgen_path is None:
                 raise ValueError("install the pinned wit-bindgen CLI")
             paths.update({"wit-bindgen": Path(bindgen_path).resolve(strict=True),
-                          "contracts-tool": contracts_tool.resolve(strict=True), "packager": packager.resolve(strict=True)})
-            materials.extend(file_identity(paths[name], name) for name in ("wit-bindgen", "contracts-tool", "packager"))
+                          "contracts-tool": contracts_tool.resolve(strict=True)})
+            if packager is not None:
+                paths["packager"] = packager.resolve(strict=True)
+            if host_linker is not None:
+                paths["host-linker"] = host_linker.resolve(strict=True)
+                environment["CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER"] = str(paths["host-linker"])
+            materials.extend(file_identity(paths[name], name)
+                             for name in ("wit-bindgen", "contracts-tool", "packager", "host-linker") if name in paths)
             environment.update(RUSTC=str(paths["rustc"]), RUSTUP_TOOLCHAIN=pins["toolchain"]["rust"]["toolchain"],
                                CARGO_INCREMENTAL="0", CARGO_TARGET_DIR=str(temporary / "target"))
-            if offline:
-                environment["CARGO_NET_OFFLINE"] = "true"
             commands = Commands(work, output, environment)
             stage = "bindings"
             version = commands.run("bindgen-version", paths["wit-bindgen"], "--version").decode().strip().split()
@@ -232,7 +239,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 raise ValueError("wit-bindgen CLI does not match the project pin")
             binding_digest = binding_check(work, pins, commands, paths["wit-bindgen"])
             stage = "compile"
-            commands.run("compile", paths["cargo"], "build", "--locked", "--release", "--lib", "--target", "wasm32-unknown-unknown")
+            diagnostics = ["--message-format=json"] if packager is None else []
+            commands.run("compile", paths["cargo"], "build", "--locked", "--release", "--lib", "--target", "wasm32-unknown-unknown", *diagnostics)
             module = temporary / "target/wasm32-unknown-unknown/release" / (project["name"].replace("-", "_") + ".wasm")
             stage = "component"
             commands.run("component", paths["wasm-tools"], "component", "new", module, "-o", output / "component.wasm")
@@ -247,9 +255,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             package_inputs(output, project, read_json(derived / "surface.json"), files, component)
-            stage = "package"
-            commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-            commands.run("inspect", paths["packager"], "inspect", output / "package")
+            if packager is not None:
+                stage = "package"
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
+                commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
             if snapshot(project_path) != files or snapshot(work) != files:
                 raise ValueError("project changed during the observed build")
@@ -279,6 +288,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "dependencyCompleteness": "declared-inputs-incomplete"}
             write_json(output / "build-observation.json", observation)
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1, "observationDigest": digest(read_file(output / "build-observation.json")),
+                "packageAssembled": packager is not None,
                 "sourceDigest": digest(source_inputs), "componentDigest": digest(component), "sdkBindingDigest": binding_digest,
                 "buildSeconds": round(time.monotonic() - start, 6), "commands": commands.records})
         return output

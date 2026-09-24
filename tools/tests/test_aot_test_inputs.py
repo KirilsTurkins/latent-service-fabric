@@ -11,6 +11,19 @@ from unittest import mock
 from tools import aot_test_inputs as inputs
 
 
+class ProfileAgreement(unittest.TestCase):
+    def test_python_producer_rust_consumer_and_cargo_feature_closure_agree(self):
+        import re
+        import tomllib
+        root = Path(__file__).resolve().parents[2]
+        rust = (root / "crates/latent-wasmtime/tests/isolated_aot/prepared.rs").read_text()
+        for name in ("PROFILE", "SCHEMA"):
+            values = re.findall(r'const ' + name + r': &str = "([^"]+)";', rust)
+            self.assertEqual(values, [getattr(inputs, name)])
+        features = tomllib.loads((root / "crates/latent-wasmtime/Cargo.toml").read_text())["features"]
+        self.assertEqual(tuple(sorted(features)), inputs.FEATURES)
+
+
 class PreparedInputsTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -186,6 +199,16 @@ class PreparedInputsTests(unittest.TestCase):
         self.write_inventory()
         with self.assertRaisesRegex(inputs.InputError, "feature"):
             self.prepare()
+
+    def test_previous_feature_closure_is_not_the_current_profile(self):
+        for previous in (["aot-test-timings"],
+                         ["aot-test-timings", "development-test-host", "java-guest-diagnostic"]):
+            with self.subTest(features=previous):
+                for record in self.records[:-1]:
+                    record["features"] = previous
+                self.write_inventory()
+                with self.assertRaisesRegex(inputs.InputError, "incompatible-cargo-feature-sets"):
+                    self.prepare()
 
     def test_changed_inventory_and_runtime_injection_fail_validation(self):
         path = self.prepare()

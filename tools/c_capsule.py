@@ -24,11 +24,13 @@ def main() -> int:
     compile_.add_argument("--output", type=Path, required=True)
     compile_.add_argument("--repository", required=True, help="Public operator-asserted source label")
     compile_.add_argument("--contracts-tool", type=Path, default=ROOT / "target/debug/examples/capsule_contracts")
-    compile_.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
+    packaging = compile_.add_mutually_exclusive_group()
+    packaging.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
+    packaging.add_argument("--package-inputs-only", action="store_true", help="Leave package assembly to the calling controller")
     args = parser.parse_args()
     try:
         result = (create(args.directory, args.template, args.name) if args.command == "new" else
-                  build(args.project, args.output, args.contracts_tool, args.packager, args.repository))
+                  build(args.project, args.output, args.contracts_tool, None if args.package_inputs_only else args.packager, args.repository))
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError) as error:

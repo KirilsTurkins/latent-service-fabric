@@ -10,6 +10,9 @@ description = "Bounded Wasmtime Component Model runtime with a retained Phase 0 
 [features]
 # Off by default; timing observations cannot authorize compilation or loading.
 aot-test-timings = []
+development-clock-fixture = []
+development-test-host = ["latent-artifacts/development-test-host", "latent-policy/development-test-host", "development-clock-fixture"]
+
 # Retains the standalone compiler diagnostic; node installation is separately explicit.
 java-guest-diagnostic = []
 

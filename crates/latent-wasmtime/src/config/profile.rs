@@ -127,6 +127,16 @@ impl WasmtimeConfig {
             }
         }
         self.include_value_policy(&mut fields);
+        #[cfg(feature = "development-clock-fixture")]
+        if let Some(readings) = self.development_clock_readings {
+            fields.insert(
+                "development-clock-fixture".into(),
+                format!(
+                    "fixed-v1:{}:{}",
+                    readings.monotonic_nanos, readings.wall_unix_millis
+                ),
+            );
+        }
         self.context_policy.append_profile_fields(&mut fields);
         fields
     }

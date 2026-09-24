@@ -40,6 +40,8 @@ pub use cache::{
     PreparedRuntimePopulation, PreparedRuntimeSnapshot,
 };
 pub use compiler::CompilerObserver;
+#[cfg(feature = "development-clock-fixture")]
+pub use config::DevelopmentClockReadings;
 pub use config::{
     CompilerOptimization, ExecutionIsolationProfile, InstanceAllocator, Phase0InstanceAllocator,
     Phase0WasmtimeConfig, WasmtimeConfig, GENERIC_BACKEND_ID, WASMTIME_VERSION,

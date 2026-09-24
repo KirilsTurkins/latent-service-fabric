@@ -202,6 +202,8 @@ fn every_uncertain_write_poison_invalidates_live_owner_and_recovery_checks_the_f
             .lock()
             .unwrap()
             .ledger
+            .as_ref()
+            .expect("the production policy store has a durable ledger")
             .fault
             .store(point, Ordering::Release);
         assert!(mutate(&store, "p", "revoke", 2, None).is_err());

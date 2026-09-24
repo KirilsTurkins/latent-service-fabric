@@ -17,11 +17,12 @@ RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dot
     "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
-    "tools/build_process_signals.py", "tools/build_snapshot.py", "examples/echo-contract/capsule.json",
+    "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
     "examples/echo-contract/deployment.json")
 
 
-def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path, repository: str, *, tools: Path):
+def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
+          *, tools: Path, offline: bool = False):
     project_path, output, tools = map(checked_path, (project_path, output, tools))
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
@@ -45,7 +46,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
-            paths = {"contracts-tool": checked_path(contracts_tool), "packager": checked_path(packager)}
+            paths = {"contracts-tool": checked_path(contracts_tool)}
+            if packager is not None:
+                paths["packager"] = checked_path(packager)
             materials = [file_identity(path, name) for name, path in paths.items()]
             stage = "contracts"
             # Public RPC resources and other unsupported contracts fail before
@@ -58,18 +61,22 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             stage = "compiler-inputs"
-            compiler = Compiler(tools, commands, work / "vendor/lsf")
+            compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline)
             write_json(output / "compiler-inputs.json", compiler.before)
             materials.extend(compiler.materials)
             stage = "compile"
+            write_json(output / "diagnostic-source.json", {
+                "capturedSource": str(temporary / "compiled/project/src"),
+                "requestedSource": str(project_path / "src")})
             component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             write_json(output / "bindings.json", generated)
             package_inputs(output, project, read_json(derived / "surface.json"), files, component)
-            stage = "package"
-            commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-            commands.run("inspect", paths["packager"], "inspect", output / "package")
+            if packager is not None:
+                stage = "package"
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
+                commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
             if snapshot(project_path) != files or snapshot(work) != files:
                 raise ValueError("captured C# project changed during compilation")
@@ -100,6 +107,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
+                "packageAssembled": packager is not None,
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                 "componentDigest": digest(component), "sdkBindingDigest": generated["filesDigest"],
                 "buildSeconds": round(time.monotonic() - start, 6), "commands": commands.records})

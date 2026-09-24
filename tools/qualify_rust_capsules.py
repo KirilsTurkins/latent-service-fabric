@@ -32,7 +32,7 @@ HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py"
     "build_observation.py", "build_process.py", "build_process_linux.py", "build_process_windows.py", "build_process_signals.py",
     "phase2_operator_process.py", "phase2_operator_scenario.py", "phase3_management_scenario.py",
     "phase3_resource_os.py", "phase3_resource_identity.py", "phase3_resource_profile.py", "sdk_provider_scenario.py",
-    "sdk_provider_http_fixture.py", "stage_runtime_wit.py", "build_guest_capsules.py")
+    "sdk_provider_http_fixture.py", "stage_runtime_wit.py", "build_guest_capsules.py", "wait_capsule_audit_idle.py")
 
 
 def inputs(language="rust"):
@@ -42,7 +42,7 @@ def inputs(language="rust"):
                     "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py")
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
-                    "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py",
+                    "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml")
     elif language == "typescript":
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
@@ -52,8 +52,7 @@ def inputs(language="rust"):
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
                     "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/sdk.py",
-                    "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py",
-                    "wait_capsule_audit_idle.py",
+                    "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),

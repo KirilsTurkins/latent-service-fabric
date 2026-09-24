@@ -4,8 +4,10 @@ import json
 from pathlib import Path
 import platform
 import re
+import shlex
 import shutil
 import sys
+import tempfile
 from tools.build_observation import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 from tools.dotnet_guest.sdk import install as install_sdk
@@ -68,10 +70,11 @@ def packages(lock: dict, directory: Path, content_hash) -> dict[str, Path]:
 
 
 class Compiler:
-    def __init__(self, tools: Path, commands, vendor: Path):
+    def __init__(self, tools: Path, commands, vendor: Path, *, offline: bool = False):
         if sys.platform != "linux" or platform.machine() not in {"x86_64", "AMD64"}:
             raise ValueError("the pinned NativeAOT LLVM compiler is qualified only on Linux x86-64")
         self.tools, self.commands, self.vendor = tools.resolve(strict=True), commands, vendor
+        self.offline = offline
         self.sdk = vendor / "sdk/dotnet-guest"
         self.dotnet = Path(shutil.which("dotnet", path=commands.environment["PATH"]) or "missing-dotnet").resolve(strict=True)
         self.wasm = Path(shutil.which("wasm-tools", path=commands.environment["PATH"]) or "missing-wasm-tools").resolve(strict=True)
@@ -79,7 +82,9 @@ class Compiler:
         commands.environment.update(DOTNET_CLI_TELEMETRY_OPTOUT="1", DOTNET_NOLOGO="1",
             DOTNET_SKIP_FIRST_TIME_EXPERIENCE="1", DOTNET_CLI_HOME=str(tools / "cli-home"), DOTNET_ROLL_FORWARD="Disable",
             NUGET_PACKAGES=str(tools / "packages"), LSF_WIT_BINDGEN=str(self.bindgen), LSF_WASM_TOOLS=str(self.wasm),
-            DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE="true", MSBUILDDISABLENODEREUSE="1")
+            DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE="true", MSBUILDDISABLENODEREUSE="1",
+            DOTNET_CLI_USE_MSBUILD_SERVER="0", DOTNET_EnableDiagnostics="0", DOTNET_EnableDiagnostics_IPC="0",
+            LC_ALL="C.UTF-8", LANG="C.UTF-8")
         if commands.run("dotnet-version", self.dotnet, "--version").strip() != SDK_VERSION.encode():
             raise ValueError(".NET SDK 10.0.100 is required")
         if commands.run("wasm-tools-version", self.wasm, "--version").split()[:2] != [b"wasm-tools", b"1.254.0"]:
@@ -118,9 +123,9 @@ class Compiler:
         command, source = self.commands, work / "wit"
         generated = output / "generated"
         binding = work / "vendor/lsf/tools/dotnet_guest_bindings.py"
-        command.run("bindings", sys.executable, binding, "c-sharp", source, "--world", world,
+        command.run("bindings", sys.executable, "-I", "-B", binding, "c-sharp", source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated)
-        command.run("bindings-drift", sys.executable, binding, "c-sharp", source, "--world", world,
+        command.run("bindings-drift", sys.executable, "-I", "-B", binding, "c-sharp", source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated, "--check")
         receipt = json.loads(read_file(generated / "bindings.json", 16 * 1024 * 1024))
         project = output / "project"
@@ -140,16 +145,28 @@ class Compiler:
         }.items():
             (project / name).write_bytes(data)
         facades = install_sdk(self.sdk, generated, project / "lsf")
+        if self.offline:
+            # All locked packages must already be present. An empty source list
+            # prohibits restore from silently reaching the network on a miss.
+            (project / "nuget.config").write_text(
+                '<configuration><packageSources><clear /></packageSources></configuration>\n', encoding="utf-8")
         command.run("locked-restore", self.dotnet, "restore", project / "Capsule.csproj", "--configfile",
-            project / "nuget.config", "--locked-mode", "--packages", self.tools / "packages", "--disable-parallel")
-        # The binding adapter path is one MSBuild property, not a shell command.
-        # Reject whitespace in the executable/script paths instead of changing
-        # argument interpretation inside an upstream Exec task.
-        if any(any(c.isspace() or c in '\"\';&|$`' for c in str(path)) for path in (Path(sys.executable), binding)):
-            raise ValueError("use compiler and source staging paths without shell metacharacters")
-        command.run("native-aot", self.dotnet, "build", project / "Capsule.csproj", "-c", "Release", "--no-restore",
-            "-nodeReuse:false", "-p:WasiSdkRoot=" + str(self.wasi_sdk),
-            "-p:WitBindgenExe=" + sys.executable + " " + str(binding))
+            project / "nuget.config", "--locked-mode", "--packages", self.tools / "packages", "--disable-parallel",
+            "-p:NuGetAudit=false")
+        # The upstream SDK interpolates WitBindgenExe into a shell Exec task.
+        # Give it one ASCII-only owned path. Actual Python/source paths remain
+        # literal quoted arguments, including spaces, Unicode and metacharacters.
+        # This finite wrapper is private and retired after the owned process.
+        with tempfile.TemporaryDirectory(prefix="lsf-dotnet-bindgen-", dir="/tmp") as wrapper_root:
+            wrapper = Path(wrapper_root) / "wit-bindgen"
+            script = "#!/bin/sh\nexec " + shlex.join([sys.executable, "-I", "-B", str(binding)]) + ' "$@"\n'
+            if len(script.encode()) > 16384:
+                raise ValueError("binding wrapper path limit exceeded")
+            wrapper.write_text(script, encoding="utf-8")
+            wrapper.chmod(0o700)
+            command.run("native-aot", self.dotnet, "build", project / "Capsule.csproj", "-c", "Release", "--no-restore",
+                "-nodeReuse:false", "-p:UseSharedCompilation=false", "-p:WasiSdkRoot=" + str(self.wasi_sdk),
+                "-p:WitBindgenExe=" + str(wrapper))
         actual = list((project / "obj").rglob("bindings.json"))
         if len(actual) != 1 or json.loads(read_file(actual[0], 16 * 1024 * 1024))["outputs"] != receipt["outputs"]:
             raise ValueError("actual NativeAOT binding inputs differ from independent drift generation")
