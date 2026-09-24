@@ -63,6 +63,7 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--workspace", required=True)
         if name == "prepare-test":
             command.add_argument("--consent-test-fixtures", action="store_true")
+            command.add_argument("--fixtures", type=Path, help="explicit reviewed node fixture configuration")
             command.add_argument("--admission", choices=("trusted-local", "signed-fixture"), required=True)
             command.add_argument("--tool-root", help="Linux pinned tool inventory containing the reviewed test signer")
         if name == "install":
@@ -303,8 +304,13 @@ def dispatch(args) -> dict:
         if args.command == "prepare-test":
             require(args.workspace.startswith("test-") and args.consent_test_fixtures,
                     "explicit-disposable-test-fixture-consent-required")
+            fixtures = {}
+            if args.fixtures:
+                from .node_fixtures import validate
+                path = args.fixtures.absolute()
+                fixtures = {"fixtures": validate(decode(paths.read(path.parent, path.name, 4096), 4096))}
             return connection.call("prepare-test", {"consent": args.consent_test_fixtures,
-                "admission": args.admission, **({"toolRoot": args.tool_root} if args.tool_root else {})}, timeout=90)
+                "admission": args.admission, **({"toolRoot": args.tool_root} if args.tool_root else {}), **fixtures}, timeout=90)
         return connection.call(args.command, {})
 
 

@@ -276,8 +276,26 @@ The `development-clock-fixture` Cargo feature is disabled by default and cannot
 be selected with an external-capsule profile. It does not change admission,
 certificate validity, provider currentness, scheduler time, activation deadlines,
 fuel or cancellation. Without a clock fixture, guest readings use the system
-clock. The current installed node adapter does not yet expose this fixture;
-portable clock results cannot establish node differential qualification.
+clock.
+
+For a stopped, disposable `test-` node, add `--fixtures path/to/clock.json` to
+`dev prepare-test --consent-test-fixtures --admission signed-fixture`. The JSON
+file contains `{"clock":{"monotonicNanos":"0","wallUnixMillis":"0"}}`.
+The node must come from an explicitly selected development-test runtime
+candidate. Ordinary runtime builds reject this configuration. The controller
+checks the installed executable against the proposed configuration before
+replacing the workspace's configuration. Existing configuration, consent,
+fixture identity and signed-test scope remain checked on recovery. Each node
+keeps one fixture selection; another selection requires another disposable
+workspace. Scenario files must reference the same fixture bytes and digest.
+
+The native candidate workflow's explicit `development_test_node` dispatch input
+builds this artifact with `latentd/development-test-node`, which is disabled by
+default. Its authenticated manifest marks it as a disposable test candidate.
+Verification rejects release authority for that artifact, and installation
+rejects system-wide, ordinary development and external-capsule destinations.
+Use a local directory such as `.lsf-dev/test-clock/runtime`. This does not
+authorize publication or supply an independently approved publisher policy.
 
 ## Editor tasks and compiler locations
 
@@ -552,9 +570,28 @@ invocation starts with fresh state. The Windows executable digest is
 `sha256:6674ca8ada67edeeba1d8ec19c6dad376f3277ebecdaaf8305d4a66de70c1e3d`;
 the Linux executable digest is
 `sha256:22c207e081de73115ed4510d10db736b1ab23db4a256015394ec747ac46b1603`.
-These are source-built portable-host observations. The installed Linux node
-does not yet expose this clock fixture, so these runs do not establish the
+These earlier portable-host runs alone do not establish the
 required node/portable deterministic-provider comparison.
+
+The later [shared clock observation](./clock-fixture-source-observation.json)
+records an authored Rust capsule built through the installed standalone recipe,
+signed with the existing ephemeral test utility and admitted by the actual
+Linux node. Eight shared cases cover zero and the maximum unsigned 64-bit value,
+cold/warm execution, explicit policy denial and fresh success. The same component
+and scenario bytes pass on the Linux portable host and native Windows host.
+Both test nodes also invoke the retained deployment after a clean restart,
+without republishing. Owned node and portable processes are confirmed reaped.
+These source observations retain failed attempts and identify their exact
+runtime/helper/host bytes. Final authenticated candidates, clean Windows/WSL
+execution and the remaining provider/failure matrix are still required.
+
+The focused contributor command is `python tools/dev_clock_fixture_probe.py
+--payload TOOL_PREFIX --source-node SOURCE_NODE --portable-host NATIVE_HOST
+--output NEW_DIRECTORY` on Linux. Its exported public project and node receipts
+feed `python tools/run_dev_clock_portable.py --host NATIVE_WINDOWS_HOST
+--inputs EXPORTED_DIRECTORY --output NEW_REPORT`. The existing developer-tools
+Rust and Windows jobs execute these commands; no separate full workspace campaign
+is added.
 
 `tools/dev_node_fault_probe.py` is a contributor fault-injection harness, separate
 from the shipped helper. Run it only as the explicitly selected `test-` workspace's
@@ -573,7 +610,7 @@ not establish receipt expiration. The harness never marks qualification complete
 | #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
 | #564 | Complete malformed/admission failure, rapid edits, in-flight revision, revocation and expired-receipt cases; repeat the observed source watch/recovery schedule with final authenticated packages. |
 | #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |
-| #566 | Complete node-side deterministic clock fixtures, verified native distribution and the provider/failure differential; all six languages have source tutorial comparisons. |
+| #566 | Verified final native distribution and the remaining provider/failure differential; all six languages have source tutorial comparisons, and Rust has shared node/native clock evidence. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
 | #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
 

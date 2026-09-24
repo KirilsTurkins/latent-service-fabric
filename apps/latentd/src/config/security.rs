@@ -35,10 +35,36 @@ pub struct ExecutionProfileReport {
     compiler: &'static str,
     compiler_sandbox: Option<&'static str>,
     authenticated_native_loading: bool,
+    #[cfg(feature = "development-test-node")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    development_guest_clock: Option<GuestClockReport>,
+}
+
+#[cfg(feature = "development-test-node")]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GuestClockReport {
+    monotonic_nanos: String,
+    wall_unix_millis: String,
+}
+
+#[cfg(feature = "development-test-node")]
+fn guest_clock_report(settings: &NodeSettings) -> Option<GuestClockReport> {
+    settings
+        .wasmtime
+        .development_clock_readings
+        .map(|readings| GuestClockReport {
+            monotonic_nanos: readings.monotonic_nanos.to_string(),
+            wall_unix_millis: readings.wall_unix_millis.to_string(),
+        })
 }
 
 impl ExecutionProfileReport {
     pub(crate) fn matches(&self, settings: &NodeSettings) -> bool {
+        #[cfg(feature = "development-test-node")]
+        if self.development_guest_clock != guest_clock_report(settings) {
+            return false;
+        }
         self.profile == settings.wasmtime.execution_isolation_profile
             && self.authenticated_native_loading == settings.isolated_aot.is_some()
             && self.protected_credential_file == settings.credentials_from_protected_file
@@ -101,6 +127,8 @@ pub(super) fn check(settings: &NodeSettings) -> Result<ExecutionProfileReport, P
             .as_ref()
             .map(|_| latent_wasmtime::ISOLATED_AOT_SANDBOX_PROFILE),
         authenticated_native_loading: settings.isolated_aot.is_some(),
+        #[cfg(feature = "development-test-node")]
+        development_guest_clock: guest_clock_report(settings),
     })
 }
 

@@ -7687,6 +7687,9 @@
         "config::tests::connection_limits::connection_deadlines_are_derived_and_validated_together",
         "config::tests::credentials_derive_exact_scoped_principals_and_secure_exposure",
         "config::tests::defaults_derive_compatible_node_limits_without_creating_storage",
+        "config::tests::development::developer_fixture_consent_values_and_profile_fail_closed",
+        "config::tests::development::guest_fixture_changes_checked_configuration_without_changing_node_deadlines",
+        "config::tests::development::node_fixture_objects_reject_null_arrays_duplicates_and_unknown_fields",
         "config::tests::document_size_and_nesting_are_bounded_before_deserialization",
         "config::tests::engine::engine_json_has_closed_choices_and_preserves_omitted_defaults",
         "config::tests::engine::finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage",
@@ -7939,7 +7942,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 219,
+      "minimumCases": 222,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

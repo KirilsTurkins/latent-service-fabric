@@ -75,6 +75,38 @@ def selected(root: Path, version: str = "0.1.0-test.1", previous: dict | None = 
 
 
 class ManifestTests(unittest.TestCase):
+    def test_development_fixture_metadata_is_closed_and_never_release_authority(self):
+        metadata, _payload = fixture()
+        metadata["developmentTest"] = copy.deepcopy(verify.DEVELOPMENT_TEST)
+        self.assertEqual(verify.manifest(metadata, metadata["version"]), metadata)
+        policy = policy_fixture(metadata)
+        with self.assertRaisesRegex(InstallError, "not-a-release"):
+            verify.development_publisher(metadata, policy)
+        verify.development_publisher(metadata, {**policy, "purpose": "candidate"})
+        for value in (None, {}, {**verify.DEVELOPMENT_TEST, "formatVersion": True},
+                      {**verify.DEVELOPMENT_TEST, "fixtures": ["ambient-network"]},
+                      {**verify.DEVELOPMENT_TEST, "extra": True}):
+            with self.subTest(value=value), self.assertRaises(InstallError):
+                verify.manifest({**metadata, "developmentTest": value}, metadata["version"])
+
+    def test_development_runtime_cannot_modify_normal_or_system_installations(self):
+        from types import SimpleNamespace
+        metadata, _payload = fixture()
+        metadata["developmentTest"] = copy.deepcopy(verify.DEVELOPMENT_TEST)
+        release = SimpleNamespace(metadata=metadata,
+                                  authentication={"policy": {"purpose": "candidate"}})
+        with tempfile.TemporaryDirectory() as temporary:
+            for system, profile, location in (
+                (True, configuration.LOCAL, "test-clock/runtime"),
+                (False, "external-capsule-v1", "test-clock/runtime"),
+                (False, configuration.LOCAL, "normal/runtime"),
+            ):
+                with self.subTest(system=system, profile=profile, location=location):
+                    layout = SimpleNamespace(system=system, prefix=Path(temporary) / location)
+                    with self.assertRaisesRegex(InstallError, "disposable-local-workspace"):
+                        lifecycle.install(layout, release, profile=profile, acknowledge=True)
+            self.assertFalse(list(Path(temporary).iterdir()))
+
     def test_dependency_inventory_retains_lowercase_published_license_files(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -66,6 +66,8 @@ def build(arguments) -> dict:
     build_command = ["cargo", "+" + toolchain, "build", "--locked", "--release", "--target", verify.TARGET,
                      "-p", "latent", "-p", "latentd", "-p", "latent-wasmtime",
                      "--bin", "latent", "--bin", "latentd", "--bin", "latent-aot-compiler"]
+    feature_arguments = ["--features", "latentd/development-test-node"] if arguments.development_test_node else []
+    build_command.extend(feature_arguments)
     started = datetime.now(timezone.utc).isoformat()
     print('{"nativeBuildStage":"native-executables"}', flush=True)
     run(build_command, timeout=7200, maximum=8_388_608)
@@ -87,6 +89,8 @@ def build(arguments) -> dict:
                 "engine": {"wasmtimeVersion": abi["wasmtimeVersion"], "hostAbiProfile": abi["id"],
                            "compilerSha256": files.digest(assets["bin/latent-aot-compiler"]),
                            "dynamicDependencies": dependencies}}
+    if arguments.development_test_node:
+        identity["developmentTest"] = dict(verify.DEVELOPMENT_TEST)
     for name in ("echo-capsule.wasm", "capsule.json", "contracts.json", "deployment.json", "input.json"):
         assets["examples/echo/" + name] = Path(environment["CARGO_TARGET_DIR"]) / "capsules/echo" / name
     for name, source in (("echo", "examples/echo-contract/wit/echo.wit"),
@@ -100,7 +104,7 @@ def build(arguments) -> dict:
                    "config/external-capsule-v1.json": ROOT / "packaging/linux/external-capsule-v1.json"})
     print('{"nativeBuildStage":"dependency-and-license-inventory"}', flush=True)
     metadata = json.loads(run(["cargo", "+" + toolchain, "metadata", "--locked", "--format-version", "1",
-                               "--filter-platform", verify.TARGET], maximum=16_777_216, stdout_only=True))
+                               "--filter-platform", verify.TARGET, *feature_arguments], maximum=16_777_216, stdout_only=True))
     license_policy = document(files.read(ROOT / "packaging/linux/license-sources.json"))
     sbom, licenses = dependency_inventory(metadata, tomllib.loads((ROOT / "Cargo.lock").read_text()), commit, epoch, license_policy)
     assets.update(licenses)
@@ -143,6 +147,8 @@ def main() -> int:
     parser.add_argument("--commit", required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--development-test-node", action="store_true",
+                        help="Nonpublishing candidate for disposable rootless test nodes; never a runtime release")
     arguments = parser.parse_args()
     try:
         result = build(arguments)

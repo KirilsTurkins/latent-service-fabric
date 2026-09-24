@@ -4,7 +4,7 @@ from __future__ import annotations
 import platform
 import time
 
-from . import build, node_invocation, node_test_grants, node_test_profile, node_tests, paths, scenarios, service, state
+from . import build, node_fixtures, node_invocation, node_test_grants, node_test_profile, node_tests, paths, scenarios, service, state
 from .common import decode, digest, members, require
 
 
@@ -73,15 +73,19 @@ def run(root, arguments, *, deadline: float | None = None):
             supported.add("clock")
         if "random" in installed:
             supported.add("random")
+    fixture_profile = state.load(root, "test-profile.json") if installed is not None else {}
+    fixtures = fixture_profile.get("fixtures")
+    initialized = node_fixtures.initialized(source, cases, fixtures)
     report = scenarios.run({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": cases}, source, "node",
         arguments["selection"], invoke, {"source": build_receipt["source"], "artifacts": build_receipt["artifacts"],
         "deployment": deployed, "expectedRevision": revision, "hostAbi": descriptor["hostAbi"],
-        "package": build_receipt["package"], "fixtureProviders": installed or {},
+        "package": build_receipt["package"], "fixtureProviders": installed or {}, "fixtureConfiguration": fixtures,
+        "fixtureCheck": fixture_profile.get("fixtureCheck"),
         "admission": node["supplyChain"]["mode"], "testSigning": signing,
         "runtime": decode(paths.read(current, "release-source.json")), "node": node["nodeId"],
         "profile": node["securityProfile"], "os": "linux", "architecture": platform.machine(), "kernel": platform.release()},
         supported=supported,
-        execution_controls=controls, expected_revision=lambda: revision)
+        initialized_fixtures=initialized, execution_controls=controls, expected_revision=lambda: revision)
     pending = journal.read()["pending"]
     if any(item.get("recovery", {}).get("clientCleanup") == "unconfirmed" for item in report["results"]):
         report["cleanup"] = "client-cleanup-unconfirmed-node-retained"

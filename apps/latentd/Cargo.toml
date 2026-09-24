@@ -11,6 +11,10 @@ description = "Data-plane node runtime and standalone service composition root."
 [lib]
 path = "src/lib_root.rs"
 
+[features]
+# Explicit developer artifact only. Ordinary node builds reject these inputs.
+development-test-node = ["latent-wasmtime/development-clock-fixture"]
+
 [lints]
 workspace = true
 

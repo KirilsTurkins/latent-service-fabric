@@ -416,8 +416,14 @@ impl StandaloneNode {
         threads: RuntimeThreads,
     ) -> Result<Self, PlatformError> {
         let clock = Arc::clone(&catalogs.clock);
-        Self::start_with_catalogs_and_clock(settings, catalogs, control_runtime, threads, clock)
-            .await
+        Box::pin(Self::start_with_catalogs_and_clock(
+            settings,
+            catalogs,
+            control_runtime,
+            threads,
+            clock,
+        ))
+        .await
     }
 
     pub(super) async fn start_with_catalogs_and_clock(

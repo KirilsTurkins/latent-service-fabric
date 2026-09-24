@@ -217,7 +217,7 @@ def dispatch(request: dict) -> dict:
             return deploy(root)
         if operation == "prepare-test":
             from .node_test_profile import prepare
-            members(arguments, {"consent", "admission"}, {"toolRoot"})
+            members(arguments, {"consent", "admission"}, {"toolRoot", "fixtures"})
             installation(root)
             descriptor = state.load(root, "project.json")["descriptor"]
             tool_root = arguments.get("toolRoot")
@@ -225,7 +225,7 @@ def dispatch(request: dict) -> dict:
                 from .tool_install import selected_root
                 tool_root = selected_root(root, descriptor)
             return prepare(root, descriptor, consent=arguments["consent"], admission=arguments["admission"],
-                           tool_root=Path(tool_root) if tool_root else None)
+                           tool_root=Path(tool_root) if tool_root else None, fixtures=arguments.get("fixtures"))
         if operation == "recover":
             members(arguments, set())
             cli, journal = client(root)

@@ -29,6 +29,9 @@ pub struct NodeConfig {
     pub execution: ExecutionConfig,
     #[serde(default)]
     pub engine: EngineConfig,
+    #[cfg(feature = "development-test-node")]
+    #[serde(default, deserialize_with = "super::development::present")]
+    pub development_test: Option<super::DevelopmentTestConfig>,
     #[serde(default, deserialize_with = "super::renderer::present")]
     pub renderer_profile: Option<latent_manifest::RendererProfile>,
     #[serde(default)]

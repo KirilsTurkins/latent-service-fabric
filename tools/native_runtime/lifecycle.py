@@ -16,7 +16,7 @@ from .checks import current
 from .common import document, encode, execute, require
 from .configuration import LOCAL, approve_compiler, provision
 from .layout import Layout, node_identity
-from .verify import VerifiedRelease, manifest, publisher_id, publisher_policy, version
+from .verify import VerifiedRelease, development_publisher, manifest, publisher_id, publisher_policy, version
 
 UNIT = Path("/etc/systemd/system/lsf.service")
 MAX_STATE = 4_194_304
@@ -60,6 +60,7 @@ def read_state(layout: Layout) -> dict | None:
                 "installed-publisher-identity")
         manifest(release["metadata"], selected)
         policy = publisher_policy(release["authentication"]["policy"], selected, allow_candidate=True)
+        development_publisher(release["metadata"], policy)
         require(policy["sourceCommit"] == release["metadata"]["sourceCommit"]
                 and publisher_id(policy) == release["publisher"], "installed-attestation-identity")
     require(set(value["roots"]) == set(layout.roots()), "installed-root-inventory")
@@ -126,6 +127,10 @@ def child_check(layout: Layout, identity: tuple[int, int], command: str, candida
 def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: Path | None = None,
             port: int = 50051, start: bool = False, enable: bool = False, upgrade: bool = False,
             resume: bool = False, acknowledge: bool = False, approved_compiler: str | None = None) -> dict:
+    if "developmentTest" in release.metadata:
+        development_publisher(release.metadata, release.authentication["policy"])
+        require(not layout.system and profile == LOCAL and layout.prefix.parent.name.startswith("test-"),
+                "development-test-artifact-requires-disposable-local-workspace")
     require(profile != LOCAL or acknowledge, "local-experimental-profile-needs-explicit-acknowledgement")
     require(layout.system or not (start or enable), "rootless-never-starts-or-enables-systemd")
     require(layout.system == (os.geteuid() == 0), "server-requires-root-local-requires-unprivileged-user")

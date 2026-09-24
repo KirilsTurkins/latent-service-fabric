@@ -9,7 +9,7 @@ import time
 import unittest
 from unittest.mock import Mock, patch
 
-from tools.dev_workflow import common, effects, journal, node_test_profile, policy_operations, scenarios, state
+from tools.dev_workflow import common, effects, journal, node_fixtures, node_test_profile, policy_operations, scenarios, state
 
 
 class PolicyRecovery(unittest.TestCase):
@@ -95,8 +95,9 @@ class TestProfile(unittest.TestCase):
         self.signer = signer.start()
         self.addCleanup(signer.stop)
 
-    def prepare(self, root, descriptor, *, consent):
-        return node_test_profile.prepare(root, descriptor, consent=consent, admission="signed-fixture", tool_root=Path("/tools"))
+    def prepare(self, root, descriptor, *, consent, fixtures=None):
+        return node_test_profile.prepare(root, descriptor, consent=consent, admission="signed-fixture",
+                                         tool_root=Path("/tools"), fixtures=fixtures)
 
     def fixture(self, root):
         for directory in (root, root / "runtime", root / "runtime/config"):
@@ -153,6 +154,77 @@ class TestProfile(unittest.TestCase):
                 self.prepare(root, descriptor, consent=True)
             result = self.prepare(root, descriptor, consent=True)
             self.assertEqual(result["configurationSha256"], common.digest((root / "runtime/config/node.json").read_bytes()))
+
+    def test_selected_fixture_requires_binary_confirmation_before_replacing_configuration(self):
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "test-clock"
+            original, descriptor = self.fixture(root)
+            selected = {"clock": {"monotonicNanos": "0", "wallUnixMillis": "18446744073709551615"}}
+            before = (root / "runtime/config/node.json").read_bytes()
+            with patch("tools.native_runtime.checks.current", return_value=root / "runtime/release"), \
+                    patch.object(node_fixtures.process, "run", return_value=SimpleNamespace(returncode=2, stdout=b"")):
+                with self.assertRaisesRegex(common.DevError, "does-not-support"):
+                    self.prepare(root, descriptor, consent=True, fixtures=selected)
+            self.assertEqual((root / "runtime/config/node.json").read_bytes(), before)
+            self.assertFalse((root / "test-profile-plan.json").exists())
+
+            def confirm(argv, cwd, **kwargs):
+                proposed = common.decode(Path(argv[-1]).read_bytes())
+                self.assertEqual((root / "runtime/config/node.json").read_bytes(), before)
+                self.assertEqual(proposed["credentials"], original["credentials"])
+                return SimpleNamespace(returncode=0, stdout=common.encode({
+                    "schemaVersion": "latent.standalone.config-check.v1", "profile": "local-experimental-v1",
+                    "protectedCredentialFile": True, "developmentGuestClock": selected["clock"]}))
+            with patch("tools.native_runtime.checks.current", return_value=root / "runtime/release"), \
+                    patch.object(node_fixtures.process, "run", side_effect=confirm) as check:
+                receipt = self.prepare(root, descriptor, consent=True, fixtures=selected)
+                self.assertEqual(self.prepare(root, descriptor, consent=True, fixtures=selected), receipt)
+                check.assert_called_once()
+            self.assertEqual(receipt["fixtures"], selected)
+            self.assertEqual(receipt["fixtureCheck"]["configurationSha256"], receipt["configurationSha256"])
+            self.assertFalse(list(root.glob(".fixture-check-*")))
+            self.assertNotIn(b"private-test-canary", common.encode(receipt))
+            with self.assertRaisesRegex(common.DevError, "fixture-selection-changed"):
+                self.prepare(root, descriptor, consent=True)
+            self.assertEqual(state.load(root / "runtime/config", "node.json")["developmentTest"]["guestClock"], selected["clock"])
+
+    def test_invalid_or_unsigned_fixture_selection_starts_no_signer_and_keeps_configuration(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "test-clock"
+            _original, descriptor = self.fixture(root)
+            before = (root / "runtime/config/node.json").read_bytes()
+            for reading in (0, None, True, "", "01", "-1", "1.0", "18446744073709551616"):
+                with self.subTest(reading=reading), self.assertRaises(common.DevError):
+                    self.prepare(root, descriptor, consent=True,
+                                 fixtures={"clock": {"monotonicNanos": "0", "wallUnixMillis": reading}})
+            with self.assertRaisesRegex(common.DevError, "signed-test-admission"):
+                node_test_profile.prepare(root, {**descriptor, "language": "rust"}, consent=True,
+                    fixtures={"clock": {"monotonicNanos": "0", "wallUnixMillis": "1"}})
+            self.signer.assert_not_called()
+            self.assertEqual((root / "runtime/config/node.json").read_bytes(), before)
+
+    def test_only_matching_initialized_fixture_bytes_can_satisfy_scenarios(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            selected = {"clock": {"monotonicNanos": "0", "wallUnixMillis": "18446744073709551615"}}
+            raw = common.encode(selected)
+            (root / "clock.json").write_bytes(raw)
+            fixture = {"id": "clock", "kind": "test-adapter", "configuration": "clock.json",
+                       "identity": common.digest(raw)}
+            cases = [{"fixtures": [fixture]}]
+            self.assertEqual(node_fixtures.initialized(root, cases, selected), {"clock"})
+            self.assertEqual(node_fixtures.initialized(root, cases, None), set())
+            changed = copy.deepcopy(selected)
+            changed["clock"]["wallUnixMillis"] = "1"
+            self.assertEqual(node_fixtures.initialized(root, cases, changed), set())
+            (root / "clock.json").write_bytes(common.encode(changed))
+            with self.assertRaisesRegex(common.DevError, "fixture-identity"):
+                node_fixtures.initialized(root, cases, selected)
+            unknown = common.encode({"futureAdapter": {}})
+            (root / "clock.json").write_bytes(unknown)
+            fixture["identity"] = common.digest(unknown)
+            self.assertEqual(node_fixtures.initialized(root, cases, selected), set())
 
 
 class ScenarioTargets(unittest.TestCase):
@@ -385,6 +457,24 @@ class NodePortableComparison(unittest.TestCase):
         self.assertTrue(result["passed"])
         self.assertFalse(result["qualificationComplete"])
         self.assertIn("deployment", result["portableExcludedChecks"])
+
+    def test_clock_comparison_requires_actual_matching_fixture_and_explicit_native_host(self):
+        from tools.compare_dev_node_portable import compare
+        node, portable = self.reports()
+        reading = {"monotonicNanos": "0", "wallUnixMillis": "18446744073709551615"}
+        node["identity"]["fixtureConfiguration"] = {"clock": reading}
+        node["identity"]["fixtureCheck"] = {"guestClock": reading, "ordinaryNodeClock": "unchanged"}
+        run = portable["identity"]["runtime"]["runs"][0]
+        run.update(fixtures={"clock": reading}, clock="fixed-guest-readings-fixture",
+                   controlClock="system-clock-nondeterministic")
+        self.assertTrue(compare(node, portable)["guestClockCompared"])
+        run["os"] = "linux"
+        with self.assertRaisesRegex(common.DevError, "native-platform"):
+            compare(node, portable)
+        self.assertEqual(compare(node, portable, native_os="linux")["nativeOs"], "linux")
+        run["fixtures"] = {"clock": {**reading, "wallUnixMillis": "0"}}
+        with self.assertRaisesRegex(common.DevError, "fixture-selection"):
+            compare(node, portable, native_os="linux")
 
     def test_native_report_cannot_replace_node_or_change_component_outcome_or_cleanup(self):
         from tools.compare_dev_node_portable import compare

@@ -3,6 +3,10 @@ name: Native runtime candidate
 on:
   workflow_dispatch:
     inputs:
+      development_test_node:
+        description: Build a nonpublishing disposable-test runtime with explicit guest fixtures
+        type: boolean
+        default: false
       artifact_run:
         description: Optional prior native candidate run for VM-only diagnostics, never release authority
         type: string
@@ -91,10 +95,13 @@ jobs:
       - name: Build exact-source unsigned candidate
         env:
           NATIVE_VERSION: ${{ steps.identity.outputs.version }}
+          DEVELOPMENT_TEST_NODE: ${{ inputs.development_test_node || false }}
         run: |
           cd "$NATIVE_WORKSPACE"
           version="$NATIVE_VERSION"
-          python3 tools/build_native_runtime.py --commit "$GITHUB_SHA" --version "$version" --output "$PWD/target/native-release"
+          fixture_args=()
+          if [ "$DEVELOPMENT_TEST_NODE" = true ]; then fixture_args=(--development-test-node); fi
+          python3 tools/build_native_runtime.py --commit "$GITHUB_SHA" --version "$version" --output "$PWD/target/native-release" "${fixture_args[@]}"
       - name: Build separately authenticated public-only VM fixture helper
         run: |
           cd "$NATIVE_WORKSPACE"
@@ -116,7 +123,7 @@ jobs:
       - name: Retain authenticated candidate, not a published release
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: native-runtime-candidate-${{ github.sha }}
+          name: native-runtime-candidate${{ inputs.development_test_node && '-development-test' || '' }}-${{ github.sha }}
           path: ${{ env.NATIVE_WORKSPACE }}/target/native-release/
           if-no-files-found: error
           retention-days: 14
@@ -137,7 +144,7 @@ jobs:
           retention-days: 7
   native-vm:
     name: Native VM (${{ matrix.profile }})
-    if: ${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}
+    if: ${{ !cancelled() && !inputs.development_test_node && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}
     needs: candidate
     runs-on: ubuntu-24.04
     timeout-minutes: 30

@@ -12,7 +12,8 @@ from tools.dev_workflow.common import HOST_ABI, decode, digest, encode, require,
 from tools.dev_workflow.scenarios import NODE_ONLY
 
 
-def compare(node: dict, portable: dict) -> dict:
+def compare(node: dict, portable: dict, *, native_os: str = "windows") -> dict:
+    require(native_os in {"windows", "linux"}, "comparison-explicit-native-platform")
     for report, environment in ((node, "node"), (portable, "portable")):
         require(report.get("schemaVersion") == "latent.dev.test-report.v1"
                 and report.get("environment") == environment and report.get("passed") is True,
@@ -43,10 +44,19 @@ def compare(node: dict, portable: dict) -> dict:
             and isinstance(runs, list) and 0 < len(runs) <= 8, "comparison-actual-native-host")
     for run in runs:
         require(run.get("schemaVersion") == "latent.dev.portable-result.v1" and run.get("productionNode") is False
-                and run.get("environment") == "portable" and run.get("os") == "windows"
+                and run.get("environment") == "portable" and run.get("os") == native_os
                 and run.get("architecture") == "x86_64" and run.get("component") == left["artifacts"]["component"]
                 and run.get("wasmtime") == left["runtime"]["engine"]["wasmtimeVersion"],
                 "comparison-qualified-native-platform-required")
+    if left.get("fixtureConfiguration") is not None:
+        from tools.dev_workflow import node_fixtures
+        fixture = node_fixtures.validate(left["fixtureConfiguration"])
+        require(left.get("fixtureCheck", {}).get("guestClock") == fixture["clock"]
+                and left["fixtureCheck"].get("ordinaryNodeClock") == "unchanged"
+                and all(run.get("fixtures", {}).get("clock") == fixture["clock"]
+                        and run.get("clock") == "fixed-guest-readings-fixture"
+                        and run.get("controlClock") == "system-clock-nondeterministic" for run in runs),
+                "comparison-actual-guest-clock-fixture-selection")
     rows = []
     for actual, native in zip(node["results"], portable["results"]):
         sha(actual.get("inputSha256"))
@@ -70,6 +80,7 @@ def compare(node: dict, portable: dict) -> dict:
         "nodeReportSha256": digest(encode(node)), "portableReportSha256": digest(encode(portable)),
         "artifacts": right["artifacts"], "selection": node["selection"], "results": rows,
         "nodeProfile": left["profile"], "nodeAdmission": left["admission"],
+        "nativeOs": native_os, "guestClockCompared": left.get("fixtureConfiguration") is not None,
         "reviewedDifferences": ["node-only-publication-admission-and-routing", "host-os-and-architecture",
             "bounded-cold-node-preparation-deadline", "system-clock-and-entropy-not-compared"],
         "portableExcludedChecks": portable["excludedChecks"]}
@@ -79,12 +90,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("node", "portable", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--native-os", choices=("windows", "linux"), default="windows")
     arguments = parser.parse_args()
     require(not arguments.output.exists(), "new-comparison-output-required")
     reports = [decode(path.read_bytes(), 4 * 1024 * 1024) for path in (arguments.node, arguments.portable)]
-    result = compare(*reports)
+    result = compare(*reports, native_os=arguments.native_os)
     arguments.output.write_bytes(encode(result))
-    print("Same-component Linux-node and native Windows scenarios passed")
+    print("Same-component Linux-node and native " + arguments.native_os + " scenarios passed")
 
 
 if __name__ == "__main__":
