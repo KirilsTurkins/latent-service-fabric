@@ -4,13 +4,15 @@ The Linux x86_64 `protected-local-secrets-v1` provider implements the existing
 `latent:secrets/reader@0.1.0` contract. A read returns bytes, media type, an operator
 version, and optional expiry. The WIT function remains synchronous to the guest;
 Wasmtime suspends its fiber while host admission or required auditing waits.
-No host ABI source, digest, or package version changes for this provider.
 
 Installation is an explicit trusted Rust composition step using `latent-secrets`,
 the existing [provider pools](provider-pools.md), and
 `ActivationCapabilityRuntime::install_secrets`. Ordinary standalone startup does
-not infer secret sources from imports. Standalone provider configuration and
-management remain the separate Phase 3 delivery in #226. The [Vault KV-v2 adapter](vault-secrets.md) reuses this protected credential store.
+not infer secret sources from imports. The current
+[standalone provider configuration](../reference/standalone-providers.md)
+can read protected HTTP credential files, but has no guest secret-store
+installation field. The [Vault KV-v2 adapter](vault-secrets.md) reuses this
+protected credential store through the Rust embedding.
 
 ## Sources and filesystem trust
 

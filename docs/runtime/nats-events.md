@@ -143,10 +143,10 @@ it omits credentials, raw events, idempotency keys and broker diagnostic text.
 
 Trusted Rust composition installs `NatsPublisher::install(pools, logical_id,
 epoch, expected_epoch, config, credentials)`, compiles explicit provider bindings,
-and calls `ActivationCapabilityRuntime::install_events`. The WIT contract and
-current host ABI are unchanged. Ordinary standalone startup does not install this
-adapter implicitly: configuration/management remains #226
-and guest bindings #221. [Inbound durable consumer triggers](nats-triggers.md) use a separate node-owned poller.
+and calls `ActivationCapabilityRuntime::install_events`. The current
+[standalone provider configuration](../reference/standalone-providers.md)
+has no NATS publisher installation field; use this Rust embedding to install it.
+[Inbound durable consumer triggers](nats-triggers.md) use a separate node-owned poller.
 
 ```sh
 cargo test --locked -p latent-nats --lib
@@ -163,4 +163,4 @@ reuse. A bounded TLS fault proxy withholds acknowledgements from the real broker
 and verifies retained messages without automatic replay. Local regressions cover
 malformed/oversized/foreign replies, control floods, original deadlines, rejected
 inputs, queue cancellation and ownership after dropping a pending publication.
-No load benchmark is part of this ticket.
+These are bounded functional checks, not a load benchmark.

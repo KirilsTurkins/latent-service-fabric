@@ -4,8 +4,9 @@
 
 Accepted; Phase 3 #225. Extends ADR-0007, ADR-0010, ADR-0024, ADR-0027,
 ADR-0035 and ADR-0037. Capsule component fields and receipts keep their existing
-meaning. The shared ingress, web management and renderer adapters remain their
-own integration steps (#229, #226 and #233).
+meaning. The shared ingress, web management and renderer adapters have separate
+implementations (#229, #226 and #233), documented in the
+[web admission contract](../docs/reference/web-release-admission.md).
 
 ## Context
 
@@ -37,7 +38,7 @@ supplied-file package assembly. Its ordered output descriptor digest omits only
 the build-input receipt and generated embedded SBOM, avoiding identity cycles;
 the signed final package authenticates both. This does not claim Angular
 compilation, source-origin authentication, hermetic execution or reproducibility.
-The observed Angular compiler recipe remains #234.
+The separate observed Angular compiler recipe was delivered by #234.
 
 Store web publications inside the concrete directory catalog, under its OS root
 lock, common admission work slot and publication writer. Original payloads use
@@ -73,11 +74,12 @@ identical renderers coexist with independent lifecycle authority. Content/code
 deduplication does not share tenant grants. Selection and blob-read leases retain
 their charges across copied tokens and asynchronous response ownership.
 
-The first installed admission profile checks the exact public async
+The installed admission profile checks the exact public async
 `latent:web/application@0.1.0` interface and supported context imports without
 compilation or guest execution. Recognizing the Angular profile's identity does
 not install its adapter: the private synchronous qualification component from
-#224 remains incompatible until #233 supplies the public adapter.
+#224 is not a public renderer. The installed #233 adapter composes that private
+engine with the exact public async interface under ADR-0040.
 
 The [web admission contract](../docs/reference/web-release-admission.md) records
 the bounds, lifecycle policy, compatibility marker and host API. These are

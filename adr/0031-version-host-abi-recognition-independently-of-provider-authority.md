@@ -2,10 +2,15 @@
 
 - **Status:** Accepted
 - **Date:** 2026-09-13
-- **Current profile/resource extension:** [ADR-0032](0032-use-bounded-owned-resources-for-streaming-http.md)
+- **Current profile/resource extension:** [ADR-0033](0033-use-scoped-durable-local-blobs-with-owned-chunks.md)
 - **RFC:** [RFC-0005](../rfcs/0005-phase3-host-abi-profiles.md)
 
 ## Context
+
+Current reading: V4 supersedes this ADR's original V2 profile selection. The
+exact HTTP and blob resource extensions are in ADR-0032/0033; ADR-0035 adds the
+closed async application export. The [current host ABI](../docs/runtime/host-abi-profile.md)
+remains an allowlist, not general WASI or arbitrary resource support.
 
 Phase 3 requires exact agreement between inspected WIT, compiled host imports,
 generated bindings and cached native compatibility. It must also distinguish
@@ -41,8 +46,8 @@ verify generated-linker compatibility with real components in normal CI.
 - Packages can be inspected before a provider is configured, while execution
   remains closed at the missing-provider boundary.
 - Old generic prepared/native compatibility identities require regeneration.
-- The currently installed guest surface remains the four built-ins; provider
-  delivery, the sealed broker, streaming and stronger deployment enforcement
-  remain assigned to their Phase 3 tickets.
+- The sealed broker, supported providers, HTTP/blob resources and deployment
+  enforcement are now implemented. Import recognition still does not install a
+  provider, supply a protected binding or grant a particular activation access.
 - No dormant service receives an execution resource, listener, task or pool from
   recognition. ABI support never implies hostile-multitenant qualification.

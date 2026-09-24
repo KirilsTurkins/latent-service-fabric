@@ -22,8 +22,7 @@ export default function Home(): React.ReactNode {
       <div className="foundation-grid">{sections.map(([label, route, description]) =>
         <section key={label}><h2><Link to={route}>{label}</Link></h2><p>{description}</p></section>,
       )}</div>
-      <p><Link to="/decisions/">Architecture decisions</Link> record constraints and status, not proof that a feature is delivered.</p>
-      <p><Link to="/components/">Theme component review</Link> is a presentation fixture, not guide or runtime acceptance.</p>
+      <p>Working on LSF itself? Read the <Link to="/decisions/">architecture decisions</Link> and the <Link to="/docs/contribute/">contribution guide</Link>.</p>
     </main>
   </Layout>;
 }

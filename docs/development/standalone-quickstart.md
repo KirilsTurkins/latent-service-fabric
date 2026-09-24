@@ -307,5 +307,5 @@ It must use the maintained fixture's credentials and OCI behavior; the runner
 does not acquire or clean up an externally supplied registry. See
 [operator workflows](../phase-2-operator-workflows.md),
 [management services](../reference/management-services.md) and
-[validation](../../VALIDATION.md#phase-2-focused-validation) for the underlying
+[validation](../../VALIDATION.md#package-and-delivery-validation) for the underlying
 contracts and focused tests.

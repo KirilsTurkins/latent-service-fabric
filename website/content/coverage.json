@@ -158,7 +158,7 @@
       ],
       "pages": [
         {
-          "path": "docs/how-to/operate-and-contribute.md",
+          "path": "docs/contribute/index.md",
           "role": "guide"
         },
         {

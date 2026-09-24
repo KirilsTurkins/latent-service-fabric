@@ -69,18 +69,18 @@ separate tested build configurations, not deployment claims.
 
 ## Versions and one publishing authority
 
-The only future Pages writer is a protected, reviewed workflow on
+The only configured Pages writer is a protected, reviewed workflow on
 `development`, owned by #355. It builds one site containing an actual released
 alpha snapshot plus clearly labelled development material. `release` and tag
 workflows may propose snapshot updates but never race as independent writers.
-The current bootstrap candidate is the existing `0.1.0-alpha.3` prerelease;
-#353 must verify its exact release/source identities before snapshot creation.
+The preserved released snapshot is `0.1.0-alpha.3`; its manifest binds the
+verified release/source identities recorded by #353.
 Deployment requires protected environment approval, exact reviewed source/run
 identity and only the publisher job's necessary Pages/OIDC permissions. PR
 builds have no publishing credentials, no privileged PR execution and no writes
 to a trusted publication cache.
 
-#353 creates `versioned_docs`, `versioned_sidebars` and `versioned_examples`
+The #353 snapshot tooling creates `versioned_docs`, `versioned_sidebars` and `versioned_examples`
 together. Each immutable manifest names documentation source commit, exact
 runtime/profile compatibility, example source commits/hashes, illustration
 hashes, source/edit URL commit and correction provenance. Released snapshots
@@ -91,10 +91,12 @@ are the deliberately separate shared exception. Corrections retain the original
 runtime/example identity and record a reviewed correction commit; changed
 example semantics require renewed qualification, not just a prose patch.
 
-The foundation publishes only labelled current development locally. Its
+The local site includes labelled development and the preserved released channel. Its
 `site-manifest` interface records source SHA, dirty state, page and asset hashes
 and routes; a dirty build is not publication evidence. Snapshot creation,
-released-channel UI and deployment are not implemented by this ADR/foundation.
+released-channel UI and the protected publishing workflow are implemented by
+their owning features. Their existence does not establish that live deployment
+or human guide review has completed.
 The initial Phase 3 guide launch can include the existing released alpha before
 the future Phase 3 tag exists. That tag and #240 closure are not prerequisites.
 
@@ -134,19 +136,20 @@ MDX are reviewed executable build inputs, not a sandbox for hostile authors.
 The repository input index stays in server-only plugin closures: Docusaurus
 serializes site configuration into browser code, so private paths and complete
 source inventories must never be plugin-option data in that configuration.
-Any future snippet extractor (#351) receives an exact version/source manifest,
+The snippet extractor (#351) receives an exact version/source manifest,
 allowlisted source path and bounded named region, with size/line limits; it
 returns display text plus hashes/verification metadata, never execution output
 invented by the site. #352 supplies accessible switching/copy controls over that
-registry. #349 owns theme tokens; #350 owns maintained illustrations while
+registry. #349 supplies theme tokens; #350 supplies maintained illustrations while
 preserving historical bytes; #354 consumes page/version metadata for search and
-built-site accessibility. These interfaces do not claim those children delivered.
+built-site accessibility. Human review and execution remain separate from these
+implemented presentation mechanisms.
 
-#355 must add narrowly scoped website CI and exact generated-path exclusions,
-preserve `CI result`/documentation profiles and existing runtime/frozen-evidence
-checks, and integrate the new lock into security inventory. Until then the
-existing classifier conservatively selects full CI for unknown website source;
-this foundation does not globally exempt it or modify shared CI ownership.
+#355 supplies scoped website CI and generated-path exclusions, preserves
+`CI result`/documentation profiles and runtime/frozen-evidence checks, and includes
+the website lock in security inventory. Changes to CI classification must keep
+those checks and the single publishing owner; a documentation change is not a
+global exemption from source or security validation.
 
 @KirilsTurkins owns the site/dependency upgrade and finite gate review. Future
 framework/plugin/tool updates are exact-pin PRs with registry/upstream identity

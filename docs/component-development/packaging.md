@@ -1,8 +1,8 @@
 # Deterministic package build and inspection
 
-`latent-packaging` implements the bounded build/inspect workflow from
-[#141](https://github.com/KirilsTurkins/latent-service-fabric/issues/141), using
-the [artifact format](../protocol/package-format.md). It packages supplied
+Build a package from your compiled component and selected metadata, then inspect
+what it contains. `latent package build` uses the
+[artifact format](../protocol/package-format.md). It packages supplied
 bytes without compiling a component or invoking a guest. The separate
 [registry adapter](../reference/oci-registry.md) transfers its bytes, and the
 [publisher signing library](../reference/publisher-trust.md) signs and verifies
@@ -71,9 +71,10 @@ Validation covers:
 - Exact package/source/dependency identities and a resolved pinned WIT world.
 - Actual component import/export sets and complete supported parameter/result,
   record, variant, enum, list, tuple, option, alias and result structures.
-- Repository-authoritative context, log and clock host interfaces. Unknown host
-  imports, unsupported world items, asynchronous/resource/future/stream/flags
-  surfaces and exports without callable functions are rejected.
+- Repository-authoritative imports from the current [host ABI profile](../runtime/host-abi-profile.md),
+  including its asynchronous operations and named owned resources. Unknown host
+  imports, unsupported world items or types, and exports without callable functions
+  are rejected. Recognizing an import does not install or authorize its provider.
 - Existing manifest execution constraints and typed descriptor consistency.
 
 Compilers can omit unused host interfaces, functions and types. Every retained
@@ -83,18 +84,18 @@ checked summary reports the declared source surface, including imports removed
 by the compiler.
 
 Each exported interface requires exactly one matching contract descriptor and
-one interface descriptor. Functions are synchronous freestanding functions with
+one interface descriptor. Functions are supported synchronous or asynchronous freestanding functions with
 `id == name`; an unnamed WIT result projects to metadata name `result`.
 Dependencies are sorted direct interface dependencies, not the world's host
-imports. Records/variants retain their named legacy projection, enums use the
-legacy named variant form, and byte lists can use `Bytes` or `List(U8)`.
+imports. Records/variants retain their named metadata projection, enums use the
+named variant form, and byte lists can use `Bytes` or `List(U8)`.
 
 Interface/contract hashes preserve the existing algorithm: compact UTF-8 JSON
 with recursively sorted object keys, array order preserved, and only the
 current object's `digest` omitted. Contract hashes include interface digests.
 Supplied stale hashes are rejected. Documentation and attributes are preserved
 and remain digest-bound. WIT supplies the full named type definitions missing
-from those legacy descriptors.
+from the compact descriptors.
 
 This validates structural association and the supported packaging profile. It
 does not prove guest behavior or publisher trust. The separate

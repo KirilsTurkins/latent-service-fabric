@@ -2,11 +2,12 @@
 
 The current node validates component metadata and dispatches supported exported
 contracts/functions through the [generic Wasmtime backend](../runtime/wasmtime.md).
-Phase 2 adds verified package association and bounded release/runtime
-compatibility comparison. Phase 3 implements the exact host ABI, sealed capability
-broker and [bounded host/local binding compiler](../runtime/capability-bindings.md).
-Guest isolated service calls, remote/inline modes and automatic compatibility
-migration remain separate work. See the [roadmap](../roadmap.md).
+Verified package association and bounded release/runtime comparison accompany
+execution. The host ABI, sealed capability broker and
+[host/local binding compiler](../runtime/capability-bindings.md) preserve exact
+contracts. [Isolated local calls](../runtime/local-service-invocation.md) execute
+through a separate child activation. Remote calls, inline composition and
+automatic contract migration are not implemented.
 
 ## Contract authority
 
@@ -38,7 +39,7 @@ consumer revision + imported contract + caller policy
 
 - `host`: import is supplied by the capability broker.
 - `inline`: planned composition in the same activation; compilation is rejected today.
-- `isolated-local`: compiles an exact local provider; guest dispatch requires #209.
+- `isolated-local`: selects an exact local target and dispatches a separately admitted child activation.
 - `remote`: planned calls to another node; compilation is rejected today.
 - `auto`: compiler selects one unambiguous installed provider within explicit allowed modes.
 
@@ -56,8 +57,8 @@ Compatibility checks consider removed functions, changed parameter/result types,
 
 Current preparation checks agreement between the supplied manifest/contract
 metadata and actual component imports, exports and supported value signatures.
-Phase 2 adds [bounded release comparison](../reference/release-compatibility.md)
-using the exact pinned WIT definitions of checked packages, plus actual-node
+[Bounded release comparison](../reference/release-compatibility.md)
+uses the exact pinned WIT definitions of checked packages, plus actual-node
 runtime requirements. Descriptor-only analysis cannot establish named record or
 variant structure. Unsupported and unknown results deny compatibility approval;
 general WIT migration remains future work. Exact host/local binding compilation

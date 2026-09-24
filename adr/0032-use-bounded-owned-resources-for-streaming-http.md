@@ -7,6 +7,10 @@
 
 ## Context
 
+Current reading: [ADR-0033](0033-use-scoped-durable-local-blobs-with-owned-chunks.md)
+selects V4 and adds local blobs. The HTTP resource ownership contract below is
+retained by that extension; V3 is the historical profile introduced here.
+
 Buffered byte lists cannot deliver a large response incrementally without
 reserving its complete body. HTTP needs a resource lifetime spanning guest calls
 while retaining exact destination authority, the accepted activation and finite
