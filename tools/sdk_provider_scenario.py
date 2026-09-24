@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 import re
 import sys
@@ -10,6 +11,7 @@ import time
 from tools.phase2_operator_process import Process, read_json, require, write_json
 from tools.phase2_operator_scenario import TOKEN
 from tools.phase3_management_scenario import TENANT
+from tools.sdk_provider_http_fixture import DEFAULT_LIFETIME_SECONDS, MAX_LIFETIME_SECONDS
 
 LANGUAGES = {"rust", "typescript", "go", "c", "java", "dotnet"}
 ASSERTIONS = {
@@ -47,17 +49,54 @@ def publish_callee(client, fixture):
             "function": "answer"}
 
 
-def start_provider(client, control):
+def start_provider(client, control, *, maximum_seconds=DEFAULT_LIFETIME_SECONDS):
+    require(type(maximum_seconds) is int and 0 < maximum_seconds <= MAX_LIFETIME_SECONDS,
+            "sdk-provider-lifetime-bound")
+    now = time.monotonic()
+    require(type(client.deadline) in (int, float) and math.isfinite(client.deadline)
+            and client.deadline > now, "sdk-provider-owner-deadline")
+    deadline = min(client.deadline, now + maximum_seconds)
     process = Process([sys.executable, str(Path(__file__).with_name("sdk_provider_http_fixture.py")),
-                       "--control", str(control)], control, client.environment, client.cancellation, maximum=4096)
+                       "--control", str(control), "--deadline-monotonic", str(deadline)],
+                      control, client.environment, client.cancellation, maximum=4096)
     try:
-        started = process.line(min(client.deadline, time.monotonic() + 10))
+        started = process.line(min(deadline, time.monotonic() + 10))
         require(set(started) == {"port"} and type(started["port"]) is int
                 and 1 <= started["port"] <= 65535, "sdk-provider-startup")
         return process, started["port"]
     except BaseException:
         process.close()
         raise
+
+
+def close_failed_provider(process):
+    """Retain closed lifecycle facts, not credentials, HTTP bytes or raw stderr."""
+    exited, observed, observation_error, cleanup_error = None, True, "none", "none"
+    try:
+        if not process.closed:
+            if not process.owner.finished:
+                exited = process.owner.exited()
+            process.drain()
+    except BaseException as error:
+        observed = False
+        observation_error = "cancelled" if isinstance(error, (KeyboardInterrupt, SystemExit)) else "unavailable"
+    try:
+        process.close()
+    except BaseException as error:
+        # This is already a failed workflow. Keep its original failure and
+        # record incomplete cleanup (or deferred cancellation) independently;
+        # neither an observation nor cleanup failure may erase FAILED.json.
+        cleanup_error = "cancelled" if isinstance(error, (KeyboardInterrupt, SystemExit)) else "cleanup-failed"
+    diagnostics = {b"": "none", b"sdk-provider-fixture-failed\n": "fixture-failed",
+                   b"sdk-provider-fixture-deadline-expired\n": "deadline-expired"}
+    diagnostic = diagnostics.get(bytes(process.buffers[1]), "unavailable") if observed else "unavailable"
+    code = process.owner.process.returncode
+    return {"schemaVersion": "latent.provider-peer.failure.v1", "exitedBeforeCleanup": exited,
+            "closed": process.closed, "reaped": process.owner.finished,
+            "observationAvailable": observed,
+            "observationError": observation_error, "cleanupError": cleanup_error,
+            "exitCode": code if type(code) is int and -255 <= code <= 255 else None,
+            "diagnostic": diagnostic}
 
 
 def stop_provider(process):
