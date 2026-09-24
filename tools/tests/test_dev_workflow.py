@@ -190,7 +190,10 @@ class ForegroundOwnership(unittest.TestCase):
             root = Path(temporary)
             calls = []
             class Connection:
-                def call(self, operation, arguments):
+                def call(self, operation, arguments, **options):
+                    if operation == "up":
+                        if options != {"timeout": common.MAX_START_SECONDS + 15}:
+                            raise AssertionError("foreground startup must preserve the transport cleanup allowance")
                     calls.append(operation)
                     if operation == "status":
                         with state.lock(root):
