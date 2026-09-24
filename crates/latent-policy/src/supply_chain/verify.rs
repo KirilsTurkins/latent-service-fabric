@@ -1,7 +1,8 @@
 use latent_artifacts::package::LayerRole;
 use latent_artifacts::{
-    decode_contract_metadata, AdmissionBinding, AdmissionStorageLimits, ArtifactDescriptor,
-    CapsuleArtifact, ContractMetadataLimits, PackageAdmissionUpload, VerifiedAdmission,
+    decode_contract_metadata, AdmissionBinding, AdmissionEvidence, AdmissionStorageLimits,
+    ArtifactDescriptor, CapsuleArtifact, ContractMetadataLimits, PackageAdmissionUpload,
+    VerifiedAdmission,
 };
 use latent_core::{ArtifactReference, PlatformError, ReleaseDigest, TenantId};
 use latent_manifest::{JsonManifestCodec, ManifestCodec, ManifestLimits};
@@ -9,34 +10,58 @@ use latent_packaging::{inspect_bundle, BundleInput, PackageBundle, PackagingLimi
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use super::{denied, grant::Grant, invalid, receipt::Receipt, Inner};
+use super::{denied, grant::Grant, invalid, receipt::Receipt, Inner, SupplyChainAuthority};
+
+pub(super) struct Prepared {
+    bundle: PackageBundle,
+    signatures: Vec<AdmissionEvidence>,
+    provenance: Vec<AdmissionEvidence>,
+    sboms: Vec<AdmissionEvidence>,
+}
 
 pub(super) fn verify(
-    owner: &Arc<Inner>,
+    authority: &SupplyChainAuthority,
     tenant: &TenantId,
     upload: PackageAdmissionUpload,
-    previous: Option<&AdmissionBinding>,
 ) -> Result<VerifiedAdmission, PlatformError> {
+    with_preparation(authority, tenant, upload, prepare)
+}
+
+pub(super) fn with_preparation(
+    authority: &SupplyChainAuthority,
+    tenant: &TenantId,
+    upload: PackageAdmissionUpload,
+    prepare: impl FnOnce(PackageAdmissionUpload) -> Result<Prepared, PlatformError>,
+) -> Result<VerifiedAdmission, PlatformError> {
+    let owner = &authority.inner;
     let _verification = owner.verification()?;
     // Reservation precedes all decode/copy work. One bounded owner slot, no
     // waiting queue; reject spare-capacity abuse before holding received data.
+    {
+        let mut state = owner.lock()?;
+        owner.sample(&mut state)?;
+        check_tenant(tenant, &state)?;
+    }
+    // Component structural validation can outlast a clock lease. It confers no
+    // authority and must not block the existing sampler or policy replacement.
+    let prepared = prepare(upload)?;
+    let ledger = owner
+        .ledger
+        .lock()
+        .map_err(|_| super::unavailable("admission-authority-poisoned"))?;
     let mut state = owner.lock()?;
-    with_state(owner, tenant, upload, previous, &mut state)
+    authority.renew(&mut state, &ledger)?;
+    with_state(owner, tenant, prepared, None, &mut state)
 }
 
-// Keep the ordered verification-to-grant transaction visible under one fence.
-#[allow(clippy::too_many_lines)]
-pub(super) fn with_state(
-    owner: &Arc<Inner>,
-    tenant: &TenantId,
-    upload: PackageAdmissionUpload,
-    previous: Option<&AdmissionBinding>,
-    state: &mut super::State,
-) -> Result<VerifiedAdmission, PlatformError> {
-    let now = owner.sample(state)?;
+fn check_tenant(tenant: &TenantId, state: &super::State) -> Result<(), PlatformError> {
     if !super::config::identifier(&tenant.0) || !state.policy.tenants.contains_key(&tenant.0) {
         return Err(denied("admission-tenant-denied"));
     }
+    Ok(())
+}
+
+pub(super) fn prepare(upload: PackageAdmissionUpload) -> Result<Prepared, PlatformError> {
     let limits = PackagingLimits::default();
     let component_limit = usize::try_from(limits.package.max_layer_bytes)
         .map_err(|_| invalid("admission-component-limit"))?;
@@ -62,6 +87,32 @@ pub(super) fn with_state(
         },
         limits,
     )?;
+    Ok(Prepared {
+        bundle,
+        signatures,
+        provenance,
+        sboms,
+    })
+}
+
+// Only current policy/signature verification and grant creation share the fence;
+// prepared bytes retain the single verification slot, never cached authority.
+#[allow(clippy::too_many_lines)]
+pub(super) fn with_state(
+    owner: &Arc<Inner>,
+    tenant: &TenantId,
+    prepared: Prepared,
+    previous: Option<&AdmissionBinding>,
+    state: &mut super::State,
+) -> Result<VerifiedAdmission, PlatformError> {
+    let now = owner.sample(state)?;
+    check_tenant(tenant, state)?;
+    let Prepared {
+        bundle,
+        signatures,
+        provenance,
+        sboms,
+    } = prepared;
     let checked: super::verification::CheckedEvidence = super::verification::check_evidence(
         &state.policy,
         state.verifiers()?,

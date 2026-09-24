@@ -26,7 +26,10 @@ async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fix
         let observation = package::observation(name);
         uploads.push(signers.upload(bundle, &observation));
     }
-    let catalog = package::catalog(root, signers.policy);
+    let memory_ceiling = super::support::guest_runtime::service_memory(
+        super::support::config().maximum_memory_bytes,
+    );
+    let catalog = package::catalog(root, signers.policy, Some(memory_ceiling));
     for upload in uploads {
         catalog
             .admit_package(&TenantId("tenant-a".into()), upload, &mut |_| Ok(()))

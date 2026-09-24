@@ -6,6 +6,93 @@ requires the complete real-node and printed-guide gate at the final PR head.
 No partial observation below authorizes a release or replaces human newcomer
 review #345.
 
+## Verified execution and measurements
+
+[Run 35935390363](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35935390363)
+passed the complete qualification at
+`e3d001d54906a8d83b78b7e62197d9a289efebc1`. This is evidence for that exact
+source, not an automatic approval of later integration changes. The retained
+[execution artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35935390363/artifacts/10782284979),
+[source archive](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35935390363/artifacts/10782259682)
+and [pinned tools](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35935390363/artifacts/10783211184)
+separate compiler reproduction, source identity and executed behavior.
+
+Independent read-only verification matched all 4,040 archived files against
+Git and all 2,323 captured runtime, SDK, WIT, schema, helper and guide inputs
+against that revision. The source archive SHA-256 is
+`74992de813ff7e94e8616529944827a7ee0ee5eb068aa9de951aa33fe8252a24`;
+`qualification.json` is
+`sha256:836d5d8fa6abfdbd870c9051630772505f53df26bccd35197c3d4defa3d6bd62`.
+Before/after source and executable identities were identical. The capture is
+explicit-input evidence, not an attestation of every implicit compiler input.
+
+All fourteen components built and all ten real SDK/provider tests passed in
+153.94 seconds. These cover every capability family, stale and foreign
+handles, independent chunks, explicit secret zeroization, uncertain effects
+without replay, child service outcomes, pending-import cancellation and fresh
+reuse. The runtime ABI diagnostic retained full-width integers, UTF-8/NUL,
+record/list/result values and fresh-state recovery. The separate recovery
+diagnostic observed actual `OutOfFuel` with ten monotonic-clock and four entropy
+imports, then returned `1` in a fresh Store; it does not replace admission.
+
+The enforced node recorded 27 known invocation outcomes and 24 resource samples.
+All twelve tutorial outcomes, HTTP allow/deny, trap, memory/fuel exhaustion,
+deadline, explicit cancellation, client disconnect and successful subsequent
+invocations passed. Missing runtime grants and an unsigned package were denied.
+All six printed Bash blocks passed in 18.715 seconds, including deployment
+deletion and clean process exit. No release publication was performed.
+
+Measurements below are one Linux CI observation, not portable performance
+guarantees. Node readiness took 67.142 ms. The startup/control path had already
+warmed the greeting image, so its first tutorial call is not a cold compile.
+Each invocation still uses fresh guest state.
+
+| Project | Component bytes | Build/package seconds | First tutorial CLI milliseconds | Warm CLI milliseconds |
+| --- | ---: | ---: | ---: | ---: |
+| Greeting | 2,521,283 | 6.200 | 29.211, prewarmed | 25.244 |
+| Word-count | 2,519,641 | 6.226 | 6,943.591 | 25.235 |
+| Shipping | 2,509,162 | 6.080 | 6,932.484 | 25.097 |
+| HTTP status | 2,553,028 | 6.229 | 7,087.767 | 30.337 |
+| Recovery | 2,509,474 | 6.109 | 6,953.292 | 25.246 |
+
+Component compilation alone took 3.546–3.629 seconds per standalone project;
+the build/package column includes generation, validation and package inspection.
+The nine SDK components ranged from 2,509,958 to 2,619,526 bytes. Ordinary
+tutorial invocations peaked at 3,014,656 guest-memory bytes. The actual memory
+exhaustion reached 66,584,576 bytes within the 67,108,864-byte ceiling; the
+four-worker fuel fixture consumed exactly 1,000,000,000 fuel and returned
+`resource-exhausted` after 1,091,747 receipt microseconds. Every subsequent
+recovery call returned `1`.
+
+| Node phase | Samples | RSS bytes | OS threads | Compiled cache entries |
+| --- | ---: | ---: | ---: | ---: |
+| Empty | 1 | 56,524,800 | 8 | 0 |
+| Five dormant deployments | 3 | 67,936,256 | 7 | 0 |
+| Nine dormant deployments | 3 | 67,940,352 | 7 | 0 |
+| Seventeen dormant deployments | 3 | 67,944,448 | 7 | 0 |
+| Held cancellation call | 1 | 138,645,504 | 8 | 2 |
+| After cancellation | 1 | 136,720,384 | 8 | 2 |
+| After deleting every deployment | 1 | 137,551,872 | 7 | 2 |
+
+Every sample contained exactly one node process, one TCP listener and no UDP
+socket. Dormant and idle samples had no occupied cell, activation quota or
+activation-scoped owner; service-resident ownership stayed zero. The active
+samples had one occupied cell. No extra process, thread, listener or guest heap
+was owned by a dormant deployment. The node's bounded shared cache retained at
+most two entries: 13,217,872 compiled-image bytes and 5,062,502 source bytes,
+with 24 hits, five misses and three evictions at the final sample. Its retained
+cache and allocator high-water state explain why deleting deployments does not
+return RSS to the empty-node value; RSS is not a count of live guest Stores.
+
+All three held HTTP peers physically closed, with eight authorized requests,
+zero unexpected requests and a reaped peer process. The reaped node's final
+record reported zero live Stores, host states, instances, temporary buffers,
+cancellation probes, provider sessions/handles/calls/results and compiler or
+cleanup jobs. Shared compiler and cleanup workers were joined. Integration
+adds a direct four-parked-application-goroutine assertion to the existing blob
+cancellation/fresh-state fixture; that newer assertion and the integrated
+source require a new complete exact-head qualification before merge.
+
 ## Compiler and implementation decisions
 
 The selected profile pins componentize-go 0.4.3 at

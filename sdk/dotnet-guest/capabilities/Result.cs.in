@@ -1,0 +1,9 @@
+using System;
+using @root@;
+namespace Lsf.Guest;
+
+public static class Results
+{
+    public static Result<V, E> Map<T, V, E>(Result<T, E> result, Func<T, V> operation) =>
+        result.IsOk ? Result<V, E>.Ok(operation(result.AsOk)) : Result<V, E>.Err(result.AsErr);
+}

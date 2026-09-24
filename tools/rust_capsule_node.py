@@ -92,17 +92,22 @@ def configure(directory, fixture, port, *, runtime_grants=False, language="rust"
         "consumerService": "examples/my-http-status", "providerService": "http-host",
         "contract": "latent:http/client@0.2.0", "providerBinding": "http-installed", "route": "my-http-status"}]
     settings["cache"].update(entries=2, preparations=1)
-    if language == "go":
-        settings["cells"][0]["maximumMemoryBytes"] = 67108864
+    if language in {"go", "typescript", "dotnet"}:
+        settings["cells"][0]["maximumMemoryBytes"] = 67108864 if language == "go" else 134217728
         settings["execution"]["maximumWallTimeMillis"] = 120000
     settings["catalogs"].update(releaseEntries=8, deployments=24)
     settings["audit"].update(records=1024, diskBytes=16777216)
+    if language == "java":
+        settings.setdefault("engine", {})["javaGuest"] = True
+        settings["execution"]["maximumWallTimeMillis"] = 120000
+        for cell in settings["cells"]:
+            cell["maximumMemoryBytes"] = 67_108_864
     settings["capabilityPolicies"]["store"] = {
         "maximumRecords": 64, "maximumOutcomes": 128, "maximumCatalogBytes": 4194304,
         "maximumReadOwners": 64, "maximumPageRecords": 16}
     if runtime_grants:
         from tools.guest_runtime_grants import configure as configure_runtime
-        configure_runtime(settings, ("greeting", "word-count", "shipping", "http-status", "recovery"))
+        configure_runtime(settings, ("greeting", "word-count", "shipping", "http-status", "recovery"), language=language)
     path = directory / "authoring-node.json"
     write_json(path, settings)
     return path, settings
@@ -154,11 +159,14 @@ def grant_http(client, node, fixture, publication, target, port):
                   grants=target["grants"] + [{"capability": descriptor["capability"], "policy": "http-allow"}])
 
 
-def start_call(client, target, template, function, arguments, activation, *, wall=None):
+def start_call(client, target, template, function, arguments, activation, *, wall=None, memory=None):
     path = client.directory / f"{activation}-input.json"
     budget_path = client.directory / f"{activation}-budget.json"
     write_json(path, arguments)
     budget = dict(target["budget"])
+    if memory is not None:
+        require(type(memory) is int and 0 < memory <= budget["memoryBytes"], "authoring-memory-budget")
+        budget["memoryBytes"] = memory
     if wall is not None:
         budget["wallTimeLimitMillis"] = wall
     write_json(budget_path, budget)

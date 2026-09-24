@@ -2,7 +2,12 @@
 
 For a new independent project, follow [Create your own Rust capsule](rust-authoring.md)
 or [Create your own C capsule](c-authoring.md), or
-[Create your own Go capsule](go-authoring.md).
+[Create your own Go capsule](go-authoring.md), or
+[Create your own TypeScript capsule](typescript-authoring.md), or
+[Create your own C# capsule](dotnet-authoring.md).
+The bounded [Java authoring profile](java-authoring.md) uses maintained TeaVM and
+typed WIT bindings; its [SDK reference](../../sdk/java-guest/README.md) documents
+the exact language, heap, clock-grant and ownership boundaries.
 That guide covers editable source, generated contracts, packaging, signing,
 enforced node admission and cleanup. This reference describes capability ownership.
 
@@ -13,6 +18,13 @@ The [Go guest SDK](../../sdk/go-guest/README.md) adds typed capability packages
 with shared owner state, explicit close and no finalizer-driven release. Its
 runtime needs separately granted LSF clocks and entropy, including for pure
 application functions. See its guide for exact compiler and dependency pins.
+The [TypeScript guest SDK](../../sdk/typescript-guest/README.md) generates typed
+WIT imports/exports and supplies affine resource owners with explicit close.
+Its SpiderMonkey heap belongs to one activation; no Node process, timer loop,
+ambient WASI or initialized dormant heap is introduced.
+The [C# guest SDK](../../sdk/dotnet-guest/README.md) uses pinned NativeAOT LLVM,
+typed WIT bindings and explicit disposable resource owners. Only its monotonic
+GC clock is granted as runtime authority; no CLR process or dormant heap remains.
 External client interfaces in Go, TypeScript, Java, .NET, C and Rust are separate
 from guest execution profiles. They do not establish general Go/JVM/.NET/JS guest
 support or a Node.js/WASI environment inside an LSF activation.
@@ -85,7 +97,7 @@ The inventory describes these package inputs; it does not assert a complete
 transitive dependency inventory. The helper contains no fixed private keys,
 trusted-local admission switch or injectable eligibility proof.
 
-The two separately approved [guest build profiles](../reference/build-provenance.md#phase-3-guest-recipes)
+The separately approved [guest build profiles](../reference/build-provenance.md#phase-3-guest-recipes)
 identify explicit worktree inputs. Their revision is a source-inventory hash,
 not a Git commit claim. Existing echo builder approvals do not authorize them.
 For an application, inspect its package and configure real publisher/builder

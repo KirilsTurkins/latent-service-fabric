@@ -1,6 +1,7 @@
 use super::{
-    BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, GO_CAPSULE_BUILD_TYPE,
-    PROVENANCE_BUILD_TYPE, RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE,
+    BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, DOTNET_CAPSULE_BUILD_TYPE,
+    GO_CAPSULE_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE, PROVENANCE_BUILD_TYPE, RUST_CAPSULE_BUILD_TYPE,
+    RUST_GUEST_BUILD_TYPE, TYPESCRIPT_CAPSULE_BUILD_TYPE,
 };
 use crate::{SignatureFailure, SignatureResult};
 use std::collections::BTreeSet;
@@ -162,10 +163,40 @@ pub(crate) fn validate_observation(
             "package-inputs",
         ],
         C_GUEST_BUILD_TYPE => &["zig", "wit-bindgen"],
+        TYPESCRIPT_CAPSULE_BUILD_TYPE => &[
+            "dependency-lock",
+            "node",
+            "compiler-inputs",
+            "contracts-tool",
+            "packager",
+            "package-inputs",
+        ],
         GO_CAPSULE_BUILD_TYPE => &[
             "go",
             "componentize-go",
             "dependency-lock",
+            "contracts-tool",
+            "packager",
+            "package-inputs",
+        ],
+        DOTNET_CAPSULE_BUILD_TYPE => &[
+            "dotnet",
+            "wit-bindgen",
+            "closed-runtime",
+            "compiler-inputs",
+            "dependency-lock",
+            "contracts-tool",
+            "packager",
+            "package-inputs",
+        ],
+        JAVA_CAPSULE_BUILD_TYPE => &[
+            "java",
+            "gradle",
+            "clang",
+            "wit-bindgen",
+            "compiler-closure",
+            "dependency-lock",
+            "generated-bindings",
             "contracts-tool",
             "packager",
             "package-inputs",
@@ -241,6 +272,23 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
                 && p.target == "wasm32-wasi"
                 && p.optimization == "O2"
         }
+        (TYPESCRIPT_CAPSULE_BUILD_TYPE, BuildRecipe::TypeScriptCapsule(p)) => {
+            p.compiler == "componentize-js"
+                && p.bindings == "jco"
+                && p.language == "typescript"
+                && p.target == "wasm32-component"
+                && p.runtime == "spidermonkey"
+                && !p.ambient_wasi
+        }
+        (DOTNET_CAPSULE_BUILD_TYPE, BuildRecipe::DotnetCapsule(p)) => {
+            p.compiler == "native-aot-llvm"
+                && p.bindings == "wit-bindgen-csharp"
+                && p.language == "csharp"
+                && p.target == "wasi-wasm"
+                && p.runtime == "native-aot"
+                && p.locked
+                && !p.ambient_wasi
+        }
         (GO_CAPSULE_BUILD_TYPE, BuildRecipe::GoCapsule(p)) => {
             !p.go_package.is_empty()
                 && p.go_package.len() <= 64
@@ -256,6 +304,14 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
                 && p.runtime == "go-component-async-v1"
                 && p.locked
                 && !p.ambient_wasi
+        }
+        (JAVA_CAPSULE_BUILD_TYPE, BuildRecipe::JavaCapsule(p)) => {
+            p.compiler == "teavm-c"
+                && p.entry_point == "dev.latent.app.Capsule"
+                && p.target == "wasm32-wasip1"
+                && p.bindings == "lsf-java-wit-v1"
+                && p.optimization == "O2"
+                && p.java_heap_bytes == 4_194_304
         }
         _ => false,
     };

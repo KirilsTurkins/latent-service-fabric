@@ -9,8 +9,15 @@ RUNTIME = {
 }
 
 
-def configure(settings, templates):
-    for name, (contract, _profile, _operation, _kind) in RUNTIME.items():
+def profiles(language):
+    require(language in {"go", "dotnet", "java"}, "runtime-grant-language")
+    if language == "java":
+        return {name: value for name, value in RUNTIME.items() if name != "random"}
+    return RUNTIME if language == "go" else {"clockMonotonic": RUNTIME["clockMonotonic"]}
+
+
+def configure(settings, templates, language="go"):
+    for name, (contract, _profile, _operation, _kind) in profiles(language).items():
         settings["providers"][name] = {"identity": {"id": name, "tenant": "examples", "service": "runtime-host", "epoch": 1}}
         for template in sorted(templates):
             settings["providers"]["bindings"].append({"name": name + "-" + template,
@@ -20,13 +27,13 @@ def configure(settings, templates):
     settings["audit"].update(records=4096, diskBytes=67108864)
 
 
-def grant(client, node, fixture, targets, publications, result):
+def grant(client, node, fixture, targets, publications, result, language="go"):
     denied = call(client, targets["greeting"], "greeting", "greet", ["Ada"], "runtime-grant-denied")
     require(denied["exitCode"] == 4 and denied["response"]["error"]["code"] == "permission-denied",
             "runtime-imports-require-explicit-grants")
     result["runtimeGrantDenied"] = denied
     grants = []
-    for name, (capability, profile, operation, kind) in RUNTIME.items():
+    for name, (capability, profile, operation, kind) in profiles(language).items():
         installed = [row for row in node.startup_record["providers"] if row["id"] == name]
         require(len(installed) == 1 and installed[0]["capability"] == capability and installed[0]["profile"] == profile,
                 "runtime-provider-installation-identity")

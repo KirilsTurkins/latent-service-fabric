@@ -6,6 +6,28 @@
   "target": "guest",
   "variants": [
     {
+      "language": "csharp",
+      "kind": "maintained",
+      "source": "sdk/dotnet-guest/templates/word-count.cs",
+      "regions": ["capsule"],
+      "validation": {
+        "target": "tools/qualify_dotnet_capsules.py",
+        "instructions": "docs/component-development/dotnet-authoring.md",
+        "evidence": null
+      }
+    },
+    {
+      "language": "typescript",
+      "kind": "maintained",
+      "source": "sdk/typescript-guest/templates/word-count.ts",
+      "regions": ["capsule"],
+      "validation": {
+        "target": "tools/qualify_typescript_capsules.py",
+        "instructions": "docs/component-development/typescript-authoring.md",
+        "evidence": null
+      }
+    },
+    {
       "language": "go",
       "kind": "maintained",
       "source": "sdk/go-guest/templates/word-count.go",
@@ -39,6 +61,19 @@
       "validation": {
         "target": "tools/qualify_c_capsules.py",
         "instructions": "docs/component-development/c-authoring.md",
+        "evidence": null
+      }
+    },
+    {
+      "language": "java",
+      "kind": "maintained",
+      "source": "sdk/java-guest/templates/word-count.java",
+      "regions": [
+        "capsule"
+      ],
+      "validation": {
+        "target": "tools/qualify_java_capsules.py",
+        "instructions": "docs/component-development/java-authoring.md",
         "evidence": null
       }
     }

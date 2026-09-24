@@ -664,6 +664,9 @@ impl WasmtimeBackend {
         );
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
+        if self.config.java_guest {
+            host_state.limiter.reserve_exception_heap()?;
+        }
         let mut store = Store::new(&self.engine, host_state);
         store.set_hostcall_fuel(self.config.hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
