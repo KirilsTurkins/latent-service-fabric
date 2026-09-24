@@ -2,10 +2,59 @@
 
 This is developer execution evidence for #546, separate from the beginner
 [TypeScript authoring guide](../component-development/typescript-authoring.md).
-All ten actual SDK cases, the signed node and the printed guide passed at the
-integrated `a880cfd7` checkpoint below. The newer TypeScript PR #555 still needs
-its final reconciled exact-head CI and source/execution evidence before delivery.
+All eight exact-head workflows passed at `aa269c04`, with independently verified
+SDK, signed-node and printed-guide evidence below. PR #555 nevertheless remains
+draft: separate Go qualification exposed two shared-runtime contention failures.
+Their corrections require new source-bound qualification before delivery.
 This report does not authorize a release or replace newcomer review #345.
+
+## Reviewed candidate and shared-runtime hold
+
+[TypeScript run 35987595334](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595334)
+and [broad CI 35987595415](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595415)
+passed at `aa269c04e8dd6b4737bf4b55d28670aba8ace7be`, alongside the other
+five language workflows and security. CI merge
+`96484337eaad1b5a20cfd70ce3c9cc848f4663a7` has the same tree
+`ad9ebc6053399b6f0b4af7ea738af51862f4e364` and includes the actual completed
+.NET development squash `8f08f7a95dbd68aebc525120645a27dc5ab85e14`.
+
+[Execution artifact 10804506508](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595334/artifacts/10804506508)
+matches 2,360 captured Git inputs, with identical before/after source and host
+tool identities. The 2,207 runtime inputs total 13,853,493 bytes, digest
+`03c93ebf6c9b2cce7cdf7e603792e4aea2e4f950499c6dbfc60d4d0c455d3c95`.
+All ten actual SDK cases passed in 671.65 seconds, including the real component
+aggregate/full-width integer, resource-drop, fuel and fresh-Store recovery
+probes. Thirty-two supplementary model cases are recorded separately, not
+substituted for those actual component tests.
+
+The signed node completed 27 invocations, 111 CLI calls and 24 resource samples.
+The 5/9/17 dormant populations each retained one process, seven threads and one
+listener, with zero active guest or reserved execution owners. All seventeen
+single-attempt deployment deletions succeeded in a summed 127.575103477 seconds.
+The first-to-final OS sample span was 741.200084119 seconds, not a claimed
+whole-owner duration. All six unchanged printed Bash steps passed in 60.987635
+seconds, including one known-success deletion. Node and guide stopped cleanly
+and were reaped; compiler and cleanup workers joined, all 23 checked owner
+fields were zero, and all three held HTTP connections physically closed.
+Qualification SHA-256 is
+`d24f9af0e185faff1b1499f8fd23bd506a16c1122e0832d5947f20448a762ab2`.
+
+The separate [source archive 10802945856](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595334/artifacts/10802945856)
+matches 4,123 selected Git files and modes (40,290,202 bytes), SHA-256
+`6f1dc64897597b6715886439ff106f750ccf985b1466e1148e44408cd0198ac9`.
+The capture remains non-hermetic and does not attest implicit compiler inputs
+or general byte-for-byte reproducibility. Post-job cache cleanup reported two
+missing generated-cache paths after successful evidence upload; all job steps,
+including cache saving, completed successfully.
+
+The separate Go candidate's [cross-TypeScript run 35987802537](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987802537)
+also passed all ten SDK cases (885.64 seconds), 27 node outcomes, 24 samples,
+seventeen single-attempt deletes and six guide steps (80.8664 seconds), with
+unchanged source/tools and clean/reaped owners. Its [execution artifact 10804369143](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987802537/artifacts/10804369143)
+matches the same runtime-source digest. These successes do not override the
+[retained compiler-worker and active-clock Go failures](go-capsule-qualification.md#current-integration-gate-and-retained-contention-failures)
+or qualify their pending corrections. The two remaining ticket PRs require
+fresh exact-head CI and final delivery audits after integration.
 
 ## Supported experiment
 
