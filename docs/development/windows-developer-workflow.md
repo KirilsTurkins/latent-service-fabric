@@ -1,8 +1,11 @@
 # Windows developer controller implementation
 
 This work implements the Windows portion of [epic #559](https://github.com/KirilsTurkins/latent-service-fabric/issues/559).
-The maintainer deferred the Mac requirements on September 23, 2026. The epic and
-its children remain open until their actual acceptance evidence exists.
+On September 24, 2026, the maintainer removed Mac, Lima and Apple Silicon requirements
+from the epic and its children. The active scope is Windows x86-64/WSL2, native
+Windows tests, Linux x86-64/direct, explicit SSH, and opt-in devcontainer tooling.
+Issue #562 was removed and closed as not planned; it is not an implemented feature.
+The eight active children remain open until their actual acceptance evidence exists.
 
 `latent-dev` is a separate executable. It does not replace `latent`, change the
 operator CLI's single-operation behavior, or enable a production Windows node.
@@ -484,6 +487,17 @@ The node build uses the existing `.cargo/managed-guest.toml` compiler-library
 optimization overrides, records their digest and retains host debug assertions.
 An earlier unoptimized TypeScript node exhausted its cold activation deadline;
 the test retains the same finite activation budget with the reviewed build profile.
+Publication and deployment share a 300-second controller deadline. TypeScript
+uses its language owner's explicit 125-second operator wait for package/control
+preparation, within that overall deadline and the node's configured server limit.
+The frontend and watch transport allow 15 additional seconds for owned cleanup.
+A timeout retains the original operation identity and a bounded observation of
+its error code and result digest; it never starts another publication attempt.
+Workspace startup has a 180-second overall bound, including preflight and up to
+120 seconds of authenticated readiness polling. Repeated immediate connection
+refusals consume that time allowance instead of exhausting ten attempts in five
+seconds. The transport reserves 15 seconds for owned cleanup. A failed startup
+retains its lifecycle error and must be inspected before another operation.
 
 The Windows native owner consumes the exact compiled bytes and node reports with
 `--require-node-parity`. It compares typed values, platform errors, the explicit
@@ -533,7 +547,6 @@ not establish receipt expiration. The harness never marks qualification complete
 | --- | --- |
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
-| #562 | Mac/native ARM64 requirements deferred by maintainer; no ARM64 support claim. |
 | #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
 | #564 | Complete malformed/admission failure, rapid edits, in-flight revision, revocation and expired-receipt cases; repeat the observed source watch/recovery schedule with final authenticated packages. |
 | #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |

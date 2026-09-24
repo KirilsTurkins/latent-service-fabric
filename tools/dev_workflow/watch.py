@@ -3,7 +3,7 @@ from pathlib import Path
 import time
 
 from . import build_client, state
-from .common import DevError, require
+from .common import DevError, MAX_DEPLOY_SECONDS, require
 
 
 def run(workspace: Path, connection, source: Path, tool_root: str, *, build, emit,
@@ -52,7 +52,7 @@ def run(workspace: Path, connection, source: Path, tool_root: str, *, build, emi
                     phase = "deploy"
                     # Once dispatched, this mutation completes or becomes uncertain.
                     # A subsequent edit never cancels it into an automatic replay.
-                    deployed = connection.call("deploy", {})
+                    deployed = connection.call("deploy", {}, timeout=MAX_DEPLOY_SECONDS + 15)
                     current = deployed
                     state.atomic(workspace, "watch-deployment.json", deployed)
                     event("deployed", build=built, deployment=deployed)

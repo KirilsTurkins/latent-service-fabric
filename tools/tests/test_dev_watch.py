@@ -41,7 +41,7 @@ class WatchTransitions(unittest.TestCase):
             calls, events = [], []
             class Connection:
                 config = {"kind": "linux"}
-                def call(self, operation, arguments):
+                def call(self, operation, arguments, **options):
                     calls.append(operation)
                     if operation == "up":
                         raise common.DevError("start-response-lost", uncertain=True)
@@ -128,7 +128,7 @@ class WatchTransitions(unittest.TestCase):
         root = Path(temporary.name)
         calls = []
         class Connection:
-            def call(self, operation, arguments):
+            def call(self, operation, arguments, **options):
                 calls.append(operation)
                 if operation == "status":
                     return {"state": "ready"}

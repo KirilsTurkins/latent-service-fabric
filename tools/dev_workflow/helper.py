@@ -10,7 +10,7 @@ import sys
 
 from . import build, effects, paths, project, protocol, snapshot, state
 from .client import Client, successful
-from .common import DevError, MAX_SNAPSHOT, decode, digest, encode, members, require
+from .common import DevError, MAX_DEPLOY_SECONDS, MAX_SNAPSHOT, decode, digest, encode, members, require
 from .journal import Journal
 
 
@@ -89,13 +89,14 @@ def sync(root: Path, arguments: dict) -> dict:
 
 
 def deploy(root: Path, *, test_grants: list | None = None, deadline: float | None = None) -> dict:
+    import time
+    deadline = min(deadline if deadline is not None else float("inf"), time.monotonic() + MAX_DEPLOY_SECONDS)
     saved = state.load(root, "project.json")
     source, receipt = build.accepted(root, saved)
     descriptor = saved["descriptor"]
     cli, journal = client(root, deadline=deadline)
     artifacts = descriptor["artifacts"]
     from . import build_artifacts, build_cache
-    import time
     require(paths.digest_file(cli.binary.parent, cli.binary.name, 268435456)[0] == receipt["packager"],
             "runtime-packager-changed-rebuild-required")
     require(build_artifacts.package(cli.binary, source, artifacts, min(time.monotonic() + 30, deadline or float("inf")),
@@ -120,7 +121,7 @@ def deploy(root: Path, *, test_grants: list | None = None, deadline: float | Non
         publication = prior["publication"]
     elif node["supplyChain"]["mode"] == "trusted-local":
         published = journal.execute("release", release_intent,
-            lambda operation: cli.call("release", "publish", "--manifest", source / artifacts["capsule"],
+            lambda operation: cli.control(descriptor["language"], "release", "publish", "--manifest", source / artifacts["capsule"],
                 "--component", source / artifacts["component"], "--contracts", source / artifacts["contracts"],
                 "--operation-id", operation, "--expected-generation", "0"))
         publication = successful(published)["release"]["publication"]["id"]
@@ -129,7 +130,7 @@ def deploy(root: Path, *, test_grants: list | None = None, deadline: float | Non
         package_root = root / "test-signing" / signing["name"] / "package" if signing else source / artifacts["packageRoot"]
         evidence = root / "test-signing" / signing["name"] / "evidence/index.json" if signing else source / artifacts["evidence"]
         published = journal.execute("release", release_intent,
-            lambda operation: cli.call("release", "publish-package", package_root,
+            lambda operation: cli.control(descriptor["language"], "release", "publish-package", package_root,
                 "--evidence", evidence, "--operation-id", operation, "--expected-generation", "0"))
         publication = successful(published)["release"]["publication"]["id"]
     deployment = decode(paths.read(source, artifacts["deployment"]))
@@ -153,7 +154,7 @@ def deploy(root: Path, *, test_grants: list | None = None, deadline: float | Non
         "attempt": receipt["attempt"], "buildKey": receipt["buildKey"], "publicationInput": publication_input,
         "componentDigest": receipt["artifacts"]["component"], "deployment": name,
         "expectedGeneration": generation, "expectedStateVersion": version}, lambda operation:
-        cli.call("deployment", "apply", root / "selected-deployment.json", "--expected-generation", generation,
+        cli.control(descriptor["language"], "deployment", "apply", root / "selected-deployment.json", "--expected-generation", generation,
                  "--operation-id", operation, "--expected-state-version", version))
     successful(applied)
     return state.load(root, "last-deployment.json")

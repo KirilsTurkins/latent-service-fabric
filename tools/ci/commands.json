@@ -3109,7 +3109,7 @@
       "sha256": "429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c"
     },
     "tools/aot_test_inputs.py": {
-      "sha256": "01704caffff027525434188f4a5f1a1665c2beba54cdf58e527b95dc726ffc8a"
+      "sha256": "a8b40e498a3eb77b00fd8531e9c31a0a7c74200e25865703633d4304dcda98e7"
     },
     "tools/build_angular_package.py": {
       "sha256": "6355b56981461912e5aeea8c9cc69424b512d5d55a6d805516af6eae523a02a0"
@@ -3989,10 +3989,13 @@
       "PolicyRecovery.test_lost_apply_looks_up_original_and_records_before_clearing_intent",
       "PolicyRecovery.test_unknown_wrong_scope_and_changed_current_policy_retain_original",
       "ScenarioTargets.test_cold_node_allowance_is_explicit_and_does_not_change_portable_deadline",
+      "ScenarioTargets.test_control_wait_uses_language_allowance_and_original_deadline_without_retry",
       "ScenarioTargets.test_each_policy_switch_requires_the_current_invocation_revision",
       "ScenarioTargets.test_elapsed_run_deadline_prevents_another_operator_process",
       "ScenarioTargets.test_preflight_freezes_the_input_and_expected_bytes_used_for_assertions",
+      "ScenarioTargets.test_readiness_uses_requested_time_after_repeated_fast_connection_refusals",
       "ScenarioTargets.test_required_unsupported_case_prevents_all_invocation_and_optional_is_separate",
+      "ScenarioTargets.test_unknown_control_observation_preserves_identity_and_excludes_response_text",
       "ScenarioTargets.test_unknown_or_failed_adapter_stops_subsequent_calls_and_redacts_exception",
       "SourceNodeProbe.test_uncertain_staging_keeps_an_explicit_private_cleanup_record",
       "TestProfile.test_interrupted_configuration_resumes_only_exact_before_or_after_bytes",

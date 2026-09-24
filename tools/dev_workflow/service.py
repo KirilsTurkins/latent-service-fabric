@@ -95,6 +95,8 @@ def request(root: Path, operation: str, *, timeout: float = 30) -> dict:
 
 
 def start(root: Path, helper: Path) -> dict:
+    from .common import MAX_START_SECONDS
+    deadline = time.monotonic() + MAX_START_SECONDS
     layout = Layout.local(root / "runtime")
     checks.preflight(layout)
     try:
@@ -111,7 +113,6 @@ def start(root: Path, helper: Path) -> dict:
     child = subprocess.Popen([sys.executable, "-I", str(helper), "supervise", str(root)],
                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              close_fds=True, start_new_session=True, env=process.environment())
-    deadline = time.monotonic() + 50
     while time.monotonic() < deadline:
         require(child.poll() is None, "workspace-supervisor-start-failed")
         try:
@@ -170,7 +171,7 @@ def supervise(root: Path) -> int:
             output = NodeOutput(owner.process, [item["token"] for item in node_config["credentials"]])
             # The bounded installer readiness probe checks node identity, credentials,
             # profile, pressure availability and admission-ready state.
-            current["readiness"] = checks.readiness(layout)
+            current["readiness"] = checks.readiness(layout, timeout=120)
             current["providers"] = output.providers(node_config["nodeId"])
             current["state"] = "ready"
             state.atomic(root, "lifecycle.json", current)

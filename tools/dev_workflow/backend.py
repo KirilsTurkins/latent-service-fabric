@@ -46,7 +46,7 @@ def validate(value: dict) -> dict:
                                            "identityFile", "knownHosts", "ssh"})
     sha(value["helperSha256"])
     kind = value["kind"]
-    require(kind in {"linux", "wsl2", "ssh"}, "unsupported-backend-macos-deferred")
+    require(kind in {"linux", "wsl2", "ssh"}, "unsupported-backend")
     if kind == "wsl2":
         require(set(value) == {"kind", "helperSha256", "distribution", "user"}, "wsl-backend-fields")
         require(re.fullmatch(r"LSF-Dev-[a-f0-9]{16}", value["distribution"])

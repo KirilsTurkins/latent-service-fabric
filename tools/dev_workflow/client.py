@@ -27,6 +27,18 @@ class Client:
                 "operator-response-exit-mismatch")
         return value
 
+    def control(self, language: str, *arguments: str) -> dict:
+        # SpiderMonkey package preparation uses the language owner's existing
+        # bounded control allowance. This is one request, never a retry after
+        # timeout, and does not increase the server or activation limits.
+        timeout = 130 if language == "typescript" else 30
+        rpc_millis = 125000 if language == "typescript" else 5000
+        if self.deadline is not None:
+            remaining = self.deadline - time.monotonic()
+            require(remaining > 0, "node-test-run-deadline")
+            rpc_millis = min(rpc_millis, max(1, int((remaining - 1) * 1000)))
+        return self.call("--rpc-timeout-ms", str(rpc_millis), *arguments, timeout=timeout)
+
     def lookup(self, kind: str, operation: str) -> dict:
         require(kind in {"release", "deployment", "invoke", "policy"}, "unknown-operation-kind")
         if kind == "policy":

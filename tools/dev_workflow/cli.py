@@ -10,7 +10,7 @@ import sys
 import time
 
 from . import backend, bundle, paths, project, protocol, snapshot, state, wsl
-from .common import DevError, decode, digest, encode, identifier, members, require
+from .common import DevError, MAX_DEPLOY_SECONDS, MAX_START_SECONDS, decode, digest, encode, identifier, members, require
 
 
 def parser() -> argparse.ArgumentParser:
@@ -140,7 +140,7 @@ def foreground_up(args, workspace: Path, connection) -> dict:
         try:
             with state.lock(workspace):
                 start_dispatched = True
-                ready = connection.call("up", {})
+                ready = connection.call("up", {}, timeout=MAX_START_SECONDS + 15)
             emit({"event": "ready", "workspace": args.workspace, "result": ready})
             if args.watch:
                 return watch(workspace, connection, args.project, args.tool_root,
@@ -290,6 +290,8 @@ def dispatch(args) -> dict:
                 "mediaType": args.media_type, "input": base64.b64encode(paths.read(args.input.absolute().parent, args.input.name, 1048576)).decode()})
         if args.command == "test":
             return connection.call("test", {"environment": args.environment, "selection": args.select}, timeout=315)
+        if args.command == "deploy":
+            return connection.call("deploy", {}, timeout=MAX_DEPLOY_SECONDS + 15)
         if args.command == "prepare-test":
             require(args.workspace.startswith("test-") and args.consent_test_fixtures,
                     "explicit-disposable-test-fixture-consent-required")

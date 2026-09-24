@@ -265,6 +265,66 @@ class ScenarioTargets(unittest.TestCase):
                 selected.call("policy", "apply")
             execute.assert_not_called()
 
+    def test_control_wait_uses_language_allowance_and_original_deadline_without_retry(self):
+        from types import SimpleNamespace
+        from tools.dev_workflow.client import Client
+        response = {"schemaVersion": "latent.cli.result.v1", "category": "transport-failure",
+                    "outcomeKnown": False, "data": {}, "error": {"code": "rpc-timeout"}}
+        completed = SimpleNamespace(returncode=4, stdout=common.encode(response))
+        for language, deadline, expected_rpc, expected_process in (
+            ("typescript", 400, "125000", 130), ("typescript", 112, "11000", 12),
+            ("rust", 400, "5000", 30),
+        ):
+            with self.subTest(language=language, deadline=deadline):
+                selected = Client(Path("operator"), Path("private-config"), Path("workspace"), deadline=deadline)
+                with patch("tools.dev_workflow.client.time.monotonic", return_value=100), \
+                        patch("tools.dev_workflow.client.process.run", return_value=completed) as execute:
+                    self.assertEqual(selected.control(language, "release", "publish-package"), response)
+                    execute.assert_called_once()
+                    argv = execute.call_args.args[0]
+                    self.assertEqual(argv[argv.index("--rpc-timeout-ms") + 1], expected_rpc)
+                    self.assertEqual(execute.call_args.kwargs["timeout"], expected_process)
+
+    def test_unknown_control_observation_preserves_identity_and_excludes_response_text(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            controller = journal.Journal(root, "node", "tenant")
+            operation = controller.begin("release", {"source": "source"})
+            response = {"category": "transport-failure", "outcomeKnown": False, "requestDispatched": True,
+                        "data": {"token": "private-fixture-value"},
+                        "error": {"code": "rpc-timeout", "message": "private-fixture-value"}}
+            with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                controller.finish(operation, response)
+            observation = state.load(root, "last-operation-observation.json")
+            self.assertEqual(controller.read()["pending"], operation)
+            self.assertEqual((observation["id"], observation["code"]), (operation["id"], "rpc-timeout"))
+            self.assertNotIn(b"private-fixture-value", (root / "last-operation-observation.json").read_bytes())
+
+    def test_readiness_uses_requested_time_after_repeated_fast_connection_refusals(self):
+        from contextlib import nullcontext
+        from itertools import count
+        from types import SimpleNamespace
+        from tools.native_runtime import checks
+        counter = count()
+        result = {"schemaVersion": "latent.cli.result.v1", "category": "success", "data": {"inventory": {
+            "node": {"id": "test-node", "attributes": {"lsf.security.profile": "local-experimental-v1"}},
+            "health": {"ready": True}, "pressure": {"loadAvailable": True}}}}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            layout = SimpleNamespace(cache=root, data=root)
+            with patch.object(checks, "service_identity"), patch.object(checks, "load", return_value={
+                    "nodeId": "test-node", "securityProfile": "local-experimental-v1"}), \
+                    patch.object(checks, "validate_layout"), patch.object(checks, "current", return_value=root), \
+                    patch.object(checks, "client_document", return_value={}), \
+                    patch.object(checks.os, "geteuid", return_value=23001, create=True), \
+                    patch.object(checks.files, "directory", return_value=nullcontext()), \
+                    patch.object(checks.files, "create"), \
+                    patch.object(checks.time, "monotonic", side_effect=lambda: next(counter) / 4), \
+                    patch.object(checks.time, "sleep"), \
+                    patch.object(checks, "execute", side_effect=[(4, b"")] * 11 + [(0, common.encode(result))]) as execute:
+                self.assertTrue(checks.readiness(layout, timeout=20)["authenticated"])
+                self.assertEqual(execute.call_count, 12)
+
 
 class ControllerProvenance(unittest.TestCase):
     def test_actual_packaging_extends_unsigned_observation_and_preserves_compiler_bytes(self):
