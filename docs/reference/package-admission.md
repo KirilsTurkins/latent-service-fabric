@@ -199,6 +199,27 @@ may therefore be unavailable for up to the configured lease duration.
 Missing floor data in an initialized authority is corruption, not permission to
 reset the policy generation or clock history.
 
+The node may also supply its existing executor timer for a finite readiness-read
+wait inside the original activation owner. Only the exact closed
+`Unavailable`/retryable `admission.currentness` reason
+`admission-authority-busy` qualifies. Sealed catalog eligibility, identity and
+read-bound observations, and pure eligibility checks, share one five-second
+window for the entire preparation; each pause releases all currentness fences.
+The selected release, publication, concrete repository and first acquired grant
+stay pinned, and the original cancellation, transport stop and activation
+deadline still govern the same future. This wait does not renew a lease or
+refresh a grant. Revocation, expiry, poison and other failures remain immediate.
+
+Compiler admission, document reservations, job start/await, arbitrary repository
+callbacks, materialization and guest execution are not replayed. Synchronous
+compiler-worker currentness checks and final activation-start fences remain
+independently fail-closed; the caller-side wait does not cover those stages.
+A long cold compilation can exhaust the shared window before the final
+readiness check. The executor-neutral preparation API requires an explicit
+caller timer to opt in; the original API retains its nonblocking behavior and
+does not assume an ambient Tokio runtime. No detached task, per-release owner,
+new worker or additional execution reservation is created by the wait.
+
 Internal lock diagnostics distinguish temporary `admission-authority-busy`
 contention from `admission-authority-poisoned`. Both preserve the existing public
 `Unavailable` shape and fail closed. Retrying the same poisoned authority cannot

@@ -35,7 +35,76 @@ These are finite experiment bounds, not throughput or production sizing claims.
 
 ## Qualification history and current gate
 
-The current candidate repairs a diagnostic gap: host-import traps now preserve
+The follow-up readiness correction uses an explicitly supplied activation-owned
+timer for sealed, read-only currentness observations. Only the exact closed
+`admission-authority-busy` result can wait, within one shared five-second window
+and the unchanged original activation deadline and cancellation. Original grants
+are rechecked before the single pool acquisition; no compilation, fetch, mutation
+or invocation is replayed. Legacy callers remain executor-neutral and immediately
+fail closed. Compiler-worker, materialization and execution-start checks are
+unchanged. See [package admission](../reference/package-admission.md).
+
+An actual signed-catalog fence reproduces a deterministic failing warm-readiness
+case without the opt-in wait and passes with it. Twelve new Linux regressions and
+five existing admission tests passed; all eight executor and 76 node unit tests
+also passed, including eight new forwarding, cancellation, deadline, transport
+and timer-ownership cases. These are local regression results, not final-head
+SDK qualification, and do not recover the uncaptured causes of older failures.
+
+Integrated diagnostic head `41a07273209d06a8ac96fd33291f30527cbdc30e` passed
+the complete [.NET run 35975059698](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35975059698).
+Artifact `10798651998` matches all 2,356 captured Git inputs, including exactly
+45 SDK sources and no generated SDK files. Before/after source and host-binary
+identities match. Both NativeAOT probes, seven ownership cases, ten actual SDK
+cases (96.00 seconds), five project builds, 27 node invocations, 24 resource
+samples and all six printed guide blocks (28.58 seconds) passed. The node and
+HTTP peer shut down cleanly; the formerly failing shipping-warm case passed.
+Qualification SHA-256 is
+`1b2ec8b49550c47ed205f3b2677cd47c0477e98f522fcae6034855dcf50395e0`.
+The runtime identity covers 2,195 files and 13,789,339 bytes, digest
+`206658948c2af4b70ada916e2ef9ae08dca48bc4ed8804b84a74a9b05393b8cc`.
+Source artifact `10798195278` separately matches 4,118 selected Git files and
+modes (40,063,650 bytes), archive SHA-256
+`b884c8861d14ddd2e96250b5047d6211bbdc3694b8204602d3a26183fdf7de09`.
+CI merge `93697116495399656c5208a77f61f912028c903d` and the reviewed head
+share tree `881d28ef6866fd7f26b55b33c562782884c8d65d`.
+
+That head is **not qualified for merge**: its
+[Go cross-check 35975059660](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35975059660)
+failed after nine passing SDK cases. Artifact `10797374406` matches 2,341 Git
+inputs and the same runtime identity. The first answer and declared-error child
+cases passed; the next answer failed during queued preparation, before
+materialization. The closed diagnostic identifies
+`ChildFailure / Unavailable / AdmissionAuthorityBusy`, with zero child fuel and
+guest memory. The parent subsequently entered its panic path on the unexpected
+child result. Neither the exact readiness checkpoint nor competing fence owner
+is captured; `Queued` alone does not exclude synchronous compiler-worker checks.
+No node or guide qualification was reached. This is distinct from the older
+generic parent trap below, whose private cause remains unknown. No invocation
+was retried to clear this gate.
+
+The same head's [TypeScript cross-check 35975059688](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35975059688)
+passed completely. Artifact `10798549332` matches 2,349 Git inputs and unchanged
+before/after source and tool identities: ten SDK cases (894.98 seconds), 27 node
+invocations, 24 resource samples and six guide blocks (81.35 seconds), with
+clean/reaped owners. The 17 deletions each succeeded once; first-to-final OS
+sampling spanned 936.55 seconds within the existing 1,200-second owner.
+Qualification SHA-256 is
+`c0a47122bd01852460ebcd15769bd84f3e914395c1b54dea90382a992a45bff6`.
+This cross-check does not substitute for the final TypeScript PR's exact-head CI
+or clear the separate Go failure.
+
+The [broad run 35975060016](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35975060016)
+also passed every selected job. Discovery artifact `10799870975` records 175
+registered targets and 2,792 active cases; discovery is not an execution count.
+Its SHA-256 is
+`6e36d6dbaa472d48ddd45d570cb646a43593944083551d428c4f3a6f4c04b22d`.
+The execution log separately confirms all 17 local-service and seven diagnostic
+integration cases, plus the ten new closed-currentness cases. Java, C, Rust and
+security cross-checks passed too. Seven successful workflows do not clear the
+failed Go workflow or authorize merging this head.
+
+The diagnostic commits repair a gap: host-import traps now preserve
 only a validated reason from the existing `admission.currentness` vocabulary.
 The original constructor must have exactly one recognized detail and field,
 with the matching platform code and retryability. The node independently checks
@@ -48,7 +117,7 @@ authority or budget allowance. Twenty-eight focused host/node/CLI Rust cases and
 is still required. This observation repair does not establish or fix the private
 causes of the retained failures below.
 
-The subsequent diagnostic head `65e7390d074f58e914ae7155375eed343c2838cd`
+The preceding diagnostic head `65e7390d074f58e914ae7155375eed343c2838cd`
 did not repeat the complete pass: [.NET run 35968038565](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35968038565)
 failed in the enforced-node workflow. Artifact `10795870530` retains all ten
 passing SDK cases (94.44 seconds), then twelve node invocation receipts, ten
@@ -102,6 +171,14 @@ It did not reproduce the CI failure or establish its private cause. The
 observation-only experimental source is identified separately from this Git
 head; these local attempts do not qualify the PR or justify a production policy
 or budget change.
+
+A separate, single local Linux .NET workflow using the same observation-only
+source completed all 27 node invocations, 24 samples and 123 control attempts in
+96.3 seconds. It retained unchanged source, component and binary identities and
+clean/reaped node and peer owners. The diagnostic captured no host-import error;
+six uncorrelated runtime markers accompanied the workflow's deliberate fault and
+cancellation cases. This experiment does not identify the original shipping-warm
+trap, qualify the later Git head or replace its complete CI execution above.
 
 The integrated head `a880cfd731f82194c36265886a65a1374d0313fb` passed the
 complete [.NET run 35963178615](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178615).

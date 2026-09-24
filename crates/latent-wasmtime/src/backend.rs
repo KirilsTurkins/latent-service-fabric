@@ -792,7 +792,16 @@ impl ExecutionBackend for WasmtimeBackend {
         repository: Arc<dyn ArtifactRepository>,
         key: PreparationKey,
     ) -> BoxFuture<'a, Result<latent_executor::PreparedReadiness, PlatformError>> {
-        Box::pin(self.prepare_ready_repository(repository, key))
+        Box::pin(self.prepare_ready_repository(repository, key, None))
+    }
+
+    fn prepare_ready_from_repository_with_wait<'a>(
+        &'a self,
+        repository: Arc<dyn ArtifactRepository>,
+        key: PreparationKey,
+        wait: &'a dyn latent_executor::PreparationReadWait,
+    ) -> BoxFuture<'a, Result<latent_executor::PreparedReadiness, PlatformError>> {
+        Box::pin(self.prepare_ready_repository(repository, key, Some(wait)))
     }
 
     fn materialize_ready(
