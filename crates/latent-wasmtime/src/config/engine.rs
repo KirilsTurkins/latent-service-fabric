@@ -57,10 +57,11 @@ impl CompilerEngineSettings {
         });
         engine_config.wasm_component_model(true);
         engine_config.wasm_component_model_async(true);
-        // Compiling GC support into the host must not enable arbitrary Wasm GC,
-        // typed references or exceptions for the existing execution profile.
+        // Preserve the ordinary profile's pre-Java typed function references.
+        // Compiling GC support into the host must not enable Wasm GC or default
+        // exceptions; the Java exception profile keeps typed references disabled.
         engine_config.wasm_gc(false);
-        engine_config.wasm_function_references(false);
+        engine_config.wasm_function_references(!self.java_guest);
         engine_config.wasm_exceptions(self.java_guest);
         engine_config.gc_support(self.java_guest);
         if self.java_guest {

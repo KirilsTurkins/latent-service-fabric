@@ -76,9 +76,11 @@ The generic `RouteSnapshot.bindings` projection and legacy `resolve_binding`
 interface remain descriptive/unavailable: they cannot express this operation's
 sealed authority. Live plans reside in the same internal immutable catalog as
 routes. [Standalone provider configuration](../reference/standalone-providers.md)
-installs the selected HTTP/local-blob providers and their host bindings. Other
-provider installations and isolated-local target bindings use trusted Rust
-composition. Enabling policy CRUD alone does not install plans or capabilities.
+installs the selected HTTP, local-blob, `clockMonotonic`, `clockWall` and `random`
+providers and their host bindings. Other provider installations and
+isolated-local target bindings use trusted Rust composition. These opt-in
+installations still require exact deployment grants and current policy;
+enabling policy CRUD alone does not install plans or capabilities.
 
 ## Recovery and bounds
 

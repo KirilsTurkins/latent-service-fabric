@@ -57,7 +57,45 @@ pub enum BuildRecipe {
     Rust(BuildParameters),
     C(CBuildParameters),
     RustCapsule(RustCapsuleBuildParameters),
+    TypeScriptCapsule(TypeScriptCapsuleBuildParameters),
+    GoCapsule(GoCapsuleBuildParameters),
+    DotnetCapsule(DotnetCapsuleBuildParameters),
     JavaCapsule(JavaCapsuleBuildParameters),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DotnetCapsuleBuildParameters {
+    pub compiler: String,
+    pub bindings: String,
+    pub language: String,
+    pub target: String,
+    pub runtime: String,
+    pub locked: bool,
+    pub ambient_wasi: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct TypeScriptCapsuleBuildParameters {
+    pub compiler: String,
+    pub bindings: String,
+    pub language: String,
+    pub target: String,
+    pub runtime: String,
+    pub ambient_wasi: bool,
+}
+
+/// Observed Go component build, not a Cargo/C recipe or an authority grant.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct GoCapsuleBuildParameters {
+    pub go_package: String,
+    pub compiler: String,
+    pub target: String,
+    pub runtime: String,
+    pub locked: bool,
+    pub ambient_wasi: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,0 +1,138 @@
+name: TypeScript guest qualification
+
+on:
+  pull_request:
+    paths:
+      - 'sdk/typescript-guest/**'
+      - 'crates/latent-wasmtime/examples/typescript_runtime_probe.rs'
+      - 'tools/typescript_guest/**'
+      - 'tools/typescript_capsule.py'
+      - 'tools/build_typescript_guest_capsules.py'
+      - 'tools/qualify_typescript_capsules.py'
+      - 'tools/*rust_capsule*.py'
+      - 'crates/latent-wasmtime/tests/**'
+      - 'crates/latent-signing/**'
+      - 'crates/latent-packaging/**'
+      - 'apps/latentd/**'
+      - '.cargo/managed-guest.toml'
+      - 'docs/component-development/typescript-authoring.md'
+      - 'examples/typescript-capsules/**'
+      - 'wit/platform/**'
+      - 'tools/toolchain.toml'
+      - 'examples/renderer-profile/package*.json'
+      - '.github/workflows/typescript-guest.yml'
+  push:
+    branches: [development]
+    paths:
+      - 'sdk/typescript-guest/**'
+      - 'crates/latent-wasmtime/examples/typescript_runtime_probe.rs'
+      - 'tools/typescript_guest/**'
+      - 'tools/typescript_capsule.py'
+      - 'tools/build_typescript_guest_capsules.py'
+      - 'tools/qualify_typescript_capsules.py'
+      - 'tools/*rust_capsule*.py'
+      - 'crates/latent-wasmtime/tests/**'
+      - 'crates/latent-signing/**'
+      - 'crates/latent-packaging/**'
+      - 'apps/latentd/**'
+      - '.cargo/managed-guest.toml'
+      - 'docs/component-development/typescript-authoring.md'
+      - 'examples/typescript-capsules/**'
+      - 'wit/platform/**'
+      - 'tools/toolchain.toml'
+      - 'examples/renderer-profile/package*.json'
+      - '.github/workflows/typescript-guest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-guest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  boundary:
+    name: TypeScript guest value and ownership boundary
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Capture immutable qualification source inputs
+        shell: bash
+        run: |
+          # Retain every input used below, including the pinned compiler lock.
+          # Historical benchmark archives are not inputs to this runtime lane.
+          git archive --format=tar.gz --output "$RUNNER_TEMP/typescript-guest-source.tar.gz" HEAD -- \
+            apps sdk/typescript-guest sdk/rust examples tools crates wit schemas docs .cargo \
+            Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/typescript-guest.yml
+          test "$(stat --format=%s "$RUNNER_TEMP/typescript-guest-source.tar.gz")" -le 134217728
+          git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-source.sha"
+      - name: Retain the exact reviewed command contract input
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: typescript-guest-command-contract-${{ github.sha }}
+          path: |
+            tools/ci/commands.json
+            ${{ runner.temp }}/typescript-guest-source.tar.gz
+            ${{ runner.temp }}/typescript-guest-source.sha
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: sdk/typescript-guest/tools/package-lock.json
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: typescript-guest-runtime-optimized-compiler
+      - name: Install the reviewed JavaScript compiler inputs
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-guest-tools"
+      - name: Install pinned component validator
+        run: cargo install --locked wasm-tools --version 1.254.0
+      - name: Compile the real async-boundary diagnostic
+        run: python3 tools/typescript_guest/probe.py --output "$RUNNER_TEMP/typescript-guest-probe" --node "$(command -v node)" --wasm-tools "$(command -v wasm-tools)" --compiler "$RUNNER_TEMP/typescript-guest-tools/node_modules/@bytecodealliance/componentize-js/src/componentize.js"
+      - name: Execute the compiled async-boundary diagnostic
+        run: |
+          set -o pipefail
+          cargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example typescript_runtime_probe -- "$RUNNER_TEMP/typescript-guest-probe/component.wasm" 2>&1 | tee "$RUNNER_TEMP/typescript-guest-probe/runtime.log"
+      - name: Execute typed value and ownership regressions
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p target/typescript-guest-runtime
+          node "$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts
+          printf '{"type":"module"}\n' > target/typescript-guest-runtime/package.json
+          LSF_TYPESCRIPT_RUNTIME="$PWD/target/typescript-guest-runtime" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log
+      - name: Check captured sources and actual generated-resource owners
+        run: |
+          set -euo pipefail
+          python3 -m pip install -r tools/requirements.lock
+          python3 -m unittest tools.tests.test_typescript_capsule_authoring tools.tests.test_build_provenance_schemas
+          node "$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-owner-tests sdk/typescript-guest/capabilities/owner.ts sdk/typescript-guest/capabilities/result.ts
+          printf '{"type":"module"}\n' > target/typescript-owner-tests/package.json
+          LSF_TYPESCRIPT_OWNERS="$PWD/target/typescript-owner-tests" node --test sdk/typescript-guest/tests/owner.test.mjs sdk/typescript-guest/tests/signed64.test.mjs 2>&1 | tee target/typescript-guest-runtime/owner-tests.log
+      - name: Qualify captured projects, all SDK owners, enforced node and printed guide
+        run: python3 tools/qualify_typescript_capsules.py --output "$RUNNER_TEMP/typescript-capsule-authoring" --tools "$RUNNER_TEMP/typescript-guest-tools"
+      - name: Preserve attempted runtime test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: typescript-guest-runtime-${{ github.sha }}
+          path: |
+            target/typescript-guest-runtime/runtime-tests.log
+            target/typescript-guest-runtime/owner-tests.log
+            ${{ runner.temp }}/typescript-guest-probe/
+            ${{ runner.temp }}/typescript-capsule-authoring/
+          if-no-files-found: warn
+          retention-days: 7

@@ -14,7 +14,8 @@ implementations. For a failed installed-node request, start with
 It uses the maintained Rust embedding and actual Wasmtime guest fixtures;
 NATS triggers also use the real local activation manager. It is not a separate
 `latentd`/SDK walkthrough or instructions to configure a production provider.
-Standalone JSON configuration supports [HTTP and local blobs](../reference/standalone-providers.md);
+Standalone JSON configuration supports [HTTP, local blobs, activation clocks and
+OS-backed randomness](../reference/standalone-providers.md);
 these S3, Vault and NATS scenarios use their trusted Rust compositions.
 Passing policy CRUD alone does not install an external provider.
 

@@ -15,9 +15,10 @@ Its `reference()` supplies the provider profile, configuration digest and epoch
 for the existing durable binding and plan compiler. Production uses the
 `system-random-v1` profile. Changing limits changes the configuration digest;
 replacement follows normal provider retirement and binding revision rules.
-This provider is available through the Rust embedding. The current
-[standalone provider configuration](../reference/standalone-providers.md)
-exposes HTTP and local blobs; it has no randomness configuration field.
+This provider is available through the Rust embedding and the opt-in `random`
+installation in [standalone provider configuration](../reference/standalone-providers.md).
+Configuration installs the provider, not guest authority: exact host bindings,
+deployment grants and current policy are still required.
 
 The owner has fixed configuration and numeric counters. There is no service
 generator, entropy file descriptor, thread, task, timer, seed or guest instance.

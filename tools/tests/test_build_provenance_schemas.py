@@ -78,6 +78,22 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
     def invalid(self, name, value):
         self.assertFalse(self.validators[name].is_valid(value), name)
 
+    def test_signed_recipes_match_every_standalone_profile_and_builder_choice(self):
+        standalone = self.validators["build-observation"].schema
+        embedded = self.validators["package-provenance-statement"].schema["properties"]["predicate"]["properties"]["observation"]
+        policy = self.validators["builder-policy"].schema["properties"]["requirements"]["items"]
+        profiles = set(standalone["properties"]["buildType"]["enum"])
+        self.assertEqual(profiles, set(embedded["properties"]["buildType"]["enum"]))
+        non_capsule = {"https://latent.dev/build/web-package-assembly/v1", "https://latent.dev/build/angular-component/v1"}
+        self.assertEqual(profiles | non_capsule, set(policy["properties"]["buildType"]["enum"]))
+        def recipes(schema):
+            rows = schema["allOf"]
+            result = {row["if"]["properties"]["buildType"]["const"]: row for row in rows}
+            self.assertEqual(len(rows), len(result), "duplicate recipe condition")
+            self.assertEqual(set(result), profiles, "an allowed profile lacks a closed recipe")
+            return result
+        self.assertEqual(recipes(standalone), recipes(embedded))
+
     def test_builder_policy_and_observation_recipes_stay_in_sync(self):
         observation = self.validators["build-observation"].schema["properties"]["buildType"]["enum"]
         web = json.loads((ROOT / "schemas/web-build-observation.schema.json").read_bytes())["properties"]["buildType"]["enum"]
@@ -197,6 +213,52 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
             changed["materials"] += [{"name": f"extra-{index}", "digest": DIGEST, "size": 1}
                                      for index in range(count - len(MATERIALS))]
             self.assertEqual(self.validators["build-observation"].is_valid(changed), count == 64)
+
+        typescript = copy.deepcopy(original)
+        typescript.update(buildType="https://latent.dev/build/typescript-capsule/v1",
+            dependencyCompleteness="declared-inputs-incomplete",
+            parameters={"compiler": "componentize-js", "bindings": "jco", "language": "typescript",
+                        "target": "wasm32-component", "runtime": "spidermonkey", "ambientWasi": False})
+        typescript["source"].update(revision="b" * 64, capture="explicit-input-files")
+        typescript["materials"] += [{"name": name, "digest": DIGEST, "size": 1} for name in
+                                    ("node", "compiler-inputs", "contracts-tool", "packager", "package-inputs")]
+        self.validators["build-observation"].validate(typescript)
+        statement = samples()["package-provenance-statement"]
+        statement["predicate"]["observation"] = typescript
+        self.validators["package-provenance-statement"].validate(statement)
+        for field in typescript["parameters"]:
+            wrong = copy.deepcopy(typescript)
+            wrong["parameters"][field] = True if field == "ambientWasi" else "different"
+            self.invalid("build-observation", wrong)
+        for name in ("node", "compiler-inputs", "dependency-lock", "contracts-tool", "packager", "package-inputs"):
+            wrong = copy.deepcopy(typescript)
+            wrong["materials"] = [row for row in wrong["materials"] if row["name"] != name]
+            self.invalid("build-observation", wrong)
+
+    def test_dotnet_profile_requires_exact_recipe_materials_and_builder_choice(self):
+        current = samples()
+        value = current["build-observation"]
+        value.update(buildType="https://latent.dev/build/dotnet-capsule/v1",
+            dependencyCompleteness="declared-inputs-incomplete",
+            parameters={"compiler": "native-aot-llvm", "bindings": "wit-bindgen-csharp", "language": "csharp",
+                        "target": "wasi-wasm", "runtime": "native-aot", "locked": True, "ambientWasi": False})
+        value["source"].update(revision="b" * 64, capture="explicit-input-files")
+        names = ("dotnet", "wit-bindgen", "closed-runtime", "compiler-inputs", "contracts-tool", "packager", "package-inputs")
+        value["materials"] += [{"name": name, "digest": DIGEST, "size": 1} for name in names]
+        current["package-provenance-statement"]["predicate"]["observation"] = value
+        current["builder-policy"]["requirements"][0]["buildType"] = value["buildType"]
+        for name in ("build-observation", "package-provenance-statement", "builder-policy"):
+            self.validators[name].validate(current[name])
+        for field, expected in value["parameters"].items():
+            wrong = copy.deepcopy(value)
+            wrong["parameters"][field] = not expected if isinstance(expected, bool) else "different"
+            self.invalid("build-observation", wrong)
+            current["package-provenance-statement"]["predicate"]["observation"] = wrong
+            self.invalid("package-provenance-statement", current["package-provenance-statement"])
+        for name in (*names, "dependency-lock"):
+            wrong = copy.deepcopy(value)
+            wrong["materials"] = [row for row in wrong["materials"] if row["name"] != name]
+            self.invalid("build-observation", wrong)
 
     def test_statement_subject_and_signed_shape(self):
         original = samples()["package-provenance-statement"]

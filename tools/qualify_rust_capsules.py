@@ -36,8 +36,25 @@ HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py"
 
 
 def inputs(language="rust"):
-    helpers = HELPERS if language == "rust" else (*HELPERS, "c_capsule.py", "c_capsule_project.py",
-        "c_capsule_build.py", "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py")
+    helpers = HELPERS
+    if language == "c":
+        helpers += ("c_capsule.py", "c_capsule_project.py", "c_capsule_build.py",
+                    "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py")
+    elif language == "go":
+        helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
+                    "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py",
+                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml")
+    elif language == "typescript":
+        helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
+                    "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
+                    "typescript_guest/probe.py", "typescript_guest/componentize.mjs", "typescript_guest/bundle.mjs",
+                    "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "../.cargo/managed-guest.toml")
+    elif language == "dotnet":
+        helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
+                    "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/sdk.py",
+                    "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py",
+                    "wait_capsule_audit_idle.py",
+                    "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
             "guide": file_identity(ROOT / f"docs/component-development/{language}-authoring.md"),
@@ -78,13 +95,28 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
     return result
 
 
-def qualify(output: Path, *, offline=False, language="rust"):
-    if language not in {"rust", "c"}:
+def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None, dotnet_tools=None):
+    if language not in {"rust", "c", "go", "typescript", "dotnet"}:
         raise ValueError("unsupported authoring qualification language")
+    if language == "typescript" and typescript_tools is None:
+        raise ValueError("explicit pinned TypeScript compiler installation required")
     creator, builder = create, build
     if language == "c":
         from tools.c_capsule_project import create as creator
         from tools.c_capsule_build import build as builder
+    elif language == "go":
+        from tools.go_capsule_project import create as creator
+        from tools.go_capsule_build import build as builder
+    elif language == "typescript":
+        from tools.typescript_guest.project import create as creator
+        from tools.typescript_guest.build import build as builder
+        typescript_tools = Path(typescript_tools).resolve(strict=True)
+    elif language == "dotnet":
+        from tools.dotnet_guest.project import create as creator
+        from tools.dotnet_guest.build import build as builder
+        if dotnet_tools is None:
+            raise ValueError("explicit pinned .NET compiler installation required")
+        dotnet_tools = Path(dotnet_tools).resolve(strict=True)
     output = output.absolute()
     if output == ROOT or ROOT in output.parents:
         raise ValueError("qualification projects must be outside the runtime checkout")
@@ -105,10 +137,18 @@ def qualify(output: Path, *, offline=False, language="rust"):
             environment["CARGO_NET_OFFLINE"] = "true"
         paths, materials = resolve_tools(pins, ROOT, environment)
         environment["RUSTC"] = str(paths["rustc"])
-        commands = Commands(ROOT, output, environment)
+        cargo_options = ["--config", ROOT / ".cargo/managed-guest.toml"] if language in {"go", "typescript", "dotnet"} else []
+        if language == "typescript":
+            environment["LSF_TYPESCRIPT_TOOLS"] = str(typescript_tools)
+        if language == "dotnet":
+            environment["LSF_DOTNET_TOOLS"] = str(dotnet_tools)
+        commands = Commands(ROOT, output, environment, **(
+            {"deadline_seconds": 3600, "command_seconds": 1800} if language in {"go", "typescript", "dotnet"} else {}))
+        result["commandLimits"] = {"overallSeconds": 3600 if language in {"go", "typescript", "dotnet"} else 900,
+                                   "perCommandSeconds": commands.command_seconds}
         result["tools"] = materials
         stage = "host-build"
-        commands.run(stage, paths["cargo"], "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
+        commands.run(stage, paths["cargo"], *cargo_options, "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
             "-p", "latent-packaging", "--example", "package", "--example", "capsule_contracts",
             "-p", "latent-policy", "--example", "capsule_authoring")
         if inputs(language) != before:
@@ -124,30 +164,75 @@ def qualify(output: Path, *, offline=False, language="rust"):
             project = creator(output / "projects" / template, template)
             artifact = builder(project, output / "builds" / template, binaries["examples/capsule_contracts"],
                 binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric",
-                **({"offline": offline} if language == "rust" else {}))
+                **({"offline": offline} if language == "rust" else
+                   {"tools": typescript_tools} if language == "typescript" else
+                   {"tools": dotnet_tools} if language == "dotnet" else {}))
             built.append(artifact)
             result["builds"][template] = read_json(artifact / "BUILD-COMPLETE.json")
         stage = "ownership"
         if language == "rust":
             result["ownership"] = ownership(output / "ownership", offline=offline)
-        else:
+        elif language == "c":
             commands.run("c-scope-compile", "zig", "cc", "-std=c11", "-Wall", "-Wextra", "-Werror",
                 "-I", ROOT / "sdk/c-guest/include", ROOT / "sdk/c-guest/tests/ownership.c", "-o", output / "c-ownership")
             commands.run("c-scope-runtime", output / "c-ownership")
+        elif language == "go":
+            commands.run("go-owner-tests", "go", "test", ROOT / "sdk/go-guest/ownership/owner.go",
+                         ROOT / "sdk/go-guest/ownership/owner_test.go")
+        elif language == "dotnet":
+            from tools.check_dotnet_capsule_ownership import check
+            result["ownership"] = check(output / "ownership", environment)
+        else:
+            node = shutil.which("node", path=environment["PATH"])
+            if node is None:
+                raise ValueError("pinned Node compiler required")
+            owners = output / "typescript-owners"
+            commands.run("typescript-owner-compile", node, typescript_tools / "node_modules/typescript/bin/tsc",
+                "--target", "ES2022", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--strict",
+                "--lib", "ES2022", "--outDir", owners, ROOT / "sdk/typescript-guest/capabilities/owner.ts",
+                ROOT / "sdk/typescript-guest/capabilities/result.ts")
+            write_json(owners / "package.json", {"type": "module"})
+            commands.environment["LSF_TYPESCRIPT_OWNERS"] = str(owners)
+            commands.run("typescript-owner-tests", node, "--test", ROOT / "sdk/typescript-guest/tests/owner.test.mjs",
+                         ROOT / "sdk/typescript-guest/tests/signed64.test.mjs")
         stage = "sdk-runtime-ownership"
-        # Preserve the full Rust AND C guest gate. The optional Rust-only local
-        # iteration switch is deliberately not used by qualification.
-        commands.run("build-sdk-guests", sys.executable, ROOT / "tools/build_guest_capsules.py", "--output", output / "sdk-guests")
+        # Rust/C qualifications preserve their combined runtime gate. Go runs
+        # the same ten provider/ownership cases with actual Go components.
+        sdk_builder = f"build_{language}_guest_capsules.py" if language in {"go", "typescript", "dotnet"} else "build_guest_capsules.py"
+        sdk_tools = (["--contracts-tool", binaries["examples/capsule_contracts"], "--packager", binaries["examples/package"]]
+                     if language == "go" else [])
+        commands.run("build-sdk-guests", sys.executable, ROOT / "tools" / sdk_builder, "--output", output / "sdk-guests",
+                     *sdk_tools,
+                     *(["--tools", typescript_tools] if language == "typescript" else
+                       ["--tools", dotnet_tools] if language == "dotnet" else []))
         commands.environment["LSF_GUEST_CAPSULES"] = str(output / "sdk-guests")
-        commands.run("sdk-runtime-tests", paths["cargo"], "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
-                     "--", "--ignored", "--test-threads=1")
+        if language in {"go", "typescript", "dotnet"}:
+            commands.environment["LSF_GUEST_SDK_LANGUAGE"] = language
+        if language == "typescript":
+            commands.run("typescript-real-sdk-error-boundary", paths["cargo"], *cargo_options,
+                "run", "--locked", "-p", "latent-wasmtime", "--example", "typescript_runtime_probe", "--",
+                output / "sdk-guests/typescript-random/component.wasm", "speed", "sdk-random")
+            commands.run("typescript-sdk-resources", paths["cargo"], *cargo_options, "run", "--locked", "-p", "latent-wasmtime",
+                "--example", "typescript_runtime_probe", "--", output / "sdk-guests/typescript-blob/component.wasm",
+                "speed", "sdk-blob")
+        if language == "dotnet":
+            commands.run("dotnet-real-sdk-secret-cleanup", paths["cargo"], *cargo_options,
+                "run", "--locked", "-p", "latent-wasmtime", "--example", "typescript_runtime_probe", "--",
+                output / "sdk-guests/dotnet-secrets/component.wasm", "speed", "sdk-dotnet-secrets")
+        commands.run("sdk-runtime-tests", paths["cargo"], *cargo_options, "test", "--locked", "-p", "latent-wasmtime", "--test", "guest_sdk",
+                     "--", "--ignored", "--test-threads=1", "--show-output")
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node", language=language)
         stage = "printed-guide"
         result["guide"] = guide(output / "guide", environment, language)
-        if inputs(language) != before or {name: file_identity(path) for name, path in binaries.items()} != result["binaries"]:
+        stage = "final-integrity"
+        after = inputs(language)
+        after_binaries = {name: file_identity(path) for name, path in binaries.items()}
+        write_json(output / "source-inputs-after.json", after)
+        write_json(output / "binaries-after.json", after_binaries)
+        if after != before or after_binaries != result["binaries"]:
             raise ValueError("qualification inputs changed")
         result.update(status="passed", commands=commands.records)
         # Large raw OS observations live in the node receipt rather than being

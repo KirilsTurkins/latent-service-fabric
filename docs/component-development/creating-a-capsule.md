@@ -9,12 +9,19 @@ Complete steps 1–7 of [Run your first node](../start/first-node.md) first.
 Keep that terminal open: this tutorial uses its running node, `cli`, `field`
 and `answer` helpers. Run commands from the same repository root.
 
-Select Rust, C or Java on each complete example below. They implement the same typed
+Select Rust, C, Go, TypeScript, Java or C# on each complete example below. They implement the same typed
 contract and behavior. The commands on this page build the in-checkout Rust
 tutorials. For independent projects with packaging and enforced admission,
-follow [Rust authoring](rust-authoring.md), [C authoring](c-authoring.md), or
-[Java authoring](java-authoring.md). Java requires the explicit bounded Java
-engine profile and runtime clock grants described in its guide.
+follow [Rust authoring](rust-authoring.md), [C authoring](c-authoring.md) or
+[Go authoring](go-authoring.md), [TypeScript authoring](typescript-authoring.md),
+[Java authoring](java-authoring.md), or
+[C# authoring](dotnet-authoring.md).
+The C# path compiles NativeAOT WebAssembly with an activation-owned heap, not a CLR process.
+The TypeScript path uses an embedded activation-owned JavaScript engine, not Node.
+Java requires the explicit bounded Java engine profile and runtime clock grants
+described in its guide.
+Go's runtime also requires explicit clock and
+entropy grants; its guide includes those bounded host policies.
 
 The [client SDK guide](../learn/use-a-client.mdx) offers Rust, TypeScript, Go,
 C, Java and C# examples for a different task: calling these programs from an

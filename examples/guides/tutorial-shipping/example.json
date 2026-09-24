@@ -6,6 +6,39 @@
   "target": "guest",
   "variants": [
     {
+      "language": "csharp",
+      "kind": "maintained",
+      "source": "sdk/dotnet-guest/templates/shipping.cs",
+      "regions": ["capsule"],
+      "validation": {
+        "target": "tools/qualify_dotnet_capsules.py",
+        "instructions": "docs/component-development/dotnet-authoring.md",
+        "evidence": null
+      }
+    },
+    {
+      "language": "typescript",
+      "kind": "maintained",
+      "source": "sdk/typescript-guest/templates/shipping.ts",
+      "regions": ["capsule"],
+      "validation": {
+        "target": "tools/qualify_typescript_capsules.py",
+        "instructions": "docs/component-development/typescript-authoring.md",
+        "evidence": null
+      }
+    },
+    {
+      "language": "go",
+      "kind": "maintained",
+      "source": "sdk/go-guest/templates/shipping.go",
+      "regions": ["capsule"],
+      "validation": {
+        "target": "tools/qualify_go_capsules.py",
+        "instructions": "docs/component-development/go-authoring.md",
+        "evidence": null
+      }
+    },
+    {
       "language": "rust",
       "kind": "maintained",
       "source": "tools/toolchain-smoke/examples/tutorial_shipping/component.rs",

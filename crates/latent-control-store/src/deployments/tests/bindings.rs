@@ -1,11 +1,13 @@
 //! Checked packages and real catalog/policy ownership; no guest execution.
 mod fixture;
 mod inspection;
+mod lease;
 mod local;
 #[path = "../../../../latent-packaging/tests/fixtures/mod.rs"]
 mod package_fixture;
 mod publications;
 mod rejections;
+mod slow_preparation;
 mod startup;
 use fixture::*;
 use latent_capabilities::broker::CapabilityPlanSource;
@@ -71,6 +73,7 @@ fn exact_host_plan_is_durable_and_old_pins_keep_original_data() {
     );
     let Fixture {
         store,
+        authority: _,
         releases,
         broker,
         provider,

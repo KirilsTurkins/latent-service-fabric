@@ -7,6 +7,8 @@ mod package;
 fn languages() -> Vec<&'static str> {
     match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
         Ok("go") => vec!["go"],
+        Ok("typescript") => vec!["typescript"],
+        Ok("dotnet") => vec!["dotnet"],
         Ok("java") => vec!["java"],
         Err(std::env::VarError::NotPresent) => vec!["rust", "c"],
         _ => panic!("unknown guest SDK language selection"),

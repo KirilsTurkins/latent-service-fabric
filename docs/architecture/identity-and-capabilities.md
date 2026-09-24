@@ -15,8 +15,9 @@ work. The [binding compiler](../runtime/capability-bindings.md) publishes exact
 host/local plans with deployment preconditions.
 
 [Standalone configuration](../reference/standalone-providers.md) installs
-buffered HTTP and local immutable blobs. Other provider integrations use their
-documented trusted Rust embedding. [Local child calls](../runtime/local-service-invocation.md)
+buffered HTTP, local immutable blobs, activation clocks and OS-backed randomness
+through explicit installations, bindings and grants. Other provider integrations
+use their documented trusted Rust embedding. [Local child calls](../runtime/local-service-invocation.md)
 derive a bounded service principal and conserve parent budgets; node workload
 mTLS and remote delegation are not implemented.
 

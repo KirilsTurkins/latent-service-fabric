@@ -35,7 +35,8 @@ with a finite child ceiling and installs the resulting shared adapter through
 weak, so the adapter cannot create a backend/manager ownership cycle. The node
 must select [descendant and provider budgets](descendant-budgets.md). Standalone startup installs
 the adapter when that profile and a capability runtime are supplied; standalone
-JSON provider configuration supplies only HTTP and local-blob host bindings.
+JSON provider configuration supplies opt-in HTTP, local-blob, `clockMonotonic`,
+`clockWall` and `random` host bindings, not isolated-local target bindings.
 Configure the checked local target and its binding through the trusted catalog
 composition described above. A declared import or policy CRUD alone cannot
 install this authority.

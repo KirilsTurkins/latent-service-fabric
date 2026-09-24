@@ -39,11 +39,13 @@ pub use policy::{
 };
 pub use provenance::{
     decode_build_observation, inspect_provenance, BuildMaterial, BuildObservation, BuildParameters,
-    BuildRecipe, BuildSource, CBuildParameters, JavaCapsuleBuildParameters, LocalBuilderSigner,
-    ProvenanceEvidence, ProvenanceEvidenceRef, ProvenanceLimits, RustCapsuleBuildParameters,
-    UnverifiedProvenance, C_GUEST_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE, PROVENANCE_BUILD_TYPE,
-    PROVENANCE_PAYLOAD_TYPE, PROVENANCE_PREDICATE_TYPE, RUST_CAPSULE_BUILD_TYPE,
-    RUST_GUEST_BUILD_TYPE,
+    BuildRecipe, BuildSource, CBuildParameters, DotnetCapsuleBuildParameters,
+    GoCapsuleBuildParameters, JavaCapsuleBuildParameters, LocalBuilderSigner, ProvenanceEvidence,
+    ProvenanceEvidenceRef, ProvenanceLimits, RustCapsuleBuildParameters,
+    TypeScriptCapsuleBuildParameters, UnverifiedProvenance, C_GUEST_BUILD_TYPE,
+    DOTNET_CAPSULE_BUILD_TYPE, GO_CAPSULE_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE,
+    PROVENANCE_BUILD_TYPE, PROVENANCE_PAYLOAD_TYPE, PROVENANCE_PREDICATE_TYPE,
+    RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE, TYPESCRIPT_CAPSULE_BUILD_TYPE,
 };
 pub use signer::LocalSigner;
 pub use subject::PackageSigningSubject;

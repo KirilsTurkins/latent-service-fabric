@@ -17,13 +17,14 @@ import traceback
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools.build_process import BuildProcessError, run_bounded
+from tools.build_process import BuildProcessError, run_bounded, run_bounded_result
 from tools.build_process_signals import owned_cancellation
 from tools.phase3_security_artifacts import (
     FAILURE_FILE, MAX_LIST_BYTES, NAME, SecurityError, file_identity, listing, read_inventory, require,
     validate_custom, validate_result, validate_selection,
 )
 from tools.phase3_security_cases import GROUPS, selected
+from tools import phase3_security_diagnostics as diagnostics
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_RECEIPT_BYTES = 128 * 1024
@@ -44,15 +45,26 @@ class Runner:
         self.active_case = None
         self.active_case_completed = False
         self.validated_workflows = []
+        self.failed_command = None
 
     def command(self, command: list[str], *, cwd: Path | None = None,
-                environment: dict | None = None, timeout: int = 90, maximum: int = 1024 * 1024):
+                environment: dict | None = None, timeout: int = 90, maximum: int = 1024 * 1024,
+                test_diagnostics: bool = False):
         remaining = self.deadline - time.monotonic()
         require(remaining > 0, "suite-deadline")
         self.commands += 1
         require(self.commands <= 1024, "suite-command-limit")
-        return run_bounded(command, cwd or self.repo, environment or self.environment,
-                           timeout_seconds=min(timeout, remaining), max_output_bytes=maximum)
+        owner = run_bounded_result if test_diagnostics else run_bounded
+        result = owner(command, cwd or self.repo, environment or self.environment,
+                       timeout_seconds=min(timeout, remaining), max_output_bytes=maximum)
+        if test_diagnostics and result.returncode != 0:
+            # Opt in only for trusted, exact test invocations. The existing owner
+            # still enforces the original deadline/output/descendant-cleanup
+            # limits. Keep closed facts, discard raw output, and never retry.
+            self.failed_command = diagnostics.extract(result, self.repo, cwd or self.repo)
+            result = None
+            raise BuildProcessError("command-exit")
+        return result
 
 
 def verify_source(runner: Runner, source: str) -> None:
@@ -64,7 +76,8 @@ def verify_source(runner: Runner, source: str) -> None:
     require(not status.stdout, "tracked-source-dirty")
     runner.command([*prefix, "ls-files", "--error-unmatch", "tools/phase3_security.py",
                     "tools/phase3_security_cases.py", "tools/phase3_security_artifacts.py",
-                    "tools/phase3_security_manual.py", "tools/phase3_security_container.py"], maximum=4096)
+                    "tools/phase3_security_manual.py", "tools/phase3_security_container.py",
+                    "tools/phase3_security_diagnostics.py"], maximum=4096)
 
 
 def check_matrix() -> None:
@@ -140,7 +153,7 @@ def run_cases(runner: Runner, groups: tuple, artifacts: dict, runtime: Path,
             runner.active_case = group.key + ":" + group.target
             runner.active_case_completed = False
             result = runner.command([str(artifact.executable)], cwd=artifact.package,
-                                    environment=environment, timeout=group.timeout)
+                                    environment=environment, timeout=group.timeout, test_diagnostics=True)
             runner.active_case_completed = True
             if group.target == "aot_supervisor":
                 from tools.run_aot_tests import validate_case_coverage
@@ -164,7 +177,7 @@ def run_cases(runner: Runner, groups: tuple, artifacts: dict, runtime: Path,
                     command.append("--ignored")
                     explicit_ignored.append(case.name)
                 result = runner.command(command, cwd=artifact.package, environment=environment,
-                                        timeout=group.timeout)
+                                        timeout=group.timeout, test_diagnostics=True)
                 runner.active_case_completed = True
                 emitted_record = None
                 if group.key in ("actual-browser", "actual-browser-application"):
@@ -294,6 +307,7 @@ def failure_report(args, runner: Runner, error: BaseException) -> dict:
             "requestedSourceCommit": args.source_commit if re.fullmatch(r"[0-9a-f]{40}", args.source_commit) else None,
             "failedStage": runner.current, "classification": failure_reason(error),
             "failureLocations": failure_locations(error),
+            "failedCommand": runner.failed_command,
             "validatedCases": runner.validated_cases, "activeCase": runner.active_case,
             "activeCaseCommandAccepted": runner.active_case_completed if runner.active_case else None,
             "notExecutedCases": [name for name in entries if name not in completed and name != runner.active_case],
@@ -320,25 +334,37 @@ def container_entry(argv=None) -> None:
     print(encoded.decode())
 
 
+def write_report(args, report: dict) -> bytes:
+    encoded = json.dumps(report, sort_keys=True, separators=(",", ":")).encode()
+    require(len(encoded) <= MAX_RECEIPT_BYTES, "security-receipt-limit")
+    if args.output is not None:
+        destination = args.output.absolute()
+        require(destination.parent.resolve(strict=True).is_relative_to((ROOT / "target").resolve()),
+                "receipt-outside-owned-target")
+        with destination.open("xb") as output:
+            output.write(encoded + b"\n")
+    return encoded
+
+
 def main(argv=None) -> int:
     args = arguments(argv)
     runner = Runner(ROOT, args.profile)
     try:
         with owned_cancellation():
             report = run(args, runner)
-            encoded = json.dumps(report, sort_keys=True, separators=(",", ":")).encode()
-            require(len(encoded) <= MAX_RECEIPT_BYTES, "security-receipt-limit")
-            if args.output is not None:
-                destination = args.output.absolute()
-                require(destination.parent.resolve(strict=True).is_relative_to((ROOT / "target").resolve()),
-                        "receipt-outside-owned-target")
-                with destination.open("xb") as output:
-                    output.write(encoded + b"\n")
+            encoded = write_report(args, report)
             print(encoded.decode())
         return 0
     except (Exception, KeyboardInterrupt) as error:
         reason = failure_reason(error)
+        report = failure_report(args, runner, error)
+        try:
+            write_report(args, report)
+        except (Exception, KeyboardInterrupt) as receipt_error:
+            print("Phase 3 failure receipt not written: " + failure_reason(receipt_error), file=sys.stderr)
         print(f"Phase 3 security failed: {runner.current}: {reason}", file=sys.stderr)
+        if runner.failed_command is not None:
+            print(json.dumps(runner.failed_command, sort_keys=True, separators=(",", ":")), file=sys.stderr)
         return 1
 
 

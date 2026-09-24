@@ -17,6 +17,7 @@ fn configured_provider_restart_preserves_exact_versions_and_durable_bytes() {
     fixture.install();
     let Fixture {
         store,
+        authority,
         releases,
         broker,
         provider,
@@ -27,6 +28,12 @@ fn configured_provider_restart_preserves_exact_versions_and_durable_bytes() {
     let revision = store.pin().unwrap().resolve(&target(), None).unwrap();
     let bytes = std::fs::read(roots[1].0.join("catalog.json")).unwrap();
     drop(store);
+    authority
+        .control_renewals
+        .store(0, std::sync::atomic::Ordering::SeqCst);
+    authority
+        .fail_control_renewal
+        .store(1, std::sync::atomic::Ordering::SeqCst);
     let reopened = open(&roots[1], &releases);
     assert!(reopened.plan(&revision).is_err());
     run(reopened.activate_configured_bindings(
@@ -36,6 +43,12 @@ fn configured_provider_restart_preserves_exact_versions_and_durable_bytes() {
         BindingLimits::default(),
     ))
     .unwrap();
+    assert_eq!(
+        authority
+            .control_renewals
+            .load(std::sync::atomic::Ordering::SeqCst),
+        0
+    );
     assert_eq!(reopened.binding_version().unwrap(), versions);
     assert_eq!(
         std::fs::read(roots[1].0.join("catalog.json")).unwrap(),
@@ -59,6 +72,7 @@ fn startup_cannot_silently_replace_durable_bindings_or_install_foreign_provider_
     fixture.install();
     let Fixture {
         store,
+        authority: _,
         releases,
         broker,
         provider,

@@ -720,6 +720,166 @@
       "shell": "default",
       "run": "npm run test:build\nnpm run test:theme\nnpm run test:examples\nnpm run test:versions\nnpm run test:discovery"
     },
+    ".github/workflows/dotnet-guest.yml:toolchain:Capture immutable qualification source inputs": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Capture immutable qualification source inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/dotnet-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/dotnet-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/dotnet-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/dotnet-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/dotnet-guest-source.sha\""
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Test contract projection, output ownership and drift rejection": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Test contract projection, output ownership and drift rejection",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest discover -s sdk/dotnet-guest/tests -v"
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Retain exact inputs and check the clock contract": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Retain exact inputs and check the clock contract",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "mkdir -p \"$RUNNER_TEMP/dotnet-guest\"\ngit rev-parse HEAD > \"$RUNNER_TEMP/dotnet-guest/revision.txt\"\ncmp wit/platform/clock/package.wit sdk/dotnet-guest/runtime/wit/deps/latent-clock.wit"
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Install the pinned native compiler and closed runtime": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Install the pinned native compiler and closed runtime",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Check independent editable projects and closed provenance profiles": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Check independent editable projects and closed provenance profiles",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_build_provenance_schemas"
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Generate and independently check current typed guest bindings": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Generate and independently check current typed guest bindings",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-guest/tools\"\npython3 tools/stage_runtime_wit.py target/dotnet-binding-wit --source wit/platform/runtime-phase3-blobs\nexport LSF_WIT_BINDGEN=\"$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen\" LSF_WASM_TOOLS=wasm-tools\npython3 tools/dotnet_guest_bindings.py c-sharp target/dotnet-binding-wit --world capsule --runtime native-aot --with-wit-results --out-dir \"$RUNNER_TEMP/dotnet-guest/generated\"\npython3 tools/dotnet_guest_bindings.py c-sharp target/dotnet-binding-wit --world capsule --runtime native-aot --with-wit-results --out-dir \"$RUNNER_TEMP/dotnet-guest/generated\" --check"
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Compile the actual C# probe and measure build costs": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Compile the actual C# probe and measure build costs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": "sdk/dotnet-guest",
+      "shell": "bash",
+      "run": "set -o pipefail\nprobe=\"$RUNNER_TEMP/dotnet-probe-source\"\nmkdir \"$probe\"\ncp probes/smoke/Smoke.csproj probes/smoke/Operations.cs \\\n  probes/smoke/component.wit probes/smoke/packages.lock.json \\\n  global.json nuget.config \"$probe/\"\ncd \"$probe\"\ndotnet --info > \"$RUNNER_TEMP/dotnet-guest/dotnet-info.txt\"\ndotnet restore Smoke.csproj --configfile nuget.config --locked-mode 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/restore.log\"\nexport LSF_WIT_BINDGEN=\"$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen\" LSF_WASM_TOOLS=wasm-tools\n/usr/bin/time -f '{\"wallSeconds\":%e,\"maxRssKiB\":%M,\"exitCode\":%x}' -o \"$RUNNER_TEMP/dotnet-guest/compilation-cost.json\" dotnet build Smoke.csproj -c Release --no-restore -p:WasiSdkRoot=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" -p:WitBindgenExe=\"python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py\" 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/build.log\"\ncp packages.lock.json \"$RUNNER_TEMP/dotnet-guest/packages.lock.json\""
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Compose capability-constrained compiler support": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Compose capability-constrained compiler support",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -o pipefail\ncargo build --quiet --locked -p latent-toolchain-smoke --example dotnet-closed-runtime --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm -o \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\"\ntools=\"$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64\"\ncp \"$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm\" \"$RUNNER_TEMP/dotnet-guest/raw.wasm\"\n\"$tools/wac\" plug \"$RUNNER_TEMP/dotnet-guest/raw.wasm\" --plug \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\" -o \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools component wit \"$RUNNER_TEMP/dotnet-guest/component.wasm\" | tee \"$RUNNER_TEMP/dotnet-guest/admitted.wit\""
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Execute LSF authority and fresh-heap qualification": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Execute LSF authority and fresh-heap qualification",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -o pipefail\ncargo test --quiet -p latent-wasmtime --test dotnet_guest --locked -- --ignored --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/execution.log\""
+    },
+    ".github/workflows/dotnet-guest.yml:toolchain:Qualify captured projects, all SDK owners, enforced node and printed guide": {
+      "workflow": ".github/workflows/dotnet-guest.yml",
+      "job": "toolchain",
+      "name": "Qualify captured projects, all SDK owners, enforced node and printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/qualify_dotnet_capsules.py --output \"$RUNNER_TEMP/dotnet-capsule-authoring\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Install the locked compiler and generator",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ncargo install --locked wasm-tools --version 1.254.0\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\"\necho \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin\" >> \"$GITHUB_PATH\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Retain pinned reproduction tools": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Retain pinned reproduction tools",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-guest-tools\"\ncp \"$HOME/.cargo/bin/componentize-go\" \"$HOME/.cargo/bin/wasm-tools\" \"$out/\"\nsha256sum \"$out/componentize-go\" \"$out/wasm-tools\" > \"$out/tools.sha256\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Generate and compile upstream and constrained LSF components": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Generate and compile upstream and constrained LSF components",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/go_guest/probe.py --output \"$RUNNER_TEMP/go-guest-probe\" --go \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Execute the compiled runtime diagnostic without claiming admission": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Execute the compiled runtime diagnostic without claiming admission",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example go_runtime_probe -- \"$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm\" 2>&1 | tee \"$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log\""
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Check standalone project source boundaries": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Check standalone project source boundaries",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_capsule_authoring"
+    },
+    ".github/workflows/go-guest.yml:upstream-probe:Qualify editable projects, all SDK owners, enforced node and printed guide": {
+      "workflow": ".github/workflows/go-guest.yml",
+      "job": "upstream-probe",
+      "name": "Qualify editable projects, all SDK owners, enforced node and printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-capsule-authoring\""
+    },
     ".github/workflows/java-guest-feasibility.yml:compiler-component:Retain the exact checked-out source revision": {
       "workflow": ".github/workflows/java-guest-feasibility.yml",
       "job": "compiler-component",
@@ -1279,6 +1439,86 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 controls/tools/security_scan.py rustsec --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Capture immutable qualification source inputs": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Capture immutable qualification source inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "# Retain every input used below, including the pinned compiler lock.\n# Historical benchmark archives are not inputs to this runtime lane.\ngit archive --format=tar.gz --output \"$RUNNER_TEMP/typescript-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/typescript-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/typescript-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/typescript-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/typescript-guest-source.sha\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Install the reviewed JavaScript compiler inputs": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Install the reviewed JavaScript compiler inputs",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Install pinned component validator": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Install pinned component validator",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "cargo install --locked wasm-tools --version 1.254.0"
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Compile the real async-boundary diagnostic": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Compile the real async-boundary diagnostic",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/typescript_guest/probe.py --output \"$RUNNER_TEMP/typescript-guest-probe\" --node \"$(command -v node)\" --wasm-tools \"$(command -v wasm-tools)\" --compiler \"$RUNNER_TEMP/typescript-guest-tools/node_modules/@bytecodealliance/componentize-js/src/componentize.js\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Execute the compiled async-boundary diagnostic": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Execute the compiled async-boundary diagnostic",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example typescript_runtime_probe -- \"$RUNNER_TEMP/typescript-guest-probe/component.wasm\" 2>&1 | tee \"$RUNNER_TEMP/typescript-guest-probe/runtime.log\""
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Execute typed value and ownership regressions": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Execute typed value and ownership regressions",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log"
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Check captured sources and actual generated-resource owners": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Check captured sources and actual generated-resource owners",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -euo pipefail\npython3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_typescript_capsule_authoring tools.tests.test_build_provenance_schemas\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-owner-tests sdk/typescript-guest/capabilities/owner.ts sdk/typescript-guest/capabilities/result.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-owner-tests/package.json\nLSF_TYPESCRIPT_OWNERS=\"$PWD/target/typescript-owner-tests\" node --test sdk/typescript-guest/tests/owner.test.mjs sdk/typescript-guest/tests/signed64.test.mjs 2>&1 | tee target/typescript-guest-runtime/owner-tests.log"
+    },
+    ".github/workflows/typescript-guest.yml:boundary:Qualify captured projects, all SDK owners, enforced node and printed guide": {
+      "workflow": ".github/workflows/typescript-guest.yml",
+      "job": "boundary",
+      "name": "Qualify captured projects, all SDK owners, enforced node and printed guide",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/qualify_typescript_capsules.py --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -2697,6 +2937,15 @@
     "tools/docs_pages.py": {
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
     },
+    "tools/dotnet_capsule.py": {
+      "sha256": "5f91abb33e0e81a962c1dd3305adcefba477a2bbb51bbb2f42b901cead9a49af"
+    },
+    "tools/dotnet_guest_bindings.py": {
+      "sha256": "6c51ffa8c2cd39b9f57f3cc4d48303d734a845c15a476038a6289b77d0efbc82"
+    },
+    "tools/go_guest/probe.py": {
+      "sha256": "6a662ae08917327c27279bc9128231004683c27e8f4c539468e6c4637c886be2"
+    },
     "tools/install_guest_bindgen.py": {
       "sha256": "5b44bb8ee33f2d0b2466afa6a38b990fb1358fbd9818061b392ef960b535eca1"
     },
@@ -2713,13 +2962,19 @@
       "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
     },
     "tools/phase3_security.py": {
-      "sha256": "5f904fc5c0ee5da777645fbc6b86215592a6bfe4fb98faf16bf147b3da7f7e41"
+      "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
     },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
     },
     "tools/qualify_c_capsules.py": {
       "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
+    },
+    "tools/qualify_dotnet_capsules.py": {
+      "sha256": "ee566c6eb8f1b8728db9f12f925f1abf60ab3687ed9bfbe59b3a2c2b4b821a30"
+    },
+    "tools/qualify_go_capsules.py": {
+      "sha256": "497409dd0d4c072b12a64c84e9ef1dbc804eb888c62ccae6fb8a27b9e64e97ce"
     },
     "tools/qualify_java_bridge.py": {
       "sha256": "f9f02c440195578fac1e1ccd297a6ba1824b5952b4c74f021475df2acac106ce"
@@ -2728,7 +2983,10 @@
       "sha256": "54a371d38d626291fd1415e2ddda6841054c5ad34334869408459461d9788792"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "8be1a3ed2d29898f66fefd9b7a8f801d4c15fb3fe994b0d2490eb9de555627c3"
+      "sha256": "d06360d52a38c94841010b91d89aa05662a9037774125ab6e7d08e9b7494ad9f"
+    },
+    "tools/qualify_typescript_capsules.py": {
+      "sha256": "9ebcf28e77e5fa9bca9018d8e15afffac9e075427315ad334fa7fc7a8d4b4e44"
     },
     "tools/reset_validation_echo.py": {
       "sha256": "7bfdd62d41f709ccee0de64e0c2b14868d4033444ca4e2b0a959424019108d2e"
@@ -2822,6 +3080,12 @@
     },
     "tools/test.py": {
       "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
+    },
+    "tools/typescript_capsule.py": {
+      "sha256": "9bde963d139e42fc9788f9200ed81f98276824ebd175e149deb20996806fb842"
+    },
+    "tools/typescript_guest/probe.py": {
+      "sha256": "535a99c354e65b17b2bcf9d60a5cf9273634d130f23a243ed847aa678d02842c"
     },
     "tools/validate_contracts.sh": {
       "sha256": "19a9c1c469cdf4ec6fd26b7d882ad979107f91e66ae50bcb72fb74d6890ea7ba"
@@ -3134,11 +3398,13 @@
     "tools/tests/test_build_provenance_schemas.py": [
       "BuildProvenanceSchemaTests.test_all_closed_fields_required_recursively",
       "BuildProvenanceSchemaTests.test_builder_policy_and_observation_recipes_stay_in_sync",
+      "BuildProvenanceSchemaTests.test_dotnet_profile_requires_exact_recipe_materials_and_builder_choice",
       "BuildProvenanceSchemaTests.test_envelope_canonical_base64_and_exact_decoded_ceiling",
       "BuildProvenanceSchemaTests.test_explicit_builder_requirements_and_revocations",
       "BuildProvenanceSchemaTests.test_java_recipe_is_closed_and_each_compiler_input_is_required",
       "BuildProvenanceSchemaTests.test_observation_profile_and_material_constraints",
       "BuildProvenanceSchemaTests.test_repository_grammar_matches_observation_and_policy",
+      "BuildProvenanceSchemaTests.test_signed_recipes_match_every_standalone_profile_and_builder_choice",
       "BuildProvenanceSchemaTests.test_statement_subject_and_signed_shape"
     ],
     "tools/tests/test_build_snapshot.py": [
@@ -3401,6 +3667,28 @@
       "DocsPagesPolicyTests.test_rollback_binds_prior_published_receipt_to_exact_artifact",
       "DocsPagesPolicyTests.test_unexpected_output_and_candidate_publisher_record_are_refused"
     ],
+    "tools/tests/test_dotnet_capsule_authoring.py": [
+      "AuditDrainTests.test_busy_to_idle_observations_are_only_bounded_read_only_calls",
+      "AuditDrainTests.test_counter_values_reject_malformed_numbers_and_unsigned_overflow",
+      "AuditDrainTests.test_every_owner_counter_must_be_present_and_zero_before_idle",
+      "AuditDrainTests.test_failed_read_stops_once_and_cli_failure_discards_private_response",
+      "AuditDrainTests.test_helper_and_dependencies_are_captured_and_guide_deletes_only_once",
+      "AuditDrainTests.test_invalid_bounds_and_identifiers_do_not_spawn",
+      "AuditDrainTests.test_malformed_paginated_ambiguous_and_unbounded_responses_are_rejected",
+      "AuditDrainTests.test_missing_audit_owner_closed_and_recovery_states_fail_closed",
+      "AuditDrainTests.test_observation_limit_and_deadline_stop_without_effect_retries",
+      "AuditDrainTests.test_real_process_deadline_and_output_overflow_retire_owned_process",
+      "DotnetAuthoringTests.test_all_real_sdk_sources_use_the_same_capture_path",
+      "DotnetAuthoringTests.test_all_templates_capture_actual_source_and_pinned_sdk",
+      "DotnetAuthoringTests.test_application_cannot_inject_msbuild_or_package_overrides",
+      "DotnetAuthoringTests.test_application_source_and_authoritative_wit_remain_editable",
+      "DotnetAuthoringTests.test_budgets_reject_overflow_boolean_and_zero_required_dimensions",
+      "DotnetAuthoringTests.test_compiler_configuration_is_closed",
+      "DotnetAuthoringTests.test_names_and_existing_directories_are_rejected",
+      "DotnetAuthoringTests.test_nuget_uses_verified_content_identity_not_raw_signed_zip_hash",
+      "DotnetAuthoringTests.test_public_contract_rejection_precedes_compiler_work",
+      "DotnetAuthoringTests.test_sdk_capture_cannot_drift"
+    ],
     "tools/tests/test_echo_cli_package.py": [
       "EchoCliPackageTests.test_generated_cli_inputs_use_actual_digest_and_positional_json",
       "EchoCliPackageTests.test_maintained_descriptor_hashes_and_shape_match_parsed_wit",
@@ -3424,6 +3712,18 @@
       "Payloads.test_uncertain_and_wrong_activation_never_pass",
       "Sequencing.test_complete_synthetic_sequence_reuses_owners_and_does_not_republish",
       "Sequencing.test_failure_is_not_retried_or_reported_as_success"
+    ],
+    "tools/tests/test_go_capsule_authoring.py": [
+      "GoAuthoringTests.test_every_editable_template_has_exact_runtime_imports_and_captured_sdk",
+      "GoAuthoringTests.test_every_sdk_fixture_is_an_editable_source_project_with_exact_wit",
+      "GoAuthoringTests.test_existing_source_and_overlapping_build_outputs_are_never_overwritten",
+      "GoAuthoringTests.test_generated_resource_owners_have_no_gc_effects_and_reject_shape_drift",
+      "GoAuthoringTests.test_guide_and_selectable_examples_cover_the_printed_workflow",
+      "GoAuthoringTests.test_readme_entrypoints_match_every_typed_capability_facade",
+      "GoAuthoringTests.test_sdk_aliases_follow_generated_identity_without_exposing_resource_constructors",
+      "GoAuthoringTests.test_sdk_builder_reuses_captured_tools_without_rebuilding_and_rejects_mutation",
+      "GoAuthoringTests.test_sdk_mutation_does_not_silently_become_a_reviewed_input",
+      "GoAuthoringTests.test_source_and_wit_remain_editable_but_budget_types_are_closed"
     ],
     "tools/tests/test_guest_build_profiles.py": [
       "GeneratorArchive.test_links_missing_duplicate_and_oversized_binary_fail",
@@ -5165,6 +5465,13 @@
       "ContainerTests.test_negative_inner_receipt_stops_the_container_and_exits_nonzero",
       "ContainerTests.test_unlabelled_unbounded_or_foreign_workspaces_are_not_owned",
       "ContainerTests.test_unowned_container_is_not_started_stopped_or_removed",
+      "FailedCommandTests.test_cleanup_or_deadline_failure_never_fabricates_a_completed_diagnostic",
+      "FailedCommandTests.test_cli_writes_negative_receipt_without_overwriting_or_escaping_owned_target",
+      "FailedCommandTests.test_failed_exact_command_retains_closed_diagnostics_without_retry_or_acceptance",
+      "FailedCommandTests.test_failure_extracts_only_closed_source_assertion_and_platform_fields",
+      "FailedCommandTests.test_fields_counts_coordinates_codes_and_integer_ranges_are_closed",
+      "FailedCommandTests.test_real_nonzero_child_is_reaped_and_never_exposes_raw_capture",
+      "FailedCommandTests.test_unknown_absolute_traversing_sources_and_noninteger_values_are_discarded",
       "InventoryTests.test_duplicate_json_keys_and_inventory_bounds_are_rejected",
       "InventoryTests.test_dynamic_links_stay_inside_the_owned_target_and_are_bounded",
       "InventoryTests.test_exact_integration_owner_ignores_stale_executable_neighbours",
@@ -5318,6 +5625,17 @@
       "SchedulerSchemaTests.test_qualified_aggregate_requires_full_exact_population",
       "SchedulerSchemaTests.test_structural_plan_rejects_crossed_allocation_case_and_extra_fields"
     ],
+    "tools/tests/test_sdk_provider_lifetime.py": [
+      "ProviderLifetimeTests.test_authoring_profile_is_typescript_only_and_cleanup_cannot_erase_original_failure",
+      "ProviderLifetimeTests.test_child_rejects_invalid_or_startup_expired_deadline_before_opening_listener",
+      "ProviderLifetimeTests.test_default_explicit_and_shorter_owner_use_absolute_expiry_despite_startup_delay",
+      "ProviderLifetimeTests.test_failed_peer_lifecycle_is_reaped_without_exposing_raw_output_or_rechecking_reaped_pid",
+      "ProviderLifetimeTests.test_invalid_owner_or_lifetime_fails_before_process_creation",
+      "ProviderLifetimeTests.test_observation_and_cleanup_failure_or_cancellation_remain_closed_negative_facts",
+      "ProviderLifetimeTests.test_real_loop_keeps_default300_and_stops_at_explicit1200_without_reset",
+      "ProviderLifetimeTests.test_request_and_physical_close_wait_are_clipped_to_owner_without_widening_local_caps",
+      "ProviderLifetimeTests.test_request_count_bound_remains32_with_one_attempt_each"
+    ],
     "tools/tests/test_sdk_provider_matrix.py": [
       "ProviderMatrixTests.test_exact_six_language_contract",
       "ProviderMatrixTests.test_false_checks_leaks_and_invented_profiles_are_not_passes",
@@ -5367,6 +5685,13 @@
       "SecurityChangedPathTests.test_failed_fetch_still_fails_closed_and_invalid_revisions_never_execute",
       "SecurityChangedPathTests.test_missing_base_is_fetched_before_exact_diff",
       "SecurityChangedPathTests.test_present_base_uses_exact_local_diff_without_network"
+    ],
+    "tools/tests/test_security_native_aot.py": [
+      "NativeAotInventoryTests.test_every_resolved_compiler_runtime_and_linker_package_is_scanned",
+      "NativeAotInventoryTests.test_missing_transitive_package_is_not_an_empty_success",
+      "NativeAotInventoryTests.test_project_lock_and_both_configuration_changes_fail_closed",
+      "NativeAotInventoryTests.test_unknown_rid_cannot_hide_in_a_reviewed_lock",
+      "NativeAotInventoryTests.test_unresolved_versions_and_missing_checksums_fail"
     ],
     "tools/tests/test_security_rustsec_workflow.py": [
       "SecurityWorkflowTests.test_actual_aggregate_checks_selected_results_and_rejects_failures",
@@ -5466,6 +5791,21 @@
       "TestkitDependencyTests.test_selected_checks_include_test_dependencies",
       "TestkitDependencyTests.test_selected_graph_rejects_empty_or_heavy_results",
       "TestkitDependencyTests.test_target_specific_optional_and_build_cycles_remain_errors"
+    ],
+    "tools/tests/test_typescript_capsule_authoring.py": [
+      "TypeScriptAuthoringTests.test_all_current_capability_fixtures_are_editable_typed_projects",
+      "TypeScriptAuthoringTests.test_every_template_captures_editable_sources_and_exact_sdk",
+      "TypeScriptAuthoringTests.test_fresh_project_and_safe_names_never_overwrite_source",
+      "TypeScriptAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
+      "TypeScriptAuthoringTests.test_import_identity_follows_selected_world_and_never_arena_indexes",
+      "TypeScriptAuthoringTests.test_qualification_watchdogs_remain_explicit_and_finite",
+      "TypeScriptAuthoringTests.test_sdk_wit_and_compiler_lock_drift_are_rejected",
+      "TypeScriptAuthoringTests.test_source_and_compiler_directory_overlap_is_rejected_before_execution",
+      "TypeScriptAuthoringTests.test_uncaptured_application_dependency_or_config_overrides_fail_closed",
+      "TypeScriptControlWaitTests.test_invalid_wait_count_and_output_bounds_fail_closed",
+      "TypeScriptControlWaitTests.test_process_deadline_keeps_one_timed_attempt_and_never_retries",
+      "TypeScriptControlWaitTests.test_selected_wait_preserves_ordinary_defaults_and_shorter_overall_deadline",
+      "TypeScriptControlWaitTests.test_uncertain_apply_remains_one_attempt_with_separate_bounded_diagnostics"
     ],
     "tools/tests/test_validate_docs.py": [
       "DocumentationValidationTests.test_code_examples_are_not_links_or_headings",
@@ -5661,8 +6001,10 @@
     "tools/tests/test_core_guides.py",
     "tools/tests/test_deterministic_tests.py",
     "tools/tests/test_docs_pages.py",
+    "tools/tests/test_dotnet_capsule_authoring.py",
     "tools/tests/test_echo_cli_package.py",
     "tools/tests/test_first_node_guide.py",
+    "tools/tests/test_go_capsule_authoring.py",
     "tools/tests/test_guest_build_profiles.py",
     "tools/tests/test_harbor_registry_runner.py",
     "tools/tests/test_helper_directory_watch.py",
@@ -5835,11 +6177,13 @@
     "tools/tests/test_sbom_upstream.py",
     "tools/tests/test_scheduler_archive.py",
     "tools/tests/test_scheduler_schemas.py",
+    "tools/tests/test_sdk_provider_lifetime.py",
     "tools/tests/test_sdk_provider_matrix.py",
     "tools/tests/test_sdk_provider_rendezvous.py",
     "tools/tests/test_sdk_provider_scenario.py",
     "tools/tests/test_security_baseline.py",
     "tools/tests/test_security_changed_paths.py",
+    "tools/tests/test_security_native_aot.py",
     "tools/tests/test_security_rustsec_workflow.py",
     "tools/tests/test_security_sdk_graphs.py",
     "tools/tests/test_security_settings.py",
@@ -5847,6 +6191,7 @@
     "tools/tests/test_supply_chain_schemas.py",
     "tools/tests/test_svg_references.py",
     "tools/tests/test_testkit_dependencies.py",
+    "tools/tests/test_typescript_capsule_authoring.py",
     "tools/tests/test_validate_docs.py",
     "tools/tests/test_validate_issue_forms.py",
     "tools/tests/test_validate_phase0_gate.py",
@@ -5866,6 +6211,8 @@
     ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
+    ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
+    ".github/workflows/go-guest.yml": "c2ee0bfab0fa66a341dda62aeee6dfdf4c77691cd9a1a926ce1fbfb5fdae48cd",
     ".github/workflows/java-guest-feasibility.yml": "6c1814b442abf741dc4dceb6ab707cf87b3cc161090a3b5b7a62c9334dc3f872",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
     ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
@@ -5873,6 +6220,7 @@
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
-    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b"
+    ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
+    ".github/workflows/typescript-guest.yml": "0daef3a640034d79103f45a4742a69119e5728d380d5f8a1de6ea2f224c4705f"
   }
 }

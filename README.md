@@ -45,7 +45,8 @@ is still being completed before the next release. The
 [guest SDK guide](docs/component-development/guest-sdk.md) describes the available
 build paths without implying that every external client is also a guest SDK.
 
-Standalone node configuration exposes outbound HTTP and local blob providers.
+Standalone node configuration exposes outbound HTTP, local blobs, activation
+clocks and OS-backed randomness through explicit provider installations.
 Other maintained provider integrations use trusted Rust embedding; consult the
 [provider reference](docs/reference/standalone-providers.md) before choosing a
 setup. Durable application state, transactional effects and clustering remain

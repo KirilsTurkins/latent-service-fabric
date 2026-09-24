@@ -13,6 +13,8 @@ use super::probes::ActivationControl;
 use super::transport_stop::TransportStop;
 use super::Inner;
 
+mod wait;
+
 impl Inner {
     pub(super) async fn prepare_ready(
         &self,
@@ -39,11 +41,15 @@ impl Inner {
                 "backend preparation key changed the pinned release",
             ));
         }
+        let read_wait = wait::Timer;
         let ready = stage(
-            self.dependencies.backend.prepare_ready_from_repository(
-                Arc::clone(&self.dependencies.artifacts),
-                key.clone(),
-            ),
+            self.dependencies
+                .backend
+                .prepare_ready_from_repository_with_wait(
+                    Arc::clone(&self.dependencies.artifacts),
+                    key.clone(),
+                    &read_wait,
+                ),
             token,
             budget.deadline().monotonic(),
             &self.clock,

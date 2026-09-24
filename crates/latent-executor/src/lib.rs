@@ -4,9 +4,11 @@
 
 use std::sync::Arc;
 
+mod preparation_read_wait;
 mod prepared_activation;
 mod prepared_readiness;
 mod prepared_use;
+pub use preparation_read_wait::PreparationReadWait;
 pub use prepared_activation::PreparedActivation;
 pub use prepared_readiness::PreparedReadiness;
 pub use prepared_use::PreparedUse;
@@ -252,6 +254,20 @@ pub trait ExecutionBackend: Send + Sync {
                 .await
                 .map(PreparedReadiness::from_activation)
         })
+    }
+
+    /// Opts into finite waits around failed, read-only currentness observations.
+    /// The caller supplies its executor's clock/timer and retains the original
+    /// deadline, cancellation and ownership of this one preparation future.
+    /// This does not authorize replaying compilation, materialization or guest
+    /// execution. Backends which do not support it preserve their old behavior.
+    fn prepare_ready_from_repository_with_wait<'a>(
+        &'a self,
+        repository: Arc<dyn ArtifactRepository>,
+        key: PreparationKey,
+        _wait: &'a dyn PreparationReadWait,
+    ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
+        self.prepare_ready_from_repository(repository, key)
     }
 
     /// Converts the same readiness pin into activation ownership after a cell

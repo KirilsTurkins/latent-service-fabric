@@ -93,7 +93,8 @@ See [capability bindings](../runtime/capability-bindings.md) and
 The runtime has HTTP, streaming HTTP, immutable blob, secret, event, local-call,
 randomness and custom-metric integrations. The
 [standalone provider configuration](../reference/standalone-providers.md)
-currently installs buffered HTTP and local immutable blobs. Streaming HTTP,
+installs buffered HTTP, local immutable blobs, activation clocks and OS-backed
+randomness through explicit configuration, bindings and grants. Streaming HTTP,
 S3, Vault, NATS and the other embedding integrations use their documented
 trusted Rust composition; their presence in the source does not add fields to
 the standalone JSON configuration.

@@ -219,6 +219,10 @@ listener, persistent guest heap, execution cell or provider pool. New guest
 profiles need their own validation and useful language-selectable tutorials.
 Each ticket records its language's current implementation and acceptance state.
 The gate requires all six authoring workflows to be complete.
+Delivery evidence is retained in those tickets and their language-specific
+developer qualification reports. This extension alone does not complete the
+remaining gate criteria, human newcomer review or development-to-release
+integration.
 
 ## Later-phase exclusions
 

@@ -2,8 +2,8 @@
 """Exercise independently compiled, signed Rust capsules on an enforced node.
 
 Linux with readable pressure metrics, Python 3.13; one node, one bounded HTTP
-peer, at most 384 controls, 48 activations, 17 deployments, a 180-second deadline.
-Java's explicit cold-compilation profile allows 900 seconds overall.
+peer, at most 384 controls, 48 activations, 17 deployments. Native guests use a
+180-second overall deadline; Go, Java and .NET allow 900 seconds, TypeScript 1200.
 Credentials are public test-only values confined to private temporary files.
 """
 from __future__ import annotations
@@ -25,14 +25,14 @@ from tools.phase3_resource_os import Probe
 from tools.rust_capsule_cases import tutorials, faults, http_cases, population, stop_peer
 from tools.rust_capsule_node import RecordingClient, configure, delete_all, deploy, sample
 from tools.rust_capsule_project import fresh
-from tools.sdk_provider_scenario import start_provider
+from tools.sdk_provider_scenario import close_failed_provider, start_provider
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = {"greeting", "word-count", "shipping", "http-status", "recovery"}
 
 
 def run(cli, node_binary, fixture, evidence, *, language="rust"):
-    require(language in {"rust", "c", "go", "java"}, "authoring-language")
+    require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -60,14 +60,18 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                 work = Path(temporary)
                 for name in ("client", "node", "peer"):
                     (work / name).mkdir(mode=0o700)
-                seconds = 900 if language == "java" else 180
-                invocation_millis = 120000 if language == "java" else 5000
-                result["limits"] = {"overallSeconds": seconds, "invocationMillis": invocation_millis}
+                seconds = 1200 if language == "typescript" else 900 if language in {"go", "dotnet", "java"} else 180
+                invocation_millis = 120000 if language in {"go", "typescript", "dotnet", "java"} else 5000
+                control_millis = 125000 if language == "typescript" else 15000
+                result["limits"] = {"overallSeconds": seconds, "invocationMillis": invocation_millis,
+                                    "controlMillis": control_millis,
+                                    "controlProcessSeconds": 130 if language == "typescript" else 25,
+                                    "peerSeconds": seconds}
                 client = RecordingClient(cli, work / "client", cancellation, time.monotonic() + seconds,
-                                         evidence=evidence / "controls", invocation_timeout_millis=invocation_millis)
-                peer, port = start_provider(client, work / "peer")
-                config, settings = configure(work / "node", fixture, port,
-                    runtime_grants=language in {"go", "java"}, language=language)
+                                         evidence=evidence / "controls", invocation_timeout_millis=invocation_millis,
+                                         control_timeout_millis=control_millis)
+                peer, port = start_provider(client, work / "peer", maximum_seconds=seconds)
+                config, settings = configure(work / "node", fixture, port, runtime_grants=language in {"go", "dotnet", "java"}, language=language)
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
                 # stay private and no token is copied into the exported receipt.
@@ -96,7 +100,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                         result["releases"][template] = published["data"]["operation"]
                         targets[template] = deploy(client, source / "deployment.json", publication)
                     names = population(client, fixture, targets, publications, probe, result)
-                    if language in {"go", "java"}:
+                    if language in {"go", "dotnet", "java"}:
                         from tools.guest_runtime_grants import grant
                         grant(client, node, fixture, targets, publications, result, language=language)
                     tutorials(client, targets, result)
@@ -111,8 +115,13 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                     result["peerShutdown"] = stop_peer(peer)
                 finally:
                     client.node = None
-                    node.close()
-                    peer.close()
+                    try:
+                        node.close()
+                    finally:
+                        if "peerShutdown" not in result:
+                            result["peerFailure"] = close_failed_provider(peer)
+                        else:
+                            peer.close()
                 result["cliCalls"] = client.calls
             cancellation.check()
         require(result["source"] == source_identity(ROOT) and identities == {"cli": file_identity(cli), "node": file_identity(node_binary)},
@@ -123,6 +132,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
     except BaseException as error:
         result["status"] = "failed"
         result["reason"] = str(error) if isinstance(error, (ValueError, RuntimeError)) else type(error).__name__
+        if peer is not None and "peerShutdown" not in result and "peerFailure" not in result:
+            result["peerFailure"] = close_failed_provider(peer)
         write_json(evidence / "FAILED.json", result)
         raise
     finally:

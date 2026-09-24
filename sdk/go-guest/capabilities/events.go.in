@@ -1,0 +1,8 @@
+package events
+
+import (
+	raw "wit_component/@raw@"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+)
+
+func Publish(event Event) wit.Result[PublishReceipt, EventError] { return raw.Publish(event) }
