@@ -18,6 +18,26 @@ pub(crate) struct HostCapabilities {
     pub(super) session: Option<CapabilitySession>,
 }
 impl HostCapabilities {
+    pub(super) async fn clock(
+        &mut self,
+        clock: latent_capabilities::broker::HostClock,
+        wait: Option<&dyn latent_executor::PreparationReadWait>,
+    ) -> wasmtime::Result<Option<ProviderCall>> {
+        match (&self.session, wait) {
+            (Some(session), Some(wait)) => session
+                .begin_host_clock(clock, wait)
+                .await
+                .map(Some)
+                .map_err(host_error),
+            _ => self.scalar(
+                clock.capability(),
+                clock.operation(),
+                ResourceTarget::Clock,
+                8,
+            ),
+        }
+    }
+
     pub(crate) fn new(session: Option<CapabilitySession>) -> Self {
         Self {
             streams: super::streaming_http::table::Table::default(),

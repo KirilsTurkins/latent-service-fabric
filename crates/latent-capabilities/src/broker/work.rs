@@ -12,6 +12,9 @@ use std::{
 };
 use zeroize::Zeroizing;
 
+mod pending;
+pub(super) use pending::PendingWork;
+
 /// The trusted provider/host adapter derives this from its actual operation.
 /// Input bytes come from the actual slice, rather than a caller-declared length.
 #[derive(Debug, Clone, Copy)]

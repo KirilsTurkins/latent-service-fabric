@@ -12,6 +12,8 @@ use latent_policy::capability::PolicyStore;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
 mod audit;
+mod clock;
+pub use clock::HostClock;
 pub mod blob;
 pub mod diagnostics;
 pub mod events;

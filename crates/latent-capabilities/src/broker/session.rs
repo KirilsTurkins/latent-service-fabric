@@ -14,6 +14,9 @@ use std::sync::{
     Arc, Mutex, Weak,
 };
 
+mod pending;
+pub(super) use pending::PendingBinding;
+
 /// Wire lookup data. Knowing or constructing this value grants no authority.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GuestCapabilityHandle {
