@@ -181,9 +181,32 @@ beyond the old owner's remaining time; this is an estimate, not an observed
 TypeScript cleanup. Only that language's isolated qualification owner now
 allows 1,200 seconds. Go retains 900 seconds, and all production activation,
 compile, control-lease, proof, quota and cleanup bounds remain unchanged. The
-new finite profile still requires a complete executed qualification.
+following run supplies full execution evidence for that finite profile.
 
-The later [combined-head Go run 35963178643](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178643)
+[TypeScript cross-qualification 35963178639](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178639)
+passed at `a880cfd731f82194c36265886a65a1374d0313fb`; its
+[execution artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178639/artifacts/10794941119)
+contains all ten SDK cases passing in 883.43 seconds, all 27 node invocations,
+24 resource samples and dormant populations 5/9/17. All seventeen single-attempt
+deployment deletions succeeded in a measured total of 150.48 seconds,
+corroborating the earlier approximately 153-second estimate. The measured span
+from the first empty-node OS sample to the final after-delete sample was
+921.20 seconds, already longer than the old 900-second owner. This is a bounded
+sample-to-sample measurement, not an invented whole-workflow duration. The
+isolated 1,200-second TypeScript owner completed without changing production,
+per-activation, compilation, control, proof, quota or cleanup limits.
+
+All six printed guide blocks passed in 80.12 seconds, including successful
+deletion and clean shutdown. The node and peer were reaped; all three held
+HTTP requests physically closed, with eight authorized requests and none
+unexpected. Independent verification matched 2,339 captured input files to
+that exact Git head and found identical source and tool-binary identities
+before and after execution. The qualification receipt SHA-256 is
+`d65d968b0cc3b8284ca61dfc6fcc21544dc0c05cf75a2e2a2aae8a0f1b06a9ef`.
+Explicit source capture remains non-hermetic. This TypeScript success neither
+resolves the separate Go failure below nor qualifies later reconciled PR heads.
+
+The [combined-head Go run 35963178643](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178643)
 at `a880cfd731f82194c36265886a65a1374d0313fb` failed the SDK service case:
 nine of ten SDK tests passed in 130.53 seconds, and the enforced node and printed
 guide were not reached. The [failed execution artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178643/artifacts/10793745523)
