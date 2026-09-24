@@ -10,7 +10,7 @@ use std::{
     time::Duration,
 };
 mod control_admission;
-mod fixture;
+pub(super) mod fixture;
 mod ingress;
 mod lifecycle;
 mod maintenance;
