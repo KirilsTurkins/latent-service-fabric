@@ -115,3 +115,31 @@ async fn clock_wait_never_replaces_a_revoked_original_policy() {
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
     f.idle();
 }
+
+#[tokio::test]
+async fn clock_wait_does_not_renew_an_expired_original_admission_lease() {
+    let signed = signed::Fixture::new(true).await;
+    let f = &signed.guest;
+    let held = signed.hold_after_first_sample();
+    let (request, control) = f.request("real-clock-expired-lease");
+    let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
+    assert!(invocation
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
+    signed.expire_original_lease();
+    held.lock().unwrap().take().unwrap().release();
+    let report = invocation.await;
+    let GuestOutcome::Interrupted { metadata, .. } = report.outcome.unwrap() else {
+        panic!("original lease must remain expired");
+    };
+    assert_eq!(
+        metadata
+            .get("admissionCurrentnessReason")
+            .map(String::as_str),
+        Some("admission-clock-lease-uncovered")
+    );
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 1);
+    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+    f.idle();
+}
