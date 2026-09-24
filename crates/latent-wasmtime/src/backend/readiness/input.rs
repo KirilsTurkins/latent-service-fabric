@@ -4,6 +4,7 @@ use latent_artifacts::{
 use latent_core::PlatformError;
 use latent_executor::PreparationKey;
 
+use super::worker_wait::WorkerWindow;
 use crate::backend::preparation::{
     counters, retained_metadata_bytes, Compilation, ComponentIntegrity, SourceAuthority,
 };
@@ -60,12 +61,15 @@ impl PreparationContext {
         authority: SourceAuthority,
         mut reservation: PrepareReservation<PreparedRuntime>,
         queue: QueueWindow,
+        worker_wait: Option<WorkerWindow>,
     ) -> Result<CompilationResult<PreparedRuntime>, PlatformError> {
-        self.check_eligibility(
-            authority.eligibility.as_ref(),
-            &key.release,
-            key.publication.as_ref(),
-        )?;
+        WorkerWindow::check(worker_wait.as_ref(), || {
+            self.check_eligibility(
+                authority.eligibility.as_ref(),
+                &key.release,
+                key.publication.as_ref(),
+            )
+        })?;
         let job = self.observer.begin(&key.release);
         job.record_queue_wait(queue.started_nanos, queue.finished_nanos);
         let mut native = input.read_native(&authority, &job)?;
@@ -83,11 +87,20 @@ impl PreparationContext {
             ),
             ArtifactInput::Source { source, limits } => {
                 let fetch = job.stage(PreparationStage::RepositoryFetchVerified);
-                let artifact = source.fetch_blocking_selected(
-                    &key.release,
-                    key.publication.as_ref(),
-                    *limits,
-                )?;
+                let artifact = match (worker_wait.as_ref(), eligibility.as_ref()) {
+                    (Some(wait), Some(original)) => source.fetch_blocking_selected_with_wait(
+                        &key.release,
+                        key.publication.as_ref(),
+                        *limits,
+                        original,
+                        wait,
+                    )?,
+                    _ => source.fetch_blocking_selected(
+                        &key.release,
+                        key.publication.as_ref(),
+                        *limits,
+                    )?,
+                };
                 fetch.complete();
                 (
                     std::borrow::Cow::Owned(artifact),
@@ -148,7 +161,7 @@ impl PreparationContext {
                     if runtime.eligibility != eligibility {
                         return Err(crate::backend::admission_association_error());
                     }
-                    self.check_runtime(&runtime)?;
+                    WorkerWindow::check(worker_wait.as_ref(), || self.check_runtime(&runtime))?;
                     return Ok(CompilationResult {
                         runtime,
                         reservation: None,
@@ -170,7 +183,7 @@ impl PreparationContext {
             let native = native.as_mut().expect("checked input");
             self.build_native_runtime(native, &key, compilation, &job)?
         } else {
-            self.build_runtime(&artifact, &key, compilation, &job)?
+            self.build_runtime_with_wait(&artifact, &key, compilation, &job, worker_wait.as_ref())?
         };
         reservation.track_runtime(&runtime)?;
         Ok(CompilationResult {

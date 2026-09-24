@@ -143,8 +143,28 @@ impl DirectoryArtifactRepository {
         publication: Option<&PublicationId>,
         requested: ArtifactPreparationReadLimits,
     ) -> Result<CapsuleArtifact, PlatformError> {
+        self.selected_fetch_with_wait(component, publication, requested, None)
+    }
+
+    pub(crate) fn selected_fetch_with_wait(
+        &self,
+        component: &ReleaseDigest,
+        publication: Option<&PublicationId>,
+        requested: ArtifactPreparationReadLimits,
+        control: Option<crate::preparation::read_wait::ReadControl<'_>>,
+    ) -> Result<CapsuleArtifact, PlatformError> {
         add(&self.verification_statistics.full_fetch_attempts, 1);
         let reference = self.selected_publication(component, publication)?;
+        if let Some(control) = &control {
+            if control.original.release() != component
+                || control.original.publication() != &reference.id
+                || !control
+                    .original
+                    .belongs_to_catalog(&self.lifecycle_authority())
+            {
+                return Err(corrupt("preparation-original-grant-mismatch"));
+            }
+        }
         let limits = ArtifactPreparationReadLimits {
             maximum_component_bytes: requested
                 .maximum_component_bytes
@@ -156,7 +176,12 @@ impl DirectoryArtifactRepository {
                 .maximum_manifest_document_bytes
                 .min(self.codec.limits().max_document_bytes),
         };
-        let bounds = self.selected_read_bounds(component, Some(&reference.id))?;
+        let bounds = match &control {
+            Some(control) => {
+                control.check(|| self.selected_read_bounds(component, Some(&reference.id)))?
+            }
+            None => self.selected_read_bounds(component, Some(&reference.id))?,
+        };
         if bounds.component_bytes > limits.maximum_component_bytes as u64 {
             return Err(resource_exhausted(
                 "stored component exceeds configured component byte limit",
@@ -172,7 +197,12 @@ impl DirectoryArtifactRepository {
         )?;
         self.verify_publication_index(&reference, &verified)?;
         verified.metadata.verify_requested(component)?;
-        self.publication_execution_eligibility(&reference)?;
+        match &control {
+            Some(control) => {
+                control.check(|| self.publication_execution_eligibility(&reference))?
+            }
+            None => self.publication_execution_eligibility(&reference)?,
+        };
         let (descriptor, manifest, contracts) = verified.metadata.into_parts();
         Ok(CapsuleArtifact {
             descriptor,
