@@ -38,8 +38,9 @@ fn managed_binding_lease_failures_never_repeat_reads_or_publish_partial_plans() 
     let f = Fixture::new();
     let original = bytes(&f);
     let version = f.store.binding_version().unwrap();
-    // Initial control renewal, metadata package, then full binding package.
-    for fail_at in 1..=3 {
+    // Initial control renewal, metadata package, then before and after the
+    // full binding package. A post-inspection failure never repeats that read.
+    for fail_at in 1..=4 {
         reset(&f, fail_at);
         assert_eq!(
             prepare(&f.store, f.broker.clone(), &f.provider, vec![definition()])
@@ -49,12 +50,12 @@ fn managed_binding_lease_failures_never_repeat_reads_or_publish_partial_plans() 
             "fixture-control-lease-unavailable"
         );
         assert_eq!(renewals(&f), fail_at);
-        assert_eq!(package_reads(), 0);
+        assert_eq!(package_reads(), usize::from(fail_at == 4));
         unchanged(&f, &original, version);
     }
-    reset(&f, 4);
+    reset(&f, 5);
     let prepared = prepare(&f.store, f.broker.clone(), &f.provider, vec![definition()]).unwrap();
-    assert_eq!(renewals(&f), 3);
+    assert_eq!(renewals(&f), 4);
     assert_eq!(package_reads(), 1);
     assert_eq!(
         f.store
@@ -64,17 +65,17 @@ fn managed_binding_lease_failures_never_repeat_reads_or_publish_partial_plans() 
             .message,
         "fixture-control-lease-unavailable"
     );
-    assert_eq!(renewals(&f), 4);
+    assert_eq!(renewals(&f), 5);
     unchanged(&f, &original, version);
 
     reset(&f, 0);
     let prepared = prepare(&f.store, f.broker.clone(), &f.provider, vec![definition()]).unwrap();
     drop(prepared); // Cancellation does not publish or repeat preparation.
-    assert_eq!(renewals(&f), 3);
+    assert_eq!(renewals(&f), 4);
     unchanged(&f, &original, version);
     reset(&f, 0);
     f.install();
-    assert_eq!(renewals(&f), 4);
+    assert_eq!(renewals(&f), 5);
     assert_eq!(package_reads(), 1);
     assert_eq!(f.store.binding_inventory().2, 1);
 }
@@ -109,9 +110,10 @@ fn managed_inherited_bindings_renew_each_distinct_package_but_never_replay() {
         manifest: (*consumer).clone(),
         expected_generation: f.store.read_catalog().versions[&consumer.id],
     };
-    // Initial renewal, two metadata packages, then two binding packages.
+    // Initial renewal, two metadata packages, then before/after each of two
+    // binding packages. Fail before reading the second binding package.
     // The duplicate consumer shares only this compilation's checked package.
-    reset(&f, 5);
+    reset(&f, 6);
     assert_eq!(
         run(f.store.prepare_operation(request.clone()))
             .err()
@@ -119,12 +121,12 @@ fn managed_inherited_bindings_renew_each_distinct_package_but_never_replay() {
             .message,
         "fixture-control-lease-unavailable"
     );
-    assert_eq!(renewals(&f), 5);
+    assert_eq!(renewals(&f), 6);
     assert_eq!(package_reads(), 1);
     unchanged(&f, &original, version);
     reset(&f, 0);
     let prepared = run(f.store.prepare_operation(request.clone())).unwrap();
-    assert_eq!(renewals(&f), 5);
+    assert_eq!(renewals(&f), 7);
     assert_eq!(package_reads(), 2);
     drop(prepared);
     unchanged(&f, &original, version);
@@ -134,7 +136,7 @@ fn managed_inherited_bindings_renew_each_distinct_package_but_never_replay() {
     assert!(!committed.value().replayed);
     committed.value().durability.as_ref().unwrap();
     drop(committed);
-    assert_eq!(renewals(&f), 6);
+    assert_eq!(renewals(&f), 8);
     let committed_bytes = bytes(&f);
     reset(&f, 1);
     let replay = run(f.store.prepare_operation(request)).unwrap();
@@ -169,30 +171,31 @@ fn managed_local_binding_renews_before_provider_reads_and_preserves_commit_fence
     let f = Fixture::with_local();
     let original = bytes(&f);
     let version = f.store.binding_version().unwrap();
-    // Initial renewal, two metadata, two consumer reads, one local provider.
-    for fail_at in 1..=6 {
+    // Initial renewal, two metadata, then before/after two consumer reads and
+    // one local provider. Every failed boundary leaves the public plan intact.
+    for fail_at in 1..=9 {
         reset(&f, fail_at);
         assert_eq!(
             prepare_local(&f).err().unwrap().message,
             "fixture-control-lease-unavailable"
         );
         assert_eq!(renewals(&f), fail_at);
-        assert!(package_reads() <= 2);
+        assert!(package_reads() <= 3);
         unchanged(&f, &original, version);
     }
     reset(&f, 0);
     let prepared = prepare_local(&f).unwrap();
-    assert_eq!(renewals(&f), 6);
+    assert_eq!(renewals(&f), 9);
     assert_eq!(package_reads(), 3);
     // Renewal cannot revive a revoked policy or bypass commit's live fence.
     f.replace_policy();
     assert!(f.store.commit_binding_update(prepared).is_err());
-    assert_eq!(renewals(&f), 7);
+    assert_eq!(renewals(&f), 10);
     unchanged(&f, &original, version);
     reset(&f, 0);
     f.store
         .commit_binding_update(prepare_local(&f).unwrap())
         .unwrap();
-    assert_eq!(renewals(&f), 7);
+    assert_eq!(renewals(&f), 10);
     assert_eq!(package_reads(), 3);
 }
