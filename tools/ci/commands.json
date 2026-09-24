@@ -2962,7 +2962,7 @@
       "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
     },
     "tools/phase3_security.py": {
-      "sha256": "5f904fc5c0ee5da777645fbc6b86215592a6bfe4fb98faf16bf147b3da7f7e41"
+      "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
     },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
@@ -5452,6 +5452,13 @@
       "ContainerTests.test_negative_inner_receipt_stops_the_container_and_exits_nonzero",
       "ContainerTests.test_unlabelled_unbounded_or_foreign_workspaces_are_not_owned",
       "ContainerTests.test_unowned_container_is_not_started_stopped_or_removed",
+      "FailedCommandTests.test_cleanup_or_deadline_failure_never_fabricates_a_completed_diagnostic",
+      "FailedCommandTests.test_cli_writes_negative_receipt_without_overwriting_or_escaping_owned_target",
+      "FailedCommandTests.test_failed_exact_command_retains_closed_diagnostics_without_retry_or_acceptance",
+      "FailedCommandTests.test_failure_extracts_only_closed_source_assertion_and_platform_fields",
+      "FailedCommandTests.test_fields_counts_coordinates_codes_and_integer_ranges_are_closed",
+      "FailedCommandTests.test_real_nonzero_child_is_reaped_and_never_exposes_raw_capture",
+      "FailedCommandTests.test_unknown_absolute_traversing_sources_and_noninteger_values_are_discarded",
       "InventoryTests.test_duplicate_json_keys_and_inventory_bounds_are_rejected",
       "InventoryTests.test_dynamic_links_stay_inside_the_owned_target_and_are_bounded",
       "InventoryTests.test_exact_integration_owner_ignores_stale_executable_neighbours",
