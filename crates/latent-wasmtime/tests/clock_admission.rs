@@ -14,11 +14,25 @@ mod signed;
 mod support;
 
 use fixture::*;
-use std::{
-    future::Future,
-    sync::Mutex,
-    task::{Context, Waker},
-};
+use std::{future::Future, pin::Pin, sync::Mutex, task::Poll};
+
+async fn pending_at_fence(
+    mut invocation: Pin<&mut impl Future<Output = latent_executor::ExecutionReport>>,
+    held: &Arc<Mutex<Option<signed::Fence>>>,
+) {
+    // Readiness itself can yield before the Store exists. Drive the same
+    // invocation until the actual first clock sample owns the real fence.
+    tokio::time::timeout(
+        Duration::from_secs(5),
+        std::future::poll_fn(|context| match invocation.as_mut().poll(context) {
+            Poll::Ready(report) => panic!("clock must wait before its second sample: {report:?}"),
+            Poll::Pending if held.lock().unwrap().is_some() => Poll::Ready(()),
+            Poll::Pending => Poll::Pending,
+        }),
+    )
+    .await
+    .expect("bounded actual clock fence observation");
+}
 
 #[tokio::test]
 async fn actual_clock_waits_on_original_grant_and_samples_each_import_once() {
@@ -27,10 +41,7 @@ async fn actual_clock_waits_on_original_grant_and_samples_each_import_once() {
     let held = signed.hold_after_first_sample();
     let (request, control) = f.request("real-clock-contention");
     let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
-    assert!(invocation
-        .as_mut()
-        .poll(&mut Context::from_waker(Waker::noop()))
-        .is_pending());
+    pending_at_fence(invocation.as_mut(), &held).await;
     assert!(held.lock().unwrap().is_some());
     assert_eq!(f.clock.calls.load(Ordering::Acquire), 1);
     assert_eq!(f.broker.snapshot().sessions, 1);
@@ -82,10 +93,7 @@ async fn dropping_actual_clock_wait_drops_store_and_all_pending_owners() {
     let held = signed.hold_after_first_sample();
     let (request, control) = f.request("real-clock-drop");
     let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
-    assert!(invocation
-        .as_mut()
-        .poll(&mut Context::from_waker(Waker::noop()))
-        .is_pending());
+    pending_at_fence(invocation.as_mut(), &held).await;
     assert!(held.lock().unwrap().is_some());
     drop(invocation);
     held.lock().unwrap().take().unwrap().release();
@@ -101,10 +109,7 @@ async fn clock_wait_never_replaces_a_revoked_original_policy() {
     let held = signed.hold_after_first_sample();
     let (request, control) = f.request("real-clock-revoked");
     let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
-    assert!(invocation
-        .as_mut()
-        .poll(&mut Context::from_waker(Waker::noop()))
-        .is_pending());
+    pending_at_fence(invocation.as_mut(), &held).await;
     held.lock().unwrap().take().unwrap().release();
     fixture::revoke(&f.policies);
     let report = invocation.await;
@@ -124,10 +129,7 @@ async fn clock_wait_does_not_renew_an_expired_original_admission_lease() {
     let held = signed.hold_after_first_sample();
     let (request, control) = f.request("real-clock-expired-lease");
     let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
-    assert!(invocation
-        .as_mut()
-        .poll(&mut Context::from_waker(Waker::noop()))
-        .is_pending());
+    pending_at_fence(invocation.as_mut(), &held).await;
     signed.expire_original_lease();
     held.lock().unwrap().take().unwrap().release();
     let report = invocation.await;

@@ -114,7 +114,7 @@ pub(super) fn observe_grant(
     context.request.as_mut().expect("captured request").scope =
         latent_audit::AuditCapabilityDigestScope::ResourceSelection;
     let (kind, outcome, reason) = match result {
-        Ok(_) => (
+        Ok(()) => (
             Phase2AuditEventKind::CapabilityGrantAllowed,
             AuditOutcome::Succeeded,
             AuditReason::Admitted,
