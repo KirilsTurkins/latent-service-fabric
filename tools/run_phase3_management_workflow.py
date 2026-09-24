@@ -15,15 +15,29 @@ from tools.build_process_signals import owned_cancellation
 from tools.phase2_operator_process import Client, WorkflowError, bounded_receipt, file_digest, require, stopped_record, write_json
 from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_management_scenario import (
-    TENANT, configure_provider_node, invoke_guest, publish_and_deploy_guests,
+    HTTP_CONTRACT, TENANT, configure_provider_node, invoke_guest, publish_and_deploy_guests,
     start_http_fixture, stop_http_fixture,
 )
 
 
-def probe(client, target, which, expected, text="", handle=0):
-    result, value = invoke_guest(client, target, which, text, handle)
+HTTP_PROBE_ERRORS = dict(enumerate((
+    "permission-denied", "uncertain", "invalid-url", "invalid-request",
+    "request-too-large", "response-too-large", "deadline-exceeded", "cancelled",
+    "budget-exhausted", "dns-failed", "tls-failed", "connection-failed", "unavailable",
+), 10))
+
+
+def probe(client, target, which, expected, text="", handle=0, *, stage="initial"):
+    require(stage in {"initial", "restart"}, "provider-probe-stage")
+    provider = "http" if target["contract"] == HTTP_CONTRACT else "blob"
+    context = f"provider-{provider}-{stage}-case-{which}"
+    try:
+        result, value = invoke_guest(client, target, which, text, handle)
+    except WorkflowError as failure:
+        raise WorkflowError(f"{context}-{failure}") from None
+    category = HTTP_PROBE_ERRORS.get(value) if provider == "http" and type(value) is int else None
     require(result["outcomeKnown"] and value == expected,
-            f"provider-invocation-result-case-{which}-expected-{expected}-returned-{value}")
+            f"{context}-http-error-{category}" if category else f"{context}-unexpected-result")
     return result["data"]["activationId"]
 
 
@@ -83,8 +97,8 @@ def run(args):
             after = inspection(client, targets, port)
             require(all(before[name]["revision"] == after[name]["revision"] for name in targets),
                     "provider-restart-changed-selected-revision")
-            activations.append(probe(client, targets["http"], 0, 2201, url))
-            activations.append(probe(client, targets["blob"], 0, 4))
+            activations.append(probe(client, targets["http"], 0, 2201, url, stage="restart"))
+            activations.append(probe(client, targets["blob"], 0, 4, stage="restart"))
             revoked = client.call("policy", "revoke", "--id", "http-allow", "--operation-id", "revoke-http",
                                   "--expected-generation", targets["http"]["policyGeneration"])
             require(revoked["outcomeKnown"], "grant-revocation-uncertain")
