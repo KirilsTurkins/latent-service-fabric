@@ -16,3 +16,6 @@ pub trait PreparationReadWait: Send + Sync {
     /// unexpired wait must yield to the caller's executor rather than spin.
     fn wait_until(&self, deadline: Instant) -> BoxFuture<'_, ()>;
 }
+
+#[cfg(test)]
+mod tests;
