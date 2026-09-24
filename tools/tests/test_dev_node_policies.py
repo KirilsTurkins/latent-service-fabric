@@ -9,7 +9,113 @@ import time
 import unittest
 from unittest.mock import Mock, patch
 
-from tools.dev_workflow import common, effects, journal, node_fixtures, node_test_profile, policy_operations, scenarios, state
+from tools.dev_workflow import common, effects, journal, node_cancellation, node_fixtures, node_test_profile, policy_operations, scenarios, state
+
+
+class RunningCancellation(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name) / "test-cancellation"
+        self.root.mkdir(mode=0o700)
+        self.cli = Mock()
+        self.observer = node_cancellation.Cancellation(self.root, self.cli, "original", time.monotonic() + 60)
+
+    def running(self, **changes):
+        return {"category": "success", "outcomeKnown": True,
+                "data": {"activationId": "original", "phase": "running", "terminalState": None, **changes}}
+
+    def cancelled(self):
+        return {"category": "platform-failure", "outcomeKnown": True, "error": {"code": "cancelled"},
+                "data": {"activationId": "original", "terminalState": "cancelled"}}
+
+    def test_cancel_requires_observed_running_and_terminal_original_result(self):
+        def call(*arguments, **_options):
+            if arguments[3] == "get":
+                return self.running()
+            prepared = state.load(self.root, "test-cancellation.json")
+            self.assertEqual(prepared["disposition"], "prepared-original-cancel")
+            self.assertEqual(prepared["activationId"], "original")
+            return {"category": "success", "outcomeKnown": True,
+                    "data": {"activationId": "original", "disposition": "accepted"}}
+        self.cli.call.side_effect = call
+        self.observer.check()
+        for _ in range(4):
+            self.observer.check()
+        self.assertEqual(self.cli.call.call_count, 2)
+        self.assertEqual(self.cli.call.call_args_list[1].args[2:5], ("activation", "cancel", "original"))
+        self.assertFalse(self.observer.report["confirmed"])
+        self.assertTrue(self.observer.finish(self.cancelled())["confirmed"])
+
+    def test_lost_cancel_response_keeps_intent_and_never_dispatches_again(self):
+        self.cli.call.side_effect = [self.running(), common.DevError("owned-process-command-deadline")]
+        with self.assertRaises(common.DevError):
+            self.observer.check()
+        self.observer.check()
+        report = self.observer.finish(self.cancelled())
+        self.assertFalse(report["confirmed"])
+        self.assertEqual(report["disposition"], "cancel-response-unavailable-no-replay")
+        self.assertEqual(self.cli.call.call_count, 2)
+        self.assertEqual(state.load(self.root, "test-cancellation.json"), report)
+
+    def test_terminal_or_wrong_activation_is_never_cancelled(self):
+        self.cli.call.return_value = self.running(terminalState="completed")
+        self.observer.check()
+        self.assertEqual(self.cli.call.call_count, 1)
+        self.assertFalse(self.observer.finish(self.cancelled())["confirmed"])
+        self.observer = node_cancellation.Cancellation(self.root, self.cli, "original", time.monotonic() + 60)
+        self.cli.call.return_value = self.running(activationId="someone-else")
+        with self.assertRaisesRegex(common.DevError, "status-unconfirmed"):
+            self.observer.check()
+        self.assertEqual(self.cli.call.call_count, 2)
+
+    def test_unknown_status_allows_only_bounded_reads_of_original_identity(self):
+        self.cli.call.return_value = {"category": "not-found", "outcomeKnown": False, "data": {}}
+        with patch('tools.dev_workflow.node_cancellation.time.monotonic', return_value=1):
+            self.observer.deadline = 10
+            for _ in range(80):
+                self.observer.next_read = 0
+                self.observer.check()
+        self.assertEqual(self.cli.call.call_count, 64)
+        self.assertTrue(all(call.args[2:] == ("activation", "get", "original") for call in self.cli.call.call_args_list))
+        self.assertEqual(self.observer.report["cancelCalls"], 0)
+        self.assertFalse(self.observer.finish(self.cancelled())["confirmed"])
+
+    def test_cancel_accepted_is_not_confirmation_of_terminal_cleanup(self):
+        self.observer.report.update(runningObserved=True, cancelCalls=1, disposition="accepted")
+        for mutation in (
+            lambda result: result.update(outcomeKnown=False),
+            lambda result: result["data"].update(activationId="different"),
+            lambda result: result["data"].update(terminalState="deadline_exceeded"),
+            lambda result: result.update(category="success"),
+        ):
+            result = self.cancelled()
+            mutation(result)
+            self.assertFalse(self.observer.finish(result)["confirmed"])
+
+    def test_deadline_before_running_does_not_send_cancel(self):
+        self.observer.deadline = 0
+        self.observer.check()
+        self.cli.call.assert_not_called()
+        self.assertFalse(self.observer.finish(self.cancelled())["confirmed"])
+
+    def test_shared_contract_requires_explicit_node_only_cancellation(self):
+        case = {"id": "cancel", "service": "a/b", "contract": "a:b/c@1.0.0", "function": "spin",
+                "input": "input.json", "mediaType": "application/json", "expect": {"category": "platform-failure"},
+                "requires": ["running-cancellation"], "timeoutMillis": 5000, "required": True, "fixtures": [],
+                "execution": {"grants": [], "cancelWhenRunning": True}}
+        document = {"schemaVersion": "latent.dev.scenarios.v1", "scenarios": [case]}
+        (self.root / "input.json").write_bytes(b"[]")
+        _, unsupported = scenarios.prepare(document, self.root, "portable", [],
+            supported=scenarios.PORTABLE, execution_controls=True)
+        self.assertIn("running-cancellation", unsupported["cancel"]["missing"])
+        adapter = Mock(return_value=self.cancelled())
+        result = scenarios.run(document, self.root, "node", [], adapter, {},
+                               supported={"running-cancellation"}, execution_controls=True)
+        self.assertFalse(result["passed"], "matching cancelled result alone cannot prove the requested trigger")
+        case["execution"]["cancelBeforeStart"] = True
+        with self.assertRaisesRegex(common.DevError, "running-cancellation-required"):
+            scenarios.validate(document, "node")
 
 
 class PolicyRecovery(unittest.TestCase):
@@ -457,6 +563,22 @@ class NodePortableComparison(unittest.TestCase):
         self.assertTrue(result["passed"])
         self.assertFalse(result["qualificationComplete"])
         self.assertIn("deployment", result["portableExcludedChecks"])
+
+    def test_only_declared_reviewed_resource_code_differences_can_compare(self):
+        from tools.compare_dev_node_portable import compare
+        for code in ("fuel-exhausted", "memory-exhausted"):
+            node, portable = self.reports()
+            mapping = {"node": "resource-exhausted", "portable": code}
+            node["results"][0].update(category="platform-failure", platformCode="resource-exhausted", platformCodes=mapping)
+            portable["results"][0].update(category="platform-failure", platformCode=code, platformCodes=dict(mapping))
+            self.assertEqual(compare(node, portable)["results"][0]["platformCodes"], mapping)
+            portable["results"][0]["platformCode"] = "guest-trap"
+            with self.assertRaisesRegex(common.DevError, "code-difference-not-reviewed"):
+                compare(node, portable)
+            node["results"][0]["platformCodes"]["portable"] = "guest-trap"
+            portable["results"][0]["platformCodes"]["portable"] = "guest-trap"
+            with self.assertRaisesRegex(common.DevError, "code-difference-not-reviewed"):
+                compare(node, portable)
 
     def test_clock_comparison_requires_actual_matching_fixture_and_explicit_native_host(self):
         from tools.compare_dev_node_portable import compare

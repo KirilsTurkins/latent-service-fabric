@@ -25,6 +25,8 @@ on:
       - tools/dev_node_application_probe.py
       - tools/dev_clock_fixture_probe.py
       - tools/run_dev_clock_portable.py
+      - tools/dev_failure_fixture_probe.py
+      - tools/run_dev_failure_portable.py
       - apps/latentd/src/config/**
       - apps/latentd/Cargo.toml
       - tools/compare_dev_node_portable.py
@@ -149,14 +151,23 @@ jobs:
         if: matrix.language == 'rust'
         run: |
           cargo --config .cargo/managed-guest.toml build --locked -p latent-portable-test-host
-          python -c "import shutil; shutil.copyfile('target/debug/latent-portable-test-host','target/dev-tools/clock-host')"
+          python -c "import shutil; shutil.copy2('target/debug/latent-portable-test-host','target/dev-tools/clock-host')"
           python tools/dev_clock_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output "$RUNNER_TEMP/dev-clock-fixtures"
+          python tools/dev_failure_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output "$RUNNER_TEMP/dev-failure-fixtures"
       - name: Retain actual clock fixtures and node comparison receipts
         if: always() && matrix.language == 'rust'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: developer-clock-fixtures-${{ github.sha }}
           path: ${{ runner.temp }}/dev-clock-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain authored failures and actual running cancellation
+        if: always() && matrix.language == 'rust'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: developer-failure-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-failure-fixtures/
           if-no-files-found: warn
           retention-days: 7
       - name: Retain identical applications for both native execution hosts
@@ -255,6 +266,13 @@ jobs:
           path: target/dev-clock-fixtures/
       - name: Compare actual native Windows clocks and denial with the signed Linux node
         run: python tools/run_dev_clock_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-clock-fixtures --output target/dev-portable-clock-comparison.json
+      - name: Retrieve identical failure capsules and real node receipts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: developer-failure-fixtures-${{ github.sha }}
+          path: target/dev-failure-fixtures/
+      - name: Compare native Windows failures and fresh state with the signed Linux node
+        run: python tools/run_dev_failure_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-failure-fixtures --output target/dev-portable-failure-comparison.json
       - name: Retrieve exact C components compiled by the maintained guest tool recipe
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -296,6 +314,7 @@ jobs:
           path: |
             target/dev-portable-smoke.json
             target/dev-portable-clock-comparison.json
+            target/dev-portable-failure-comparison.json
             target/dev-portable-c-smoke.json
             target/dev-portable-*-applications.json
           if-no-files-found: error

@@ -72,9 +72,22 @@ def compare(node: dict, portable: dict, *, native_os: str = "windows") -> dict:
                 "comparison-case-publication-identity")
         require(all(actual["resolvedRevision"].get(key) == value for key, value in expected.items()),
                 "comparison-node-selected-revision")
-        keys = ("id", "inputSha256", "category", "payloadSha256", "platformCode", "fixtures", "execution")
+        keys = ("id", "inputSha256", "category", "payloadSha256", "fixtures", "execution", "platformCodes")
         require(all(actual.get(key) == native.get(key) for key in keys), "comparison-typed-result-mismatch")
-        rows.append({key: actual.get(key) for key in keys})
+        codes = actual.get("platformCodes")
+        if codes is not None:
+            require(codes in ({"node": "resource-exhausted", "portable": "fuel-exhausted"},
+                              {"node": "resource-exhausted", "portable": "memory-exhausted"})
+                    and actual.get("category") == "platform-failure"
+                    and actual.get("platformCode") == codes["node"] and native.get("platformCode") == codes["portable"],
+                    "comparison-platform-code-difference-not-reviewed")
+        else:
+            require(actual.get("platformCode") == native.get("platformCode"), "comparison-platform-code-mismatch")
+        row = {key: actual.get(key) for key in keys if key != "platformCodes"}
+        row["platformCode"] = actual.get("platformCode")
+        if codes is not None:
+            row["platformCodes"] = dict(codes)
+        rows.append(row)
     return {"schemaVersion": "latent.dev.node-portable-comparison.v1", "passed": True,
         "qualificationComplete": False, "scope": "selected-typed-application-values",
         "nodeReportSha256": digest(encode(node)), "portableReportSha256": digest(encode(portable)),
@@ -82,7 +95,8 @@ def compare(node: dict, portable: dict, *, native_os: str = "windows") -> dict:
         "nodeProfile": left["profile"], "nodeAdmission": left["admission"],
         "nativeOs": native_os, "guestClockCompared": left.get("fixtureConfiguration") is not None,
         "reviewedDifferences": ["node-only-publication-admission-and-routing", "host-os-and-architecture",
-            "bounded-cold-node-preparation-deadline", "system-clock-and-entropy-not-compared"],
+            "bounded-cold-node-preparation-deadline", "system-clock-and-entropy-not-compared"]
+            + (["node-public-resource-code-and-portable-engine-detail"] if any("platformCodes" in row for row in rows) else []),
         "portableExcludedChecks": portable["excludedChecks"]}
 
 

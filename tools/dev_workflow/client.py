@@ -13,12 +13,12 @@ class Client:
         self.binary, self.config, self.directory = binary, config, directory
         self.deadline = deadline
 
-    def call(self, *arguments: str, timeout: int = 30) -> dict:
+    def call(self, *arguments: str, timeout: float = 30, check=None) -> dict:
         if self.deadline is not None:
             timeout = min(timeout, self.deadline - time.monotonic())
             require(timeout > 0, "node-test-run-deadline")
         result = process.run([str(self.binary), "--config", str(self.config), "--output", "json",
-                               *map(str, arguments)], self.directory, timeout=timeout, maximum=1048576)
+                               *map(str, arguments)], self.directory, timeout=timeout, maximum=1048576, check=check)
         value = decode(result.stdout, 1048576)
         require(value.get("schemaVersion") == "latent.cli.result.v1"
                 and type(value.get("outcomeKnown")) is bool and isinstance(value.get("data"), dict),

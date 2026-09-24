@@ -644,7 +644,7 @@
       "job": "guest-tools",
       "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Compare explicit clock fixtures on signed nodes and the Linux portable host",
-      "run": "cargo --config .cargo/managed-guest.toml build --locked -p latent-portable-test-host\npython -c \"import shutil; shutil.copyfile('target/debug/latent-portable-test-host','target/dev-tools/clock-host')\"\npython tools/dev_clock_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-clock-fixtures\"",
+      "run": "cargo --config .cargo/managed-guest.toml build --locked -p latent-portable-test-host\npython -c \"import shutil; shutil.copy2('target/debug/latent-portable-test-host','target/dev-tools/clock-host')\"\npython tools/dev_clock_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-clock-fixtures\"\npython tools/dev_failure_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-failure-fixtures\"",
       "shell": "default",
       "stepIf": "matrix.language == 'rust'",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -805,6 +805,16 @@
       "jobIf": "success()",
       "name": "Compare actual native Windows clocks and denial with the signed Linux node",
       "run": "python tools/run_dev_clock_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-clock-fixtures --output target/dev-portable-clock-comparison.json",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-tools.yml:windows:Compare native Windows failures and fresh state with the signed Linux node": {
+      "job": "windows",
+      "jobIf": "success()",
+      "name": "Compare native Windows failures and fresh state with the signed Linux node",
+      "run": "python tools/run_dev_failure_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-failure-fixtures --output target/dev-portable-failure-comparison.json",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -3261,6 +3271,9 @@
     "tools/dev_clock_fixture_probe.py": {
       "sha256": "307493b05e171bf2cd2980d205be69363592ddea199944806650da7367135ef4"
     },
+    "tools/dev_failure_fixture_probe.py": {
+      "sha256": "debeb0ea617f5d8eef93ee4b1ef8552bbf5cd30b96c2d684f9960d39cbd6a9a9"
+    },
     "tools/docs_pages.py": {
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
     },
@@ -3338,6 +3351,9 @@
     },
     "tools/run_dev_clock_portable.py": {
       "sha256": "0d54e0da68594e187c3ff866e512ae57785524796c88237f1ffffcce67df185d"
+    },
+    "tools/run_dev_failure_portable.py": {
+      "sha256": "13c37e3b2036a4a2bf7cb58ef475eda5c33656226c65741d2754946f1d2c2152"
     },
     "tools/run_dev_guest_tools_tests.py": {
       "sha256": "73074d091d249186c7d787286b67ab8556b4c8966191d4454617dc8c87190c12"
@@ -4051,11 +4067,19 @@
       "NodePortableComparison.test_different_denial_policies_cannot_count_as_the_same_scenario",
       "NodePortableComparison.test_exact_values_match_with_explicit_node_only_exclusions",
       "NodePortableComparison.test_native_report_cannot_replace_node_or_change_component_outcome_or_cleanup",
+      "NodePortableComparison.test_only_declared_reviewed_resource_code_differences_can_compare",
       "NodePortableComparison.test_policy_changes_keep_the_expected_revision_for_each_case",
       "PolicyRecovery.test_existing_unowned_or_changed_policy_is_never_applied",
       "PolicyRecovery.test_lookup_queries_current_document_only_after_retained_operation",
       "PolicyRecovery.test_lost_apply_looks_up_original_and_records_before_clearing_intent",
       "PolicyRecovery.test_unknown_wrong_scope_and_changed_current_policy_retain_original",
+      "RunningCancellation.test_cancel_accepted_is_not_confirmation_of_terminal_cleanup",
+      "RunningCancellation.test_cancel_requires_observed_running_and_terminal_original_result",
+      "RunningCancellation.test_deadline_before_running_does_not_send_cancel",
+      "RunningCancellation.test_lost_cancel_response_keeps_intent_and_never_dispatches_again",
+      "RunningCancellation.test_shared_contract_requires_explicit_node_only_cancellation",
+      "RunningCancellation.test_terminal_or_wrong_activation_is_never_cancelled",
+      "RunningCancellation.test_unknown_status_allows_only_bounded_reads_of_original_identity",
       "ScenarioTargets.test_cold_node_allowance_is_explicit_and_does_not_change_portable_deadline",
       "ScenarioTargets.test_control_wait_uses_language_allowance_and_original_deadline_without_retry",
       "ScenarioTargets.test_each_policy_switch_requires_the_current_invocation_revision",
@@ -6746,7 +6770,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-tools.yml": "ec04a83675d542c90789af6e3a832deaf904e4a92d5b574b94cab7e27d0d27ae",
+    ".github/workflows/developer-tools.yml": "55a9d73070b6fcb881d41b4ef5190d963003c39a8e2103bb2053d765b43f4e45",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",

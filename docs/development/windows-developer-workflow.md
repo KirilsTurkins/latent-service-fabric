@@ -208,6 +208,32 @@ clock lease before opening the same catalogs. It neither edits the ledger nor
 retries a rejected mutation. Lost Invoke results use bounded status queries for
 the original activation ID. A terminal status without the original typed result
 still fails the scenario; an unknown status retains the pending operation.
+
+An explicit `execution.cancelWhenRunning: true` requires
+`requires: ["running-cancellation"]`. The node adapter starts one Invoke, polls
+that original activation at most 64 times within five seconds, and sends one
+public Cancel only after observing `running`. It persists the cancellation intent
+before dispatch. An accepted Cancel is insufficient: the original invocation
+must return `cancelled` with its confirmed revision. Lost responses remain
+uncertain and never cause a second Invoke or Cancel. This node-only requirement
+blocks portable execution; portable `cancelBeforeStart` remains a separate test.
+
+Resource-failure scenarios may explicitly declare
+`expect.platformCodes: {"node": "resource-exhausted", "portable": "fuel-exhausted"}`
+or the corresponding `memory-exhausted` portable detail. Both environments must
+return the declared platform-failure category and their exact declared code.
+Comparison retains both codes and recognizes only these reviewed public-node
+versus engine-detail mappings. Typed values, errors, component bytes and node
+revisions keep their existing exact comparisons.
+The [failure source observation](failure-fixture-source-observation.json) records
+13 signed real-node scenarios, a retained restart, and 12 shared cases on each
+portable host. The separate native `after-cancel` case checks a fresh Store;
+running cancellation itself is evidenced only by the node's explicit receipt.
+The probe is `tools/dev_failure_fixture_probe.py`; the Windows comparison is
+`tools/run_dev_failure_portable.py`. Both preserve failed reports and run within
+the existing Rust/Windows CI owners. These source observations do not qualify
+an authenticated final installation or a clean Windows host.
+
 The native portable host reuses the production component engine, WIT surface,
 canonical value codec, fresh-store ownership and capability policy broker.
 It executes prebuilt controlled development components without Linux. Its
