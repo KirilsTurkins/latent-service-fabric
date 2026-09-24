@@ -304,8 +304,11 @@ printf 'Saved project and results: %s\n' "$LSF_DOTNET_PROJECTS"
 ```
 
 Your source and results remain at that path. Edit the greeting, create a new
-build directory, and repeat signing and delivery to try a change. See
-[delivery and recovery](../learn/deliver-and-recover-a-capsule.md) for updates.
+build directory, and repeat signing and delivery to try a change. The
+[delivery and recovery](../learn/deliver-and-recover-a-capsule.md) guide explains
+update and recovery principles using its separate Rust tutorial project and
+node. Its commands require that tutorial's prerequisites and variables; for
+this C# project, retain the build, signing and admission path above.
 
 For capabilities, use the [guest SDK reference](guest-sdk.md). It covers buffered
 and streaming HTTP, blobs, secrets, events, local calls, randomness and metrics,
