@@ -527,7 +527,13 @@ impl CapabilitySession {
         resource: ResourceTarget<'_>,
     ) -> Result<GuestCapabilityHandle, PlatformError> {
         let result = self.bind_inner(capability, operation, resource);
-        super::audit::observe_grant(&self.core, capability, operation, resource, &result);
+        super::audit::observe_grant(
+            &self.core,
+            capability,
+            operation,
+            resource,
+            result.as_ref().map(|_| ()),
+        );
         result
     }
     fn bind_inner(
