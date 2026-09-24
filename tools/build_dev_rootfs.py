@@ -6,6 +6,7 @@ import argparse
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import re
 import secrets
 import shutil
 import subprocess
@@ -43,7 +44,10 @@ def main() -> int:
     output.mkdir(parents=True)
     context = output / "context"
     context.mkdir()
-    identity = {"sourceCommit": commit, "sourceDirty": dirty, "baseImages": IMAGES,
+    snapshots = re.findall(r"^ARG UBUNTU_SNAPSHOT=([0-9]{8}T[0-9]{6}Z)$",
+                           (ROOT / "packaging/dev/wsl.Dockerfile").read_text(), re.MULTILINE)
+    require(len(snapshots) == 1, "one-pinned-ubuntu-snapshot-required")
+    identity = {"sourceCommit": commit, "sourceDirty": dirty, "baseImages": IMAGES, "aptSnapshot": snapshots[0],
                 "recipeSha256": file_digest(ROOT / "packaging/dev/wsl.Dockerfile")[0]}
     (context / "source.json").write_bytes(encode(identity))
     helper(context / "helper.pyz")

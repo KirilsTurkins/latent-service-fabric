@@ -16,7 +16,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.dev_workflow import build, build_cache, paths, project, snapshot, state
-from tools.dev_workflow.common import DevError, decode, encode, require
+from tools.dev_workflow.common import DevError, decode, digest, encode, require
 
 
 def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict:
@@ -63,9 +63,21 @@ def exercise(payload: Path, packager: Path, output: Path, language: str) -> dict
             require(compile_current() == compiled, "unchanged-build-must-reuse-verified-attempt")
             source = root / "builds" / compiled["attempt"] / "source"
             complete = decode(paths.read(source, "output/BUILD-COMPLETE.json"))
-            require(complete["packageAssembled"] is False and not any(item["stage"] == "package" for item in complete["commands"]),
+            compiler = decode(paths.read(source, "output/compiler-BUILD-COMPLETE.json"))
+            require(compiler["packageAssembled"] is False
+                    and not any(item["stage"] == "package" for item in compiler["commands"]),
                     "language-recipe-must-leave-package-assembly-to-controller")
-            require(complete["componentDigest"] == compiled["artifacts"]["component"], "observed-compiler-component-identity")
+            packaging = decode(paths.read(source, "output/controller-packaging.json"))
+            require(complete["packageAssembled"] is True and packaging["authority"] == "observed-local-build"
+                    and packaging["compilerObservation"] == compiler["observationDigest"]
+                    == digest(paths.read(source, "output/compiler-build-observation.json"))
+                    and packaging["observation"] == complete["observationDigest"]
+                    == digest(paths.read(source, "output/build-observation.json"))
+                    and packaging["packager"] == receipt["packager"]
+                    and packaging["packageDigest"] == compiled["package"]["packageDigest"],
+                    "controller-packaging-must-retain-actual-compiler-and-packager-observations")
+            require(complete["componentDigest"] == compiler["componentDigest"] == compiled["artifacts"]["component"],
+                    "observed-compiler-component-identity")
             # Retain exact common scenarios and compiled bytes for Windows/Linux
             # differential execution. This build probe itself does not invoke them.
             retained = output / name

@@ -2,7 +2,12 @@
 FROM python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419 AS python
 FROM ubuntu@sha256:008173c23f95b170204355c12626cb5a965d779a7e1283b09e9cffbb1bf33ca3
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+ARG UBUNTU_SNAPSHOT=20260924T120000Z
+# The pinned Python image supplies TLS roots until the pinned Ubuntu CA package
+# is installed. Repository signatures remain checked by Ubuntu's archive keyring.
+COPY --from=python /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+RUN apt-get update -qq --snapshot "$UBUNTU_SNAPSHOT" \
+    && apt-get install -y --no-install-recommends --snapshot "$UBUNTU_SNAPSHOT" \
     ca-certificates=20260601~24.04.1 openssl=3.0.13-0ubuntu3.15 \
     libexpat1=2.6.1-2ubuntu0.5 libgdbm6t64=1.23-5.1build1 \
     libgdbm-compat4t64=1.23-5.1build1 libreadline8t64=8.2-4build1 \

@@ -292,10 +292,13 @@ The developer-tools workflow builds nonpublishing Windows and WSL candidates.
 The Windows bundle contains the standalone frontend, helper and release-mode
 portable host, with the existing Rust SPDX/license inventory and the actual
 Python/bootloader license texts. The Ubuntu image pins both OCI input digests and
-additional Ubuntu package versions, retains its observed package licenses, and
+additional Ubuntu package versions against the
+[Ubuntu snapshot](https://snapshot.ubuntu.com/) `20260924T120000Z`, retains its observed package licenses, and
 disables automatic drive mounts and Windows executable interop. It does not
 contain an LSF runtime, guest compiler, kernel or user credentials. Docker is a
 contributor image-build tool; the end-user Windows backend uses WSL2 directly.
+The image receipt records the snapshot ID. Package signatures remain verified
+with Ubuntu's archive keyring; updating the snapshot is an explicit recipe change.
 
 Candidate checksum inventories are attested only on branch/manual workflow runs.
 Pull-request runs remain unsigned. Offline verification additionally requires an
