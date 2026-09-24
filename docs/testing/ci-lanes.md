@@ -21,8 +21,11 @@ The full Rust job remains the single producer for the compatible host build:
    Phase 3 security qualification complete before product integration starts.
 5. When renderer coverage is selected, the browser component is composed once
    from the already built workspace input.
-6. 'tools/run_ci_lanes.py' dispatches the co-located provider and renderer lanes.
-7. The existing Phase 2 delivery/security/resource work, isolated Angular T1
+6. The [pinned source-built S3 fixture](s3-fixture.md) is prepared under its own
+   finite build owner before product integration. Its immutable local image
+   receipt is passed to both the positive and negative S3 runs.
+7. 'tools/run_ci_lanes.py' dispatches the co-located provider and renderer lanes.
+8. The existing Phase 2 delivery/security/resource work, isolated Angular T1
    compiler and protected T1 qualification remain after the lanes. They are not
    overlapped with product integration because their physical/resource evidence
    must remain uncontaminated.

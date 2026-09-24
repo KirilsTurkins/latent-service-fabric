@@ -297,16 +297,33 @@ jobs:
           cargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release
           wasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o "$RUNNER_TEMP/browser-component/application.wasm"
           wasm-tools validate "$RUNNER_TEMP/browser-component/application.wasm"
+      - name: Build pinned source-only S3 test fixture
+        id: s3_fixture
+        timeout-minutes: 26
+        run: |
+          python3 -m unittest tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner
+          python3 tools/build_s3_fixture.py --output "$RUNNER_TEMP/s3-fixture"
+      - name: Retain source-built S3 fixture and failure evidence
+        if: always() && steps.s3_fixture.outcome != '' && steps.s3_fixture.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: source-built-s3-fixture-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/s3-fixture/
+            ${{ runner.temp }}/s3-fixture-diagnostics/
+          if-no-files-found: error
+          retention-days: 14
       - name: Run bounded renderer and provider integration lanes
         id: integration_lanes
         timeout-minutes: 70
         env:
           CI_LANE_WORKERS: ${{ github.event_name == 'workflow_dispatch' && inputs.ci_lane_workers || '2' }}
           CI_LANE_RENDERER: ${{ needs.profile.outputs.renderer }}
+          LSF_S3_FIXTURE_RECEIPT: ${{ runner.temp }}/s3-fixture/fixture.json
         run: |
           # Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py
           # tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py
-          # tools/build_angular_package.py tools/run_angular_build_tests.py
+          # tools/build_angular_package.py tools/run_angular_build_tests.py tools/build_s3_fixture.py
           python3 tools/run_ci_lanes.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --renderer "$CI_LANE_RENDERER" --workers "$CI_LANE_WORKERS" --output "$RUNNER_TEMP/ci-lanes"
       - name: Retain bounded CI lane timing and completion receipts
         if: always() && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'

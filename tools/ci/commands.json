@@ -300,6 +300,16 @@
       "shell": "default",
       "run": "mkdir -p \"$RUNNER_TEMP/browser-component\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-component/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-component/application.wasm\""
     },
+    ".github/workflows/ci.yml:rust:s3_fixture": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "s3_fixture",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m unittest tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner\npython3 tools/build_s3_fixture.py --output \"$RUNNER_TEMP/s3-fixture\""
+    },
     ".github/workflows/ci.yml:rust:integration_lanes": {
       "workflow": ".github/workflows/ci.yml",
       "job": "rust",
@@ -308,7 +318,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\""
+      "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py tools/build_s3_fixture.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\""
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned operator workflow registry": {
       "workflow": ".github/workflows/ci.yml",
@@ -2541,9 +2551,9 @@
       "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned S3 conformance server": {
-      "after": ".github/workflows/ci.yml:rust:integration_lanes",
+      "after": ".github/workflows/ci.yml:rust:s3_fixture",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Maintainer-approved pinned source build replaces the inaccessible image acquisition; immutable receipt and owned compiler cleanup preserve fixture preparation, with unchanged real S3 tests and negative control in the provider lane."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned Vault conformance server": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
@@ -2895,6 +2905,9 @@
     "tools/build_provenance.py": {
       "sha256": "03c1c677cb530fc6b762440dd3a7f762f945892909ad9034af7a115a17fbdb97"
     },
+    "tools/build_s3_fixture.py": {
+      "sha256": "b0b05d6c1b48c6f1f405db526e7883900e98137dd8a8436de9c0720d6b40dd86"
+    },
     "tools/build_static_sites.py": {
       "sha256": "5acd3d499791273271236d0e60077763b6e9dd22ccee58aaac46d2b69733035c"
     },
@@ -2920,7 +2933,7 @@
       "sha256": "62bbebe6115eb6932a4aaf92d68ab1794457a4c069c1d32a51eba82b7c829a44"
     },
     "tools/ci_lane_worker.py": {
-      "sha256": "eea815b98d48cc7af4207a3ff10ac94dd2d3ba6c6a88e83e4e826a59fc269537"
+      "sha256": "6212cd840e2bddfcd3feccfd01b7c07538362d821188085997934efe9c8b7261"
     },
     "tools/ci_profile.py": {
       "sha256": "63949a0f50b4b7e3554383ade3a5f0ab51fed79a182fa301478df31501359fc8"
@@ -3043,7 +3056,7 @@
       "sha256": "8db908658b41757e598285dd0c0a1bdf288dd706e56de5463ce9facc23d5fd42"
     },
     "tools/run_s3_blob_tests.py": {
-      "sha256": "44e5356b966b50f6788461b1bbb8b270b002609f232a8e240c55c23725bc2fc6"
+      "sha256": "b91f43999f1eebdf3c0180eecd7302a67ba45bba2c21b51a66eed4ecb365ea21"
     },
     "tools/run_sdk_provider_matrix.sh": {
       "sha256": "aba338b2f1b12e27ba14fa8b3ee0f9ee30c1f5f47b25cd7ab68de92239b3d6ae"
@@ -5589,7 +5602,38 @@
       "S3RunnerTests.test_cleanup_verifies_label_and_immutable_id",
       "S3RunnerTests.test_daemon_failure_cannot_report_successful_cleanup",
       "S3RunnerTests.test_missing_or_ambiguous_cargo_artifacts_are_rejected",
-      "S3RunnerTests.test_reuses_only_the_named_harness_inside_the_cargo_target"
+      "S3RunnerTests.test_reuses_only_the_named_harness_inside_the_cargo_target",
+      "SourceBuiltImageRunnerTests.test_cli_requires_image_receipt_before_creating_temporary_state",
+      "SourceBuiltImageRunnerTests.test_harness_exception_is_forwarded_once_after_owned_server_cleanup",
+      "SourceBuiltImageRunnerTests.test_invalid_supplied_receipt_never_rebuilds_pulls_or_starts_server",
+      "SourceBuiltImageRunnerTests.test_missing_receipt_rejects_before_commands_certificates_or_harness",
+      "SourceBuiltImageRunnerTests.test_server_image_or_ownership_mismatch_stops_before_fixture_effects",
+      "SourceBuiltImageRunnerTests.test_supplied_receipt_runs_exact_image_without_pull_or_changed_server_limits"
+    ],
+    "tools/tests/test_s3_fixture_builder.py": [
+      "FixtureFilesTests.test_archive_accepts_only_the_authenticated_small_source_tree",
+      "FixtureFilesTests.test_archive_bounds_member_count_names_member_size_and_expansion",
+      "FixtureFilesTests.test_archive_rejects_links_special_files_and_duplicate_destinations",
+      "FixtureFilesTests.test_archive_rejects_traversal_absolute_foreign_and_ambiguous_paths",
+      "FixtureFilesTests.test_archive_requires_regular_inputs_and_matching_module_hashes",
+      "FixtureFilesTests.test_binary_accepts_a_bounded_static_amd64_elf_and_returns_exact_digest",
+      "FixtureFilesTests.test_binary_rejects_wrong_format_architecture_interpreter_and_header_bounds",
+      "FixtureFilesTests.test_recipe_binds_source_builder_go_and_helper_implementation",
+      "FixtureFilesTests.test_sha_is_exact_and_rejects_missing_empty_oversized_or_symlink_files",
+      "FixtureFilesTests.test_source_size_or_digest_failure_precedes_tar_parsing",
+      "FixtureOwnerTests.test_cleanup_cannot_report_success_when_owned_container_remains",
+      "FixtureOwnerTests.test_cleanup_distinguishes_confirmed_absence_from_daemon_failure",
+      "FixtureOwnerTests.test_cleanup_failure_preserves_original_build_failure_and_prevents_success",
+      "FixtureOwnerTests.test_cleanup_rejects_foreign_label_id_and_malformed_container_identity",
+      "FixtureOwnerTests.test_cleanup_uses_only_verified_immutable_container_id_even_after_reply_loss",
+      "FixtureOwnerTests.test_failed_removal_forwards_the_original_error_without_retry",
+      "FixtureOwnerTests.test_main_does_not_publish_success_when_compiler_retirement_is_unconfirmed",
+      "FixtureOwnerTests.test_main_publishes_success_only_after_verified_compiler_retirement",
+      "FixtureReceiptTests.test_current_retired_receipt_resolves_only_its_immutable_local_image",
+      "FixtureReceiptTests.test_image_inspection_requires_one_result_and_never_hides_daemon_failure",
+      "FixtureReceiptTests.test_image_must_match_id_platform_entrypoint_labels_and_rootfs",
+      "FixtureReceiptTests.test_receipt_rejects_stale_pins_failed_compiler_or_missing_retirement",
+      "FixtureReceiptTests.test_receipt_rejects_unknown_fields_malformed_shapes_and_forged_outputs"
     ],
     "tools/tests/test_sbom_policy_schema.py": [
       "SbomPolicySchemaTests.test_explicit_presence_and_role_choices",
@@ -6173,6 +6217,7 @@
     "tools/tests/test_run_aot_tests.py",
     "tools/tests/test_rust_capsule_authoring.py",
     "tools/tests/test_s3_blob_runner.py",
+    "tools/tests/test_s3_fixture_builder.py",
     "tools/tests/test_sbom_policy_schema.py",
     "tools/tests/test_sbom_schemas.py",
     "tools/tests/test_sbom_upstream.py",
@@ -6209,7 +6254,7 @@
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
-    ".github/workflows/ci.yml": "2a7ddab3d7fd395a6e0dd0cdfb3baa2c223625699455157d1289acbb86c6c6ee",
+    ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
