@@ -167,22 +167,7 @@ pub(super) fn successes(fixture: &Fixture, count: u64) {
 }
 
 pub(super) async fn summaries(fixture: &Fixture) -> Vec<latent_audit::AuditCanaryDecision> {
-    let page = fixture
-        .audit
-        .query(
-            latent_audit::AuditQueryRequest {
-                scope: latent_audit::AuditScope::Tenant(TenantId("alice".into())),
-                filter: latent_audit::AuditFilter::default(),
-                cursor: None,
-                limit: 32,
-                maximum_bytes: 32768,
-            },
-            expires(),
-        )
-        .unwrap()
-        .wait()
-        .await
-        .unwrap();
+    let page = fixture.audit_page(32).await;
     page.records()
         .iter()
         .filter_map(|record| match &record.data {
