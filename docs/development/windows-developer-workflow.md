@@ -208,6 +208,16 @@ clock lease before opening the same catalogs. It neither edits the ledger nor
 retries a rejected mutation. Lost Invoke results use bounded status queries for
 the original activation ID. A terminal status without the original typed result
 still fails the scenario; an unknown status retains the pending operation.
+Retained status reports the last lifecycle phase (such as `running`) separately
+from its terminal state. Recovery requires a coherent terminal state/outcome,
+completion timestamp and final accounting; a lifecycle phase alone cannot settle
+the original invocation. The [recovery source observation](recovery-source-observation.json)
+records actual lost signed-publication, deployment and Invoke responses recovered
+by fresh helper processes, with one original mutation each. It also covers wrong
+token/tenant invocation denial, retained restart and concurrent-deployment rejection.
+The explicit never-dispatched unknown-intent case remains private and unreplayed;
+it is not evidence of an expired receipt. Run `tools/dev_recovery_fixture_probe.py`
+with the installed source-observation kit for this focused contributor check.
 
 An explicit `execution.cancelWhenRunning: true` requires
 `requires: ["running-cancellation"]`. The node adapter starts one Invoke, polls

@@ -656,6 +656,15 @@ class SourceNodeProbe(unittest.TestCase):
 
 
 class InvocationRecovery(unittest.TestCase):
+    def test_fault_probe_selects_signed_control_calls_without_matching_argument_data(self):
+        from tools.dev_node_fault_probe import mutation
+        for prefix in ((), ("--rpc-timeout-ms", "5000")):
+            for command in (("release", "publish"), ("release", "publish-package"), ("deployment", "apply"), ("invoke",)):
+                self.assertEqual(mutation(prefix + command + ("arbitrary-path",)), command)
+        for command in (("release", "operation", "invoke"), ("deployment", "get", "apply"),
+                        ("--config", "release", "publish-package"), ("package", "check", "invoke")):
+            self.assertEqual(mutation(command), ())
+
     def test_unconfirmed_client_cleanup_retains_intent_and_starts_no_other_process(self):
         from tools.dev_workflow import node_invocation
         with tempfile.TemporaryDirectory() as temporary:
@@ -680,7 +689,7 @@ class InvocationRecovery(unittest.TestCase):
             def lookup(*arguments, **kwargs):
                 self.assertEqual(arguments[-3:], ("activation", "get", calls[0]))
                 return {"category": "success", "outcomeKnown": True, "data": {
-                    "activationId": calls[0], "phase": "terminal", "terminalState": "guest_trap",
+                    "activationId": calls[0], "phase": "running", "terminalState": "guest_trap", "terminalAtUnixMillis": "1234",
                     "terminalOutcome": {"kind": "platform-failure"}, "finalConsumption": {"cpuFuel": "1"}}}
             client = Mock()
             client.call.side_effect = lookup
@@ -692,6 +701,27 @@ class InvocationRecovery(unittest.TestCase):
             self.assertEqual(result["data"]["recovery"]["outcome"], "platform-failure")
             self.assertIsNone(controller.read()["pending"])
             self.assertEqual(controller.read()["history"][-1]["category"], "platform-failure")
+
+    def test_lifecycle_phase_alone_and_partial_or_contradictory_terminals_cannot_settle(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            controller = journal.Journal(Path(temporary), "node", "examples")
+            pending = controller.begin("invoke", {})
+            valid = {"category": "success", "outcomeKnown": True, "data": {
+                "activationId": pending["id"], "phase": "running", "terminalState": "completed",
+                "terminalOutcome": {"kind": "success"}, "finalConsumption": {"cpuFuel": "1"},
+                "terminalAtUnixMillis": "1234"}}
+            for change in ({"terminalState": None}, {"phase": "terminal"}, {"phase": "future"},
+                           {"terminalAtUnixMillis": None}, {"terminalAtUnixMillis": "18446744073709551616"},
+                           {"finalConsumption": None}, {"terminalOutcome": None},
+                           {"terminalOutcome": {"kind": "platform-failure"}}, {"terminalState": "cancelled"}):
+                value = copy.deepcopy(valid)
+                value["data"].update(change)
+                with self.assertRaises(common.DevError) as caught:
+                    controller.recover(lambda *_: value)
+                self.assertTrue(caught.exception.uncertain)
+                self.assertEqual(controller.read()["pending"], pending)
+            self.assertEqual(controller.recover(lambda *_: valid)["category"], "success")
+            self.assertIsNone(controller.read()["pending"])
 
     def test_unknown_receipt_retains_original_and_forbids_new_invocation(self):
         from tools.dev_workflow import node_invocation
