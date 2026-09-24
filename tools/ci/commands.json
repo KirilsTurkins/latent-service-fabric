@@ -5550,7 +5550,11 @@
       "TypeScriptAuthoringTests.test_qualification_watchdogs_remain_explicit_and_finite",
       "TypeScriptAuthoringTests.test_sdk_wit_and_compiler_lock_drift_are_rejected",
       "TypeScriptAuthoringTests.test_source_and_compiler_directory_overlap_is_rejected_before_execution",
-      "TypeScriptAuthoringTests.test_uncaptured_application_dependency_or_config_overrides_fail_closed"
+      "TypeScriptAuthoringTests.test_uncaptured_application_dependency_or_config_overrides_fail_closed",
+      "TypeScriptControlWaitTests.test_invalid_wait_count_and_output_bounds_fail_closed",
+      "TypeScriptControlWaitTests.test_process_deadline_keeps_one_timed_attempt_and_never_retries",
+      "TypeScriptControlWaitTests.test_selected_wait_preserves_ordinary_defaults_and_shorter_overall_deadline",
+      "TypeScriptControlWaitTests.test_uncertain_apply_remains_one_attempt_with_separate_bounded_diagnostics"
     ],
     "tools/tests/test_validate_docs.py": [
       "DocumentationValidationTests.test_code_examples_are_not_links_or_headings",

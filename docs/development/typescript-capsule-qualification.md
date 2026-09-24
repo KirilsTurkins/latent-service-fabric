@@ -45,6 +45,40 @@ produced. This is explicit negative authoring evidence, not runtime admission.
 
 ## Retained attempts and compiler boundary fixes
 
+[Run 35934224469](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934224469)
+at `cb3aab64377eea4a5cb26220a6593b5ca2f8351d` passed all ten actual SDK
+tests in 680.29 seconds. The real node then admitted all four attempted signed
+packages and committed the greeting, HTTP-status and recovery deployments.
+The fourth deployment, shipping at control 015, returned `rpc-failed` /
+`cancelled`, with `requestDispatched: true` and `outcomeKnown: false`. One
+read-only operation lookup and one audit query both returned `resource-exhausted`;
+the retained audit is explicitly incomplete. No mutation was retried and no
+eventual commit, dormant population, printed-guide or clean-shutdown success
+is claimed. Artifact `10782897442` retains this failed attempt.
+
+Shipping publication was recorded at `2026-09-24T00:02:29.024Z`; the failing
+apply, both diagnostic reads and cleanup had ended by `00:02:44.937Z`, 15.913
+seconds later. The automated operator had still used the common 15-second RPC
+profile and 25-second process watchdog, while this TypeScript node already
+allowed 120 seconds. This supports a caller-timeout mismatch, but the failed
+receipt alone does not prove the server's final outcome. Only the TypeScript
+experiment now explicitly selects the printed guide's existing 125-second
+operator wait and a 130-second process watchdog. The 900-second overall limit,
+120-second node ceiling, production control leases, binding compilation limits
+and ordinary-language waits are unchanged. A separate bounded timing record
+now accompanies every control attempt, including read-only failure diagnostics;
+the closed CLI receipt is not modified. Four regressions cover default waits,
+shorter overall deadlines, count/output bounds and one-attempt failures. The
+next complete run must validate this evidence-backed inference.
+
+The corresponding source archive `10781944148` contained 4,062 files and
+39,728,405 source bytes, all independently matched to that exact Git tree;
+its SHA-256 was
+`30af4f50d936ec6fc1e2d6b4a66b515ee310258e5226693236c9e35e86212aaf`.
+The separate Phase 3 security receipt passed all 27 entries, including the
+concurrent local-service acceptance test; artifact `10782532920` retains it.
+These checks do not convert the failed full-node qualification into a pass.
+
 [Run 35930223705](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35930223705)
 at `e40fc4bc89aa2bd302489bb3575ee4286d90ee5d` passed all ten actual SDK tests
 in 890.74 seconds, including the compiled secret zeroization/copy checks and
@@ -76,7 +110,7 @@ retirement, clock regression, failed durability and invalid-input cleanup.
 The registered cases compiled natively and passed in the authoritative Linux
 workspace test step of [run 35934224754](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934224754)
 at `cb3aab64377eea4a5cb26220a6593b5ca2f8351d`. The separate TypeScript
-full-node qualifier was still running when this milestone was recorded.
+full-node qualifier progressed to the later control failure recorded above.
 
 The next [Go cross-gate run 35934224433](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934224433)
 passed all ten SDK cases in 82.46 seconds, all 5/9/17 dormant checks, the tutorials

@@ -62,9 +62,13 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                     (work / name).mkdir(mode=0o700)
                 seconds = 900 if language in {"go", "typescript"} else 180
                 invocation_millis = 120000 if language in {"go", "typescript"} else 5000
-                result["limits"] = {"overallSeconds": seconds, "invocationMillis": invocation_millis}
+                control_millis = 125000 if language == "typescript" else 15000
+                result["limits"] = {"overallSeconds": seconds, "invocationMillis": invocation_millis,
+                                    "controlMillis": control_millis,
+                                    "controlProcessSeconds": 130 if language == "typescript" else 25}
                 client = RecordingClient(cli, work / "client", cancellation, time.monotonic() + seconds,
-                                         evidence=evidence / "controls", invocation_timeout_millis=invocation_millis)
+                                         evidence=evidence / "controls", invocation_timeout_millis=invocation_millis,
+                                         control_timeout_millis=control_millis)
                 peer, port = start_provider(client, work / "peer")
                 config, settings = configure(work / "node", fixture, port, runtime_grants=language == "go", language=language)
                 result["configuration"] = settings

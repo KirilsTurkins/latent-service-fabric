@@ -234,6 +234,13 @@ error. Connection failures, exhausted budgets and guest traps have different
 outcomes. Use a new activation ID for a new request; an uncertain mutation must
 be inspected before any retry.
 
+The explicit 125-second operator profile above covers both deployment controls
+and cold invocations. The isolated node still caps each request at 120 seconds;
+the automated experiment uses a 130-second CLI-process watchdog within its
+unchanged 900-second overall deadline. Ordinary operator defaults and production
+control leases are unchanged. A cancelled or timed-out mutation is not retried
+automatically and does not prove that no change occurred.
+
 ## 6. Clean up and continue
 
 ```bash
