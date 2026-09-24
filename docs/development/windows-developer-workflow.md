@@ -108,8 +108,7 @@ adapter unit test is not a WSL provisioning receipt.
 `latent.dev.project.v1` is closed and versioned. It identifies the language
 owner (#544–#549), immutable template revision, ABI, build host, pinned tools,
 explicit input roots, exclusions, output paths and application scenarios.
-It integrates supplied language artifacts; it does not ship parallel SDKs or
-claim the pending language-owner PRs are delivered.
+It integrates the six merged language owners' artifacts and build recipes.
 
 The Linux helper uses pinned Python 3.13.5, negotiated before any operation.
 The managed guest provides it at `/usr/local/bin/python3.13`; the distro's own
@@ -147,7 +146,48 @@ limits, not a claim of hostile compiler or whole-process memory containment.
 `latent.dev.scenarios.v1` keeps application inputs and results as exact bytes
 and supports focused selections plus JUnit rendering. Tests must explicitly
 choose `node` or `portable`; unsupported required checks fail coverage.
+An optional `nodeTimeoutMillis` selects a separate bounded node deadline, up to
+120 seconds. Managed-language templates use their maintained 120-second node
+ceiling because a cold node charges compilation to the activation. Their portable
+guest deadline remains five seconds, with separate native preparation. Each
+result records the selected deadline; output comparisons do not claim identical
+cold-start timing. The complete selection remains bounded to five minutes.
 The current node runner requires an explicitly selected `test-` workspace.
+After building its first project, stop that workspace and run
+`dev prepare-test --workspace test-NAME --consent-test-fixtures --admission
+signed-fixture` before its first deployment. This uses the workspace's installed
+tool selection; `--tool-root ABSOLUTE_LINUX_TOOL_PATH` explicitly overrides it.
+This selects the language's bounded memory/engine profile and, when
+needed, installs its maintained clock/random providers. It preserves the private
+operator credentials and refuses existing provider configuration, a running node,
+a pending operation, another project or changed configuration bytes. The command
+does not grant capabilities. Each scenario's explicit grants become scoped
+policies through the public operator API and a confirmed deployment generation.
+Policy recovery looks up the original operation and checks the current policy's
+scope, document and receipt; unknown or changed policies never trigger replay.
+The runner compares each invocation with the generation selected for that case.
+The `signed-fixture` option calls the pinned language bundle's maintained
+`capsule-test-signer` utility. It verifies the actual build observation, produces
+a signed package and scoped evidence, and creates a private, 30-minute test
+policy. The utility holds signing keys only in memory. Deployment then uses the
+normal public `release publish-package` API and enforced package admission.
+The report distinguishes the original compiled package from the signed fixture's
+package, which also contains its SBOM. An expired fixture or a changed accepted
+build requires a new test workspace; the controller never silently re-signs it.
+`--admission trusted-local` remains available for templates without provider
+imports. Go, Java and C# require signed package admission for their runtime
+capability bindings. These test profiles require `local-experimental-v1` and do
+not qualify the external-capsule profile.
+
+The controller joins a completed compiler observation with its separately
+completed packaging step, preserving the original compiler bytes. This unsigned
+local observation becomes authenticated test evidence only through the explicit
+fixture signer. It grants no production builder approval. After a confirmed
+shutdown, an enforced restart waits five seconds for the runtime's persisted
+clock lease before opening the same catalogs. It neither edits the ledger nor
+retries a rejected mutation. Lost Invoke results use bounded status queries for
+the original activation ID. A terminal status without the original typed result
+still fails the scenario; an unknown status retains the pending operation.
 The native portable host reuses the production component engine, WIT surface,
 canonical value codec, fresh-store ownership and capability policy broker.
 It executes prebuilt controlled development components without Linux. Its
@@ -156,7 +196,7 @@ missing-import denial, cancellation, traps, fuel/memory/deadline interruption,
 and subsequent fresh-state success. Additional actual Rust SDK capsules cover
 random bytes and unsigned values, all four custom metric kinds, explicit policy
 denials, and buffered HTTP through the production provider and an owned loopback
-peer. The C provider subset and four languages' tutorial applications are also
+peer. The C provider subset and all six languages' tutorial applications are also
 exercised below; real-node differential qualification remains required work.
 
 The selected verified Windows bundle must contain the portable executable.
@@ -190,7 +230,7 @@ before guest execution. Canonical arguments and results use the production value
 codec, including decimal-string unsigned 64-bit values and explicit absent values.
 One request runs at most 128 calls sequentially with fresh Stores, 16 MiB component
 bytes, 1 MiB input per call, 64 MiB guest memory (128 MiB for the explicitly
-selected .NET NativeAOT profile), ten billion fuel, five seconds per
+selected .NET NativeAOT or TypeScript SpiderMonkey profile), ten billion fuel, five seconds per
 call and 2 MiB aggregate results. Native compilation remains a controlled-workload
 operation; these guest limits are not compiler or whole-process RSS containment.
 
@@ -341,7 +381,7 @@ changed-source output and cleanup passed. The same components then passed all
 nine shared tutorial cases on each native Windows and Linux host, with matching
 typed result bytes. Java selects its maintained linear-memory engine profile;
 C# selects its bounded NativeAOT memory profile. Required clock grants are explicit
-in the scenarios. CI repeats these native comparisons for Rust, C, Java and C#.
+in the scenarios. CI repeats native comparisons for all six languages.
 These are source-integration and native-host comparisons; they do not qualify
 publisher identity, managed WSL installation or real Linux-node differential tests.
 
@@ -350,11 +390,13 @@ records all three maintained templates building with pinned offline compiler
 bundles, an unprivileged Linux account and no network. Both languages passed
 cache reuse, mapped compiler failures, last-good retention, changed-source output
 and cleanup. Go retains its reviewed module graph; TypeScript retains its npm
-lock and gives Wizer private compiler configuration/cache paths. CI now builds
+lock and gives Wizer private compiler configuration/cache paths. Both languages
+also passed all nine common tutorial cases on native Windows and Linux hosts,
+with identical typed results. TypeScript used release-mode hosts. CI now builds
 and compares all six languages on native Windows and Linux. Native preparation
 has a separate 120-second allowance, each activation retains its declared
-deadline, and one scenario run is bounded to five minutes. The observation keeps
-failed native preparation attempts explicit until release-host execution passes.
+deadline, and one scenario run is bounded to five minutes. The observation retains
+the earlier failed preparation attempts alongside the passing release-host runs.
 
 The actual native Windows C run executes the three compiled applications through
 the common byte-exact success/declared-error scenarios. It also runs C probes for
@@ -400,6 +442,21 @@ actionable trust error before tool selection. The observation retains the failed
 attempts and identifies the updated source frontend/helper bytes used to verify
 the fixes. It is not final authenticated distribution qualification.
 
+The [node source observation](node-developer-source-observation.json) records
+Go, TypeScript and Java greeting builds followed by signed package publication,
+enforced admission and all three typed application scenarios on a real node.
+All three retained the exact deployment through shutdown and restart, then passed
+the selected success scenario without republishing or redeploying. Go's scoped
+runtime grants were applied through public policy and deployment APIs. The runs
+used offline source-built artifacts and private Linux container workspaces on
+the Windows WSL kernel. They establish neither authenticated artifact
+installation nor clean-host or external-profile qualification. The exact Go and
+TypeScript component, capsule and contract bytes also passed the same three cases
+on native Windows. `tools/compare_dev_node_portable.py` checks artifact identities,
+typed result bytes, selected node revisions, environment labels and cleanup. This
+comparison covers the selected tutorial values; deterministic provider fixtures
+and the broader failure/ownership differential remain required work.
+
 `tools/dev_node_fault_probe.py` is a contributor fault-injection harness, separate
 from the shipped helper. Run it only as the explicitly selected `test-` workspace's
 unprivileged Linux owner, with its exact helper path and SHA-256. It requires the
@@ -431,7 +488,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate

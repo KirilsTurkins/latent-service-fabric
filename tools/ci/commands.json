@@ -622,9 +622,9 @@
     },
     ".github/workflows/developer-tools.yml:contracts:Exercise controller boundaries and actual owned subprocesses": {
       "job": "contracts",
-      "jobIf": "success()",
+      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Exercise controller boundaries and actual owned subprocesses",
-      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_build_process",
+      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_build_process",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -632,7 +632,7 @@
     },
     ".github/workflows/developer-tools.yml:guest-tools:Assemble pinned compiler tools and maintained templates": {
       "job": "guest-tools",
-      "jobIf": "success()",
+      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Assemble pinned compiler tools and maintained templates",
       "run": "python tools/build_dev_guest_tools.py --language \"$LSF_DEV_LANGUAGE\" --output target/dev-tools --python-prefix \"$LSF_DEV_PYTHON_PREFIX\"",
       "shell": "default",
@@ -642,7 +642,7 @@
     },
     ".github/workflows/developer-tools.yml:guest-tools:Compile actual projects with isolated tools and separate operator packaging": {
       "job": "guest-tools",
-      "jobIf": "success()",
+      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Compile actual projects with isolated tools and separate operator packaging",
       "run": "python tools/run_dev_guest_tools_tests.py --language \"$LSF_DEV_LANGUAGE\" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --output \"$RUNNER_TEMP/dev-projects\"",
       "shell": "default",
@@ -652,7 +652,7 @@
     },
     ".github/workflows/developer-tools.yml:guest-tools:Compile maintained C provider fixtures for native execution": {
       "job": "guest-tools",
-      "jobIf": "success()",
+      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Compile maintained C provider fixtures for native execution",
       "run": "python tools/build_portable_c_guests.py --tool-root target/dev-tools/payload --output target/dev-c-portable/providers\npython -c \"from pathlib import Path; import os,shutil; shutil.copytree(Path(os.environ['RUNNER_TEMP'])/'dev-projects', 'target/dev-c-portable/applications')\"",
       "shell": "default",
@@ -662,7 +662,7 @@
     },
     ".github/workflows/developer-tools.yml:guest-tools:Retain offline guest tool attestation": {
       "job": "guest-tools",
-      "jobIf": "success()",
+      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Retain offline guest tool attestation",
       "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-tools/candidate/attestation.json",
       "shell": "default",
@@ -672,7 +672,7 @@
     },
     ".github/workflows/developer-tools.yml:guest-tools:Stage the pinned relocatable Python prefix": {
       "job": "guest-tools",
-      "jobIf": "success()",
+      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Stage the pinned relocatable Python prefix",
       "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/guest-tools-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_DEV_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\"",
       "shell": "default",
@@ -812,7 +812,7 @@
     },
     ".github/workflows/developer-tools.yml:wsl-image:Build reviewed image and observed package license inventory": {
       "job": "wsl-image",
-      "jobIf": "success()",
+      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Build reviewed image and observed package license inventory",
       "run": "python tools/build_dev_rootfs.py --output target/dev-wsl",
       "shell": "default",
@@ -822,7 +822,7 @@
     },
     ".github/workflows/developer-tools.yml:wsl-image:Retain offline image attestation": {
       "job": "wsl-image",
-      "jobIf": "success()",
+      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Retain offline image attestation",
       "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-wsl/candidate/attestation.json",
       "shell": "default",
@@ -3121,10 +3121,10 @@
       "sha256": "aa9f74f6d3c48e5b748163a56747b46208405f2c3c34ffb42d134d1a7b347d13"
     },
     "tools/build_dev_frontend.py": {
-      "sha256": "c8e8959a795e1d207cbead426acb255cb23839cd7424fd1e5633bd69046a6888"
+      "sha256": "ae21815a5df802139fbeb62d311ffc737b315d6c33ad7d8cb36f425af4923721"
     },
     "tools/build_dev_guest_tools.py": {
-      "sha256": "161f248bf9da0a2401301caf1d5870b1b0981559102b4652aa12f3dbbc5914e1"
+      "sha256": "d344487bfab4850ef975861c249598ffa3c4aa9873204e05a14d383b274e9969"
     },
     "tools/build_dev_rootfs.py": {
       "sha256": "b0a0df997fc39bd4447f1afe825ce58c7ce6ae16a851fa7e3a8ad70bafe479c0"
@@ -3244,10 +3244,10 @@
       "sha256": "f9f02c440195578fac1e1ccd297a6ba1824b5952b4c74f021475df2acac106ce"
     },
     "tools/qualify_java_capsules.py": {
-      "sha256": "54a371d38d626291fd1415e2ddda6841054c5ad34334869408459461d9788792"
+      "sha256": "f9cb042c1787805c8d31e4977f45d2079d5dcad0c02b732cd6994b56950b97ac"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "ad13d2378077ee097dfa8a904aad3e40858489b6c4d8724d2e36113be0a6dd4d"
+      "sha256": "7bef04f6c9d0429aa95bbc53343de7ad94f20a4fc83e279341217efed1729455"
     },
     "tools/qualify_typescript_capsules.py": {
       "sha256": "9ebcf28e77e5fa9bca9018d8e15afffac9e075427315ad334fa7fc7a8d4b4e44"
@@ -3971,6 +3971,29 @@
       "Transports.test_helper_digest_is_checked_before_hello",
       "Transports.test_ssh_identity_options_and_constant_command",
       "WslOwnership.test_recovery_observes_original_registration_and_user_nonce_without_reimport"
+    ],
+    "tools/tests/test_dev_node_policies.py": [
+      "ControllerProvenance.test_actual_packaging_extends_unsigned_observation_and_preserves_compiler_bytes",
+      "InvocationRecovery.test_enforced_restart_requires_confirmed_cleanup_and_observes_clock_lease",
+      "InvocationRecovery.test_lost_result_recovers_original_terminal_without_claiming_typed_output",
+      "InvocationRecovery.test_socket_backlog_retries_only_connect_before_sending_one_command",
+      "InvocationRecovery.test_unconfirmed_client_cleanup_retains_intent_and_starts_no_other_process",
+      "InvocationRecovery.test_unknown_receipt_retains_original_and_forbids_new_invocation",
+      "NodePortableComparison.test_exact_values_match_with_explicit_node_only_exclusions",
+      "NodePortableComparison.test_native_report_cannot_replace_node_or_change_component_outcome_or_cleanup",
+      "PolicyRecovery.test_existing_unowned_or_changed_policy_is_never_applied",
+      "PolicyRecovery.test_lookup_queries_current_document_only_after_retained_operation",
+      "PolicyRecovery.test_lost_apply_looks_up_original_and_records_before_clearing_intent",
+      "PolicyRecovery.test_unknown_wrong_scope_and_changed_current_policy_retain_original",
+      "ScenarioTargets.test_cold_node_allowance_is_explicit_and_does_not_change_portable_deadline",
+      "ScenarioTargets.test_each_policy_switch_requires_the_current_invocation_revision",
+      "ScenarioTargets.test_elapsed_run_deadline_prevents_another_operator_process",
+      "ScenarioTargets.test_preflight_freezes_the_input_and_expected_bytes_used_for_assertions",
+      "ScenarioTargets.test_required_unsupported_case_prevents_all_invocation_and_optional_is_separate",
+      "ScenarioTargets.test_unknown_or_failed_adapter_stops_subsequent_calls_and_redacts_exception",
+      "TestProfile.test_interrupted_configuration_resumes_only_exact_before_or_after_bytes",
+      "TestProfile.test_profile_requires_explicit_test_scope_and_preserves_credentials",
+      "TestProfile.test_running_owner_and_existing_provider_configuration_are_preserved"
     ],
     "tools/tests/test_dev_tool_install.py": [
       "GuestTools.test_changed_completed_payload_is_rejected_and_not_implicitly_repaired",
@@ -6422,6 +6445,7 @@
     "tools/tests/test_deterministic_tests.py",
     "tools/tests/test_dev_build_cache.py",
     "tools/tests/test_dev_contracts.py",
+    "tools/tests/test_dev_node_policies.py",
     "tools/tests/test_dev_tool_install.py",
     "tools/tests/test_dev_tools.py",
     "tools/tests/test_dev_watch.py",
@@ -6636,7 +6660,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-tools.yml": "6e9cb472ae56f77b4fa1194851eddcd278b17cc70c91f633fc5f312db9c12227",
+    ".github/workflows/developer-tools.yml": "e5aa298151e00b273c26cedda462bf42975ab9e1b22b5e5ac343d636827c2b64",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",

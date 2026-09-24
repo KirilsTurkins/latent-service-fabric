@@ -44,7 +44,7 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
     manifest = decode(content["capsule"])
     require(manifest.get("component", {}).get("digest") == digest(content["component"]), "portable-component-identity")
     ceiling = manifest["execution"]["limits"]
-    groups, initialized = [], set()
+    fixtures_by_case, initialized = {}, set()
     for case in document["scenarios"]:
         if selection and case["id"] not in selection:
             continue
@@ -57,6 +57,14 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
         if fixtures is None:
             continue
         initialized.update(item["id"] for item in case["fixtures"])
+        fixtures_by_case[case["id"]] = fixtures
+    prepared, unsupported = scenarios.prepare(document, source, "portable", selection,
+        supported=SUPPORTED, initialized_fixtures=initialized, execution_controls=True)
+    groups = []
+    for case, input_bytes, _expected in prepared:
+        if case["id"] in unsupported:
+            continue
+        fixtures = fixtures_by_case[case["id"]]
         execution = case.get("execution", {"grants": []})
         require(case["timeoutMillis"] <= 5000, "portable-timeout-limit")
         # A scenario deadline bounds the test. Its default invocation budget
@@ -67,11 +75,13 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
             groups.append((fixtures, []))
             require(len(groups) <= 8, "portable-fixture-group-limit")
         groups[-1][1].append({"id": case["id"], "service": case["service"], "contract": case["contract"],
-            "function": case["function"], "input": base64.b64encode(paths.read(source, case["input"], 1048576)).decode(),
+            "function": case["function"], "input": base64.b64encode(input_bytes).decode(),
             "grants": execution["grants"], "deniedCapabilities": execution.get("deniedCapabilities", []),
             "fuel": execution.get("fuel", str(ceiling["cpuFuel"])),
             "memoryBytes": execution.get("memoryBytes", str(ceiling["memoryBytes"])),
             "timeoutMillis": timeout, "cancelBeforeStart": execution.get("cancelBeforeStart", False)})
+    if any(item["required"] for item in unsupported.values()):
+        groups = []
     results, runs = {}, []
     for fixtures, calls in groups:
         request = {"schemaVersion": "latent.dev.portable-request.v1", "environment": "portable",
@@ -101,12 +111,11 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
         results.update({item["id"]: item for item in runtime.pop("results")})
         runs.append(runtime)
     runtime = {"execution": "actual-component-production-wasmtime" if runs else "no-compatible-selected-scenarios", "runs": runs}
-    report = scenarios.run(document, source, "portable", selection,
+    report = scenarios.run_prepared(prepared, unsupported, "portable",
         lambda case, _raw: results[case["id"]],
         {"host": host_identity, "runtime": runtime, "hostAbi": HOST_ABI,
          "artifacts": {name: digest(raw) for name, raw in content.items()},
-         "trust": "controlled-development-test", "productionNode": False}, supported=SUPPORTED,
-         initialized_fixtures=initialized, execution_controls=True)
+         "trust": "controlled-development-test", "productionNode": False})
     report["cleanup"] = "owned-native-host-reaped" if groups else "no-native-host-started"
     return report
 

@@ -96,6 +96,8 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
                 observed = compile_recipe(root, working, descriptor, record, tools, deadline, check)
                 unchanged(working, descriptor, record)
                 packaged = build_artifacts.package(cli, working, descriptor["artifacts"], deadline, check, cached=False)
+                from .build_provenance import complete
+                complete(working, descriptor, cli, packager, packaged)
                 receipt = {"schemaVersion": "latent.dev.build.v1", "source": record["identity"], "recipe": trusted,
                     "host": host, "target": recipe["target"], "hostAbi": HOST_ABI,
                     "artifacts": build_artifacts.identities(working, descriptor["artifacts"]), "package": packaged,

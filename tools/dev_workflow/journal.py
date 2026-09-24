@@ -27,7 +27,7 @@ class Journal:
         return value
 
     def begin(self, kind: str, intent: dict) -> dict:
-        require(kind in {"release", "deployment", "invoke"}, "operation-kind")
+        require(kind in {"release", "deployment", "invoke", "policy"}, "operation-kind")
         value = self.read()
         if value["pending"] is not None:
             raise DevError("recover-original-operation-before-new-mutation", uncertain=True)
@@ -43,6 +43,12 @@ class Journal:
         require(value["pending"] == operation, "operation-journal-conflict")
         if result.get("outcomeKnown") is not True:
             raise DevError("operation-outcome-uncertain-use-recover", uncertain=True)
+        if operation["kind"] == "policy" and result.get("category") == "success":
+            from .policy_operations import confirm
+            try:
+                confirm(operation, result)
+            except DevError as error:
+                raise DevError(error.code, uncertain=True) from None
         # Commit idempotent local consequences before releasing this intent. A
         # crash between the two writes recovers the same ID and repeats only the
         # local metadata write, never the remote operation.
@@ -78,19 +84,30 @@ class Journal:
     def _recover(self, pending: dict, lookup) -> dict:
         result = lookup(pending["kind"], pending["id"])
         data = result.get("data", {})
-        if pending["kind"] != "invoke" and result.get("category") == "success":
+        if pending["kind"] in {"release", "deployment"} and result.get("category") == "success":
             prefix = {"release": "RELEASE", "deployment": "DEPLOYMENT"}[pending["kind"]] + "_OPERATION_LOOKUP_DISPOSITION_"
             disposition = data.get("lookup", data.get("disposition", ""))
             if disposition == prefix + "UNKNOWN":
                 raise DevError("original-operation-unknown-or-expired-no-replay", uncertain=True)
             if disposition == prefix + "UNCERTAIN":
                 raise DevError("original-operation-durability-uncertain-no-replay", uncertain=True)
+        if pending["kind"] == "policy" and data.get("mutationOutcome") == "unknown":
+            raise DevError("original-operation-unknown-or-expired-no-replay", uncertain=True)
         if result.get("outcomeKnown") is not True:
             raise DevError("recovery-transport-outcome-unknown", uncertain=True)
-        if pending["kind"] == "invoke":
+        if pending["kind"] == "policy":
+            require(result.get("category") == "success", "original-policy-receipt-unavailable-no-replay")
+        elif pending["kind"] == "invoke":
+            require(result.get("category") == "success", "original-activation-receipt-unavailable-no-replay")
             require(data.get("activationId") == pending["id"], "recovered-activation-identity")
-            require(data.get("terminalState") in {"completed", "failed", "cancelled", "deadline_exceeded"},
+            require(data.get("phase") == "terminal" and data.get("terminalState") in {
+                "completed", "rejected", "cancelled", "deadline_exceeded", "resource_exhausted",
+                "guest_trap", "state_conflict", "dependency_failed", "platform_failed"},
                     "activation-cleanup-not-terminal")
+            outcome = data.get("terminalOutcome")
+            require(isinstance(outcome, dict) and outcome.get("kind") in {"success", "declared-error", "platform-failure"}
+                    and isinstance(data.get("finalConsumption"), dict), "activation-terminal-outcome-required")
+            result = {**result, "category": outcome["kind"]}
         else:
             disposition = data.get("lookup", data.get("disposition", ""))
             receipt = data.get("receipt")

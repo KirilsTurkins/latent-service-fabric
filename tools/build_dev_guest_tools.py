@@ -82,6 +82,7 @@ def main() -> int:
     pins = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
     tools, _ = resolve_tools(pins, ROOT, environment)
     run("host-tools", tools["cargo"], "build", "--locked", "-p", "latent-packaging", "--example", "capsule_contracts",
+        "-p", "latent-policy", "--example", "capsule_authoring",
         "-p", "latent", "--bin", "latent")
     run("strip-operator", "strip", "-o", output / "latent-test", target / "debug/latent")
     if args.language == "rust":
@@ -108,6 +109,8 @@ def main() -> int:
             executables.update(distribution.binary_archive(archive, payload, name, source["sha256"][7:]))
     run("strip-contracts", "strip", "-o", payload / "sdk/bin/capsule-contracts", target / "debug/examples/capsule_contracts")
     executables.add("sdk/bin/capsule-contracts")
+    run("strip-test-signer", "strip", "-o", payload / "sdk/bin/capsule-test-signer", target / "debug/examples/capsule_authoring")
+    executables.add("sdk/bin/capsule-test-signer")
     # Managed dependency capture invokes these exact staged tools before final
     # bundle assembly. Archive extraction deliberately does not preserve modes.
     for name in executables:
@@ -134,7 +137,7 @@ def main() -> int:
                               "--filter-platform", "x86_64-unknown-linux-gnu"))
     sbom, licenses = native_runtime_build.dependency_inventory(metadata,
         tomllib.loads((ROOT / "Cargo.lock").read_text()), commit, epoch,
-        json.loads((ROOT / "packaging/linux/license-sources.json").read_bytes()), root_names=frozenset({"latent-packaging"}))
+        json.loads((ROOT / "packaging/linux/license-sources.json").read_bytes()), root_names=frozenset({"latent-packaging", "latent-policy"}))
     # Every retained .crate is redistributed, including inactive target entries
     # in the locked offline cache. Account for that complete source inventory.
     if args.language == "rust":

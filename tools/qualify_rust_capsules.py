@@ -42,7 +42,7 @@ def inputs(language="rust"):
                     "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py")
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
-                    "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py",
+                    "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml")
     elif language == "typescript":
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
@@ -52,7 +52,7 @@ def inputs(language="rust"):
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
                     "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/sdk.py",
-                    "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py",
+                    "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     "wait_capsule_audit_idle.py",
                     "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),

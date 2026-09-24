@@ -18,6 +18,7 @@ on:
       - tools/dev_managed_*.py
       - tools/dev_go_distribution.py
       - tools/dev_typescript_distribution.py
+      - tools/guest_runtime_profiles.py
       - tools/run_dev_guest_tools_tests.py
       - tools/run_portable_guest_tests.py
       - tools/compare_portable_guest_tests.py
@@ -74,6 +75,9 @@ concurrency:
 
 jobs:
   contracts:
+    # This branch also produces exact-source candidates on push. Its PR must
+    # consume those checks without duplicating six compiler bundles and hosts.
+    if: github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository
     name: Developer controller contracts (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -89,9 +93,10 @@ jobs:
         with:
           python-version: 3.13.5
       - name: Exercise controller boundaries and actual owned subprocesses
-        run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_build_process
+        run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_build_process
 
   guest-tools:
+    if: github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository
     name: Guest tool bundle and maintained application builds (${{ matrix.language }})
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -331,6 +336,7 @@ jobs:
           retention-days: 7
 
   wsl-image:
+    if: github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository
     name: Pinned WSL image candidate
     runs-on: ubuntu-24.04
     timeout-minutes: 15

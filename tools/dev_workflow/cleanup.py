@@ -70,5 +70,12 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
     assets = root / "assets"
     if assets.exists():
         files.remove_tree(assets, maximum=256)
+    if (root / "test-profile-plan.json").exists():
+        paths.read(root, "test-profile-plan.json")
+        (root / "test-profile-plan.json").unlink()
+    if (root / "test-signing").exists():
+        require(root.name.startswith("test-") and (root / "test-signing-intent.json").exists(), "test-signing-owner-required")
+        paths.read(root, "test-signing-intent.json")
+        files.remove_tree(root / "test-signing", maximum=8192)
     state.atomic(root, "lifecycle.json", {"state": "purged", "dataRetained": False, "reaped": True})
     return {"workspace": workspace, "state": "purged", "runtime": receipt, "sourceTreeRetained": True}

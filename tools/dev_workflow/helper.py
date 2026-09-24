@@ -31,10 +31,10 @@ def installation(root: Path):
     return layout, checks.current(layout)
 
 
-def client(root: Path) -> tuple[Client, Journal]:
+def client(root: Path, *, deadline: float | None = None) -> tuple[Client, Journal]:
     layout, current = installation(root)
     config = decode(paths.read(layout.node.parent, layout.node.name))
-    return Client(current / "bin/latent", layout.client, root), Journal(root, config["nodeId"], "examples",
+    return Client(current / "bin/latent", layout.client, root, deadline=deadline), Journal(root, config["nodeId"], "examples",
         settle=lambda operation, result: effects.settle(root, operation, result))
 
 
@@ -88,24 +88,31 @@ def sync(root: Path, arguments: dict) -> dict:
     return {"snapshot": record["identity"], "sourceBytes": record["bytes"], "files": len(record["files"])}
 
 
-def deploy(root: Path) -> dict:
+def deploy(root: Path, *, test_grants: list | None = None, deadline: float | None = None) -> dict:
     saved = state.load(root, "project.json")
     source, receipt = build.accepted(root, saved)
     descriptor = saved["descriptor"]
-    cli, journal = client(root)
+    cli, journal = client(root, deadline=deadline)
     artifacts = descriptor["artifacts"]
     from . import build_artifacts, build_cache
     import time
     require(paths.digest_file(cli.binary.parent, cli.binary.name, 268435456)[0] == receipt["packager"],
             "runtime-packager-changed-rebuild-required")
-    require(build_artifacts.package(cli.binary, source, artifacts, time.monotonic() + 30,
+    require(build_artifacts.package(cli.binary, source, artifacts, min(time.monotonic() + 30, deadline or float("inf")),
             build_cache.monitor(source.parent), cached=True) == receipt["package"], "built-package-modified-before-deploy")
     node = decode(paths.read(root / "runtime/config", "node.json"))
+    signing = None
+    if (root / "test-signing-receipt.json").exists():
+        from .node_test_signing import selected
+        signing = selected(root, receipt)
+        require(node["supplyChain"] == {"mode": "enforced", "policyFile": str(root / "test-signing/policy.json")},
+                "signed-test-profile-changed")
     require(descriptor["tenant"] == "examples", "project-tenant-does-not-match-workspace-credential")
     if journal.read()["pending"] is not None:
         raise DevError("recover-original-operation-before-new-mutation", uncertain=True)
     prior = state.load(root, "last-publication.json") if (root / "last-publication.json").exists() else None
-    publication_input = digest(encode({"mode": node["supplyChain"]["mode"], "package": receipt["package"]["packageDigest"],
+    publication_input = digest(encode({"mode": node["supplyChain"]["mode"],
+        "package": signing["packageDigest"] if signing else receipt["package"]["packageDigest"],
         **{name: receipt["artifacts"][name] for name in ("component", "capsule", "contracts")}}))
     release_intent = {"source": saved["snapshot"], "componentDigest": receipt["artifacts"]["component"],
         "expectedGeneration": "0", "attempt": receipt["attempt"], "buildKey": receipt["buildKey"], "publicationInput": publication_input}
@@ -119,11 +126,16 @@ def deploy(root: Path) -> dict:
         publication = successful(published)["release"]["publication"]["id"]
     else:
         require("packageRoot" in artifacts and "evidence" in artifacts, "signed-package-handoff-required")
+        package_root = root / "test-signing" / signing["name"] / "package" if signing else source / artifacts["packageRoot"]
+        evidence = root / "test-signing" / signing["name"] / "evidence/index.json" if signing else source / artifacts["evidence"]
         published = journal.execute("release", release_intent,
-            lambda operation: cli.call("release", "publish-package", source / artifacts["packageRoot"],
-                "--evidence", source / artifacts["evidence"], "--operation-id", operation, "--expected-generation", "0"))
+            lambda operation: cli.call("release", "publish-package", package_root,
+                "--evidence", evidence, "--operation-id", operation, "--expected-generation", "0"))
         publication = successful(published)["release"]["publication"]["id"]
     deployment = decode(paths.read(source, artifacts["deployment"]))
+    if test_grants is not None:
+        require(root.name.startswith("test-") and (root / "test-profile.json").exists(), "disposable-test-grants-only")
+        deployment["spec"]["grants"] = test_grants
     deployment["spec"]["publication"] = publication
     name = deployment["metadata"]["name"]
     observation = cli.call("deployment", "get", name, "--operation-snapshot")
@@ -202,6 +214,17 @@ def dispatch(request: dict) -> dict:
         if operation == "deploy":
             members(arguments, set())
             return deploy(root)
+        if operation == "prepare-test":
+            from .node_test_profile import prepare
+            members(arguments, {"consent", "admission"}, {"toolRoot"})
+            installation(root)
+            descriptor = state.load(root, "project.json")["descriptor"]
+            tool_root = arguments.get("toolRoot")
+            if arguments["admission"] == "signed-fixture" and not tool_root:
+                from .tool_install import selected_root
+                tool_root = selected_root(root, descriptor)
+            return prepare(root, descriptor, consent=arguments["consent"], admission=arguments["admission"],
+                           tool_root=Path(tool_root) if tool_root else None)
         if operation == "recover":
             members(arguments, set())
             cli, journal = client(root)
@@ -234,44 +257,8 @@ def dispatch(request: dict) -> dict:
 
 
 def test(root: Path, arguments: dict) -> dict:
-    from . import node_tests, scenarios
-    members(arguments, {"environment", "selection"})
-    require(arguments["environment"] == "node", "linux-test-cannot-fallback-to-portable")
-    # A test workspace is deliberately named at creation, rather than silently
-    # republishing over the user's current development deployment.
-    require(root.name.startswith("test-"), "explicit-disposable-test-workspace-required")
-    saved = state.load(root, "project.json")
-    source, build_receipt = build.accepted(root, saved)
-    descriptor = saved["descriptor"]
-    cli, journal = client(root)
-    deployed, revision = node_tests.target(root, descriptor, build_receipt, cli)
-    cases = []
-    for name in descriptor["scenarios"]:
-        document = scenarios.validate(decode(paths.read(source, name)), "node")
-        cases.extend(document["scenarios"])
-    def invoke(case, raw):
-        require(case["service"] == descriptor["service"], "scenario-service-outside-test-project")
-        path = root / "test-input.json"
-        if path.exists():
-            paths.read(root, path.name, 1048576)
-            path.unlink()
-        paths.write_new(path, raw)
-        return journal.execute("invoke", {"case": case["id"], "inputSha256": digest(raw)}, lambda activation:
-            cli.call("invoke", "--service", case["service"], "--contract", case["contract"], "--function", case["function"],
-                "--input", path, "--media-type", case["mediaType"], "--activation-id", activation,
-                "--rpc-timeout-ms", str(case["timeoutMillis"]), timeout=case["timeoutMillis"] / 1000 + 5))
-    layout, current = installation(root)
-    import platform
-    node = decode(paths.read(layout.node.parent, layout.node.name))
-    report = scenarios.run({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": cases}, source, "node",
-        arguments["selection"], invoke, {"source": build_receipt["source"], "artifacts": build_receipt["artifacts"],
-        "deployment": deployed, "expectedRevision": revision,
-        "runtime": decode(paths.read(current, "release-source.json")), "node": node["nodeId"],
-        "profile": node["securityProfile"], "os": "linux", "architecture": platform.machine(), "kernel": platform.release()},
-        supported={"context", "log", "clock", "fresh-state", "fuel", "memory"}, expected_revision=revision)
-    report["cleanup"] = "invocation-results-received-node-retained"
-    state.atomic(root, "test-report.json", report)
-    return report
+    from .node_scenarios import run
+    return run(root, arguments)
 
 
 def main() -> int:

@@ -33,13 +33,15 @@ class NodeTestIdentity(unittest.TestCase):
                         "generation": "2", "publication": "publication-a"}
             state.atomic(root, "last-deployment.json", deployed)
             current = {"generation": "2", "manifest": {"metadata": {"tenant": "examples", "name": "sample"},
-                "spec": {"service": "examples/sample", "publication": "publication-a", "release": "component"}}}
+                "spec": {"service": "examples/sample", "publication": "publication-a", "release": "component",
+                         "grants": [{"capability": "clock", "policy": "retained-policy"}]}}}
             class Client:
                 def call(self, *args):
                     return {"outcomeKnown": True, "category": "success", "data": {"deployment": current, "routeGeneration": "9"}}
             receipt = {"source": "source", "artifacts": {"component": "component"}}
             self.assertEqual(node_tests.target(root, descriptor(), receipt, Client()),
-                             (deployed, {"publicationId": "publication-a", "releaseDigest": "component", "routeGeneration": "9"}))
+                             (deployed, {"publicationId": "publication-a", "releaseDigest": "component", "routeGeneration": "9"},
+                              [{"capability": "clock", "policy": "retained-policy"}]))
             current["manifest"]["metadata"]["tenant"] = "another-tenant"
             with self.assertRaisesRegex(common.DevError, "test-deployment-target-mismatch"):
                 node_tests.target(root, descriptor(), receipt, Client())
@@ -217,7 +219,8 @@ class Recovery(unittest.TestCase):
         operation = controller.begin("deployment", intent)
         receipt = {"operationId": operation["id"], "tenant": "tenant-a", "expectedGeneration": "1",
             "expectedStateVersion": "2", "componentDigest": intent["componentDigest"], "deploymentId": "sample",
-            "publication": {"id": "other", "tenant": "tenant-a"}, "objectGeneration": "2"}
+            "publication": {"id": "other", "tenant": "tenant-a"}, "objectGeneration": "3", "routeGeneration": "3",
+            "stateVersion": "3", "action": "DEPLOYMENT_OPERATION_ACTION_APPLY"}
         result = {"category": "success", "outcomeKnown": True, "data": {
             "disposition": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_FOUND", "receipt": receipt,
             "durability": "DEPLOYMENT_DURABILITY_CONFIRMED"}}
@@ -225,8 +228,12 @@ class Recovery(unittest.TestCase):
             controller.recover(lambda *_: result)
         self.assertIsNotNone(controller.read()["pending"])
         receipt["publication"]["id"] = "selected"
+        receipt["routeGeneration"] = "4"
+        with self.assertRaisesRegex(common.DevError, "confirmed-deployment-generation"):
+            controller.recover(lambda *_: result)
+        receipt["routeGeneration"] = "3"
         controller.recover(lambda *_: result)
-        self.assertEqual(state.load(self.root, "last-deployment.json")["generation"], "2")
+        self.assertEqual(state.load(self.root, "last-deployment.json")["generation"], "3")
 
 
 class Transports(unittest.TestCase):

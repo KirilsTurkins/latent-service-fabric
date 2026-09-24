@@ -5,7 +5,7 @@ from . import state
 from .common import require
 
 
-def target(root: Path, descriptor: dict, receipt: dict, cli) -> tuple[dict, dict]:
+def target(root: Path, descriptor: dict, receipt: dict, cli) -> tuple[dict, dict, list]:
     require((root / "last-deployment.json").exists(), "test-requires-confirmed-deployment")
     deployed = state.load(root, "last-deployment.json")
     require(deployed["source"] == receipt["source"]
@@ -27,4 +27,4 @@ def target(root: Path, descriptor: dict, receipt: dict, cli) -> tuple[dict, dict
     generation = observed["data"]["routeGeneration"]
     require(isinstance(generation, str) and generation.isdecimal(), "test-route-generation-required")
     return deployed, {"publicationId": deployed["publication"], "releaseDigest": deployed["componentDigest"],
-                      "routeGeneration": generation}
+                      "routeGeneration": generation}, manifest["spec"].get("grants", [])

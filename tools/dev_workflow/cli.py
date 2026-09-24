@@ -54,9 +54,13 @@ def parser() -> argparse.ArgumentParser:
     for name in ("wsl-recover", "wsl-purge"):
         command = dev.add_parser(name)
         command.add_argument("--confirm-distribution", required=True)
-    for name in ("install", "install-tools", "up", "status", "logs", "down", "purge", "build", "build-status", "deploy", "recover", "invoke", "test"):
+    for name in ("install", "install-tools", "up", "status", "logs", "down", "purge", "build", "build-status", "deploy", "recover", "invoke", "test", "prepare-test"):
         command = dev.add_parser(name)
         command.add_argument("--workspace", required=True)
+        if name == "prepare-test":
+            command.add_argument("--consent-test-fixtures", action="store_true")
+            command.add_argument("--admission", choices=("trusted-local", "signed-fixture"), required=True)
+            command.add_argument("--tool-root", help="Linux pinned tool inventory containing the reviewed test signer")
         if name == "install":
             command.add_argument("--runtime-inputs", type=Path, required=True,
                                  help="explicit guest-side installer inputs and profile, with consent")
@@ -286,6 +290,11 @@ def dispatch(args) -> dict:
                 "mediaType": args.media_type, "input": base64.b64encode(paths.read(args.input.absolute().parent, args.input.name, 1048576)).decode()})
         if args.command == "test":
             return connection.call("test", {"environment": args.environment, "selection": args.select}, timeout=315)
+        if args.command == "prepare-test":
+            require(args.workspace.startswith("test-") and args.consent_test_fixtures,
+                    "explicit-disposable-test-fixture-consent-required")
+            return connection.call("prepare-test", {"consent": args.consent_test_fixtures,
+                "admission": args.admission, **({"toolRoot": args.tool_root} if args.tool_root else {})}, timeout=90)
         return connection.call(args.command, {})
 
 

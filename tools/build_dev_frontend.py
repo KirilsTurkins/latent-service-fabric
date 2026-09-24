@@ -62,7 +62,7 @@ def helper(output: Path) -> str:
             if path.name == "windows.py":
                 continue
             entries[path.relative_to(ROOT).as_posix()] = path.read_bytes()
-    for name in ("build_process", "build_process_linux", "build_process_signals"):
+    for name in ("build_process", "build_process_linux", "build_process_signals", "guest_runtime_profiles"):
         entries[f"tools/{name}.py"] = (ROOT / f"tools/{name}.py").read_bytes()
     with zipfile.ZipFile(output, "x", compression=zipfile.ZIP_DEFLATED) as archive:
         for name, raw in sorted(entries.items()):

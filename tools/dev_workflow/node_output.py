@@ -11,6 +11,8 @@ class NodeOutput:
         self.child, self.tokens = child, tokens
         self.retained = bytearray()
         self.clean_stop, self.failure = False, None
+        self.started = None
+        self.startup = threading.Event()
         self.lock = threading.Lock()
         self.worker = threading.Thread(target=self._drain, name="latent-dev-node-output", daemon=True)
         self.worker.start()
@@ -22,6 +24,11 @@ class NodeOutput:
                 if (record.get("schemaVersion") == "latent.standalone.status.v1"
                         and record.get("event") == "stopped" and record.get("clean") is True):
                     self.clean_stop = True
+                if (record.get("schemaVersion") == "latent.standalone.status.v1"
+                        and record.get("event") in {"ready", "started"}):
+                    with self.lock:
+                        self.started = record
+                    self.startup.set()
             except (ValueError, AttributeError):
                 pass
         text = raw.decode("utf-8", errors="replace")
@@ -69,6 +76,16 @@ class NodeOutput:
     def logs(self):
         with self.lock:
             return self.retained.decode("utf-8", errors="replace")
+
+    def providers(self, node_id):
+        require(self.startup.wait(timeout=2), "node-startup-identity-unavailable")
+        with self.lock:
+            require(isinstance(self.started, dict) and self.started.get("nodeId") == node_id,
+                    "node-startup-identity-unavailable")
+            records = self.started.get("providers", [])
+            require(isinstance(records, list) and len(records) <= 16
+                    and all(isinstance(row, dict) for row in records), "node-provider-startup-format")
+            return records
 
     def finish(self):
         self.worker.join(timeout=3)

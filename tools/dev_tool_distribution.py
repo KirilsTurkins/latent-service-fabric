@@ -143,6 +143,7 @@ def templates(payload: Path, commit: str, language: str) -> dict:
                "dotnet": dotnet_project, "go": go_capsule_project, "typescript": typescript_project}[language]
     tools = [("python", "sdk/bin/python", "3.13.5"), ("recipe", "recipe/tools/dev_guest_recipe.py", "1"),
              ("contracts", "sdk/bin/capsule-contracts", commit),
+             ("test-signer", "sdk/bin/capsule-test-signer", commit),
              ("wasm-tools", "sdk/bin/wasm-tools", WASM_VERSION), ("wit-bindgen", "sdk/bin/wit-bindgen", BINDGEN_VERSION)]
     if language == "rust":
         tools.extend([("cargo", "sdk/rust/bin/cargo", RUST_VERSION), ("rustc", "sdk/rust/bin/rustc", RUST_VERSION)])
@@ -166,6 +167,11 @@ def templates(payload: Path, commit: str, language: str) -> dict:
                 "input": f"tests/{ordinal}-input.json", "mediaType": "application/vnd.latent.wit-values.v1+json",
                 "expect": {"category": "success" if code == 0 else "declared-error", "payload": f"tests/{ordinal}-expected.json"},
                 "requires": [], "timeoutMillis": 5000, "required": True, "fixtures": []})
+            if language in {"java", "dotnet", "go", "typescript"}:
+                # A cold node charges compilation to the accepted activation.
+                # Match the maintained language deployment's finite ceiling;
+                # portable preparation has its own separate allowance.
+                entries[-1]["nodeTimeoutMillis"] = 120000
             if language in {"java", "dotnet", "go"}:
                 # These capabilities are declared by the maintained language
                 # runtime. A node still requires explicit operator policy.

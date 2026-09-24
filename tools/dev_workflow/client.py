@@ -2,16 +2,21 @@
 from __future__ import annotations
 
 from pathlib import Path
+import time
 
 from . import process
 from .common import DevError, decode, require
 
 
 class Client:
-    def __init__(self, binary: Path, config: Path, directory: Path):
+    def __init__(self, binary: Path, config: Path, directory: Path, *, deadline: float | None = None):
         self.binary, self.config, self.directory = binary, config, directory
+        self.deadline = deadline
 
     def call(self, *arguments: str, timeout: int = 30) -> dict:
+        if self.deadline is not None:
+            timeout = min(timeout, self.deadline - time.monotonic())
+            require(timeout > 0, "node-test-run-deadline")
         result = process.run([str(self.binary), "--config", str(self.config), "--output", "json",
                                *map(str, arguments)], self.directory, timeout=timeout, maximum=1048576)
         value = decode(result.stdout, 1048576)
@@ -23,7 +28,10 @@ class Client:
         return value
 
     def lookup(self, kind: str, operation: str) -> dict:
-        require(kind in {"release", "deployment", "invoke"}, "unknown-operation-kind")
+        require(kind in {"release", "deployment", "invoke", "policy"}, "unknown-operation-kind")
+        if kind == "policy":
+            from .policy_operations import lookup
+            return lookup(self, operation)
         return self.call("activation", "get", operation) if kind == "invoke" else self.call(kind, "operation", operation)
 
 

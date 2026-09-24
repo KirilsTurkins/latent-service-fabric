@@ -8,6 +8,10 @@ from .common import require
 def settle(root: Path, operation: dict, result: dict) -> None:
     if operation["kind"] == "invoke" or result["category"] != "success":
         return
+    if operation["kind"] == "policy":
+        from .policy_operations import settle as settle_policy
+        settle_policy(root, operation, result)
+        return
     data, intent = result["data"], operation["intent"]
     receipt = data.get("receipt", data.get("operation"))
     require(isinstance(receipt, dict) and receipt.get("operationId") == operation["id"]
@@ -30,7 +34,11 @@ def settle(root: Path, operation: dict, result: dict) -> None:
                 "confirmed-deployment-target-mismatch")
         generation = receipt.get("objectGeneration")
         require(isinstance(generation, str) and generation.isdecimal()
-                and int(generation) == int(intent["expectedGeneration"]) + 1, "confirmed-deployment-generation")
+                and int(generation) > int(intent["expectedGeneration"])
+                and receipt.get("routeGeneration") == generation
+                and receipt.get("action") == "DEPLOYMENT_OPERATION_ACTION_APPLY"
+                and receipt.get("stateVersion") == str(int(intent["expectedStateVersion"]) + 1),
+                "confirmed-deployment-generation")
         require(data.get("durability") in {"confirmed", "DEPLOYMENT_DURABILITY_CONFIRMED"},
                 "deployment-durability-unconfirmed")
         state.atomic(root, "last-deployment.json", {**retained, "generation": generation, "deployment": intent["deployment"]})

@@ -14,6 +14,7 @@ import time
 
 from tools.build_process_linux import OwnedProcess
 from tools.native_runtime import checks
+from tools.native_runtime.common import InstallError
 from tools.native_runtime.layout import Layout
 from . import paths, process, state
 from .common import DevError, MAX_LOG, decode, encode, require
@@ -62,14 +63,32 @@ def request(root: Path, operation: str, *, timeout: float = 30) -> dict:
     require(operation in {"status", "logs", "down"}, "supervisor-command")
     paths.private_root(root)
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
-        connection.settimeout(timeout)
-        connection.connect(str(socket_path(root)))
+        deadline = time.monotonic() + timeout
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise socket.timeout("supervisor-control-deadline")
+            connection.settimeout(remaining)
+            try:
+                connection.connect(str(socket_path(root)))
+                break
+            except BlockingIOError:
+                # Linux AF_UNIX may report EAGAIN rather than waiting for its
+                # bounded listen queue. No command has been sent at this point.
+                time.sleep(min(0.01, remaining))
         peer = connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12)
         require(struct.unpack("3i", peer)[1] == os.geteuid(), "supervisor-peer-owner")
         connection.sendall(encode({"operation": operation}))
         connection.shutdown(socket.SHUT_WR)
         data = bytearray()
-        while raw := connection.recv(min(65536, MAX_LOG * 2 + 1 - len(data))):
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise socket.timeout("supervisor-control-deadline")
+            connection.settimeout(remaining)
+            raw = connection.recv(min(65536, MAX_LOG * 2 + 1 - len(data)))
+            if not raw:
+                break
             data.extend(raw)
             require(len(data) <= MAX_LOG * 2, "supervisor-response-limit")
         return decode(bytes(data), MAX_LOG * 2)
@@ -86,6 +105,7 @@ def start(root: Path, helper: Path) -> dict:
         disconnected(root)
     # The durable record is diagnostic only; it never authorizes killing a PID.
     node_config = decode(paths.read(layout.node.parent, layout.node.name))
+    wait_for_restart_lease(root, node_config)
     state.atomic(root, "lifecycle.json", {"state": "starting", "profile": node_config["securityProfile"],
                                          "guestInstance": guest_instance()})
     child = subprocess.Popen([sys.executable, "-I", str(helper), "supervise", str(root)],
@@ -99,10 +119,25 @@ def start(root: Path, helper: Path) -> dict:
             if result.get("state") == "ready":
                 return result
             require(result.get("state") != "failed", "workspace-node-start-failed")
-        except (FileNotFoundError, ConnectionRefusedError, socket.timeout):
+        except (FileNotFoundError, ConnectionRefusedError, ConnectionResetError, socket.timeout):
             pass
         time.sleep(0.05)
     raise DevError("workspace-readiness-deadline-status-required", uncertain=True)
+
+
+def wait_for_restart_lease(root: Path, node_config: dict) -> None:
+    if node_config["supplyChain"]["mode"] != "enforced" or not (root / "lifecycle.json").exists():
+        return
+    # The runtime persists a future clock ceiling. Its public configuration
+    # bounds that lease to at most five seconds. Wait after confirmed process
+    # cleanup; never edit the ledger, advance the clock or retry an effect.
+    with state.lock(root, "supervisor.lock"), state.lock(root / "runtime", "run.lock"):
+        previous = state.load(root, "lifecycle.json")
+        require(previous["state"] == "stopped" and previous.get("reaped") is True,
+                "confirm-stopped-owner-before-enforced-restart")
+        deadline = time.monotonic() + 5
+        while (remaining := deadline - time.monotonic()) > 0:
+            time.sleep(min(0.1, remaining))
 
 
 def supervise(root: Path) -> int:
@@ -136,6 +171,7 @@ def supervise(root: Path) -> int:
             # The bounded installer readiness probe checks node identity, credentials,
             # profile, pressure availability and admission-ready state.
             current["readiness"] = checks.readiness(layout)
+            current["providers"] = output.providers(node_config["nodeId"])
             current["state"] = "ready"
             state.atomic(root, "lifecycle.json", current)
             stopping = False
@@ -146,17 +182,23 @@ def supervise(root: Path) -> int:
                 for key, _events in selector.select(timeout=0.2):
                     connection, _address = server.accept()
                     with connection:
-                        connection.settimeout(2)
-                        peer = struct.unpack("3i", connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
-                        require(peer[1] == os.geteuid(), "supervisor-request-owner")
-                        raw = bytearray()
-                        while part := connection.recv(4097 - len(raw)):
-                            raw.extend(part)
-                            require(len(raw) <= 4096, "supervisor-request-byte-limit")
-                        document = decode(bytes(raw), 4096)
-                        require(set(document) == {"operation"}, "supervisor-request-fields")
-                        operation = document["operation"]
-                        require(operation in {"status", "logs", "down"}, "supervisor-command")
+                        try:
+                            connection.settimeout(2)
+                            peer = struct.unpack("3i", connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
+                            require(peer[1] == os.geteuid(), "supervisor-request-owner")
+                            raw = bytearray()
+                            while part := connection.recv(4097 - len(raw)):
+                                raw.extend(part)
+                                require(len(raw) <= 4096, "supervisor-request-byte-limit")
+                            document = decode(bytes(raw), 4096)
+                            require(set(document) == {"operation"}, "supervisor-request-fields")
+                            operation = document["operation"]
+                            require(operation in {"status", "logs", "down"}, "supervisor-command")
+                        except (DevError, OSError):
+                            # A partial/malformed controller connection owns no
+                            # node process. In particular startup probes may
+                            # time out while retained packages are verified.
+                            continue
                         if operation == "logs":
                             # Only the node's structured bounded diagnostics are returned.
                             result = {**current, "logs": output.logs()}
@@ -175,9 +217,18 @@ def supervise(root: Path) -> int:
                             result = current
                         else:
                             result = current
-                        connection.sendall(encode(result))
+                        try:
+                            connection.sendall(encode(result))
+                        except (BrokenPipeError, ConnectionResetError, socket.timeout):
+                            # Keep a committed down disposition in the durable
+                            # record even when its original response is lost.
+                            pass
             return 0
-        except BaseException:
+        except BaseException as error:
+            current["failure"] = (error.code if isinstance(error, DevError)
+                                  else str(error) if isinstance(error, InstallError) else type(error).__name__)
+            state.atomic(root, "node-start-failure.json", {"code": current["failure"],
+                "diagnostics": output.logs()[-8192:] if output else "node-process-not-started"})
             state.atomic(root, "lifecycle.json", {**current, "state": "failed", "cleanup": "pending"})
             return 1
         finally:
@@ -195,4 +246,4 @@ def supervise(root: Path) -> int:
                     state.atomic(root, "lifecycle.json", {**current, "state": "uncertain", "cleanup": "unconfirmed"})
                 elif current["state"] != "stopped":
                     state.atomic(root, "lifecycle.json", {**current, "state": "stopped", "reaped": True,
-                        "cleanShutdown": False, "failure": "node-or-supervisor-failed", "dataRetained": True})
+                        "cleanShutdown": False, "failure": current.get("failure", "node-or-supervisor-failed"), "dataRetained": True})

@@ -8,7 +8,7 @@ import sys
 from .common import PROTOCOL, HOST_ABI, members, require
 
 FEATURES = frozenset({"doctor", "install", "install-tools", "up", "status", "logs", "down", "purge", "snapshot",
-                      "build", "build-status", "cancel-build", "deploy", "recover", "invoke", "test",
+                      "build", "build-status", "cancel-build", "deploy", "recover", "invoke", "test", "prepare-test",
                       "asset-begin", "asset-chunk", "asset-finish"})
 
 

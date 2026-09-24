@@ -577,12 +577,11 @@
       "language": "typescript",
       "phase": "unoptimized-native-host",
       "reason": "Native preparation exceeded both the initial and increased finite host allowance",
-      "repair": "Release-profile native host validation pending; no pass inferred from compilation"
+      "repair": "Release-profile native hosts passed all nine shared cases on Windows and Linux; exact outputs match"
     }
   ],
   "remaining": [
     "Final authenticated tool and native host installation on Windows/WSL",
-    "Release native TypeScript execution and differential receipt",
     "Real Linux node differential fixtures and failure/restart schedule",
     "Final packaged clean-host qualification and editor walkthrough"
   ],
@@ -602,5 +601,1818 @@
     "tools/run_portable_guest_tests.py": "sha256:aa42377a892e8d574a61b41aa8d64bda27dc0504b240550556e670558088f268",
     "tools/typescript_guest/build.py": "sha256:d881f4b654db9185cd0099ae99f63dfbab3f5e87f60fb8ecfeea3ede5d832117",
     "tools/typescript_guest/componentize.mjs": "sha256:67c78b1466c34852621e08b1333707d41d8d280be33e168a2bebcdc6120eb6c0"
-  }
+  },
+  "nativeTutorialExecution": {
+    "go": {
+      "windows": {
+        "applications": {
+          "greeting": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:495993470f6580af66470e48fd41c9726d3671f9bd92c688f134d815826c4476",
+                "component": "sha256:9c62c1c26fe1edc0d937549b3d0647a8fcd1e796105820ec26103b44ec5039d4",
+                "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:6f1fde6c8c8baadfa4010cc63e353104bbb969aff4b70a7155d6ea537f12b539"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:9c62c1c26fe1edc0d937549b3d0647a8fcd1e796105820ec26103b44ec5039d4",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "windows",
+                    "productionNode": false,
+                    "runtimeProfile": "standard-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "greeting-0",
+                "inputSha256": "sha256:ef51432249b4415547723843d22c923719d51493a177a4bb4cd312e840c70e37",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:b5cf4f7f7e9bfe683ce6959318e4ce65bf1f519e8fbdb2ba248056c502a2ac07",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "greeting-1",
+                "inputSha256": "sha256:a9dd51fe609d0dc1c13c23dd8b5246201ac84a2ff7572d0eb4b8e5a3bb771ed3",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:5dfaba4bfdd4dfd54dcb179e0be4864c672f62a6fe7a322cd5f9baf8234788a2",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "greeting-2",
+                "inputSha256": "sha256:418386ee404c8f44a64ad6422cd07f032b6ce04f9ad1471397dcfb0a03a0d2f1",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:45ed64462316c8649ae617131bd9e47389367ba5704e1f0a2647717b393ed11d",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "greeting-0",
+              "greeting-1",
+              "greeting-2"
+            ]
+          },
+          "shipping": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:4a89e9851fdf34527a79970224e5bd2d9d97559fe73b3489f510cc942c46e26b",
+                "component": "sha256:34a1775170d4a42774206fbe08c7834e77b4f7da0e98786f4651d2a3930d6dd9",
+                "contracts": "sha256:514a63dc5089ab5d09c9f671ea6c56a667f43c2f8d458a30f39c31a152f061a1"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:6f1fde6c8c8baadfa4010cc63e353104bbb969aff4b70a7155d6ea537f12b539"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:34a1775170d4a42774206fbe08c7834e77b4f7da0e98786f4651d2a3930d6dd9",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "windows",
+                    "productionNode": false,
+                    "runtimeProfile": "standard-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "shipping-0",
+                "inputSha256": "sha256:94034fb3ccd681b25719772865ccada02da0b1132fd3593930535110fce7a5b9",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:1d61b478ab769d1a1862513c4795510647e352dc271a949bcb936b2e77a61a50",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "shipping-1",
+                "inputSha256": "sha256:ba1b05c25f753eef8a487effe462e9b8c65d5307207ee4a1117154e4150af907",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:6f102f16a6af29cd42f420c77dec98d683a67701d839329dc3c0209c0e7b51dd",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "shipping-2",
+                "inputSha256": "sha256:759032f80dcbd5bf355cb2c6e572073d7438930304e23c1a43e77948e5c93f94",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:4141b23176d57848bc890ee303f48706396a4c495c7138f585a5d76aed3108a0",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "shipping-0",
+              "shipping-1",
+              "shipping-2"
+            ]
+          },
+          "word-count": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:911b7cdaa7c1dba28b1e88b3b30a8cdc31bb41b20af7b22991fda8f721bdc741",
+                "component": "sha256:a001be6dc4c247d77feb038cb5adce04171b7fce2db44e36de7c032510a5d5b7",
+                "contracts": "sha256:16934cdac62a23e71b7e63837703e9edda69117809f7ef38057c8058c5305b92"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:6f1fde6c8c8baadfa4010cc63e353104bbb969aff4b70a7155d6ea537f12b539"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:a001be6dc4c247d77feb038cb5adce04171b7fce2db44e36de7c032510a5d5b7",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "windows",
+                    "productionNode": false,
+                    "runtimeProfile": "standard-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "word-count-0",
+                "inputSha256": "sha256:bddc7403b62a484cb2d6558c8ea2a6341349b664d6ae4ed19007292c3a69de50",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "word-count-1",
+                "inputSha256": "sha256:563376918d5e5aeff6db569ad322a87de96fec029cc9c386dd8329587439bf7b",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "word-count-2",
+                "inputSha256": "sha256:660b5a15f1513a144b5fe92e0d45ea160f49f9aa3f055fc8ea10da99ff385a57",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:95a62bf8e0e008c91b18ccd185511e2fb8283fd935f8701a0878c3a7c0729250",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "word-count-0",
+              "word-count-1",
+              "word-count-2"
+            ]
+          }
+        },
+        "architecture": "AMD64",
+        "cleanup": "owned-processes-reaped",
+        "compilerInExecutionPath": false,
+        "environment": "portable",
+        "execution": "actual-component-production-wasmtime",
+        "hostSha256": "sha256:6f1fde6c8c8baadfa4010cc63e353104bbb969aff4b70a7155d6ea537f12b539",
+        "language": "go",
+        "os": "Windows",
+        "outsideCheckout": true,
+        "ownerIssue": 547,
+        "passed": true,
+        "phase": "complete",
+        "publisherAuthenticated": false,
+        "qualification": "native-tutorial-subset-only",
+        "schemaVersion": "latent.dev.portable-applications.v1"
+      },
+      "linux": {
+        "applications": {
+          "greeting": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:495993470f6580af66470e48fd41c9726d3671f9bd92c688f134d815826c4476",
+                "component": "sha256:9c62c1c26fe1edc0d937549b3d0647a8fcd1e796105820ec26103b44ec5039d4",
+                "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:fd6aadb0816dfaf1ee1d3d6669fe1b193b99247f2f01f407441754353055bf09"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:9c62c1c26fe1edc0d937549b3d0647a8fcd1e796105820ec26103b44ec5039d4",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "linux",
+                    "productionNode": false,
+                    "runtimeProfile": "standard-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "greeting-0",
+                "inputSha256": "sha256:ef51432249b4415547723843d22c923719d51493a177a4bb4cd312e840c70e37",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:b5cf4f7f7e9bfe683ce6959318e4ce65bf1f519e8fbdb2ba248056c502a2ac07",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "greeting-1",
+                "inputSha256": "sha256:a9dd51fe609d0dc1c13c23dd8b5246201ac84a2ff7572d0eb4b8e5a3bb771ed3",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:5dfaba4bfdd4dfd54dcb179e0be4864c672f62a6fe7a322cd5f9baf8234788a2",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "greeting-2",
+                "inputSha256": "sha256:418386ee404c8f44a64ad6422cd07f032b6ce04f9ad1471397dcfb0a03a0d2f1",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:45ed64462316c8649ae617131bd9e47389367ba5704e1f0a2647717b393ed11d",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "greeting-0",
+              "greeting-1",
+              "greeting-2"
+            ]
+          },
+          "shipping": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:4a89e9851fdf34527a79970224e5bd2d9d97559fe73b3489f510cc942c46e26b",
+                "component": "sha256:34a1775170d4a42774206fbe08c7834e77b4f7da0e98786f4651d2a3930d6dd9",
+                "contracts": "sha256:514a63dc5089ab5d09c9f671ea6c56a667f43c2f8d458a30f39c31a152f061a1"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:fd6aadb0816dfaf1ee1d3d6669fe1b193b99247f2f01f407441754353055bf09"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:34a1775170d4a42774206fbe08c7834e77b4f7da0e98786f4651d2a3930d6dd9",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "linux",
+                    "productionNode": false,
+                    "runtimeProfile": "standard-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "shipping-0",
+                "inputSha256": "sha256:94034fb3ccd681b25719772865ccada02da0b1132fd3593930535110fce7a5b9",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:1d61b478ab769d1a1862513c4795510647e352dc271a949bcb936b2e77a61a50",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "shipping-1",
+                "inputSha256": "sha256:ba1b05c25f753eef8a487effe462e9b8c65d5307207ee4a1117154e4150af907",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:6f102f16a6af29cd42f420c77dec98d683a67701d839329dc3c0209c0e7b51dd",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "shipping-2",
+                "inputSha256": "sha256:759032f80dcbd5bf355cb2c6e572073d7438930304e23c1a43e77948e5c93f94",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:4141b23176d57848bc890ee303f48706396a4c495c7138f585a5d76aed3108a0",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "shipping-0",
+              "shipping-1",
+              "shipping-2"
+            ]
+          },
+          "word-count": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:911b7cdaa7c1dba28b1e88b3b30a8cdc31bb41b20af7b22991fda8f721bdc741",
+                "component": "sha256:a001be6dc4c247d77feb038cb5adce04171b7fce2db44e36de7c032510a5d5b7",
+                "contracts": "sha256:16934cdac62a23e71b7e63837703e9edda69117809f7ef38057c8058c5305b92"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:fd6aadb0816dfaf1ee1d3d6669fe1b193b99247f2f01f407441754353055bf09"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:a001be6dc4c247d77feb038cb5adce04171b7fce2db44e36de7c032510a5d5b7",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "linux",
+                    "productionNode": false,
+                    "runtimeProfile": "standard-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "word-count-0",
+                "inputSha256": "sha256:bddc7403b62a484cb2d6558c8ea2a6341349b664d6ae4ed19007292c3a69de50",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "word-count-1",
+                "inputSha256": "sha256:563376918d5e5aeff6db569ad322a87de96fec029cc9c386dd8329587439bf7b",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "word-count-2",
+                "inputSha256": "sha256:660b5a15f1513a144b5fe92e0d45ea160f49f9aa3f055fc8ea10da99ff385a57",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:95a62bf8e0e008c91b18ccd185511e2fb8283fd935f8701a0878c3a7c0729250",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "word-count-0",
+              "word-count-1",
+              "word-count-2"
+            ]
+          }
+        },
+        "architecture": "x86_64",
+        "cleanup": "owned-processes-reaped",
+        "compilerInExecutionPath": false,
+        "environment": "portable",
+        "execution": "actual-component-production-wasmtime",
+        "hostSha256": "sha256:fd6aadb0816dfaf1ee1d3d6669fe1b193b99247f2f01f407441754353055bf09",
+        "language": "go",
+        "os": "Linux",
+        "outsideCheckout": true,
+        "ownerIssue": 547,
+        "passed": true,
+        "phase": "complete",
+        "publisherAuthenticated": false,
+        "qualification": "native-tutorial-subset-only",
+        "schemaVersion": "latent.dev.portable-applications.v1"
+      },
+      "comparison": {
+        "excludedChecks": [
+          "node-admission",
+          "provider-clock-values",
+          "clean-host-install"
+        ],
+        "language": "go",
+        "linuxReceipt": "sha256:31ddeb2adbe5f6808410798ed251c588ece2a12ad7a8e244b966fb44c187cd4d",
+        "observed": {
+          "applications": {
+            "greeting": {
+              "artifacts": {
+                "capsule": "sha256:495993470f6580af66470e48fd41c9726d3671f9bd92c688f134d815826c4476",
+                "component": "sha256:9c62c1c26fe1edc0d937549b3d0647a8fcd1e796105820ec26103b44ec5039d4",
+                "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+              },
+              "cases": [
+                {
+                  "category": "success",
+                  "id": "greeting-0",
+                  "inputSha256": "sha256:ef51432249b4415547723843d22c923719d51493a177a4bb4cd312e840c70e37",
+                  "payloadSha256": "sha256:b5cf4f7f7e9bfe683ce6959318e4ce65bf1f519e8fbdb2ba248056c502a2ac07",
+                  "platformCode": null
+                },
+                {
+                  "category": "success",
+                  "id": "greeting-1",
+                  "inputSha256": "sha256:a9dd51fe609d0dc1c13c23dd8b5246201ac84a2ff7572d0eb4b8e5a3bb771ed3",
+                  "payloadSha256": "sha256:5dfaba4bfdd4dfd54dcb179e0be4864c672f62a6fe7a322cd5f9baf8234788a2",
+                  "platformCode": null
+                },
+                {
+                  "category": "declared-error",
+                  "id": "greeting-2",
+                  "inputSha256": "sha256:418386ee404c8f44a64ad6422cd07f032b6ce04f9ad1471397dcfb0a03a0d2f1",
+                  "payloadSha256": "sha256:45ed64462316c8649ae617131bd9e47389367ba5704e1f0a2647717b393ed11d",
+                  "platformCode": null
+                }
+              ],
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "runtimeProfiles": [
+                "standard-v1"
+              ]
+            },
+            "shipping": {
+              "artifacts": {
+                "capsule": "sha256:4a89e9851fdf34527a79970224e5bd2d9d97559fe73b3489f510cc942c46e26b",
+                "component": "sha256:34a1775170d4a42774206fbe08c7834e77b4f7da0e98786f4651d2a3930d6dd9",
+                "contracts": "sha256:514a63dc5089ab5d09c9f671ea6c56a667f43c2f8d458a30f39c31a152f061a1"
+              },
+              "cases": [
+                {
+                  "category": "success",
+                  "id": "shipping-0",
+                  "inputSha256": "sha256:94034fb3ccd681b25719772865ccada02da0b1132fd3593930535110fce7a5b9",
+                  "payloadSha256": "sha256:1d61b478ab769d1a1862513c4795510647e352dc271a949bcb936b2e77a61a50",
+                  "platformCode": null
+                },
+                {
+                  "category": "success",
+                  "id": "shipping-1",
+                  "inputSha256": "sha256:ba1b05c25f753eef8a487effe462e9b8c65d5307207ee4a1117154e4150af907",
+                  "payloadSha256": "sha256:6f102f16a6af29cd42f420c77dec98d683a67701d839329dc3c0209c0e7b51dd",
+                  "platformCode": null
+                },
+                {
+                  "category": "declared-error",
+                  "id": "shipping-2",
+                  "inputSha256": "sha256:759032f80dcbd5bf355cb2c6e572073d7438930304e23c1a43e77948e5c93f94",
+                  "payloadSha256": "sha256:4141b23176d57848bc890ee303f48706396a4c495c7138f585a5d76aed3108a0",
+                  "platformCode": null
+                }
+              ],
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "runtimeProfiles": [
+                "standard-v1"
+              ]
+            },
+            "word-count": {
+              "artifacts": {
+                "capsule": "sha256:911b7cdaa7c1dba28b1e88b3b30a8cdc31bb41b20af7b22991fda8f721bdc741",
+                "component": "sha256:a001be6dc4c247d77feb038cb5adce04171b7fce2db44e36de7c032510a5d5b7",
+                "contracts": "sha256:16934cdac62a23e71b7e63837703e9edda69117809f7ef38057c8058c5305b92"
+              },
+              "cases": [
+                {
+                  "category": "success",
+                  "id": "word-count-0",
+                  "inputSha256": "sha256:bddc7403b62a484cb2d6558c8ea2a6341349b664d6ae4ed19007292c3a69de50",
+                  "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                  "platformCode": null
+                },
+                {
+                  "category": "success",
+                  "id": "word-count-1",
+                  "inputSha256": "sha256:563376918d5e5aeff6db569ad322a87de96fec029cc9c386dd8329587439bf7b",
+                  "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                  "platformCode": null
+                },
+                {
+                  "category": "declared-error",
+                  "id": "word-count-2",
+                  "inputSha256": "sha256:660b5a15f1513a144b5fe92e0d45ea160f49f9aa3f055fc8ea10da99ff385a57",
+                  "payloadSha256": "sha256:95a62bf8e0e008c91b18ccd185511e2fb8283fd935f8701a0878c3a7c0729250",
+                  "platformCode": null
+                }
+              ],
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "runtimeProfiles": [
+                "standard-v1"
+              ]
+            }
+          },
+          "language": "go",
+          "ownerIssue": 547
+        },
+        "passed": true,
+        "qualification": "native-tutorial-subset-only",
+        "schemaVersion": "latent.dev.portable-differential.v1",
+        "windowsReceipt": "sha256:9aa2b97811d268ce623608f19d56dfd5bc03ce6f71886a88db4540a100a567fb"
+      }
+    },
+    "typescript": {
+      "windows": {
+        "applications": {
+          "greeting": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:5d8aa2a8e1434765a9444d454c15df97d0c03d30721676364334a7450f0798a9",
+                "component": "sha256:0e4e7e7df406ece2b75b2dbe3871485bb6186c92f2ee17ec673caf831e41f6a7",
+                "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:5036558edfdae12757b014948938201eb157be1e85bf28eb7fe82447a003cf17"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:0e4e7e7df406ece2b75b2dbe3871485bb6186c92f2ee17ec673caf831e41f6a7",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "windows",
+                    "productionNode": false,
+                    "runtimeProfile": "typescript-spidermonkey-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "greeting-0",
+                "inputSha256": "sha256:ef51432249b4415547723843d22c923719d51493a177a4bb4cd312e840c70e37",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:b5cf4f7f7e9bfe683ce6959318e4ce65bf1f519e8fbdb2ba248056c502a2ac07",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "greeting-1",
+                "inputSha256": "sha256:a9dd51fe609d0dc1c13c23dd8b5246201ac84a2ff7572d0eb4b8e5a3bb771ed3",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:5dfaba4bfdd4dfd54dcb179e0be4864c672f62a6fe7a322cd5f9baf8234788a2",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "greeting-2",
+                "inputSha256": "sha256:418386ee404c8f44a64ad6422cd07f032b6ce04f9ad1471397dcfb0a03a0d2f1",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:45ed64462316c8649ae617131bd9e47389367ba5704e1f0a2647717b393ed11d",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "greeting-0",
+              "greeting-1",
+              "greeting-2"
+            ]
+          },
+          "shipping": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:638ee4b44380b6496b48ccbd1e7c5c50d036b0ddd664d02407650868189c8e79",
+                "component": "sha256:9be47aad4d9bb7f7735f350833149cc836181ff04c11ec80353552fe2b83a431",
+                "contracts": "sha256:514a63dc5089ab5d09c9f671ea6c56a667f43c2f8d458a30f39c31a152f061a1"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:5036558edfdae12757b014948938201eb157be1e85bf28eb7fe82447a003cf17"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:9be47aad4d9bb7f7735f350833149cc836181ff04c11ec80353552fe2b83a431",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "windows",
+                    "productionNode": false,
+                    "runtimeProfile": "typescript-spidermonkey-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "shipping-0",
+                "inputSha256": "sha256:94034fb3ccd681b25719772865ccada02da0b1132fd3593930535110fce7a5b9",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:1d61b478ab769d1a1862513c4795510647e352dc271a949bcb936b2e77a61a50",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "shipping-1",
+                "inputSha256": "sha256:ba1b05c25f753eef8a487effe462e9b8c65d5307207ee4a1117154e4150af907",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:6f102f16a6af29cd42f420c77dec98d683a67701d839329dc3c0209c0e7b51dd",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "shipping-2",
+                "inputSha256": "sha256:759032f80dcbd5bf355cb2c6e572073d7438930304e23c1a43e77948e5c93f94",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:4141b23176d57848bc890ee303f48706396a4c495c7138f585a5d76aed3108a0",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "shipping-0",
+              "shipping-1",
+              "shipping-2"
+            ]
+          },
+          "word-count": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:75edb40b2ec519db74dbf659460cde4c4823de94944b7a4562e685cde68c03e7",
+                "component": "sha256:d9373c521309c889f26172ee2b2f72c8346db9e46b7f9d6384a9faeb591fa06f",
+                "contracts": "sha256:16934cdac62a23e71b7e63837703e9edda69117809f7ef38057c8058c5305b92"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:5036558edfdae12757b014948938201eb157be1e85bf28eb7fe82447a003cf17"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:d9373c521309c889f26172ee2b2f72c8346db9e46b7f9d6384a9faeb591fa06f",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "windows",
+                    "productionNode": false,
+                    "runtimeProfile": "typescript-spidermonkey-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "word-count-0",
+                "inputSha256": "sha256:bddc7403b62a484cb2d6558c8ea2a6341349b664d6ae4ed19007292c3a69de50",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "word-count-1",
+                "inputSha256": "sha256:563376918d5e5aeff6db569ad322a87de96fec029cc9c386dd8329587439bf7b",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "word-count-2",
+                "inputSha256": "sha256:660b5a15f1513a144b5fe92e0d45ea160f49f9aa3f055fc8ea10da99ff385a57",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:95a62bf8e0e008c91b18ccd185511e2fb8283fd935f8701a0878c3a7c0729250",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "word-count-0",
+              "word-count-1",
+              "word-count-2"
+            ]
+          }
+        },
+        "architecture": "AMD64",
+        "cleanup": "owned-processes-reaped",
+        "compilerInExecutionPath": false,
+        "environment": "portable",
+        "execution": "actual-component-production-wasmtime",
+        "hostSha256": "sha256:5036558edfdae12757b014948938201eb157be1e85bf28eb7fe82447a003cf17",
+        "language": "typescript",
+        "os": "Windows",
+        "outsideCheckout": true,
+        "ownerIssue": 546,
+        "passed": true,
+        "phase": "complete",
+        "publisherAuthenticated": false,
+        "qualification": "native-tutorial-subset-only",
+        "schemaVersion": "latent.dev.portable-applications.v1"
+      },
+      "linux": {
+        "applications": {
+          "greeting": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:5d8aa2a8e1434765a9444d454c15df97d0c03d30721676364334a7450f0798a9",
+                "component": "sha256:0e4e7e7df406ece2b75b2dbe3871485bb6186c92f2ee17ec673caf831e41f6a7",
+                "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:6a2cfeb7d50e6206e252144017ac83d711ce301c16814c7c039b7881400fad72"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:0e4e7e7df406ece2b75b2dbe3871485bb6186c92f2ee17ec673caf831e41f6a7",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "linux",
+                    "productionNode": false,
+                    "runtimeProfile": "typescript-spidermonkey-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "greeting-0",
+                "inputSha256": "sha256:ef51432249b4415547723843d22c923719d51493a177a4bb4cd312e840c70e37",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:b5cf4f7f7e9bfe683ce6959318e4ce65bf1f519e8fbdb2ba248056c502a2ac07",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "greeting-1",
+                "inputSha256": "sha256:a9dd51fe609d0dc1c13c23dd8b5246201ac84a2ff7572d0eb4b8e5a3bb771ed3",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:5dfaba4bfdd4dfd54dcb179e0be4864c672f62a6fe7a322cd5f9baf8234788a2",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "greeting-2",
+                "inputSha256": "sha256:418386ee404c8f44a64ad6422cd07f032b6ce04f9ad1471397dcfb0a03a0d2f1",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:45ed64462316c8649ae617131bd9e47389367ba5704e1f0a2647717b393ed11d",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "greeting-0",
+              "greeting-1",
+              "greeting-2"
+            ]
+          },
+          "shipping": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:638ee4b44380b6496b48ccbd1e7c5c50d036b0ddd664d02407650868189c8e79",
+                "component": "sha256:9be47aad4d9bb7f7735f350833149cc836181ff04c11ec80353552fe2b83a431",
+                "contracts": "sha256:514a63dc5089ab5d09c9f671ea6c56a667f43c2f8d458a30f39c31a152f061a1"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:6a2cfeb7d50e6206e252144017ac83d711ce301c16814c7c039b7881400fad72"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:9be47aad4d9bb7f7735f350833149cc836181ff04c11ec80353552fe2b83a431",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "linux",
+                    "productionNode": false,
+                    "runtimeProfile": "typescript-spidermonkey-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "shipping-0",
+                "inputSha256": "sha256:94034fb3ccd681b25719772865ccada02da0b1132fd3593930535110fce7a5b9",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:1d61b478ab769d1a1862513c4795510647e352dc271a949bcb936b2e77a61a50",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "shipping-1",
+                "inputSha256": "sha256:ba1b05c25f753eef8a487effe462e9b8c65d5307207ee4a1117154e4150af907",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:6f102f16a6af29cd42f420c77dec98d683a67701d839329dc3c0209c0e7b51dd",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "shipping-2",
+                "inputSha256": "sha256:759032f80dcbd5bf355cb2c6e572073d7438930304e23c1a43e77948e5c93f94",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:4141b23176d57848bc890ee303f48706396a4c495c7138f585a5d76aed3108a0",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "shipping-0",
+              "shipping-1",
+              "shipping-2"
+            ]
+          },
+          "word-count": {
+            "cleanup": "owned-native-host-reaped",
+            "environment": "portable",
+            "excludedChecks": [
+              "authentication",
+              "compiler-isolation",
+              "deployment",
+              "native-cache",
+              "pressure",
+              "protected-files",
+              "restart"
+            ],
+            "identity": {
+              "artifacts": {
+                "capsule": "sha256:75edb40b2ec519db74dbf659460cde4c4823de94944b7a4562e685cde68c03e7",
+                "component": "sha256:d9373c521309c889f26172ee2b2f72c8346db9e46b7f9d6384a9faeb591fa06f",
+                "contracts": "sha256:16934cdac62a23e71b7e63837703e9edda69117809f7ef38057c8058c5305b92"
+              },
+              "host": {
+                "kind": "explicit-local-test-build",
+                "sha256": "sha256:6a2cfeb7d50e6206e252144017ac83d711ce301c16814c7c039b7881400fad72"
+              },
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "productionNode": false,
+              "runtime": {
+                "execution": "actual-component-production-wasmtime",
+                "runs": [
+                  {
+                    "architecture": "x86_64",
+                    "category": "success",
+                    "clock": "system-clock-nondeterministic",
+                    "component": "sha256:d9373c521309c889f26172ee2b2f72c8346db9e46b7f9d6384a9faeb591fa06f",
+                    "entropy": "system-entropy-nondeterministic",
+                    "environment": "portable",
+                    "excludedChecks": [
+                      "node-admission",
+                      "deployment",
+                      "management-authentication",
+                      "linux-protected-files",
+                      "PSI",
+                      "isolated-compilation",
+                      "native-cache",
+                      "production-performance"
+                    ],
+                    "fixtures": {
+                      "http": false,
+                      "metrics": false,
+                      "random": false,
+                      "sha256": "sha256:974e7eeb506127bf909659f929b1b5d4f1d923ca94d43bbe7fb8732e537f723e"
+                    },
+                    "httpFixtureRequests": 0,
+                    "metrics": null,
+                    "os": "linux",
+                    "productionNode": false,
+                    "runtimeProfile": "typescript-spidermonkey-v1",
+                    "schemaVersion": "latent.dev.portable-result.v1",
+                    "supportedImports": [
+                      "latent:context/context@0.1.0",
+                      "latent:log/log@0.1.0",
+                      "latent:clock/monotonic@0.1.0",
+                      "latent:clock/wall@0.1.0",
+                      "latent:random/random@0.1.0",
+                      "latent:telemetry/custom@0.1.0",
+                      "latent:http/client@0.2.0"
+                    ],
+                    "trust": "controlled-development-test",
+                    "wasmtime": "47.0.4"
+                  }
+                ]
+              },
+              "trust": "controlled-development-test"
+            },
+            "passed": true,
+            "results": [
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "word-count-0",
+                "inputSha256": "sha256:bddc7403b62a484cb2d6558c8ea2a6341349b664d6ae4ed19007292c3a69de50",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "success",
+                "fixtures": [],
+                "id": "word-count-1",
+                "inputSha256": "sha256:563376918d5e5aeff6db569ad322a87de96fec029cc9c386dd8329587439bf7b",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              },
+              {
+                "activationId": null,
+                "category": "declared-error",
+                "fixtures": [],
+                "id": "word-count-2",
+                "inputSha256": "sha256:660b5a15f1513a144b5fe92e0d45ea160f49f9aa3f055fc8ea10da99ff385a57",
+                "outcomeKnown": true,
+                "payloadSha256": "sha256:95a62bf8e0e008c91b18ccd185511e2fb8283fd935f8701a0878c3a7c0729250",
+                "platformCode": null,
+                "required": true,
+                "resolvedRevision": null,
+                "status": "passed",
+                "targetMatches": true
+              }
+            ],
+            "schemaVersion": "latent.dev.test-report.v1",
+            "selection": [
+              "word-count-0",
+              "word-count-1",
+              "word-count-2"
+            ]
+          }
+        },
+        "architecture": "x86_64",
+        "cleanup": "owned-processes-reaped",
+        "compilerInExecutionPath": false,
+        "environment": "portable",
+        "execution": "actual-component-production-wasmtime",
+        "hostSha256": "sha256:6a2cfeb7d50e6206e252144017ac83d711ce301c16814c7c039b7881400fad72",
+        "language": "typescript",
+        "os": "Linux",
+        "outsideCheckout": true,
+        "ownerIssue": 546,
+        "passed": true,
+        "phase": "complete",
+        "publisherAuthenticated": false,
+        "qualification": "native-tutorial-subset-only",
+        "schemaVersion": "latent.dev.portable-applications.v1"
+      },
+      "comparison": {
+        "excludedChecks": [
+          "node-admission",
+          "provider-clock-values",
+          "clean-host-install"
+        ],
+        "language": "typescript",
+        "linuxReceipt": "sha256:78454a64a162f479df65c8e2b70cb39e664f94a51a28f53de13d9db73ca9cdcd",
+        "observed": {
+          "applications": {
+            "greeting": {
+              "artifacts": {
+                "capsule": "sha256:5d8aa2a8e1434765a9444d454c15df97d0c03d30721676364334a7450f0798a9",
+                "component": "sha256:0e4e7e7df406ece2b75b2dbe3871485bb6186c92f2ee17ec673caf831e41f6a7",
+                "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+              },
+              "cases": [
+                {
+                  "category": "success",
+                  "id": "greeting-0",
+                  "inputSha256": "sha256:ef51432249b4415547723843d22c923719d51493a177a4bb4cd312e840c70e37",
+                  "payloadSha256": "sha256:b5cf4f7f7e9bfe683ce6959318e4ce65bf1f519e8fbdb2ba248056c502a2ac07",
+                  "platformCode": null
+                },
+                {
+                  "category": "success",
+                  "id": "greeting-1",
+                  "inputSha256": "sha256:a9dd51fe609d0dc1c13c23dd8b5246201ac84a2ff7572d0eb4b8e5a3bb771ed3",
+                  "payloadSha256": "sha256:5dfaba4bfdd4dfd54dcb179e0be4864c672f62a6fe7a322cd5f9baf8234788a2",
+                  "platformCode": null
+                },
+                {
+                  "category": "declared-error",
+                  "id": "greeting-2",
+                  "inputSha256": "sha256:418386ee404c8f44a64ad6422cd07f032b6ce04f9ad1471397dcfb0a03a0d2f1",
+                  "payloadSha256": "sha256:45ed64462316c8649ae617131bd9e47389367ba5704e1f0a2647717b393ed11d",
+                  "platformCode": null
+                }
+              ],
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "runtimeProfiles": [
+                "typescript-spidermonkey-v1"
+              ]
+            },
+            "shipping": {
+              "artifacts": {
+                "capsule": "sha256:638ee4b44380b6496b48ccbd1e7c5c50d036b0ddd664d02407650868189c8e79",
+                "component": "sha256:9be47aad4d9bb7f7735f350833149cc836181ff04c11ec80353552fe2b83a431",
+                "contracts": "sha256:514a63dc5089ab5d09c9f671ea6c56a667f43c2f8d458a30f39c31a152f061a1"
+              },
+              "cases": [
+                {
+                  "category": "success",
+                  "id": "shipping-0",
+                  "inputSha256": "sha256:94034fb3ccd681b25719772865ccada02da0b1132fd3593930535110fce7a5b9",
+                  "payloadSha256": "sha256:1d61b478ab769d1a1862513c4795510647e352dc271a949bcb936b2e77a61a50",
+                  "platformCode": null
+                },
+                {
+                  "category": "success",
+                  "id": "shipping-1",
+                  "inputSha256": "sha256:ba1b05c25f753eef8a487effe462e9b8c65d5307207ee4a1117154e4150af907",
+                  "payloadSha256": "sha256:6f102f16a6af29cd42f420c77dec98d683a67701d839329dc3c0209c0e7b51dd",
+                  "platformCode": null
+                },
+                {
+                  "category": "declared-error",
+                  "id": "shipping-2",
+                  "inputSha256": "sha256:759032f80dcbd5bf355cb2c6e572073d7438930304e23c1a43e77948e5c93f94",
+                  "payloadSha256": "sha256:4141b23176d57848bc890ee303f48706396a4c495c7138f585a5d76aed3108a0",
+                  "platformCode": null
+                }
+              ],
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "runtimeProfiles": [
+                "typescript-spidermonkey-v1"
+              ]
+            },
+            "word-count": {
+              "artifacts": {
+                "capsule": "sha256:75edb40b2ec519db74dbf659460cde4c4823de94944b7a4562e685cde68c03e7",
+                "component": "sha256:d9373c521309c889f26172ee2b2f72c8346db9e46b7f9d6384a9faeb591fa06f",
+                "contracts": "sha256:16934cdac62a23e71b7e63837703e9edda69117809f7ef38057c8058c5305b92"
+              },
+              "cases": [
+                {
+                  "category": "success",
+                  "id": "word-count-0",
+                  "inputSha256": "sha256:bddc7403b62a484cb2d6558c8ea2a6341349b664d6ae4ed19007292c3a69de50",
+                  "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                  "platformCode": null
+                },
+                {
+                  "category": "success",
+                  "id": "word-count-1",
+                  "inputSha256": "sha256:563376918d5e5aeff6db569ad322a87de96fec029cc9c386dd8329587439bf7b",
+                  "payloadSha256": "sha256:c659ac088605fdefa8e23bc6008a85829de161bd93c1883ded9de9832a731518",
+                  "platformCode": null
+                },
+                {
+                  "category": "declared-error",
+                  "id": "word-count-2",
+                  "inputSha256": "sha256:660b5a15f1513a144b5fe92e0d45ea160f49f9aa3f055fc8ea10da99ff385a57",
+                  "payloadSha256": "sha256:95a62bf8e0e008c91b18ccd185511e2fb8283fd935f8701a0878c3a7c0729250",
+                  "platformCode": null
+                }
+              ],
+              "hostAbi": "lsf-host-abi-phase3-v4",
+              "runtimeProfiles": [
+                "typescript-spidermonkey-v1"
+              ]
+            }
+          },
+          "language": "typescript",
+          "ownerIssue": 546
+        },
+        "passed": true,
+        "qualification": "native-tutorial-subset-only",
+        "schemaVersion": "latent.dev.portable-differential.v1",
+        "windowsReceipt": "sha256:e7aa56bb90e781fd0267c2eb195a691627aa4fe875a2c881d4acde1f36d49b61"
+      }
+    }
+  },
+  "nativeComparisonScope": "Actual portable production backend on Windows and Linux, not a separate production node or clean-host installation"
 }
