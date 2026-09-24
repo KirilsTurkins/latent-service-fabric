@@ -6,7 +6,11 @@ interface host {
 }
 
 interface probe {
-    record payload { value: u64, minimum: s64, maximum: s64, text: string, bytes: list<u8> }
+    record item { text: string, amount: u64 }
+    record payload {
+        value: u64, minimum: s64, maximum: s64, text: string,
+        bytes: list<u8>, maybe: option<u64>, items: list<item>
+    }
     run: async func(input: payload) -> result<payload, string>;
     echo-signed: async func(value: s64) -> s64;
 }

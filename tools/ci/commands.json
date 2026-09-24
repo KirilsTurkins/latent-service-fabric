@@ -1500,15 +1500,15 @@
       "shell": "default",
       "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example typescript_runtime_probe -- \"$RUNNER_TEMP/typescript-guest-probe/component.wasm\" 2>&1 | tee \"$RUNNER_TEMP/typescript-guest-probe/runtime.log\""
     },
-    ".github/workflows/typescript-guest.yml:boundary:Execute typed value and ownership regressions": {
+    ".github/workflows/typescript-guest.yml:boundary:Execute supplementary value and ownership models": {
       "workflow": ".github/workflows/typescript-guest.yml",
       "job": "boundary",
-      "name": "Execute typed value and ownership regressions",
+      "name": "Execute supplementary value and ownership models",
       "jobIf": "success()",
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "bash",
-      "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log"
+      "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts sdk/typescript-guest/tests/model/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime/tests/model\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log"
     },
     ".github/workflows/typescript-guest.yml:boundary:Check captured sources and actual generated-resource owners": {
       "workflow": ".github/workflows/typescript-guest.yml",
@@ -2993,7 +2993,7 @@
       "sha256": "54a371d38d626291fd1415e2ddda6841054c5ad34334869408459461d9788792"
     },
     "tools/qualify_rust_capsules.py": {
-      "sha256": "db5c3364c3ed8b666bc61018c6a745e34b3d3bc98c3e98606d0819bcec8e0447"
+      "sha256": "afe96e20fe2d9b8ab2f82771e490099ba8cdecefe37902404f65cef9b6a85606"
     },
     "tools/qualify_typescript_capsules.py": {
       "sha256": "9ebcf28e77e5fa9bca9018d8e15afffac9e075427315ad334fa7fc7a8d4b4e44"
@@ -5786,6 +5786,7 @@
       "TypeScriptAuthoringTests.test_fresh_project_and_safe_names_never_overwrite_source",
       "TypeScriptAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
       "TypeScriptAuthoringTests.test_import_identity_follows_selected_world_and_never_arena_indexes",
+      "TypeScriptAuthoringTests.test_public_contract_rejection_precedes_guest_compiler_execution",
       "TypeScriptAuthoringTests.test_qualification_watchdogs_remain_explicit_and_finite",
       "TypeScriptAuthoringTests.test_sdk_wit_and_compiler_lock_drift_are_rejected",
       "TypeScriptAuthoringTests.test_source_and_compiler_directory_overlap_is_rejected_before_execution",
@@ -6208,6 +6209,6 @@
     ".github/workflows/rust-capsule-authoring.yml": "e67ad52de8270386f17328a441af8dcc2ec2725b1ae8ba45985ea026c86a85e0",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/typescript-guest.yml": "0daef3a640034d79103f45a4742a69119e5728d380d5f8a1de6ea2f224c4705f"
+    ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41"
   }
 }

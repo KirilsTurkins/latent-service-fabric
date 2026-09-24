@@ -221,6 +221,10 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
             commands.run("typescript-sdk-resources", paths["cargo"], *cargo_options, "run", "--locked", "-p", "latent-wasmtime",
                 "--example", "typescript_runtime_probe", "--", output / "sdk-guests/typescript-blob/component.wasm",
                 "speed", "sdk-blob")
+            for role in ("service", "callee"):
+                commands.run("typescript-sdk-" + role + "-memory", paths["cargo"], *cargo_options,
+                    "run", "--locked", "-p", "latent-wasmtime", "--example", "typescript_runtime_probe", "--",
+                    output / f"sdk-guests/typescript-{role}/component.wasm", "speed", "sdk-" + role + "-memory")
         if language == "dotnet":
             commands.run("dotnet-real-sdk-secret-cleanup", paths["cargo"], *cargo_options,
                 "run", "--locked", "-p", "latent-wasmtime", "--example", "typescript_runtime_probe", "--",
