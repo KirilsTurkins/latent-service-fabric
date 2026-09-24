@@ -16,7 +16,7 @@ config, activation_limits)` and calls
 epoch for durable bindings and exact plan compilation. This provider is
 available through the Rust embedding. The current
 [standalone provider configuration](../reference/standalone-providers.md)
-exposes HTTP and local blobs; it has no custom-metric configuration field.
+has no custom-metric configuration field.
 
 `CustomMetricsConfig` declares exact tenant policies, metric names, kinds, units,
 label keys and permitted values. It has no wildcard labels. Names start with an

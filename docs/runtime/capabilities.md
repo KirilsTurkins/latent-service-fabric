@@ -26,7 +26,9 @@ handle and call ownership and can gate the four built-in imports in explicit
 managed embeddings. [Exact plan compilation](capability-bindings.md) and
 conserved [descendant budgets](descendant-budgets.md) support local child calls.
 The [standalone bootstrap](../reference/standalone-providers.md) installs the
-supported HTTP/local-blob configuration and exposes scoped provider management.
+configured HTTP, local-blob, activation-clock and OS-entropy providers and exposes
+scoped provider management. Explicit bindings, deployment grants and current
+policy remain required.
 Other concrete adapters use their documented trusted Rust compositions; declaring
 their contracts does not install them through standalone configuration. Start with
 [the capability walkthrough](../learn/use-capabilities.md) to exercise the actual

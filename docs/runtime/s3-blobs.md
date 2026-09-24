@@ -4,7 +4,7 @@
 the same `latent:blob/blob@0.2.0` guest interface and owned chunks as
 [local blobs](local-blobs.md). Installation is an explicit trusted embedding
 operation. The current [standalone provider configuration](../reference/standalone-providers.md)
-exposes HTTP and local blobs; it has no S3 installation field. Declaring an import
+has no S3 installation field. Declaring an import
 does not enable S3 access.
 
 ## Supported transport and credentials

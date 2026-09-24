@@ -123,11 +123,13 @@ printf '%s\n' "$CAPABILITY_DEMO"
 
 You can remove that demo directory when you no longer need its files.
 
-The standalone configuration currently exposes buffered HTTP and local
-immutable blobs. Other capabilities have their own integration paths:
+The standalone configuration exposes buffered HTTP, local immutable blobs,
+activation clocks and [OS-backed randomness](../runtime/random.md) through
+explicit installations, bindings and grants. Other capabilities have their own
+integration paths:
 [streaming HTTP](../runtime/streaming-http.md),
 [local service calls](../runtime/local-service-invocation.md),
-[secrets](../runtime/local-secrets.md), [randomness](../runtime/random.md),
+[secrets](../runtime/local-secrets.md),
 and [custom metrics](../runtime/custom-metrics.md).
 For S3, Vault and NATS, continue with the
 [local provider examples](../how-to/exercise-provider-failure-and-recovery.md).

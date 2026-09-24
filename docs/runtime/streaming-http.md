@@ -10,7 +10,7 @@ automatic replay or automatic redirect is provided.
 
 Install this provider through the trusted Rust embedding API. The current
 [standalone provider configuration](../reference/standalone-providers.md)
-exposes buffered HTTP and local blobs; it has no streaming HTTP installation field.
+has no streaming HTTP installation field.
 
 ```rust,ignore
 let provider = StreamingHttpProvider::install(pools.clone(), "streaming", 1, 0,
