@@ -9,9 +9,26 @@ The eight active children remain open until their actual acceptance evidence exi
 
 `latent-dev` is a separate executable. It does not replace `latent`, change the
 operator CLI's single-operation behavior, or enable a production Windows node.
-The Windows executable includes its Python interpreter; application developers
+The Windows and Linux executables include their Python interpreter; application developers
 do not need Python, Rust, or an LSF checkout to run that executable. Guest
 compilers remain separate, explicitly selected build inputs.
+
+The Linux frontend is packaged by the same build and distribution owners as the
+Windows frontend. The existing Linux portable-host CI job produces its
+`linux-x86_64` candidate, including the helper, portable host, dependency inventory,
+licenses and exact-source provenance. Linux build inputs have a separate hashed
+wheel lock. The build records its glibc version as a conservative minimum for
+that artifact and observes the package owners and license texts of every
+redistributed native library. All frontend files, including shared libraries,
+are checked again before candidate assembly.
+
+An actual local source package ran as an unprivileged user in the pinned Ubuntu
+24.04 image, with no Python or LSF checkout in that image, no network and a
+non-ASCII installation path containing spaces. Its `dev doctor` result reported
+Linux without claiming node readiness. This establishes packaged frontend
+startup only; authenticated direct-Linux/SSH installation and lifecycle
+qualification remain required. The helper's selected interpreter requirements
+are described below.
 
 ## Implemented controller contracts
 

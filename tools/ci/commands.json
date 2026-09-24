@@ -622,7 +622,7 @@
     },
     ".github/workflows/developer-tools.yml:contracts:Exercise controller boundaries and actual owned subprocesses": {
       "job": "contracts",
-      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
+      "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Exercise controller boundaries and actual owned subprocesses",
       "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_build_process",
       "shell": "default",
@@ -632,7 +632,7 @@
     },
     ".github/workflows/developer-tools.yml:guest-tools:Assemble pinned compiler tools and maintained templates": {
       "job": "guest-tools",
-      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
+      "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Assemble pinned compiler tools and maintained templates",
       "run": "python tools/build_dev_guest_tools.py --language \"$LSF_DEV_LANGUAGE\" --output target/dev-tools --python-prefix \"$LSF_DEV_PYTHON_PREFIX\" --node-tests",
       "shell": "default",
@@ -642,7 +642,7 @@
     },
     ".github/workflows/developer-tools.yml:guest-tools:Compile actual projects with isolated tools and separate operator packaging": {
       "job": "guest-tools",
-      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
+      "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Compile actual projects with isolated tools and separate operator packaging",
       "run": "python tools/run_dev_guest_tools_tests.py --language \"$LSF_DEV_LANGUAGE\" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-projects\"",
       "shell": "default",
@@ -652,7 +652,7 @@
     },
     ".github/workflows/developer-tools.yml:guest-tools:Compile maintained C provider fixtures for native execution": {
       "job": "guest-tools",
-      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
+      "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Compile maintained C provider fixtures for native execution",
       "run": "python tools/build_portable_c_guests.py --tool-root target/dev-tools/payload --output target/dev-c-portable/providers\npython -c \"from pathlib import Path; import os,shutil; shutil.copytree(Path(os.environ['RUNNER_TEMP'])/'dev-projects', 'target/dev-c-portable/applications')\"",
       "shell": "default",
@@ -662,7 +662,7 @@
     },
     ".github/workflows/developer-tools.yml:guest-tools:Retain offline guest tool attestation": {
       "job": "guest-tools",
-      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
+      "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Retain offline guest tool attestation",
       "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-tools/candidate/attestation.json",
       "shell": "default",
@@ -672,9 +672,29 @@
     },
     ".github/workflows/developer-tools.yml:guest-tools:Stage the pinned relocatable Python prefix": {
       "job": "guest-tools",
-      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
+      "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Stage the pinned relocatable Python prefix",
       "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/guest-tools-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_DEV_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-tools.yml:linux-portable:Assemble Linux frontend and portable host with the shared distribution owner": {
+      "job": "linux-portable",
+      "jobIf": "success()",
+      "name": "Assemble Linux frontend and portable host with the shared distribution owner",
+      "run": "python -c \"from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-linux-frontend/portable'); d.mkdir(); p=d/'latent-portable-test-host'; shutil.copyfile('target/release/latent-portable-test-host',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'linux-x86_64','profile':'release'}))\"\npython tools/build_dev_bundle.py --target linux-x86_64 --frontend target/dev-linux-frontend --portable target/dev-linux-frontend/portable/latent-portable-test-host --output target/dev-linux",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-tools.yml:linux-portable:Build native Linux frontend and observe redistributed libraries": {
+      "job": "linux-portable",
+      "jobIf": "success()",
+      "name": "Build native Linux frontend and observe redistributed libraries",
+      "run": "python tools/build_dev_frontend.py --output target/dev-linux-frontend",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -697,6 +717,26 @@
       "run": "set -euo pipefail\nfor language in rust c java dotnet go typescript; do\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host --language \"$language\" --applications \"target/dev-applications/developer-$language-applications-$GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\"\ndone",
       "shell": "default",
       "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-tools.yml:linux-portable:Install exact hashed Linux frontend build inputs": {
+      "job": "linux-portable",
+      "jobIf": "success()",
+      "name": "Install exact hashed Linux frontend build inputs",
+      "run": "python -m pip install --require-hashes -r tools/dev-frontend-linux.lock",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-tools.yml:linux-portable:Retain offline Linux developer attestation": {
+      "job": "linux-portable",
+      "jobIf": "success()",
+      "name": "Retain offline Linux developer attestation",
+      "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-linux/candidate/attestation.json",
+      "shell": "default",
+      "stepIf": "github.event_name != 'pull_request'",
       "workflow": ".github/workflows/developer-tools.yml",
       "workingDirectory": "."
     },
@@ -812,7 +852,7 @@
     },
     ".github/workflows/developer-tools.yml:wsl-image:Build reviewed image and observed package license inventory": {
       "job": "wsl-image",
-      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
+      "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Build reviewed image and observed package license inventory",
       "run": "python tools/build_dev_rootfs.py --output target/dev-wsl",
       "shell": "default",
@@ -822,7 +862,7 @@
     },
     ".github/workflows/developer-tools.yml:wsl-image:Retain offline image attestation": {
       "job": "wsl-image",
-      "jobIf": "github.event_name != 'pull_request' || github.head_ref != 'feat/559-cross-platform-dev' || github.event.pull_request.head.repo.full_name != github.repository",
+      "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Retain offline image attestation",
       "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-wsl/candidate/attestation.json",
       "shell": "default",
@@ -3118,10 +3158,10 @@
       "sha256": "7a52c2a73e1178a12066b940849fc1ddfc5504705621cb11c920552258e1a809"
     },
     "tools/build_dev_bundle.py": {
-      "sha256": "aa9f74f6d3c48e5b748163a56747b46208405f2c3c34ffb42d134d1a7b347d13"
+      "sha256": "6e6a2fca5042eae43020432ef2ff8a49b75fed174a05e88f08f877404b334a05"
     },
     "tools/build_dev_frontend.py": {
-      "sha256": "ae21815a5df802139fbeb62d311ffc737b315d6c33ad7d8cb36f425af4923721"
+      "sha256": "b86e895abc7baf6f191c6ce2cf059f14d754c933c5d2f59bb6a75693a9ebf0b8"
     },
     "tools/build_dev_guest_tools.py": {
       "sha256": "13c62254e939b9ff55c0c661245d3cd09b30234bb21397124fbe5763342fef05"
@@ -4019,6 +4059,7 @@
       "CompanionInputs.test_unrecorded_importable_file_is_rejected",
       "CompanionInputs.test_verification_observes_cancellation",
       "CompanionInputs.test_wrong_owner_host_and_template_revision_fail_before_execution",
+      "FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly",
       "LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound",
       "ManagedCompilerInputs.test_changed_member_and_path_escape_are_rejected",
       "ManagedCompilerInputs.test_distribution_materializes_internal_links_and_rejects_external_links",
@@ -6668,7 +6709,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-tools.yml": "9d4185ce85013ccafc066af7778399a65f17839f6da51a6ccd747538166ad6cf",
+    ".github/workflows/developer-tools.yml": "abab47e2b6cdb170e1d1503deeeebe516343f12720206c4476d6e75a0ff67fe4",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
