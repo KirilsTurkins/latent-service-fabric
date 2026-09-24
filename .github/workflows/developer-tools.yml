@@ -149,7 +149,7 @@ jobs:
         if: matrix.language == 'rust'
         run: |
           cargo --config .cargo/managed-guest.toml build --locked -p latent-portable-test-host
-          python -c "import shutil; shutil.copyfile('target/debug/latent-portable-test-host','target/dev-tools/clock-host')"
+          python -c "import shutil; shutil.copy2('target/debug/latent-portable-test-host','target/dev-tools/clock-host')"
           python tools/dev_clock_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output "$RUNNER_TEMP/dev-clock-fixtures"
       - name: Retain actual clock fixtures and node comparison receipts
         if: always() && matrix.language == 'rust'
