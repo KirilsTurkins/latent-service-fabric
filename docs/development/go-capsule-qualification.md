@@ -99,10 +99,37 @@ This bounded run used the retained Linux image with two CPUs, 8 GiB memory,
 two Cargo jobs, no network and no image pull. The initial missing test-trait
 import and the deterministic negative run are retained separately.
 
-These are focused regression results, not SDK or final-head qualification.
-Clock Linux tests, integrated validation and fresh complete CI remain required
-before either pending ticket PR is merged. Runtime release HOLD and human
-newcomer review #345 are unchanged.
+Clock source `76166f80838dbb0209c358a3e3aec395bc4f8565`, tree
+`5f8a2b7d70fdb47de5c7f90bc86eba55f30f0093`, passed 65 focused Linux cases,
+including eighteen new cases, with no failures or ignored cases in the selected
+suites. Five execute actual Wasmtime clock imports against the production
+signed-authority fence: opt-in success, legacy immediate Busy, future-drop
+cleanup, policy revocation and original lease expiry. The same success test,
+with only timer opt-in disabled, produced the expected closed Busy guest trap
+on its second clock import, with reusable cleanup and no second sample. It
+drives one invocation to the actual first-sample fence rather than assuming
+the first pending poll has reached that boundary. The earlier fixture-version
+and premature-poll failures are retained, not counted as this negative proof.
+
+Broker tests separately cover both clock identities, exact deadline expiry,
+elapsed time charged only once, one audit/charge/ID owner, capacity, cancellation,
+required-audit denial, callback-entered failures and foreign-slot preservation.
+The clock archive SHA-256 is
+`1743c6fdc9e867a0670506d684dd9a78d79ab4202290fb7cb80b73ddd8001984`;
+the passing log is
+`da26eb84a5dc62b44221a8f4deb9dca8504bc945477663451cb8abceb2ef9087`.
+The two exact tested source commits are retained in the integration branch's
+ancestry; preserving that ancestry did not change the integrated source tree.
+
+The integrated source registers all 35 new cases and the existing legacy cases,
+including a new five-case Linux clock-import target. Native executor/node tests
+passed 84 cases, and CI inventory/lane/coverage tests passed 24. The daemon and
+Wasmtime all-target check and library lint command passed; pre-existing warnings
+are not a warning-free claim. Repository, documentation and formatting checks
+also passed. These focused results do not replace combined integration, complete
+SDK execution or exact-head CI: those gates are required before either pending
+ticket PR is merged. Runtime release HOLD and human newcomer review #345 are
+unchanged.
 
 ## Verified execution and measurements
 
