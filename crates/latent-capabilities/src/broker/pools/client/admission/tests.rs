@@ -1,5 +1,5 @@
 use super::*;
-use crate::broker::pools::{ProviderPoolLimits, limits::Kind, tests::fixture::*};
+use crate::broker::pools::{limits::Kind, tests::fixture::*, ProviderPoolLimits};
 use crate::broker::tests::fixture::{pending, ready};
 use latent_core::PlatformErrorCode;
 use std::sync::atomic::Ordering;
@@ -180,13 +180,11 @@ async fn poisoned_connection_registry_fails_closed_without_waiting() {
     let setup = Setup::new(single());
     let (session, _control) = setup.session("dial-poisoned");
     let call = setup.call(&session).await;
-    assert!(
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let _inspection = setup.pools.inner.state.lock().unwrap();
-            panic!("controlled connection registry poison");
-        }))
-        .is_err()
-    );
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _inspection = setup.pools.inner.state.lock().unwrap();
+        panic!("controlled connection registry poison");
+    }))
+    .is_err());
     let failure = ready(setup.client.reserve_connection_wait(&call))
         .err()
         .unwrap();
