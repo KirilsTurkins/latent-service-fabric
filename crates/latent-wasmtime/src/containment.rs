@@ -270,10 +270,14 @@ pub(crate) fn classify_runtime_error(
         &mut outcome,
         error.downcast_ref::<crate::host::capabilities::HostCapabilityFailure>(),
     ) {
-        // Only a typed, closed host code survives. Never expose the original
+        // Only typed, closed host diagnostics survive. Never expose the original
         // provider message, policy document, Wasmtime context or guest input.
         trap.metadata
-            .insert("capabilityFailure".into(), format!("{:?}", failure.0));
+            .insert("capabilityFailure".into(), format!("{:?}", failure.code()));
+        if let Some(reason) = failure.currentness_reason() {
+            trap.metadata
+                .insert("admissionCurrentnessReason".into(), reason.into());
+        }
     }
     Ok(outcome)
 }
@@ -390,6 +394,9 @@ pub(crate) fn bounded_text(value: &str, maximum_bytes: usize) -> String {
 }
 
 #[cfg(test)]
+mod currentness_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::sync::atomic::AtomicBool;
@@ -429,9 +436,13 @@ mod tests {
 
     #[test]
     fn typed_capability_failure_retains_only_its_closed_code() {
-        let error = wasmtime::Error::new(crate::host::capabilities::HostCapabilityFailure(
-            PlatformErrorCode::PermissionDenied,
-        ))
+        let error = wasmtime::Error::new(
+            crate::host::capabilities::HostCapabilityFailure::from_error(&platform_error(
+                PlatformErrorCode::PermissionDenied,
+                "private provider input",
+                false,
+            )),
+        )
         .context("secret provider context must not escape");
         let stop = StopControl::new(None, None);
         let outcome = classify_runtime_error(&error, &stop, false, consumption()).unwrap();
@@ -440,6 +451,7 @@ mod tests {
         };
         assert_eq!(trap.code, "guest-runtime-error");
         assert_eq!(trap.metadata["capabilityFailure"], "PermissionDenied");
+        assert!(!trap.metadata.contains_key("admissionCurrentnessReason"));
         assert!(!format!("{trap:?}").contains("secret"));
         assert!(trap.guest_backtrace.is_empty());
         let untyped = wasmtime::Error::msg("capability admission: fake secret");
@@ -448,6 +460,7 @@ mod tests {
             panic!("untyped component error must retain its generic classification");
         };
         assert!(!trap.metadata.contains_key("capabilityFailure"));
+        assert!(!trap.metadata.contains_key("admissionCurrentnessReason"));
         assert!(!format!("{trap:?}").contains("secret"));
         assert_interruption(
             classify_runtime_error(&error, &stop, true, consumption()).unwrap(),
