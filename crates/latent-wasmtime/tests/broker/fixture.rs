@@ -221,6 +221,7 @@ impl Fixture {
                 clock: clock.clone(),
                 log_sink: None,
                 capabilities: Some(runtime.clone()),
+                currentness_read_wait: None,
             },
             catalog.lifecycle_authority(),
         )
@@ -253,6 +254,7 @@ impl Fixture {
             clock: self.clock.clone(),
             log_sink: None,
             capabilities: Some(self.runtime.clone()),
+            currentness_read_wait: None,
         }
     }
     pub fn request(&self, id: &str) -> (ExecutionRequest, Control) {

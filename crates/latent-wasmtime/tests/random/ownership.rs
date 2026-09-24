@@ -76,6 +76,7 @@ async fn uninstalled_random_import_is_rejected_before_any_store() {
             clock: f.clock.clone(),
             log_sink: None,
             capabilities: None,
+            currentness_read_wait: None,
         },
         f.catalog.lifecycle_authority(),
     )

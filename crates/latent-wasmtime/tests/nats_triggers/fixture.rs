@@ -148,6 +148,7 @@ impl Fixture {
                 clock: Arc::new(SystemActivationClock),
                 log_sink: None,
                 capabilities: None,
+                currentness_read_wait: None,
             },
             catalog.lifecycle_authority(),
         )
