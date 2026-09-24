@@ -156,7 +156,7 @@ jobs:
           python -c "import shutil; shutil.copy2('target/debug/latent-portable-test-host','target/dev-tools/clock-host')"
           python tools/dev_clock_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output "$RUNNER_TEMP/dev-clock-fixtures"
           python tools/dev_failure_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output "$RUNNER_TEMP/dev-failure-fixtures"
-          python tools/dev_recovery_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-recovery-fixtures"
+          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_dev_recovery_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-recovery-fixtures"
       - name: Retain actual clock fixtures and node comparison receipts
         if: always() && matrix.language == 'rust'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

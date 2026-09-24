@@ -39,7 +39,8 @@ def run(args) -> dict:
         raise ValueError("exact helper and explicit test workspace required")
     for path in (helper_path, *helper_path.parents):
         metadata = path.lstat()
-        if (metadata.st_uid not in {0, os.geteuid()} or metadata.st_mode & 0o022
+        sticky_root = metadata.st_uid == 0 and stat.S_ISDIR(metadata.st_mode) and metadata.st_mode & stat.S_ISVTX
+        if (metadata.st_uid not in {0, os.geteuid()} or metadata.st_mode & 0o022 and not sticky_root
                 or stat.S_ISLNK(metadata.st_mode)):
             raise ValueError("helper ownership or path protection failed")
     with helper_path.open("rb") as stream:
