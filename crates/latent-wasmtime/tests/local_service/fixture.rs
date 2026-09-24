@@ -41,6 +41,8 @@ use std::{
 mod admission_fixture;
 #[path = "../../../latent-control-store/tests/admission/support.rs"]
 mod authority;
+#[path = "diagnostics.rs"]
+mod diagnostics;
 #[path = "../guest_sdk/runtime.rs"]
 mod guest_runtime;
 
@@ -53,6 +55,7 @@ pub struct Observations {
         )>,
     >,
     pub child_running: tokio::sync::Notify,
+    pub child_failures: Arc<diagnostics::Recorder>,
 }
 impl latent_telemetry::ActivationObserver for Observations {
     fn on_observation(
@@ -410,6 +413,7 @@ impl Fixture {
             starts: Mutex::new(vec![]),
             terminals: Mutex::new(vec![]),
             child_running: tokio::sync::Notify::new(),
+            child_failures: Arc::new(diagnostics::Recorder::default()),
         });
         let manager = LocalActivationManager::with_services(
             latent_node::LocalActivationManagerConfig::default(),
@@ -429,7 +433,10 @@ impl Fixture {
         )
         .unwrap();
         capabilities
-            .install_local_services(manager.local_service_invoker(packages::budget()).unwrap())
+            .install_local_services(Arc::new(diagnostics::ObservedInvoker {
+                inner: manager.local_service_invoker(packages::budget()).unwrap(),
+                recorder: observations.child_failures.clone(),
+            }))
             .unwrap();
         Self {
             _guest_runtime: guest_runtime,
