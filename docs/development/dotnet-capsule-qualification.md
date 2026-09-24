@@ -35,6 +35,72 @@ These are finite experiment bounds, not throughput or production sizing claims.
 
 ## Successful finite qualification
 
+The integrated head `a880cfd731f82194c36265886a65a1374d0313fb` passed the
+complete [.NET run 35963178615](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178615).
+Artifact `10793826456` independently matches 2,346 captured Git inputs and zero
+generated SDK inputs. Five standalone builds, all ten SDK cases (97.38 seconds),
+27 signed-node invocations, 24 resource observations and dormant populations
+5/9/17 passed. The HTTP peer saw eight authorized requests, zero unexpected
+requests and all three held operations physically closed. Node/peer shutdown
+was clean. All six printed guide blocks passed in 27.85 seconds. A single
+15 ms audit-idle observation had all required counters zero; the one deletion
+received durable acknowledgment 10, and the retained catalog contains zero
+deployments, object generations and publication pins.
+
+Before/after source and execution-tool inventories match. Runtime identity is
+`sha256:ce7ae39f77472a059e8a76139a070bafcfa20aa4edd452e04dc447300e64c005`
+(2,185 files, 13,727,494 bytes); qualification marker identity is
+`sha256:f02064a0a69c3f27a007f1c094bcd530f276c65cd46009686b39aaed47d77f3e`.
+Source artifact `10793237246` matches all 4,108 selected Git blobs and executable
+modes (39,985,713 bytes), archive SHA-256
+`ff92d1ceb52391c89a81735cf3900c802edbbaa93c1ab6392718819925b0f13a`.
+CI merge `6f8a00cea1b00540c67f7aed53585308818518a6` and the reviewed head share
+tree `a5c2f893805d286d9726d2a27d64172872ed9c7d`; the merge parents are the
+development documentation squash `417ed363` and the reviewed `a880cfd7`.
+
+The same head passed the complete
+[TypeScript cross-check 35963178639](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178639).
+Artifact `10794941119` matches all 2,339 captured Git inputs, with unchanged
+before/after source and execution-tool inventories. All ten SDK cases passed
+in 883.43 seconds, followed by 27 node invocations, 24 resource observations,
+the 5/9/17 dormant populations and all six printed guide blocks (80.12 seconds).
+The HTTP peer recorded eight authorized requests, zero unexpected requests and
+all three held operations physically closed; node shutdown was clean. All 17
+deployment deletions succeeded once in 150.48 seconds. The actual first-to-final
+OS resource-sample span was 921.20 seconds, independently establishing that the
+old 900-second owner was insufficient for this finite workload. This successful
+execution qualifies the bounded 1,200-second fixture correction at this source,
+not the final TypeScript-specific PR head or an earlier failed run.
+
+[Broad CI 35963178726](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178726)
+also passed. Artifact `10794656924` retains the discovered 2,768 active cases
+and actual execution of all 17 local-service cases, the three slow-preparation
+regressions, the real 32 KiB audit-writer drain and CLI counter projection tests.
+Rust, C, Java and security workflows passed as well. Website checks do not
+replace the separate human newcomer review #345 or lift the release hold.
+
+That head is not merge-ready: its
+[Go cross-check 35963178643](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178643)
+failed before signed-node or guide execution. Artifact `10793745523` retains
+nine passing SDK cases and one failed nested-service case (130.53 seconds total).
+The first permitted child stopped at `Queued` with `DependencyFailed/Unavailable`,
+zero fuel/memory/effects and 438 microseconds of wall time; its parent failed
+the expected-result assertion after 7.095 seconds. The private child rejection
+detail was not retained, so the cause remains unknown. This differs from the
+earlier `Resolved` stale-load failure. The fixture uses a fixed supply-chain
+clock; real elapsed time alone does not establish an expired lease.
+
+The next candidate adds test-only diagnostics before child errors are lowered
+to guest values. It retains at most 32 fixed stage/code/reason records, never
+raw messages, paths, tokens or payloads. Unknown shapes remain unclassified;
+overflow, contention or poisoned observation storage explicitly marks the
+record incomplete. The original start, future, outcome and owners pass through
+once without copying payloads, changing authority or retrying work. Seven native
+fake-invoker regressions cover the closed shapes, malformed values, redaction,
+unchanged success/error forwarding, bounded storage and pending-owner drop.
+These diagnostics improve observation; they do not establish or fix the
+unrecovered private cause. Fresh exact-source runtime qualification is required.
+
 The integrated head `9f51c60cdd686eb23aab5408f5dde75b4e7f7d09` passed
 [run 35942901339](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901339).
 Artifact `10785948026` matches 2,346 captured Git inputs with no generated SDK
@@ -58,7 +124,7 @@ share tree `e6c317a0a28305291411ebab7966ac1521f54ea3`.
 That head also passed broad repository CI and the Rust, C, Java, Go and security
 workflows, but its TypeScript cross-check
 [run 35942901312](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901312)
-failed and still prevents merging. Artifact `10786577160` retains ten passing
+failed, so that head was not merge-ready. Artifact `10786577160` retains ten passing
 SDK cases (872.12 seconds), the 5/9/17 dormant populations, 20 invocation
 receipts and 18 resource samples. The first allowed HTTP invocation returned
 the declared `connection-failed` result with a known outcome after 47.92 seconds;
