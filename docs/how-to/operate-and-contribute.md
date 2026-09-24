@@ -1,138 +1,136 @@
-# Operate a local node and choose a contribution
+# Inspect and stop a local node
 
-## Outcome and supported scope
+Check whether your node is ready, inspect a recent call and stop the node you
+started. These steps use the local node from
+[Run your first node](../start/first-node.md), through step 7. Keep that terminal
+open: its `cli`, `field`, `start_node`, `stop_node` and `ready` helpers select your private
+configuration and the process you own.
 
-Separate an operational symptom from a retry decision, inspect the right retained
-identity, stop only your owned node, and choose focused validation for a change.
-This is the standalone development profile, not a cluster or a production
-service-level guarantee. Start with [the first-node guide](../start/first-node.md)
-and the [CLI contract](../reference/operator-cli.md) before using these commands.
-
-You need the CLI, an explicitly selected protected client configuration, the actual
-node ID and any invocation/operation identity retained by your own request.
-`CLIENT_CONFIG`, `NODE_ID`, `ACTIVATION_ID` and `OPERATION_ID` below are selectors
-from that run, not shared credentials or IDs to paste against somebody else's node.
-No token belongs in a command-line argument, website bundle or public log.
-
-## Readiness and resource diagnosis
+## 1. Check readiness and routes
 
 ```bash
-latent --config "$CLIENT_CONFIG" --output json node get "$NODE_ID"
-latent --config "$CLIENT_CONFIG" --output json route get
-latent --config "$CLIENT_CONFIG" --output json activation get "$ACTIVATION_ID"
+cli node get learning-node > "$RESULTS/node-inventory.json"
+field "$RESULTS/node-inventory.json" data inventory health ready
+cli route get > "$RESULTS/routes.json"
+python3 - "$RESULTS/routes.json" <<'PY'
+import json, sys
+routes = json.load(open(sys.argv[1]))["data"]["snapshot"]["services"]
+for route in routes:
+    print(route["service"], "via", route["routeId"])
+PY
 ```
 
-Check `data.inventory.health.ready`, then the bounded cell, queue, quota and cache
-observations. A responsive management listener does not guarantee admission is
-ready. Missing pressure observations, exhaustion and preparation contention have
-different owners; do not infer a cause from HTTP reachability or one empty queue.
-Use [node configuration](../reference/standalone-node.md),
-[resource budgets](../runtime/resource-budgets.md) and
-[telemetry](../telemetry.md) to interpret the reported values.
-Configured ceilings are not measured resident memory and a warmed cache is not a
-per-dormant-application process. Preserve the exact source and measurement scope
-when discussing memory or latency.
+The readiness check should print **True**. Individual calls can still be denied
+or run out of resources. The route list
+shows `examples/echo` through its default and named deployment routes.
+If the connection is refused, check that the tutorial node is running and read
+`$LSF_TUTORIAL_DIR/node/diagnostic.jsonl` for startup errors.
 
-A requested Invoke RPC timeout must fit `execution.maximumWallTimeMillis` even
-when `--wall-time-ms` is smaller. Diagnose cold preparation and the selected
-client/node time ceilings; do not silently enlarge them, infer that a timed-out
-activation never ran, or retry until the system happens to accept it.
+For resource pressure, inspect the node's cells, queues, quotas and caches.
+A full execution-cell pool differs from a failed compiler or a denied capability.
+Use the [inventory reference](../reference/standalone-node.md) and
+[resource budgets](../runtime/resource-budgets.md) to interpret those fields.
 
-## Cancellation and uncertain results
+## 2. Inspect your most recent echo call
 
-To cancel a known activation explicitly from another process:
+The first-node guide supplies an activation ID before sending each call. Its
+post-restart invocation uses `learning-after-restart`:
 
 ```bash
-latent --config "$CLIENT_CONFIG" --output json activation cancel "$ACTIVATION_ID"
-latent --config "$CLIENT_CONFIG" --output json activation get "$ACTIVATION_ID"
+cli activation get learning-after-restart > "$RESULTS/activation-status.json"
+field "$RESULTS/activation-status.json" data terminalState
 ```
 
-Preserve `accepted`, `already_terminal` and `not_found` distinctly. Ctrl-C of a
-client is not an acknowledged Cancel RPC. A missing status can mean eviction,
-restart or foreign scope, not proof of non-execution. The existing
-[real CLI outcome tests](../../apps/latent/tests/standalone_cli/outcomes.rs)
-exercise declared errors, traps, deadlines, explicit cancellation and recovery;
-the small echo runner does not replace that cancellation suite.
+You should see **completed**. Activation history is bounded;
+after eviction or another node restart, a missing status does not prove that
+the call never ran. Deployments and activation history have different lifetimes.
 
-For a managed deployment response lost after submission, inspect the original
-operation rather than constructing a new mutation:
+For your own calls, choose and save a new activation ID before dispatch. If the
+response is lost, inspect that original ID instead of invoking again to discover
+the old result.
+
+## 3. Understand an explicit cancellation
+
+The echo call has already finished. Cancelling it demonstrates the
+already-terminal response:
 
 ```bash
-latent --config "$CLIENT_CONFIG" --output json deployment operation "$OPERATION_ID"
+cli activation cancel learning-after-restart > "$RESULTS/cancellation.json"
+field "$RESULTS/cancellation.json" data disposition
+cli activation get learning-after-restart > "$RESULTS/activation-status.json"
+field "$RESULTS/activation-status.json" data terminalState
 ```
 
-Use the matching `release operation` or `rollout operation ROLLOUT OPERATION`
-family for those owners. Keep original tenant, request and preconditions.
-`unknown` remains unknown; finite receipt retention cannot prove a request did
-not execute. A replayed historical receipt does not restore revoked authority.
-The [delivery/recovery walkthrough](../learn/deliver-and-recover-a-capsule.md)
-shows the separate object generation, catalog state version, rollout revision and
-rollback target. Aborting a rollout is not restoration of old traffic weights.
+The output is **already_terminal**, followed by **completed**. For an active
+call, the same command requests cancellation. Keep these outcomes
+separate:
 
-For configured durable audit, read a bounded page:
+| Result | Meaning |
+| --- | --- |
+| Accepted | The node accepted the cancellation request; cleanup may still be running |
+| Already terminal | The call already has a terminal outcome |
+| Not found | The node has no retained activation visible to this caller |
+
+Pressing Ctrl-C in a client stops its local wait; it does not prove the node or an
+external provider stopped. A cancelled call can also have completed an external
+effect before interruption. Follow the provider's recovery contract when that
+outcome is uncertain.
+
+## 4. Recover a management request by its operation ID
+
+Managed changes have their own operation IDs, separate from invocation IDs.
+The [policy walkthrough](reconcile-a-policy-change.md) gives a complete example
+using `policy operation` to find creation and revocation results.
+
+Choose the lookup that owns your request: `deployment operation`,
+`release operation`, `rollout operation` or `policy operation`. Keep its original
+tenant, operation ID, request and preconditions. An unknown lookup is still
+uncertain because receipt retention is finite. A historical receipt does not
+restore permission to a revoked publication or policy.
+
+For a node with durable audit configured, read one bounded page with:
 
 ```bash
-latent --config "$CLIENT_CONFIG" --output json audit query --scope tenant --page-size 16
+cli audit query --scope tenant --page-size 16
 ```
 
-Use only the returned cursor for continuation. An empty page with a cursor is not
-necessarily the end of history; audit observation is not durable external action.
-Absent or uncertain acknowledgement does not undo a committed catalog mutation.
-No part of this guide automatically restarts pagination or retries a mutation.
+The basic tutorial node has no durable audit configured, so use this command
+only after enabling it through the [audit configuration](../phase-2-audit.md).
+Continue with the returned cursor, if any. An empty page with a cursor is not
+necessarily the end of history, and an audit acknowledgement is separate from
+the underlying operation result.
 
-## Shutdown, backup and recovery
-
-The first-node runner stops its owned processes and checks both reported cleanup
-and physical reap. An interactive source node instead uses the PID/process owner
-created by the [quickstart](../development/standalone-quickstart.md). Do not use
-broad `pkill`, delete a live catalog, or adopt a PID whose ownership was lost.
-Stopping a listener is not sufficient evidence that guest/compiler/provider work
-has drained; inspect the node's actual stopped/clean report.
-
-For an installed node, use the installer's [status/drain contract](../../packaging/linux/INSTALL.md#status-drain-and-hardening)
-and [consistent backup/recovery procedure](../../packaging/linux/INSTALL.md#reinstall-upgrade-and-recovery).
-Preserve credentials, protected trust and matching catalog state together under
-the documented offline boundary. There is no live config reload or generic
-cross-version downgrade promise. A binary downgrade does not reverse a storage
-migration. Native uninstall and separately confirmed installation-ID purge are
-different operations; a guide-test cleanup authorizes neither on a server.
-
-## Choose and validate a contribution
-
-Follow [CONTRIBUTING](../../CONTRIBUTING.md) and the
-[live issue queue](https://github.com/KirilsTurkins/latent-service-fabric/issues).
-Select an open issue, read its owning subsystem/acceptance criteria and create a
-focused branch from development. Do not use article counts or one passing test
-as a replacement for the requested behavior.
-The [contract and evidence guide](../learn/read-contracts-and-evidence.md) shows
-how to validate retained receipts and find the exact authority for a proposed change.
-
-For these guide sources and their first-node runner:
+## 5. Stop or restart your node
 
 ```bash
-python3 -m unittest tools.tests.test_first_node_guide
-python3 tools/validate_docs.py
-git diff --check
+stop_node
+tail -n 1 "$LSF_TUTORIAL_DIR/node/status.jsonl" > "$RESULTS/stopped.json"
+field "$RESULTS/stopped.json" clean
 ```
 
-Then use the pinned [website validation commands](../development/website.md) and
-its production builds for both base paths. The new synthetic Python tests prove
-runner sequencing/redaction/cleanup behavior, not a real-node walkthrough.
-Changes to executable examples still require their owning runtime/SDK tests.
-The [CI classifier contract](../development/ci-profiles.md) retains conservative
-full validation for shared tools, product inputs, frozen evidence and uncertain
-changes; do not bypass it by calling executable MDX inert prose.
+The final check should print **True** for clean shutdown. The helper sends termination
+to the exact process started by this terminal and waits for it to exit. A forced
+stop or incomplete cleanup must be investigated before treating work as drained.
 
-## Failure, cleanup and evidence
+To resume this experiment with its saved deployments:
 
-A failing selected test remains a failure; retain the command/source/toolchain and
-bounded redacted diagnostic, fix the cause and rerun the relevant check. Never
-mark a skipped native/browser test as passed, replace a failed receipt, enlarge a
-frozen budget, or silently substitute synthetic peers for LSF.
+```bash
+start_node
+ready
+```
 
-Remove only your owned preview processes, target output or private guide-test
-files after retaining the compact nonsecret evidence. Link validation and human
-review separately in the [core guide handoff](../development/core-guide-validation.md).
-Next, use the shared [delivery/recovery path](../learn/deliver-and-recover-a-capsule.md)
-or the applicable capability/SDK guide; avoid assuming transactional state,
-workflow or exactly-once semantics from a successful local call.
+When you are finished, remove the tutorial deployment and stop the node using
+[the first-node cleanup](../start/first-node.md#8-continue-or-stop).
+Keep or remove the printed private tutorial directory only after the node has
+stopped. Do not delete a live catalog or use a broad process-name kill command.
+
+For an installed server, use its
+[service status and drain commands](../../packaging/linux/INSTALL.md#status-drain-and-hardening)
+and [backup procedure](../../packaging/linux/INSTALL.md#reinstall-upgrade-and-recovery).
+Preserve matching configuration, credentials, trust history and catalog state
+together in a consistent stopped backup. A binary downgrade does not convert
+stored data.
+
+To change LSF itself, use the [contribution guide](../contribute/index.md).
+It covers choosing an issue, creating a branch and running the checks relevant
+to your change.

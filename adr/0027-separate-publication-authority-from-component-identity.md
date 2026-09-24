@@ -5,6 +5,8 @@
 - Issue: #264
 - RFC: [RFC-0002](../rfcs/0002-tenant-scoped-publication-identity.md)
 - Supersedes: ADR-0019's retained one-component/one-publication uniqueness rule
+- Partly superseded by: [ADR-0044](0044-remove-obsolete-alpha-compatibility.md),
+  which removes obsolete alpha selectors and catalog migration
 
 ## Context
 
@@ -36,41 +38,36 @@ Preserve ADR-0019's package/component distinction, ADR-0010's metadata/policy
 separation and ADR-0024's package-bound immutable SBOM. Correcting an embedded
 inventory produces a new package/publication rather than mutating the old one.
 
-Existing `ReleaseDigest` values and wire fields remain component identities.
-Add explicit publication selectors and result fields. Fresh legacy resolution
-must be unique within the authorized scope or reject ambiguity; it never chooses
-first/latest or skips a revoked association to select another package. Captured
-deployment revisions, route/rollback targets and operation receipts retain their
-original publication through migration and restart.
+`ReleaseDigest` values remain component identities. Public selection uses explicit
+publication references and result fields. Obsolete component-or-publication
+fallback is removed under ADR-0044. Captured deployment revisions, route/rollback
+targets and operation receipts retain their original publication through
+current-format restart and recovery.
 
 Share immutable bytes or code only under independently bounded ownership and
 exact compatibility. A cache hit cannot share another tenant's metadata, grants,
 lifecycle generation, provider secrets or permission. Each activation retains
 fresh guest state and its own current authority.
 
-## Migration and failure boundary
+## Storage and failure boundary
 
-Use a bounded, versioned offline migration under the existing catalog-root owner.
-Preserve immutable completion/package bytes and historical receipts, record exact
-legacy mappings and deterministic durable progress, and fail closed on damaged,
-incomplete or ambiguous associations. An existing old-reader-checked format fence
-must prevent older binaries from using a migrated or partially migrated root.
-Do not rely on a new marker that old code ignores.
+ADR-0044 replaces this decision's original offline migration and legacy mapping
+requirements. Current builds reject obsolete or interrupted migration roots
+before cleanup or mutation. The [catalog reference](../docs/reference/publication-catalog.md)
+describes current-format recovery and provisioning a separate empty data root.
 
-Do not serve mixed layouts or erase security floors to satisfy quotas. Downgrade
-requires a complete consistent offline restore; rewriting digest meanings or
-removing the fence is unsupported. RFC-0002 defines batch/retention bounds,
-recovery and the compatibility/owner matrix.
+Do not serve mixed layouts, erase security floors or remove format markers to
+force startup. Preserve a complete consistent stopped backup before replacing
+old data. A binary downgrade does not convert stored state.
 
 ## Delivery and consequences
 
-#265 owns catalog, lifecycle and storage migration; #266 owns deployment/runtime
-and native/prepared authority; #267 owns public selectors, all six SDK models and
-the integrated operator workflow. Their coexistence, revocation, restart,
-legacy-client and resource-ownership evidence is required by #238/#240.
+#265, #266 and #267 delivered catalog/lifecycle identity, deployment/runtime
+propagation and public selectors across all six client SDKs. Subsequent alpha
+cleanup removes migration and legacy-client entry points. Coexistence,
+revocation, exact operation recovery and resource ownership remain required.
 
-This decision allocates no runtime resource and makes no claim that its
-implementation is already delivered. Dormant publications remain bounded
+Dormant publications remain bounded
 metadata/artifacts rather than dedicated repositories, processes, file handles,
 workers, providers, stores or execution cells. Phase 4 transactions and Phase 5
 clustering remain separate work.

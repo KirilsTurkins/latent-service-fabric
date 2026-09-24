@@ -1,261 +1,281 @@
 import CodeExample from '@site/src/components/CodeExample';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-# Invoke, cancel and recover with a client SDK
+# Call a capsule from your application
 
-Use your language's client to invoke an authorized guest, retain its activation
-identity, distinguish application and platform failures, cancel explicitly and
-recover a management operation. The same scenario runs in Rust, TypeScript,
-Go, C, Java and C# against a separate authenticated node.
+Use an LSF client SDK to call a capsule from Rust, TypeScript, Go, C, Java or C#.
+In this tutorial, run one example in your chosen language. It calls HTTP and
+storage capsules, handles an application error, cancels a request and checks
+whether a configuration change succeeded.
 
-This is the **development, Linux x86-64, numeric-loopback HTTP/2 + Protobuf**
-client profile. It does not add a public node listener or remote TLS transport.
-These programs run outside the guest. The [Rust/C guest bindings](../component-development/guest-sdk.md)
-and the [browser application boundary](../testing/sdk-browser-application.md)
-serve different purposes: browsers use the approved application HTTP route and
-never receive the node's management credential.
+The example starts its own temporary node and stops it when finished. It does
+not change the node from [your first tutorial](../start/first-node.md).
+Client programs run outside capsules. To write the code that runs inside a
+capsule, use the [capsule authoring guide](../component-development/guest-sdk.md).
 
-## Before you start
+## 1. Prepare the example
 
-Use a clean checkout of the development source identified by this page's
-**Exact documentation source** link. Install the repository's
-[pinned toolchain](../development/toolchain.md) on Linux, including Python 3.13.5.
-Run commands from the repository root under `umask 077`. Choose a private,
-disposable working directory and keep node storage separate from client inputs.
-The [first-node and delivery guide](deliver-and-recover-a-capsule.md) explains
-authentication, readiness, signing, publication and deployment.
+Use the Linux source checkout and Python environment from the first-node guide.
+Run the Bash blocks in one terminal, from the repository root. The current
+native clients connect to a node on the same machine; this example uses numeric
+loopback addresses. Browser applications use the separate
+[application HTTP interface](../security/browser-boundary.md).
 
-For this learning scenario the existing harness performs that setup, then starts
-the chosen native participant. It supplies only the explicit client credential
-path, loopback endpoint and admitted targets. Provider credentials remain with
-the node. Fixture credentials are disposable public test inputs in protected
-files; they are not production defaults. Do not print the participant input or
-copy its credential into source, an environment variable, a URL or a browser.
-
-| Client | Reviewed toolchain and setup | Complete maintained participant |
-| --- | --- | --- |
-| Rust | Rust 1.97.1, locked Cargo dependencies; [network API](../../sdk/rust/README.md) | [Entry and modules](../../sdk/rust/examples/provider_workflow.rs) |
-| TypeScript | Node 24.19.0, the SDK's locked npm graph; [Node setup and browser boundary](../../sdk/typescript-client/README.md) | [Runnable Node ESM participant](../../sdk/typescript-client/tests/provider-workflow.mjs) |
-| Go | Go 1.27.1, local toolchain and verified module graph; [generation and build](../../sdk/go/README.md) | [Entry](../../sdk/go/cmd/provider-workflow/main.go), [workflow](../../sdk/go/internal/providerworkflow/workflow.go) |
-| C | Pinned Zig/native C, nanopb and nghttp2 recipe; [headers, libraries and ownership](../../sdk/c/README.md) | [Native participant and helpers](../../sdk/c/examples/provider_workflow.c) |
-| Java | Temurin 21.0.11+10, the SDK's pinned generator/dependencies; [build and lifecycle](../../sdk/java-client/README.md) | [ProviderWorkflow](../../sdk/java-client/src/example/java/dev/latent/sdk/examples/ProviderWorkflow.java) |
-| C# | .NET SDK 8.0.425/runtime 8.0.31, locked NuGet restore; [transport setup](../../sdk/dotnet/README.md) | [Entry](../../sdk/dotnet/Latent.Sdk.ProviderWorkflow/Program.cs), [lifetime](../../sdk/dotnet/Latent.Sdk.ProviderWorkflow/Lifetime.cs) |
-
-Use source packages from this checkout. This guide does not invent published
-Cargo, npm, Maven or NuGet coordinates. Generated protocol code and the public
-convenience APIs remain separate. The TypeScript tab below shows the real
-JavaScript ESM program exercising the compiled TypeScript Node client.
-
-## Build your participant
-
-Build only the language you intend to run, following its linked SDK instructions.
-These are the maintained participant entry commands; generation and native
-dependencies described in those instructions are prerequisites.
-
-```bash
-# Rust
-cargo build --locked -p latent-sdk --example provider_workflow
-
-# TypeScript / Node
-npm ci --prefix sdk/typescript-client --ignore-scripts
-npm --prefix sdk/typescript-client run build
-
-# Go: after the pinned graph check and binding generation
-GOTOOLCHAIN=local GOWORK=off GOENV=off GOFLAGS=-mod=readonly \
-  go -C sdk/go build -trimpath -o "$PWD/target/go-provider-workflow" ./cmd/provider-workflow
-
-# C: builds the actual library, participant and controlled transport tests
-python3 sdk/c/tools/validate.py --build-dir target/c-sdk
-
-# Java: includes the generated protocol and runnable participant JAR
-python3 sdk/java-client/tools/build.py build
-
-# C#: use the repository's explicit locked restore configuration
-dotnet restore sdk/dotnet/Latent.Sdk.ProviderWorkflow/Latent.Sdk.ProviderWorkflow.csproj \
-  --locked-mode --configfile sdk/dotnet/nuget.transport.config \
-  -p:ImportDirectoryBuildProps=false -p:ImportDirectoryBuildTargets=false \
-  -p:ImportDirectoryPackagesProps=false -p:UseSharedCompilation=false -nodeReuse:false
-dotnet build sdk/dotnet/Latent.Sdk.ProviderWorkflow/Latent.Sdk.ProviderWorkflow.csproj \
-  --no-restore --disable-build-servers \
-  -p:ImportDirectoryBuildProps=false -p:ImportDirectoryBuildTargets=false \
-  -p:ImportDirectoryPackagesProps=false -p:UseSharedCompilation=false -nodeReuse:false
-```
-
-For the complete six-language check, `bash tools/run_sdk_provider_matrix.sh build`
-is the authoritative combined build recipe. It requires all six toolchains;
-ordinary website builds only read the registered snippets and never invoke it.
-
-## Invoke an admitted guest
-
-The controlled node admits the maintained HTTP, immutable-blob and callee guests
-under an explicit test policy. The client sends a supported WIT-value frame,
-finite budgets and a caller-known identity such as `rust-http`. It does not
-contact the provider using provider credentials. HTTP returns the encoded
-unsigned value `2201`; the blob round trip returns `4` in this fixture.
-
-<CodeExample example="client/provider-invoke" region="invoke" />
-
-The **complete source** link includes imports, request construction, private
-configuration loading, failure checks and shutdown. A displayed region is part
-of that executable scenario, not a standalone program. Identity prefixes and
-temporary policies belong to one disposable run; avoid reusing them against an
-unrelated node.
-
-Inspect success, declared application error and platform failure separately.
-The callee's `fail` function returns its declared error; `spin` with a deliberately
-small fuel budget produces a platform failure. Wrong tenant and wrong credential
-are rejected before guest execution. A transport failure can leave execution
-uncertain even when the local exception is definite.
-
-Never coerce a wire `u64` through a JavaScript `number` or a signed narrowing
-conversion. TypeScript uses `bigint` and decimal strings; Java uses its documented
-lossless unsigned representation; C uses checked `uint64_t` fields. An absent
-activation ID requests assignment; a present empty ID is invalid. Preserve
-presence for zero-valued generations, deadlines and optional acknowledgements.
-
-## Cancel the wait, then inspect the original identity
-
-The fixture first holds an actual authorized upstream request. Its private
-`started` marker is evidence that physical provider work began; it is not an
-application API. The participant interrupts its own wait and then uses a live
-client/context to cancel or inspect the original activation.
-
-<CodeExample example="client/provider-cancel" region="cancel" />
-
-| Language | Local interruption and retained ownership |
-| --- | --- |
-| Rust | Dropping the pending future ends local ownership. Use `Cancel`/`GetActivation` with the original ID; `Drop` alone does not prove guest cleanup. |
-| TypeScript | `AbortSignal` stops the local wait. Recovery uses a live signal and original ID; `shutdown()` drains the client's shared transport owner. |
-| Go | A cancelled `context.Context` cannot be reused for recovery. Use a live parent/bounded context, then `Close()` and inspect reaped ownership. |
-| C | A local call handle identifies a callback operation, not the activation. Copy retained requests, copy callback results you need later, release call handles and stop/drain before destruction. Callbacks can run inline. |
-| Java | Future cancellation is local and can complete exceptionally. A live observer retains the original ID; closing the owned channel/executor is explicit. |
-| C# | A cancelled token cannot establish server cancellation. Use a live observer token, await each `ValueTask` once and await `DisposeAsync()` for finite shutdown. |
-
-`accepted`, `already-terminal` and `not-found` are different successful Cancel
-dispositions. None is a transport exception. `accepted` acknowledges the request,
-not physical cleanup. Poll retained status under a finite deadline, and use the
-provider's closure observation in this fixture. Bounded retention means later
-`not-found` is not proof that an activation never executed.
-
-The normal scenario uses the node's five-second RPC ceiling. Held work uses
-three seconds, while the deliberate deadline case uses 500 milliseconds under
-one original absolute deadline. Do not reset that deadline at a queue, pool or
-RPC boundary. There is no automatic Invoke retry after a lost response.
-
-## Inspect pages and reconcile a mutation
-
-The shared management profile reads policies and redacted provider descriptors
-with page size one, follows the exact continuation token and checks the catalog
-generation. Treat page tokens as opaque. The participant creates an empty policy
-with **expected generation zero** and a caller-known operation ID; that policy
-grants no execution authority.
-
-<CodeExample example="client/provider-management" region="management" />
-
-Keep the original request and operation ID. After an uncertain response, lookup
-uses that ID; an absent receipt remains unknown. The harness separately tests an
-explicit replay of identical content and rejects a changed request or stale
-precondition. This demonstration is not a universal automatic retry rule.
-The current policy RPC has no audit acknowledgement: preserve its absence.
-Do not manufacture an acknowledgement from an audit sequence or operation ID.
-
-## Run against a separate real node
-
-Follow [the guest SDK build and fixture export](../component-development/guest-sdk.md)
-and [the native provider harness](../testing/sdk-provider-workflow.md) to build
-the paired CLI/node and export fresh signed HTTP/blob/callee inputs. Export
-immediately before execution; expired evidence must be regenerated, not edited.
-The fixture root and the selected participant executable must be absolute paths.
-
-Build the native setup tools and guests, then create fresh signed inputs with
-the existing exporter. The temporary parent belongs to this walkthrough alone.
+Install the tools for your chosen client language from the
+[toolchain setup](../development/toolchain.md). Rust, `wit-bindgen` and Zig are
+also needed to build the example capsules that the client calls.
 
 ```bash
 set -euo pipefail
 umask 077
 export CARGO_TARGET_DIR="$PWD/target"
+mkdir -p "$CARGO_TARGET_DIR"
+CLIENT_DEMO=$(mktemp -d "$CARGO_TARGET_DIR/client-demo.XXXXXXXX")
 cargo build --locked -p latent -p latentd
-python3 tools/build_guest_capsules.py --output "$CARGO_TARGET_DIR/guest-capsules"
-PRIVATE_RUN=$(mktemp -d "${TMPDIR:-/tmp}/lsf-client-guide.XXXXXXXX")
-FIXTURE_ROOT="$PRIVATE_RUN/inputs"
-LSF_GUEST_CAPSULES="$CARGO_TARGET_DIR/guest-capsules" \
-LSF_PHASE3_WORKFLOW_FIXTURE_ROOT="$FIXTURE_ROOT" \
-  cargo test --locked -p latentd --test phase3_workflow_fixture \
-    export_signed_provider_workflow_fixtures -- --exact --ignored --nocapture --test-threads=1
-test -f "$FIXTURE_ROOT/fixture.json"
 ```
 
-Expected: the one named exporter runs and creates the new fixture inventory.
-Do not continue after zero matching tests, a failed exporter or missing output.
-Then, for example, after the Rust participant build:
+The new directory keeps this attempt's files separate from earlier attempts.
+The first build can take several minutes.
+
+## 2. Build the client in your language
+
+Select one tab and run its commands. The SDKs come from this checkout.
+
+<Tabs groupId="client-tutorial-language" defaultValue="rust">
+<TabItem value="rust" label="Rust">
 
 ```bash
-umask 077
-python3 tools/run_sdk_provider_workflow.py \
-  --cli "$PWD/target/debug/latent" --node "$PWD/target/debug/latentd" \
-  --fixture-root "$FIXTURE_ROOT" --language rust \
-  -- "$PWD/target/debug/examples/provider_workflow" \
-  > "$PRIVATE_RUN/rust.json"
+cargo build --locked -p latent-sdk --example provider_workflow
 ```
 
-`FIXTURE_ROOT` is the newly exported directory and `PRIVATE_RUN` is your private
-result directory, created before the command. For another language, keep the
-same owner and choose its actual participant command:
+See the [Rust client reference](../../sdk/rust/README.md) for its API.
 
-| `--language` | Command after `--` |
-| --- | --- |
-| `typescript` | absolute Node executable, then the absolute `sdk/typescript-client/tests/provider-workflow.mjs` path |
-| `go` | absolute `target/go-provider-workflow` binary |
-| `c` | absolute `target/c-sdk/provider-workflow` binary |
-| `java` | absolute Java executable, `-jar`, absolute `sdk/java-client/build/latent-java-client.jar` |
-| `dotnet` | absolute .NET executable, then the participant DLL path printed by your build |
-
-The runner appends its protected `--config` argument. It checks actual participant
-and node retirement, original activation/operation identities and four started
-upstream requests whose sockets physically close. Expected output is one bounded
-JSON receipt with `passed: true` and 18 participant assertions. Inspect its schema
-using the [receipt contract](../testing/sdk-provider-workflow.md#required-result-and-independent-checks).
-An empty test selection, partial language matrix or unreaped process is failure.
-
-For all six participants built by the combined recipe:
+</TabItem>
+<TabItem value="typescript" label="TypeScript">
 
 ```bash
-bash tools/run_sdk_provider_matrix.sh run \
-  "$PWD/target/debug/latent" "$PWD/target/debug/latentd" "$FIXTURE_ROOT"
-python3 tools/verify_sdk_provider_matrix.py target/phase3-sdk
+npm ci --prefix sdk/typescript-client --ignore-scripts
+npm --prefix sdk/typescript-client run build
 ```
 
-## Diagnose and clean up
+The runnable example is a JavaScript ESM program using the compiled TypeScript
+client. See the [TypeScript client reference](../../sdk/typescript-client/README.md).
 
-| Observation | Next action |
+</TabItem>
+<TabItem value="go" label="Go">
+
+```bash
+(
+  export GOTOOLCHAIN=local GOWORK=off GOENV=off GOFLAGS=-mod=readonly
+  export GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
+  export GOPRIVATE= GONOPROXY= GONOSUMDB=
+  python3 sdk/go/dependencies.py --check
+  python3 sdk/go/generate.py
+  go -C sdk/go build -trimpath -o "$CLIENT_DEMO/go-provider-workflow" ./cmd/provider-workflow
+)
+```
+
+Generation also needs the pinned Buf tool. See the
+[Go client setup](../../sdk/go/README.md).
+
+</TabItem>
+<TabItem value="c" label="C">
+
+```bash
+python3 sdk/c/tools/validate.py --build-dir "$CLIENT_DEMO/c"
+```
+
+This builds the C library and runnable example. See the
+[C client setup](../../sdk/c/README.md) for its Zig, nanopb and nghttp2 prerequisites.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```bash
+python3 sdk/java-client/tools/build.py build
+```
+
+Use the pinned Java 25 toolchain from the
+[Java client setup](../../sdk/java-client/README.md).
+
+</TabItem>
+<TabItem value="csharp" label="C#/.NET">
+
+```bash
+dotnet restore sdk/dotnet/Latent.Sdk.ProviderWorkflow/Latent.Sdk.ProviderWorkflow.csproj \
+  --locked-mode --configfile sdk/dotnet/nuget.transport.config \
+  -p:ArtifactsPath="$CLIENT_DEMO/dotnet" \
+  -p:ImportDirectoryBuildProps=false -p:ImportDirectoryBuildTargets=false \
+  -p:ImportDirectoryPackagesProps=false -p:UseSharedCompilation=false -nodeReuse:false
+dotnet build sdk/dotnet/Latent.Sdk.ProviderWorkflow/Latent.Sdk.ProviderWorkflow.csproj \
+  --no-restore --disable-build-servers --artifacts-path "$CLIENT_DEMO/dotnet" \
+  -p:ImportDirectoryBuildProps=false -p:ImportDirectoryBuildTargets=false \
+  -p:ImportDirectoryPackagesProps=false -p:UseSharedCompilation=false -nodeReuse:false
+```
+
+Use the pinned .NET 8 SDK and runtime from the
+[C# client setup](../../sdk/dotnet/README.md).
+
+</TabItem>
+</Tabs>
+
+## 3. Prepare the capsules and temporary node inputs
+
+```bash
+python3 tools/build_guest_capsules.py --output "$CLIENT_DEMO/guests"
+LSF_GUEST_CAPSULES="$CLIENT_DEMO/guests" \
+LSF_PHASE3_WORKFLOW_FIXTURE_ROOT="$CLIENT_DEMO/inputs" \
+  cargo test --locked -p latentd --test phase3_workflow_fixture -- \
+    export_signed_provider_workflow_fixtures --exact --ignored --nocapture
+```
+
+Expect `1 passed; 0 failed`. This prepares signed example packages and the
+temporary node's trust settings. Run the next step soon afterward because the
+demonstration signatures expire. These credentials are for this temporary
+example; use [package delivery](deliver-and-recover-a-capsule.md) when configuring
+your own installed node.
+
+## 4. Run your client
+
+Define this helper once. It starts the temporary node, runs the selected client
+and saves the result:
+
+```bash
+run_client() {
+  local language=$1
+  shift
+  python3 tools/run_sdk_provider_workflow.py \
+    --cli "$CARGO_TARGET_DIR/debug/latent" --node "$CARGO_TARGET_DIR/debug/latentd" \
+    --fixture-root "$CLIENT_DEMO/inputs" --language "$language" \
+    -- "$@" > "$CLIENT_DEMO/result.json"
+}
+```
+
+Select the same language you built in step 2:
+
+<Tabs groupId="client-tutorial-language" defaultValue="rust">
+<TabItem value="rust" label="Rust">
+
+```bash
+run_client rust "$CARGO_TARGET_DIR/debug/examples/provider_workflow"
+```
+
+</TabItem>
+<TabItem value="typescript" label="TypeScript">
+
+```bash
+run_client typescript "$(command -v node)" "$PWD/sdk/typescript-client/tests/provider-workflow.mjs"
+```
+
+</TabItem>
+<TabItem value="go" label="Go">
+
+```bash
+run_client go "$CLIENT_DEMO/go-provider-workflow"
+```
+
+</TabItem>
+<TabItem value="c" label="C">
+
+```bash
+run_client c "$CLIENT_DEMO/c/provider-workflow"
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```bash
+run_client java "$(command -v java)" --sun-misc-unsafe-memory-access=allow \
+  --enable-native-access=ALL-UNNAMED -jar "$PWD/sdk/java-client/build/latent-java-client.jar"
+```
+
+</TabItem>
+<TabItem value="csharp" label="C#/.NET">
+
+```bash
+run_client dotnet "$(command -v dotnet)" \
+  "$CLIENT_DEMO/dotnet/bin/Latent.Sdk.ProviderWorkflow/debug/Latent.Sdk.ProviderWorkflow.dll"
+```
+
+</TabItem>
+</Tabs>
+
+Show what happened:
+
+```bash
+python3 - "$CLIENT_DEMO/result.json" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    result = json.load(source)
+checks = result["participant"]["assertions"]
+print("Client language:", result["language"])
+print("HTTP capsule succeeded:", checks["httpGuest"])
+print("Storage capsule succeeded:", checks["blobGuest"])
+print("Cancellation completed:", checks["explicitCancellation"])
+print("Configuration change recovered:", checks["mutationReceipt"])
+print("Node stopped cleanly:", result["nodeShutdown"]["record"]["clean"])
+PY
+```
+
+Expect your chosen language followed by five `True` results. The example also
+tries intentional failures, such as a wrong credential and an application error.
+Those cases are part of the demonstration. A command that exits with an error
+has not completed the walkthrough.
+
+## Invoke an admitted guest
+
+Now follow the code behind the example. Choose a language tab below; the source
+link opens the complete program with its imports and setup.
+
+<CodeExample example="client/provider-invoke" region="invoke" />
+
+The client sends the target capsule, function arguments, a time/resource budget
+and an activation ID. The HTTP capsule makes its permitted request through the
+node. The storage capsule writes and reads four bytes. Provider credentials stay
+with the node; the client does not need them.
+
+A successful call, an error declared by the capsule, and a platform failure are
+different outcomes. Handle each explicitly. Keep the activation ID if the reply
+is lost so that you can ask about the original call.
+
+## Cancel the wait, then inspect the original identity
+
+Stopping a client-side wait does not prove that the capsule has stopped. This
+example retains the activation ID, requests cancellation and checks its status:
+
+<CodeExample example="client/provider-cancel" region="cancel" />
+
+Use a fresh, live context or cancellation token for that follow-up. Do not send
+the invocation again just to find out whether the first one finished. When your
+program finishes, close its client and await any required shutdown.
+
+## Inspect pages and reconcile a mutation
+
+A management operation has its own operation ID. Keep that ID and the original
+request so that a lost reply can be resolved without accidentally creating a
+second change:
+
+<CodeExample example="client/provider-management" region="management" />
+
+The example reads one result page at a time and follows its continuation token.
+It also demonstrates a conflicting change. Check the current state before
+deciding to submit a new operation.
+
+## Finish or troubleshoot
+
+The runner stops its temporary node and local HTTP server automatically. Your
+builds and result remain under the directory printed by `printf '%s\n' "$CLIENT_DEMO"`.
+You can remove that directory when you no longer need it.
+
+| What you see | What to do |
 | --- | --- |
-| Connection refused or connect deadline | Verify the explicit loopback endpoint and authenticated node readiness. No execution is implied by an unsuccessful local connection. |
-| Unauthenticated / wrong tenant | Recheck the protected client credential and tenant against the node configuration. Never print the credential to debug it. |
-| Permission denied before publication | Inspect fresh publisher/builder policy and signed input identities. Local verification is not a runtime grant. |
-| Declared error | Inspect the application contract's error variant; it is an observed application result. |
-| Platform budget failure | Inspect the exact budget and current status. Keep the bounded failure case; do not silently raise node limits. |
-| Lost response, size limit or local cancellation | Retain the activation ID and query status using a live recovery context. Do not invoke again to discover the old outcome. |
-| Stale management precondition | Reconcile the original operation, then inspect current catalog state before deciding on a new operation. |
-| Client cannot drain | Treat the run as failed, retain redacted diagnostics and the owner state, and let the finite harness cleanup run. |
+| Missing compiler, generator or dependency | Revisit the setup link for your selected language and the common capsule toolchain |
+| Expired demonstration signature | Start again at step 1 with a fresh demo directory |
+| Connection or authentication failure | Use the runner's temporary configuration and keep its credential file private |
+| An example command exits with an error | Keep its diagnostic and result files; start the next attempt in a fresh demo directory |
 
-The harness owns and removes its temporary node/client directories and joins its
-process groups. Keep compact result receipts; remove only your explicitly chosen
-fixture/build directories after verifying no owner is using them. Never remove a
-persistent server's catalog as walkthrough cleanup.
-
-## Evidence and next steps
-
-The [merged six-client qualification](../evidence/phase3-sdk-matrix-0b99cd92/README.md)
-records 108 assertions, 54 actual activation IDs, 24 physically closed upstream
-holds and six clean node shutdowns at its stated source identity. That historical
-record does not automatically qualify a changed snippet: each block states the
-verification matching its exact source and validation owner. The
-[guide-source CI qualification](../evidence/phase3-sdk-guides-35509915448/README.md)
-passes all six clients and binds 18 example records to the exact executed source.
-It retains the original per-client and combined receipts. Newcomer review remains
-tracked in
-[#358](https://github.com/KirilsTurkins/latent-service-fabric/issues/358).
-
-Continue with [provider failure and recovery](../how-to/exercise-provider-failure-and-recovery.md),
-[policy reconciliation](../how-to/reconcile-a-policy-change.md) and the
-[shared client profile](../../sdk/profile/README.md). Resource campaigns, installed
-release bundles and the complete Angular workflow have their own evidence.
+Continue with [provider failure and recovery](../how-to/exercise-provider-failure-and-recovery.md)
+or [policy reconciliation](../how-to/reconcile-a-policy-change.md).
+For detailed limits and language-specific ownership rules, see the
+[shared client API reference](../../sdk/profile/README.md).

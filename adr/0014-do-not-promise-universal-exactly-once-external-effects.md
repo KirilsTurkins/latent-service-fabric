@@ -3,9 +3,12 @@
 - **Status:** Accepted
 - **Date:** 2026-08-17
 
-## Implementation status at Phase 1 completion
+## Current implementation
 
-This decision constrains later state/effect and workflow implementations. Phase 1 does not implement a durable effect dispatcher.
+The current immediate capability APIs report uncertainty when an external effect
+may have occurred. They provide no durable intent dispatcher or automatic retry.
+The durable-intent decision below constrains the planned transactional model;
+see [ADR-0025](0025-separate-immediate-capability-operations-from-transactional-effect-intents.md).
 
 ## Context
 

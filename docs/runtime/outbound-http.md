@@ -9,13 +9,13 @@ OPTIONS. The versioned provider profile is `bounded-http-v1`. It uses the existi
 [shared pools](provider-pools.md) and [required audit](capability-audit.md).
 An HTTP status, including 4xx/5xx, is a response rather than a transport error.
 
-This is a trusted embedding API. Install the provider in an
+For Rust embedding, install the provider in an
 `ActivationCapabilityRuntime` before preparing its capsules. Compile exact
-[provider bindings](capability-bindings.md), supply the original Phase 3 budget
+[provider bindings](capability-bindings.md), supply the original capability budget
 ledger, and grant the actual destination, method and path. An import declaration,
 inspection result or provider reference alone grants no network access. Ordinary
-standalone/CLI provider configuration is tracked separately in
-[#226](https://github.com/KirilsTurkins/latent-service-fabric/issues/226).
+standalone startup supports this provider through the
+[HTTP provider configuration](../reference/standalone-providers.md).
 
 ```rust,ignore
 let provider = HttpProvider::install(pools.clone(), "outbound", 1, 0,

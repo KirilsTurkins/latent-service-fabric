@@ -1,14 +1,16 @@
-# Diagnose provider failures and preserve recovery authority
+# Diagnose provider failures
 
 ## Outcome and supported scope
 
 Identify which owner rejected or retained a capability operation, recover using
 its actual operation identity, and stop the node without misreporting remote
-effects or live resources as reclaimed. This development guide accompanies
-[the real capability walkthrough](../learn/use-capabilities.md) and uses its
-exact checkout, Linux x86_64 tools and temporary fixtures. For an installed node,
-first use [authenticated readiness and configuration](../reference/standalone-node.md)
-and the [native installation/upgrade procedure](../../packaging/linux/INSTALL.md).
+effects or live resources as reclaimed. Start with the failed command's error
+and activation or operation ID. Keep the node's configuration and protected
+diagnostics available. This guide applies to the
+[capability walkthrough](../learn/use-capabilities.md) and installed nodes.
+If the node itself is unavailable, check
+[authenticated readiness and configuration](../reference/standalone-node.md)
+before diagnosing an individual provider.
 
 The following references describe the complete executable configurations:
 [standalone providers](../reference/standalone-providers.md),
@@ -21,7 +23,7 @@ credential-fallback or configuration-reload API to substitute for these paths.
 
 | Observation | Check and next action | What remains unknown or owned |
 | --- | --- | --- |
-| Invalid or unprotected configuration | Run `latentd check-config --config` on the intended protected file; inspect the bounded diagnostic and the closed schema before starting. Unknown provider fields and unsafe credential files fail closed. | A successful check does not establish catalog recovery, a live listener or execution permission. |
+| Invalid or unprotected configuration | Run `latentd check-config --config /path/to/node.json`, replacing the path with your protected node file. Correct the reported field or file permissions before starting. | A successful check does not establish catalog recovery, a live listener or execution permission. |
 | Authentication or grant denial | Preserve the activation/operation identity. Check tenant, selected publication/revision, deployment grant, current policy generation, exact binding and actual installed provider descriptor. The walkthrough demonstrates allowed/denied `capability explain` and post-revocation invocation. | Local package verification and a diagnostic explanation are not a reusable grant. A principal cannot gain authority by setting metadata. |
 | Exhausted budget or saturated pool | Compare the original deadline and remaining request/byte/descendant allowance with active broker, pool and I/O inventory. Release owned chunks/handles when the application has finished with them. | Queued work, sleeping host calls, active descendants and delayed consumers still hold real capacity. Raising a caller limit does not raise the node/provider ceiling. |
 | Slow, disconnected or unavailable provider | Determine whether dispatch occurred. Use the protocol's returned operation/receipt identity and its own recovery procedure. Keep the original deadline; inspect retained cleanup work before replacing the provider. | A lost reply, timeout or cancellation after possible dispatch cannot establish that the remote effect did not happen. |
@@ -36,40 +38,11 @@ provider logs, credential selectors, authorization headers or secret payloads.
 Record configuration/profile identities, activation and operation IDs, observed
 outcomes and cleanup counters instead.
 
-## Reproduce wrong authority, exhaustion and provider failure
-
-Run the standalone workflow in [Use capabilities](../learn/use-capabilities.md)
-for wrong-path denial and grant revocation. Its exact peer request count and
-clean shutdown assertions distinguish rejection from a hidden dispatch/retry.
-Then use the following maintained cases with the same pinned source:
-
-```bash
-cargo test --locked -p latent-wasmtime --test http \
-  --test streaming_http --test local_secrets --test random --test metrics -- --nocapture
-cargo test --locked -p latent-capabilities --lib broker::pools -- --nocapture
-```
-
-Inspect the named results: exhausted original request budgets, cancelled stream
-reads, failed secret reload preserving the current value, failed entropy without
-partial bytes, and a closed metric exporter returning typed unavailability.
-The pool regressions retain old credential epochs while requests are live and
-verify finite cleanup under contention. These are deliberately induced failures
-whose **expected typed outcome and cleanup** make the tests pass. A crashing,
-ignored or empty target is not equivalent.
-
-The [S3/Vault/NATS walkthrough](exercise-provider-failure-and-recovery.md)
-extends this to actual disposable TLS services: wrong credentials and immutable
-range verification, interrupted multipart work, Vault version/rotation/revocation,
-and NATS lost acknowledgements plus trigger overload/redelivery. Each runner
-removes only the service it owns. No paid account or pre-existing container is
-used. Inspect its retained source/lock identity before comparing old results to
-a changed provider or dependency graph.
-
 ## Recover immediate effects without manufacturing certainty
 
 HTTP response delivery, S3 publication acknowledgement and a NATS broker receipt
 are protocol observations. They do not establish downstream application success.
-Follow the [immediate-operation semantics](../runtime/capabilities.md#phase-3-immediate-provider-operations):
+Follow the [immediate-operation semantics](../runtime/capabilities.md#immediate-provider-operations):
 rejection before dispatch, acknowledgement, known failure and uncertainty after
 possible dispatch are different outcomes. Do not turn uncertainty into a fresh
 unconditional mutation, even when a generic client can retry transport requests.
@@ -115,18 +88,18 @@ authentication, DNS and redirect restrictions, and the provider's own network
 policy for capability calls. Never forward a registry token or backend provider
 credential into browser code, guest metadata, copied examples or public receipts.
 
-## Record verification and clean up
+## Check recovery and stop a local experiment
 
-Retain the exact source, dependency lock, selected test names, executable/package
-hashes, expected failure outcomes and owned cleanup. Machine-readable receipts
-must keep their original identities. Configured limits are not measured capacity,
-and a bounded fixture is not production or hostile-multitenant certification.
-The [maintained security monitoring guide](../operations/maintained-security-monitoring.md)
-assigns advisory/lock/workflow review to its existing owners; a manual scan cannot
-be relabelled as a scheduled run.
+After correcting configuration or authority, make a new, harmless read using a
+new activation ID. Check that it succeeds and that the node has released the
+failed call's resources. A successful new call does not resolve an earlier
+uncertain write: reconcile that write through its provider's documented receipt
+or observation procedure.
 
-The companion runners and tests close their own temporary nodes, services,
-children and storage. Preserve their public receipts for review, then remove only
-their explicitly owned review directories. Installed data, unrelated containers
-and operator credentials are outside that cleanup. A maintainer walkthrough of
-the rendered guides remains a separate coverage-review requirement.
+For a tutorial node, follow [the local shutdown steps](operate-and-contribute.md).
+Keep uncertain provider records with the node's data. An installed node's service
+manager owns its shutdown; deleting its state is not a recovery procedure.
+
+If you are changing a provider implementation, use the separate
+[contributor failure and recovery tests](exercise-provider-failure-and-recovery.md)
+and [standalone validation reference](../development/standalone-provider-validation.md).

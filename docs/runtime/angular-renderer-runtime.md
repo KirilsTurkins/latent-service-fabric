@@ -10,8 +10,12 @@ interface is not a node import or an SDK API.
 
 ## Configuration and identity
 
-Add `rendererProfile: "angular-ssr-component-v1"` to an explicitly controlled
-`local-experimental-v1` node. Reserve the workload's source, memory and CPU
+Set `rendererProfile: "angular-ssr-component-v1"` on the node. The supported
+profiles are explicitly controlled `local-experimental-v1` execution and
+protected `external-capsule-v1` execution with signed application packages and
+isolated native preparation. The [T1 workflow](../testing/angular-t1-workflow.md)
+describes the latter's configuration and admission requirements.
+Reserve the workload's source, memory and CPU
 through the normal settings; for the maintained fixture these include a
 32 MiB `limits.maximumComponentBytes`, 2 MiB `limits.maximumPayloadBytes`,
 256 MiB cell memory and 2,000,000,000 `execution.maximumCpuFuel`. The opt-in
@@ -58,7 +62,7 @@ Disconnect transfers ownership to the normal cleanup supervisor until the
 actual guest and delivery owners retire; revocation rejects before a fresh
 Store starts. Store memory accounting does not represent total process RSS.
 
-## Validation and remaining integration
+## Validation and support boundary
 
 After installing the pinned npm dependencies without lifecycle scripts, build
 the maintained qualification bundle with `npm run build` in
@@ -71,11 +75,15 @@ manifest and that exact component. It executes real generic-backend and HTTP
 node regressions, including failures, concurrent progress, disconnect and
 revocation. Missing fixtures fail the gate. No binary or bulk report is checked
 in. The original [qualification evidence](../testing/angular-renderer-qualification.md)
-remains historical; #239 measures integrated release-build performance.
+remains historical; [renderer resource measurements](../testing/phase3-resource-renderer.md)
+record their own bounded release-build profiles.
 
-The observed application builder is #234, componentless web deployment
-management is #226, and browser delivery defenses are #235. The current runtime
-explicitly refuses Angular under `external-capsule-v1`: T1 requires those
-actual package/build/authority paths and their conformance evidence. It cannot
-be enabled by relabeling Angular output as a Rust or C build. This profile
-does not provide an ambient Node process or arbitrary Node package support.
+The [observed application builder](../component-development/angular-build.md),
+componentless web deployment management and
+[browser delivery defenses](../security/browser-boundary.md) are implemented.
+The [complete reference workflow](../testing/angular-reference-workflow.md)
+exercises their integration under `external-capsule-v1`, including signed
+admission, provider calls, hydration, revocation, restart and rollback. T1 still
+requires the actual package, build and authority checks; relabeling Angular
+output as a Rust or C build cannot authorize execution. This renderer profile
+provides neither an ambient Node process nor arbitrary Node package support.

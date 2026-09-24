@@ -1,13 +1,13 @@
 # Blob model
 
-Phase 3 implements the guest blob capability through configured Linux
+The guest blob capability has configured Linux
 [local](../runtime/local-blobs.md) and [S3](../runtime/s3-blobs.md) providers.
 Both use the exact `latent:blob/blob@0.2.0` interface, tenant-scoped immutable
 references, finite staging and owned read chunks. Their shared capability port
-is separate from the package repository and raw artifact cache delivered in
-Phase 2. Standalone provider composition remains #226; cluster replication and
-cross-node transfer remain later work. See the
-[capability surface](../runtime/capabilities.md) and [roadmap](../roadmap.md).
+is separate from the package repository and raw artifact cache. The standalone
+node can install the local-blob provider through its [provider configuration](../reference/standalone-providers.md);
+S3 uses its documented Rust embedding. Cluster replication and cross-node
+transfer are not implemented. See the [capability surface](../runtime/capabilities.md).
 
 Large payloads should not be repeatedly serialized through the router, runtime, and component call graph. The implemented guest model represents them as immutable content-addressed blob references.
 

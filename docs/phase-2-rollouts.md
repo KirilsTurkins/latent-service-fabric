@@ -67,12 +67,12 @@ the route snapshot. Invocation pins retain only that executable snapshot, so old
 activations do not retain rollout history. Already admitted execution and
 lifecycle fencing follow the existing [routing semantics](deployment-routing.md).
 
-Current deployment catalog format 5 persists exact publication pins together with
-the combined route, rollout and managed deployment operation state. Older formats
-2–4 are recovered and upgraded before exposing routes. Legacy rollout plan and
-receipt hashes remain stable; new plans bind exact publication IDs under plan
-version 2. See [publication recovery](reference/publication-runtime.md) for migration,
-ambiguity, historical authority and rollback semantics.
+Current deployment catalog formats 5–7 persist exact publication pins together
+with route, rollout and managed operation state; capability bindings and HTTP
+routes select the corresponding extended format. Obsolete formats 1–4 are
+rejected before recovery cleanup. Current plans bind exact publication IDs under
+plan version 2. See [publication recovery](reference/publication-runtime.md) for
+current storage, historical authority and rollback semantics.
 
 ## Receipts, retries and uncertain outcomes
 

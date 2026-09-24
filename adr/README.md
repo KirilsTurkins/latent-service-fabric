@@ -1,145 +1,99 @@
 # Architecture Decision Records
 
-ADRs record decisions that constrain implementations and compatibility. Accepted ADRs may be superseded only by another ADR.
+ADRs explain why LSF works as it does and which constraints an implementation
+must preserve. Acceptance records an architectural decision; availability comes
+from the current implementation and its qualification. Superseding a decision
+requires another ADR with an explicit scope.
 
-[ADR-0041](0041-publish-single-source-version-bound-documentation.md) proposes the
-single-source Docusaurus ownership, finite guide coverage and one-writer
-publication contract. It does not claim the migration, guide review or live
-deployment is complete.
+## Current implementation
 
-Acceptance records architectural direction, not feature availability. Phase 1,
-its performance extension, and Phase 2 are complete. Verified package admission,
-OCI transfer, publisher/builder/SBOM policy, isolated compilation, bounded native
-reuse and controlled rollout now have delivered implementations. General
-capability providers and application hosting enter Phase 3. Transactional
-state/effects and clustered control retain their later scope. Stronger external
-execution hosts remain unsupported until their explicit isolation profile is
-implemented and validated. The [roadmap](../docs/roadmap.md) and
-[Phase 2 completion report](../docs/phase-2-completion.md) identify the delivered
-boundary. Dated implementation snapshots within ADRs keep their original context.
+The standalone node executes Component Model capsules in fresh Wasmtime Stores,
+resolves immutable local routes and uses activation-scoped capability grants.
+It provides exact publication admission, bounded OCI transfer, isolated compiler
+work, authenticated native reuse, managed delivery and shared HTTP ingress.
+The closed Angular renderer and static web targets use that shared ingress.
+See the [architecture overview](../docs/architecture/overview.md),
+[execution profiles](../docs/runtime/execution-security-profiles.md) and
+[current host ABI](../docs/runtime/host-abi-profile.md) for the supported boundary.
 
-[ADR-0019](0019-separate-package-identity-from-component-identity.md) defines the
-Phase 2 package identity and format foundation while preserving Phase 1 component
-identities. The bounded format codec does not itself establish publisher trust.
+Application transactions, durable effect dispatch and clustered control remain
+planned. A fixed execution-host backend for process-compromise containment is
+also unavailable. A compiler sandbox does not supply that guest boundary.
 
-[ADR-0020](0020-validate-supplied-components-without-executing-guests.md) implements
-deterministic supplied-artifact packaging and bounded structural validation
-without compiling or invoking guests.
+## Read superseded decisions in context
 
-[ADR-0021](0021-bound-registry-authority-and-transfer-ownership.md) defines scoped
-authenticated OCI transfers, retained download budgets and owned upload cleanup.
-Its permanent authority/ownership boundary is retained while ADR-0029 versions
-the transport interoperability choices.
+- ADR-0027 replaces the original one-component/one-publication association with
+  exact tenant-scoped publication authority.
+- ADR-0025 separates immediate capability calls from future transactional intents.
+- ADR-0029 adds an explicitly configured Bearer transport alongside the restricted
+  static OCI profile. Its tested topology does not imply support for every registry.
+- ADR-0032/0033 extend the original ABI with exact HTTP/blob resource ownership;
+  ADR-0035 adds the buffered async application contract.
+- ADR-0039/0040/0042 record the shared listener, installed Angular adapter and
+  optional scoped backend request beyond the initial renderer qualification.
+- ADR-0043 adds a distinct static target. ADR-0044 supersedes its original old-format
+  recovery policy and the obsolete catalog/selector compatibility in ADR-0019/0027.
+- ADR-0041 governs documentation ownership, versions and publishing. A working
+  website build does not complete human guide review or authorize a runtime release.
 
-[ADR-0022](0022-bind-publisher-proofs-to-current-explicit-trust.md) defines bounded
-package signatures and publisher proofs bound to explicit current policy and
-revocation snapshots, separate from tenant/catalog admission.
+Dates, original rationale and historical measurements remain useful decision
+history. Current guides and reference pages must use the implemented contract;
+old implementation snapshots are not setup instructions.
 
-[ADR-0023](0023-bind-build-attestations-to-observed-inputs-and-builder-trust.md)
-defines observed committed-source builds and separately approved builder proofs,
-with exact package/component/source associations and bounded current trust.
+## Decision index
 
-[ADR-0024](0024-bind-sbom-inventory-through-package-content.md) defines bounded
-declared-input SBOMs embedded before package assembly, exact detached associations
-and content policy separate from publisher authentication and admission currentness.
+### Runtime and authority
 
-[ADR-0025](0025-separate-immediate-capability-operations-from-transactional-effect-intents.md)
-separates Phase 3 immediate capability operations and explicit uncertain outcomes
-from Phase 4 transactional state/effect intents. It narrows ADR-0013's blanket
-external-effect statement while preserving ADR-0014's no-universal-exactly-once
-boundary.
+- [ADR-0001: Use Rust for the runtime](0001-use-rust-for-the-runtime.md)
+- [ADR-0002: Use the WebAssembly Component Model](0002-use-the-webassembly-component-model.md)
+- [ADR-0003: Use WIT as the capsule contract authority](0003-use-wit-as-the-capsule-contract-authority.md)
+- [ADR-0004: Use Wasmtime as the first execution engine](0004-use-wasmtime-as-the-first-execution-engine.md)
+- [ADR-0005: Forbid per-service idle execution allocation](0005-forbid-per-service-idle-execution-allocation.md)
+- [ADR-0006: Use reusable generic execution cells](0006-use-reusable-generic-execution-cells.md)
+- [ADR-0007: Distribute capsules as OCI artifacts](0007-distribute-capsules-as-oci-artifacts.md)
+- [ADR-0008: Compile AOT artifacts only in a trusted boundary](0008-compile-aot-artifacts-only-in-a-trusted-boundary.md)
+- [ADR-0009: Use capability-based host access](0009-use-capability-based-host-access.md)
+- [ADR-0010: Separate immutable capsule metadata from deployment policy](0010-separate-immutable-capsule-metadata-from-deployment-policy.md)
+- [ADR-0011: Keep the control plane out of the invocation hot path](0011-keep-the-control-plane-out-of-the-invocation-hot-path.md)
+- [ADR-0012: Place remote invocation behind a WIT-native transport abstraction](0012-place-remote-invocation-behind-a-wit-native-transport-abstraction.md)
+- [ADR-0013: Use explicit state transactions and effect intents](0013-use-explicit-state-transactions-and-effect-intents.md)
+- [ADR-0014: Do not promise universal exactly-once external effects](0014-do-not-promise-universal-exactly-once-external-effects.md)
+- [ADR-0015: Build a single-node stateless fabric before clustering](0015-build-a-single-node-stateless-fabric-before-clustering.md)
+- [ADR-0016: Keep paging, continuation eviction, and fusion optional](0016-keep-paging-continuation-eviction-and-fusion-optional.md)
+- [ADR-0017: Use fixed trust-class execution hosts for stronger containment](0017-use-fixed-trust-class-execution-hosts-for-stronger-containment.md)
+- [ADR-0018: Treat Latent Service Fabric as a working name](0018-treat-latent-service-fabric-as-a-working-name.md)
 
-[ADR-0026](0026-require-explicit-execution-isolation-profiles.md) defines exact
-security-profile selection, trusted-computing-base boundaries and fail-closed
-requirements for in-process guests, isolated compilation, authenticated native
-reuse and future provider/renderer/fixed-host execution.
+### Packages, trust and activation ownership
 
-[ADR-0027](0027-separate-publication-authority-from-component-identity.md)
-supersedes only ADR-0019's one-component/one-publication rule. It separates
-tenant-scoped immutable publication and lifecycle authority from component/code
-deduplication, preserving legacy component fields and requiring explicit
-selectors, bounded migration and independent currentness. Implementation remains
-assigned to #265â€“#267 in [RFC-0002](../rfcs/0002-tenant-scoped-publication-identity.md).
+- [ADR-0019: Separate package identity from component identity](0019-separate-package-identity-from-component-identity.md)
+- [ADR-0020: Validate supplied components without executing guests](0020-validate-supplied-components-without-executing-guests.md)
+- [ADR-0021: Bound registry authority and transfer ownership](0021-bound-registry-authority-and-transfer-ownership.md)
+- [ADR-0022: Bind publisher proofs to current explicit trust](0022-bind-publisher-proofs-to-current-explicit-trust.md)
+- [ADR-0023: Bind build attestations to observed inputs and builder trust](0023-bind-build-attestations-to-observed-inputs-and-builder-trust.md)
+- [ADR-0024: Bind SBOM inventory through package content](0024-bind-sbom-inventory-through-package-content.md)
+- [ADR-0025: Separate immediate capability operations from transactional effect intents](0025-separate-immediate-capability-operations-from-transactional-effect-intents.md)
+- [ADR-0026: Require explicit execution isolation profiles](0026-require-explicit-execution-isolation-profiles.md)
+- [ADR-0027: Separate publication authority from component identity](0027-separate-publication-authority-from-component-identity.md)
+- [ADR-0028: Retain activation ownership across asynchronous waits](0028-retain-activation-ownership-across-asynchronous-waits.md)
+- [ADR-0029: Separate registry authority from transport profile](0029-separate-registry-authority-from-transport-profile.md)
+- [ADR-0030: Bound disconnected authorization validity](0030-bound-disconnected-authorization-validity.md)
 
-[ADR-0028](0028-retain-activation-ownership-across-asynchronous-waits.md) follows
-ADR-0006 by defining ownership while active guests await providers or descendant
-calls. Yielding the shared runtime thread does not refund a live cell, Store,
-buffer or reservation; nested calls must make progress within fixed declared
-capacity or reject promptly. Implementation and conformance remain assigned to
-#205, #208, #209 and #238.
+### Capabilities and application hosting
 
-[ADR-0029](0029-separate-registry-authority-from-transport-profile.md) separates
-ADR-0021's permanent registry authority/ownership rules from versioned transport
-choices. `lsf-oci-static-v1` names the delivered restricted profile;
-`lsf-oci-bearer-v1` remains selected but unsupported until #269/#270 deliver and
-validate token authentication, bounded DNS/redirects and the Harbor conformance
-matrix from [RFC-0003](../rfcs/0003-versioned-oci-transport-profiles.md).
+- [ADR-0031: Version host ABI recognition independently of provider authority](0031-version-host-abi-recognition-independently-of-provider-authority.md)
+- [ADR-0032: Use bounded owned resources for streaming HTTP](0032-use-bounded-owned-resources-for-streaming-http.md)
+- [ADR-0033: Use scoped durable local blobs with owned chunks](0033-use-scoped-durable-local-blobs-with-owned-chunks.md)
+- [ADR-0034: Version maintained guest build provenance profiles](0034-version-maintained-guest-build-provenance-profiles.md)
+- [ADR-0035: Bound HTTP application values and delivery ownership](0035-bound-http-application-values-and-delivery-ownership.md)
+- [ADR-0036: Publish HTTP triggers with exact catalog target pins](0036-publish-http-triggers-with-exact-catalog-target-pins.md)
+- [ADR-0037: Qualify a closed Angular Component Model renderer profile](0037-qualify-a-closed-angular-component-renderer-profile.md)
+- [ADR-0038: Admit web packages with componentless publication authority](0038-admit-web-packages-with-componentless-publication-authority.md)
+- [ADR-0039: Bound the shared HTTP listener and preserve selected admission](0039-bound-the-shared-http-listener-and-preserve-selected-admission.md)
+- [ADR-0040: Run the closed Angular adapter in fresh generic Stores](0040-run-the-closed-angular-adapter-in-fresh-generic-stores.md)
 
-[ADR-0030](0030-bound-disconnected-authorization-validity.md) clarifies
-ADR-0011's temporary disconnected operation. Exact publication authorization has
-finite lease/disconnection bounds independent of route retention, with explicit
-clock, replay, restart and guarded-start semantics. Phase 3 delivers the design;
-[the Phase 5 handoff](../docs/architecture/cluster-freshness-handoff.md) requires
-executable distributed conformance before support is claimed.
+### Documentation and current alpha contracts
 
-[ADR-0031](0031-version-host-abi-recognition-independently-of-provider-authority.md)
-defines the exact Phase 3 host ABI recognition profile, selected asynchronous
-forms, immediate-operation error semantics and prepared/native identity. Real
-generated-binding checks enforce shape agreement; provider installation and
-activation authority remain separate, as specified in
-[RFC-0005](../rfcs/0005-phase3-host-abi-profiles.md).
-
-[ADR-0032](0032-use-bounded-owned-resources-for-streaming-http.md) extends the host
-profile to V3 with exact owned HTTP upload/body/chunk resources, finite transfer
-and resident-byte accounting, and explicit EOF/cancellation semantics. The
-[streaming profile](../docs/runtime/streaming-http.md) preserves V1/V2 contracts
-and the separate authorization and dormant-resource boundaries.
-
-[ADR-0033](0033-use-scoped-durable-local-blobs-with-owned-chunks.md) extends the
-profile to V4 with immutable local blobs, original tenant/session authority,
-owned chunks and a durable publication boundary. The [local storage
-contract](../docs/runtime/local-blobs.md) defines finite inventory, explicit
-retention, no-follow filesystem access and cancellation/recovery ownership.
-
-[ADR-0034](0034-version-maintained-guest-build-provenance-profiles.md) adds
-separately approved Rust and C guest build recipes for the maintained SDK
-examples. It preserves ADR-0023's independent builder trust and finite process
-ownership while keeping the original echo recipe unchanged.
-
-[ADR-0035](0035-bound-http-application-values-and-delivery-ownership.md) defines
-the buffered inbound application contract, canonical HTTP mapping, host-context
-authority and retained response-delivery ownership. It separates an async
-application export from provider availability and from the shared HTTP listener.
-
-[ADR-0036](0036-publish-http-triggers-with-exact-catalog-target-pins.md) binds
-HTTP route metadata and exact publication/deployment targets in one catalog
-transaction, with explicit CAS, bounded receipts and retained request ownership.
-
-[ADR-0037](0037-qualify-a-closed-angular-component-renderer-profile.md) selects
-a closed Angular Component Model renderer candidate using executable SSR,
-hydration and resource-bound evidence. It keeps production adapter/build work
-and unsupported stronger isolation profiles explicit.
-
-[ADR-0038](0038-admit-web-packages-with-componentless-publication-authority.md)
-admits exact browser/SSR packages with componentless scoped publication authority,
-current-use leases and the existing catalog's shared resource bounds.
-
-[ADR-0039](0039-bound-the-shared-http-listener-and-preserve-selected-admission.md)
-defines the shared HTTP/TLS listener, explicit authentication and proxy profiles,
-finite connection residency, exact selected admission and retained cleanup/write
-ownership. Its narrow Connection-header rule supersedes that part of ADR-0035;
-the bounded application mapping remains unchanged.
-
-[ADR-0040](0040-run-the-closed-angular-adapter-in-fresh-generic-stores.md)
-installs the closed Angular adapter in fresh generic Stores with explicit profile
-identity, finite callback/binary budgets and the existing HTTP cleanup ownership.
-T1 remains gated on observed Angular build and web deployment authority.
-
-[ADR-0042](0042-bound-angular-render-data-through-the-capability-broker.md)
-proposes one explicitly requested, broker-mediated HTTP data step inside the
-fresh Angular render activation, without ambient JavaScript networking.
-
-[ADR-0043](0043-select-static-web-publications-as-first-class-http-targets.md)
-defines componentless static-web trigger targets, signed `static-site-v1`
-browser routing metadata, shared external matcher semantics, exact web
-publication currentness and format-v1 HTTP state compatibility.
+- [ADR-0041: Publish single-source, version-bound documentation](0041-publish-single-source-version-bound-documentation.md)
+- [ADR-0042: Bound Angular render data through the capability broker](0042-bound-angular-render-data-through-the-capability-broker.md)
+- [ADR-0043: Select static web publications as first-class HTTP targets](0043-select-static-web-publications-as-first-class-http-targets.md)
+- [ADR-0044: Remove obsolete alpha compatibility](0044-remove-obsolete-alpha-compatibility.md)

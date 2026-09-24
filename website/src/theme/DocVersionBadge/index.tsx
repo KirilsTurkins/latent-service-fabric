@@ -13,7 +13,7 @@ export default function DocVersionBadge(props: Props): ReactNode {
   const publications = siteConfig.customFields?.publications as Publication[];
   const publication = publications.find(item => item.version === version.version);
   const current = siteConfig.customFields?.contentIdentity as {revision: string};
-  const learningPage = /\/docs\/(?:[^/]+\/)?(?:start|learn|component-development|how-to|operations)\//.test(useLocation().pathname);
+  const learningPage = /\/docs\/(?:[^/]+\/)?(?:(?:start|learn|component-development|how-to|operations)\/|installation\/|phase-2-(?:delivery|audit|canary-observation|canary-promotion|operator-workflows|rollback|rollouts)\/)/.test(useLocation().pathname);
   if (version.version !== 'current' && !publication) throw new Error('Missing document publication identity');
   return <>
     <OriginalBadge {...props} />

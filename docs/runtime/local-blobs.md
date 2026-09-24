@@ -4,7 +4,8 @@
 `latent:blob/blob@0.2.0`. The [V4 host profile](host-abi-profile.md) and
 [ADR-0033](../../adr/0033-use-scoped-durable-local-blobs-with-owned-chunks.md)
 select its exact async ABI. The legacy 0.1 interface remains recognized without
-an installed provider. This is Phase 3 immutable large-value storage, with no
+an installed provider. Use 0.2.0 for executable local-blob capabilities. This is
+immutable large-value storage, with no
 transactional key-value state, multi-object transactions, outbox or replication.
 
 ## Installation and authority
@@ -13,8 +14,8 @@ A trusted embedding opens one `LocalBlobStore` with an absolute root, namespace
 and `LocalBlobLimits`. It installs a `LocalBlobProvider` on the node's existing
 `ProviderPools` and registers it through
 `ActivationCapabilityRuntime::install_blobs`. Installation creates no runtime,
-listener or deployment-owned pool. Standalone provider configuration and
-management retain their separate Phase 3 delivery scope.
+listener or deployment-owned pool. A standalone node can install this provider
+through its [provider configuration](../reference/standalone-providers.md).
 
 The root must be private to the effective service UID (0700 directories, 0600
 files), with trusted ancestors. Root-owned sticky temporary directories are
