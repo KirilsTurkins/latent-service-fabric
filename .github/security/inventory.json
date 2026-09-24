@@ -1,8 +1,12 @@
 {
   "schema": 1,
   "manifests": [
+    {"path": "sdk/dotnet-guest/tests/Ownership.csproj", "kind": "no-external-packages", "sha256": "2193ac074d5fd2eadd661d2addbeffa90fdcc2ac7e5b300a257e9fb51bb786a4", "absent_when_directory_missing": "sdk/dotnet-guest/tests"},
+    {"path": "sdk/dotnet-guest/tools/package-hash/PackageHash.csproj", "kind": "no-external-packages", "sha256": "8ecf130707633e9451818256df40a6617277a651b1ad09b5557a65ff9bf4bdd7", "absent_when_directory_missing": "sdk/dotnet-guest/tools/package-hash"},
     {"path": "Cargo.toml", "kind": "cargo", "lock": "Cargo.lock"},
     {"path": "tools/native-fixture/Cargo.toml", "kind": "cargo", "lock": "tools/native-fixture/Cargo.lock", "isolated": true, "manifest_sha256": "7b43528d2c654a4cd136a5584a452406a4b67285aa1e99c8d96da57126639751", "absent_when_directory_missing": "tools/native-fixture"},
+    {"path": "sdk/typescript-guest/package.json", "kind": "no-external-packages", "sha256": "0d90346664579fc1b3da836a6d1290d47c7f748a476219b712936c7fc5c346ef", "absent_when_directory_missing": "sdk/typescript-guest"},
+    {"path": "sdk/typescript-guest/tools/package.json", "kind": "npm", "lock": "sdk/typescript-guest/tools/package-lock.json", "absent_when_directory_missing": "sdk/typescript-guest/tools"},
     {"path": "sdk/typescript-client/package.json", "kind": "npm", "lock": "sdk/typescript-client/package-lock.json"},
     {"path": "examples/renderer-profile/package.json", "kind": "npm", "lock": "examples/renderer-profile/package-lock.json", "absent_when_directory_missing": "examples/renderer-profile"},
     {"path": "website/package.json", "kind": "npm", "lock": "website/package-lock.json", "absent_when_directory_missing": "website"},
@@ -10,10 +14,25 @@
     {"path": "tools/requirements.lock", "kind": "pypi"},
     {"path": ".github/security/requirements.txt", "kind": "pypi", "absent_when_directory_missing": ".github/security"},
     {"path": "sdk/go/go.mod", "kind": "go-locked", "lock": "sdk/go/dependencies.lock.json", "sum": "sdk/go/go.sum", "module": "latent.dev/sdk/go", "legacy_sha256": "c4f1425518140f59773083b82a768a3783befd47246460586999d32fa8d3b28f"},
+    {"path": "sdk/go-guest/runtime-deps/go.mod", "kind": "go-locked", "lock": "sdk/go-guest/runtime-deps/dependencies.lock.json", "sum": "sdk/go-guest/runtime-deps/go.sum", "module": "wit_component", "absent_when_directory_missing": "sdk/go-guest/runtime-deps"},
     {"path": "sdk/java-client/build.gradle.kts", "kind": "maven-locked", "lock": "sdk/java-client/dependencies.lock.json", "legacy_sha256": "ce07cded5f7ba84687df95129a62fef32c4ba55b4e1ef3fcca69c0c63b86dbdc", "manifest_sha256": "3edeca5be99ddeb9a76ffb3439bc33d428912398f03f5982b6323f651348a010"},
     {"path": "sdk/java-client/settings.gradle.kts", "kind": "no-external-packages", "sha256": "d2bec319296b4d77e1218274e3fecd04bd47d07c92c0064f06876393c49df01b"},
+    {"path": "sdk/java-guest/feasibility/build.gradle", "kind": "maven-locked", "lock": "sdk/java-guest/feasibility/dependencies.lock.json", "manifest_sha256": "6b2291fcc2bb0e95ec8d21186ff674110164167f472b60292dc76eeeef987dc5", "absent_when_directory_missing": "sdk/java-guest/feasibility"},
+    {"path": "sdk/java-guest/compiler.gradle", "kind": "maven-locked", "lock": "sdk/java-guest/feasibility/dependencies.lock.json", "manifest_sha256": "9661685bdbe83c3e7b5dc4d4e311b4a680a7ba9175bb8e44703a6bb2d469b6ca", "absent_when_directory_missing": "sdk/java-guest"},
+    {"path": "sdk/java-guest/feasibility/settings.gradle", "kind": "no-external-packages", "sha256": "23755faa9365a644fa70a39f8a1ef83e99422914fc67b85d6df51e60984d7982", "absent_when_directory_missing": "sdk/java-guest/feasibility"},
     {"path": "sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj", "kind": "no-external-packages", "sha256": "48bcd87dca0595c0146b10aeb35c0870a7d4c858d9ae263e232f3fa0dc048d8f"},
     {"path": "sdk/dotnet/Latent.Sdk.SemanticTests/Latent.Sdk.SemanticTests.csproj", "kind": "no-external-packages", "sha256": "2ad35b92e0a92c308aecbb9419c868039c4b211929cba6b2194b17e6f023ee12"},
+    {
+      "path": "sdk/dotnet-guest/probes/smoke/Smoke.csproj", "kind": "nuget-aot-locked",
+      "lock": "sdk/dotnet-guest/probes/smoke/packages.lock.json",
+      "manifest_sha256": "da5a0b225e3f0cf5c4b576d607aeff1a67a17758d5e2c06d41212694f83f0e71",
+      "lock_sha256": "c52f3ff2af8396c543f93063caf0a36ff41fed9e47f20383ae51fd432f74ad82",
+      "absent_when_directory_missing": "sdk/dotnet-guest/probes/smoke",
+      "configuration": [
+        {"path": "sdk/dotnet-guest/global.json", "sha256": "0aa4b85ae248d59bbc4138f346d952b7fae4fe18cc701d921fa1c003211be777"},
+        {"path": "sdk/dotnet-guest/nuget.config", "sha256": "68972ec7d2e15dc029bb08855bfb789657c760abd0e567621dae2460bef16f38"}
+      ]
+    },
     {
       "path": "sdk/dotnet/Latent.Sdk.Transport/Latent.Sdk.Transport.csproj", "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Transport/packages.lock.json", "runtime_identifier": "linux-x64",

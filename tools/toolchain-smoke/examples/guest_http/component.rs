@@ -35,6 +35,18 @@ async fn probe(which: u32, text: String, _handle: u64) -> u64 {
         Ok(response) => u64::from(response.status) + 1000 * response.body.len() as u64,
         Err(HttpError::PermissionDenied) => 10,
         Err(HttpError::Uncertain) => 11,
-        Err(other) => panic!("unexpected HTTP error: {other:?}"),
+        // Closed probe outcomes retain the provider failure category without
+        // guest messages or payloads. HTTP success codes start at 100.
+        Err(HttpError::InvalidUrl) => 12,
+        Err(HttpError::InvalidRequest) => 13,
+        Err(HttpError::RequestTooLarge) => 14,
+        Err(HttpError::ResponseTooLarge) => 15,
+        Err(HttpError::DeadlineExceeded) => 16,
+        Err(HttpError::Cancelled) => 17,
+        Err(HttpError::BudgetExhausted) => 18,
+        Err(HttpError::DnsFailed) => 19,
+        Err(HttpError::TlsFailed) => 20,
+        Err(HttpError::ConnectionFailed) => 21,
+        Err(HttpError::Unavailable) => 22,
     }
 }

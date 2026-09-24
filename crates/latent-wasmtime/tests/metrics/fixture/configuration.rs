@@ -44,11 +44,27 @@ pub(super) fn compile(
     publication: &ReleaseUseEligibility,
     provider: &ProviderReference,
 ) -> Arc<CompiledCapabilityPlan> {
+    compile_with_runtime(
+        broker,
+        revision,
+        publication,
+        provider,
+        &support::guest_runtime::Runtime::default(),
+    )
+}
+
+pub(super) fn compile_with_runtime(
+    broker: &ActivationCapabilityBroker,
+    revision: &ResolvedRevision,
+    publication: &ReleaseUseEligibility,
+    provider: &ProviderReference,
+    runtime: &support::guest_runtime::Runtime,
+) -> Arc<CompiledCapabilityPlan> {
     broker
         .compile_invocation_plan(
             revision,
             Some(&latent_core::DeploymentId("metrics-deployment".into())),
-            &[CapabilityBindingSpec {
+            &runtime.bindings(&[CapabilityBindingSpec {
                 definition_digest: Some(&latent_artifacts::package::artifact_blob_digest(
                     b"metrics-fixture-binding-v1",
                 )),
@@ -57,7 +73,7 @@ pub(super) fn compile(
                 policy_ids: &["p".into()],
                 provider_binding_id: "binding",
                 deployment_restriction_json: br#"{"operations":[]}"#,
-            }],
+            }]),
             publication,
             &[],
             &[],

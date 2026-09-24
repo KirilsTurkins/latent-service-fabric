@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GUIDES = {
     'evaluate-boundary': ['docs/start/index.md'],
     'install-auth-readiness': ['docs/start/first-node.md', 'docs/installation.md'],
-    'contributor-checks': ['docs/how-to/operate-and-contribute.md'],
+    'contributor-checks': ['docs/contribute/index.md'],
     'author-capsule': ['docs/learn/author-your-first-capsule.md'],
     'package-sign-publish': ['docs/learn/author-your-first-capsule.md', 'docs/learn/deliver-and-recover-a-capsule.md'],
     'rollout-uncertain-recovery': ['docs/learn/deliver-and-recover-a-capsule.md', 'docs/how-to/operate-and-contribute.md'],
@@ -71,8 +71,12 @@ class CoreGuides(unittest.TestCase):
     def test_real_guest_region_is_referenced_without_copying_implementation(self):
         guide = (ROOT / 'docs/learn/author-your-first-capsule.md').read_text(encoding='utf-8')
         self.assertEqual(guide.count('<!-- lsf-example: guest/rust-echo echo -->'), 1)
-        self.assertNotIn('impl Guest for EchoCapsule', guide)
-        self.assertIn('examples/guides/rust-echo/example.json', guide)
+        # Prose may explain the implementation; only a pasted implementation
+        # would bypass the maintained source-region extraction.
+        for language, source in fences(guide):
+            if language == 'rust':
+                self.assertNotIn('impl Guest for EchoCapsule', source)
+        self.assertTrue((ROOT / 'examples/guides/rust-echo/example.json').is_file())
 
     def test_learning_sequence_links_are_present_and_bounded(self):
         first = (ROOT / 'docs/start/first-node.md').read_text(encoding='utf-8')

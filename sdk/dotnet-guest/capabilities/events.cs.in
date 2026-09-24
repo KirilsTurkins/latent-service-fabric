@@ -1,0 +1,7 @@
+using @root@;
+using Raw = @raw@;
+namespace Lsf.Guest;
+public static class Events
+{
+    public static Result<Raw.PublishReceipt, Raw.EventError> Publish(Raw.Event value) => Raw.Publish(value);
+}

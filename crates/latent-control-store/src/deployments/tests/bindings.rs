@@ -1,15 +1,46 @@
 //! Checked packages and real catalog/policy ownership; no guest execution.
 mod fixture;
 mod inspection;
+mod lease;
 mod local;
 #[path = "../../../../latent-packaging/tests/fixtures/mod.rs"]
 mod package_fixture;
 mod publications;
 mod rejections;
+mod slow_preparation;
 mod startup;
 use fixture::*;
 use latent_capabilities::broker::CapabilityPlanSource;
 use latent_routing::{RouteCompiler, RouteResolver, RouteSnapshotPublisher};
+
+#[test]
+fn identical_consumers_reuse_one_transient_package_but_never_a_previous_compilation() {
+    use crate::DeploymentStore;
+    use latent_core::DeploymentId;
+    let f = Fixture::new();
+    let original = f
+        .store
+        .read_catalog()
+        .record_by_id(&DeploymentId("consumer".into()))
+        .unwrap()
+        .deployment
+        .clone();
+    for index in 0..8 {
+        let mut deployment = (*original).clone();
+        deployment.id = DeploymentId(format!("dormant-{index}"));
+        deployment.metadata.name = deployment.id.0.clone();
+        run(f.store.apply(deployment)).unwrap();
+    }
+    super::super::bindings::compile::PACKAGE_READS.with(|reads| reads.set(0));
+    for expected in 1..=2 {
+        let prepared =
+            prepare(&f.store, f.broker.clone(), &f.provider, vec![definition()]).unwrap();
+        f.store.commit_binding_update(prepared).unwrap();
+        assert_eq!(f.store.binding_inventory().2, 9);
+        super::super::bindings::compile::PACKAGE_READS
+            .with(|reads| assert_eq!(reads.get(), expected));
+    }
+}
 
 #[test]
 fn exact_host_plan_is_durable_and_old_pins_keep_original_data() {
@@ -42,6 +73,7 @@ fn exact_host_plan_is_durable_and_old_pins_keep_original_data() {
     );
     let Fixture {
         store,
+        authority: _,
         releases,
         broker,
         provider,

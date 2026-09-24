@@ -3,9 +3,13 @@
 - **Status:** Accepted
 - **Date:** 2026-08-17
 
-## Implementation status at Phase 1 completion
+## Current implementation
 
-Transactions and durable effect execution are Phase 4 work. Phase 1 is stateless; its durable release/deployment metadata is not application state.
+Application transactions and durable effect dispatch remain planned. Durable
+publication/deployment metadata is not application state. Immediate capability
+operations are implemented under
+[ADR-0025](0025-separate-immediate-capability-operations-from-transactional-effect-intents.md),
+which supersedes this ADR's blanket requirement to journal every external effect.
 
 ## Context
 

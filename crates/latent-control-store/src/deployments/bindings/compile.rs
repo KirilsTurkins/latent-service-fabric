@@ -3,7 +3,7 @@ use super::{
     capacity, denied, error, invalid, model::StoredBinding, BindingCatalog, CompilerOwner,
 };
 use crate::deployments::compiler::{CompiledCatalog, RevisionRecord};
-use latent_artifacts::{ArtifactRepository, ReleaseUseEligibility};
+use latent_artifacts::{AdmissionAuthority, ArtifactRepository, ReleaseUseEligibility};
 use latent_capabilities::broker::{
     CapabilityBindingSpec, InvocationBindingTarget, LOCAL_SERVICE_INVOCATION_PROFILE,
     SERVICE_INVOCATION_CAPABILITY,
@@ -27,6 +27,7 @@ pub(super) async fn compile(
     owner: Option<Arc<CompilerOwner>>,
     artifacts: &dyn ArtifactRepository,
     strict: bool,
+    control_authority: Option<&dyn AdmissionAuthority>,
 ) -> Result<BindingCatalog, PlatformError> {
     let limits = owner
         .as_ref()
@@ -44,7 +45,13 @@ pub(super) async fn compile(
         return Err(capacity());
     }
     invocation::configured_graph(catalog, &definitions, &owner)?;
+    let order_bytes = catalog
+        .records
+        .len()
+        .checked_mul(std::mem::size_of::<&RevisionRecord>())
+        .ok_or_else(capacity)?;
     if owner.retained_bytes()
+        + order_bytes
         + data
             .iter()
             .map(StoredBinding::retained_bytes)
@@ -58,7 +65,18 @@ pub(super) async fn compile(
         .ok_or_else(capacity)?;
     let mut plans = Vec::with_capacity(catalog.records.len());
     let mut unavailable = 0;
-    for record in &catalog.records {
+    // One transient consumer package, not one retained package per deployment.
+    // Each plan still checks live eligibility and its own scoped grants. Sorting
+    // the bounded pointer list groups only identical tenant/publication/source
+    // identities; no cache or authority survives this compilation.
+    let mut order = Vec::new();
+    order
+        .try_reserve_exact(catalog.records.len())
+        .map_err(|_| capacity())?;
+    order.extend(catalog.records.iter().map(Arc::as_ref));
+    order.sort_unstable_by(|left, right| package_key(left).cmp(&package_key(right)));
+    let mut consumer = None;
+    for record in order {
         if matches!(
             catalog.selected_eligibility(&record.deployment.release, record.publication.as_ref()),
             Some(crate::deployments::admission_fence::SelectedEligibility::Inactive(_))
@@ -66,7 +84,17 @@ pub(super) async fn compile(
             unavailable += 1;
             continue;
         }
-        let result = plan(catalog, record, &definitions, &owner, artifacts, deadline).await;
+        let result = plan(
+            catalog,
+            record,
+            &definitions,
+            &owner,
+            artifacts,
+            deadline,
+            &mut consumer,
+            control_authority,
+        )
+        .await;
         match result {
             Ok(plan) => plans.push(plan),
             Err(failure)
@@ -91,6 +119,26 @@ pub(super) async fn compile(
         plans: plans.into_boxed_slice(),
         unavailable,
     })
+}
+
+fn package_key(
+    record: &RevisionRecord,
+) -> (
+    &Option<latent_core::TenantId>,
+    &Option<latent_core::PublicationId>,
+    &latent_core::ReleaseDigest,
+) {
+    (
+        &record.deployment.metadata.tenant,
+        &record.publication,
+        &record.deployment.release,
+    )
+}
+
+#[cfg(test)]
+thread_local! {
+    pub(in crate::deployments) static PACKAGE_READS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    pub(in crate::deployments) static AFTER_PACKAGE_INSPECTION: std::cell::RefCell<Option<Box<dyn FnOnce()>>> = const { std::cell::RefCell::new(None) };
 }
 fn definitions(
     data: &[StoredBinding],
@@ -218,7 +266,10 @@ async fn bundle(
     record: &RevisionRecord,
     owner: &CompilerOwner,
     artifacts: &dyn ArtifactRepository,
+    control_authority: Option<&dyn AdmissionAuthority>,
 ) -> Result<PackageBundle, PlatformError> {
+    #[cfg(test)]
+    PACKAGE_READS.with(|reads| reads.set(reads.get() + 1));
     let tenant = record
         .deployment
         .metadata
@@ -258,6 +309,22 @@ async fn bundle(
             .is_none_or(|s| s.component_digest().as_str() != record.deployment.release.0)
     {
         return Err(denied());
+    }
+    #[cfg(test)]
+    AFTER_PACKAGE_INSPECTION.with(|hook| {
+        let action = hook.borrow_mut().take();
+        if let Some(action) = action {
+            action();
+        }
+    });
+    // Structural work grants no authority and one bounded package can take
+    // longer than a clock window. Renew only the explicit control owner after
+    // that work, outside every policy/lifecycle fence. The caller and broker
+    // still check the retained publication and all dependencies against live
+    // policy, expiry and revocation; neither bytes nor a renewed clock revive
+    // stale proof. Recovery/startup pass None and keep their fail-closed path.
+    if let Some(authority) = control_authority {
+        authority.renew_control_lease()?;
     }
     Ok(bundle)
 }
@@ -311,13 +378,19 @@ struct Import<'a> {
     policies: Vec<String>,
     restriction: Vec<u8>,
 }
-async fn plan(
+#[expect(
+    clippy::too_many_arguments,
+    reason = "authenticated control renewal accompanies the existing bounded binding inputs"
+)]
+async fn plan<'a>(
     catalog: &CompiledCatalog,
-    record: &RevisionRecord,
+    record: &'a RevisionRecord,
     definitions: &[BindingDefinition],
     owner: &Arc<CompilerOwner>,
     artifacts: &dyn ArtifactRepository,
     deadline: Instant,
+    cached: &mut Option<(&'a RevisionRecord, PackageBundle)>,
+    control_authority: Option<&dyn AdmissionAuthority>,
 ) -> Result<Arc<latent_capabilities::broker::CompiledCapabilityPlan>, PlatformError> {
     if Instant::now() >= deadline {
         return Err(error(
@@ -325,12 +398,32 @@ async fn plan(
             "binding-compile-deadline",
         ));
     }
+    let new_package = cached
+        .as_ref()
+        .is_none_or(|(previous, _)| package_key(previous) != package_key(record));
+    // Binding compilation reads the packages again after metadata compilation.
+    // Refresh only at an explicit control boundary, before checking eligibility
+    // and reading a new bounded package. Recovery/read-only callers pass None;
+    // failed renewals never repeat a package read, plan, or deployment effect.
+    if new_package {
+        if let Some(authority) = control_authority {
+            authority.renew_control_lease()?;
+        }
+    }
     let publication = eligibility(catalog, record)?;
     if publication.web_projection().is_some() {
         return web::compile(catalog, record, definitions, owner, &publication, deadline);
     }
     let comparison = PackageComparisonLimits::default();
-    let consumer = bundle(record, owner, artifacts).await?;
+    if new_package {
+        // Drop the preceding package before reading another bounded package.
+        *cached = None;
+        *cached = Some((
+            record,
+            bundle(record, owner, artifacts, control_authority).await?,
+        ));
+    }
+    let consumer = &cached.as_ref().expect("current checked consumer package").1;
     let surface = consumer.surface().ok_or_else(denied)?;
     let mut imports = Vec::new();
     let mut dependencies = Vec::new();
@@ -350,8 +443,11 @@ async fn plan(
             {
                 return Err(denied());
             }
+            if let Some(authority) = control_authority {
+                authority.renew_control_lease()?;
+            }
             dependencies.push(eligibility(catalog, target)?);
-            let provider_bundle = bundle(target, owner, artifacts).await?;
+            let provider_bundle = bundle(target, owner, artifacts, control_authority).await?;
             local.push(super::source::LocalTarget::new(target));
             let mut resolved = revision(target, catalog.generation);
             resolved.target.contract = d.manifest.provider.contract.clone();
@@ -366,11 +462,11 @@ async fn plan(
                     resolved,
                     target_proof.functions(),
                 )?);
-                latent_packaging::compile_host_binding(&consumer, interface, comparison)?
+                latent_packaging::compile_host_binding(consumer, interface, comparison)?
             } else {
                 local_targets.push(resolved);
                 latent_packaging::compile_local_binding(
-                    &consumer,
+                    consumer,
                     &provider_bundle,
                     interface,
                     &d.manifest.provider.contract.0,
@@ -378,7 +474,7 @@ async fn plan(
                 )?
             }
         } else {
-            latent_packaging::compile_host_binding(&consumer, interface, comparison)?
+            latent_packaging::compile_host_binding(consumer, interface, comparison)?
         };
         let (policies, restriction) = grant(record, d, interface)?;
         imports.push(Import {

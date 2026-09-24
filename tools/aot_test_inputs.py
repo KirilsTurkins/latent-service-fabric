@@ -25,10 +25,10 @@ if __package__ in (None, ""):
 from tools import ci_rust_artifacts as artifacts
 
 SCHEMA = "latent.aot-test-inputs.v1"
-PROFILE = "debug-all-features-v2"
-# Exact Cargo --all-features closure, including the explicit developer test seam.
-# This remains test preparation, never an approved production compiler identity.
-FEATURES = ("aot-test-timings", "development-test-host")
+PROFILE = "debug-all-features-v3"
+# Exact --all-features closure for the developer host and Java diagnostic.
+# Production Wasm exceptions remain an explicit, bounded Java profile opt-in.
+FEATURES = ("aot-test-timings", "development-test-host", "java-guest-diagnostic")
 MAX_FILE = 512 * 1024 * 1024
 MAX_MANIFEST = 64 * 1024
 HARNESS_NAMES = ("aot_supervisor", "isolated_aot", "native_aot_cache")

@@ -1,5 +1,5 @@
 //! Exact data-only bindings published by the existing deployment transaction.
-mod compile;
+pub(in crate::deployments) mod compile;
 mod inspection;
 pub(in crate::deployments) mod model;
 mod source;
@@ -86,6 +86,7 @@ pub(super) async fn inherit(
     catalog: &CompiledCatalog,
     previous: Option<&CompiledCatalog>,
     artifacts: &dyn latent_artifacts::ArtifactRepository,
+    control_authority: Option<&dyn latent_artifacts::AdmissionAuthority>,
 ) -> Result<BindingCatalog, PlatformError> {
     let Some(previous) = previous else {
         return Ok(BindingCatalog::default());
@@ -99,6 +100,7 @@ pub(super) async fn inherit(
         previous.bindings.owner.clone(),
         artifacts,
         false,
+        control_authority,
     )
     .await
 }
@@ -107,7 +109,7 @@ pub(super) async fn restore(
     data: Vec<StoredBinding>,
     artifacts: &dyn latent_artifacts::ArtifactRepository,
 ) -> Result<BindingCatalog, PlatformError> {
-    compile::compile(catalog, data.into(), None, artifacts, false).await
+    compile::compile(catalog, data.into(), None, artifacts, false, None).await
 }
 fn error(code: PlatformErrorCode, message: &'static str) -> PlatformError {
     super::error(code, message)

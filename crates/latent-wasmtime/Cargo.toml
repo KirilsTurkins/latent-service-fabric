@@ -12,6 +12,9 @@ description = "Bounded Wasmtime Component Model runtime with a retained Phase 0 
 aot-test-timings = []
 development-test-host = ["latent-artifacts/development-test-host", "latent-policy/development-test-host"]
 
+# Retains the standalone compiler diagnostic; node installation is separately explicit.
+java-guest-diagnostic = []
+
 [lints.rust]
 # Only the private authenticated copying loader may locally allow unsafe.
 unsafe_code = "deny"
@@ -50,7 +53,7 @@ latent-telemetry = { path = "../latent-telemetry" }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
-wasmtime.workspace = true
+wasmtime = { workspace = true, features = ["gc", "gc-drc"] }
 zeroize = { version = "=1.9.0", features = ["alloc"] }
 
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
@@ -61,6 +64,7 @@ rustix = { version = "=1.1.4", features = ["process", "thread", "fs", "pipe", "m
 seccompiler = "=0.5.0"
 
 [dev-dependencies]
+getrandom = "=0.4.3"
 latent-ingress = { path = "../latent-ingress" }
 base64.workspace = true
 latent-signing = { path = "../latent-signing" }
@@ -77,7 +81,7 @@ wasm-encoder.workspace = true
 wit-parser = { version = "=0.252.0", default-features = false, features = ["std"] }
 latent-node = { path = "../latent-node" }
 latent-scheduler = { path = "../latent-scheduler" }
-tokio = { workspace = true, features = ["rt-multi-thread"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]
 rustix = { version = "=1.1.4", features = ["time"] }

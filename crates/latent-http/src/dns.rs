@@ -171,7 +171,7 @@ async fn exchange(
     server: SocketAddr,
     packet: &[u8],
 ) -> Result<latent_capabilities::broker::io::IoBuffer, HttpError> {
-    let reservation = client.reserve_connection(call)?;
+    let reservation = client.reserve_connection_wait(call).await?;
     let memory = pools.reserve_protocol_metadata(4096)?;
     let bind = if server.is_ipv4() {
         "0.0.0.0:0"
@@ -232,7 +232,7 @@ async fn tcp(
     server: SocketAddr,
     packet: &[u8],
 ) -> Result<latent_capabilities::broker::io::IoBuffer, HttpError> {
-    let reservation = client.reserve_connection(call)?;
+    let reservation = client.reserve_connection_wait(call).await?;
     let memory = pools.reserve_protocol_metadata(4096)?;
     let socket = call
         .io()

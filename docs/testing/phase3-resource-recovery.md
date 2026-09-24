@@ -24,6 +24,6 @@ The raw receipts, their build identities and both matrix outcomes are linked bel
 - [2026-09-20-resource-web-recovery-09-web-campaign.json](phase3-resource-evidence/2026-09-20-resource-web-recovery-09-web-campaign.json): `checkpoint-passed`, 59 samples.
 - [2026-09-20-resource-web-recovery-09-web-smoke.json](phase3-resource-evidence/2026-09-20-resource-web-recovery-09-web-smoke.json): `checkpoint-passed`, 48 samples.
 
-## Remaining acceptance
+## Scope at this checkpoint
 
-#239 remains open for standalone secret/event/child-call campaigns, OCI token/resolver/redirect pool accounting, multiple resource ceilings and shared-storage deduplication measurements. JavaScript allocator heap bytes are not exported; unknown values remain unknown. Actual browser qualification belongs to #236, and cold/warm conclusions remain scoped to the recorded host and profiles. The four passing profiles do not certify the full Phase 3 gate.
+At this checkpoint, standalone secret/event/child-call campaigns, OCI token/resolver/redirect pool accounting, multiple resource ceilings and shared-storage deduplication measurements were still outstanding. Later measurements and the closure decision are recorded in [resource qualification #239](https://github.com/KirilsTurkins/latent-service-fabric/issues/239); they do not change the four observations retained here. JavaScript allocator heap bytes were not exported; unknown values remain unknown. Actual browser qualification belongs to #236, and cold/warm conclusions remain scoped to the recorded host and profiles. The four passing profiles do not certify the full Phase 3 gate.

@@ -17,11 +17,7 @@ async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fix
     let callee_name = format!("{language}-callee");
     let caller = package::bundle(&package::input(&caller_name));
     let callee = package::bundle(&package::input(&callee_name));
-    let signers = package::Signers::new(if language == "c" {
-        latent_signing::C_GUEST_BUILD_TYPE
-    } else {
-        latent_signing::RUST_GUEST_BUILD_TYPE
-    });
+    let signers = package::Signers::new(&package::observation(&caller_name).build_type);
     let mut uploads = vec![];
     for (name, bundle) in [
         (caller_name.as_str(), &caller),
@@ -30,7 +26,10 @@ async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fix
         let observation = package::observation(name);
         uploads.push(signers.upload(bundle, &observation));
     }
-    let catalog = package::catalog(root, signers.policy);
+    let memory_ceiling = super::support::guest_runtime::service_memory(
+        super::support::config().maximum_memory_bytes,
+    );
+    let catalog = package::catalog(root, signers.policy, Some(memory_ceiling));
     for upload in uploads {
         catalog
             .admit_package(&TenantId("tenant-a".into()), upload, &mut |_| Ok(()))
@@ -43,19 +42,40 @@ async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fix
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn typed_service_outcomes_use_node_admission_and_reused_cells() {
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         for permit in [true, false] {
             let root = tempfile::tempdir().unwrap();
             let f = configured(root.path(), permit, language).await;
             for (index, (which, expected)) in [(0, 42), (1, 10), (0, 42)].into_iter().enumerate() {
                 let mut request = f.request(&format!("sdk-service-{index}"), which);
                 request.input = serde_json::to_vec(&serde_json::json!([which, "", "0"])).unwrap();
+                // Fixed numeric snapshots distinguish caller/child cache reuse
+                // from new worker activity without retaining any guest input.
+                let preparation_before = f.backend.preparation_activity_snapshot();
+                let compiler_before = f.backend.compiler_snapshot();
+                let started = std::time::Instant::now();
                 let receipt = f.manager.start(request).unwrap().await;
+                let preparation_after = f.backend.preparation_activity_snapshot();
+                let compiler_after = f.backend.compiler_snapshot();
+                let terminals = f.observations.terminals.lock().unwrap().clone();
+                let starts = f.observations.starts.lock().unwrap().clone();
+                let child_failures = f.observations.child_failures.snapshot();
+                eprintln!(
+                    "service timing language={language} permit={permit} case={index} elapsed={:?}; preparation before: {preparation_before:?}; preparation after: {preparation_after:?}; compiler before: {compiler_before:?}; compiler after: {compiler_after:?}; caller/child starts: {starts:?}; terminals: {terminals:?}; child failures: {child_failures:?}",
+                    started.elapsed()
+                );
                 let ActivationOutcome::Succeeded(success) = receipt.outcome else {
-                    panic!("{:?}", receipt.outcome)
+                    panic!(
+                        "{:?}; caller/child starts: {starts:?}; terminals: {terminals:?}; child failures: {child_failures:?}",
+                        receipt.outcome
+                    )
                 };
                 let result: Vec<String> = serde_json::from_slice(&success.output).unwrap();
-                assert_eq!(result, [if permit { expected } else { 11 }.to_string()]);
+                assert_eq!(
+                    result,
+                    [if permit { expected } else { 11 }.to_string()],
+                    "caller/child terminals: {terminals:?}; child failures: {child_failures:?}"
+                );
                 assert_eq!(success.consumption.child_calls, u32::from(permit));
                 f.idle().await;
             }

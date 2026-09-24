@@ -21,11 +21,127 @@ from tools import phase3_security_artifacts as artifacts
 from tools import phase3_security_cases as cases
 from tools import phase3_security_container as container
 from tools import phase3_security_manual as manual
+from tools import phase3_security_diagnostics as diagnostics
 from tools.build_process import BuildProcessError, run_bounded
 
 
 def completed(stdout=b"", stderr=b""):
     return subprocess.CompletedProcess([], 0, stdout, stderr)
+
+
+class FailedCommandTests(unittest.TestCase):
+    source = "crates/latent-wasmtime/tests/local_service/acceptance.rs"
+
+    def failure(self, prefix="crates/latent-wasmtime/"):
+        raw = ("thread 'acceptance::concurrent_imports' (123) panicked at "
+               + prefix + "tests/local_service/acceptance.rs:51:5:\n"
+               "assertion `left == right` failed\n  left: 2004\n right: 42\n"
+               'PlatformError { code: PermissionDenied, message: "fixture-busy" }\n'
+               'secret: credential-fixture-never-log /private/fixture/token\n'
+               'PlatformError { code: SecretCode, message: "credential-fixture-never-log" }\n')
+        return subprocess.CompletedProcess([], 101, raw.encode(), b"private-stderr-never-log")
+
+    def test_failure_extracts_only_closed_source_assertion_and_platform_fields(self):
+        value = diagnostics.extract(self.failure(), security.ROOT, security.ROOT)
+        self.assertEqual(value, {
+            "exitCode": 101,
+            "panicLocations": [{"file": self.source, "line": 51, "column": 5}],
+            "integerAssertions": [{"relation": "==", "left": 2004, "right": 42}],
+            "platformCodes": ["PermissionDenied"], "reasonCodes": ["fixture-busy"],
+        })
+        encoded = json.dumps(value)
+        for private in ("credential", "private", "SecretCode", str(security.ROOT)):
+            self.assertNotIn(private, encoded)
+        relative = diagnostics.extract(self.failure(""), security.ROOT,
+                                       security.ROOT / "crates/latent-wasmtime")
+        self.assertEqual(relative, value)
+
+    def test_unknown_absolute_traversing_sources_and_noninteger_values_are_discarded(self):
+        for prefix in ("/private/", "../", "crates/latent-wasmtime/../../", "crates/unknown/"):
+            value = diagnostics.extract(self.failure(prefix), security.ROOT, security.ROOT)
+            self.assertEqual(value["panicLocations"], [])
+        result = self.failure()
+        result.stdout = result.stdout.replace(b"left: 2004", b'left: "credential-fixture-never-log"')
+        self.assertEqual(diagnostics.extract(result, security.ROOT, security.ROOT)["integerAssertions"], [])
+        result.stdout = b"x" * (diagnostics.MAX_CAPTURE_BYTES + 1)
+        with self.assertRaisesRegex(artifacts.SecurityError, "diagnostic-capture"):
+            diagnostics.extract(result, security.ROOT, security.ROOT)
+
+    def test_fields_counts_coordinates_codes_and_integer_ranges_are_closed(self):
+        value = diagnostics.extract(self.failure(), security.ROOT, security.ROOT)
+        bad = [dict(value, raw="credential-fixture-never-log"), dict(value, exitCode=0),
+               dict(value, exitCode=True), dict(value, platformCodes=["SecretCode"]),
+               dict(value, reasonCodes=["private-diagnostic"]),
+               dict(value, panicLocations=value["panicLocations"] * 9),
+               dict(value, panicLocations=[{"file": "/private/path.rs", "line": 1, "column": 1}]),
+               dict(value, integerAssertions=[{"relation": "==", "left": 2 ** 64, "right": 0}])]
+        for record in bad:
+            with self.subTest(record=record), self.assertRaises(artifacts.SecurityError):
+                diagnostics.validate(record)
+        result = self.failure()
+        result.stdout *= 20
+        bounded = diagnostics.extract(result, security.ROOT, security.ROOT)
+        self.assertEqual(len(bounded["integerAssertions"]), 8)
+        self.assertEqual(len(bounded["panicLocations"]), 1)
+
+    def test_failed_exact_command_retains_closed_diagnostics_without_retry_or_acceptance(self):
+        runner = security.Runner(security.ROOT, "pr")
+        runner.deadline = 100
+        with patch.object(security.time, "monotonic", return_value=96), \
+                patch.object(security, "run_bounded_result", return_value=self.failure()) as owned, \
+                patch.object(security, "run_bounded") as strict:
+            with self.assertRaisesRegex(BuildProcessError, "^command-exit$"):
+                runner.command(["trusted-test"], timeout=90, test_diagnostics=True)
+        owned.assert_called_once()
+        strict.assert_not_called()
+        self.assertEqual(owned.call_args.kwargs["timeout_seconds"], 4)
+        self.assertEqual(owned.call_args.kwargs["max_output_bytes"], 1024 * 1024)
+        self.assertEqual(runner.failed_command["exitCode"], 101)
+        self.assertFalse(runner.active_case_completed)
+        self.assertEqual(runner.validated_cases, [])
+
+    def test_cleanup_or_deadline_failure_never_fabricates_a_completed_diagnostic(self):
+        for reason in ("command-deadline", "command-output-limit", "process-cleanup"):
+            runner = security.Runner(security.ROOT, "pr")
+            with patch.object(security, "run_bounded_result", side_effect=BuildProcessError(reason)) as owned:
+                with self.assertRaisesRegex(BuildProcessError, reason):
+                    runner.command(["trusted-test"], test_diagnostics=True)
+            owned.assert_called_once()
+            self.assertIsNone(runner.failed_command)
+
+    @unittest.skipUnless(sys.version_info >= (3, 13), "owned process requires Python 3.13")
+    def test_real_nonzero_child_is_reaped_and_never_exposes_raw_capture(self):
+        runner = security.Runner(security.ROOT, "pr")
+        script = "import sys; print('credential-fixture-never-log'); sys.exit(17)"
+        with self.assertRaisesRegex(BuildProcessError, "^command-exit$"):
+            runner.command([sys.executable, "-c", script], environment=dict(os.environ),
+                           timeout=5, test_diagnostics=True)
+        self.assertEqual(runner.failed_command, {"exitCode": 17, "panicLocations": [],
+                         "integerAssertions": [], "platformCodes": [], "reasonCodes": []})
+
+    def test_cli_writes_negative_receipt_without_overwriting_or_escaping_owned_target(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "target").mkdir()
+            destination = root / "target/failure.json"
+            arguments = ["--inventory", "unused", "--source-commit", "a" * 40,
+                         "--output", str(destination)]
+            with patch.object(security, "ROOT", root), \
+                    patch.object(security, "run", side_effect=ValueError("credential-fixture-never-log")), \
+                    redirect_stderr(io.StringIO()) as diagnostic:
+                self.assertEqual(security.main(arguments), 1)
+                initial = destination.read_bytes()
+                self.assertEqual(security.main(arguments), 1)
+                self.assertEqual(destination.read_bytes(), initial)
+                arguments[-1] = str(root / "outside.json")
+                self.assertEqual(security.main(arguments), 1)
+                self.assertFalse((root / "outside.json").exists())
+            report = json.loads(initial)
+            self.assertEqual(report["schemaVersion"], "latent.phase3.security.failure.v1")
+            self.assertIs(report["passed"], False)
+            self.assertEqual(report["validatedCases"], [])
+            self.assertIsNone(report["failedCommand"])
+            self.assertNotIn("credential-fixture", initial.decode() + diagnostic.getvalue())
 
 
 class InventoryTests(unittest.TestCase):

@@ -4,6 +4,11 @@
 
 Accepted; Phase 3 issue #223. Extends ADR-0011, ADR-0025 and ADR-0035.
 
+[ADR-0043](0043-select-static-web-publications-as-first-class-http-targets.md)
+extends this application target with a separate static-web variant and current
+format-v2 HTTP state. The target remains exact; static serving invents no
+component or deployment identity.
+
 ## Context
 
 HTTP host/path selection must not combine an old trigger with a newer logical
@@ -33,8 +38,8 @@ host imports nor changes admission, publisher trust or lifecycle scope.
 
 One canonical authority belongs to one tenant within the catalog. Matchers use
 explicit methods and exact/segment-prefix paths with deterministic precedence.
-This authority reservation does not verify DNS ownership or replace the future
-shared ingress's host/TLS access policy. This change creates no public HTTP
+This authority reservation does not verify DNS ownership or replace the shared
+ingress's host/TLS access policy. Route metadata itself creates no public HTTP
 listener.
 
 ## Consequences

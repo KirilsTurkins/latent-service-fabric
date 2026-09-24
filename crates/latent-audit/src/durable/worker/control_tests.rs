@@ -99,3 +99,98 @@ fn control_reservation_preserves_capacity_pending_and_closed_rejection() {
     let failure = handle.reserve_control_critical(&attempt()).err().unwrap();
     assert_eq!(failure.message, "audit-closed");
 }
+
+#[test]
+fn two_observations_exhaust_32k_control_queue_until_actual_writer_drain() {
+    let directory = Directory::new();
+    let path = directory.0.join("audit");
+    let limits = AuditLimits {
+        maximum_queued_operations: 8,
+        maximum_queued_bytes: 32 * 1024,
+        ..Default::default()
+    };
+    let store = Store::open(&path, limits).unwrap();
+    let (records, bytes, next) = store.summary();
+    // Delay starting the real writer, so its two prepaid observations cannot
+    // race this capacity assertion. No sleeps, production hooks or extra quota.
+    let shared = Arc::new(Shared {
+        limits,
+        state: Mutex::new(State {
+            queue: VecDeque::new(),
+            queued_bytes: 0,
+            reserved_records: 0,
+            reserved_bytes: 0,
+            summary: AuditSnapshot {
+                retained_records: records,
+                retained_bytes: bytes,
+                next_sequence: next,
+                ..Default::default()
+            },
+            closed: false,
+            pending: None,
+            finish: None,
+            begin: None,
+        }),
+        wake: Condvar::new(),
+        pages: Arc::new(PageBudget {
+            state: Mutex::new((0, 0)),
+            owners: limits.maximum_query_owners,
+            bytes: limits.maximum_total_page_bytes,
+        }),
+        dropped: AtomicU64::new(0),
+        unavailable: AtomicU64::new(0),
+        finished: AtomicBool::new(false),
+    });
+    let handle = AuditHandle {
+        shared: shared.clone(),
+    };
+    let event = AuditObservation {
+        scope: crate::AuditScope::Node,
+        actor: attempt().actor,
+        kind: crate::Phase2AuditEventKind::CacheMiss,
+        outcome: crate::AuditOutcome::Succeeded,
+        identities: crate::AuditIdentities::default(),
+        reason: AuditReason::CacheMiss,
+        cache_kind: Some(crate::AuditCacheKind::Raw),
+        occurred_at_unix_millis: 1,
+    };
+    handle.try_capture(&event).unwrap();
+    handle.try_capture(&event).unwrap();
+    let full = handle.snapshot();
+    assert_eq!(full.queued_operations, 2);
+    assert_eq!(full.queued_bytes, 32 * 1024);
+    assert_eq!(full.reserved_records, 2);
+    let failure = handle.reserve_control_critical(&attempt()).err().unwrap();
+    assert_eq!(
+        failure.code,
+        latent_core::PlatformErrorCode::ResourceExhausted
+    );
+    assert_eq!(failure.message, "audit-capacity");
+    assert_eq!(
+        handle.snapshot(),
+        full,
+        "failed admission has no partial reservation"
+    );
+    // Closing prevents new work but the actual writer still drains prepaid
+    // records, refunds their charges, and releases its filesystem owner.
+    handle.close();
+    run::run(shared, store);
+    let drained = handle.snapshot();
+    assert_eq!(drained.retained_records, 2);
+    assert_eq!(drained.queued_operations, 0);
+    assert_eq!(drained.queued_bytes, 0);
+    assert_eq!(drained.reserved_records, 0);
+    assert_eq!(drained.reserved_bytes, 0);
+    assert!(!drained.recovery_pending);
+    let (reopened, _worker) = open(&path, limits).unwrap();
+    assert_eq!(reopened.snapshot().retained_records, 2);
+    let mut active = reopened
+        .reserve_control_critical(&attempt())
+        .unwrap()
+        .begin()
+        .blocking_wait()
+        .unwrap();
+    active.mutation_started().unwrap();
+    active.finish(conclusion()).blocking_wait().unwrap();
+    assert_eq!(reopened.snapshot().retained_records, 4);
+}

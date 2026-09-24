@@ -4,10 +4,21 @@ use latent_executor::ExecutionBackend;
 #[path = "guest_sdk/package.rs"]
 mod package;
 
+fn languages() -> Vec<&'static str> {
+    match std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref() {
+        Ok("go") => vec!["go"],
+        Ok("typescript") => vec!["typescript"],
+        Ok("dotnet") => vec!["dotnet"],
+        Ok("java") => vec!["java"],
+        Err(std::env::VarError::NotPresent) => vec!["rust", "c"],
+        _ => panic!("unknown guest SDK language selection"),
+    }
+}
+
 #[tokio::test]
 #[ignore = "Requires compiled guests from tools/build_guest_capsules.py"]
 async fn all_rust_examples_are_exact_signed_phase2_packages() {
-    for language in ["rust", "c"] {
+    for language in languages() {
         for name in [
             "http",
             "streaming",
@@ -36,6 +47,7 @@ mod random;
 mod support;
 
 fn input(request: &mut latent_executor::ExecutionRequest, which: u32, text: &str, handle: u64) {
+    support::guest_runtime::imports(request);
     request.activation.input =
         serde_json::to_vec(&serde_json::json!([which, text, handle.to_string()])).unwrap();
 }

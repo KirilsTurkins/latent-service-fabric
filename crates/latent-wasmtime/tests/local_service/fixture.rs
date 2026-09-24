@@ -5,7 +5,7 @@
 use super::{component, packages};
 use latent_activation::{ActivationIdSource, ActivationRequest};
 use latent_admission::{
-    LocalAdmissionController, LocalQuotaProvider, NodeLoadSnapshot, NodeLoadState,
+    LocalAdmissionController, LocalQuotaProvider, NodeLoadSnapshot, NodeLoadSource,
 };
 use latent_artifacts::{ArtifactRepository, DirectoryArtifactRepository, PackageAdmissionUpload};
 use latent_capabilities::broker::*;
@@ -41,10 +41,21 @@ use std::{
 mod admission_fixture;
 #[path = "../../../latent-control-store/tests/admission/support.rs"]
 mod authority;
+#[path = "diagnostics.rs"]
+mod diagnostics;
+#[path = "../guest_sdk/runtime.rs"]
+mod guest_runtime;
 
 pub struct Observations {
     pub starts: Mutex<Vec<latent_telemetry::ActivationObservationContext>>,
+    pub terminals: Mutex<
+        Vec<(
+            latent_telemetry::ActivationObservationContext,
+            latent_telemetry::ActivationTerminalObservation,
+        )>,
+    >,
     pub child_running: tokio::sync::Notify,
+    pub child_failures: Arc<diagnostics::Recorder>,
 }
 impl latent_telemetry::ActivationObserver for Observations {
     fn on_observation(
@@ -53,7 +64,7 @@ impl latent_telemetry::ActivationObserver for Observations {
         event: &latent_telemetry::ActivationObservation,
     ) {
         use latent_telemetry::ActivationObservationKind;
-        match event.kind {
+        match &event.kind {
             ActivationObservationKind::Received => {
                 let mut starts = self.starts.lock().unwrap();
                 assert!(starts.len() < 32);
@@ -63,6 +74,11 @@ impl latent_telemetry::ActivationObserver for Observations {
                 phase: latent_core::ActivationPhase::Running,
                 ..
             } if context.parent_activation_id.is_some() => self.child_running.notify_one(),
+            ActivationObservationKind::Terminal(terminal) => {
+                let mut terminals = self.terminals.lock().unwrap();
+                assert!(terminals.len() < 32);
+                terminals.push((context.clone(), terminal.clone()));
+            }
             _ => (),
         }
     }
@@ -77,6 +93,7 @@ impl ActivationIdSource for Ids {
     }
 }
 pub struct Fixture {
+    _guest_runtime: guest_runtime::Runtime,
     pub manager: LocalActivationManager,
     pub backend: Arc<WasmtimeBackend>,
     _factory: WasmtimeComponentEngineFactory,
@@ -102,10 +119,6 @@ impl Fixture {
     ) -> Self {
         Self::with_packages(cells, foreign, permit_target, audit, None).await
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
-    )]
     pub async fn with_packages(
         cells: u32,
         foreign: bool,
@@ -116,6 +129,35 @@ impl Fixture {
             latent_packaging::PackageBundle,
             latent_packaging::PackageBundle,
         )>,
+    ) -> Self {
+        Self::with_packages_and_load(
+            cells,
+            foreign,
+            permit_target,
+            audit,
+            provided,
+            Arc::new(SyntheticFixtureLoad),
+        )
+        .await
+    }
+    pub async fn with_load_source(load: Arc<dyn NodeLoadSource>) -> Self {
+        Self::with_packages_and_load(2, false, true, None, None, load).await
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
+    )]
+    async fn with_packages_and_load(
+        cells: u32,
+        foreign: bool,
+        permit_target: bool,
+        audit: Option<latent_audit::AuditHandle>,
+        provided: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        )>,
+        load: Arc<dyn NodeLoadSource>,
     ) -> Self {
         let root = tempfile::tempdir().unwrap();
         let target_tenant = if foreign { "tenant-b" } else { "tenant-a" };
@@ -161,6 +203,8 @@ impl Fixture {
             (catalog, caller, callee)
         };
         let config = WasmtimeConfig {
+            java_guest: guest_runtime::java(),
+            fuel_async_yield_interval: guest_runtime::java().then_some(10_000),
             maximum_memory_bytes: packages::budget().memory_bytes,
             maximum_fuel: packages::budget().cpu_fuel,
             prepared_cache_maximum_entries: 4,
@@ -202,7 +246,9 @@ impl Fixture {
             latent_core::CapabilityId(SERVICE_INVOCATION_CAPABILITY.into()),
             PolicyId("local-calls".into()),
         )];
+        consumer.grants.extend(guest_runtime::grants());
         let mut target = deployment("callee", target_tenant, &callee, &callee_publication);
+        target.grants = guest_runtime::grants();
         target.resources = catalog
             .fetch(&packages::release(&callee))
             .await
@@ -234,7 +280,7 @@ impl Fixture {
                 "id":"call","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":["caller"],
                 "publications":[caller_publication.as_str()],"capability":SERVICE_INVOCATION_CAPABILITY,"operations":["call"],
                 "resources":{"kind":"service","services":["callee"],"publications":[allowed_target]},
-                "ceiling":{"operations":8,"inputBytes":65536,"outputBytes":65536,"wallTimeMillis":5000},"requireAudit":audit.is_some()}]}),
+                "ceiling":{"operations":8,"inputBytes":65536,"outputBytes":65536,"wallTimeMillis":packages::budget().wall_time_limit_millis.unwrap_or(5000)},"requireAudit":audit.is_some()}]}),
             ),
             (
                 "installed",
@@ -282,23 +328,47 @@ impl Fixture {
                 minimum_call_charges: &[],
             })
             .unwrap();
+        let guest_runtime = guest_runtime::Runtime::scoped(
+            &broker,
+            &policies,
+            "tenant-a",
+            &[
+                guest_runtime::Scope {
+                    services: &["caller"],
+                    publications: std::slice::from_ref(&caller_publication),
+                    principal: ("user", "alice"),
+                },
+                // Local invocation deliberately derives a service principal;
+                // the child does not inherit Alice's user authority.
+                guest_runtime::Scope {
+                    services: &["callee"],
+                    publications: std::slice::from_ref(&callee_publication),
+                    principal: ("service", "service:8:tenant-a:6:caller"),
+                },
+            ],
+            false,
+        );
         let definition = BindingDefinition { manifest: JsonManifestCodec::default().decode_binding(&serde_json::to_vec(&json!({
             "apiVersion":"latent.dev/v1alpha1","kind":"Binding","metadata":{"name":"local-call","tenant":"tenant-a"},
             "spec":{"consumer":{"service":"caller","contract":SERVICE_INVOCATION_CAPABILITY},"provider":{"service":"callee","contract":component::CALLEE,"route":"callee"},"mode":"isolated-local"}})).unwrap()).unwrap(),
             provider_binding_id: "installed".into(), allowed_modes: vec![BindingMode::IsolatedLocal], restriction_json: br#"{"operations":[]}"#.to_vec() };
+        let mut definitions = vec![definition];
+        definitions.extend(guest_runtime.definitions("tenant-a", &["caller", "callee"]));
+        let mut providers = vec![ConfiguredBindingProvider {
+            tenant: TenantId("tenant-a".into()),
+            service: ServiceId("callee".into()),
+            reference: provider.reference(),
+            local_deployment: Some(DeploymentId("callee".into())),
+        }];
+        providers.extend(guest_runtime.providers("tenant-a"));
         let (generation, transaction) = store.binding_version().unwrap();
         let update = store
             .prepare_binding_update(
                 generation,
                 transaction,
-                vec![definition],
+                definitions,
                 broker.clone(),
-                vec![ConfiguredBindingProvider {
-                    tenant: TenantId("tenant-a".into()),
-                    service: ServiceId("callee".into()),
-                    reference: provider.reference(),
-                    local_deployment: Some(DeploymentId("callee".into())),
-                }],
+                providers,
                 latent_control_store::bindings::BindingLimits::default(),
             )
             .await
@@ -308,6 +378,7 @@ impl Fixture {
             broker.clone(),
             store.clone(),
         ));
+        guest_runtime.install(&capabilities);
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             config,
             WasmtimeHostServices {
@@ -336,21 +407,13 @@ impl Fixture {
             )
             .unwrap(),
         );
-        let load = Arc::new(
-            NodeLoadState::new(NodeLoadSnapshot {
-                accepting: true,
-                cpu_pressure_milli: 0,
-                memory_pressure_milli: 0,
-                queue_delay_millis: 0,
-                observed_at: Instant::now(),
-            })
-            .unwrap(),
-        );
         let admission =
             LocalAdmissionController::new(Arc::new(store.pin().unwrap()), quotas.clone(), load);
         let observations = Arc::new(Observations {
             starts: Mutex::new(vec![]),
+            terminals: Mutex::new(vec![]),
             child_running: tokio::sync::Notify::new(),
+            child_failures: Arc::new(diagnostics::Recorder::default()),
         });
         let manager = LocalActivationManager::with_services(
             latent_node::LocalActivationManagerConfig::default(),
@@ -370,9 +433,13 @@ impl Fixture {
         )
         .unwrap();
         capabilities
-            .install_local_services(manager.local_service_invoker(packages::budget()).unwrap())
+            .install_local_services(Arc::new(diagnostics::ObservedInvoker {
+                inner: manager.local_service_invoker(packages::budget()).unwrap(),
+                recorder: observations.child_failures.clone(),
+            }))
             .unwrap();
         Self {
+            _guest_runtime: guest_runtime,
             manager,
             backend,
             _factory: factory,
@@ -387,10 +454,6 @@ impl Fixture {
             _root: root,
         }
     }
-    #[expect(
-        clippy::unused_self,
-        reason = "fixture keeps request construction paired with its node composition"
-    )]
     pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
         let mut request = admission_fixture::request(id);
         request.target.service = ServiceId("caller".into());
@@ -447,6 +510,22 @@ impl Fixture {
                 &mut |_| Ok(()),
             )
             .unwrap();
+    }
+}
+/// This test composition has no production node monitor. Its fixed synthetic
+/// healthy profile is sampled at every admission, including nested children
+/// after a slow cold parent compile. Real quota accounting and admission's
+/// normal freshness checks remain in force; no failed invocation is retried.
+pub struct SyntheticFixtureLoad;
+impl NodeLoadSource for SyntheticFixtureLoad {
+    fn snapshot(&self) -> Result<NodeLoadSnapshot, PlatformError> {
+        Ok(NodeLoadSnapshot {
+            accepting: true,
+            cpu_pressure_milli: 0,
+            memory_pressure_milli: 0,
+            queue_delay_millis: 0,
+            observed_at: Instant::now(),
+        })
     }
 }
 fn deployment(

@@ -12,7 +12,7 @@ RPCs or provider credentials into an application.
 
 ## Node.js
 
-Use Node.js 24.19.x, the checked-in lockfile and TypeScript 7.0.2. The selected
+Use Node.js 24.19.0, the checked-in lockfile and TypeScript 7.0.2. The selected
 node transport is explicitly configured plaintext **numeric loopback**, not a
 remote/TLS endpoint or a browser API. Endpoint, tenant and client credential
 are mandatory. The transport does not inspect environment variables, cookies,
@@ -102,8 +102,9 @@ with nine retained activations and four physically closed upstream holds. The
 [actual browser evidence](../../docs/testing/sdk-browser-application.md) additionally
 proves the real web WIT component, exact public route, omitted cookies/credentials,
 rejected management paths and hydration/navigation through shared HTTP ingress.
-Its controlled Node SSR output is not production Angular Wasm SSR qualification;
-that remains #226/#236. Exact-head CI and central review remain required.
+Its controlled Node SSR output is separate from the
+[actual Angular component qualification](../../docs/testing/angular-reference-workflow.md),
+which covers the maintained Wasm renderer, observed builds and provider integration.
 
 ## Reproducible checks
 

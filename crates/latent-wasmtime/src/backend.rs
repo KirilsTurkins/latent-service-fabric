@@ -685,6 +685,9 @@ impl WasmtimeBackend {
         );
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
+        if self.config.java_guest {
+            host_state.limiter.reserve_exception_heap()?;
+        }
         let mut store = Store::new(&self.engine, host_state);
         store.set_hostcall_fuel(self.config.hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
@@ -810,7 +813,16 @@ impl ExecutionBackend for WasmtimeBackend {
         repository: Arc<dyn ArtifactRepository>,
         key: PreparationKey,
     ) -> BoxFuture<'a, Result<latent_executor::PreparedReadiness, PlatformError>> {
-        Box::pin(self.prepare_ready_repository(repository, key))
+        Box::pin(self.prepare_ready_repository(repository, key, None))
+    }
+
+    fn prepare_ready_from_repository_with_wait<'a>(
+        &'a self,
+        repository: Arc<dyn ArtifactRepository>,
+        key: PreparationKey,
+        wait: &'a dyn latent_executor::PreparationReadWait,
+    ) -> BoxFuture<'a, Result<latent_executor::PreparedReadiness, PlatformError>> {
+        Box::pin(self.prepare_ready_repository(repository, key, Some(wait)))
     }
 
     fn materialize_ready(

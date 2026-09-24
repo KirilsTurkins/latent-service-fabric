@@ -1,8 +1,7 @@
 # Bounded NATS JetStream triggers
 
 `latent_nats::triggers::NatsTriggers` implements the operator-installed
-`nats-jetstream-pull-v1` profile from
-[#218](https://github.com/KirilsTurkins/latent-service-fabric/issues/218).
+`nats-jetstream-pull-v1` profile.
 It delivers external events through the existing publication catalog, admission
 controller, scheduler and fresh activation stores. It uses the same confined TLS
 transport and rotating opaque credentials as the [publisher](nats-events.md).
@@ -133,8 +132,9 @@ even when a node cannot receive the final attempt.
 Signal the watch channel and await `run` to finish cleanup. Explicit `step` users
 call `close_idle()` when stopping; shared pool shutdown owns final reclamation.
 Dropping an activation waiter is not a substitute for driving backend cleanup.
-Standalone configuration/management remains #226; ordinary startup does not
-silently enable an external broker.
+The standalone node has no NATS trigger installation field. Supply this
+configuration, protected credentials and the owned run future through the Rust
+embedding; declaring a trigger alone cannot start an external broker connection.
 
 ```sh
 cargo test --locked -p latent-nats --lib

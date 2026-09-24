@@ -13,7 +13,7 @@ use fixture::*;
 #[tokio::test]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn rust_and_c_owned_chunks_closed_handles_abandonment_and_reuse() {
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         let (_root, f) = configured(&format!("{language}-blob"), Default::default()).await;
         for (which, expected) in [(0, 4), (1, 1), (2, 10), (3, 3), (0, 4)] {
             let (mut request, control) = f.request("sdk-blob", 0, 0);
@@ -94,7 +94,7 @@ async fn configured(
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn rust_and_c_cancel_pending_import_without_refunding_another_owner() {
     use latent_capabilities::broker::{blob::BlobInvoker, pools::ProviderPoolLimits};
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         let (_root, f) = configured(
             &format!("{language}-blob"),
             ProviderPoolLimits {

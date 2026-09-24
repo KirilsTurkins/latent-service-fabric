@@ -2147,6 +2147,7 @@ dependencies = [
  "base64 0.23.1",
  "blake3",
  "close_fds",
+ "getrandom 0.4.3",
  "landlock",
  "latent-activation",
  "latent-admission",

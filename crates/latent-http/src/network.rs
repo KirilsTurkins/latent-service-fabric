@@ -83,7 +83,7 @@ pub(crate) async fn connect_for(
     maximum_headers: usize,
 ) -> Result<PooledConnection<Network>, HttpError> {
     let reused = match scope {
-        crate::protocol::ProtocolScope::Invocation(call) => client.checkout(call)?,
+        crate::protocol::ProtocolScope::Invocation(call) => client.checkout_wait(call).await?,
         crate::protocol::ProtocolScope::Maintenance(_) => None,
     };
     if let Some(mut connection) = reused {
@@ -94,7 +94,9 @@ pub(crate) async fn connect_for(
         drop(connection);
     }
     let reservation = match scope {
-        crate::protocol::ProtocolScope::Invocation(call) => client.reserve_connection(call)?,
+        crate::protocol::ProtocolScope::Invocation(call) => {
+            client.reserve_connection_wait(call).await?
+        }
         crate::protocol::ProtocolScope::Maintenance(request) => {
             client.reserve_maintenance_connection(request)?
         }

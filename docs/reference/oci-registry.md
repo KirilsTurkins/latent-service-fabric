@@ -6,12 +6,12 @@ tag/digest resolution, manifest/blob pull, complete package pull and native OCI
 1.1 referrer discovery. Capsule, browser-assets, SSR and detached-evidence
 envelopes use the [package format](../protocol/package-format.md).
 
-This is a library delivery boundary. It does not publish a catalog release,
-authenticate a publisher, verify signature/provenance/SBOM payloads or permit
-execution. Browser and SSR runtime hosting remain later work. The separately
-implemented [packager](../component-development/packaging.md) checks
-supplied component semantics before distribution; the registry itself cannot
-make that assertion trustworthy.
+This Rust library handles registry transport. The
+[packager](../component-development/packaging.md) checks package structure and
+supplied component semantics; node admission checks publisher, build and SBOM
+evidence before making a publication eligible. For application delivery, use
+the [static-site](../component-development/static-sites.md) or
+[Angular](../learn/build-and-deliver-angular.mdx) workflow.
 
 The separate [publisher verifier](publisher-trust.md) can authenticate pulled
 signature evidence against explicit current policy/revocation snapshots. The
@@ -25,8 +25,7 @@ and [RFC-0003](../../rfcs/0003-versioned-oci-transport-profiles.md) separate the
 registry's permanent authority/ownership boundary from transport interoperability
 choices.
 
-`lsf-oci-static-v1` is the **delivered** profile and names the current
-`HttpOciRegistry` behavior:
+`lsf-oci-static-v1` is the supported profile for static credentials and addresses:
 
 - one explicit HTTPS origin and repository;
 - operator-supplied socket addresses for hostname origins, with no runtime DNS;
@@ -193,7 +192,10 @@ Redirects are disabled in `lsf-oci-static-v1`. Upload `Location` and pagination
 `Link` URLs must remain within the approved origin/repository and the relevant
 operation path. Opaque upload query parameters are preserved. Registries that
 require object-store redirects or a separate automatic token origin require the
-planned `lsf-oci-bearer-v1` behavior and remain unsupported until #269/#270 pass.
+explicit `lsf-oci-bearer-v1` configuration described in the
+[authentication](oci-bearer-read-auth.md) and
+[network](oci-network-profile.md) references. Support remains limited to the
+demonstrated topologies in the matrix above.
 A challenge or redirect URL alone never grants authority to forward credentials.
 
 ## Default limits
@@ -215,24 +217,33 @@ can only be lowered. Admission fails promptly when a shared budget is exhausted.
 
 URLs are capped at 4096 bytes; retained response headers are capped at 100 entries
 and 16 KiB. The pinned HTTP/1 implementation also has finite parser scratch
-limits, separate from the retained-body accounting. Compression, redirects and
-automatic retries are disabled. `usage()` reports active operations, retained
+limits, separate from the retained-body accounting. Compression and automatic
+retries are disabled; the static profile also disables redirects. `usage()` reports active operations, retained
 package leases, charged raw bytes and whether admission is closed.
 
-The planned Bearer profile must add finite ceilings for resolver jobs/answers and
-cache entries, token acquisitions/cache entries and token bytes, redirect hops and
-metadata, and any additional shared socket/worker ownership. These are node-owned
-shared bounds, not per-service resources.
+The Bearer profile also bounds resolver jobs and cached answers, token
+acquisitions and retained token bytes, redirect hops and metadata, and connection
+ownership. The [authentication](oci-bearer-read-auth.md#rotation-and-physical-ownership)
+and [network](oci-network-profile.md#physical-ownership-and-shutdown) references
+give those ceilings. Clones share these resources rather than allocating an
+independent pool for every deployment.
 
 ## Run the real registry check
 
-Docker must provide Linux containers. Python 3, OpenSSL and the repository's Rust
-toolchain are required. Git for Windows' bundled OpenSSL is detected when it is
-not on `PATH`. Pull the exact static-profile fixture image once:
+Run the maintained qualification runner on Linux x86_64 with Docker, OpenSSL
+and the [pinned Python/Rust toolchain](../development/toolchain.md). Preflight
+checks the environment before compilation. Prepare the exact test executable
+and pass Cargo's resulting inventory to the execution-only runner:
 
-```console
+```bash
+set -euo pipefail
 docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
-python tools/run_oci_registry_tests.py
+python3 tools/run_oci_registry_tests.py --preflight
+mkdir -p target/oci-review
+cargo test -p latent-oci --test registry --locked --no-run \
+  --message-format=json,json-render-diagnostics > target/oci-review/registry-tests.jsonl
+python3 tools/run_oci_registry_tests.py \
+  --test-manifest target/oci-review/registry-tests.jsonl
 ```
 
 The runner uses the pinned Linux/amd64 Zot minimal 2.1.18 image, with no scanner
@@ -253,19 +264,21 @@ signing key, signs a package, attaches/discovers/pulls the exact evidence and
 verifies it against an independently supplied publisher policy. No private key
 is retained. The original tiny format corpus makes no runnable-guest or
 trusted-evidence claim. Scripted HTTP unit tests cover hostile
-responses and cancellation separately. No benchmark, 100k workload or successful
-run report is generated. The distribution checks can run with a Windows Rust
-test binary and Linux Docker engine. The additional cold/warm/reopened raw-cache
-roundtrip runs only in a Unix Rust test process because it exercises directory
-durability. It is part of the same primary integration test and uses the tiny
-browser package; it builds or invokes no guest.
+responses and cancellation separately. The runner records bounded execution
+and cleanup diagnostics. The maintained process owner requires Linux;
+parser/library tests on another host do not replace this qualification. The
+cold/warm/reopened raw-cache roundtrip exercises directory durability inside the
+same primary integration test and uses the tiny browser package; it builds or
+invokes no guest.
 
-Pass `--test-binary /absolute/path/to/the/registry-test-binary` to the runner to
-reuse an existing build. Without `--provenance-input`, the separate observed-build
+The optional `--test-binary` argument must match the executable selected by
+`--test-manifest`; it cannot replace the inventory. Without `--provenance-input`, the separate observed-build
 provenance test is skipped. The Python fixture runner and test process must share
 access to the fixture's loopback endpoint and CA file; a Linux test binary in a
 separate container does not share the Windows host's loopback automatically.
 
-The Harbor 2.15.2 Bearer-profile workflow does not exist yet. #269/#270 must add
-that reproducible bounded fixture and retain its exact identities/results before
-this document can move Harbor or `lsf-oci-bearer-v1` into the supported column.
+The separate Harbor 2.15.2 workflow exercises the Bearer profile with a private
+project and native referrers. Use the
+[owned Harbor workflow](oci-bearer-read-auth.md#validation-and-remaining-transport-boundary)
+and its [DNS variant](oci-network-profile.md#maintained-conformance-and-limitations)
+for those checks. Its results do not qualify an untested hosted-storage topology.

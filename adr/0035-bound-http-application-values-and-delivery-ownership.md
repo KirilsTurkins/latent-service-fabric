@@ -55,10 +55,12 @@ finite runtime settings when enabling this application profile.
 
 ## Consequences
 
-The portable contract, generated bindings, codec and ownership tests precede the
-shared HTTP listener and durable route configuration. Those implementations must
-retain normal admission, exact publication/revision pins, tenant policy and
-cancellation cleanup. A WIT declaration alone installs no listener or provider.
+The portable contract, generated bindings, codec and ownership tests are used by
+the shared listener in [ADR-0039](0039-bound-the-shared-http-listener-and-preserve-selected-admission.md)
+and durable routes in [ADR-0036](0036-publish-http-triggers-with-exact-catalog-target-pins.md).
+These implementations retain normal admission, exact publication/revision pins,
+tenant policy and cancellation cleanup. A WIT declaration alone installs no
+listener or provider.
 
 The initial restrictions are a versioned profile, not a permanent interoperability
 ceiling. Streaming or larger bodies require an explicit compatible contract,

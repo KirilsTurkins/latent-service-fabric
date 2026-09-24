@@ -371,7 +371,7 @@ impl AdmissionAuthority for SupplyChainAuthority {
         tenant: &TenantId,
         upload: PackageAdmissionUpload,
     ) -> Result<VerifiedAdmission, PlatformError> {
-        verify::verify(&self.inner, tenant, upload, None)
+        verify::verify(self, tenant, upload)
     }
     fn recover(
         &self,
@@ -381,6 +381,11 @@ impl AdmissionAuthority for SupplyChainAuthority {
         let _verification = self.inner.verification()?;
         // Recovery is an explicit synchronous control operation. It may cover
         // the clock lease while scanning; preparation/invocation never renew it.
+        // Structural history is checked under the single verification owner,
+        // outside the currentness fence, before any policy/clock denial that may
+        // retain non-authorizing historical metadata (as for web recovery).
+        let upload = receipt::Receipt::validate_retained(binding, upload)?;
+        let prepared = verify::prepare(upload)?;
         let ledger = self
             .inner
             .ledger
@@ -391,14 +396,11 @@ impl AdmissionAuthority for SupplyChainAuthority {
             .state
             .lock()
             .map_err(|_| unavailable("admission-authority-poisoned"))?;
-        // Structural recovery shares the single verification slot and precedes
-        // any current clock/policy denial that may retain historical metadata.
-        let upload = receipt::Receipt::validate_retained(binding, upload)?;
         self.renew(&mut state, &ledger)?;
         verify::with_state(
             &self.inner,
             &binding.tenant,
-            upload,
+            prepared,
             Some(binding),
             &mut state,
         )

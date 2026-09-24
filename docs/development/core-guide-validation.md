@@ -13,7 +13,7 @@ source/evidence distinctions and is not relabelled by this change.
 | --- | --- | --- |
 | `evaluate-boundary` | [Choose a path](../start/index.md) | Resource/profile references and native installer status, not an unqualified performance claim. |
 | `install-auth-readiness` | [First node](../start/first-node.md), [native installation](../installation.md) | New finite source-based runner reusing the existing process owner; native bundle/VM and publisher verification remain the installer owner's separate work. |
-| `contributor-checks` | [Operate and contribute](../how-to/operate-and-contribute.md) | Existing docs/website/CI classifier and selected product suites. |
+| `contributor-checks` | [Contribute to LSF](../contribute/index.md) | Existing docs/website/CI classifier and selected product suites. |
 | `author-capsule` | [Author a capsule](../learn/author-your-first-capsule.md) | Existing Rust echo source, WIT, builder and registry; no second copied program. |
 | `package-sign-publish` | [Author a capsule](../learn/author-your-first-capsule.md), [delivery](../learn/deliver-and-recover-a-capsule.md) | Existing package/operator/registry owners; explicit synthetic signatures versus actual observed-build evidence. |
 | `rollout-uncertain-recovery` | [Delivery/recovery](../learn/deliver-and-recover-a-capsule.md), [operations](../how-to/operate-and-contribute.md) | Existing canary/publication/offline workflows and exact retained operation identities. |
@@ -31,7 +31,7 @@ all selected case names and seven executable hashes. This includes local-call
 authority and descendant cleanup, bounded randomness and custom metrics; it
 leaves rendered human walkthrough review pending.
 
-## Current integration and native installation
+## Retained integration and native installation
 
 [CI 35818046307](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35818046307)
 passed after the obsolete alpha API removals. The
@@ -121,14 +121,23 @@ labelled synthetic: they check sequencing, bounded ownership, refusal/redaction
 and cleanup, not the RPC protocol or LSF guest execution. Guide tests also check
 coverage mapping, source-backed snippet usage and the Bash/Python command syntax.
 
-For **real execution**, use the build and exact runner command in
-[First node](../start/first-node.md). After a contract build already produced the
-same native binaries and generated echo inputs, that runner can be invoked
-without rebuilding or generating another protocol fixture. Keep its receipt
+For **real execution**, build the native binaries and echo inputs as described in
+[First node](../start/first-node.md), then invoke the automated companion:
+
+```bash
+python3 tools/run_first_node_guide.py \
+  --cli "$PWD/target/debug/latent" --node "$PWD/target/debug/latentd" \
+  --echo-root "$PWD/target/capsules/echo" \
+  --source-commit "$(git rev-parse HEAD)" > target/first-node-guide.json
+```
+
+The asserted source commit must describe the supplied build. A later checkout
+does not prove that retained binaries came from it. Keep the companion's receipt
 separate from the existing [CLI integration tests](../../apps/latent/tests/standalone_cli.rs).
 The latter own trap/deadline/cancellation and broader transport tests that the echo
-walkthrough does not claim to cover. The existing delivery guide owns its
-registry/publication/canary workflows and independently pinned historical source.
+walkthrough does not claim to cover. The current manual update/restore tutorial
+uses trusted-local publications; the historical registry, signing and canary
+workflows retain their separate owners and execution records.
 
 From `website/`, under the pinned website Node/npm toolchain:
 
@@ -201,7 +210,9 @@ were exercised from clean source `bb2062afeeea8561c1403202a87b6ad4c63ddf83` on L
 The [unaltered command receipt](../evidence/reference-guides-2026-09-21.json)
 has SHA-256 `79cd77d86d1c2d77f69b1fdbb2d82adc9e77f6ffc45c5321fdea782ab99b8881`; it binds the exact guide and validator files,
 commands, expected and actual exits, output hashes and observed output.
-The guide files remain byte-identical to the tested source in this evidence update.
+The guide files were byte-identical to that source when this receipt was added.
+Current guides have since been revised; the receipt remains evidence for its
+original source and commands.
 
 Pinned Python prerequisites, repository/documentation validators, the retained
 six-language SDK matrix, the retained provider resource campaign and contributor
@@ -214,8 +225,9 @@ exact retained file; this execution leaves the historical receipt unchanged.
 This is execution of static contract and retained-evidence validation commands.
 It does not rerun the historic SDK or resource workloads, build an installed
 bundle, measure performance, or supply a human newcomer review. All six affected
-coverage rows keep their human review pending. The installed-native prerequisite
-and the complete 27-topic maintainer review remain required for gate acceptance.
+coverage rows keep their human review pending. The complete 27-topic maintainer
+review remains required for gate acceptance; the later native rehearsal is
+recorded separately above.
 
 ## Check an automated first-node receipt
 

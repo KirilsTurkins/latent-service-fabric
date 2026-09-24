@@ -14,7 +14,7 @@ use latent_capabilities::broker::{
     io::{IoLimits, IoRuntime},
     pools::{ProviderPoolLimits, ProviderPools},
     ActivationCapabilityBroker, ActivationCapabilityRuntime, CapabilityBrokerLimits,
-    ProviderReference,
+    ProviderReference, ProviderRegistration,
 };
 use latent_control_store::{
     bindings::{BindingLimits, ConfiguredBindingProvider},
@@ -27,6 +27,8 @@ use crate::config::{NodeSettings, ProviderIdentity};
 
 #[path = "http.rs"]
 mod http;
+#[path = "scalar.rs"]
+mod scalar;
 #[path = "startup.rs"]
 mod startup;
 
@@ -36,10 +38,15 @@ pub(in crate::standalone) struct ProviderRuntime {
     io: Arc<IoRuntime>,
     secrets: Option<latent_secrets::LocalSecretStore>,
     blobs: Option<Arc<LocalBlobStore>>,
+    clocks: Vec<ProviderRegistration>,
     descriptors: Vec<ProviderDescriptor>,
 }
 
 impl ProviderRuntime {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "bounded provider owners are installed and rolled back in one transaction"
+    )]
     pub async fn open(
         settings: &NodeSettings,
         artifacts: &Arc<DirectoryArtifactRepository>,
@@ -76,11 +83,31 @@ impl ProviderRuntime {
             io,
             secrets: None,
             blobs: None,
-            descriptors: Vec::with_capacity(2),
+            clocks: Vec::with_capacity(2),
+            descriptors: Vec::with_capacity(5),
         };
         let deadline = Instant::now() + Duration::from_secs(30);
         let installed = tokio::time::timeout_at(deadline.into(), async {
-            let mut providers = Vec::with_capacity(2);
+            let mut providers = Vec::with_capacity(5);
+            for (installation, monotonic) in
+                [(&config.clock_monotonic, true), (&config.clock_wall, false)]
+            {
+                if let Some(installation) = installation {
+                    let registration =
+                        scalar::clock(&broker, installation.identity.epoch, monotonic)?;
+                    providers.push(owner.record(&installation.identity, registration.reference()));
+                    owner.clocks.push(registration);
+                }
+            }
+            if let Some(installation) = &config.random {
+                let provider = latent_capabilities::broker::random::RandomProvider::system(
+                    &broker,
+                    installation.identity.epoch,
+                    latent_capabilities::broker::random::RandomLimits::default(),
+                )?;
+                providers.push(owner.record(&installation.identity, provider.reference()));
+                owner.runtime.install_random(provider)?;
+            }
             if let Some(http) = &config.http {
                 let (provider, secrets) = http::install(&owner.pools, http, deadline).await?;
                 owner.secrets = secrets;
@@ -163,6 +190,9 @@ impl ProviderRuntime {
 
     pub fn retire(&self) {
         self.runtime.retire();
+        for clock in &self.clocks {
+            clock.retire();
+        }
         self.pools.retire();
         if let Some(secrets) = &self.secrets {
             secrets.close();

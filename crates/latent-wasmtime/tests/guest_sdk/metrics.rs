@@ -12,7 +12,7 @@ use fixture::*;
 #[tokio::test]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn generated_metric_kinds_and_typed_failure() {
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         let root = tempfile::tempdir().unwrap();
         let publication = package::publish(root.path(), &format!("{language}-metrics")).await;
         let mut f =

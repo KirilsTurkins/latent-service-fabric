@@ -2,6 +2,9 @@
 use latent_capabilities::broker::{CapabilityCallCost, CapabilitySession, ProviderCall};
 use latent_core::PlatformError;
 use latent_policy::capability::ResourceTarget;
+mod failure;
+pub(super) use failure::host_error;
+pub(crate) use failure::HostCapabilityFailure;
 
 #[derive(Default)]
 pub(crate) struct HostCapabilities {
@@ -212,13 +215,18 @@ impl HostCapabilities {
                 }
             }
         }
-        self.begin(capability, operation, resource, &[], output_bytes)
+        let mut cost = CapabilityCallCost::new(output_bytes);
+        if matches!(
+            capability,
+            "latent:clock/monotonic@0.1.0" | "latent:clock/wall@0.1.0"
+        ) {
+            // Match the installed clock profile's mandatory charge. A clock
+            // grant never implies unmetered runtime initialization or GC work.
+            cost = cost
+                .with_charge(latent_core::BudgetDimension::CpuFuel, 100)
+                .map_err(host_error)?;
+        }
+        self.begin_typed(capability, operation, resource, &[], cost)
             .map_err(host_error)
     }
-}
-pub(super) fn host_error(error: PlatformError) -> wasmtime::Error {
-    // No policy document, token, provider location or untrusted detail in traps.
-    let code = error.code;
-    drop(error);
-    wasmtime::Error::msg(format!("capability admission: {code:?}"))
 }

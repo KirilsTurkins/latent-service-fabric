@@ -13,7 +13,7 @@ use fixture::*;
 #[tokio::test]
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn secret_owner_typed_denial_cancellation_and_cell_recovery() {
-    for language in ["rust", "c"] {
+    for language in super::languages() {
         let root = tempfile::tempdir().unwrap();
         let publication = package::publish(root.path(), &format!("{language}-secrets")).await;
         let f = Fixture::with_publication(
@@ -44,11 +44,15 @@ async fn secret_owner_typed_denial_cancellation_and_cell_recovery() {
         f.gate.armed.store(true, Ordering::Release);
         let (mut request, control) = f.request("sdk-secret-cancel", 0);
         input(&mut request, 0, "allowed", 0);
+        let runtime_calls_before = f.runtime_entropy_calls();
         let (report, ()) = tokio::join!(f.backend.invoke_contained(request, &control), async {
             tokio::time::timeout(Duration::from_secs(2), f.gate.entered.notified())
                 .await
                 .unwrap();
-            assert_eq!(f.broker.snapshot().calls, 1);
+            // Runtime entropy results remain separately charged through
+            // canonical lowering; they are not leaked secret operations.
+            let runtime_calls = f.runtime_entropy_calls() - runtime_calls_before;
+            assert_eq!(f.broker.snapshot().calls as u64, 1 + runtime_calls);
             control.probe.0.store(true, Ordering::Release);
             f.gate.released.notify_one();
         });

@@ -58,6 +58,7 @@ pub fn validate_web_renderer_with_backend(
     mut limits: SemanticLimits,
 ) -> Result<CheckedSurface, PlatformError> {
     limits.validate()?;
+    limits = web_profile_limits(profile, limits);
     if !backend.is_none() && profile != WebRendererProfile::AngularSsrComponentV1 {
         return Err(incompatible("web-backend-profile-incompatible"));
     }
@@ -117,6 +118,18 @@ pub fn validate_web_renderer_with_backend(
     })
 }
 
+fn web_profile_limits(profile: WebRendererProfile, mut limits: SemanticLimits) -> SemanticLimits {
+    // General capsules can contain larger managed runtimes, but that does not
+    // enlarge either the ordinary buffered-web binary profile or public WIT.
+    // Angular's separately selected binary envelope remains independently
+    // bounded by validate_renderer; its public interface keeps this ceiling.
+    limits.max_type_nodes = limits.max_type_nodes.min(65_536);
+    if profile == WebRendererProfile::WasmWebBufferedV1 {
+        limits.max_operators = limits.max_operators.min(2_000_000);
+    }
+    limits
+}
+
 fn source_materials(
     backend: WebBackendProfile,
 ) -> Vec<(Box<str>, latent_core::ArtifactBlobDigest)> {
@@ -160,6 +173,37 @@ fn public_world(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn managed_capsule_limits_do_not_expand_existing_web_profiles() {
+        let maximum = SemanticLimits::default();
+        let ordinary = web_profile_limits(WebRendererProfile::WasmWebBufferedV1, maximum);
+        assert_eq!(ordinary.max_operators, 2_000_000);
+        assert_eq!(ordinary.max_type_nodes, 65_536);
+        let angular = web_profile_limits(WebRendererProfile::AngularSsrComponentV1, maximum);
+        assert_eq!(angular.max_type_nodes, 65_536);
+        assert_eq!(
+            angular.max_renderer_operators,
+            maximum.max_renderer_operators
+        );
+        assert_eq!(
+            angular.max_renderer_type_nodes,
+            maximum.max_renderer_type_nodes
+        );
+        for profile in [
+            WebRendererProfile::WasmWebBufferedV1,
+            WebRendererProfile::AngularSsrComponentV1,
+        ] {
+            let smaller = SemanticLimits {
+                max_operators: 12,
+                max_type_nodes: 16,
+                max_renderer_operators: 24,
+                max_renderer_type_nodes: 32,
+                ..maximum
+            };
+            assert_eq!(web_profile_limits(profile, smaller), smaller);
+        }
+    }
 
     #[test]
     fn backend_world_requests_only_the_exact_async_http_import() {

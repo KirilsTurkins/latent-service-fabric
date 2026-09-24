@@ -1,12 +1,11 @@
 # S3 immutable blobs
 
-`latent-blobs::s3` implements `s3-versioned-immutable-blobs-v1` for
-[#214](https://github.com/KirilsTurkins/latent-service-fabric/issues/214). It uses
+`latent-blobs::s3` implements `s3-versioned-immutable-blobs-v1`. It uses
 the same `latent:blob/blob@0.2.0` guest interface and owned chunks as
 [local blobs](local-blobs.md). Installation is an explicit trusted embedding
-operation. Standalone provider configuration and operator commands remain
-[#226](https://github.com/KirilsTurkins/latent-service-fabric/issues/226);
-declaring an import does not enable S3 access.
+operation. The current [standalone provider configuration](../reference/standalone-providers.md)
+has no S3 installation field. Declaring an import
+does not enable S3 access.
 
 ## Supported transport and credentials
 

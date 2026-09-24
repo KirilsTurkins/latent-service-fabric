@@ -17,17 +17,18 @@ with protected sources, atomic rotation and separate opaque provider credentials
 [NATS JetStream publication](nats-events.md) implements immediate `latent:events/publisher@0.2.0` with broker receipts and explicit uncertainty.
 [Cryptographic randomness](random.md) implements both `latent:random/random@0.1.0` methods through the activation broker and original ledger.
 [Custom metrics](custom-metrics.md) implements all four `latent:telemetry/custom@0.1.0` kinds through a shared bounded registry and exporter.
-Completion of [Phase 2](../phase-2-completion.md) adds package delivery,
-currentness, native caching and rollout control; it does not expand this guest
-import set. The [Phase 3 backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
-now includes the delivered [versioned host ABI profile](host-abi-profile.md).
+Package delivery, native caching and rollout control do not expand this guest
+import set. The [versioned host ABI profile](host-abi-profile.md) defines the
+supported contract versions.
 Package inspection recognizes its exact provider contracts and selected async
 imports, while preparation rejects providers without installed owners. The [sealed activation broker](capability-broker.md) now implements session,
 handle and call ownership and can gate the four built-in imports in explicit
 managed embeddings. [Exact plan compilation](capability-bindings.md) and
 conserved [descendant budgets](descendant-budgets.md) support local child calls.
 The [standalone bootstrap](../reference/standalone-providers.md) installs the
-supported HTTP/local-blob configuration and exposes scoped provider management.
+configured HTTP, local-blob, activation-clock and OS-entropy providers and exposes
+scoped provider management. Explicit bindings, deployment grants and current
+policy remain required.
 Other concrete adapters use their documented trusted Rust compositions; declaring
 their contracts does not install them through standalone configuration. Start with
 [the capability walkthrough](../learn/use-capabilities.md) to exercise the actual
@@ -56,13 +57,13 @@ The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
 [standalone node](../reference/standalone-node.md). The standalone provider
 configuration and application ingress remain distinct authority boundaries. Transactional
-state/effects, cluster transport and durable workflow suspension remain later
-phases; declared WIT alone makes none of them callable.
+state/effects, cluster transport and durable workflow suspension are not
+implemented; declared WIT alone makes none of them callable.
 
-## Phase 3 immediate provider operations
+## Immediate provider operations
 
 [ADR-0025](../../adr/0025-separate-immediate-capability-operations-from-transactional-effect-intents.md)
-defines the semantic mode for Phase 3 external providers. HTTP, blob and event
+defines the semantic mode for external providers. HTTP, blob and event
 operations are immediate activation-scoped capability calls, not application
 state transactions or durable effect intents. Provider contracts must distinguish
 rejection before dispatch, provider acknowledgement, known provider failure and
@@ -81,12 +82,11 @@ response, blob-provider acknowledgement or broker publication receipt does not
 by itself prove downstream consumer processing, invocation success, a guest-state
 commit or end-to-end exactly-once execution. Audit observations report what LSF
 observed; provider cleanup/recovery records retain provider-owned work. Neither is
-a Phase 4 transaction/outbox receipt.
+an application transaction or outbox receipt.
 
-The shared async ownership work in #205 and concrete HTTP/blob/event providers in
-#211, #214 and #217 must preserve those distinctions in typed results and cleanup.
-#238 owns integrated adversarial uncertainty/resource-retirement evidence and
-#240 reviews that evidence at the Phase 3 gate. Buffered/streaming HTTP, local/S3 immutable blobs, local/Vault secrets and immediate NATS publication are implemented; inbound consumer
+Buffered/streaming HTTP, local/S3 immutable blobs, local/Vault secrets and
+immediate NATS publication preserve these distinctions in their typed results
+and cleanup. Inbound consumer
 triggers are implemented by the [shared JetStream poller](nats-triggers.md).
 
 ## Context disclosure
@@ -197,5 +197,5 @@ LSF_CAPABILITIES_COMPONENT=target/capsules/capabilities/capabilities-capsule.was
 ```
 
 These are bounded semantic regressions. They do not establish the long-running
-reclamation, dormant-release scale, or complete Phase 1 conformance evidence in
+reclamation, dormant-release scale, or complete runtime conformance evidence in
 the [validation contract](../../VALIDATION.md).

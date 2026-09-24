@@ -37,6 +37,27 @@ def guest(language):
 
 
 class GuestProfileSchemas(unittest.TestCase):
+    def test_java_recipe_requires_its_closed_compiler_inputs_and_separate_type(self):
+        value = guest("rust")
+        value["buildType"] = "https://latent.dev/build/java-capsule/v1"
+        value["parameters"] = {"compiler": "teavm-c", "entryPoint": "dev.latent.app.Capsule",
+            "target": "wasm32-wasip1", "bindings": "lsf-java-wit-v1", "optimization": "O2", "javaHeapBytes": 4194304}
+        value["materials"] = [item for item in value["materials"] if item["name"] not in {"cargo", "rustc"}]
+        for name in ("java", "gradle", "clang", "compiler-closure", "generated-bindings", "contracts-tool", "packager", "package-inputs"):
+            value["materials"].append({"name": name, "digest": DIGEST, "size": 1})
+        self.validate(value)
+        for material in value["materials"]:
+            changed = copy.deepcopy(value)
+            changed["materials"] = [item for item in changed["materials"] if item["name"] != material["name"]]
+            self.validate(changed, valid=False)
+        for key in value["parameters"]:
+            changed = copy.deepcopy(value)
+            changed["parameters"][key] = "unreviewed"
+            self.validate(changed, valid=False)
+        changed = copy.deepcopy(value)
+        changed["buildType"] = "https://latent.dev/build/c-guest/v1"
+        self.validate(changed, valid=False)
+
     def test_echo_snapshot_can_still_capture_every_workspace_member(self):
         validate_workspace(ROOT)
 

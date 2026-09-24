@@ -1,6 +1,6 @@
 # Durable administrative audit
 
-Phase 3 [capability audit and inspection](runtime/capability-audit.md) extends this
+[Capability audit and inspection](runtime/capability-audit.md) extends this
 same owner with typed capability grant/call/provider evidence and optional
 policy-required admission. It preserves the query and resource contracts below.
 
@@ -20,8 +20,7 @@ semantics and explicitly rejects unsupported platforms before mutation.
 The earlier `BoundedPhase2AuditJournal` remains an explicit volatile embedding
 API. It starts no worker and loses its records on restart. Its bounded metadata
 maps and secret-bearing-key checks do not provide the durable guarantees below.
-The production implementation evolves the event vocabulary and memory journal
-contributed in PR165.
+The durable journal below has a separate ownership and recovery contract.
 
 ## Typed records and identity
 
@@ -99,9 +98,10 @@ the directory catalog is also usable without them.
 Dropping an accepted attempt before `mutation_started` produces `NotStarted`;
 dropping it afterward produces `Unknown`. Its prepaid terminal capacity remains
 owned by the worker. Deployment adapters bind the normalized request and actual
-returned deployment/catalog generation. The deployment catalog has no retained
-idempotency receipt for crash reconciliation, so an unresolved deployment
-attempt recovers as unknown.
+returned deployment/catalog generation. Managed deployment operations retain
+exact receipts for startup reconciliation. A matching retained receipt can
+establish the committed result; an absent receipt or an unmanaged deployment
+attempt leaves the outcome unknown. Recovery never repeats the mutation.
 
 ## Storage, recovery and retention
 
@@ -226,5 +226,6 @@ no committed catalog receipt.
 Focused tests exercise transaction cutpoints, missing acknowledged history,
 private paths, full-record capacity, exact replay, post-commit sink failure,
 scope/cursor/deadline behavior, response leases and shutdown with live attempts.
-These tests and the canary tests are part of the implementation evidence; final
-ticket completion and release readiness still depend on the required CI gates.
+The tests cover journal behavior and canary integration. For a live incident,
+inspect both the operation owner's retained result and the audit acknowledgement;
+neither a missing response nor an incomplete audit history proves rollback.

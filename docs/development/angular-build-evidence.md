@@ -10,7 +10,7 @@ not start a node, publish a package, sign evidence or authorize execution.
 
 ## Build an application
 
-Provision Python 3.13, the repository's exact Rust and wasm-tools versions, the
+Provision Python 3.13.5, the repository's exact Rust and wasm-tools versions, the
 `wasm32-unknown-unknown` target, and Node 24.19.0. The approved tooling root must
 have the exact [qualification package and lock](../../examples/renderer-profile/package.json).
 Install those tools explicitly; application dependency installation and npm
@@ -125,8 +125,8 @@ OS isolation remain outside that trusted-build helper's guarantees.
 ## Evidence and reproducibility
 
 The existing web predicate now supports the separately approved build type
-`https://latent.dev/build/angular-component/v1`. The old supplied-file assembly
-recipe keeps its original wire representation. Approval for that assembly recipe
+`https://latent.dev/build/angular-component/v1`. The supplied-file assembly
+recipe has its own wire representation. Approval for that assembly recipe
 does not authorize the Angular recipe. The Angular observation binds the exact
 final component and profile digest, JS embedding, compiled async adapter,
 adapter source, public/private WIT, actual server/client bundles, npm lock and
@@ -183,3 +183,30 @@ state IDs with other or missing types, aggregate/UTF-8 limits and recovery.
 These are finite conformance fixtures, not throughput or memory benchmarks.
 Generated packages and HTML remain temporary CI/local output. No large binary
 or benchmark report is committed.
+
+## Exercise the source and output boundaries
+
+Use a disposable copy of the maintained application for one change at a time.
+Run the [actual build adapter](../component-development/angular-build.md) with
+that copy as `--input-root` and a fresh output path. Preserve the original
+application and successful output for the recovery check.
+
+| Change | Expected boundary and correction |
+| --- | --- |
+| Edit the shared heading or the selected `shared/version.ts` literal | Valid captured-source change. Rebuild; source, browser and renderer/package observations must describe the new bytes. |
+| Add `import '../server/main.js'` to the client entry | Client/shared to server import is rejected. Move only public data types into shared code; leave server implementation private. |
+| Set a shared component's `templateUrl` to `../server/private.html`, including a declared server file | The source-area resource check rejects access before Angular compilation. Use a captured shared/client resource. Shorthand/computed resource metadata does not bypass this rule. |
+| Import `node:fs` or introduce ambient `process`, a worker or an interval | The closed source/module profile rejects unsupported APIs. Use an implemented, explicitly granted capability; arbitrary npm installation cannot add runtime authority. |
+| Supply more than 32 KiB of aggregate recognized hydration JSON, or more than 128 KiB HTML | The supplied-output or runtime wrapper rejects the result. Reduce transferred public state/output; do not increase the limit to pass the example. A subsequent bounded render must succeed. |
+
+The [source and hydration tests](../../tools/tests/test_build_angular_package.py)
+and [Angular conformance runner](../../tools/run_angular_build_tests.py) own these
+checks, including UTF-8 byte accounting, duplicate/ambiguous script attributes,
+state-ID recognition and recovery. Run the focused input suite with:
+
+```sh
+python3 -m unittest tools.tests.test_build_angular_package
+```
+
+That Python suite validates capture and supplied-output boundaries. It does not
+replace the complete adapter build, native preparation or real-browser workflow.

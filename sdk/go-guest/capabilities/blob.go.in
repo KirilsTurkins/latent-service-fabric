@@ -1,0 +1,43 @@
+package blob
+
+import (
+	raw "wit_component/@raw@"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+	"wit_component/lsf/ownership"
+)
+
+type Writer struct { owner ownership.Owner[uint64] }
+type Reader struct { owner ownership.Owner[uint64] }
+type Chunk struct { owner ownership.Owner[*raw.Chunk] }
+
+func Create(mediaType string, size wit.Option[uint64]) wit.Result[*Writer, BlobError] {
+	r := raw.Create(mediaType, size)
+	if r.IsErr() { return wit.Err[*Writer, BlobError](r.Err()) }
+	return wit.Ok[*Writer, BlobError](&Writer{ownership.New(r.Ok())})
+}
+func Open(reference BlobReference) wit.Result[*Reader, BlobError] {
+	r := raw.Open(reference)
+	if r.IsErr() { return wit.Err[*Reader, BlobError](r.Err()) }
+	return wit.Ok[*Reader, BlobError](&Reader{ownership.New(r.Ok())})
+}
+func (w *Writer) Write(offset uint64, bytes []byte) wit.Result[uint64, BlobError] {
+	v, release := w.owner.Borrow(); defer release()
+	return raw.Write(v, offset, bytes)
+}
+// Seal consumes the owner on success or failure, including uncertain effects.
+func (w *Writer) Seal() wit.Result[BlobReference, BlobError] { return raw.Seal(w.owner.Take()) }
+func (w *Writer) Close() wit.Result[bool, BlobError] { return raw.Close(w.owner.Take()) }
+func (r *Reader) Read(offset uint64, length uint32) wit.Result[*Chunk, BlobError] {
+	v, release := r.owner.Borrow(); defer release()
+	result := raw.Read(v, offset, length)
+	if result.IsErr() { return wit.Err[*Chunk, BlobError](result.Err()) }
+	return wit.Ok[*Chunk, BlobError](&Chunk{ownership.New(result.Ok())})
+}
+func (r *Reader) Close() wit.Result[bool, BlobError] { return raw.Close(r.owner.Take()) }
+// Bytes materializes once, and drops the independent host charge on every
+// return. Reader closure does not consume this chunk or refund its owner.
+func (c *Chunk) Bytes() wit.Result[[]byte, BlobError] {
+	v := c.owner.Take(); defer v.Drop()
+	return raw.ChunkBytes(v)
+}
+func (c *Chunk) Close() { c.owner.Close(func(v *raw.Chunk) { v.Drop() }) }

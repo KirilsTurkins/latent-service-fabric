@@ -52,6 +52,9 @@ pub(super) fn wasmtime(
     }
     runtime.value_codec_limits.max_input_bytes = config.limits.maximum_payload_bytes;
     runtime.value_codec_limits.max_output_bytes = config.limits.maximum_payload_bytes;
+    if config.engine.java_guest {
+        runtime.install_java_guest();
+    }
     if config.renderer_profile.is_some() {
         if config.renderer_profile != Some(latent_manifest::RendererProfile::AngularSsrComponentV1)
         {

@@ -1,0 +1,426 @@
+{
+  "schemaVersion": 1,
+  "maven": "https://repo.maven.apache.org/maven2/",
+  "artifacts": [
+    {
+      "path": "com/fasterxml/jackson/core/jackson-annotations/2.18.9/jackson-annotations-2.18.9.jar",
+      "sha256": "798c85b86e7420d0b4eb91e7b3e37d4bee673c61de37a616ba51a7539631e6b7",
+      "size": 78411,
+      "platform": "any"
+    },
+    {
+      "path": "com/fasterxml/jackson/core/jackson-core/2.18.9/jackson-core-2.18.9.jar",
+      "sha256": "e03144f48c8d5307da2894570b4972aab8c72f22440f8dcdb745be2485ce2024",
+      "size": 588002,
+      "platform": "any"
+    },
+    {
+      "path": "com/fasterxml/jackson/core/jackson-databind/2.18.9/jackson-databind-2.18.9.jar",
+      "sha256": "71595a3f7ff58344ec0496a9f9ec9f623ef7b85b45402d88f1ca261f1bc4b42c",
+      "size": 1662872,
+      "platform": "any"
+    },
+    {
+      "path": "com/jcraft/jzlib/1.1.3/jzlib-1.1.3.jar",
+      "sha256": "89b1360f407381bf61fde411019d8cbd009ebb10cff715f3669017a031027560",
+      "size": 71976,
+      "platform": "any"
+    },
+    {
+      "path": "jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar",
+      "sha256": "5f65fdaf424eee2b55e1d882ba9bb376be93fb09b37b808be6e22e8851c909fe",
+      "size": 26141,
+      "platform": "any"
+    },
+    {
+      "path": "jakarta/enterprise/jakarta.enterprise.cdi-api/4.0.1/jakarta.enterprise.cdi-api-4.0.1.jar",
+      "sha256": "beaf74c4f2618189309e3f4a09c43effab633dd96aa1f6dc58a6ba7ee0042717",
+      "size": 151307,
+      "platform": "any"
+    },
+    {
+      "path": "jakarta/enterprise/jakarta.enterprise.lang-model/4.0.1/jakarta.enterprise.lang-model-4.0.1.jar",
+      "sha256": "53acafe65b6ef0195fa1b8a0ef2650e5aa024c32cb4059c4df372d6b32089cd3",
+      "size": 26226,
+      "platform": "any"
+    },
+    {
+      "path": "jakarta/inject/jakarta.inject-api/2.0.1/jakarta.inject-api-2.0.1.jar",
+      "sha256": "f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c",
+      "size": 10681,
+      "platform": "any"
+    },
+    {
+      "path": "jakarta/interceptor/jakarta.interceptor-api/2.1.0/jakarta.interceptor-api-2.1.0.jar",
+      "sha256": "ef787d3f713fc6ff4f02cd4b0dbed08f93d8af3400c90cbb43fb4b5c0583710b",
+      "size": 25287,
+      "platform": "any"
+    },
+    {
+      "path": "jakarta/servlet/jakarta.servlet-api/6.1.0/jakarta.servlet-api-6.1.0.jar",
+      "sha256": "8a31f465f3593bf2351531a5c952014eb839da96a605b5825b93dd54714c48c4",
+      "size": 398424,
+      "platform": "any"
+    },
+    {
+      "path": "jakarta/transaction/jakarta.transaction-api/2.0.1/jakarta.transaction-api-2.0.1.jar",
+      "sha256": "50c0a7c760c13ae6c042acf182b28f0047413db95b4636fb8879bcffab5ba875",
+      "size": 28607,
+      "platform": "any"
+    },
+    {
+      "path": "joda-time/joda-time/2.12.2/joda-time-2.12.2.jar",
+      "sha256": "8d4d807adc8e92a83913d9ccd61e634b4907c78d88f3016d06b3b3d2b4795a02",
+      "size": 636782,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/compression/jetty-compression-common/12.1.10/jetty-compression-common-12.1.10.jar",
+      "sha256": "7c02e58d5589549a5e9b19a903134a0e868fdb9ee38459b2c4495a6a3b342ba0",
+      "size": 12600,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/compression/jetty-compression-gzip/12.1.10/jetty-compression-gzip-12.1.10.jar",
+      "sha256": "8c112b9ebb3413626026ba6782afde5e22575eb6fb071c98ae3541cb8d2dc79e",
+      "size": 20381,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/ee/jetty-ee-webapp/12.1.10/jetty-ee-webapp-12.1.10.jar",
+      "sha256": "a75c0f3ec4aff18295e8ebeba5de07e67c22892f511e7637e6e51ba7b01f35e1",
+      "size": 16222,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/ee10/jetty-ee10-annotations/12.1.10/jetty-ee10-annotations-12.1.10.jar",
+      "sha256": "922564cbc5058a16e8de21bc902f5692f74fd2635a2d7558a5b0a995b4769f6e",
+      "size": 66838,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/ee10/jetty-ee10-plus/12.1.10/jetty-ee10-plus-12.1.10.jar",
+      "sha256": "c0812685728707f9d48ea9046adf5308c16184e1f4ae92241ad9cd926a68bced",
+      "size": 22773,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/ee10/jetty-ee10-servlet/12.1.10/jetty-ee10-servlet-12.1.10.jar",
+      "sha256": "05cccc74bbe1478ceb765e967b1cb1a3c8d9b51e99acf586190887e467ffd87d",
+      "size": 449258,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/ee10/jetty-ee10-webapp/12.1.10/jetty-ee10-webapp-12.1.10.jar",
+      "sha256": "b0a9622aec43a34f7b5554a6496a68c1e224a4b080b983ef2136376d8c74df4a",
+      "size": 122355,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/ee10/websocket/jetty-ee10-websocket-jetty-server/12.1.10/jetty-ee10-websocket-jetty-server-12.1.10.jar",
+      "sha256": "e48ec73463ab925215a49ec2bf547203a7fafd43461b377a175d92b2eb2cf129",
+      "size": 32951,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/ee10/websocket/jetty-ee10-websocket-servlet/12.1.10/jetty-ee10-websocket-servlet-12.1.10.jar",
+      "sha256": "9c670f946e976b469550495374f029090119610eb02ad49c71c95a4f8c802496",
+      "size": 8748,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-alpn-client/12.1.10/jetty-alpn-client-12.1.10.jar",
+      "sha256": "4eed96763ac18fe310ad162d3266cf64ec718d86f5ac87b19a91f3f62a2c4520",
+      "size": 7622,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-annotations/12.1.10/jetty-annotations-12.1.10.jar",
+      "sha256": "b10d017a3ee94fa446c4d1756daf9571adc9e510a6dd4c97c96c952d748a06da",
+      "size": 18434,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-client/12.1.10/jetty-client-12.1.10.jar",
+      "sha256": "6e72623ef6ef1ed39a77934452e9d0340d7977882f3d8e9184ed8a2176330c68",
+      "size": 372437,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-http/12.1.10/jetty-http-12.1.10.jar",
+      "sha256": "090f276739fd9bf8c30511007caec669ea3804b1df1061c37f44467474bee71d",
+      "size": 479593,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-io/12.1.10/jetty-io-12.1.10.jar",
+      "sha256": "448fc0f8f6f5f7251fc46de8e3aae7da14bd7c571a8043dac3dc381d08228fa0",
+      "size": 382910,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-jndi/12.1.10/jetty-jndi-12.1.10.jar",
+      "sha256": "d80daed161e97b94e8dcfe105c19e668f464f95b5522db99b1f36ce5110f84b4",
+      "size": 31125,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-plus/12.1.10/jetty-plus-12.1.10.jar",
+      "sha256": "d2cbf417d2f196ecc041e13cae0b801fc71fddf39ebab320c61e5919de05cdb5",
+      "size": 34833,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-security/12.1.10/jetty-security-12.1.10.jar",
+      "sha256": "2f34b7895cec4e3547a1b52e12e7e92b3f3a110bf3c17637f8743ca3f4e42f0c",
+      "size": 166551,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-server/12.1.10/jetty-server-12.1.10.jar",
+      "sha256": "4b0108e87abada7027123deca17186249413232dad0a2bd58a4e70a987b5354a",
+      "size": 703082,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-session/12.1.10/jetty-session-12.1.10.jar",
+      "sha256": "164649123d15a3f2be5c196e82aa652dff05c75362db71b0f4ab6bb35165020a",
+      "size": 118625,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-util/12.1.10/jetty-util-12.1.10.jar",
+      "sha256": "c52b4ff62cdacca8a399c611231129e6bd1074db7e3892e78cd106725cdd0ef1",
+      "size": 728712,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/jetty-xml/12.1.10/jetty-xml-12.1.10.jar",
+      "sha256": "d4660c9fa82eabfa9e5996eff5b36ae22e5e14430c3dcc485920aef889149a89",
+      "size": 87998,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-core-client/12.1.10/jetty-websocket-core-client-12.1.10.jar",
+      "sha256": "10ee92d90fe1d112a6d6d612083de853f28935310902443bdbe5daea84e530f5",
+      "size": 25089,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-core-common/12.1.10/jetty-websocket-core-common-12.1.10.jar",
+      "sha256": "bc6397bf67feeb18d7851b5fbf817c4ed11016024481202e8db790bb5a8321e1",
+      "size": 205224,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-core-server/12.1.10/jetty-websocket-core-server-12.1.10.jar",
+      "sha256": "ca9e5cdecde06d21d0637f7b0c15e40b90463290fa8c75d2c66b4bad6910608d",
+      "size": 45764,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-api/12.1.10/jetty-websocket-jetty-api-12.1.10.jar",
+      "sha256": "f3b33c3c284c12917bef8a5af9b347dfecfbcb3b1a416a7d00041f5ad1b2b76f",
+      "size": 32118,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-client/12.1.10/jetty-websocket-jetty-client-12.1.10.jar",
+      "sha256": "5c003615ff57ffe4ceb60c82b701a1bd7fb01187290275c61231a3fa69469f4f",
+      "size": 22197,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-common/12.1.10/jetty-websocket-jetty-common-12.1.10.jar",
+      "sha256": "b7b6766b0f5eec268b17e971cd8ac8058cffba350aed53e5bf120c00081be4cf",
+      "size": 34025,
+      "platform": "any"
+    },
+    {
+      "path": "org/eclipse/jetty/websocket/jetty-websocket-jetty-server/12.1.10/jetty-websocket-jetty-server-12.1.10.jar",
+      "sha256": "e9fb2d66de7edd797f95089afad93717f24e8948097f238fb2bb94bbc1718584",
+      "size": 21348,
+      "platform": "any"
+    },
+    {
+      "path": "org/ow2/asm/asm-commons/9.10/asm-commons-9.10.jar",
+      "sha256": "4282689aaa9a7023dd7a9ccd0bcca39aca49863e16d1ac709b392a6f36a50bfb",
+      "size": 74835,
+      "platform": "any"
+    },
+    {
+      "path": "org/ow2/asm/asm-tree/9.10/asm-tree-9.10.jar",
+      "sha256": "02a58618b38c7748e9ce4adff00d1080ced507f309e50b8643b703532ef347e0",
+      "size": 51953,
+      "platform": "any"
+    },
+    {
+      "path": "org/ow2/asm/asm/9.10/asm-9.10.jar",
+      "sha256": "34f38c5d5e8bcb32cbd2d11e44bc12725be1ccdb87c3c96000af57fd81df6e64",
+      "size": 126184,
+      "platform": "any"
+    },
+    {
+      "path": "org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar",
+      "sha256": "7b751d952061954d5abfed7181c1f645d336091b679891591d63329c622eb832",
+      "size": 69908,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-browser-runner/0.15.0/teavm-browser-runner-0.15.0.jar",
+      "sha256": "10f2223e07726326e445e204a3141444c88fd647fcab6929b00854eb468d63b0",
+      "size": 48622,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar",
+      "sha256": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410",
+      "size": 17718996,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar",
+      "sha256": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+      "size": 2956367,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-devserver-client/0.15.0/teavm-devserver-client-0.15.0.jar",
+      "sha256": "4113d73ac4241935de10dfdff20f8b67957a3253a0127bb6bada04ee5cd009d7",
+      "size": 16198,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-extension-annotation-processor/0.15.0/teavm-extension-annotation-processor-0.15.0.jar",
+      "sha256": "a801dfbbeef2f11e75b7fc3a6bfe63add003890f8b53679d63adbf92ffac1520",
+      "size": 4433,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-extension-apis/0.15.0/teavm-extension-apis-0.15.0.jar",
+      "sha256": "9e867f3760b1c8d86cdb18ec70e429c23fd933021c8c3bb0cc0b727eac3202c0",
+      "size": 13264,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-extension-spi-util/0.15.0/teavm-extension-spi-util-0.15.0.jar",
+      "sha256": "d94e8d4478c4186d18b657cb67654851d38b9f51d372dc7e7e54e0f3a24347c9",
+      "size": 1845,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar",
+      "sha256": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49",
+      "size": 16527,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-gradle-plugin/0.15.0/teavm-gradle-plugin-0.15.0.jar",
+      "sha256": "d68695de71995c16741208223d7ef755cfe7dcbfb436128f6ec6e7c76abd7ceb",
+      "size": 85532,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar",
+      "sha256": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f",
+      "size": 12599,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-jso-apis/0.15.0/teavm-jso-apis-0.15.0.jar",
+      "sha256": "171abaff01d9c029218df911470184ed8e30e6b511be6bb03381a924ec4a8c3c",
+      "size": 177814,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-jso-impl/0.15.0/teavm-jso-impl-0.15.0.jar",
+      "sha256": "9a8d15205807b70d7efdfbd4c1356304954e20146e464aec3830dbc6616ef57c",
+      "size": 193829,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-jso/0.15.0/teavm-jso-0.15.0.jar",
+      "sha256": "58b337b93924106bf819c45890c7c231a0c740145afe77795f1e0f099f621d71",
+      "size": 8437,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-junit/0.15.0/teavm-junit-0.15.0.jar",
+      "sha256": "5a89059e00cbc7bcb7bae04c04f294f4f596dc5d06fb8bac1d2bdb605a02e04b",
+      "size": 92906,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-metaprogramming-api/0.15.0/teavm-metaprogramming-api-0.15.0.jar",
+      "sha256": "00f053ad35ff78312e48eebbf4e1c6cf5f7a1e759b2432ba0b60d6f111bb3bdd",
+      "size": 13884,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-metaprogramming-impl/0.15.0/teavm-metaprogramming-impl-0.15.0.jar",
+      "sha256": "616d30aa28f7b0180a61c2289b11c77bf84c715bd79f255e1e42400edb5b6d70",
+      "size": 126504,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-platform/0.15.0/teavm-platform-0.15.0.jar",
+      "sha256": "999d369ab15aa83c17987d048ba59560759169891de7e13a5a1c2bd93dd060a8",
+      "size": 101636,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar",
+      "sha256": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c",
+      "size": 34800,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar",
+      "sha256": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140",
+      "size": 73343,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar",
+      "sha256": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b",
+      "size": 51412,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-util/0.15.0/teavm-relocated-libs-asm-util-0.15.0.jar",
+      "sha256": "a41247ca7f023959712be0e713d3f2f5687b4dfeda6b112b2d976494d52cdc57",
+      "size": 94715,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar",
+      "sha256": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018",
+      "size": 126383,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar",
+      "sha256": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6",
+      "size": 1509391,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-rhino/0.15.0/teavm-relocated-libs-rhino-0.15.0.jar",
+      "sha256": "49cedc9bfcdd44d30b8bc8d1d46d78fb7f8f2044b8c85c9c3f1ece33e94ee7e9",
+      "size": 1426826,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-tooling/0.15.0/teavm-tooling-0.15.0.jar",
+      "sha256": "51123d78dc48404aa2e7cb0c04a0a6d75309decf604ffafda1c64564e7c9c6f3",
+      "size": 68279,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-wasm-gc-deobfuscator/0.15.0/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+      "sha256": "875532a32d0c328f33f830ff5a75df752773229c71ae1d5a85bdeac497050376",
+      "size": 19793,
+      "platform": "any"
+    }
+  ]
+}
