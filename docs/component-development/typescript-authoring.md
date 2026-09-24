@@ -276,8 +276,11 @@ requires checking the deployment grant, provider binding and allowed destination
 
 The guest runs in an activation-owned SpiderMonkey heap in WebAssembly. It is
 not Node, a browser, or an application-owned JavaScript event loop. There is no
-ambient filesystem, process, clock, entropy, network, timer, worker or DOM API.
-Use a declared, configured LSF import for every host effect.
+ambient filesystem, process, clock, entropy, network, timer, worker or DOM
+authority. Disabled compiler features do not necessarily remove JavaScript
+symbols: `Math.random()` has a deterministic fallback, not approved entropy,
+and timer functions such as `setTimeout` trap. Use the declared LSF randomness
+wrapper for real random values and a configured LSF import for every host effect.
 
 The compiler generates a synchronous JavaScript calling convention, then the
 builder restores the original typed async WIT metadata. Wasmtime suspends the

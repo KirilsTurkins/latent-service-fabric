@@ -37,6 +37,9 @@ including nested records/lists; authoritative contract derivation rejects them
 before guest compilation. This does not narrow the declared blob/streaming
 resource imports used by the capability wrappers. There is no ambient
 clock, entropy, filesystem, network, timer, worker, process or DOM authority.
+The compiler's disabled random feature leaves a deterministic `Math.random()`
+fallback, not approved entropy; use the LSF randomness wrapper for real random
+values. Disabled timers such as `setTimeout` trap rather than schedule work.
 Effects require configured, declared LSF imports and host grants. Dynamic
 imports, Node built-ins, `require`, npm dependencies and application compiler
 configuration overrides are outside this captured-source profile.

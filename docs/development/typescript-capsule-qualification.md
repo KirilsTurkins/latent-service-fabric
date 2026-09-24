@@ -45,6 +45,27 @@ produced. This is explicit negative authoring evidence, not runtime admission.
 
 ## Retained attempts and compiler boundary fixes
 
+The integrated cross-check
+[run 35938546318](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938546318)
+at `0c08d3f175f8cb58546208abe7f797cd27d6b61b` passed nine SDK cases in
+1,007.91 seconds but failed its first permitted nested service call. The child
+stopped at `Resolved` with `DependencyFailed` / `Unavailable` and zero recorded
+consumption; the parent assertion trapped after 67.452685681 seconds. Artifact
+`10784514997` retains the failed attempt. Its child private rejection reason
+was not captured. The fixture refreshed its synthetic healthy load only at root
+request construction, while normal admission rejects a sample older than
+60 seconds. Stale load at child admission is therefore an evidence-backed
+inference, not a recovered private cause.
+
+This fixture now samples the same explicitly synthetic healthy profile at each
+admission, including nested children. No production health source, 60-second
+freshness limit, quota, invocation budget or retry behavior changes. Three
+registered regressions check per-read timestamps and run real parent/child WAT
+components with deterministic fresh and 61-second-old child observations. They
+require exactly one admission per activation, reproduce zero-consumption stale
+child rejection, and check cleanup. The native test bodies typechecked, but
+the real repository-backed cases still need authoritative Linux execution.
+
 [Run 35938383435](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938383435)
 at `f65820c5ac7a7265569e15fee52a3695a812c505` passed all ten SDK tests
 in 879.58 seconds. The nested service succeeded cold in 94.410 seconds, with
@@ -195,9 +216,10 @@ service invocation in 82.891 seconds, including a successful child in 42.388
 seconds. The child's observed peak was 9,502,720 bytes and the caller's aggregate
 peak, including the child, was 19,005,440 bytes. The next request correctly
 failed admission because the test fixture's one-shot synthetic load sample was
-older than the unchanged 60-second admission limit. The fixture now publishes
-its synthetic current load at each new request, like its missing node monitor;
-it neither retries the failed request nor weakens production freshness checks.
+older than the unchanged 60-second admission limit. That candidate refreshed
+its synthetic current load at each new root request, like its missing node
+monitor; it neither retried the failed request nor weakened production freshness
+checks. The later nested-child failure above exposes that correction's limit.
 The attempt passed nine of ten SDK tests in 669.71 seconds, but remained failed
 before full-node or guide qualification. Artifact `10779964328` retains it.
 
