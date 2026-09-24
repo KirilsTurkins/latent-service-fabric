@@ -1,6 +1,6 @@
 use super::super::*;
 use latent_control_store::rollouts::{RolloutCommand, RolloutId, RolloutRequest};
-use latent_core::{RouteGeneration, TenantId};
+use latent_core::RouteGeneration;
 use std::sync::atomic::AtomicU8;
 
 pub(super) async fn fixture(canary: bool) -> (Fixture, Arc<AtomicU8>) {
