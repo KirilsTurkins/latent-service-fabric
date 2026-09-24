@@ -176,6 +176,10 @@ pub(super) fn node_usage(value: &domain::NodeUsage) -> proto::CapabilityResource
         result
             .counters
             .insert("audit_closed".into(), u64::from(audit.closed));
+        result.counters.insert(
+            "audit_recovery_pending".into(),
+            u64::from(audit.recovery_pending),
+        );
         counts!(
             "audit_",
             audit,
@@ -183,13 +187,58 @@ pub(super) fn node_usage(value: &domain::NodeUsage) -> proto::CapabilityResource
             unavailable_events,
             pending_attempts,
             queued_operations,
+            queued_bytes,
             reserved_records,
             reserved_bytes,
             query_owners,
-            query_bytes
+            query_bytes,
+            stage_bytes
         );
     } else {
         result.unavailable.push("audit-owner-not-configured".into());
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn audit_byte_ownership_and_recovery_remain_visible_after_record_refund() {
+        let mut usage = domain::NodeUsage {
+            broker: Default::default(),
+            pools: None,
+            io: None,
+            audit_capture_dropped: 0,
+            audit: Some(latent_audit::AuditSnapshot {
+                queued_bytes: 16 * 1024,
+                stage_bytes: 68 * 1024,
+                recovery_pending: true,
+                ..Default::default()
+            }),
+        };
+        let encoded = node_usage(&usage);
+        assert_eq!(encoded.counters["audit_queued_operations"], 0);
+        assert_eq!(encoded.counters["audit_reserved_records"], 0);
+        assert_eq!(encoded.counters["audit_reserved_bytes"], 0);
+        assert_eq!(encoded.counters["audit_queued_bytes"], 16 * 1024);
+        assert_eq!(encoded.counters["audit_stage_bytes"], 68 * 1024);
+        assert_eq!(encoded.counters["audit_recovery_pending"], 1);
+        usage.audit = Some(latent_audit::AuditSnapshot::default());
+        let idle = node_usage(&usage);
+        for name in [
+            "audit_queued_bytes",
+            "audit_stage_bytes",
+            "audit_recovery_pending",
+        ] {
+            assert_eq!(idle.counters[name], 0);
+        }
+        usage.audit = None;
+        let unavailable = node_usage(&usage);
+        assert!(unavailable
+            .unavailable
+            .contains(&"audit-owner-not-configured".into()));
+        assert!(!unavailable.counters.contains_key("audit_queued_bytes"));
+    }
 }
