@@ -45,6 +45,48 @@ produced. This is explicit negative authoring evidence, not runtime admission.
 
 ## Retained attempts and compiler boundary fixes
 
+[Run 35938383435](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938383435)
+at `f65820c5ac7a7265569e15fee52a3695a812c505` passed all ten SDK tests
+in 879.58 seconds. The nested service succeeded cold in 94.410 seconds, with
+9,502,720 bytes observed for the child and 19,005,440 bytes for the caller's
+aggregate peak. The node admitted its first signed greeting package, then the
+first deployment apply, control 006, failed after a directly measured
+6.179590237 seconds with `unavailable` / `admission-clock-lease-uncovered`.
+The new timing receipt confirms the explicit 125-second RPC and 130-second
+process bounds were selected; this is not the previous 15-second timeout.
+The mutation's `outcomeKnown` remained false, the read-only operation lookup
+reported `UNKNOWN`, and a complete eight-record audit retained the rejection.
+No mutation was retried. Artifact `10784737181` preserves the failed attempt;
+it provides no dormant population, printed-guide or final-cleanup pass.
+
+The exact retained greeting component SHA-256 was
+`a4e7d661cc418c466749e7ca3061d8a9766c826f70bcbe7a9b87e86c0b4ae7a1`.
+Its package passed an independent native inspection in 5.401 seconds. The
+inspecting binary SHA-256 was
+`c2209dfa0b91fd2f7e06ca57ee77625da5f7ead1a5635342abd934d5b6a3a5ea9`;
+this Windows measurement is diagnostic evidence, not Linux node qualification.
+Binding preparation already renewed before each package read, but its later
+broker checks could see an expired lease after one slow structural inspection.
+The explicit authenticated-control path now also renews after each successful,
+identity-matched inspection. The five-second lease, 30-second binding deadline,
+single preparation owner and latest policy/lifecycle checks are unchanged.
+Startup, recovery, invocation and historical replay do not gain this renewal.
+Three registered real-package regressions advance a fake clock by six seconds
+and cover cancellation/owner release, revoked or expired proofs despite a
+renewed clock, and startup without renewal. Their actual bodies typechecked
+locally with the Linux module temporarily exposed, then its platform guard was
+restored. They still require authoritative Linux execution; native catalog
+durability is unavailable, and a zero-case Windows command is not a pass.
+
+Source artifact `10783384481` matched all 4,096 selected Git blobs and
+40,094,211 source bytes at that exact head; its archive SHA-256 was
+`fd692386dc56d0e3d356195bb95c35d37ff62ae0cd78b8fa0295452a999e7d72`.
+The CI merge tree also exactly matched the head tree. The corrected Go
+[cross-language run 35938383432](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938383432)
+passed its complete SDK, node, recovery and printed-guide qualification on
+the same head. Neither that cross-language success nor exact source identity
+converts this TypeScript node failure into successful delivery.
+
 [Run 35934224469](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934224469)
 at `cb3aab64377eea4a5cb26220a6593b5ca2f8351d` passed all ten actual SDK
 tests in 680.29 seconds. The real node then admitted all four attempted signed
