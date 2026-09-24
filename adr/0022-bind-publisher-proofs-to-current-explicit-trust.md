@@ -54,10 +54,12 @@ and clock floors and atomically compare the captured trust state at final
 publication. A library proof is neither catalog admission nor tenant authority,
 route eligibility, semantic guest validation or native-load permission.
 
-Future provenance and trusted AOT require distinct signed payloads and explicit
+Build provenance and trusted AOT use distinct authenticated payloads and explicit
 builder/compiler key roles. Publisher keys cannot authorize those roles through
 subject matching. SBOM presence, inventory and authenticity remain separate
-policy decisions. CLI integration is delivered by its dedicated feature ticket.
+policy decisions. The current [CLI](../docs/reference/operator-cli.md) exposes
+the package verification and admission workflows; a publisher proof alone still
+does not authorize either builder/compiler roles or execution.
 
 Validate through independent RFC 8032 and OpenSSL public vectors, adversarial
 bounded format/trust tests and the existing single disposable authenticated Zot

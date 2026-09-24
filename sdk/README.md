@@ -19,15 +19,12 @@ this does not imply published packages, remote node listeners or guest runtimes.
 | Java | [Native client](java-client/README.md) | Lossless unsigned values, local future cancellation and owned channel/executor closure. |
 | C#/.NET | [Native client](dotnet/README.md) | Live recovery tokens, single-consumption ValueTask and async disposal. |
 
-The external client SDK directories separate portable programming models from
-executable transport packages. Rust network delivery and its transport-specific
-documentation are tracked in [#228](https://github.com/KirilsTurkins/latent-service-fabric/issues/228);
-model validation alone does not establish transport readiness.
-The [common executable client profile](profile/README.md) supplies a complete,
-protobuf-derived eight-operation facade in all six languages, including policy,
-redacted provider inspection, preconditioned mutation and recovery. Its models
-and fast semantic fixtures are separate from the network implementations owned
-by Rust #228, TypeScript #230, Go #260, C #261, Java #262 and .NET #263.
+The [common client profile](profile/README.md) supplies the same eight-operation
+facade in all six languages: invocation, cancellation/status, policy, redacted
+provider inspection, preconditioned mutation and recovery. Each native transport
+implements that profile. The profile's fast semantic fixtures and each
+transport's network tests cover separate parts of the contract.
+
 The [Rust guest SDK](rust-guest/README.md) provides generated typed capability
 bindings and ownership helpers for actual Wasm components;
 [C guest fixtures](c-guest/README.md) validate generated ownership and ABI behavior.
@@ -86,9 +83,8 @@ activation never ran.
 
 The delivered [activation manager](../docs/activation-lifecycle.md) and
 [invocation adapter](../docs/protocol/invocation-service.md) enforce these server
-identity and lineage rules. The shared profile includes executable test doubles;
-network packages and their separate delivery evidence
-determine which executable clients are available.
+identity and lineage rules. Shared semantic fixtures exercise these rules,
+and native transport tests verify their wire representation and failure handling.
 
 All six client surfaces cancel and query status by known activation ID.
 Cancellation has three successful RPC dispositions: `accepted`,
@@ -100,10 +96,8 @@ server cancellation. Only an explicit cancellation response confirms its
 disposition; automatic cancellation forwarding and retry policy are outside
 these interfaces.
 
-The [extension's caller-budget guidance](../docs/phase-1-extension-completion.md#tuning-and-closure)
-distinguishes useful responses, deadline misses and eventual cleanup.
-Its benchmark client results do not add transports, automatic cancellation
-forwarding or retries to these SDK interfaces.
+Follow the [client guide](../docs/learn/use-a-client.mdx) to retain an activation
+ID, set a deadline and recover an uncertain response without duplicate execution.
 
 ### C callback contract
 
@@ -141,7 +135,7 @@ lost-response recovery, distinct outcomes, capacity, deadlines and shutdown.
 Model fixtures establish representable values; transport validation rejects
 present-invalid requests without normalizing them into absence.
 
-The shared Phase 3 suite contains 67 protobuf-selected vectors, 16 strict unsigned
+The shared profile suite contains 67 protobuf-selected vectors, 16 strict unsigned
 decimal boundaries, and local cancellation/response ownership/recovery fixtures
 in every language. The existing runners execute these suites, including ordinary
 public Rust crate tests. See the [profile validation commands](profile/README.md#executable-semantic-fixtures)
@@ -158,7 +152,7 @@ retains raw RPC status, dispatch uncertainty, activation/operation IDs and
 independent audit facts. Package and SDK versions do not change independently
 versioned WIT and Protobuf contracts.
 
-## Publication identity (Phase 3)
+## Publication identity
 
 All six SDKs provide transport-neutral `PublicationRef` (ID and tenant) and
 `PublicationIdentity` (publication, component and package) models. A corrected

@@ -65,8 +65,10 @@ must be joined during shutdown. Compiler isolation, admission and provider trust
 remain independent security boundaries. Existing execution security profiles
 remain authoritative; enabling TLS does not qualify hostile guest execution.
 
-Web-package routing, Angular adaptation, assets and hydration remain the
-separately scoped #226, #233, #231, #232 and #234 integrations. HTTP requests use
+Web-package routing, Angular adaptation, assets and hydration use the separate
+#226, #233, #231, #232 and #234 implementations. Their integrated behavior is
+recorded in the [Angular workflow](../docs/testing/angular-reference-workflow.md).
+HTTP requests use
 immediate invocation semantics and receive no automatic retry or durable-effect
 guarantee from this listener.
 

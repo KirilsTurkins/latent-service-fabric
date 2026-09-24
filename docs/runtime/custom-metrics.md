@@ -5,8 +5,7 @@ The configured `MetricProvider` implements
 `emit-metric` requires the exact import, installed provider identity, current
 publication and policy, and an operation grant with resource kind `telemetry`
 and an allowed metric name. Guest strings never select a provider or supply
-trusted source identity. An uninstalled import fails preparation. The WIT and
-host ABI version are unchanged.
+trusted source identity. An uninstalled import fails preparation.
 
 ## Composition and identity
 
@@ -14,8 +13,10 @@ An embedding supplies `MetricProvider::install(&broker, telemetry_handle, epoch,
 config, activation_limits)` and calls
 `ActivationCapabilityRuntime::install_metrics` with the returned `Arc`. Its
 `reference()` supplies the `custom-metrics-v1` profile, configuration digest and
-epoch for durable bindings and exact plan compilation. Standalone provider
-configuration is tracked by [#226](https://github.com/KirilsTurkins/latent-service-fabric/issues/226).
+epoch for durable bindings and exact plan compilation. This provider is
+available through the Rust embedding. The current
+[standalone provider configuration](../reference/standalone-providers.md)
+has no custom-metric configuration field.
 
 `CustomMetricsConfig` declares exact tenant policies, metric names, kinds, units,
 label keys and permitted values. It has no wildcard labels. Names start with an

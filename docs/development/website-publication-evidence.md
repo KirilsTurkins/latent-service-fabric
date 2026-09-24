@@ -16,6 +16,6 @@ Live Chromium 153.0.8010.12 checks passed for home, direct nested reload, static
 - [Initial publication receipt](../evidence/pages-2026-09-20/publication.json) and [live browser receipt](../evidence/pages-2026-09-20/publication-browser.json).
 - [Controlled redeployment receipt](../evidence/pages-2026-09-20/redeployment.json) and [live browser receipt](../evidence/pages-2026-09-20/redeployment-browser.json).
 
-The environment requires the configured repository maintainer reviewer and permits the `release` deployment branch. Candidates were reviewed against their source, run, attempt, immutable artifact and staged bytes before approval; no environment bypass was used. Pages serves static documentation. These operations neither publish a node runtime release nor certify Phase 3 or the final essential-guide review.
+At publication, the environment required the configured repository maintainer reviewer and permitted the `release` deployment branch. Candidates were reviewed against their source, run, attempt, immutable artifact and staged bytes before approval; no environment bypass was used. Pages serves static documentation. These operations neither publish a node runtime release nor certify Phase 3 or the final essential-guide review.
 
 The [publication procedure](website-publication.md) documents refusal handling, protected recovery, artifact retention and the bounded adversarial fixtures. Final content coverage and human pedagogy review remain owned by #345 and its guide tickets.

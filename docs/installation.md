@@ -1,124 +1,74 @@
-# Native standalone installation
+# Install or build LSF
 
-**Availability:** prebuilt native publication is on hold. The premature
-`0.1.0-alpha.4` tag has been removed and its publication run cancelled; no
-binary release was published. Use the [source walkthrough](start/first-node.md)
-to try LSF while the installation release is being completed and reviewed.
+**Prebuilt native releases are not available yet.** Native publication is on
+hold for completion and review. To try LSF now, follow
+[Run your first node](start/first-node.md): it builds the node and CLI from source,
+starts a local node, and walks through deploying and invoking a service. The
+historical `0.1.0-alpha.3` release is source-only.
 
-The [historical native rehearsal](evidence/native-upgrade-35821200294/README.md)
-passed rootless evaluation and both clean-VM profiles, including reboot,
-retained invocation, backup/recovery, removal and a compatible upgrade.
-Those receipts qualify only their recorded source and archive. A future
-approved release will receive its own build, checks and publication evidence.
-The historical
-[`0.1.0-alpha.3` release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3)
-remains source-only. Do not install an unsigned candidate as an authenticated
-release or infer production/hostile-multitenant certification.
+## Choose your starting point
 
-## Choose the right path
-
-| Need | Entry point |
+| What you want to do | Follow this guide |
 | --- | --- |
-| Install a prebuilt native runtime | [Bundled operator instructions](../packaging/linux/INSTALL.md#prerequisites-and-independent-bootstrap-trust): verify the publisher before executing downloaded code. |
-| Try controlled workloads without root | [Rootless foreground evaluation](../packaging/linux/INSTALL.md#rootless-evaluation): private user-owned files, no system service. |
-| Run a persistent single server | [Server installation](../packaging/linux/INSTALL.md#persistent-server): non-root node, protected credentials, explicit profile/start/enablement. |
-| Develop an application/capsule | [Guest SDK](component-development/guest-sdk.md) and [operator CLI](reference/operator-cli.md); this does not install the node runtime. |
-| Build or contribute to LSF itself | [Pinned toolchain](development/toolchain.md) and [development quickstart](development/standalone-quickstart.md), not a server installer. |
+| Try a local service for the first time | [Run your first node](start/first-node.md) |
+| Write a capsule after starting a node | [Create a capsule](component-development/creating-a-capsule.md) |
+| Connect an existing application | [Use a client SDK](learn/use-a-client.mdx) |
+| Serve a static or Angular website | [Static sites](component-development/static-sites.md) or [Angular walkthrough](learn/build-and-deliver-angular.mdx) |
+| Change LSF itself | [Contribute](contribute/index.md) and [install the contributor toolchain](development/toolchain.md) |
 
-The narrow qualified native matrix is Ubuntu Server 24.04/x86_64, kernel 6.8+,
-glibc 2.39+, SSE2 and Python 3.12+. Actual pressure observations, local filesystem
-locking/directory synchronization, protected-file semantics, dynamic libraries
-and, for external capsules, the approved Landlock ABI 3/seccomp compiler are
-checked under the intended node identity. This matrix is tested for the exact
-recorded **alpha.4 rehearsal** archive, not for every newer source or rebuild.
-There is no container-runtime prerequisite or alternative container installation
-mode. Capsule OCI transport remains independent of native runtime distribution.
+Running an SDK client does not install or start the node. Start one node first,
+then use its local connection profile in your application. Management RPCs stay
+on loopback; for a remote server, use a local SSH session. Application HTTP
+traffic uses a separately configured [HTTP listener](reference/http-ingress.md).
 
-## Authority and operation
+## Native installation requirements
 
-- [Bootstrap verification and offline inputs](../packaging/linux/INSTALL.md#prerequisites-and-independent-bootstrap-trust)
-- [Explicit security profiles](runtime/execution-security-profiles.md), [protected files](runtime/protected-configuration.md), [isolated AOT](runtime/trusted-aot.md)
-- [Protected layout and credentials](../packaging/linux/INSTALL.md#layout-and-credentials)
-- [First retained invocation and publication references](../packaging/linux/INSTALL.md#first-retained-invocation)
-- [Authenticated readiness, logs and drain](../packaging/linux/INSTALL.md#status-drain-and-hardening)
-- [Compatibility, consistent backups and recovery](../packaging/linux/INSTALL.md#reinstall-upgrade-and-recovery)
-- [Removal versus destructive purge](../packaging/linux/INSTALL.md#removal-and-separately-confirmed-purge)
+The native installer targets **Ubuntu Server 24.04 on x86_64**, with kernel 6.8+,
+glibc 2.39+, SSE2 and Python 3.12+. It checks filesystem locking/synchronization,
+protected files, dynamic libraries and host pressure observations under the
+intended node identity. External capsule execution also needs the approved
+Landlock ABI 3/seccomp compiler sandbox.
 
-Management remains loopback-only over a local SSH session. Installation does not
-configure public management, firewall rules, reverse proxies, TLS bypasses,
-clusters, or [application HTTP ingress](reference/http-ingress.md). One systemd
-service owns the native node and its transient compiler children, not deployed
-capsules. Fixed node runtime plus active activations plus bounded shared caches
-and catalog metadata remains the resource model.
+The [native rehearsal record](evidence/native-upgrade-35821200294/README.md)
+records installation, reboot, recovery and upgrade checks for its exact candidate.
+It is not a downloadable, approved release and does not qualify every rebuild or
+newer source. Current runtime execution and security limits are described in
+[execution profiles](runtime/execution-security-profiles.md).
 
-## Maintainer build and release boundary
+No container runtime is required for native installation. OCI registries distribute
+application packages independently of how you install LSF itself.
 
-The native builder requires a clean checkout at the exact explicit commit, the
-committed lockfile, the pinned Rust/wasm-tools versions and Ubuntu 24.04. It builds
-the three native executables and the maintained echo component, inventories ELF
-dependencies/GLIBC requirements, bundles dependency license texts, generates SPDX
-and observed in-toto/SLSA-format provenance, and verifies the assembled archive.
-It does not claim a SLSA assurance level or cross-host reproducibility.
+## When an approved native bundle is available
 
-```bash
-python3 tools/build_native_runtime.py --commit "$REVIEWED_COMMIT" \
-  --version "$RELEASE_VERSION" --output "$PWD/target/native-release/$RELEASE_VERSION"
-python3 -m unittest tools.tests.test_native_runtime
-```
+The [bundled installation instructions](../packaging/linux/INSTALL.md) cover the
+complete procedure, including exact command syntax and verification inputs:
 
-Version must match the committed workspace version. A new binary release needs a
-new maintainer-reviewed release identity; do not reuse the historical alpha.3 tag.
-The [maintainer release gate](development/native-release-gate.md) describes the
-exact workflow, required review environment, two-profile real-VM matrix and
-compatible-version selection. It distinguishes scoped candidate successes and
-earlier failures from complete release acceptance, including actual boot IDs.
-The builder emits an **unsigned candidate**. The release gate uses GitHub artifact
-attestations with the exact repository, `native-runtime-release.yml` workflow,
-release tag, source/signing commit and GitHub-hosted runner certificate identity.
-Operators separately provision GitHub CLI, Sigstore roots and the approved
-identity policy before executing any downloaded bootstrap. No project bootstrap
-key, invented fingerprint or bundle-provided trust root is needed. The maintainer
-chooses the final version/commit only after exact-head CI and acceptance review;
-publication must not precede that gate. Capsule signing/admission is a separate policy.
+1. [Verify the publisher and bundle](../packaging/linux/INSTALL.md#prerequisites-and-independent-bootstrap-trust)
+   before running downloaded code. Obtain trust roots and the approved identity
+   policy independently of the bundle.
+2. Choose [rootless evaluation](../packaging/linux/INSTALL.md#rootless-evaluation)
+   for a foreground process in private user-owned directories, or
+   [persistent server installation](../packaging/linux/INSTALL.md#persistent-server)
+   for a non-root systemd service.
+3. Configure the selected profile and credentials, start the node, and check
+   [authenticated readiness](../packaging/linux/INSTALL.md#status-drain-and-hardening).
+4. [Deploy and invoke the bundled example](../packaging/linux/INSTALL.md#first-retained-invocation)
+   before delivering your own applications.
+5. Use [consistent backups and recovery](../packaging/linux/INSTALL.md#reinstall-upgrade-and-recovery)
+   when changing installations. Check the declared upgrade pair before upgrading.
 
-The signed `SHA256SUMS` binds exactly the archive, `release.json`, and
-`lsf-install.pyz`. The manifest also binds every archive file's name, mode, size
-and SHA-256, the source/lockfile/toolchain, runtime/host ABI and approved compiler.
-The installer re-verifies using independently installed `gh`, an offline
-attestation bundle and separately supplied trusted roots, then pins the opened
-archive through extraction. No installation command downloads a branch or invokes
-a development compiler. The approved isolated AOT compiler runs only for the
-selected profile's maintained readiness probe and actual capsule preparation.
+The installer does not configure public management access, firewall rules,
+reverse proxies, application HTTP ingress or clusters. One service owns the node
+and its transient compiler children; it does not create a service process per
+capsule.
 
-## Evidence and downstream handoff
+[Removal and purge](../packaging/linux/INSTALL.md#removal-and-separately-confirmed-purge)
+are separate operations. Review the retained data and backup requirements before
+choosing destructive purge.
 
-The fast Python suite is selected by the existing contracts job's
-`unittest discover -s tools/tests` under the maintained
-[full CI profile](development/ci-profiles.md). It distinguishes synthetic artifact
-and mocked lifecycle tests from actual native execution. Windows skips Linux
-descriptor/lifecycle cases; a Windows result cannot establish them. Mocked `gh`
-unit tests check argument/identity and failure handling, not Sigstore cryptography.
-Real release acceptance must additionally retain:
+## Building a native release
 
-1. Exact reviewed source, build/toolchain, workflow/certificate and archive identities.
-2. A fresh Ubuntu VM without source, Rust, a guest compiler or a container runtime.
-3. Packaged-binary local and enforced-profile checks, authenticated readiness and
-   a retained publish/deploy/invoke using the bundled component.
-4. Actual changed boot ID after reboot and an invocation of the retained deployment.
-5. Same-version key/config/credential/catalog preservation, one declared and
-   genuinely exercised compatible version pair, incompatible-upgrade rejection.
-6. Remove/reinstall recovery, separate exact-installation purge, and a real
-   unprivileged rootless foreground run.
-
-[`packaging/linux/compatibility.json`](../packaging/linux/compatibility.json)
-declares the exact `0.1.0-alpha.4-rc.2` predecessor for the alpha.4 bundle,
-including its source commit and archive digest. The
-[foundation receipt](evidence/native-foundation-35811188306.json) records its
-successful nonpublishing two-profile VM qualification. The subsequent
-[alpha.4 rehearsal](evidence/native-upgrade-35821200294/README.md) exercised that
-pair in both profiles, preserved retained state and rejected the unsupported
-downgrade. Publication rebuilds and requalifies its own exact bytes before
-protected publisher approval. Documentation can be published with this qualified status without
-waiting circularly for #240 phase acceptance.
-Supply exact receipts and these operational boundaries to #237/#238/#240; preserve
-the historical release and benchmark identities in the maintained operator guides.
+Maintainers use the [native release gate](development/native-release-gate.md).
+It requires a clean reviewed source, matching package versions, real VM checks
+for the exact archive, independent publisher verification and explicit publication
+approval. Building a candidate or passing ordinary CI does not publish a release.

@@ -1,8 +1,7 @@
 # Isolated local service invocation
 
-The `lsf-local-service-invocation-v1` provider implements
-[#209](https://github.com/KirilsTurkins/latent-service-fabric/issues/209) for the
-canonical async `latent:service/invoke@0.1.0` interface. A guest can invoke a
+The `lsf-local-service-invocation-v1` provider implements the canonical async
+`latent:service/invoke@0.1.0` interface. A guest can invoke a
 checked application export through the broker and the normal node activation
 manager. Each child gets a fresh Store and activation state. Compiled code may
 be shared; permission, identity, cells and budgets remain activation-owned.
@@ -34,10 +33,13 @@ The runtime composition calls `LocalActivationManager::local_service_invoker`
 with a finite child ceiling and installs the resulting shared adapter through
 `ActivationCapabilityRuntime::install_local_services`. The manager reference is
 weak, so the adapter cannot create a backend/manager ownership cycle. The node
-must select [Phase 3 budgets](descendant-budgets.md). Standalone startup installs
+must select [descendant and provider budgets](descendant-budgets.md). Standalone startup installs
 the adapter when that profile and a capability runtime are supplied; standalone
-provider configuration and management remain #226. A declared import or policy
-CRUD alone cannot install this authority.
+JSON provider configuration supplies opt-in HTTP, local-blob, `clockMonotonic`,
+`clockWall` and `random` host bindings, not isolated-local target bindings.
+Configure the checked local target and its binding through the trusted catalog
+composition described above. A declared import or policy CRUD alone cannot
+install this authority.
 
 ## Guest values, identity and deadlines
 

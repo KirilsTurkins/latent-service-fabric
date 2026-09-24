@@ -64,11 +64,12 @@ of a production SSR/client release cutover. The asset fixture injects an explici
 test authority; root-container Chromium disables its OS sandbox. Neither choice
 is presented as cryptographic admission or hostile-code containment evidence.
 
-## Remaining acceptance boundaries
+## Acceptance boundaries at this checkpoint
 
-Exact-head PR CI and parent review are still required. The parent controls PR
-merges and issue closure. No workflow-scope bypass, issue closure or remote merge
-was performed. Full application publication, Angular Wasm SSR/client release
-integration and management/T1 projection remain #226/#236 responsibilities.
+At this checkpoint, exact-head PR CI and parent review were still required.
+The validation run performed no workflow-scope bypass, issue closure or remote
+merge. Later [Angular reference qualification](angular-reference-workflow.md)
+records the complete signed application, Wasm SSR/client and protected T1
+integration; it does not change this earlier Node-rendered browser receipt.
 No reconnect-flood fairness, arbitrary HTML sanitization, automatic secret
 classification or browser user-authentication guarantee is claimed.

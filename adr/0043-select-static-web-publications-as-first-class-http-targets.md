@@ -101,7 +101,7 @@ The selected `WebSelection` owns the existing bounded web-read/current-admission
 
 Delivery must call the existing web currentness boundary immediately before accepting a representation for output. A route deletion does not revoke an already selected publication, but selected work still fails if the publication itself is revoked or replaced before delivery.
 
-This ticket intentionally does not add the static response renderer/asset mapping to standalone ingress. The dependent runtime issue consumes this authority variant. Until that runtime is installed, standalone dispatch does not reinterpret a static target as an application activation.
+The static response mapping subsequently delivered in #496 consumes this authority variant in standalone ingress. Static delivery does not reinterpret a static target as an application activation. The [static hosting reference](../docs/component-development/static-sites.md) documents the installed mapping and its exclusions.
 
 ### Durable state and receipts
 
@@ -113,7 +113,7 @@ Static target identity stores the exact publication, admitted web-manifest diges
 
 Format-v2 operation receipts carry the same tagged identity. Static receipts contain no component/deployment/revision placeholders.
 
-Format-v1 HTTP tables and receipts remain readable as application-only state. Their original flat fields are retained in the data model solely for compatibility. Recovery reconstructs and validates the equivalent application target identity. The table is migrated to v2 only when an HTTP mutation is already being committed; read-only restart does not rewrite state. New writes use v2 exclusively and reject mixed v1/v2 record shapes as corruption.
+Only format-v2 HTTP tables and receipts are accepted. [ADR-0044](0044-remove-obsolete-alpha-compatibility.md) supersedes this ADR's original format-v1 recovery and migration policy. Rejected obsolete state is preserved without mutation; mixed record shapes fail recovery.
 
 Replay is keyed by the existing normalized request digest, actor, operation ID and CAS preconditions. Replaying an accepted static mutation returns the retained exact receipt and does not reselect a different publication. Delete/recreate receives a new trigger generation. Corrupt target/receipt associations fail recovery.
 
