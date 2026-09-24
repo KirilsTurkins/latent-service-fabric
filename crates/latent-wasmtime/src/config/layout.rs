@@ -78,6 +78,7 @@ impl WasmtimeConfig {
                 .to_owned(),
             ),
             ("wasm-gc", "false".to_owned()),
+            ("wasm-function-references", (!self.java_guest).to_string()),
             ("wasm-exceptions", self.java_guest.to_string()),
             (
                 "exception-heap-reservation-bytes",

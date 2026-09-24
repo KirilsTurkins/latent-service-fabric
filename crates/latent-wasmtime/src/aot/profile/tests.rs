@@ -1,6 +1,41 @@
 use super::*;
 
 #[test]
+fn typed_function_references_are_explicit_in_native_policy_identity() {
+    let limits = AotCompilerLimits::default();
+    let config = WasmtimeConfig::default();
+    let runtime = config.detected_runtime_profile().unwrap();
+    let current = config.profile_with_runtime(DispatchMode::Generic, Some(&runtime));
+    let checked = ValidatedAotProfile::from_config(&config, limits).unwrap();
+    let policy = declared_digest(&current, limits).unwrap();
+    assert_eq!(&policy, checked.security_policy_digest());
+    assert_eq!(current.configuration["wasm-function-references"], "true");
+    let mut stale = current.clone();
+    stale.configuration.remove("wasm-function-references");
+    assert_ne!(declared_digest(&stale, limits).unwrap(), policy);
+    stale
+        .configuration
+        .insert("wasm-function-references".into(), "false".into());
+    assert_ne!(declared_digest(&stale, limits).unwrap(), policy);
+
+    let java = WasmtimeConfig {
+        java_guest: true,
+        fuel_async_yield_interval: Some(10_000),
+        ..config
+    };
+    let java_checked = ValidatedAotProfile::from_config(&java, limits).unwrap();
+    assert_eq!(
+        java.profile(DispatchMode::Generic).configuration["wasm-function-references"],
+        "false"
+    );
+    assert_ne!(java_checked.security_policy_digest(), &policy);
+    assert_ne!(
+        java_checked.engine_compatibility(),
+        checked.engine_compatibility()
+    );
+}
+
+#[test]
 fn previous_patch_version_and_layout_cannot_alias_the_current_aot_policy() {
     let limits = AotCompilerLimits::default();
     let config = WasmtimeConfig::default();
