@@ -6528,6 +6528,9 @@
         "asynchronous_application_export_waits_for_the_canonical_async_service_import",
         "both_real_components_have_checked_packages_and_exact_async_metadata",
         "declared_service_import_without_a_node_adapter_has_no_execution_authority",
+        "load::fresh_per_admission_fixture_load_admits_the_real_parent_and_child_once",
+        "load::stale_child_load_fails_closed_before_admission_without_consumption_or_retry",
+        "load::synthetic_profile_is_unchanged_and_observed_on_each_read",
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
       "expectedIgnored": [],
@@ -6535,7 +6538,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 14,
+      "minimumCases": 17,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

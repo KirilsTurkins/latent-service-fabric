@@ -5,7 +5,7 @@
 use super::{component, packages};
 use latent_activation::{ActivationIdSource, ActivationRequest};
 use latent_admission::{
-    LocalAdmissionController, LocalQuotaProvider, NodeLoadSnapshot, NodeLoadState,
+    LocalAdmissionController, LocalQuotaProvider, NodeLoadSnapshot, NodeLoadSource,
 };
 use latent_artifacts::{ArtifactRepository, DirectoryArtifactRepository, PackageAdmissionUpload};
 use latent_capabilities::broker::*;
@@ -102,7 +102,6 @@ pub struct Fixture {
     _provider: ProviderRegistration,
     pub target: DeploymentManifest,
     pub observations: Arc<Observations>,
-    load: Arc<NodeLoadState>,
     _root: tempfile::TempDir,
 }
 impl Fixture {
@@ -117,10 +116,6 @@ impl Fixture {
     ) -> Self {
         Self::with_packages(cells, foreign, permit_target, audit, None).await
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
-    )]
     pub async fn with_packages(
         cells: u32,
         foreign: bool,
@@ -131,6 +126,35 @@ impl Fixture {
             latent_packaging::PackageBundle,
             latent_packaging::PackageBundle,
         )>,
+    ) -> Self {
+        Self::with_packages_and_load(
+            cells,
+            foreign,
+            permit_target,
+            audit,
+            provided,
+            Arc::new(SyntheticFixtureLoad),
+        )
+        .await
+    }
+    pub async fn with_load_source(load: Arc<dyn NodeLoadSource>) -> Self {
+        Self::with_packages_and_load(2, false, true, None, None, load).await
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
+    )]
+    async fn with_packages_and_load(
+        cells: u32,
+        foreign: bool,
+        permit_target: bool,
+        audit: Option<latent_audit::AuditHandle>,
+        provided: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        )>,
+        load: Arc<dyn NodeLoadSource>,
     ) -> Self {
         let root = tempfile::tempdir().unwrap();
         let target_tenant = if foreign { "tenant-b" } else { "tenant-a" };
@@ -380,12 +404,8 @@ impl Fixture {
             )
             .unwrap(),
         );
-        let load = Arc::new(NodeLoadState::new(current_fixture_load()).unwrap());
-        let admission = LocalAdmissionController::new(
-            Arc::new(store.pin().unwrap()),
-            quotas.clone(),
-            load.clone(),
-        );
+        let admission =
+            LocalAdmissionController::new(Arc::new(store.pin().unwrap()), quotas.clone(), load);
         let observations = Arc::new(Observations {
             starts: Mutex::new(vec![]),
             terminals: Mutex::new(vec![]),
@@ -424,16 +444,10 @@ impl Fixture {
             _provider: provider,
             target,
             observations,
-            load,
             _root: root,
         }
     }
     pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
-        // This fixture has no production node monitor. Publish its explicitly
-        // synthetic current load before each new request, including after slow
-        // cold managed-component compilation. Admission's normal sample-age
-        // limit remains unchanged, and a failed invocation is never retried.
-        self.load.publish(current_fixture_load()).unwrap();
         let mut request = admission_fixture::request(id);
         request.target.service = ServiceId("caller".into());
         request.target.contract = ContractId(component::CALLER.into());
@@ -491,13 +505,20 @@ impl Fixture {
             .unwrap();
     }
 }
-fn current_fixture_load() -> NodeLoadSnapshot {
-    NodeLoadSnapshot {
-        accepting: true,
-        cpu_pressure_milli: 0,
-        memory_pressure_milli: 0,
-        queue_delay_millis: 0,
-        observed_at: Instant::now(),
+/// This test composition has no production node monitor. Its fixed synthetic
+/// healthy profile is sampled at every admission, including nested children
+/// after a slow cold parent compile. Real quota accounting and admission's
+/// normal freshness checks remain in force; no failed invocation is retried.
+pub struct SyntheticFixtureLoad;
+impl NodeLoadSource for SyntheticFixtureLoad {
+    fn snapshot(&self) -> Result<NodeLoadSnapshot, PlatformError> {
+        Ok(NodeLoadSnapshot {
+            accepting: true,
+            cpu_pressure_milli: 0,
+            memory_pressure_milli: 0,
+            queue_delay_millis: 0,
+            observed_at: Instant::now(),
+        })
     }
 }
 fn deployment(
