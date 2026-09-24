@@ -33,7 +33,75 @@ The supported guest ceiling is 128 MiB, one billion fuel and 120 seconds for a
 cold invocation. Deliberately multi-operation SDK tests use ten billion fuel.
 These are finite experiment bounds, not throughput or production sizing claims.
 
-## Successful finite qualification
+## Qualification history and current gate
+
+The current candidate repairs a diagnostic gap: host-import traps now preserve
+only a validated reason from the existing `admission.currentness` vocabulary.
+The original constructor must have exactly one recognized detail and field,
+with the matching platform code and retryability. The node independently checks
+the runtime-trap/code/reason combination before forwarding that existing detail.
+Unknown shapes, raw messages, arbitrary metadata and backtraces are not copied.
+The outer `GuestTrap`, non-retryability, consumption, stop/memory precedence and
+public CLI vocabulary remain unchanged. This adds no logging, locks, retries,
+authority or budget allowance. Twenty-eight focused host/node/CLI Rust cases and
+24 CI inventory/lane/coverage Python cases passed; exact-head Linux qualification
+is still required. This observation repair does not establish or fix the private
+causes of the retained failures below.
+
+The subsequent diagnostic head `65e7390d074f58e914ae7155375eed343c2838cd`
+did not repeat the complete pass: [.NET run 35968038565](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35968038565)
+failed in the enforced-node workflow. Artifact `10795870530` retains all ten
+passing SDK cases (94.44 seconds), then twelve node invocation receipts, ten
+resource samples and dormant populations 5/9/17. The final
+`authoring-shipping-warm` invocation returned known/dispatched `guest-trap` in
+25.06 milliseconds, reporting 50,780,412 fuel and 53,018,624 peak guest-memory
+bytes. The public receipt does not retain its private trap reason. The peer was
+alive before failure cleanup and was closed/reaped; complete node cleanup and
+the printed guide are not qualified. No invocation was retried.
+
+All 2,350 captured pre-execution Git inputs match that head, with no generated
+SDK files. Final after-execution identities were not captured. Failed marker
+SHA-256 is `1221f97efe9f84df778f06ad814d3c58c68dd5c8f826dffc197e055ce8862ff5`;
+the node failure receipt is
+`a462ba6da9737639c236755e88fe4ba64d5e3349e4b82962097b7571670bb6a9`.
+Source artifact `10795176008` separately matches all 4,112 selected Git blobs
+and modes (40,022,327 bytes), archive SHA-256
+`be6fcd52b956c4f71e6d15fc118df8165c862a87b41016a67b9f1a64ac5c8363`.
+CI merge `e88dd260c9c52b711773f653da3295b0c827fba1` and the reviewed head
+share tree `6b383152e5d3b93fc0af177c38a11997e9fa1e2b`.
+
+The same head's [Go cross-check 35968038588](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35968038588)
+also failed. Artifact `10795094294` retains nine passing SDK cases and one failed
+service case (135.65 seconds). Unlike the preceding a880 failure, the first
+permitted nested answer succeeded in 13.8306 seconds. The next declared-error
+case trapped in the parent with `guest-runtime-error` after 4.8635 milliseconds
+while one child remained outstanding. The closed child diagnostic has no records
+and is not incomplete; it does not identify a parent-side host/runtime failure.
+Aggregate consumption includes the outstanding half-budget child reservation:
+eight child calls, about five billion fuel and 35,061,760 memory bytes do not
+establish eight dispatches. Only one new child start was observed. The private
+parent cause remains unknown, and node/guide execution was not reached. These
+failed gates prevent delivery despite the earlier complete qualifications below.
+
+The same head's [TypeScript cross-check 35968038564](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35968038564)
+passed completely. Artifact `10796213887` matches all 2,343 captured Git inputs,
+with unchanged before/after source and tool identities: ten SDK cases, 27 node
+invocations, 24 resource samples and all six printed guide blocks passed, with
+clean node/peer shutdown. All 17 deletions succeeded once; the measured
+first-to-final OS sample span was 931.85 seconds within the bounded 1,200-second
+owner. Qualification SHA-256 is
+`ec617f6e622b7ab3f8fcbebeeb83ec1035b88038425c7522efd6228d86d18d1b`.
+[Broad CI 35968038765](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35968038765)
+also passed. Discovery artifact `10796891041` retains 2,775 active cases; the
+actual Linux log confirms all 17 local-service and seven new closed-diagnostic
+regressions passed. Neither passing workflow clears the Go or .NET failures.
+
+A bounded local Linux Go experiment retained one passing unchanged-source
+attempt and four passing diagnostic processes, with no closed error events.
+It did not reproduce the CI failure or establish its private cause. The
+observation-only experimental source is identified separately from this Git
+head; these local attempts do not qualify the PR or justify a production policy
+or budget change.
 
 The integrated head `a880cfd731f82194c36265886a65a1374d0313fb` passed the
 complete [.NET run 35963178615](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178615).
