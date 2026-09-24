@@ -1,6 +1,6 @@
 use super::super::*;
 use latent_control_store::rollouts::{RolloutCommand, RolloutId, RolloutRequest};
-use latent_core::{RouteGeneration, TenantId};
+use latent_core::RouteGeneration;
 use std::sync::atomic::AtomicU8;
 
 pub(super) async fn fixture(canary: bool) -> (Fixture, Arc<AtomicU8>) {
@@ -59,27 +59,7 @@ pub(super) fn request(operation: &str, revision: u64, target: u64) -> RolloutReq
     }
 }
 pub(super) async fn rows(fixture: &Fixture) -> Vec<latent_audit::AuditStoredRecord> {
-    let deadline = expires();
-    let ticket = loop {
-        match fixture.audit.query(
-            latent_audit::AuditQueryRequest {
-                scope: latent_audit::AuditScope::Tenant(TenantId("alice".into())),
-                filter: latent_audit::AuditFilter::default(),
-                cursor: None,
-                limit: 32,
-                maximum_bytes: 32768,
-            },
-            deadline,
-        ) {
-            Ok(ticket) => break ticket,
-            Err(error) if error.message == "audit-busy" && Instant::now() < deadline => {
-                tokio::task::yield_now().await;
-            }
-            Err(error) => panic!("bounded audit query failed: {error:?}"),
-        }
-    };
-    let page = ticket.wait().await.unwrap();
-    page.records().to_vec()
+    fixture.audit_page(32).await.records().to_vec()
 }
 pub(super) async fn start(fixture: &Fixture, canary: bool) {
     let mut request = super::super::support::start();

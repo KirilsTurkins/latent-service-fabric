@@ -6,15 +6,15 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from tools.phase2_operator_process import WorkflowError, startup_diagnostic, write_json
 from tools.phase3_http_fixture import request
 from tools.phase3_management_scenario import (
-    MEDIA_TYPE, PROVIDER_CREDENTIAL, configure_provider_node, installed_descriptors,
+    HTTP_CONTRACT, MEDIA_TYPE, PROVIDER_CREDENTIAL, configure_provider_node, installed_descriptors,
     invocation_budget, invoke_guest,
 )
-from tools.run_phase3_management_workflow import inspection
+from tools.run_phase3_management_workflow import inspection, probe
 
 
 def descriptors():
@@ -42,6 +42,32 @@ class MemoryConnection:
 
 
 class ProviderWorkflowTests(unittest.TestCase):
+    def test_probe_retains_http_category_and_restart_stage_without_replaying(self):
+        result = {"outcomeKnown": True, "data": {"activationId": "activation"}}
+        with patch("tools.run_phase3_management_workflow.invoke_guest", return_value=(result, 22)) as invoke:
+            with self.assertRaisesRegex(WorkflowError, "^provider-http-restart-case-0-http-error-unavailable$"):
+                probe(object(), {"contract": HTTP_CONTRACT}, 0, 2201, "private-url", stage="restart")
+            invoke.assert_called_once()
+        with patch("tools.run_phase3_management_workflow.invoke_guest", return_value=(result, 10)) as invoke:
+            self.assertEqual(probe(object(), {"contract": HTTP_CONTRACT}, 0, 10), "activation")
+            invoke.assert_called_once()
+
+    def test_probe_does_not_echo_unrecognized_guest_results(self):
+        result = {"outcomeKnown": True, "data": {"activationId": "activation"}}
+        for value in (42, "private-payload"):
+            with self.subTest(value=value), patch("tools.run_phase3_management_workflow.invoke_guest",
+                                                 return_value=(result, value)) as invoke:
+                with self.assertRaisesRegex(WorkflowError, "^provider-http-initial-case-2-unexpected-result$"):
+                    probe(object(), {"contract": HTTP_CONTRACT}, 2, 2201)
+                invoke.assert_called_once()
+
+    def test_probe_keeps_closed_platform_failure_with_stage(self):
+        reason = "cli-exit-call-28-status-4-code-guest-trap-grpc-absent"
+        with patch("tools.run_phase3_management_workflow.invoke_guest", side_effect=WorkflowError(reason)) as invoke:
+            with self.assertRaisesRegex(WorkflowError, "^provider-http-restart-case-0-" + reason + "$"):
+                probe(object(), {"contract": HTTP_CONTRACT}, 0, 2201, stage="restart")
+            invoke.assert_called_once()
+
     def test_startup_failure_keeps_only_closed_node_stage_and_code(self):
         self.assertEqual(startup_diagnostic(b"latentd: startup: unavailable\n"), "startup-unavailable")
         self.assertEqual(startup_diagnostic(b"latentd: configuration: invalid-argument\r\n"),

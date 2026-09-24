@@ -3034,7 +3034,7 @@
       "sha256": "4419751f1167d74edb740ee3a849433f4ac05758d2e8a65dcd550fbdb7b121ff"
     },
     "tools/run_phase3_management_workflow.py": {
-      "sha256": "9c21b9690acdd54e419c82e27c2caf9ff25057b978e123e8524114775e60367d"
+      "sha256": "6cf2b176e39c74ccddc6ad5b3d9aee6812d3bf84a0dd9cc45a30ba0eb9d7c070"
     },
     "tools/run_phase3_resource_acceptance.py": {
       "sha256": "1c59a51493d89074474527ce496123b0078e968013a8a35a78ad907e56ede3e7"
@@ -5388,6 +5388,9 @@
       "ProviderWorkflowTests.test_invocation_is_one_call_with_lossless_u64_inputs_and_closed_results",
       "ProviderWorkflowTests.test_node_configuration_keeps_credentials_out_of_public_configuration",
       "ProviderWorkflowTests.test_only_actual_installed_profiles_and_canonical_identity_are_accepted",
+      "ProviderWorkflowTests.test_probe_does_not_echo_unrecognized_guest_results",
+      "ProviderWorkflowTests.test_probe_keeps_closed_platform_failure_with_stage",
+      "ProviderWorkflowTests.test_probe_retains_http_category_and_restart_stage_without_replaying",
       "ProviderWorkflowTests.test_startup_failure_keeps_only_closed_node_stage_and_code"
     ],
     "tools/tests/test_phase3_native_cache_audit.py": [
