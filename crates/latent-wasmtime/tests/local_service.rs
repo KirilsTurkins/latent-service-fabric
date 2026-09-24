@@ -9,6 +9,8 @@ mod acceptance;
 mod component;
 #[path = "local_service/fixture.rs"]
 mod fixture;
+#[path = "local_service/load.rs"]
+mod load;
 #[path = "local_service/packages.rs"]
 mod packages;
 
