@@ -26,7 +26,7 @@ CONDUCTORS = ('dev_packaged_probe', 'dev_packaged_process', 'dev_packaged_bootst
     'dev_packaged_failures', 'dev_failure_case_inputs', 'dev_clock_case_inputs', 'dev_packaged_security',
     'dev_packaged_isolation', 'dev_packaged_watch_guest', 'dev_packaged_watch_observer',
     'dev_watch_case_inputs', 'dev_watch_inflight', 'dev_watch_revocation', 'dev_packaged_authority',
-    'dev_packaged_recovery_guest', 'dev_packaged_recovery_windows')
+    'dev_packaged_recovery_guest', 'dev_packaged_recovery_windows', 'dev_packaged_newcomer')
 
 
 def checked(condition, code):
@@ -72,6 +72,8 @@ def main():
         runs[kind] = {'id': int(number), 'url': run['html_url'], 'sourceCommit': source, 'conclusion': run['conclusion']}
     for name in CONDUCTORS:
         shutil.copyfile(ROOT / 'tools' / (name + '.py'), target / (name + '.py'))
+    guide = ROOT / 'docs/component-development/windows-application.md'
+    shutil.copyfile(guide, target / 'windows-application.md')
     shutil.copyfile(ROOT / 'packaging/dev/qualification.Dockerfile', target / 'qualification.Dockerfile')
     root = ROOT / 'packaging/dev/qualification-trusted-root.jsonl'
     checked(hashlib.sha256(root.read_bytes()).hexdigest() == TRUSTED_ROOT_SHA, 'independent-trust-root-changed')
@@ -108,6 +110,8 @@ def main():
         'consentProvisionAndInstall': True, 'independentPolicyApproved': True,
         'verificationInputs': {'verifierSha256': verifiers, 'trustedRootSha256': 'sha256:' + TRUSTED_ROOT_SHA},
         'candidateRuns': runs, 'conductorSourceCommit': os.environ['GITHUB_SHA'],
+        'newcomerGuide': {'path': guide.relative_to(ROOT).as_posix(),
+            'sha256': 'sha256:' + hashlib.sha256((target / 'windows-application.md').read_bytes()).hexdigest()},
         'faultProbeSha256': 'sha256:' + hashlib.sha256((target / 'dev_node_fault_probe.py').read_bytes()).hexdigest(),
         'recoveryProbeSha256': 'sha256:' + hashlib.sha256((target / 'dev_packaged_recovery_guest.py').read_bytes()).hexdigest(),
         'watchProbeSha256': {name: 'sha256:' + hashlib.sha256((target / name).read_bytes()).hexdigest()

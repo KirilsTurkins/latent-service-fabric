@@ -17,7 +17,7 @@ OBSERVER = r'''
 import base64,hashlib,json,os,pwd,re,stat,sys
 from pathlib import Path
 name,mode,*options=sys.argv[1:]
-assert re.fullmatch(r'test-packaged-(rust(?:-failure|-clock|-watch|-expiry|-unknown)?|c|java|dotnet|go|typescript)',name)
+assert re.fullmatch(r'test-packaged-(rust(?:-failure|-clock|-watch|-expiry|-unknown|-newcomer)?|c|java|dotnet|go|typescript)',name)
 account=pwd.getpwuid(os.getuid()); assert os.getuid()!=0
 root=Path(account.pw_dir)/'.lsf-dev'/name
 def document(path):

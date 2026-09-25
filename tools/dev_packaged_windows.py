@@ -14,6 +14,7 @@ if __package__:
     from .dev_packaged_bootstrap import authenticate, extract
     from .dev_packaged_guest import observe, export, installation_progress
     from .dev_packaged_watch import campaign as watch_campaign
+    from .dev_packaged_newcomer import campaign as newcomer_campaign, reviewed_guide
     from .dev_packaged_process import MAX_COMMANDS, Command, ProbeFailure, digest, environment, read_json, require, write_json
     from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from .dev_packaged_wsl_lifecycle import restart_owned_distribution
@@ -21,6 +22,7 @@ else:
     from dev_packaged_bootstrap import authenticate, extract
     from dev_packaged_guest import observe, export, installation_progress
     from dev_packaged_watch import campaign as watch_campaign
+    from dev_packaged_newcomer import campaign as newcomer_campaign, reviewed_guide
     from dev_packaged_process import MAX_COMMANDS, Command, ProbeFailure, digest, environment, read_json, require, write_json
     from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from dev_packaged_wsl_lifecycle import restart_owned_distribution
@@ -36,11 +38,12 @@ class Frontend:
         self.running = {}
         self.deadline = time.monotonic() + 7200
 
-    def command(self, *arguments):
+    def command(self, *arguments, editor_diagnostics=False):
         limit = MAX_COMMANDS if arguments[0] in {'down', 'status', 'recover'} else MAX_COMMANDS - 24
         require(len(self.report['commands']) < limit, 'qualification-command-count-limit')
         require(time.monotonic() < self.deadline, 'qualification-schedule-deadline')
-        return Command([self.executable, '--state-root', self.state, 'dev', *arguments], self.root, self.env)
+        diagnostics = ['--editor-diagnostics'] if editor_diagnostics else []
+        return Command([self.executable, '--state-root', self.state, *diagnostics, 'dev', *arguments], self.root, self.env)
 
     def call(self, *arguments, timeout=90, rejection=None, expected_test_failure=False, expected_uncertain=None):
         require(sum((rejection is not None, expected_test_failure, expected_uncertain is not None)) <= 1,
@@ -81,12 +84,12 @@ class Frontend:
             finally:
                 self.report['commands'].append({**process.receipt(), **receipt})
 
-    def start(self, workspace, *, project=None, selection=None):
+    def start(self, workspace, *, project=None, selection=None, editor_diagnostics=False):
         require(workspace not in self.running, 'foreground-already-owned')
         arguments = ['up', '--workspace', workspace]
         if project is not None:
             arguments.extend(['--watch', '--project', project, '--test-select', selection])
-        process = self.command(*arguments)
+        process = self.command(*arguments, editor_diagnostics=editor_diagnostics)
         self.running[workspace] = process
         try:
             ready = process.until(lambda event: event.get('event') == 'ready', 210)['result']
@@ -175,14 +178,17 @@ def inputs(api, config, language, index):
 
 
 def prepare(api, config, language, index, helper_sha, *, backend_config=None, project_parent=None, case_set=None,
-            watch_project=False, recovery_case=None):
+            watch_project=False, recovery_case=None, newcomer_project=False):
     require(case_set in {None, 'failure', 'clock'} and (case_set is None or language == 'rust'), 'closed-authored-case-set')
     require(type(watch_project) is bool and (not watch_project or language == 'rust' and case_set is None),
             'trusted-local-watch-requires-separate-provider-free-rust-project')
     require(recovery_case in {None, 'expiry', 'unknown'}
         and (recovery_case is None or language == 'rust' and case_set is None and not watch_project),
         'closed-separate-recovery-project')
-    suffix = '-watch' if watch_project else '-' + recovery_case if recovery_case else '' if case_set is None else '-' + case_set
+    require(type(newcomer_project) is bool and (not newcomer_project or language == 'rust'
+        and case_set is None and not watch_project and recovery_case is None), 'separate-rust-newcomer-project-required')
+    suffix = ('-newcomer' if newcomer_project else '-watch' if watch_project else '-' + recovery_case
+              if recovery_case else '' if case_set is None else '-' + case_set)
     workspace = 'test-packaged-' + language + suffix
     if backend_config is None:
         owned = api.call('wsl-workspace', '--workspace', workspace, '--helper-sha256', helper_sha)
@@ -224,7 +230,7 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
             from dev_watch_case_inputs import edit, populate
         populate(project, read_json(project / 'latent.project.json'))
     security = {}
-    if language == 'rust' and case_set is None and not watch_project and recovery_case is None:
+    if language == 'rust' and case_set is None and not watch_project and recovery_case is None and not newcomer_project:
         if __package__:
             from .dev_packaged_security import descriptors, source_paths
         else:
@@ -235,7 +241,7 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
         security['crlfSourceSha256'] = digest(source)
     api.call('build', '--workspace', workspace, '--project', project, rejection={'workspace-recipe-trust-required'})
     api.call('trust', '--workspace', workspace, '--project', project)
-    if language == 'rust' and case_set is None and not watch_project and recovery_case is None:
+    if language == 'rust' and case_set is None and not watch_project and recovery_case is None and not newcomer_project:
         security['sourcePaths'] = source_paths(api, workspace, project)
     warm_b = None
     if watch_project:
@@ -254,7 +260,7 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
         retention = recovery_observation(api, config, {'workspace': workspace, 'user': owned['user'],
             'helperSha256': helper_sha}, 'configure-expiry')
     fixtures = ['--fixtures', project / 'tests/clock-zero.json'] if case_set == 'clock' else []
-    admission = 'trusted-local' if watch_project else 'signed-fixture'
+    admission = 'trusted-local' if watch_project or newcomer_project else 'signed-fixture'
     profile = api.call('prepare-test', '--workspace', workspace, '--consent-test-fixtures',
                        '--admission', admission, '--tool-root', selected['directory'], *fixtures, timeout=120)
     require(profile['admission'] == admission, 'explicit-qualification-admission-required')
@@ -324,6 +330,7 @@ def run(config, output):
             'scheduleSeconds': 7200}}
     api = None
     try:
+        report['newcomerGuide'] = reviewed_guide(config)
         manifest, report['bootstrap'] = authenticate(config, output)
         executable = extract(Path(config['artifacts']['windows']), manifest, output / 'frontend')
         api = Frontend(executable, output, report)
@@ -333,6 +340,8 @@ def run(config, output):
         image = acquire(api, config, config['artifacts']['wsl'], 'linux-x86_64-wsl-rootfs')
         inventory = read_json(api.state / 'bundles' / image['bundle'] / 'rootfs-inventory.json')
         report['provision'] = api.call('provision', '--bundle', image['bundle'], '--consent-provision', timeout=360)
+        report['newcomerApplication'] = newcomer_campaign(api, config, inventory['helperSha256'])
+        write_json(output / 'observation.json', report)
         retained = None
         for index, language in enumerate(LANGUAGES):
             item = report['languages'][language] = prepare(api, config, language, index, inventory['helperSha256'])
