@@ -15,7 +15,10 @@
       "clientUid": 10001,
       "serverUid": 23002,
       "listener": "127.0.0.1:2222",
-      "hostKeySha256": "d1789c40e9271d7cc4ff568bedf2fa12741e0607539f9278d2d1d8e9ad7a72fd"
+      "hostPublicKey": {
+        "algorithm": "sha256",
+        "digest": "d1789c40e9271d7cc4ff568bedf2fa12741e0607539f9278d2d1d8e9ad7a72fd"
+      }
     },
     "cleanup": "exact-owned-peer-stopped-private-volume-retained"
   },
