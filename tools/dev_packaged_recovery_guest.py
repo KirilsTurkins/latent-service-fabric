@@ -11,6 +11,7 @@ import re
 import secrets
 import stat
 import sys
+import tempfile
 import time
 from types import SimpleNamespace
 
@@ -94,15 +95,18 @@ def run(args):
         require(node['retention']['terminalTtlMillis'] == 3000, 'configured-real-receipt-retention-required')
         source = request['faultSource']['source'].encode('utf-8')
         require(len(source) <= 16384 and digest(source) == request['faultSource']['sha256'], 'reviewed-fault-source-digest')
-        namespace = {'__name__': 'reviewed_installed_fault_probe'}
-        exec(compile(source, 'reviewed-installed-fault-probe', 'exec'), namespace)
-        saved = sys.stdin
-        try:
-            sys.stdin = io.TextIOWrapper(io.BytesIO(encode(request['arguments'])))
-            injection = namespace['run'](SimpleNamespace(helper=helper_path, helper_sha256=args.helper_sha256,
-                workspace=args.workspace, kind='invoke'))
-        finally:
-            sys.stdin = saved
+        with tempfile.TemporaryDirectory(prefix='qualification-observer-', dir=root) as directory:
+            paths.write_new(Path(directory) / 'qualification_fault_probe.py', source)
+            sys.path.insert(0, directory)
+            saved = sys.stdin
+            try:
+                from qualification_fault_probe import run as inject_original
+                sys.stdin = io.TextIOWrapper(io.BytesIO(encode(request['arguments'])))
+                injection = inject_original(SimpleNamespace(helper=helper_path, helper_sha256=args.helper_sha256,
+                    workspace=args.workspace, kind='invoke'))
+            finally:
+                sys.stdin = saved
+                sys.path.remove(directory)
         pending = journal.read()['pending']
         require(injection['selectedMutationCalls'] == injection['remoteMutationCalls'] == 1
                 and injection['pending']['id'] == pending['id'], 'one-original-expiring-invocation-required')

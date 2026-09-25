@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import stat
 import sys
+import tempfile
 import time
 
 
@@ -44,13 +45,25 @@ def main(args):
         print(json.dumps({'event': event, 'result': value}), flush=True)
 
     def reviewed(name):
+        require(name in {'inflight', 'revocation'}, 'closed-watch-observer-module')
         selected = request[name]
         source = selected['source'].encode('utf-8')
         require(len(source) <= 16384 and 'sha256:' + hashlib.sha256(source).hexdigest() == selected['sha256'],
                 'reviewed-watch-source-digest-mismatch')
-        namespace = {}
-        exec(compile(source, 'reviewed-watch-' + name, 'exec'), namespace)
-        return namespace
+        # Import only these two named, hash-checked modules from a new private
+        # directory. No expression, arbitrary module name or project path is run.
+        with tempfile.TemporaryDirectory(prefix='qualification-observer-', dir=root) as directory:
+            filename = 'qualification_watch_' + name + '.py'
+            paths.write_new(Path(directory) / filename, source)
+            sys.path.insert(0, directory)
+            try:
+                if name == 'inflight':
+                    from qualification_watch_inflight import Inflight
+                    return Inflight
+                from qualification_watch_revocation import run
+                return run
+            finally:
+                sys.path.remove(directory)
 
     if args.mode == 'inflight':
         require(not marker.exists() and not (root / 'qualification-spin-intent.json').exists(),
@@ -58,7 +71,7 @@ def main(args):
         descriptor = state.load(root, 'project.json')['descriptor']
         # These two reviewed source strings are separately hashed by the host
         # conductor. Their application imports resolve to the verified zip above.
-        inflight = reviewed('inflight')['Inflight'](root, descriptor, time.monotonic() + 150)
+        inflight = reviewed('inflight')(root, descriptor, time.monotonic() + 150)
         try:
             inflight.start()
             output('inflight-ready', inflight.report)
@@ -85,7 +98,7 @@ def main(args):
         require(not (root / 'qualification-revoke-intent.json').exists()
                 and not (root / 'qualification-restore-intent.json').exists(),
                 'inspect-original-revocation-before-any-new-mutation')
-        output('revoked-restore', reviewed('revocation')['run'](root, previous, time.monotonic() + 90))
+        output('revoked-restore', reviewed('revocation')(root, previous, time.monotonic() + 90))
     elif args.mode == 'build':
         active = build_control.status(root)
         result = {'build': active, 'child': None, 'source': None}
