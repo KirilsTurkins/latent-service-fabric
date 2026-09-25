@@ -13,11 +13,13 @@ if __package__ in {None, ''}:
     from dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
     from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
     from dev_packaged_watch import run as watch
+    from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
 else:
     from .dev_packaged_bootstrap import authenticate
     from .dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
     from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
     from .dev_packaged_watch import run as watch
+    from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
 
 
 def run():
@@ -52,7 +54,9 @@ def run():
         report['frontend'] = acquire(api, config, config['artifacts']['linux'], 'linux-x86_64')
         item = report['application'] = prepare(api, config, 'rust', 2, config['linuxHelperSha256'],
             backend_config=home / 'ssh-backend.json', project_parent=Path('/workspaces/project'))
+        deploy_with_lost_responses(api, config, item)
         verify_language(api, item)
+        invoke_with_lost_response(api, config, item)
         report['editor'] = api.call('editor', '--workspace', item['workspace'], '--project', item['project'],
                                    '--frontend', executable)
         tasks = read_json(Path(item['project']) / '.vscode/tasks.json')

@@ -1,15 +1,14 @@
 """Discard one committed response, then recover its original identity with the packaged frontend."""
 import base64
 import json
-import os
 from pathlib import Path
 import re
 
 if __package__:
-    from .dev_packaged_guest import observe
+    from .dev_packaged_guest import guest_argv, observe
     from .dev_packaged_process import MAX_COMMANDS, Command, digest, read_json, require
 else:
-    from dev_packaged_guest import observe
+    from dev_packaged_guest import guest_argv, observe
     from dev_packaged_process import MAX_COMMANDS, Command, digest, read_json, require
 
 
@@ -17,19 +16,20 @@ def inject(api, config, item, kind, arguments=None):
     require(kind in {'release', 'deployment', 'invoke'}, 'closed-packaged-fault-kind')
     require(len(api.report['commands']) < MAX_COMMANDS - 24, 'qualification-command-count-limit')
     backend = read_json(api.state / item['workspace'] / 'backend.json')
-    require(backend['kind'] == 'wsl2' and backend['user'] == item['user']
-        and backend['helperSha256'] == item['helperSha256']
-        and backend['distribution'] == api.report['provision']['distribution']
-        and re.fullmatch(r'LSF-Dev-[a-f0-9]{16}', backend['distribution']), 'owned-wsl-fault-target')
+    require(backend['kind'] in {'wsl2', 'linux', 'ssh'}
+        and backend['helperSha256'] == item['helperSha256'], 'exact-owned-fault-helper-required')
+    if backend['kind'] == 'wsl2':
+        require(backend['user'] == item['user'] and backend['distribution'] == api.report['provision']['distribution']
+            and re.fullmatch(r'LSF-Dev-[a-f0-9]{16}', backend['distribution']), 'owned-wsl-fault-target')
     source = Path(config['faultProbe'])
     require(source.is_file() and not source.is_symlink() and source.stat().st_size <= 16384
             and digest(source) == config['faultProbeSha256'], 'separate-reviewed-fault-conductor-required')
     # This maintained injector verifies and imports the installed helper zip.
     # It never imports an LSF checkout or substitutes a node/operator binary.
-    argv = [Path(os.environ['SystemRoot']) / 'System32/wsl.exe', '--distribution', backend['distribution'],
-        '--user', item['user'], '--exec', '/usr/local/bin/python3.13', '-I', '-B', '-c', source.read_text(encoding='utf-8'),
-        '--helper', '/opt/latent-dev/helper.pyz', '--helper-sha256', item['helperSha256'],
-        '--workspace', item['workspace'], '--kind', kind]
+    helper = backend['helper'] if backend['kind'] == 'linux' else '/opt/latent-dev/helper.pyz'
+    argv = guest_argv(api, item, ['/usr/local/bin/python3.13', '-I', '-B', '-c', source.read_text(encoding='utf-8'),
+        '--helper', helper, '--helper-sha256', item['helperSha256'],
+        '--workspace', item['workspace'], '--kind', kind])
     command = Command(argv, api.root, api.env,
         input_bytes=None if arguments is None else json.dumps(arguments).encode())
     try:

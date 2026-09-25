@@ -42,7 +42,7 @@ and an actual hard-linked source file; Unix clients also exercise an actual
 symbolic link. The conductor restores the exact descriptor bytes and removes
 only its individually created path fixtures before the valid build proceeds.
 
-For the first Rust deployment, a separately staged and digest-checked conductor
+For each backend's first Rust deployment, a separately staged and digest-checked conductor
 discards one actual successful release response, then one deployment response.
 It imports the authenticated installed helper and calls the actual operator CLI.
 The packaged `recover` command must resolve each original journal identity
@@ -100,8 +100,8 @@ and a newly generated host key provisioned through the conductor. Neither its
 management RPC listener nor SSH is published on the Docker host.
 
 That lane exercises one maintained Rust project through direct Linux and SSH,
-including real build/deploy/test, retained restart, repeated stop/purge and
-source preservation. Direct Linux also executes watch A/B and compiler failure.
+including real build/deploy/test, lost-response recovery, retained restart,
+repeated stop/purge and source preservation. Both execute watch A/B and compiler failure.
 SSH rejects a wrong host key and helper digest, then checks that a concurrent
 start cannot replace or stop the existing node. The Windows/WSL lane owns the
 six-language matrix. This Linux OS-container observation is distinct from the
@@ -120,7 +120,7 @@ The container must run as the declared UID 10001 with all capabilities dropped,
 no new privileges, 2 GiB memory and two CPUs. The peer provisions fresh SSH keys
 only in the generated private home volume and checks the helper's digest before
 serving requests. The schedule creates a real Rust project in the source mount,
-builds/deploys/tests over SSH, generates the same editor process tasks, runs
+builds/deploys/tests and recovers original lost-response identities over SSH, generates the same editor process tasks, runs
 watch and compiler failure, restarts retained state and explicitly purges the
 node workspace. Both exact containers are stopped and inspected; authored
 source and the private home volume remain until runner teardown. The extra
@@ -159,6 +159,11 @@ Windows runner can execute WSL2; it does not supply those missing receipts.
 The [final source campaign](final-source-campaign-observation.json) records the
 separate successful isolation, watch and recovery source probes and their failed
 predecessors. Those observations likewise do not replace installed-candidate runs.
+The [candidate source campaign](candidate-source-campaign-observation.json)
+retains 34 passing probe, comparison and tutorial receipt identities from the
+complete candidate build at `f5d556d3`. It includes the corrected actual watch
+campaign, all provider cases, and native Windows/Linux comparisons, with their
+cleanup dispositions and original artifact references.
 
 The eleven fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and

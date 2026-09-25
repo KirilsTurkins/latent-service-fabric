@@ -14,11 +14,13 @@ if __package__ in {None, ''}:
     from dev_packaged_process import MAX_COMMANDS, ProbeFailure, digest, read_json, require, write_json
     from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
     from dev_packaged_watch import run as watch
+    from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
 else:
     from .dev_packaged_bootstrap import authenticate, extract
     from .dev_packaged_process import MAX_COMMANDS, ProbeFailure, digest, read_json, require, write_json
     from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
     from .dev_packaged_watch import run as watch
+    from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
 
 
 def reject_ssh_mismatch(api, selected):
@@ -76,17 +78,18 @@ def run(config, output):
             # Windows/WSL lane owns the language matrix rather than duplicating it.
             item = observation['application'] = prepare(api, config, 'rust', 0 if kind == 'linux' else 1,
                                                         helper_sha, backend_config=backend)
+            deploy_with_lost_responses(api, config, item)
             verify_language(api, item)
+            invoke_with_lost_response(api, config, item)
             observation['status'] = api.call('status', '--workspace', item['workspace'])
             observation['logs'] = api.call('logs', '--workspace', item['workspace'])
-            if kind == 'linux':
-                watch(api, item)
-            else:
+            if kind == 'ssh':
                 # A concurrent second start must fail before selecting another
                 # node. The existing foreground and deployment remain callable.
                 observation['concurrentStart'] = api.call('up', '--workspace', item['workspace'],
                     rejection={'invalid-or-unavailable-input-inspect-doctor'}, timeout=30)
                 observation['afterConcurrentStart'] = retained_invocation(api, item)
+            watch(api, item)
             item['down'] = api.down(item['workspace'])
             item['repeatedDown'] = api.call('down', '--workspace', item['workspace'])
             item['retainedRestart'] = api.start(item['workspace'])

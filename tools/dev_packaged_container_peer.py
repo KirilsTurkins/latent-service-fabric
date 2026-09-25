@@ -59,6 +59,7 @@ def main():
     client_inputs = client_home / 'inputs'
     support = client_inputs / 'support'
     selected['artifacts'] = {name: str(client_inputs / 'artifacts' / name) for name in ('linux', 'rust', 'native')}
+    selected['faultProbe'] = str(support / 'dev_node_fault_probe.py')
     selected['trust'].update(hostVerifier=str(support / 'gh-linux'), guestVerifier=str(support / 'gh-linux'),
         trustedRoot=str(support / 'trusted_root.jsonl'), developerPolicy=str(support / 'developer-policy.json'),
         runtimePolicy=str(support / 'runtime-policy.json'))

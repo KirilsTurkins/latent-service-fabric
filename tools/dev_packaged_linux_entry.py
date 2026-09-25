@@ -28,6 +28,7 @@ def main():
         path.chmod(0o700 if path.is_dir() or path.name == 'gh-linux' else 0o600)
     selected = json.loads((support / 'inputs.json').read_bytes())
     selected['artifacts'] = {name: str(support / 'artifacts' / name) for name in ('linux', 'rust', 'native')}
+    selected['faultProbe'] = str(support / 'support/dev_node_fault_probe.py')
     selected['trust'] = {**selected['trust'], 'hostVerifier': str(support / 'support/gh-linux'),
         'guestVerifier': str(support / 'support/gh-linux'), 'trustedRoot': str(support / 'support/trusted_root.jsonl'),
         'developerPolicy': str(support / 'support/developer-policy.json'),
