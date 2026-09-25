@@ -14,12 +14,14 @@ if __package__ in {None, ''}:
     from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
     from dev_packaged_watch import run as watch
     from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
+    from dev_packaged_failures import node_campaign
 else:
     from .dev_packaged_bootstrap import authenticate
     from .dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
     from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
     from .dev_packaged_watch import run as watch
     from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
+    from .dev_packaged_failures import node_campaign
 
 
 def run():
@@ -71,6 +73,8 @@ def run():
         item['finalDown'] = api.down(item['workspace'])
         item['purge'] = api.call('purge', '--workspace', item['workspace'], '--confirm-workspace', item['workspace'], timeout=120)
         item['preservedSource'] = preserved_source(item)
+        report['closedProfile'] = node_campaign(api, config, config['linuxHelperSha256'],
+            backend_config=home / 'ssh-backend.json', project_parent=Path('/workspaces/project'))
         report.update(passed=True, cleanup='owned-remote-node-reaped-workspace-purged-client-state-retained')
     except BaseException as error:
         report['failure'] = str(error) if isinstance(error, ProbeFailure) else type(error).__name__

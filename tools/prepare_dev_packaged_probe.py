@@ -19,6 +19,11 @@ TRUSTED_ROOT_SHA = '65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb
 VERIFIERS = {
     'windows': ('gh_2.96.0_windows_amd64.zip', 'c2d6acc935cd2f00e2144d7e036d5cd82e6b6bd5594e8c75aa75ef2a4ed6aac3'),
     'linux': ('gh_2.96.0_linux_amd64.tar.gz', '83d5c2ccad5498f58bf6368acb1ab32588cf43ab3a4b1c301bf36328b1c8bd60')}
+CONDUCTORS = ('dev_packaged_probe', 'dev_packaged_process', 'dev_packaged_bootstrap', 'dev_packaged_windows',
+    'dev_packaged_guest', 'dev_packaged_watch', 'dev_packaged_linux', 'dev_packaged_linux_host',
+    'dev_packaged_linux_entry', 'dev_packaged_recovery', 'dev_packaged_wsl_lifecycle', 'dev_node_fault_probe',
+    'dev_packaged_container_host', 'dev_packaged_container_peer', 'dev_packaged_container_client',
+    'dev_packaged_failures', 'dev_failure_case_inputs', 'dev_clock_case_inputs', 'dev_packaged_security')
 
 
 def checked(condition, code):
@@ -62,11 +67,7 @@ def main():
         checked(run['head_sha'] == source and run['status'] == 'completed' and run['conclusion'] == 'success'
                 and run['path'] == '.github/workflows/' + workflow, 'successful-exact-candidate-workflow-required')
         runs[kind] = {'id': int(number), 'url': run['html_url'], 'sourceCommit': source, 'conclusion': run['conclusion']}
-    for name in ('dev_packaged_probe', 'dev_packaged_process', 'dev_packaged_bootstrap', 'dev_packaged_windows',
-                 'dev_packaged_guest', 'dev_packaged_watch', 'dev_packaged_linux', 'dev_packaged_linux_host',
-                 'dev_packaged_linux_entry', 'dev_packaged_recovery', 'dev_packaged_wsl_lifecycle', 'dev_node_fault_probe',
-                 'dev_packaged_container_host', 'dev_packaged_container_peer', 'dev_packaged_container_client',
-                 'dev_packaged_failures', 'dev_failure_case_inputs', 'dev_clock_case_inputs', 'dev_packaged_security'):
+    for name in CONDUCTORS:
         shutil.copyfile(ROOT / 'tools' / (name + '.py'), target / (name + '.py'))
     shutil.copyfile(ROOT / 'packaging/dev/qualification.Dockerfile', target / 'qualification.Dockerfile')
     root = ROOT / 'packaging/dev/qualification-trusted-root.jsonl'

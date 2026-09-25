@@ -41,6 +41,9 @@ explicit recipe trust it rejects two distinct Unicode-equivalent source names
 and an actual hard-linked source file; Unix clients also exercise an actual
 symbolic link. The conductor restores the exact descriptor bytes and removes
 only its individually created path fixtures before the valid build proceeds.
+The initial Rust source uses CRLF line endings. After the actual build, a bounded
+read-only guest observation must match its host digest and retain those line
+endings exactly; normalized or stale source cannot satisfy the transfer check.
 
 For each backend's first Rust deployment, a separately staged and digest-checked conductor
 discards one actual successful release response, then one deployment response.
@@ -72,11 +75,11 @@ compares case identities, outcomes and payload digests with the Linux-node
 results. This export is an explicitly labeled read-only qualification observer;
 it does not compile, deploy or invoke an application in place of the frontend.
 
-Two further Rust workspaces use the same authored failure and clock cases as
+Two further Rust workspaces on each node backend use the same authored failure and clock cases as
 the maintained source probes. Their stimulus writers use only the standard
 library and produce byte-identical source, WIT, fixture and scenario files.
-The packaged frontend builds and signs each project in its own WSL user and
-node. The failure schedule covers cold/warm fresh state, declared error, trap,
+The packaged frontend builds and signs each project in its own node and, on WSL,
+its own Linux user. The failure schedule covers cold/warm fresh state, declared error, trap,
 fuel and memory exhaustion, deadline, actual running cancellation, recovery
 after each failure, and retained restart. The explicit zero-clock fixture
 covers cold/warm readings, denied capability and fresh recovery.
@@ -165,12 +168,14 @@ complete candidate build at `f5d556d3`. It includes the corrected actual watch
 campaign, all provider cases, and native Windows/Linux comparisons, with their
 cleanup dispositions and original artifact references.
 
-The eleven fast conductor regressions exercise archive traversal/alias/device/link
+The twelve fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and
 bounded stdin with receipt redaction, plus the actual Windows DACL of the newly
 created conductor directory. A required unsupported-case report must retain its
 non-success exit and cannot be accepted by an ordinary passing-test call. They also
 require the correct native entrypoint and private executable modes on Linux.
+The exact staged conductor inventory must import in an isolated interpreter
+outside the checkout, without loading an LSF source package.
 They run on Windows and Linux and do not count as installed-product evidence.
 The [OS setup observation](qualification-os-smoke-observation.json) additionally
 records an actual disconnected-container SSH handshake between UIDs 23001 and

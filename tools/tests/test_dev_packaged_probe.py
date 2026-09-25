@@ -3,6 +3,7 @@ from pathlib import Path
 import hashlib
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -137,6 +138,26 @@ class PackagedProbe(unittest.TestCase):
         with self.assertRaisesRegex(ProbeFailure, 'expected-required-test-failure-missing'):
             frontend.call('test', expected_test_failure=True)
         self.assertEqual(len(report['commands']), 3)
+
+    def test_staged_conductors_load_without_source_checkout_imports(self):
+        from tools.prepare_dev_packaged_probe import CONDUCTORS, ROOT
+        for name in CONDUCTORS:
+            shutil.copyfile(ROOT / 'tools' / (name + '.py'), self.root / (name + '.py'))
+        names = [name for name in CONDUCTORS if name.startswith('dev_packaged_')]
+        if os.name == 'nt':
+            # These two OS provisioners require Unix account APIs and only run
+            # inside Linux containers. The Unix contract lane imports them too.
+            names = [name for name in names if name not in {'dev_packaged_linux_entry', 'dev_packaged_container_peer'}]
+        script = ('import importlib,sys;sys.path.insert(0,' + repr(str(self.root)) + ');'
+            '[importlib.import_module(name) for name in ' + repr(names) + '];'
+            'from dev_packaged_guest import OBSERVER;compile(OBSERVER,"observer","exec");'
+            'assert "tools" not in sys.modules;print("standalone-conductor-imports-passed")')
+        child = Command([sys.executable, '-I', '-B', '-c', script], self.root, environment(self.root))
+        try:
+            self.assertEqual(child.finish(10), 0, bytes(child.outputs[1]).decode(errors='replace')[:2000])
+            self.assertEqual(child.raw().strip(), b'standalone-conductor-imports-passed')
+        finally:
+            child.abort_controller()
 
 
 if __name__ == '__main__':

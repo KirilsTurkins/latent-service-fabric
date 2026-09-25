@@ -187,6 +187,9 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
         else:
             from dev_packaged_security import descriptors, source_paths
         security['descriptors'] = descriptors(api, workspace, project)
+        source = project / 'app/src/lib.rs'
+        source.write_bytes(source.read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))
+        security['crlfSourceSha256'] = digest(source)
     api.call('build', '--workspace', workspace, '--project', project, rejection={'workspace-recipe-trust-required'})
     api.call('trust', '--workspace', workspace, '--project', project)
     if language == 'rust' and case_set is None:
@@ -215,6 +218,11 @@ def verify_language(api, item):
     require(item['tests']['passed'] and all(case['status'] == 'passed' for case in item['tests']['results']), 'language-required-case-failed')
     require({'success', 'declared-error'} <= {case['category'] for case in item['tests']['results']}, 'success-and-declared-error-required')
     item['guest'] = observe(api, item, 'audit')
+    if 'crlfSourceSha256' in item['sourceRejections']:
+        item['sourceTransfer'] = observe(api, item, 'rust-source', item['build']['attempt'])
+        require(item['sourceTransfer']['sha256'] == item['sourceRejections']['crlfSourceSha256']
+            and item['sourceTransfer']['crlfLines'] > 0 and item['sourceTransfer']['bareLfLines'] == 0,
+            'exact-crlf-source-transfer-required')
     item['publicArtifacts'] = export(api, item)
 
 

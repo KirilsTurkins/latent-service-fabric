@@ -45,6 +45,17 @@ elif mode=='journal':
     journal=document(root/'operations.json');pending=journal['pending']
     result={'pending':None if pending is None else {'id':pending['id'],'kind':pending['kind']},
         'history':[{'id':row['id'],'kind':row['kind']} for row in journal['history']]}
+elif mode=='rust-source':
+    attempt,=options;assert re.fullmatch(r'[a-f0-9]{32}',attempt)
+    receipt=document(root/'last-build.json')['receipt'];assert receipt['attempt']==attempt
+    path=root/'builds'/attempt/'source/app/src/lib.rs'
+    for parent in (path,*path.parents):
+        assert not parent.is_symlink()
+        if parent==root:break
+    info=path.lstat();assert stat.S_ISREG(info.st_mode) and info.st_nlink==1 and 0<info.st_size<=131072
+    raw=path.read_bytes()
+    result={'sha256':'sha256:'+hashlib.sha256(raw).hexdigest(),'bytes':len(raw),
+        'crlfLines':raw.count(b'\r\n'),'bareLfLines':raw.count(b'\n')-raw.count(b'\r\n')}
 elif mode=='artifact':
     key,attempt,offset=options;assert key in {'component','capsule','contracts'} and re.fullmatch(r'[a-f0-9]{32}',attempt)
     receipt=document(root/'last-build.json')['receipt'];assert receipt['attempt']==attempt

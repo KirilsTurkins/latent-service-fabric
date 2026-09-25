@@ -19,17 +19,19 @@ def author(project, kind):
     (failure_inputs if kind == 'failure' else clock_inputs)(project, descriptor)
 
 
-def node_campaign(api, config, helper_sha):
+def node_campaign(api, config, helper_sha, *, backend_config=None, project_parent=None):
     if __package__:
         from .dev_packaged_windows import prepare, preserved_source, retained_invocation
     else:
         from dev_packaged_windows import prepare, preserved_source, retained_invocation
     observations = {}
-    # Separate users, nodes and signing fixtures keep each exact authored input
-    # independent. Neither test changes a retained application's node profile.
+    # Separate nodes and signing fixtures keep each exact authored input
+    # independent. WSL additionally gives each workspace its own Linux user.
+    # Neither test changes a retained application's node profile.
     api.report['closedProfile'] = observations
     for index, kind in enumerate(('failure', 'clock'), start=6):
-        item = observations[kind] = prepare(api, config, 'rust', index, helper_sha, case_set=kind)
+        item = observations[kind] = prepare(api, config, 'rust', index, helper_sha,
+            case_set=kind, backend_config=backend_config, project_parent=project_parent)
         name = item['workspace']
         item['startup'] = api.start(name)
         item['doctor'] = api.call('doctor', '--workspace', name)
