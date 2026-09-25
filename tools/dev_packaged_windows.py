@@ -107,9 +107,11 @@ def acquire(api, config, directory, target, *, rejection=None):
         '--target', target, '--allow-candidate', timeout=180, rejection=rejection)
 
 
-def negative_bundles(api, config):
-    source = Path(config['artifacts']['windows'])
-    acquire(api, config, source, 'linux-x86_64', rejection={'developer-bundle-target'})
+def negative_bundles(api, config, *, target='windows-x86_64'):
+    require(target in {'windows-x86_64', 'linux-x86_64'}, 'closed-negative-bundle-target')
+    source = Path(config['artifacts']['windows' if target == 'windows-x86_64' else 'linux'])
+    wrong_target = 'linux-x86_64' if target == 'windows-x86_64' else 'windows-x86_64'
+    acquire(api, config, source, wrong_target, rejection={'developer-bundle-target'})
     copied = api.root / 'tampered-bundle'
     shutil.copytree(source, copied)
     manifest = read_json(copied / 'developer-bundle.json')
@@ -117,16 +119,18 @@ def negative_bundles(api, config):
         original = stream.read(1)
         stream.seek(0)
         stream.write(bytes([original[0] ^ 1]))
-    acquire(api, config, copied, 'windows-x86_64', rejection={'developer-archive-digest'})
+    acquire(api, config, copied, target, rejection={'developer-archive-digest'})
     untrusted = api.root / 'untrusted-publisher-policy.json'
     write_json(untrusted, {**config['approvedDeveloperPolicy'], 'sourceRef': 'refs/heads/not-the-approved-source'})
     trust = config['trust']
     api.call('acquire', '--bundle-directory', source, '--publisher-policy', untrusted,
         '--trusted-root', trust['trustedRoot'], '--verifier', trust['hostVerifier'],
         '--verifier-sha256', trust['hostVerifierSha256'], '--version', config['version'],
-        '--target', 'windows-x86_64', '--allow-candidate', timeout=180,
+        '--target', target, '--allow-candidate', timeout=180,
         rejection={'developer-publisher-attestation-rejected'})
     require(not any((api.state / 'bundles').glob('*/verified-bundle.json')), 'rejected-candidate-became-usable')
+    return {'target': target, 'wrongTargetRejected': True, 'tamperedArchiveRejected': True,
+            'wrongPublisherRejected': True, 'rejectedCandidateBecameUsable': False}
 
 
 def inputs(api, config, language, index):
@@ -264,7 +268,7 @@ def run(config, output):
         executable = extract(Path(config['artifacts']['windows']), manifest, output / 'frontend')
         api = Frontend(executable, output, report)
         report['doctor'] = api.call('doctor')
-        negative_bundles(api, config)
+        report['bundleRejections'] = negative_bundles(api, config)
         report['frontend'] = acquire(api, config, config['artifacts']['windows'], 'windows-x86_64')
         image = acquire(api, config, config['artifacts']['wsl'], 'linux-x86_64-wsl-rootfs')
         inventory = read_json(api.state / 'bundles' / image['bundle'] / 'rootfs-inventory.json')

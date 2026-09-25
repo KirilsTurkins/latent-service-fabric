@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import sys
+import time
 
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -24,12 +25,14 @@ def run(config, output):
     report = {'schemaVersion': 'latent.dev.packaged-linux-container.v1', 'passed': False,
         'qualificationComplete': False, 'commands': [], 'cleanup': 'not-started',
         'sourceCommit': config['sourceCommit'], 'publiclyPublished': False,
-        'limits': {'memoryBytes': 8589934592, 'cpus': 2, 'pids': 512, 'scheduleSeconds': 7200}}
+        'limits': {'memoryBytes': 8589934592, 'cpus': 2, 'pids': 512, 'scheduleSeconds': 7200,
+                   'containerSeconds': 3600, 'hostCommands': 384}}
     name = 'lsf-package-qualification-' + os.environ['GITHUB_RUN_ID'] + '-' + os.environ['GITHUB_RUN_ATTEMPT']
     require(re.fullmatch(r'lsf-package-qualification-[0-9]{1,20}-[0-9]{1,4}', name), 'exact-disposable-container-name')
     container = None
 
     def command(argv, seconds, *, allowed=(0,)):
+        require(len(report['commands']) < 384, 'linux-host-command-count-limit')
         child = Command(argv, output, environment(output))
         try:
             require(child.finish(seconds) in allowed, 'owned-container-command-failed-' + str(argv[1]))
@@ -85,11 +88,18 @@ def run(config, output):
         report['container'] = {'id': container, 'name': name, 'network': 'none', 'privileged': created['HostConfig']['Privileged']}
         require(report['container']['privileged'] is False, 'unprivileged-container-required')
         command(['docker', 'start', container], 20)
-        status = command(['docker', 'wait', container], 1800)
-        # The schedule is bounded more tightly here than its internal emergency
-        # ceiling. A timeout stops only this exact container and retains state.
-        report['exitCode'] = int(status.decode().strip())
-        stopped = json.loads(command(['docker', 'inspect', container], 15))[0]
+        deadline = time.monotonic() + 3600
+        while True:
+            stopped = json.loads(command(['docker', 'inspect', container], 15))[0]
+            require(stopped['Id'] == container and stopped['Name'] == '/' + name and stopped['Image'] == image['Id'],
+                    'original-container-owner-changed')
+            if stopped['State']['Running'] is False:
+                break
+            require(time.monotonic() < deadline, 'linux-container-schedule-deadline')
+            time.sleep(min(10, max(0, deadline - time.monotonic())))
+        # Eight independently installed node workspaces share this outer hour;
+        # application commands keep their original individual deadlines.
+        report['exitCode'] = stopped['State']['ExitCode']
         require(stopped['State']['Running'] is False and stopped['State']['ExitCode'] == report['exitCode'], 'container-stop-unconfirmed')
         command(['docker', 'cp', container + ':/home/lsfqa/observation/observation.json', str(output / 'observation.json')], 30)
         observation = read_json(output / 'observation.json', 16 * 1024 * 1024)

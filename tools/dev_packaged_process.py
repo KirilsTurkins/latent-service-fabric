@@ -123,6 +123,10 @@ class Command:
         if self.child.poll() is None:
             self.child.kill()
         self.child.wait(timeout=5)
+        deadline = time.monotonic() + 2
+        for thread in self.threads:
+            thread.join(max(0, deadline - time.monotonic()))
+        require(not any(thread.is_alive() for thread in self.threads), 'conductor-pipe-owner-unconfirmed')
 
     def receipt(self):
         return {'argv': self.argv, 'exitCode': self.child.poll(),

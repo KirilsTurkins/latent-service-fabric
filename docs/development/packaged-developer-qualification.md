@@ -9,7 +9,9 @@ whose PATH contains only Windows System32. Python runs the separate conductor.
 
 This lane is manual. Its inputs are the complete, independently approved
 developer/runtime publisher policies and their successful exact-source candidate
-workflow run IDs. The maintainer must approve those policies before selecting
+workflow run IDs. A platform selector permits a fresh Windows or Linux attempt
+without repeating the other platform; skipped entries never count as qualified.
+The maintainer must approve those policies before selecting
 `policy_approved`. The conductor does not grant publishing authority. Its support
 job rejects unsuccessful, unfinished, wrong-workflow or wrong-source candidate
 runs. Candidate signatures and inventories are still verified before use.
@@ -111,6 +113,11 @@ management RPC listener nor SSH is published on the Docker host.
 That lane exercises one maintained Rust project through direct Linux and SSH,
 including real build/deploy/test, lost-response recovery, retained restart,
 repeated stop/purge and source preservation. Both execute watch A/B and compiler failure.
+The two initial nodes overlap under distinct Unix users with the same service
+name. Each user must be denied access to the other home, and the direct node's
+original deployment must remain callable after the SSH workspace is purged.
+Each Linux frontend, including the devcontainer, rejects wrong-target and
+tampered archives and a mismatched publisher identity before admitting a bundle.
 SSH rejects a wrong host key and helper digest, then checks that a concurrent
 start cannot replace or stop the existing node. The Windows/WSL lane owns the
 six-language matrix. This Linux OS-container observation is distinct from the
@@ -152,8 +159,11 @@ remains explicitly unconfirmed. Private failed state remains until the ephemeral
 runner is discarded.
 
 The Linux container has an 8 GiB memory limit, two CPUs and 512 processes.
-Its outer schedule wait is bounded to 1,800 seconds after a 1,200-second OS image
-build allowance; its internal emergency ceiling is 7,200 seconds. On failure,
+Its eight independently installed node workspaces share a 3,600-second outer
+schedule after a 1,200-second OS image build allowance; its internal emergency
+ceiling is 7,200 seconds. At most 384 host commands poll and revalidate the exact
+container identity, with each inspection bounded to 15 seconds. Application
+command and build deadlines are unchanged. On failure,
 the conductor verifies the original container identity, attempts its bounded
 stop, and inspects the result. Private state remains until runner teardown;
 an unconfirmed container stop is reported as unconfirmed.
@@ -186,6 +196,15 @@ The same attempt's disconnected Linux lane authenticated and installed its
 inputs, exercised path/trust rejections, and reached the unchanged 900-second
 build deadline. Its exact container stopped. This failure is retained for
 diagnosis and is not counted as a passing Linux build or complete qualification.
+
+The [second Windows attempt](packaged-candidate-c-install-attempt-observation.json)
+again passed the signed Rust build, tests and original operation recovery. With
+that node still running, it created a distinct C user and installed its runtime,
+then lost the backend connection during C tool installation after 36.49 seconds.
+The frontend preserved an uncertain outcome; the operation was not replayed.
+The original Rust node stopped cleanly. The C installation's private state
+remained on the disposable runner until teardown. The cause is under
+investigation, and this receipt does not count as a successful C installation.
 
 The twelve fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and
