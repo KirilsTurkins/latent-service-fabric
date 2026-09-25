@@ -19,6 +19,8 @@ def run(api, item):
     original = source.read_bytes()
     require(b'Hello, ' in original, 'maintained-rust-watch-source-changed')
     name = item['workspace']
+    require(name == 'test-packaged-rust-watch' and item['profile']['admission'] == 'trusted-local',
+            'watch-requires-its-explicit-provider-free-trusted-local-workspace')
     observation = item['packagedWatch'] = {'passed': False, 'events': [], 'initialTests': item['tests']}
     observation['downBeforeWatch'] = api.down(name)
     observation['watchReady'] = api.start(name, project=root, selection=case['id'])
@@ -72,3 +74,26 @@ def run(api, item):
         observation['passed'] = True
     finally:
         observation['events'] = process.events()
+
+
+def campaign(api, config, helper_sha, *, backend_config=None, project_parent=None):
+    # The maintained short-lived signing fixture binds exactly one accepted
+    # build. Watch has a distinct provider-free Rust workspace, configured with
+    # its documented trusted-local mode before the first deployment. No signed
+    # workspace changes admission or credentials to accommodate an edit.
+    if __package__:
+        from .dev_packaged_windows import prepare, verify_language, retained_invocation, preserved_source
+    else:
+        from dev_packaged_windows import prepare, verify_language, retained_invocation, preserved_source
+    item = prepare(api, config, 'rust', 10, helper_sha, backend_config=backend_config,
+                   project_parent=project_parent, watch_project=True)
+    verify_language(api, item)
+    run(api, item)
+    name = item['workspace']
+    item['down'] = api.down(name)
+    item['retainedRestart'] = api.start(name)
+    item['afterRestart'] = retained_invocation(api, item)
+    item['finalDown'] = api.down(name)
+    item['purge'] = api.call('purge', '--workspace', name, '--confirm-workspace', name, timeout=120)
+    item['preservedAuthorSource'] = preserved_source(item)
+    return item

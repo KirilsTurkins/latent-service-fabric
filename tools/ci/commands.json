@@ -632,7 +632,7 @@
     },
     ".github/workflows/developer-packaged-qualification.yml:linux:Download only selected Linux, Rust and native candidates": {
       "job": "linux",
-      "jobIf": "success()",
+      "jobIf": "inputs.platform == 'all' || inputs.platform == 'linux'",
       "name": "Download only selected Linux, Rust and native candidates",
       "run": "python3 -B - <<'PY'\nfrom pathlib import Path\nimport json, os, re, subprocess\nsupport = Path(os.environ['RUNNER_TEMP']) / 'packaged-support'\nselected = json.loads((support / 'selection.json').read_bytes())\nsha = selected['sourceCommit']\nassert re.fullmatch(r'[a-f0-9]{40}', sha)\ntarget = Path(os.environ['RUNNER_TEMP']) / 'packaged-candidates'\ntarget.mkdir()\nselected['artifacts'] = {}\nfor name, kind, artifact in (\n    ('linux', 'developer', 'developer-linux-candidate-' + sha),\n    ('rust', 'developer', 'developer-rust-tools-candidate-' + sha),\n    ('native', 'runtime', 'native-runtime-candidate-development-test-' + sha)):\n    destination = target / name\n    subprocess.run(['gh', 'run', 'download', str(selected['candidateRuns'][kind]['id']),\n        '--repo', 'KirilsTurkins/latent-service-fabric', '--name', artifact, '--dir', str(destination)],\n        check=True, timeout=300)\n    selected['artifacts'][name] = str(destination)\n(support / 'gh-linux').chmod(0o700)\nselected['trust'] = {\n    'developerPolicy': str(support / 'developer-policy.json'),\n    'runtimePolicy': str(support / 'runtime-policy.json'),\n    'trustedRoot': str(support / 'trusted_root.jsonl'),\n    'trustedRootSha256': selected['verificationInputs']['trustedRootSha256'],\n    'hostVerifier': str(support / 'gh-linux'), 'guestVerifier': str(support / 'gh-linux'),\n    'hostVerifierSha256': selected['verificationInputs']['verifierSha256']['linux'],\n    'guestVerifierSha256': selected['verificationInputs']['verifierSha256']['linux']}\n(support / 'inputs.json').write_text(json.dumps(selected), encoding='utf-8')\nPY",
       "shell": "default",
@@ -642,7 +642,7 @@
     },
     ".github/workflows/developer-packaged-qualification.yml:linux:Execute the generated terminal devcontainer against a separate explicit SSH peer": {
       "job": "linux",
-      "jobIf": "success()",
+      "jobIf": "inputs.platform == 'all' || inputs.platform == 'linux'",
       "name": "Execute the generated terminal devcontainer against a separate explicit SSH peer",
       "run": "cd \"$RUNNER_TEMP/packaged-support\"\npython3 -I -B dev_packaged_container_host.py --inputs inputs.json \\\n  --linux-output \"$RUNNER_TEMP/packaged-linux\" --output \"$RUNNER_TEMP/packaged-devcontainer\"",
       "shell": "default",
@@ -652,7 +652,7 @@
     },
     ".github/workflows/developer-packaged-qualification.yml:linux:Run the authenticated packages in a clean compiler-free disconnected Ubuntu container": {
       "job": "linux",
-      "jobIf": "success()",
+      "jobIf": "inputs.platform == 'all' || inputs.platform == 'linux'",
       "name": "Run the authenticated packages in a clean compiler-free disconnected Ubuntu container",
       "run": "cd \"$RUNNER_TEMP/packaged-support\"\npython3 -I -B dev_packaged_linux_host.py --inputs inputs.json --output \"$RUNNER_TEMP/packaged-linux\"",
       "shell": "default",
@@ -672,7 +672,7 @@
     },
     ".github/workflows/developer-packaged-qualification.yml:windows:Download only selected exact-source candidate inputs": {
       "job": "windows",
-      "jobIf": "success()",
+      "jobIf": "inputs.platform == 'all' || inputs.platform == 'windows'",
       "name": "Download only selected exact-source candidate inputs",
       "run": "$ErrorActionPreference = 'Stop'\n$Support = Join-Path $env:RUNNER_TEMP 'packaged-support'\n$Selection = Get-Content (Join-Path $Support 'selection.json') -Raw | ConvertFrom-Json -AsHashtable\n$Artifacts = Join-Path $env:RUNNER_TEMP 'packaged-candidates'\nNew-Item -ItemType Directory -Path $Artifacts | Out-Null\n$Sha = $Selection.sourceCommit\nif ($Sha -notmatch '^[a-f0-9]{40}$') { throw 'Exact candidate source required.' }\n$Names = [ordered]@{ windows=\"developer-windows-candidate-$Sha\"; wsl=\"developer-wsl-candidate-$Sha\" }\nforeach ($Language in @('rust','c','java','dotnet','go','typescript')) {\n    $Names[$Language] = \"developer-$Language-tools-candidate-$Sha\"\n}\n$Selection.artifacts = @{}\nforeach ($Name in $Names.Keys) {\n    $Destination = Join-Path $Artifacts $Name\n    & gh run download $Selection.candidateRuns.developer.id --repo KirilsTurkins/latent-service-fabric --name $Names[$Name] --dir $Destination\n    if ($LASTEXITCODE -ne 0) { throw \"Candidate download failed: $Name\" }\n    $Selection.artifacts[$Name] = $Destination\n}\n$Destination = Join-Path $Artifacts 'native'\n& gh run download $Selection.candidateRuns.runtime.id --repo KirilsTurkins/latent-service-fabric --name \"native-runtime-candidate-development-test-$Sha\" --dir $Destination\nif ($LASTEXITCODE -ne 0) { throw 'Native candidate download failed.' }\n$Selection.artifacts.native = $Destination\n$Selection.trust = @{\n    developerPolicy=(Join-Path $Support 'developer-policy.json'); runtimePolicy=(Join-Path $Support 'runtime-policy.json');\n    trustedRoot=(Join-Path $Support 'trusted_root.jsonl'); trustedRootSha256=$Selection.verificationInputs.trustedRootSha256;\n    hostVerifier=(Join-Path $Support 'gh.exe'); hostVerifierSha256=$Selection.verificationInputs.verifierSha256.windows;\n    guestVerifier=(Join-Path $Support 'gh-linux'); guestVerifierSha256=$Selection.verificationInputs.verifierSha256.linux\n}\n$Selection.faultProbe = Join-Path $Support 'dev_node_fault_probe.py'\n$Selection | ConvertTo-Json -Depth 15 | Set-Content (Join-Path $Support 'inputs.json') -Encoding utf8",
       "shell": "pwsh",
@@ -682,7 +682,7 @@
     },
     ".github/workflows/developer-packaged-qualification.yml:windows:Exercise packaged frontend with host SDKs and Python absent from its PATH": {
       "job": "windows",
-      "jobIf": "success()",
+      "jobIf": "inputs.platform == 'all' || inputs.platform == 'windows'",
       "name": "Exercise packaged frontend with host SDKs and Python absent from its PATH",
       "run": "$Support = Join-Path $env:RUNNER_TEMP 'packaged-support'\n$Observation = Join-Path $env:RUNNER_TEMP 'packaged-observation'\nSet-Location $Support\npython -I -B dev_packaged_probe.py --inputs (Join-Path $Support 'inputs.json') --output $Observation\nif ($LASTEXITCODE -ne 0) { throw 'Packaged schedule failed; retain the original attempt.' }",
       "shell": "pwsh",
@@ -6984,7 +6984,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-packaged-qualification.yml": "089df19784014ba37da40527494eb9b5e47c30f35b0f5356547b72894e055ba5",
+    ".github/workflows/developer-packaged-qualification.yml": "60d97ae453cb1eb8b32681ffeceae5c13c0edec0243617ea2ee1af7d0a7c1c85",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "0e6d62e17694c75b231822f019e772de7b89f9563fd35a32f2e3800956cbc409",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",

@@ -60,12 +60,18 @@ must observe a changed guest namespace, confirmed process reaping and an
 unclean shutdown. Restart must retain the existing deployment and execute it.
 The schedule never shuts down WSL globally.
 
-The retained Rust workspace also runs the packaged watch command. The conductor
+An additional provider-free Rust workspace runs the packaged watch command.
+It explicitly selects the documented `trusted-local` admission mode before its
+first deployment. The greeting and provider-fixture workspaces retain their
+separately selected signed admission for their entire lifetimes. The short-lived
+signing fixture is bound to one build and cannot authorize an edited component;
+watch never changes that policy or silently signs new source. The conductor
 edits the greeting from A to B, waits for B's real deployment and focused test,
 then introduces a compiler error and invokes the still-selected B publication.
 It explicitly restores valid B source, reuses its checked build, and restarts
 the retained B deployment. This author action is recorded separately from any
 automatic rollback, which the controller does not perform.
+The watch workspace then stops and purges through its own recorded identity.
 
 The conductor exports only the three public build files in bounded chunks from
 their exact owned build attempt, rechecking each complete file's recorded
@@ -167,6 +173,19 @@ retains 34 passing probe, comparison and tutorial receipt identities from the
 complete candidate build at `f5d556d3`. It includes the corrected actual watch
 campaign, all provider cases, and native Windows/Linux comparisons, with their
 cleanup dispositions and original artifact references.
+
+The [first installed-candidate attempt](packaged-candidate-attempt-observation.json)
+retains the actual failed run of the independently approved f5 candidates.
+Windows authenticated and installed the frontend, owned WSL image, runtime and
+Rust tools; built and executed success/declared-error cases; and recovered the
+original release, deployment and invocation identities. The original conductor
+then tried to edit that signed fixture, which correctly rejected the new build.
+Its owned node was reaped and private failed state retained. The corrected
+schedule selects a distinct provider-free watch workspace from the outset.
+The same attempt's disconnected Linux lane authenticated and installed its
+inputs, exercised path/trust rejections, and reached the unchanged 900-second
+build deadline. Its exact container stopped. This failure is retained for
+diagnosis and is not counted as a passing Linux build or complete qualification.
 
 The twelve fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and

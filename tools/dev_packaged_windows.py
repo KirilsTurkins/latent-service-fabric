@@ -13,14 +13,14 @@ import time
 if __package__:
     from .dev_packaged_bootstrap import authenticate, extract
     from .dev_packaged_guest import observe, export
-    from .dev_packaged_watch import run as watch_schedule
+    from .dev_packaged_watch import campaign as watch_campaign
     from .dev_packaged_process import MAX_COMMANDS, Command, ProbeFailure, digest, environment, read_json, require, write_json
     from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from .dev_packaged_wsl_lifecycle import restart_owned_distribution
 else:
     from dev_packaged_bootstrap import authenticate, extract
     from dev_packaged_guest import observe, export
-    from dev_packaged_watch import run as watch_schedule
+    from dev_packaged_watch import campaign as watch_campaign
     from dev_packaged_process import MAX_COMMANDS, Command, ProbeFailure, digest, environment, read_json, require, write_json
     from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from dev_packaged_wsl_lifecycle import restart_owned_distribution
@@ -143,9 +143,12 @@ def inputs(api, config, language, index):
     return runtime_path, tools_path
 
 
-def prepare(api, config, language, index, helper_sha, *, backend_config=None, project_parent=None, case_set=None):
+def prepare(api, config, language, index, helper_sha, *, backend_config=None, project_parent=None, case_set=None,
+            watch_project=False):
     require(case_set in {None, 'failure', 'clock'} and (case_set is None or language == 'rust'), 'closed-authored-case-set')
-    suffix = '' if case_set is None else '-' + case_set
+    require(type(watch_project) is bool and (not watch_project or language == 'rust' and case_set is None),
+            'trusted-local-watch-requires-separate-provider-free-rust-project')
+    suffix = '-watch' if watch_project else '' if case_set is None else '-' + case_set
     workspace = 'test-packaged-' + language + suffix
     if backend_config is None:
         owned = api.call('wsl-workspace', '--workspace', workspace, '--helper-sha256', helper_sha)
@@ -196,8 +199,10 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
         security['sourcePaths'] = source_paths(api, workspace, project)
     built = api.call('build', '--workspace', workspace, '--project', project, timeout=1200)
     fixtures = ['--fixtures', project / 'tests/clock-zero.json'] if case_set == 'clock' else []
+    admission = 'trusted-local' if watch_project else 'signed-fixture'
     profile = api.call('prepare-test', '--workspace', workspace, '--consent-test-fixtures',
-                       '--admission', 'signed-fixture', '--tool-root', selected['directory'], *fixtures, timeout=120)
+                       '--admission', admission, '--tool-root', selected['directory'], *fixtures, timeout=120)
+    require(profile['admission'] == admission, 'explicit-qualification-admission-required')
     authored = {entry['path']: digest(project / entry['path']) for entry in manifest['snapshot']['files']}
     authored.update({'latent.project.json': digest(project / 'latent.project.json'), 'app/.env': digest(sentinel)})
     if case_set is not None:
@@ -272,7 +277,6 @@ def run(config, output):
             verify_language(api, item)
             if retained is None:
                 invoke_with_lost_response(api, config, item)
-                watch_schedule(api, item)
                 retained = item
                 continue
             require(item['user'] != retained['user'], 'separate-wsl-users-required')
@@ -295,6 +299,7 @@ def run(config, output):
         retained['shutdownAfterRestart'] = api.down(retained['workspace'])
         retained['purge'] = api.call('purge', '--workspace', retained['workspace'], '--confirm-workspace', retained['workspace'], timeout=120)
         retained['authoredSourceAfterPurge'] = preserved_source(retained)
+        report['watchApplication'] = watch_campaign(api, config, inventory['helperSha256'])
         if __package__:
             from .dev_packaged_failures import node_campaign, portable_campaign
         else:

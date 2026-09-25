@@ -57,8 +57,8 @@ def run(config, output):
         conductor.mkdir()
         for path in support.glob('dev_packaged_*.py'):
             shutil.copyfile(path, conductor / path.name)
-        for name in ('dev_failure_case_inputs.py', 'dev_clock_case_inputs.py'):
-            shutil.copyfile(support / name, conductor / name)
+        for input_module in ('dev_failure_case_inputs.py', 'dev_clock_case_inputs.py'):
+            shutil.copyfile(support / input_module, conductor / input_module)
         inputs = output / 'container-inputs'
         inputs.mkdir(mode=0o700)
         shutil.copytree(support, inputs / 'support')

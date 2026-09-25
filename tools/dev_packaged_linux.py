@@ -13,14 +13,14 @@ if __package__ in {None, ''}:
     from dev_packaged_bootstrap import authenticate, extract
     from dev_packaged_process import MAX_COMMANDS, ProbeFailure, digest, read_json, require, write_json
     from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
-    from dev_packaged_watch import run as watch
+    from dev_packaged_watch import campaign as watch_campaign
     from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from dev_packaged_failures import node_campaign
 else:
     from .dev_packaged_bootstrap import authenticate, extract
     from .dev_packaged_process import MAX_COMMANDS, ProbeFailure, digest, read_json, require, write_json
     from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
-    from .dev_packaged_watch import run as watch
+    from .dev_packaged_watch import campaign as watch_campaign
     from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from .dev_packaged_failures import node_campaign
 
@@ -91,7 +91,6 @@ def run(config, output):
                 observation['concurrentStart'] = api.call('up', '--workspace', item['workspace'],
                     rejection={'invalid-or-unavailable-input-inspect-doctor'}, timeout=30)
                 observation['afterConcurrentStart'] = retained_invocation(api, item)
-            watch(api, item)
             item['down'] = api.down(item['workspace'])
             item['repeatedDown'] = api.call('down', '--workspace', item['workspace'])
             item['retainedRestart'] = api.start(item['workspace'])
@@ -102,6 +101,7 @@ def run(config, output):
             item['repeatedPurge'] = api.call('purge', '--workspace', item['workspace'],
                 '--confirm-workspace', item['workspace'], timeout=120)
             item['preservedAuthorSource'] = preserved_source(item)
+            observation['watchApplication'] = watch_campaign(api, config, helper_sha, backend_config=backend)
             observation['closedProfile'] = node_campaign(api, config, helper_sha, backend_config=backend)
             observation['passed'] = True
             write_json(output / 'observation.json', report)

@@ -12,14 +12,14 @@ if __package__ in {None, ''}:
     from dev_packaged_bootstrap import authenticate
     from dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
     from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
-    from dev_packaged_watch import run as watch
+    from dev_packaged_watch import campaign as watch_campaign
     from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from dev_packaged_failures import node_campaign
 else:
     from .dev_packaged_bootstrap import authenticate
     from .dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
     from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
-    from .dev_packaged_watch import run as watch
+    from .dev_packaged_watch import campaign as watch_campaign
     from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from .dev_packaged_failures import node_campaign
 
@@ -65,7 +65,6 @@ def run():
         require(tasks['version'] == '2.0.0' and all(task['type'] == 'process' for task in tasks['tasks']),
                 'same-process-task-contract-required')
         report['editorTasksSha256'] = digest(Path(item['project']) / '.vscode/tasks.json')
-        watch(api, item)
         report['logs'] = api.call('logs', '--workspace', item['workspace'])
         item['down'] = api.down(item['workspace'])
         item['restart'] = api.start(item['workspace'])
@@ -73,6 +72,8 @@ def run():
         item['finalDown'] = api.down(item['workspace'])
         item['purge'] = api.call('purge', '--workspace', item['workspace'], '--confirm-workspace', item['workspace'], timeout=120)
         item['preservedSource'] = preserved_source(item)
+        report['watchApplication'] = watch_campaign(api, config, config['linuxHelperSha256'],
+            backend_config=home / 'ssh-backend.json', project_parent=Path('/workspaces/project'))
         report['closedProfile'] = node_campaign(api, config, config['linuxHelperSha256'],
             backend_config=home / 'ssh-backend.json', project_parent=Path('/workspaces/project'))
         report.update(passed=True, cleanup='owned-remote-node-reaped-workspace-purged-client-state-retained')

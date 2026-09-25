@@ -20,6 +20,12 @@ on:
         type: boolean
         default: false
         required: true
+      platform:
+        description: Fresh platform schedule to execute with the approved candidates
+        type: choice
+        options: [all, windows, linux]
+        default: all
+        required: true
   push:
     branches: [feat/559-packaged-qualification]
     paths:
@@ -79,6 +85,7 @@ jobs:
   windows:
     name: Actual packaged Windows and WSL2 schedule
     needs: support
+    if: inputs.platform == 'all' || inputs.platform == 'windows'
     runs-on: windows-2025
     timeout-minutes: 150
     steps:
@@ -146,6 +153,7 @@ jobs:
   linux:
     name: Actual packaged direct Linux and explicit SSH schedule
     needs: support
+    if: inputs.platform == 'all' || inputs.platform == 'linux'
     runs-on: ubuntu-24.04
     timeout-minutes: 125
     steps:
