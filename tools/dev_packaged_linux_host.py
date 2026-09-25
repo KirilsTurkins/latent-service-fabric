@@ -85,7 +85,7 @@ def run(config, output):
         command(['docker', 'start', container], 20)
         status = command(['docker', 'wait', container], 1800)
         # The schedule is bounded more tightly here than its internal emergency
-        # ceiling. A timeout retains the exact container and reports uncertainty.
+        # ceiling. A timeout stops only this exact container and retains state.
         report['exitCode'] = int(status.decode().strip())
         stopped = json.loads(command(['docker', 'inspect', container], 15))[0]
         require(stopped['State']['Running'] is False and stopped['State']['ExitCode'] == report['exitCode'], 'container-stop-unconfirmed')
@@ -98,7 +98,23 @@ def run(config, output):
         report['cleanup'] = 'owned-container-state-unconfirmed-inspect-original-id' if container else 'no-container-created'
         raise
     finally:
+        if container is not None:
+            try:
+                observed = json.loads(command(['docker', 'inspect', container], 15))[0]
+                require(observed['Id'] == container and observed['Name'] == '/' + name
+                        and observed['Image'] == image['Id'], 'original-container-owner-changed')
+                if observed['State']['Running']:
+                    command(['docker', 'stop', '--time', '30', container], 40)
+                    observed = json.loads(command(['docker', 'inspect', container], 15))[0]
+                require(observed['Id'] == container and observed['State']['Running'] is False,
+                        'owned-container-stop-unconfirmed')
+                report['containerShutdown'] = {'stopped': True, 'exitCode': observed['State']['ExitCode']}
+                report['cleanup'] = 'owned-container-stopped-private-state-retained-until-runner-teardown'
+            except BaseException as error:
+                report['containerShutdown'] = {'stopped': False, 'failure': type(error).__name__}
+                report.update(passed=False, cleanup='owned-container-state-unconfirmed-inspect-original-id')
         write_json(output / 'host-observation.json', report)
+    require(report['passed'], 'owned-linux-container-cleanup-failed')
     return report
 
 

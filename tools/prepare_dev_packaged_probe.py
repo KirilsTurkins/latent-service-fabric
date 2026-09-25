@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import base64
 import io
 import json
 import os
@@ -63,7 +64,8 @@ def main():
         runs[kind] = {'id': int(number), 'url': run['html_url'], 'sourceCommit': source, 'conclusion': run['conclusion']}
     for name in ('dev_packaged_probe', 'dev_packaged_process', 'dev_packaged_bootstrap', 'dev_packaged_windows',
                  'dev_packaged_guest', 'dev_packaged_watch', 'dev_packaged_linux', 'dev_packaged_linux_host',
-                 'dev_packaged_linux_entry', 'dev_packaged_recovery', 'dev_packaged_wsl_lifecycle', 'dev_node_fault_probe'):
+                 'dev_packaged_linux_entry', 'dev_packaged_recovery', 'dev_packaged_wsl_lifecycle', 'dev_node_fault_probe',
+                 'dev_packaged_container_host', 'dev_packaged_container_peer', 'dev_packaged_container_client'):
         shutil.copyfile(ROOT / 'tools' / (name + '.py'), target / (name + '.py'))
     shutil.copyfile(ROOT / 'packaging/dev/qualification.Dockerfile', target / 'qualification.Dockerfile')
     root = ROOT / 'packaging/dev/qualification-trusted-root.jsonl'
@@ -89,12 +91,20 @@ def main():
         verifiers[kind] = 'sha256:' + hashlib.sha256(binary).hexdigest()
     for key in ('developer', 'runtime'):
         (target / (key + '-policy.json')).write_text(json.dumps(selected[key], sort_keys=True) + '\n', encoding='utf-8')
+    if __package__:
+        from .dev_packaged_container_host import CLI_SHA512
+    else:
+        from dev_packaged_container_host import CLI_SHA512
+    archive = download('https://registry.npmjs.org/@devcontainers/cli/-/cli-0.89.0.tgz')
+    checked(base64.b64encode(hashlib.sha512(archive).digest()).decode() == CLI_SHA512, 'reviewed-devcontainer-cli-digest')
+    (target / 'devcontainer-cli.tgz').write_bytes(archive)
     plan = {'sourceCommit': source, 'version': selected['developer']['version'],
         'approvedDeveloperPolicy': selected['developer'], 'approvedRuntimePolicy': selected['runtime'],
         'consentProvisionAndInstall': True, 'independentPolicyApproved': True,
         'verificationInputs': {'verifierSha256': verifiers, 'trustedRootSha256': 'sha256:' + TRUSTED_ROOT_SHA},
         'candidateRuns': runs, 'conductorSourceCommit': os.environ['GITHUB_SHA'],
-        'faultProbeSha256': 'sha256:' + hashlib.sha256((target / 'dev_node_fault_probe.py').read_bytes()).hexdigest()}
+        'faultProbeSha256': 'sha256:' + hashlib.sha256((target / 'dev_node_fault_probe.py').read_bytes()).hexdigest(),
+        'devcontainerCli': {'version': '0.89.0', 'archiveSha512Base64': CLI_SHA512}}
     (target / 'selection.json').write_text(json.dumps(plan, indent=2) + '\n', encoding='utf-8')
     print('Prepared separate conductor and exact candidate verification inputs:', source)
 

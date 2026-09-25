@@ -147,7 +147,7 @@ jobs:
     name: Actual packaged direct Linux and explicit SSH schedule
     needs: support
     runs-on: ubuntu-24.04
-    timeout-minutes: 65
+    timeout-minutes: 125
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -191,6 +191,14 @@ jobs:
         run: |
           cd "$RUNNER_TEMP/packaged-support"
           python3 -I -B dev_packaged_linux_host.py --inputs inputs.json --output "$RUNNER_TEMP/packaged-linux"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+      - name: Execute the generated terminal devcontainer against a separate explicit SSH peer
+        run: |
+          cd "$RUNNER_TEMP/packaged-support"
+          python3 -I -B dev_packaged_container_host.py --inputs inputs.json \
+            --linux-output "$RUNNER_TEMP/packaged-linux" --output "$RUNNER_TEMP/packaged-devcontainer"
       - name: Retain bounded public Linux success or failure receipts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -199,6 +207,8 @@ jobs:
           path: |
             ${{ runner.temp }}/packaged-linux/host-observation.json
             ${{ runner.temp }}/packaged-linux/observation.json
+            ${{ runner.temp }}/packaged-devcontainer/host-observation.json
+            ${{ runner.temp }}/packaged-devcontainer/observation.json
             ${{ runner.temp }}/packaged-support/selection.json
           if-no-files-found: error
           retention-days: 7

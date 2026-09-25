@@ -83,6 +83,27 @@ start cannot replace or stop the existing node. The Windows/WSL lane owns the
 six-language matrix. This Linux OS-container observation is distinct from the
 Windows WSL2 host and the opt-in editor devcontainer path.
 
+The Linux job then generates the opt-in devcontainer through the authenticated
+frontend and starts it with the independently pinned Dev Container CLI 0.89.0
+and host Node.js 24.19.0. It retains the generated configuration and separately
+records two explicit qualification additions: the disconnected SSH peer's
+network namespace and a read-only pinned Python mount for the conductor. The
+application continues to use its own embedded Python; guest compilers and the
+node run only on the separate SSH peer. No host directory containing credentials,
+Docker socket, root mount, port publication or agent forwarding is supplied.
+
+The container must run as the declared UID 10001 with all capabilities dropped,
+no new privileges, 2 GiB memory and two CPUs. The peer provisions fresh SSH keys
+only in the generated private home volume and checks the helper's digest before
+serving requests. The schedule creates a real Rust project in the source mount,
+builds/deploys/tests over SSH, generates the same editor process tasks, runs
+watch and compiler failure, restarts retained state and explicitly purges the
+node workspace. Both exact containers are stopped and inspected; authored
+source and the private home volume remain until runner teardown. The extra
+client schedule is bounded to 1,800 seconds and its peer to 3,600 seconds.
+This tests the terminal container path on Linux; it is separate from a rendered
+editor walkthrough and from the earlier Windows Docker Desktop source receipt.
+
 Each command has bounded output and a deadline. The schedule admits at most
 360 completed commands per backend, reserving the last 24 for status, recovery
 and cleanup, 4 MiB stdout and 256 KiB stderr per command, 1,800 seconds
@@ -100,8 +121,9 @@ runner is discarded.
 The Linux container has an 8 GiB memory limit, two CPUs and 512 processes.
 Its outer schedule wait is bounded to 1,800 seconds after a 1,200-second OS image
 build allowance; its internal emergency ceiling is 7,200 seconds. On failure,
-the exact container identity and private state are retained until runner
-teardown; an unconfirmed container stop is reported as unconfirmed.
+the conductor verifies the original container identity, attempts its bounded
+stop, and inspects the result. Private state remains until runner teardown;
+an unconfirmed container stop is reported as unconfirmed.
 
 This is qualification scaffolding until a completed run is linked. Its receipt
 deliberately keeps `qualificationComplete: false`: the full watch, transport-loss,
@@ -124,3 +146,9 @@ The [OS setup observation](qualification-os-smoke-observation.json) additionally
 records an actual disconnected-container SSH handshake between UIDs 23001 and
 23002 with host compilers absent. It uses a harmless helper placeholder and runs
 no LSF candidate, so it validates provisioning only.
+The [terminal devcontainer OS observation](terminal-devcontainer-os-observation.json)
+also records the actual pinned CLI starting the generated unprivileged image,
+the read-only conductor interpreter running there, and a separate SSH handshake
+from UID 10001 to UID 23002. Its application/helper placeholders were never
+executed. The first server-only smoke lacked the client account; that failed
+attempt and both successful cleanup results are retained.

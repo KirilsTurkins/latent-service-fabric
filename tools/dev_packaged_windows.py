@@ -139,7 +139,7 @@ def inputs(api, config, language, index):
     return runtime_path, tools_path
 
 
-def prepare(api, config, language, index, helper_sha, *, backend_config=None):
+def prepare(api, config, language, index, helper_sha, *, backend_config=None, project_parent=None):
     workspace = 'test-packaged-' + language
     if backend_config is None:
         owned = api.call('wsl-workspace', '--workspace', workspace, '--helper-sha256', helper_sha)
@@ -164,7 +164,7 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None):
     manifest = read_json(template_root / template['path'] / 'template.json')
     identity = 'sha256:' + hashlib.sha256((json.dumps(manifest, sort_keys=True,
         separators=(',', ':'), ensure_ascii=True, allow_nan=False) + '\n').encode()).hexdigest()
-    project = api.root / ('Author spaces-\u00fc ' + language)
+    project = (project_parent or api.root) / ('Author spaces-\u00fc ' + language)
     api.call('init', project, '--bundle', cached['bundle'], '--template', relative, '--template-sha256', identity)
     sentinel = project / 'app/.env'
     sentinel.write_text('QUALIFICATION_EXCLUDED_CREDENTIAL=never-synchronize-this-marker\n', encoding='utf-8')

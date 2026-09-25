@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "latent.dev.terminal-devcontainer-os-observation.v1",
+  "observedUtc": "2026-09-25",
+  "passed": true,
+  "candidateExecuted": false,
+  "qualificationComplete": false,
+  "scope": "actual-OS-and-terminal-CLI-provisioning-only",
+  "peer": {
+    "container": "f9c483a422af9a4da0e6a2e2a166a92332c40023cd8ba33209aeadc3ef6ec2f1",
+    "peerSourceSha256": "sha256:b8b634f1b37b66a2689945453080f8a1b8c6c1e7bcdde841e2bdde779bc61efe",
+    "actualSshClientUid": 10001,
+    "actualSshServerUid": 23002,
+    "ready": {
+      "ready": true,
+      "clientUid": 10001,
+      "serverUid": 23002,
+      "listener": "127.0.0.1:2222",
+      "hostKeySha256": "d1789c40e9271d7cc4ff568bedf2fa12741e0607539f9278d2d1d8e9ad7a72fd"
+    },
+    "cleanup": "exact-owned-peer-stopped-private-volume-retained"
+  },
+  "generatedClient": {
+    "container": "f9e2202025693b0448ee622d7a181e4252ae7979e175bef8421b6a0aa54ab640",
+    "image": "sha256:221451cbbc5f7c06df37da1c2d65b775dd4e6ef4ebbd32fd54a56f1da81a15d9",
+    "dockerfileSha256": "85357f0f64d4122fcac81f186195a971a6198820d22427e4229db6520ea66388",
+    "observation": {
+      "uid": 10001,
+      "tls": "OpenSSL 3.0.13 30 Jan 2024",
+      "compilers": []
+    },
+    "cli": {
+      "version": "0.89.0",
+      "node": "v24.19.0"
+    },
+    "isolation": {
+      "Privileged": false,
+      "CapDrop": [
+        "ALL"
+      ],
+      "CapAdd": null,
+      "SecurityOpt": [
+        "no-new-privileges"
+      ],
+      "Memory": 2147483648,
+      "NanoCpus": 2000000000,
+      "PidsLimit": 256,
+      "NetworkMode": "none",
+      "PortBindings": {}
+    },
+    "mounts": [
+      {
+        "Type": "bind",
+        "Destination": "/workspaces/project",
+        "RW": true
+      },
+      {
+        "Type": "volume",
+        "Destination": "/home/latent-dev",
+        "RW": true
+      },
+      {
+        "Type": "volume",
+        "Destination": "/usr/local",
+        "RW": false
+      }
+    ],
+    "cleanup": "exact-generated-container-stopped-private-home-and-interpreter-volumes-retained"
+  },
+  "receiptSha256": {
+    "peer": "sha256:93e8e1f9db2051059d1379e0bd4aea75042dfb6c2232349be424dca3f5a11c97",
+    "client": "sha256:de75fa1fa72162d17d736b174917f42e1d1f7412985924eff6f72fa3215fbafc"
+  },
+  "failedAttempts": [
+    {
+      "scope": "OS-only-peer-fixture",
+      "error": "No user exists for uid 10001",
+      "container": "f964fbbd0a1dc1d1b4748779fd15b0418376152f185549ea0d87011b97b33c8c",
+      "explanation": "The first smoke ran its SSH client inside a server-only OS without the devcontainer account. The second smoke used a separate client with the declared account.",
+      "cleanup": "exact-owned-peer-stopped-private-volume-retained"
+    }
+  ],
+  "limitations": [
+    "Helper and frontend files were harmless unexecuted placeholders; no publisher or candidate approval is implied.",
+    "The source generator produced the Dockerfile/configuration; this is not evidence of running the packaged generator.",
+    "The terminal CLI and pinned interpreter mount ran on actual Docker Desktop, with network disabled and UID 10001.",
+    "A separate actual SSH handshake used the declared client/peer identities and new private keys.",
+    "Final installed-package build/watch/recovery/devcontainer and rendered editor review remain required."
+  ]
+}
