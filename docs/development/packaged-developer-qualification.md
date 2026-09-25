@@ -1,5 +1,9 @@
 # Packaged developer qualification
 
+The [five-platform handoff](packaged-platform-handoff.md) records the complete
+passing packaged schedule and dedicated Windows recovery campaign at approved
+source `0cb5cf08`. It retains the remaining editor/newcomer and final review gates.
+
 The [native Windows qualification](native-windows-qualification.md) records the
 completed Windows/WSL and native schedule at approved source `0cb5cf08`, including
 all six languages and the closed failure/clock differential. It supplies #566's
