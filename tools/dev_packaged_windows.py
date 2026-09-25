@@ -302,6 +302,7 @@ def run(config, output):
             verify_language(api, item)
             if retained is None:
                 invoke_with_lost_response(api, config, item)
+                item['logs'] = api.call('logs', '--workspace', item['workspace'])
                 retained = item
                 continue
             require(item['user'] != retained['user'], 'separate-wsl-users-required')

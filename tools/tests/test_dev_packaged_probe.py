@@ -141,6 +141,26 @@ class PackagedProbe(unittest.TestCase):
             frontend.call('test', expected_test_failure=True)
         self.assertEqual(len(report['commands']), 3)
 
+    def test_native_comparison_requires_all_three_exported_artifacts(self):
+        from tools.dev_packaged_failures import require_same_artifacts
+        shared = {key: 'sha256:' + hashlib.sha256(key.encode()).hexdigest()
+                  for key in ('component', 'capsule', 'contracts')}
+        node = {'os': 'linux', 'artifacts': {**shared, 'deployment': 'node-only',
+                                           'evidence': 'node-only', 'packageSource': 'node-only'}}
+        portable = {'productionNode': False, 'artifacts': shared}
+        require_same_artifacts(node, portable)
+        for key in shared:
+            with self.subTest(changed=key), self.assertRaisesRegex(ProbeFailure, 'same-byte-real-node-native-comparison'):
+                require_same_artifacts(node, {**portable, 'artifacts': {**shared, key: 'sha256:' + '0' * 64}})
+            with self.subTest(missing=key), self.assertRaisesRegex(ProbeFailure, 'same-byte-real-node-native-comparison'):
+                require_same_artifacts(node, {**portable, 'artifacts': {k: v for k, v in shared.items() if k != key}})
+        with self.assertRaises(ProbeFailure):
+            require_same_artifacts(node, {**portable, 'productionNode': True})
+        with self.assertRaises(ProbeFailure):
+            require_same_artifacts({**node, 'os': 'windows'}, portable)
+        with self.assertRaises(ProbeFailure):
+            require_same_artifacts(node, {**portable, 'artifacts': {**shared, 'unexpected': 'not-exported'}})
+
     def test_staged_conductors_load_without_source_checkout_imports(self):
         from tools.prepare_dev_packaged_probe import CONDUCTORS, ROOT
         for name in CONDUCTORS:

@@ -52,11 +52,23 @@ def run(config, linux_output, output):
         'limits': {'hostCommands': 64, 'clientSeconds': 2400, 'peerSeconds': 4800, 'clientMemoryBytes': 2147483648}}
     peer = client = label = None
 
-    def call(argv, seconds, *, allowed=(0,)):
+    def call(argv, seconds, *, allowed=(0,), terminal=False):
         require(len(report['commands']) < 64, 'devcontainer-host-command-bound')
         child = Command(argv, output, environment(output))
         try:
-            require(child.finish(seconds) in allowed, 'devcontainer-host-command-failed')
+            code = child.finish(seconds)
+            if code not in allowed and terminal:
+                # This CLI only sees the generated public configuration and OS
+                # build. Retain its bounded structured error, never docker
+                # inspection output, environment or private workspace files.
+                try:
+                    failure = json.loads(child.raw())
+                except (ValueError, UnicodeError):
+                    failure = {}
+                report['terminalFailure'] = {key: failure[key][:2048]
+                    for key in ('outcome', 'message', 'description')
+                    if isinstance(failure, dict) and isinstance(failure.get(key), str)}
+            require(code in allowed, 'devcontainer-host-command-failed')
             return child.raw()
         finally:
             try:
@@ -128,7 +140,9 @@ def run(config, linux_output, output):
         # address is valid. This never publishes or forwards management ports.
         options['runArgs'].append('--network=container:' + peer)
         options['mounts'].append('source=' + str(python_root) + ',target=/usr/local,type=bind,readonly')
-        selected_config = project / '.devcontainer/qualification.json'
+        # The CLI accepts only devcontainer.json or .devcontainer.json. Keep
+        # this beside the generated file so its relative build paths are intact.
+        selected_config = project / '.devcontainer/.devcontainer.json'
         write_json(selected_config, options)
         report['qualificationConfigurationSha256'] = digest(selected_config)
         cli_state = output / 'cli-state'
@@ -137,7 +151,7 @@ def run(config, linux_output, output):
         require(not call(['docker', 'ps', '-aq', '--filter', 'label=' + label], 15).strip(), 'new-container-owner-label-required')
         raw = call([node, cli, 'up', '--workspace-folder', project, '--config', selected_config,
                     '--id-label', label, '--mount-workspace-git-root', 'false', '--skip-post-create',
-                    '--user-data-folder', cli_state], 1200)
+                    '--user-data-folder', cli_state], 1200, terminal=True)
         started = json.loads(raw)
         require(started.get('outcome') == 'success' and re.fullmatch(r'[a-f0-9]{64}', started.get('containerId', '')),
                 'actual-devcontainer-cli-start-required')

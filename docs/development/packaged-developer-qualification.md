@@ -184,11 +184,11 @@ the conductor verifies the original container identity, attempts its bounded
 stop, and inspects the result. Private state remains until runner teardown;
 an unconfirmed container stop is reported as unconfirmed.
 
-This is qualification scaffolding until a completed run is linked. Its receipt
-deliberately keeps `qualificationComplete: false`: the full watch, transport-loss,
-security/failure, full portable subset, direct Linux, SSH, devcontainer and rendered
-newcomer/editor schedules still need their actual packaged evidence before
-issue #569 or epic #559 can close. The successful
+The receipt deliberately keeps `qualificationComplete: false` even when an
+individual schedule passes. The full watch, transport-loss, security/failure,
+portable subset, devcontainer and rendered newcomer/editor requirements still
+need their actual packaged evidence before issue #569 or epic #559 can close.
+Completed stages and failed attempts are recorded separately below. The successful
 [hosted WSL preflight](hosted-wsl-preflight-observation.json) proves that the
 Windows runner can execute WSL2; it does not supply those missing receipts.
 The [final source campaign](final-source-campaign-observation.json) records the
@@ -230,7 +230,30 @@ qualification. Its first local setup hit the Windows path-length limit in a
 deeply nested custom controller directory. A fresh, shorter state path succeeded
 without changing the host's global path setting or reusing the partial cache.
 
-The fourteen fast conductor regressions exercise archive traversal/alias/device/link
+The [monitor-fix candidate attempt](packaged-monitor-candidate-attempt-observation.json)
+used all ten independently approved `0cb5cf08` bundles. Every language passed
+its signed WSL node cases and its Windows portable cases, with the owned WSL
+distribution removed before native execution. The direct Linux and explicit
+SSH schedules both passed, including simultaneous workspace isolation, retained
+restart, basic watch, closed-profile failures and exact-owner cleanup.
+
+That run remained incomplete in two later conductor stages. The Windows
+closed-profile comparison incorrectly compared node-only deployment, evidence
+and package-source metadata with the portable record. All three exported
+artifact hashes and every completed typed result matched. The comparison now
+requires exactly the shared component, capsule and contracts, while rejecting
+any missing or changed artifact. Clock parity and the remaining native
+cancellation checks were not reached in that attempt.
+
+The devcontainer CLI rejected the conductor's `qualification.json` filename
+before creating its client container; the owned SSH peer stopped. The reviewed
+CLI reproduced that rejection locally. The conductor now uses the accepted
+`.devcontainer.json` name beside the generated configuration, preserving relative
+Dockerfile paths, and retains bounded structured CLI failures. Configuration
+parsing succeeded locally; a fresh installed devcontainer campaign is still
+required. Neither correction replaces the original failed receipt.
+
+The fifteen fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and
 bounded stdin with receipt redaction, plus the actual Windows DACL of the newly
 created conductor directory. A required unsupported-case report must retain its
