@@ -503,8 +503,12 @@ Source bytes and generated bindings are checked again after successful compile.
 Interrupt watch to request owned shutdown. After a closed terminal or lost
 connection, run status and, for a pending mutation, recover the original operation
 before continuing. Closing an editor is not proof that the Linux node stopped.
-These task contracts are tested; actual editor/newcomer qualification remains in
-the acceptance table below.
+The [executed Windows editor integration](editor-task-integration.md) covers
+actual task execution, live compiler diagnostics, last-good deployment, task
+termination, explicit down, retained restart and untrusted folder opening.
+Watch uses build start/end markers to flush and clear its background problem
+matcher while the task remains running. The separate clean-machine newcomer
+walkthrough and final authenticated package qualification remain open.
 
 `dev up` stays in the foreground until interruption or an explicit `dev down`
 from another terminal. Its private WSL session remains open while the node is

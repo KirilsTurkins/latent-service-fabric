@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "latent.dev.editor-integration-observation.v1",
+  "passed": true,
+  "scope": "actual-installed-vscode-source-frontend-integration",
+  "cleanHost": false,
+  "interactiveVisualReview": false,
+  "epicQualificationComplete": false,
+  "host": {
+    "osVersion": "10.0.26200",
+    "architecture": "AMD64",
+    "vscode": "1.139.0"
+  },
+  "frontend": {
+    "sourceCommit": "6c8eeeca4ff1fd7523f7aacd7d67d8a630a39d59",
+    "sourceDirty": true,
+    "frontendSha256": "sha256:3d1927ed5e1c9af22e2a1de14a7934b34f405d57a5b52d83bb40e782110f053f",
+    "helperSha256": "sha256:01e518376ee79e2b30401dd403e250f9cf826dcca3c9153f3ab781d3aa8a595d",
+    "python": "3.13.5",
+    "packager": "pyinstaller-6.22.3",
+    "lockSha256": "sha256:6b9071c1154ce68806fedb502191c10b1d38d394e0c15cfffa84e5c21dadcd6c",
+    "publisherAuthenticated": false
+  },
+  "sourceChanges": {
+    "tools/dev_workflow/build_client.py": "sha256:dcf33d32dda4428e5d01e078f5977e68d5215789ac76b6f204712786e3d65df9",
+    "tools/dev_workflow/diagnostics.py": "sha256:ce22588057b7423a0467703993a8a120781890c0a9f5028284ef097caee9d7e8",
+    "tools/dev_workflow/editor.py": "sha256:2ce8858d78483568215a2afd6909a177553218ba1f96856301cc52d018a46fdd"
+  },
+  "runtime": {
+    "sourceCommit": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+    "helperSha256": "sha256:edf144ac4a5ea112d2bb85ac583201f16f0564cdaddd093a298a15882702ba16",
+    "publisherAuthenticated": true,
+    "profile": "local-experimental-v1",
+    "admission": "trusted-local",
+    "controlledDevelopmentOnly": true
+  },
+  "observationSha256": "sha256:888c6571eca9dd1366cb970242cf4ac53daa0e2aab2bab644c68e1531221fd24",
+  "observerSha256": "sha256:a0be6596b2f0d13bfe6754bbc4b6824dd29aaae8222cdc9eb8548efa1eddeace",
+  "generatedTasksSha256": "sha256:f91e12d7f1c2f9ff300b787279ca49e73d9cdf6f34fdbbd5a867c85ee19af329",
+  "seconds": 97.929,
+  "taskExecutions": [
+    {
+      "name": "LSF: build",
+      "exitCode": 0,
+      "ended": true
+    },
+    {
+      "name": "LSF: doctor",
+      "exitCode": 0,
+      "ended": true
+    },
+    {
+      "name": "LSF: status",
+      "exitCode": 0,
+      "ended": true
+    },
+    {
+      "name": "LSF: watch",
+      "exitCode": null,
+      "ended": true
+    },
+    {
+      "name": "LSF: logs",
+      "exitCode": 0,
+      "ended": true
+    },
+    {
+      "name": "LSF: down",
+      "exitCode": 0,
+      "ended": true
+    },
+    {
+      "name": "LSF: up",
+      "exitCode": 0,
+      "ended": true
+    },
+    {
+      "name": "LSF: down",
+      "exitCode": 0,
+      "ended": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "line": 22,
+      "column": 6,
+      "severity": 0,
+      "code": "",
+      "source": "LSF",
+      "message": "expected one of `!` or `::`, found `is`",
+      "path": "app/src/lib.rs"
+    }
+  ],
+  "pathCases": [
+    "windows-drive-letter",
+    "spaces",
+    "non-ASCII"
+  ],
+  "successfulBuildClearedDiagnostics": true,
+  "revisionA": {
+    "componentDigest": "sha256:fba3442520093172f38e1dc74953c9a055ee9e839fe6e384c1168d94afd33f89",
+    "publication": "publication:sha256:7a52ddd03d50005eaab6eee9dfec05e29eefdb38706d12360d9fecc47ce60a70",
+    "generation": "3"
+  },
+  "revisionB": {
+    "componentDigest": "sha256:69f6cb6c04fcf24cdb6732177f9f79e873650fcfc9d89682cf8f1bdd3520b977",
+    "publication": "publication:sha256:747a318ad7b5d906a47f7ce584d03d2d66da463f417a375cac0bc6b13edd3005",
+    "generation": "4"
+  },
+  "values": {
+    "initial": 101,
+    "afterCompilerFailure": 101,
+    "afterEdit": 201,
+    "afterRestart": 201
+  },
+  "compilerFailureRetainedDeployment": true,
+  "restartRetainedDeployment": true,
+  "termination": {
+    "taskExitCode": null,
+    "observedNodeState": "ready",
+    "explicitDownTaskExitCode": 0,
+    "nodeStoppedConfirmed": true,
+    "closingTerminalProvesRemoteCleanup": false
+  },
+  "untrusted": {
+    "passed": true,
+    "interactiveVisualReview": false,
+    "cleanHost": false,
+    "automaticTasks": [],
+    "trustedAtOpen": false,
+    "tasksSha256": "sha256:f91e12d7f1c2f9ff300b787279ca49e73d9cdf6f34fdbbd5a867c85ee19af329",
+    "trustedAtEnd": false,
+    "activeTasks": []
+  },
+  "untrustedObservationSha256": "sha256:88bec3c11d85c575ca5363859100bdd343ace035c33804b3295ca037ac0aff21",
+  "untrustedOpenStartedOwnedDistro": false,
+  "automaticExecution": false,
+  "cleanup": "owned-node-reaped-owned-distro-stopped-private-state-and-author-source-retained",
+  "globalWslShutdown": false,
+  "failedAttempts": [
+    {
+      "observationSha256": "sha256:06aef6c6f1671d4bbc9189fce124a6c208b5659382503d97191f2d58715b3cd3",
+      "failure": "editor-problem-matcher-diagnostic-timeout",
+      "effectReplayed": false,
+      "cleanup": "owned-node-reaped",
+      "interpretation": "finite-task-matcher-did-not-flush-diagnostics-during-watch"
+    },
+    {
+      "observationSha256": "sha256:8709e7832d7f2326f6f47c578e4c2af20569628d86b6df2a2944e9c4b8c7c5b3",
+      "failure": "frontend-command-failed-invoke-windows-protected-open-failed",
+      "effectReplayed": false,
+      "cleanup": "owned-node-reaped",
+      "interpretation": "observer-read-retained-deployment-before-new-watch-build-settled"
+    },
+    {
+      "observationSha256": "sha256:11307b29d7cfebfb3c26647662b0e2ed63f5ae7bd705f9f324c2d8572754c34f",
+      "failure": "editor-problem-matcher-diagnostic-timeout",
+      "effectReplayed": false,
+      "cleanup": "owned-node-reaped",
+      "interpretation": "finite-task-matcher-did-not-flush-diagnostics-during-watch"
+    }
+  ]
+}
