@@ -29,8 +29,19 @@ separate Linux users for the six language-owned greeting projects. It installs
 the selected runtime and compiler tools, rejects an untrusted build recipe,
 builds real components, starts signed/enforced test nodes, deploys and executes
 the common success and declared-error cases. A retained Rust workspace remains
-callable while subsequent workspaces stop and purge. Restart uses the retained
-deployment without a new publication. Purge retains the authored source trees.
+callable while subsequent workspaces stop and purge. Actual guest observations
+check private credential permissions, rejection of the other workspace's home,
+and exclusion of an authored `.env` file from synchronized snapshots. Restart
+uses the retained deployment without a new publication. Purge preserves every
+recorded authored file by digest.
+
+The conductor exports only the three public build files in bounded chunks from
+their exact owned build attempt, rechecking each complete file's recorded
+digest. After all nodes and the owned WSL distribution are purged, it executes
+the same six greeting applications with the native Windows portable host. It
+compares case identities, outcomes and payload digests with the Linux-node
+results. This export is an explicitly labeled read-only qualification observer;
+it does not compile, deploy or invoke an application in place of the frontend.
 
 Each command has bounded output and a deadline. The schedule admits at most
 190 completed commands, 4 MiB stdout and 256 KiB stderr per command, 1,800 seconds
@@ -44,7 +55,7 @@ runner is discarded.
 
 This is qualification scaffolding until a completed run is linked. Its receipt
 deliberately keeps `qualificationComplete: false`: the full watch, transport-loss,
-security/failure, native portable, direct Linux, SSH, devcontainer and rendered
+security/failure, full portable subset, direct Linux, SSH, devcontainer and rendered
 newcomer/editor schedules still need their actual packaged evidence before
 issue #569 or epic #559 can close. The successful
 [hosted WSL preflight](hosted-wsl-preflight-observation.json) proves that the

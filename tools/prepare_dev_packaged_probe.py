@@ -61,7 +61,7 @@ def main():
         checked(run['head_sha'] == source and run['status'] == 'completed' and run['conclusion'] == 'success'
                 and run['path'] == '.github/workflows/' + workflow, 'successful-exact-candidate-workflow-required')
         runs[kind] = {'id': int(number), 'url': run['html_url'], 'sourceCommit': source, 'conclusion': run['conclusion']}
-    for name in ('dev_packaged_probe', 'dev_packaged_process', 'dev_packaged_bootstrap', 'dev_packaged_windows'):
+    for name in ('dev_packaged_probe', 'dev_packaged_process', 'dev_packaged_bootstrap', 'dev_packaged_windows', 'dev_packaged_guest'):
         shutil.copyfile(ROOT / 'tools' / (name + '.py'), target / (name + '.py'))
     root = ROOT / 'packaging/dev/qualification-trusted-root.jsonl'
     checked(hashlib.sha256(root.read_bytes()).hexdigest() == TRUSTED_ROOT_SHA, 'independent-trust-root-changed')

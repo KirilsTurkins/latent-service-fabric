@@ -14,9 +14,11 @@ import time
 
 if __package__:
     from .dev_packaged_bootstrap import authenticate, extract
+    from .dev_packaged_guest import observe, export
     from .dev_packaged_process import Command, ProbeFailure, digest, environment, read_json, require, write_json
 else:
     from dev_packaged_bootstrap import authenticate, extract
+    from dev_packaged_guest import observe, export
     from dev_packaged_process import Command, ProbeFailure, digest, environment, read_json, require, write_json
 
 LANGUAGES = ('rust', 'c', 'java', 'dotnet', 'go', 'typescript')
@@ -156,8 +158,10 @@ def prepare(api, config, language, index, helper_sha):
     built = api.call('build', '--workspace', workspace, '--project', project, timeout=1200)
     profile = api.call('prepare-test', '--workspace', workspace, '--consent-test-fixtures',
                        '--admission', 'signed-fixture', '--tool-root', selected['directory'], timeout=120)
+    authored = {entry['path']: digest(project / entry['path']) for entry in manifest['snapshot']['files']}
+    authored.update({'latent.project.json': digest(project / 'latent.project.json'), 'app/.env': digest(sentinel)})
     return {'workspace': workspace, 'user': owned['user'], 'project': str(project),
-            'build': built, 'profile': profile, 'tools': selected}
+            'build': built, 'profile': profile, 'tools': selected, 'authoredSource': authored}
 
 
 def verify_language(api, item):
@@ -168,6 +172,8 @@ def verify_language(api, item):
     item['tests'] = api.call('test', '--workspace', name, '--environment', 'node', timeout=330)
     require(item['tests']['passed'] and all(case['status'] == 'passed' for case in item['tests']['results']), 'language-required-case-failed')
     require({'success', 'declared-error'} <= {case['category'] for case in item['tests']['results']}, 'success-and-declared-error-required')
+    item['guest'] = observe(api, item, 'audit')
+    item['publicArtifacts'] = export(api, item)
 
 
 def retained_invocation(api, item):
@@ -176,6 +182,12 @@ def retained_invocation(api, item):
     require(result['passed'] and result['identity']['deployment'] == item['tests']['identity']['deployment'],
             'retained-workspace-invocation-redeployed-or-failed')
     return result
+
+
+def preserved_source(item):
+    require(all(digest(Path(item['project']) / name) == checksum for name, checksum in item['authoredSource'].items()),
+            'owned-purge-changed-authored-source')
+    return {'files': len(item['authoredSource']), 'unchanged': True}
 
 
 def run(config, output):
@@ -210,13 +222,15 @@ def run(config, output):
                 retained = item
                 continue
             require(item['user'] != retained['user'], 'separate-wsl-users-required')
+            item['guestIsolation'] = observe(api, item, 'audit', retained['user'])
+            item['reverseGuestIsolation'] = observe(api, retained, 'audit', item['user'])
             item['otherWorkspaceBeforeStop'] = api.call('status', '--workspace', retained['workspace'])
             item['shutdown'] = api.down(item['workspace'])
             item['otherWorkspaceAfterStop'] = api.call('status', '--workspace', retained['workspace'])
             require(item['otherWorkspaceAfterStop']['state'] == 'ready', 'other-workspace-stopped')
             item['otherWorkspaceInvocationAfterStop'] = retained_invocation(api, retained)
             item['purge'] = api.call('purge', '--workspace', item['workspace'], '--confirm-workspace', item['workspace'], timeout=120)
-            require(Path(item['project']).is_dir(), 'purge-removed-authored-source')
+            item['authoredSourceAfterPurge'] = preserved_source(item)
             write_json(output / 'observation.json', report)
         retained['shutdown'] = api.down(retained['workspace'])
         retained['restart'] = api.start(retained['workspace'])
@@ -224,8 +238,20 @@ def run(config, output):
         retained['invocationAfterRestart'] = retained_invocation(api, retained)
         retained['shutdownAfterRestart'] = api.down(retained['workspace'])
         retained['purge'] = api.call('purge', '--workspace', retained['workspace'], '--confirm-workspace', retained['workspace'], timeout=120)
-        require(Path(retained['project']).is_dir(), 'purge-removed-authored-source')
+        retained['authoredSourceAfterPurge'] = preserved_source(retained)
         report['distroPurge'] = api.call('wsl-purge', '--confirm-distribution', report['provision']['distribution'], timeout=180)
+        report['distroAfterPurge'] = api.call('wsl-status')
+        require(report['distroAfterPurge']['registered'] is False, 'portable-stage-still-has-owned-wsl-distribution')
+        for language, item in report['languages'].items():
+            item['portable'] = api.call('test', '--workspace', 'test-portable-' + language, '--environment', 'portable',
+                '--project', item['project'], '--artifacts', item['publicArtifacts']['directory'],
+                '--portable-bundle', report['frontend']['bundle'], '--controlled-development', timeout=330)
+            require(item['portable']['passed'] and item['portable']['environment'] == 'portable'
+                    and item['portable']['cleanup'] == 'owned-native-host-reaped', 'native-portable-qualification-failed')
+            common = lambda result: [(case['id'], case['status'], case['category'], case['payloadSha256'])
+                                     for case in result['results']]
+            require(common(item['portable']) == common(item['tests']), 'native-and-linux-common-outcomes-differ')
+        report['portableExecution'] = 'native-windows-after-owned-wsl-distribution-purge'
         report.update(passed=True, cleanup='owned-workspaces-and-distribution-purged-author-source-retained')
     except BaseException as error:
         report['failure'] = str(error) if isinstance(error, ProbeFailure) else type(error).__name__
