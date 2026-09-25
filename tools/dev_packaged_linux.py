@@ -12,14 +12,16 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from dev_packaged_bootstrap import authenticate, extract
     from dev_packaged_process import MAX_COMMANDS, ProbeFailure, digest, read_json, require, write_json
-    from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
+    from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source, negative_bundles
+    from dev_packaged_guest import observe
     from dev_packaged_watch import campaign as watch_campaign
     from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from dev_packaged_failures import node_campaign
 else:
     from .dev_packaged_bootstrap import authenticate, extract
     from .dev_packaged_process import MAX_COMMANDS, ProbeFailure, digest, read_json, require, write_json
-    from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
+    from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source, negative_bundles
+    from .dev_packaged_guest import observe
     from .dev_packaged_watch import campaign as watch_campaign
     from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from .dev_packaged_failures import node_campaign
@@ -53,7 +55,7 @@ def run(config, output):
         'environment': 'fresh-ubuntu-24.04-os-container-with-network-none', 'kernel': platform.release(),
         'osRelease': Path('/etc/os-release').read_text(), 'backends': {},
         'cleanup': 'not-started', 'limits': {'scheduleSeconds': 7200, 'commandsPerBackend': MAX_COMMANDS}}
-    api = None
+    apis = {}
     try:
         report['absentHostCompilers'] = [name for name in ('gcc', 'g++', 'clang', 'rustc', 'cargo', 'dotnet', 'javac', 'go', 'node')
                                        if shutil.which(name) is None]
@@ -69,9 +71,11 @@ def run(config, output):
             root.mkdir(mode=0o700)
             observation = report['backends'][kind] = {'commands': [], 'passed': False, 'backend': kind}
             api = Frontend(executable, root, observation)
+            apis[kind] = api
             backend = root / 'backend.json'
             write_json(backend, selected)
             observation['hostDoctor'] = api.call('doctor')
+            observation['bundleRejections'] = negative_bundles(api, config, target='linux-x86_64')
             observation['authenticatedFrontend'] = acquire(api, config, config['artifacts']['linux'], 'linux-x86_64')
             if kind == 'ssh':
                 reject_ssh_mismatch(api, selected)
@@ -91,6 +95,18 @@ def run(config, output):
                 observation['concurrentStart'] = api.call('up', '--workspace', item['workspace'],
                     rejection={'invalid-or-unavailable-input-inspect-doctor'}, timeout=30)
                 observation['afterConcurrentStart'] = retained_invocation(api, item)
+                other = report['backends']['linux']['application']
+                require(item['user'] != other['user'] and item['startup']['node'] != other['startup']['node'],
+                        'separate-live-linux-node-owners-required')
+                observation['otherOwnerHomeDenied'] = observe(api, item, 'audit', other['user'])
+                report['backends']['linux']['otherOwnerHomeDenied'] = observe(apis['linux'], other, 'audit', item['user'])
+                observation['otherNodeWhileBothReady'] = retained_invocation(apis['linux'], other)
+            write_json(output / 'observation.json', report)
+        # Both owners overlap before either is stopped. Retire SSH first and
+        # require the direct node's original deployment to remain callable.
+        for kind in ('ssh', 'linux'):
+            api, observation = apis[kind], report['backends'][kind]
+            item = observation['application']
             item['down'] = api.down(item['workspace'])
             item['repeatedDown'] = api.call('down', '--workspace', item['workspace'])
             item['retainedRestart'] = api.start(item['workspace'])
@@ -101,8 +117,12 @@ def run(config, output):
             item['repeatedPurge'] = api.call('purge', '--workspace', item['workspace'],
                 '--confirm-workspace', item['workspace'], timeout=120)
             item['preservedAuthorSource'] = preserved_source(item)
-            observation['watchApplication'] = watch_campaign(api, config, helper_sha, backend_config=backend)
-            observation['closedProfile'] = node_campaign(api, config, helper_sha, backend_config=backend)
+            if kind == 'ssh':
+                observation['otherNodeAfterPurge'] = retained_invocation(apis['linux'], report['backends']['linux']['application'])
+        for kind in ('linux', 'ssh'):
+            api, observation = apis[kind], report['backends'][kind]
+            observation['watchApplication'] = watch_campaign(api, config, helper_sha, backend_config=api.root / 'backend.json')
+            observation['closedProfile'] = node_campaign(api, config, helper_sha, backend_config=api.root / 'backend.json')
             observation['passed'] = True
             write_json(output / 'observation.json', report)
         report.update(passed=True, cleanup='both-owned-node-workspaces-purged-author-source-retained')
@@ -111,13 +131,15 @@ def run(config, output):
         report['cleanup'] = 'failed-attempt-private-container-state-retained'
         raise
     finally:
-        if api is not None and api.running:
-            report['cleanupAttempts'] = {}
+        for kind, api in apis.items():
+            if not api.running:
+                continue
+            cleanup = report.setdefault('cleanupAttempts', {}).setdefault(kind, {})
             for name in list(api.running):
                 try:
-                    report['cleanupAttempts'][name] = api.down(name)
+                    cleanup[name] = api.down(name)
                 except BaseException as error:
-                    report['cleanupAttempts'][name] = {'failure': type(error).__name__, 'remoteTerminationConfirmed': False}
+                    cleanup[name] = {'failure': type(error).__name__, 'remoteTerminationConfirmed': False}
         report['seconds'] = round(time.monotonic() - started, 3)
         write_json(output / 'observation.json', report)
     return report

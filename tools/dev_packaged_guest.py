@@ -37,7 +37,8 @@ if mode=='audit':
         'privateCredentialMode':stat.S_IMODE(info.st_mode),'credentialContentsRead':False,
         'sourceCredentialExcluded':True,'snapshotFiles':len(names)}
     if options:
-        other=options[0];assert re.fullmatch(r'lsfd-[a-f0-9]{12}',other) and other!=account.pw_name
+        other=options[0];assert (re.fullmatch(r'lsfd-[a-f0-9]{12}',other)
+            or {other,account.pw_name}=={'lsfqa','lsfremote'}) and other!=account.pw_name
         try:list((Path('/home')/other).iterdir())
         except PermissionError:result['otherWorkspaceHomeDenied']=True
         else:raise AssertionError('other workspace home readable')

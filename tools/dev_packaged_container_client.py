@@ -11,14 +11,14 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from dev_packaged_bootstrap import authenticate
     from dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
-    from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
+    from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source, negative_bundles
     from dev_packaged_watch import campaign as watch_campaign
     from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from dev_packaged_failures import node_campaign
 else:
     from .dev_packaged_bootstrap import authenticate
     from .dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
-    from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
+    from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source, negative_bundles
     from .dev_packaged_watch import campaign as watch_campaign
     from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from .dev_packaged_failures import node_campaign
@@ -53,6 +53,7 @@ def run():
         require(digest(executable) == pin['sha256'], 'generated-image-frontend-digest')
         api = Frontend(executable, output, report)
         report['doctor'] = api.call('doctor')
+        report['bundleRejections'] = negative_bundles(api, config, target='linux-x86_64')
         report['frontend'] = acquire(api, config, config['artifacts']['linux'], 'linux-x86_64')
         item = report['application'] = prepare(api, config, 'rust', 2, config['linuxHelperSha256'],
             backend_config=home / 'ssh-backend.json', project_parent=Path('/workspaces/project'))
