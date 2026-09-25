@@ -44,7 +44,8 @@ def stage_runtime(root: Path, supplied: Path) -> dict:
 
 
 def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path, *,
-        fixtures: dict | None = None, selection: list[str] | None = None) -> dict:
+        fixtures: dict | None = None, selection: list[str] | None = None,
+        retained_selection: list[str] | None = None) -> dict:
     require(os.name == "posix" and os.geteuid() != 0 and root.name.startswith("test-"),
             "explicit-unprivileged-test-workspace-required")
     require(not output.exists(), "new-source-node-report-required")
@@ -75,8 +76,10 @@ def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path,
         down = service.request(root, "down", timeout=20)
         require(down["state"] == "stopped" and down.get("reaped") is True and down.get("cleanShutdown") is True,
                 "source-node-clean-shutdown-required")
+        report["shutdownBeforeRestart"] = down
         service.start(root, supplied / "helper.pyz")
-        report["retained"] = node_scenarios.run(root, {"environment": "node", "selection": [report["tests"]["selection"][0]]},
+        report["retained"] = node_scenarios.run(root, {"environment": "node", "selection":
+                                                retained_selection or [report["tests"]["selection"][0]]},
                                                 deadline=deadline)
         require(report["retained"]["passed"] and state.load(root, "last-deployment.json") == selected,
                 "source-node-retained-invocation-must-not-redeploy")

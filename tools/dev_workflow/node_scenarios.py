@@ -88,9 +88,11 @@ def run(root, arguments, *, deadline: float | None = None):
             supported.add("random")
         if "http" in installed:
             supported.add("buffered-http-fixture")
+        if "blob" in installed:
+            supported.add("immutable-blob-fixture")
     fixture_profile = state.load(root, "test-profile.json") if installed is not None else {}
     fixtures = fixture_profile.get("fixtures")
-    initialized = node_fixtures.initialized(source, cases, fixtures, fixture_runtime)
+    initialized = node_fixtures.initialized(source, cases, fixtures, fixture_runtime, installed)
     report = scenarios.run({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": cases}, source, "node",
         arguments["selection"], invoke, {"source": build_receipt["source"], "artifacts": build_receipt["artifacts"],
         "deployment": deployed, "expectedRevision": revision, "hostAbi": descriptor["hostAbi"],

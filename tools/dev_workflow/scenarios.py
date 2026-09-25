@@ -12,7 +12,7 @@ from . import paths
 from .common import DevError, MAX_DOCUMENT, decode, digest, encode, identifier, integer, members, require
 
 OUTCOMES = {"success", "declared-error", "platform-failure", "transport-failure"}
-NODE_ONLY = {"authentication", "deployment", "restart", "pressure", "compiler-isolation", "protected-files", "native-cache", "running-cancellation"}
+NODE_ONLY = {"authentication", "deployment", "restart", "pressure", "compiler-isolation", "protected-files", "native-cache", "running-cancellation", "immutable-blob-fixture"}
 PORTABLE = {"context", "log", "clock", "random", "metrics", "buffered-http-fixture", "fresh-state", "fuel", "memory"}
 
 
