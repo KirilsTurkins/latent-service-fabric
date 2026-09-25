@@ -2,9 +2,17 @@ name: Developer tools
 
 on:
   push:
-    branches: ['feat/559-*', '!feat/559-preflight-ready']
+    # Qualification consumes separately approved candidates; conductor changes
+    # have their own contracts and must not rebuild six compiler distributions.
+    branches: ['feat/559-*', '!feat/559-preflight-ready', '!feat/559-packaged-qualification']
     paths-ignore:
       - .github/workflows/developer-platform-preflight.yml
+      - .github/workflows/developer-packaged-qualification.yml
+      - tools/dev_packaged_*.py
+      - tools/prepare_dev_packaged_probe.py
+      - tools/tests/test_dev_packaged_probe.py
+      - packaging/dev/qualification-trusted-root.jsonl
+      - packaging/dev/qualification.Dockerfile
       - tools/ci/commands.json
       - docs/**
   pull_request:

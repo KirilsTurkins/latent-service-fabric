@@ -22,34 +22,8 @@ if __package__ in {None, ""}:
 from tools.compare_dev_node_portable import compare
 from tools.dev_node_application_probe import run as run_node
 from tools.dev_workflow import build, paths, portable, project, snapshot, state
-from tools.dev_workflow.common import decode, digest, encode, require
-
-WORLD = """package examples:greeting@1.0.0;
-interface api {
-    record reading { monotonic: u64, wall: u64 }
-    clocks: func() -> reading;
-}
-world service {
-    import latent:clock/monotonic@0.1.0;
-    import latent:clock/wall@0.1.0;
-    export api;
-}
-"""
-COMPONENT = """#[cfg(target_arch = "wasm32")]
-mod component {
-    wit_bindgen::generate!({path: "wit", world: "service", generate_all});
-    struct Capsule;
-    impl exports::examples::greeting::api::Guest for Capsule {
-        fn clocks() -> exports::examples::greeting::api::Reading {
-            exports::examples::greeting::api::Reading {
-                monotonic: latent::clock::monotonic::now_nanos(),
-                wall: latent::clock::wall::now_unix_millis(),
-            }
-        }
-    }
-    export!(Capsule);
-}
-"""
+from tools.dev_workflow.common import decode, encode, require
+from tools.dev_clock_case_inputs import populate
 
 
 def author(payload: Path, destination: Path) -> dict:
@@ -59,36 +33,7 @@ def author(payload: Path, destination: Path) -> dict:
     project.scaffold(template, destination, manifest, entry["identity"])
     descriptor = copy.deepcopy(manifest["project"])
     require(descriptor["language"] == "rust", "rust-authoring-template-required")
-    app = destination / "app"
-    (app / "src/lib.rs").write_text(COMPONENT, encoding="utf-8", newline="\n")
-    (app / "wit/world.wit").write_text(WORLD, encoding="utf-8", newline="\n")
-    clocks = app / "wit/deps/clock"
-    clocks.mkdir(parents=True)
-    paths.write_new(clocks / "package.wit", paths.read(app, "vendor/lsf/wit/platform/clock/package.wit"))
-    cases = []
-    grants = ["latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0"]
-    for name, value in (("zero", "0"), ("maximum", "18446744073709551615")):
-        fixture = encode({"clock": {"monotonicNanos": value, "wallUnixMillis": value}})
-        paths.write_new(destination / f"tests/clock-{name}.json", fixture)
-        paths.write_new(destination / f"tests/clock-{name}-expected.json",
-                        json.dumps([{"monotonic": value, "wall": value}], separators=(",", ":")).encode())
-        for behavior in ("cold", "warm", "denied", "fresh"):
-            case = {"id": f"clock-{name}-{behavior}", "service": descriptor["service"],
-                "contract": "examples:greeting/api@1.0.0", "function": "clocks", "input": "tests/clock-input.json",
-                "mediaType": "application/vnd.latent.wit-values.v1+json", "timeoutMillis": 1000,
-                "nodeTimeoutMillis": 5000, "required": True, "requires": ["clock"],
-                "fixtures": [{"id": f"clock-{name}", "kind": "test-adapter", "identity": digest(fixture),
-                              "configuration": f"tests/clock-{name}.json"}],
-                "execution": {"grants": grants},
-                "expect": {"category": "success", "payload": f"tests/clock-{name}-expected.json"}}
-            if behavior == "denied":
-                case["execution"] = {"grants": grants, "deniedCapabilities": grants}
-                case["expect"] = {"category": "platform-failure", "platformCode": "guest-trap"}
-            cases.append(case)
-    paths.write_new(destination / "tests/clock-input.json", b"[]")
-    (destination / "tests/scenarios.json").write_bytes(encode({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": cases}))
-    (destination / "latent.project.json").write_bytes(encode(descriptor))
-    return descriptor
+    return populate(destination, descriptor)
 
 
 def run(payload: Path, supplied: Path, portable_host: Path, output: Path) -> dict:
