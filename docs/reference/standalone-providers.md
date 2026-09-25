@@ -5,8 +5,9 @@ local-blob providers in the standalone node. Explicit `clockMonotonic`, `clockWa
 and `random` installations also enable the maintained activation-clock and
 OS-entropy providers. Explicit `secrets` installs the protected local guest-secret
 provider. `metrics` shares the node's telemetry exporter, and `localService`
-selects a bounded local caller/callee binding. Streaming HTTP, S3 and events have
-no installation entry here. The
+selects a bounded local caller/callee binding. `events` installs the maintained
+TLS NATS immediate publisher. Streaming HTTP and S3 have no installation entry
+here. The
 [configuration schema](../../schemas/node-providers.schema.json) describes the
 closed input. This example is the provider section of a protected node file:
 
@@ -111,6 +112,23 @@ per-capsule worker, listener, VM or persistent guest instance is installed.
 Configure a nonzero `maximumChildCalls` and enough cell capacity for parent and
 child; delegation remains bounded by the existing depth, descendant and parent
 budget rules. Startup does not publish or deploy either component.
+
+An `events` entry contains `identity`, `configuration`, `credentialDirectory`,
+`credentialReference` and `credentialFile`. Configuration uses the maintained
+`latent_nats::NatsConfig`: one explicit IPv4 peer and TLS server name, approved
+roots, one to sixteen exact tenant/topic/subject/stream mappings, a stable
+idempotency namespace and finite payload/timeout limits. Every mapping must
+belong to the configured tenant. Nonpublic peers require explicit approval;
+wildcards, discovered servers and ambient credentials are unavailable.
+
+The protected local-secret store binds token authentication to the exact tenant,
+provider ID, TLS server name and port. Neither the token nor its value digest
+enters the provider descriptor. Bind `latent:events/publisher@0.2.0` and the
+actual `nats-jetstream-publish-v1` descriptor, then grant only approved logical
+topics. Installation grants no publish authority. A missing or invalid reply
+after a possible publish is `uncertain` and is never automatically replayed.
+The existing shared provider pool owns connections and work; shutdown closes
+the credential generation and checks that live resource counters are zero.
 
 The node's bounded `ready` record includes actual installed descriptors:
 `id`, `tenant`, `service`, `capability`, `profile`, `configurationDigest`, and

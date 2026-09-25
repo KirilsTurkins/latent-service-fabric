@@ -16,6 +16,9 @@ pub use metrics::MetricsInstallation;
 #[path = "providers/local_service.rs"]
 mod local_service;
 pub use local_service::LocalServiceInstallation;
+#[path = "providers/events.rs"]
+mod events;
+pub use events::EventInstallation;
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -31,6 +34,8 @@ pub struct ConfiguredProviders {
     pub metrics: Option<MetricsInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub local_service: Option<LocalServiceInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub events: Option<EventInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub clock_monotonic: Option<ScalarInstallation>,
     #[serde(default, deserialize_with = "present")]
@@ -120,6 +125,7 @@ pub(super) fn derive(
             && providers.secrets.is_none()
             && providers.metrics.is_none()
             && providers.local_service.is_none()
+            && providers.events.is_none()
             && providers.clock_monotonic.is_none()
             && providers.clock_wall.is_none()
             && providers.random.is_none())
@@ -190,6 +196,9 @@ pub(super) fn derive(
     if let Some(local) = &providers.local_service {
         local.validate_installation(providers)?;
     }
+    if let Some(events) = &providers.events {
+        events.validate_installation(providers)?;
+    }
     for scalar in [
         &providers.clock_monotonic,
         &providers.clock_wall,
@@ -238,6 +247,7 @@ impl ConfiguredProviders {
                 "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),
                 "latent:telemetry/custom@0.1.0" => self.metrics.as_ref().map(|v| &v.identity),
                 "latent:service/invoke@0.1.0" => self.local_service.as_ref().map(|v| &v.identity),
+                "latent:events/publisher@0.2.0" => self.events.as_ref().map(|v| &v.identity),
                 "latent:clock/monotonic@0.1.0" => self.clock_monotonic.as_ref().map(|v| &v.identity),
                 "latent:clock/wall@0.1.0" => self.clock_wall.as_ref().map(|v| &v.identity),
                 "latent:random/random@0.1.0" => self.random.as_ref().map(|v| &v.identity),
@@ -277,6 +287,9 @@ impl ConfiguredProviders {
 }
 
 pub(super) fn anchor(config: &mut ConfiguredProviders, parent: &Path) -> Result<(), PlatformError> {
+    if let Some(events) = &mut config.events {
+        events.anchor(parent)?;
+    }
     if let Some(secrets) = &mut config.secrets {
         secrets.anchor(parent)?;
     }

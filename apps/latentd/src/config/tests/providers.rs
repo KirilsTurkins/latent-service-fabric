@@ -21,6 +21,7 @@ fn provider_input_rejects_null_unknown_and_raw_secret_fields() {
         ("/providers/metrics", Value::Null),
         ("/providers/localService", Value::Null),
         ("/providers/http", Value::Null),
+        ("/providers/events", Value::Null),
         ("/providers/clockMonotonic", Value::Null),
         ("/providers/clockWall", Value::Null),
         ("/providers/random", Value::Null),

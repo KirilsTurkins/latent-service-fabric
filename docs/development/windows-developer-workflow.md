@@ -385,6 +385,31 @@ record request counts before and after execution. Comparisons require identical
 public fixture data and completed exchanges on both hosts; they do not equate a
 controlled loopback peer with an external-service qualification.
 
+An event fixture uses the same explicit setup command with a file such as
+`{"events":{"port":43128,"exchanges":[{"topic":"dev.example","payload":"b2s=","mode":"ack"}]}}`.
+Declare `controlled-peer`, bind its configuration digest and require
+`immediate-event-fixture`. The capsule must declare outbound operations and
+grant `latent:events/publisher@0.2.0`. The production NATS publisher connects
+through TLS to an owned loopback protocol peer. This fixture does not establish
+live JetStream broker or consumer-processing qualification.
+
+The pinned bundle's fixture utility generates a private TLS key and certificate;
+setup generates a separate private token. Both remain in the owned workspace,
+are checked on retained restart and are removed by explicit owned purge.
+No ambient OpenSSL executable, broker, network discovery or user credential is
+needed. Public receipts exclude private key/token bytes and their value digests.
+
+Select at most sixteen exact topic/payload exchanges, with modes `ack`,
+`duplicate`, `drop-ack`, `wrong-stream`, `malformed-ack` or `no-responders`.
+Payloads are canonical base64, at most 32 KiB each; the fixture is at most
+192 KiB. Peer ownership is bounded to four simultaneous connections, 128 total
+connections and publishes, 128 commands per connection, two seconds per partial
+frame and 900 seconds per start. TLS and authentication precede publication.
+The supervisor owns and closes every socket. The guest's production provider
+returns `uncertain` after a lost or invalid acknowledgement and never resends it.
+Before/after per-topic receive counts expose accidental duplicate sends.
+Portable hosts reject required event fixtures before running selected cases.
+
 A blob fixture selects `{"blob":{"namespace":"dev-blobs"}}` through the same
 explicit `prepare-test` command. Declare its dependency as `real-provider`, bind
 the configuration digest and require `immutable-blob-fixture`. This installs the
@@ -831,6 +856,22 @@ status/cancellation integration; both that run and the final source identities
 are recorded. These observations do not qualify cross-workspace access, the
 portable host, authenticated final candidates or a clean Windows host.
 
+The [event source observation](./event-fixture-source-observation.json) records
+sixteen authored scenarios and one retained-restart invocation through the
+production NATS provider and an authenticated TLS protocol peer. Cases cover
+cold/warm success, duplicate receipts, unknown/invalid topics, invalid events,
+policy denial, lost acknowledgement, wrong stream, malformed acknowledgement,
+no responders and recovery with a new permitted event. Each uncertain case
+reached the peer exactly once. Both shutdowns closed every peer socket and
+released provider work and secret generations. The private workspace was purged.
+
+Two source-tool preparation failures were rejected before compilation or node
+startup and remain recorded. The final receipt identifies the actual node,
+helper, signer and tool inventory. Run `tools/dev_event_fixture_probe.py` for
+this contributor check; the existing Rust CI owner retains its receipts. This
+does not qualify a live broker, native portable events, final authenticated
+candidates or a clean Windows host.
+
 The focused contributor command is `python tools/dev_local_service_fixture_probe.py
 --payload TOOL_PREFIX --source-node SOURCE_NODE --output NEW_DIRECTORY` as the
 Linux test owner. The existing Rust developer job executes the same command and
@@ -842,7 +883,7 @@ retains its public receipts.
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
 | #564 | Complete malformed/admission failure, rapid edits, in-flight revision, revocation and expired-receipt cases; repeat the observed source watch/recovery schedule with final authenticated packages. |
-| #565 | Complete bounded event fixtures and the remaining failure/isolation matrix; qualify the integrated fixtures and scenarios with all six languages. |
+| #565 | Complete the remaining failure/isolation matrix; qualify the integrated fixtures and scenarios with all six languages. |
 | #566 | Verified final native distribution and the remaining provider/failure differential; all six languages have source tutorial comparisons, and Rust has shared node/native clock evidence. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
 | #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
@@ -856,7 +897,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate

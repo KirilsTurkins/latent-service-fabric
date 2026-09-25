@@ -32,6 +32,7 @@ latent-executor = { path = "../../crates/latent-executor" }
 latent-ingress = { path = "../../crates/latent-ingress" }
 latent-http = { path = "../../crates/latent-http" }
 latent-manifest = { path = "../../crates/latent-manifest" }
+latent-nats = { path = "../../crates/latent-nats" }
 latent-node = { path = "../../crates/latent-node" }
 latent-protected-files = { path = "../../crates/latent-protected-files" }
 latent-policy = { path = "../../crates/latent-policy" }

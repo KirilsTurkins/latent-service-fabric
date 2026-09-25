@@ -12,10 +12,10 @@ def selection(root, descriptor, publication, execution, installed, client, journ
     operators = [item for item in node["credentials"] if item["tenant"] == descriptor["tenant"] and item["role"] == "operator"]
     require(len(operators) == 1, "test-requires-exact-scoped-operator")
     from tools.guest_runtime_profiles import RUNTIME
-    from . import blob_fixture, http_fixture, local_service_fixture, metric_fixture, secret_fixture
+    from . import blob_fixture, event_fixture, http_fixture, local_service_fixture, metric_fixture, secret_fixture
     profiles = {**RUNTIME, "http": http_fixture.PROVIDER, "blob": blob_fixture.PROVIDER,
                 "secrets": secret_fixture.PROVIDER, "metrics": metric_fixture.PROVIDER,
-                "localService": local_service_fixture.PROVIDER}
+                "localService": local_service_fixture.PROVIDER, "events": event_fixture.PROVIDER}
     grants = []
     for capability in sorted(execution["grants"]):
         name, entry = by_capability[capability]
@@ -41,6 +41,11 @@ def selection(root, descriptor, publication, execution, installed, client, journ
             fixture = blob_fixture.validate(state.load(root, "test-profile.json")["fixtures"]["blob"])
             policy["rules"][0].update(resources={"kind": "blob", "namespaces": [fixture["namespace"]]},
                 ceiling={"operations": 32, "inputBytes": 65536, "outputBytes": 65536, "wallTimeMillis": 5000})
+        if kind == "events":
+            fixture = event_fixture.validate(state.load(root, "test-profile.json")["fixtures"]["events"])
+            event_fixture.material(root, fixture)
+            policy["rules"][0].update(resources={"kind": "events", "subjects": [entry["topic"] for entry in fixture["exchanges"]]},
+                ceiling={"operations": 8, "inputBytes": 65536, "outputBytes": 65536, "wallTimeMillis": 5000})
         if kind == "secrets":
             fixture = state.load(root, "test-profile.json")["fixtures"]["secrets"]
             secret_fixture.values(root, fixture)

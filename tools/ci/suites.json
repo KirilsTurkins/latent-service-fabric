@@ -3416,14 +3416,15 @@
       "boundary": "runtime",
       "expectedCases": [
         "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
-        "authoring::policy::tests::demo_publisher_and_builder_proof_age_ceilings_remain_independent"
+        "authoring::policy::tests::demo_publisher_and_builder_proof_age_ceilings_remain_independent",
+        "fixture_tls::tests::fixture_tls_is_fresh_private_and_never_replaces_an_existing_identity"
       ],
       "expectedIgnored": [],
       "id": "latent-policy.example.capsule-authoring",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 2,
+      "minimumCases": 3,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -7892,7 +7893,10 @@
         "standalone::start::tests::telemetry::changed_exporter_limits_reject_composition_and_join_the_bootstrap_owner",
         "config::tests::local_service::local_dispatcher_preserves_exact_provider_target_and_isolated_mode",
         "config::tests::local_service::local_dispatcher_rejects_foreign_scope_self_calls_and_invalid_targets",
-        "config::tests::local_service::local_dispatcher_protected_configuration_rejects_ambiguous_provider_identity"
+        "config::tests::local_service::local_dispatcher_protected_configuration_rejects_ambiguous_provider_identity",
+        "config::tests::events::event_input_rejects_inline_secrets_ambient_auth_and_unknown_fields",
+        "config::tests::events::event_binding_requires_exact_tenant_and_provider_service",
+        "config::tests::events::event_protected_configuration_rejects_foreign_topics_paths_and_colliding_identity"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -7955,7 +7959,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 232,
+      "minimumCases": 235,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
