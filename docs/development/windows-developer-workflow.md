@@ -906,12 +906,35 @@ Run `tools/dev_workspace_isolation_probe.py` with the same payload, source-node
 and new-output arguments for this maintained CI check. It does not qualify
 separate WSL users, owned purge or final authenticated clean-host installation.
 
+The [watch failure observation](./watch-failure-source-observation.json) records
+the real controller handling three committed revisions. An invocation selected
+on A remained running after B committed and returned a cancellation receipt
+pinned to A; subsequent calls returned B with fresh guest state. B's exact build
+was prepared before A started and revalidated from the source/tool/recipe cache
+when the edit was observed. Compiler failure and malformed component output left
+B callable and correctly identified it as the current deployment.
+
+Two rapid edits during a deliberately slow owned recipe cancelled and reaped
+only that original build and its child. The watcher deployed the latest edit,
+then exposed an intentionally failed focused test while keeping that new
+deployment live. Four retained build attempts stayed within the declared bound.
+An explicit public-API revocation of A followed by one generation-checked restore
+attempt returned `permission-denied`; the current deployment remained callable.
+The node and recipe/Invoke processes were reaped. Private state and the first
+run's incorrect expectation of a shortened cleanup reason remain retained.
+
+The Rust CI job runs `tools/dev_watch_fixture_probe.py` with the same payload,
+source-node and new-output arguments. These are source observations through the
+direct Linux helper, with explicitly trusted local admission. They still require
+repetition through final authenticated Windows/WSL packages and do not claim a
+clean host, VM-disconnect recovery or rendered newcomer/editor review.
+
 | Child | Remaining Windows acceptance |
 | --- | --- |
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
-| #564 | Complete malformed/admission failure, rapid edits, in-flight revision and revocation cases; repeat the observed source watch/recovery and actual expired-receipt schedules with final authenticated packages. |
+| #564 | Repeat the observed source watch failures, rapid edits, in-flight revision, revocation, recovery and actual expired-receipt schedules with final authenticated Windows/WSL packages; complete VM-disconnect recovery. |
 | #565 | Complete the remaining failure/isolation matrix; qualify the integrated fixtures and scenarios with all six languages. |
 | #566 | Verified final native distribution and the remaining provider/failure differential; all six languages have source tutorial comparisons, and Rust has shared node/native clock evidence. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |

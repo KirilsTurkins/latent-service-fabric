@@ -1,0 +1,1094 @@
+{
+  "schemaVersion": "latent.dev.watch-source-observation.v1",
+  "scope": "windows-epic-supporting-linux-source-observation",
+  "observedUtc": "2026-09-25",
+  "sourceParent": "c0547eac90aea86d3adbae4ef31f1ce3a3924b7b",
+  "sourceDirty": true,
+  "probeSources": {
+    "tools/dev_watch_fixture_probe.py": "sha256:ceed3aa9f423c043348545257f71438da463056480546608fea59605f41eeb09",
+    "tools/dev_watch_fixture_inputs.py": "sha256:f3b3cda6cef1e5e5e8247bdb1d0461ef5316dbe2fd5fb44c1adea5b98201ef30",
+    "tools/dev_watch_inflight.py": "sha256:350c97dcf1f1c3c749c510f614474cd6a386c00afccf77aca784dd878468f621",
+    "tools/dev_watch_revocation.py": "sha256:48ab983bfe03bc5c9043085475fcc5e7b6d1d5c72fe960572ef9209558afafdb"
+  },
+  "publisherAuthenticated": false,
+  "cleanHost": false,
+  "qualificationComplete": false,
+  "limitations": [
+    "Direct Linux helper transport under one unprivileged owner; final Windows/WSL clean-host qualification remains required.",
+    "Revision B was compiled before A started; the watch edit reused and revalidated only its exact source/tool/recipe cache entry.",
+    "The slow-build trigger is an owned recipe child before the real Rust compiler; no compiler or node result is mocked.",
+    "Revoked-publication restore uses an explicitly recorded public CLI operation; automatic rollback is not offered.",
+    "Private workspaces remain retained; no owned purge is claimed."
+  ],
+  "runtime": {
+    "binaries": {
+      "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+      "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "latentd": "sha256:cb5ba1774c2bd089f0cd452aaa574feffc6c61cc6e7adaf0cbc6d3796febf649"
+    },
+    "buildProfile": {
+      "compiledBinary": "latentd",
+      "debugInfo": 0,
+      "features": [
+        "latentd/development-test-node"
+      ],
+      "incremental": false,
+      "name": "dev",
+      "retainedOperatorAndAotSource": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30"
+        },
+        "path": "/build/dev559-clock-kit2"
+      }
+    },
+    "controllerSourceCommit": "8b2cf843f287c460cf09777b9a1139c3ff49245c",
+    "controllerSourceDirty": true,
+    "controllerSources": {
+      "tools/dev_workflow/event_fixture.py": "sha256:09fb190b45a6644881fc6b96524fbcef86e41deb3da3e9d54fe8ac4a5290145f",
+      "tools/dev_workflow/event_peer.py": "sha256:d03b3af10af310a1fa98e891ade9fe34f1d0b5ee3106421c0275bba85c2366e4",
+      "tools/dev_workflow/service.py": "sha256:5d2c85e1658136a9a9655ab6363ed5bf217d44334789188a2f1836a657b9f61a"
+    },
+    "engine": {
+      "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "wasmtimeVersion": "47.0.4"
+    },
+    "fixtureProbeSha256": "sha256:f64f6c0cb748c3f8d39b519938b5ad6301bb3978a4e11ed1f45ddecd0c620950",
+    "fixtureTools": {
+      "inventory": "sha256:2bf2d280cb6ad8349e21c3b562de49f275a19a418273fd102578470230a04f67",
+      "originalInventory": "sha256:bf05bf4f9ad5247045274603a6d2378a5f4766c57449babae3455371cdb9cd02",
+      "path": "/build/dev559-event-tools2/payload",
+      "signer": "sha256:8a19b2937ad3128a99e4f01eba4282ab4eb7598deeca75b7888cb5749253762f",
+      "signerSource": {
+        "crates/latent-policy/examples/capsule_authoring.rs": "sha256:dda65679ac86ed297d6ecd206a59312ecb61e0737fe0135d5902484667db6844",
+        "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs": "sha256:700359fb9391632991892c5a517cdb9f8c736a5ce098757ddcca0647aa5a89e9"
+      }
+    },
+    "helperSha256": "sha256:ecba30258af023453d88b3b6bf74a4b99cea2618957a8e8811fd8e1cfdf201bc",
+    "nodeSources": {
+      "apps/latentd/src/config/providers.rs": "sha256:efa50c5b60dfbabf367a6d9e5bf7ca09f9be0d5f3a64dc6ec55a90ccda343c25",
+      "apps/latentd/src/config/providers/events.rs": "sha256:dd7a24bafe11e3a4eb2370ed7e1642a8f0228fa12176c904720b63ce7bcf5824",
+      "apps/latentd/src/standalone/providers/events.rs": "sha256:f5c3bd8341f3be6f0e3925c8399e6e6c2500eacfb89c69ac8f01fec37c3e0a09",
+      "apps/latentd/src/standalone/providers/runtime.rs": "sha256:5a838ba73aae8104794707b239efd194de47cf4a1e132a8ac4d692caf953fcc7"
+    },
+    "publisherAuthenticated": false,
+    "purpose": "source-application-node-tests",
+    "sourceCommit": "8b2cf843f287c460cf09777b9a1139c3ff49245c",
+    "sourceDirty": true,
+    "version": "0.1.0-alpha.4"
+  },
+  "guestToolInventorySha256": "sha256:04703baf788ffb1aa548e18bb4413a26bfa9f27619af2dbefca93f1ca4570154",
+  "passed": true,
+  "seconds": 181.034,
+  "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained",
+  "deployments": [
+    {
+      "attempt": "aff1dd92f6c67b3bc3844ad4cd70f220",
+      "buildKey": "sha256:f4269290c7112df6dca2bbce7493dcba8000b540230a5bd03832769e54c86fb8",
+      "componentDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+      "deployment": "my-greeting",
+      "generation": "1",
+      "operation": "dev-87bf4b4fe81b582697d38dc2587a26e8",
+      "publication": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+      "publicationInput": "sha256:69b4a0132653a6144be21776132943fdaee8b14553bd63f33726bf18fcb34480",
+      "source": "sha256:6054b48685354248d195207b7a0491aacbfb6a752421fe95f8f4eb46c5fef41f"
+    },
+    {
+      "attempt": "b3b954bee38c2ecb2c8a449bd4aea920",
+      "buildKey": "sha256:c83c0eff97cf847b3346132a155e2b8dacdb4cdbb11423496a9089364d7fbfc0",
+      "componentDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+      "deployment": "my-greeting",
+      "generation": "2",
+      "operation": "dev-777ec5a74f388c034ffa8db15190a4a9",
+      "publication": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+      "publicationInput": "sha256:c08406b52a46e361c66c65664c9ca3376bd29811dba2f231c0a977c988795862",
+      "source": "sha256:a085cb69b56bbacabc1f626a5e0288482dd13a1babe5d9f4865a8ddf8201bbcc"
+    },
+    {
+      "attempt": "26b429acc6f35858c00fb3f5cbc20582",
+      "buildKey": "sha256:30f423e34edd2541c1f93ac36dd8229663768a7cd23b18281128197084741044",
+      "componentDigest": "sha256:59a9c0c2a99f1cf017ca857af0c03ac320ee1a7b82271c6a7c68f65ee7e844c5",
+      "deployment": "my-greeting",
+      "generation": "3",
+      "operation": "dev-55836e81067bb46dea6a96c66da03b44",
+      "publication": "publication:sha256:6289f6784405c74c6834d49bd9a0e1c3a630320af6c0d33f6cb8a8e87c9d5e2c",
+      "publicationInput": "sha256:71da56ad5c4a6ed2ee55cac70a0d32ab08bfeff6e14001f8033ceacfd71296f9",
+      "source": "sha256:fa484ef98a4521f9c516f50c9203639e99828f3f02fda80adb8cdea8a8a4e905"
+    }
+  ],
+  "retention": {
+    "attempts": 4,
+    "maximumAttempts": 4,
+    "ownedBytes": 2076369133
+  },
+  "observations": {
+    "afterRevokedRestore": {
+      "category": "success",
+      "command": "invoke",
+      "data": {
+        "activationId": "dev-c6261bfbf47f24a55c13a4e863267ebe",
+        "committedStateVersion": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "32",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1889"
+        },
+        "effectIds": [],
+        "metadata": {
+          "cell-disposition": "released",
+          "cell-id": "lsf-e79705aa6bd0f812:phase0:standard:00000000"
+        },
+        "payload": {
+          "byteLength": "5",
+          "data": "WzUwMV0=",
+          "encoding": "base64",
+          "mediaType": "application/vnd.latent.wit-values.v1+json"
+        },
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:6289f6784405c74c6834d49bd9a0e1c3a630320af6c0d33f6cb8a8e87c9d5e2c",
+          "releaseDigest": "sha256:59a9c0c2a99f1cf017ca857af0c03ac320ee1a7b82271c6a7c68f65ee7e844c5",
+          "revisionId": "revision-v1:sha256:93e682a12e00b4f4b8c8a87008600b2f16f5ceb8afe98402e548dedd0fa871bb",
+          "routeGeneration": "3"
+        }
+      },
+      "error": null,
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    "bValue": {
+      "category": "success",
+      "command": "invoke",
+      "data": {
+        "activationId": "dev-cf1f42ba13fa87fa308a042cc50ed2f8",
+        "committedStateVersion": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "32",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1658"
+        },
+        "effectIds": [],
+        "metadata": {
+          "cell-disposition": "released",
+          "cell-id": "lsf-e79705aa6bd0f812:phase0:standard:00000000"
+        },
+        "payload": {
+          "byteLength": "5",
+          "data": "WzIwMV0=",
+          "encoding": "base64",
+          "mediaType": "application/vnd.latent.wit-values.v1+json"
+        },
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+          "releaseDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+          "revisionId": "revision-v1:sha256:4c83d64dbd365ab867e3814946d1a0efae50ed9c4103a9653ea5f80380b9c7d1",
+          "routeGeneration": "2"
+        }
+      },
+      "error": null,
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    "compiler-error": {
+      "callableB": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "dev-9316cff0a34730893c62378aae211628",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "32",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1114112",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "1450"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "lsf-e79705aa6bd0f812:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "5",
+            "data": "WzIwMV0=",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+            "releaseDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+            "revisionId": "revision-v1:sha256:4c83d64dbd365ab867e3814946d1a0efae50ed9c4103a9653ea5f80380b9c7d1",
+            "routeGeneration": "2"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "event": {
+        "code": "guest-build-failed-last-deployment-retained",
+        "currentDeployment": {
+          "attempt": "b3b954bee38c2ecb2c8a449bd4aea920",
+          "buildKey": "sha256:c83c0eff97cf847b3346132a155e2b8dacdb4cdbb11423496a9089364d7fbfc0",
+          "componentDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+          "deployment": "my-greeting",
+          "generation": "2",
+          "operation": "dev-777ec5a74f388c034ffa8db15190a4a9",
+          "publication": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+          "publicationInput": "sha256:c08406b52a46e361c66c65664c9ca3376bd29811dba2f231c0a977c988795862",
+          "source": "sha256:a085cb69b56bbacabc1f626a5e0288482dd13a1babe5d9f4865a8ddf8201bbcc"
+        },
+        "diagnostics": [
+          {
+            "code": "",
+            "column": 6,
+            "hostPath": "/build/dev559-node-homes/wa3/host-watch-8ff999/Author spaces-\u00fc/app/src/lib.rs",
+            "line": 19,
+            "message": "expected one of `!` or `::`, found `is`",
+            "path": "app/src/lib.rs",
+            "severity": "error"
+          }
+        ],
+        "event": "edit-failed",
+        "phase": "build",
+        "rollbackPerformed": false,
+        "source": "sha256:60dc1af294d6702b25e207230ac99be8636de0f8b268f0366584af925e40d638",
+        "uncertain": false,
+        "workspace": "test-watch-1d0023"
+      }
+    },
+    "inflight": {
+      "activationId": "qualification-151ee44b6fe79d22fa6fd751be1670bc",
+      "afterSwitch": {
+        "category": "success",
+        "command": "activation get",
+        "data": {
+          "activationId": "qualification-151ee44b6fe79d22fa6fd751be1670bc",
+          "finalConsumption": null,
+          "lastUpdatedUnixMillis": "1790320972194",
+          "metadata": {
+            "release": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+            "revision": "revision-v1:sha256:8a65608039117ac9a83e5910abd3013a979b00a6182aecb0c2746bf5fbb1b1bf",
+            "route-generation": "1"
+          },
+          "phase": "running",
+          "terminalAtUnixMillis": null,
+          "terminalOutcome": null,
+          "terminalState": null
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "beforeEdit": {
+        "category": "success",
+        "command": "activation get",
+        "data": {
+          "activationId": "qualification-151ee44b6fe79d22fa6fd751be1670bc",
+          "finalConsumption": null,
+          "lastUpdatedUnixMillis": "1790320972194",
+          "metadata": {
+            "release": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+            "revision": "revision-v1:sha256:8a65608039117ac9a83e5910abd3013a979b00a6182aecb0c2746bf5fbb1b1bf",
+            "route-generation": "1"
+          },
+          "phase": "running",
+          "terminalAtUnixMillis": null,
+          "terminalOutcome": null,
+          "terminalState": null
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "cancelCalls": 1,
+      "cancellation": {
+        "category": "success",
+        "command": "activation cancel",
+        "data": {
+          "activationId": "qualification-151ee44b6fe79d22fa6fd751be1670bc",
+          "disposition": "accepted",
+          "terminalState": null
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "invokeCalls": 1,
+      "oldRevisionRetained": true,
+      "result": {
+        "category": "platform-failure",
+        "command": "invoke",
+        "data": {
+          "activationId": "qualification-151ee44b6fe79d22fa6fd751be1670bc",
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "1884271674",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1114112",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "5734254"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+            "releaseDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+            "revisionId": "revision-v1:sha256:8a65608039117ac9a83e5910abd3013a979b00a6182aecb0c2746bf5fbb1b1bf",
+            "routeGeneration": "1"
+          },
+          "terminalState": "cancelled"
+        },
+        "error": {
+          "code": "cancelled",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      }
+    },
+    "malformed": {
+      "callableB": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "dev-4e987a29b670d61735ff5d7b5a0e7ab3",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "32",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1114112",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "1600"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "lsf-e79705aa6bd0f812:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "5",
+            "data": "WzIwMV0=",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+            "releaseDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+            "revisionId": "revision-v1:sha256:4c83d64dbd365ab867e3814946d1a0efae50ed9c4103a9653ea5f80380b9c7d1",
+            "routeGeneration": "2"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "event": {
+        "code": "build-output-is-not-component-model",
+        "currentDeployment": {
+          "attempt": "b3b954bee38c2ecb2c8a449bd4aea920",
+          "buildKey": "sha256:c83c0eff97cf847b3346132a155e2b8dacdb4cdbb11423496a9089364d7fbfc0",
+          "componentDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+          "deployment": "my-greeting",
+          "generation": "2",
+          "operation": "dev-777ec5a74f388c034ffa8db15190a4a9",
+          "publication": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+          "publicationInput": "sha256:c08406b52a46e361c66c65664c9ca3376bd29811dba2f231c0a977c988795862",
+          "source": "sha256:a085cb69b56bbacabc1f626a5e0288482dd13a1babe5d9f4865a8ddf8201bbcc"
+        },
+        "diagnostics": [],
+        "event": "edit-failed",
+        "phase": "build",
+        "rollbackPerformed": false,
+        "source": "sha256:6884df49085bc03644682aa865238538e0d0b99263761321719af6c4673ac5c8",
+        "uncertain": false,
+        "workspace": "test-watch-1d0023"
+      }
+    },
+    "postDeployFailureStillLive": {
+      "category": "success",
+      "command": "invoke",
+      "data": {
+        "activationId": "dev-dd117dee4e9592862da322a90c74dcbc",
+        "committedStateVersion": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "32",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1680"
+        },
+        "effectIds": [],
+        "metadata": {
+          "cell-disposition": "released",
+          "cell-id": "lsf-e79705aa6bd0f812:phase0:standard:00000000"
+        },
+        "payload": {
+          "byteLength": "5",
+          "data": "WzUwMV0=",
+          "encoding": "base64",
+          "mediaType": "application/vnd.latent.wit-values.v1+json"
+        },
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:6289f6784405c74c6834d49bd9a0e1c3a630320af6c0d33f6cb8a8e87c9d5e2c",
+          "releaseDigest": "sha256:59a9c0c2a99f1cf017ca857af0c03ac320ee1a7b82271c6a7c68f65ee7e844c5",
+          "revisionId": "revision-v1:sha256:93e682a12e00b4f4b8c8a87008600b2f16f5ceb8afe98402e548dedd0fa871bb",
+          "routeGeneration": "3"
+        }
+      },
+      "error": null,
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    "rapidEdits": {
+      "build": {
+        "attempt": "20928a1db08e3be6134a06f16523d51c",
+        "guestInstance": {
+          "bootId": "c4c2587f-fb3a-41f4-b31b-2607df940192",
+          "initStartTicks": "213392",
+          "pidNamespace": "4026532304"
+        },
+        "id": "1df395405f1369531f74faf2a09ab773",
+        "reason": null,
+        "state": "running"
+      },
+      "childPid": 4504,
+      "cleanup": {
+        "attempt": "20928a1db08e3be6134a06f16523d51c",
+        "guestInstance": {
+          "bootId": "c4c2587f-fb3a-41f4-b31b-2607df940192",
+          "initStartTicks": "213392",
+          "pidNamespace": "4026532304"
+        },
+        "id": "1df395405f1369531f74faf2a09ab773",
+        "reason": "guest-build-superseded",
+        "state": "reaped"
+      },
+      "delay": "owned-recipe-child-before-rust-compiler",
+      "intermediate": "sha256:acecb8fcb365765bb655395397292ab17f5f8037b80c681114b6d84034b550aa",
+      "lastWorkingValue": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "dev-4d369ce44f78459bc3de8fae879a8aef",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "32",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1114112",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "1709"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "lsf-e79705aa6bd0f812:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "5",
+            "data": "WzIwMV0=",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+            "releaseDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+            "revisionId": "revision-v1:sha256:4c83d64dbd365ab867e3814946d1a0efae50ed9c4103a9653ea5f80380b9c7d1",
+            "routeGeneration": "2"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "latest": "sha256:fa484ef98a4521f9c516f50c9203639e99828f3f02fda80adb8cdea8a8a4e905",
+      "maximumDelaySeconds": 30
+    },
+    "revokedRestore": {
+      "controllerDeploymentUnchanged": true,
+      "original": {
+        "category": "success",
+        "command": "release lifecycle",
+        "data": {
+          "status": {
+            "eligibility": "RELEASE_LIVE_ELIGIBILITY_ELIGIBLE",
+            "eligibilityReason": "RELEASE_ELIGIBILITY_REASON_LOCAL_ELIGIBLE",
+            "record": {
+              "actor": {
+                "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+                "subject": "installation-operator"
+              },
+              "componentDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+              "evidenceRevisionDigest": null,
+              "generation": "1",
+              "observedAtUnixMillis": "1790320971635",
+              "operationId": "dev-836f2774bff9f83b106287851d2b9094",
+              "packageDigest": null,
+              "policy": null,
+              "publication": {
+                "id": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+                "tenant": "examples"
+              },
+              "reason": "RELEASE_LIFECYCLE_REASON_ADMITTED",
+              "state": "RELEASE_LIFECYCLE_STATE_ADMITTED",
+              "tenant": "examples"
+            }
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "restore": {
+        "category": "platform-failure",
+        "command": "deployment apply",
+        "data": {
+          "auditAck": {
+            "attemptSequence": "15",
+            "status": "durable"
+          },
+          "recovery": {
+            "deploymentId": "my-greeting",
+            "expectedGeneration": "3",
+            "expectedStateVersion": "3",
+            "family": "deployment",
+            "operationId": "qualification-7910b67819610d821ce6eaf10ee0d435",
+            "tenant": "examples"
+          }
+        },
+        "error": {
+          "code": "permission-denied",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "restoreCalls": 1,
+      "revoke": {
+        "category": "success",
+        "command": "release revoke",
+        "data": {
+          "auditAck": {
+            "attemptSequence": "13",
+            "status": "AUDIT_ACK_STATUS_DURABLE"
+          },
+          "operation": {
+            "action": "RELEASE_LIFECYCLE_ACTION_REVOKE",
+            "actor": {
+              "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "installation-operator"
+            },
+            "componentDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+            "disposition": "RELEASE_OPERATION_DISPOSITION_COMMITTED",
+            "expectedGeneration": "1",
+            "observedAtUnixMillis": "1790321082664",
+            "operationId": "qualification-21731472ec05f0b6458be556dbb64573",
+            "packageManifestDigest": null,
+            "policy": null,
+            "publication": {
+              "id": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+              "tenant": "examples"
+            },
+            "reason": "RELEASE_LIFECYCLE_REASON_OPERATOR_REVOCATION",
+            "record": {
+              "actor": {
+                "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+                "subject": "installation-operator"
+              },
+              "componentDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+              "evidenceRevisionDigest": null,
+              "generation": "2",
+              "observedAtUnixMillis": "1790321082664",
+              "operationId": "qualification-21731472ec05f0b6458be556dbb64573",
+              "packageDigest": null,
+              "policy": null,
+              "publication": {
+                "id": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+                "tenant": "examples"
+              },
+              "reason": "RELEASE_LIFECYCLE_REASON_OPERATOR_REVOCATION",
+              "state": "RELEASE_LIFECYCLE_STATE_REVOKED",
+              "tenant": "examples"
+            },
+            "requestDigest": "sha256:2368ab1e923b022d689d4393be993ecc44bf5129cacedb0f9ed4bd3c5439b7e0",
+            "tenant": "examples"
+          },
+          "recovery": {
+            "expectedGeneration": "1",
+            "family": "release",
+            "operationId": "qualification-21731472ec05f0b6458be556dbb64573",
+            "publication": {
+              "id": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+              "tenant": "examples"
+            },
+            "tenant": "examples"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "revokeCalls": 1,
+      "revoked": {
+        "category": "success",
+        "command": "release lifecycle",
+        "data": {
+          "status": {
+            "eligibility": "RELEASE_LIVE_ELIGIBILITY_DENIED",
+            "eligibilityReason": "RELEASE_ELIGIBILITY_REASON_REVOKED",
+            "record": {
+              "actor": {
+                "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+                "subject": "installation-operator"
+              },
+              "componentDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+              "evidenceRevisionDigest": null,
+              "generation": "2",
+              "observedAtUnixMillis": "1790321082664",
+              "operationId": "qualification-21731472ec05f0b6458be556dbb64573",
+              "packageDigest": null,
+              "policy": null,
+              "publication": {
+                "id": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+                "tenant": "examples"
+              },
+              "reason": "RELEASE_LIFECYCLE_REASON_OPERATOR_REVOCATION",
+              "state": "RELEASE_LIFECYCLE_STATE_REVOKED",
+              "tenant": "examples"
+            }
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "serverDeploymentUnchanged": true,
+      "statePreconditionRefreshedForRetry": false
+    }
+  },
+  "events": [
+    {
+      "event": "deployed",
+      "currentDeployment": {
+        "attempt": "aff1dd92f6c67b3bc3844ad4cd70f220",
+        "buildKey": "sha256:f4269290c7112df6dca2bbce7493dcba8000b540230a5bd03832769e54c86fb8",
+        "componentDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+        "deployment": "my-greeting",
+        "generation": "1",
+        "operation": "dev-87bf4b4fe81b582697d38dc2587a26e8",
+        "publication": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+        "publicationInput": "sha256:69b4a0132653a6144be21776132943fdaee8b14553bd63f33726bf18fcb34480",
+        "source": "sha256:6054b48685354248d195207b7a0491aacbfb6a752421fe95f8f4eb46c5fef41f"
+      },
+      "build": {
+        "source": "sha256:6054b48685354248d195207b7a0491aacbfb6a752421fe95f8f4eb46c5fef41f",
+        "attempt": "aff1dd92f6c67b3bc3844ad4cd70f220",
+        "buildKey": "sha256:f4269290c7112df6dca2bbce7493dcba8000b540230a5bd03832769e54c86fb8",
+        "artifacts": {
+          "capsule": "sha256:17a939a44f975c45b65361f348c23f623810aef5a2894ae9f916c49086dd4573",
+          "component": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+          "contracts": "sha256:2e1f2ec758836a640ce67025307646cf04f40fe4258389c2a3989fdb49318048",
+          "deployment": "sha256:4913c556d2d5d1aaf9ab68a26746d87625d0a990c9a0727fd9b249bba5a10d4b",
+          "evidence": "sha256:e880861568034236548d6af0c9c0ae9e827f25bbd614c7649cff3850543d1e09",
+          "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+        },
+        "recipe": "sha256:b4e39b1bbce9ea2cc710eaa82da73f56df2da29efae5f1b768a128c98e6576a0",
+        "toolInventory": "sha256:2bf2d280cb6ad8349e21c3b562de49f275a19a418273fd102578470230a04f67"
+      }
+    },
+    {
+      "event": "post-deploy-tests",
+      "currentDeployment": {
+        "attempt": "aff1dd92f6c67b3bc3844ad4cd70f220",
+        "buildKey": "sha256:f4269290c7112df6dca2bbce7493dcba8000b540230a5bd03832769e54c86fb8",
+        "componentDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+        "deployment": "my-greeting",
+        "generation": "1",
+        "operation": "dev-87bf4b4fe81b582697d38dc2587a26e8",
+        "publication": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+        "publicationInput": "sha256:69b4a0132653a6144be21776132943fdaee8b14553bd63f33726bf18fcb34480",
+        "source": "sha256:6054b48685354248d195207b7a0491aacbfb6a752421fe95f8f4eb46c5fef41f"
+      },
+      "passed": true,
+      "rollbackPerformed": false,
+      "tests": {
+        "passed": true,
+        "selection": [
+          "value"
+        ],
+        "results": [
+          {
+            "activationId": "dev-82113aecd01059f4f8ad48ee6b9ee369",
+            "category": "success",
+            "execution": {
+              "grants": []
+            },
+            "expectedRevision": {
+              "publicationId": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+              "releaseDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+              "routeGeneration": "1"
+            },
+            "fixtures": [],
+            "id": "value",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "outcomeKnown": true,
+            "payloadSha256": "sha256:d45d39f3996478609d46956d9f1c197532d82e79bab71d743148427b01e13cee",
+            "platformCode": null,
+            "required": true,
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+              "releaseDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+              "revisionId": "revision-v1:sha256:8a65608039117ac9a83e5910abd3013a979b00a6182aecb0c2746bf5fbb1b1bf",
+              "routeGeneration": "1"
+            },
+            "status": "passed",
+            "targetMatches": true,
+            "timeoutMillis": 5000
+          }
+        ]
+      }
+    },
+    {
+      "event": "deployed",
+      "currentDeployment": {
+        "attempt": "b3b954bee38c2ecb2c8a449bd4aea920",
+        "buildKey": "sha256:c83c0eff97cf847b3346132a155e2b8dacdb4cdbb11423496a9089364d7fbfc0",
+        "componentDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+        "deployment": "my-greeting",
+        "generation": "2",
+        "operation": "dev-777ec5a74f388c034ffa8db15190a4a9",
+        "publication": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+        "publicationInput": "sha256:c08406b52a46e361c66c65664c9ca3376bd29811dba2f231c0a977c988795862",
+        "source": "sha256:a085cb69b56bbacabc1f626a5e0288482dd13a1babe5d9f4865a8ddf8201bbcc"
+      },
+      "build": {
+        "source": "sha256:a085cb69b56bbacabc1f626a5e0288482dd13a1babe5d9f4865a8ddf8201bbcc",
+        "attempt": "b3b954bee38c2ecb2c8a449bd4aea920",
+        "buildKey": "sha256:c83c0eff97cf847b3346132a155e2b8dacdb4cdbb11423496a9089364d7fbfc0",
+        "artifacts": {
+          "capsule": "sha256:3733d549cc6252cc54d7c4146625545f187416ff2f90f17ca535e007996a57b6",
+          "component": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+          "contracts": "sha256:2e1f2ec758836a640ce67025307646cf04f40fe4258389c2a3989fdb49318048",
+          "deployment": "sha256:58628ec84341ff6117803eb8ea1b99b34cc59dac90dc60d98b7a6f044ebc734e",
+          "evidence": "sha256:1cecb229c6ea4f0d5fe9b3fd809dda744c1993f544c160f048fe4128ec71daf6",
+          "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+        },
+        "recipe": "sha256:b4e39b1bbce9ea2cc710eaa82da73f56df2da29efae5f1b768a128c98e6576a0",
+        "toolInventory": "sha256:2bf2d280cb6ad8349e21c3b562de49f275a19a418273fd102578470230a04f67"
+      }
+    },
+    {
+      "event": "post-deploy-tests",
+      "currentDeployment": {
+        "attempt": "b3b954bee38c2ecb2c8a449bd4aea920",
+        "buildKey": "sha256:c83c0eff97cf847b3346132a155e2b8dacdb4cdbb11423496a9089364d7fbfc0",
+        "componentDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+        "deployment": "my-greeting",
+        "generation": "2",
+        "operation": "dev-777ec5a74f388c034ffa8db15190a4a9",
+        "publication": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+        "publicationInput": "sha256:c08406b52a46e361c66c65664c9ca3376bd29811dba2f231c0a977c988795862",
+        "source": "sha256:a085cb69b56bbacabc1f626a5e0288482dd13a1babe5d9f4865a8ddf8201bbcc"
+      },
+      "passed": true,
+      "rollbackPerformed": false,
+      "tests": {
+        "passed": true,
+        "selection": [
+          "value"
+        ],
+        "results": [
+          {
+            "activationId": "dev-e8489f27df17deb46ef65bb3a1cde6af",
+            "category": "success",
+            "execution": {
+              "grants": []
+            },
+            "expectedRevision": {
+              "publicationId": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+              "releaseDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+              "routeGeneration": "2"
+            },
+            "fixtures": [],
+            "id": "value",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "outcomeKnown": true,
+            "payloadSha256": "sha256:70a54961f76119ae69296ffeaeb0dbc7da6ead064afa684aa6b55f0339bdec0a",
+            "platformCode": null,
+            "required": true,
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+              "releaseDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+              "revisionId": "revision-v1:sha256:4c83d64dbd365ab867e3814946d1a0efae50ed9c4103a9653ea5f80380b9c7d1",
+              "routeGeneration": "2"
+            },
+            "status": "passed",
+            "targetMatches": true,
+            "timeoutMillis": 5000
+          }
+        ]
+      }
+    },
+    {
+      "event": "edit-failed",
+      "currentDeployment": {
+        "attempt": "b3b954bee38c2ecb2c8a449bd4aea920",
+        "buildKey": "sha256:c83c0eff97cf847b3346132a155e2b8dacdb4cdbb11423496a9089364d7fbfc0",
+        "componentDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+        "deployment": "my-greeting",
+        "generation": "2",
+        "operation": "dev-777ec5a74f388c034ffa8db15190a4a9",
+        "publication": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+        "publicationInput": "sha256:c08406b52a46e361c66c65664c9ca3376bd29811dba2f231c0a977c988795862",
+        "source": "sha256:a085cb69b56bbacabc1f626a5e0288482dd13a1babe5d9f4865a8ddf8201bbcc"
+      },
+      "phase": "build",
+      "source": "sha256:60dc1af294d6702b25e207230ac99be8636de0f8b268f0366584af925e40d638",
+      "code": "guest-build-failed-last-deployment-retained",
+      "uncertain": false,
+      "rollbackPerformed": false
+    },
+    {
+      "event": "edit-failed",
+      "currentDeployment": {
+        "attempt": "b3b954bee38c2ecb2c8a449bd4aea920",
+        "buildKey": "sha256:c83c0eff97cf847b3346132a155e2b8dacdb4cdbb11423496a9089364d7fbfc0",
+        "componentDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+        "deployment": "my-greeting",
+        "generation": "2",
+        "operation": "dev-777ec5a74f388c034ffa8db15190a4a9",
+        "publication": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+        "publicationInput": "sha256:c08406b52a46e361c66c65664c9ca3376bd29811dba2f231c0a977c988795862",
+        "source": "sha256:a085cb69b56bbacabc1f626a5e0288482dd13a1babe5d9f4865a8ddf8201bbcc"
+      },
+      "phase": "build",
+      "source": "sha256:6884df49085bc03644682aa865238538e0d0b99263761321719af6c4673ac5c8",
+      "code": "build-output-is-not-component-model",
+      "uncertain": false,
+      "rollbackPerformed": false
+    },
+    {
+      "event": "build-superseded",
+      "currentDeployment": {
+        "attempt": "b3b954bee38c2ecb2c8a449bd4aea920",
+        "buildKey": "sha256:c83c0eff97cf847b3346132a155e2b8dacdb4cdbb11423496a9089364d7fbfc0",
+        "componentDigest": "sha256:20b199b1921cdb6d67f148f78608adbe90097d09ba98b694f9e68b871da7dfa4",
+        "deployment": "my-greeting",
+        "generation": "2",
+        "operation": "dev-777ec5a74f388c034ffa8db15190a4a9",
+        "publication": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+        "publicationInput": "sha256:c08406b52a46e361c66c65664c9ca3376bd29811dba2f231c0a977c988795862",
+        "source": "sha256:a085cb69b56bbacabc1f626a5e0288482dd13a1babe5d9f4865a8ddf8201bbcc"
+      },
+      "phase": "build",
+      "source": "sha256:d5ecbd53b0ca43d823b7680803e4ed211ec4dd3aa1c5df46d3ce7ec15cf7810b",
+      "code": "guest-build-superseded",
+      "uncertain": false,
+      "rollbackPerformed": false
+    },
+    {
+      "event": "deployed",
+      "currentDeployment": {
+        "attempt": "26b429acc6f35858c00fb3f5cbc20582",
+        "buildKey": "sha256:30f423e34edd2541c1f93ac36dd8229663768a7cd23b18281128197084741044",
+        "componentDigest": "sha256:59a9c0c2a99f1cf017ca857af0c03ac320ee1a7b82271c6a7c68f65ee7e844c5",
+        "deployment": "my-greeting",
+        "generation": "3",
+        "operation": "dev-55836e81067bb46dea6a96c66da03b44",
+        "publication": "publication:sha256:6289f6784405c74c6834d49bd9a0e1c3a630320af6c0d33f6cb8a8e87c9d5e2c",
+        "publicationInput": "sha256:71da56ad5c4a6ed2ee55cac70a0d32ab08bfeff6e14001f8033ceacfd71296f9",
+        "source": "sha256:fa484ef98a4521f9c516f50c9203639e99828f3f02fda80adb8cdea8a8a4e905"
+      },
+      "build": {
+        "source": "sha256:fa484ef98a4521f9c516f50c9203639e99828f3f02fda80adb8cdea8a8a4e905",
+        "attempt": "26b429acc6f35858c00fb3f5cbc20582",
+        "buildKey": "sha256:30f423e34edd2541c1f93ac36dd8229663768a7cd23b18281128197084741044",
+        "artifacts": {
+          "capsule": "sha256:95634b173d57c69e755ac5e5940896af4a66e803c5c661479ce1e03b54f23f18",
+          "component": "sha256:59a9c0c2a99f1cf017ca857af0c03ac320ee1a7b82271c6a7c68f65ee7e844c5",
+          "contracts": "sha256:2e1f2ec758836a640ce67025307646cf04f40fe4258389c2a3989fdb49318048",
+          "deployment": "sha256:350847e3eaa37e7d478e6757ce2d9bedbeea17bdad5e4a2354cf79b648abe356",
+          "evidence": "sha256:5dd11e341a3ef281b41d88b225d92bb947ae8047448a5bf776f92daeeadc62dd",
+          "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+        },
+        "recipe": "sha256:b4e39b1bbce9ea2cc710eaa82da73f56df2da29efae5f1b768a128c98e6576a0",
+        "toolInventory": "sha256:2bf2d280cb6ad8349e21c3b562de49f275a19a418273fd102578470230a04f67"
+      }
+    },
+    {
+      "event": "post-deploy-tests",
+      "currentDeployment": {
+        "attempt": "26b429acc6f35858c00fb3f5cbc20582",
+        "buildKey": "sha256:30f423e34edd2541c1f93ac36dd8229663768a7cd23b18281128197084741044",
+        "componentDigest": "sha256:59a9c0c2a99f1cf017ca857af0c03ac320ee1a7b82271c6a7c68f65ee7e844c5",
+        "deployment": "my-greeting",
+        "generation": "3",
+        "operation": "dev-55836e81067bb46dea6a96c66da03b44",
+        "publication": "publication:sha256:6289f6784405c74c6834d49bd9a0e1c3a630320af6c0d33f6cb8a8e87c9d5e2c",
+        "publicationInput": "sha256:71da56ad5c4a6ed2ee55cac70a0d32ab08bfeff6e14001f8033ceacfd71296f9",
+        "source": "sha256:fa484ef98a4521f9c516f50c9203639e99828f3f02fda80adb8cdea8a8a4e905"
+      },
+      "passed": false,
+      "rollbackPerformed": false,
+      "tests": {
+        "passed": false,
+        "selection": [
+          "value"
+        ],
+        "results": [
+          {
+            "activationId": "dev-b41e89cee18893856bf01a66ce8b7eeb",
+            "category": "success",
+            "execution": {
+              "grants": []
+            },
+            "expectedRevision": {
+              "publicationId": "publication:sha256:6289f6784405c74c6834d49bd9a0e1c3a630320af6c0d33f6cb8a8e87c9d5e2c",
+              "releaseDigest": "sha256:59a9c0c2a99f1cf017ca857af0c03ac320ee1a7b82271c6a7c68f65ee7e844c5",
+              "routeGeneration": "3"
+            },
+            "fixtures": [],
+            "id": "value",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "outcomeKnown": true,
+            "payloadSha256": "sha256:0051d639293473b68c54177f22ba1d64d2d9079698917692fa8559cbe1807406",
+            "platformCode": null,
+            "required": true,
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:6289f6784405c74c6834d49bd9a0e1c3a630320af6c0d33f6cb8a8e87c9d5e2c",
+              "releaseDigest": "sha256:59a9c0c2a99f1cf017ca857af0c03ac320ee1a7b82271c6a7c68f65ee7e844c5",
+              "revisionId": "revision-v1:sha256:93e682a12e00b4f4b8c8a87008600b2f16f5ceb8afe98402e548dedd0fa871bb",
+              "routeGeneration": "3"
+            },
+            "status": "failed",
+            "targetMatches": true,
+            "timeoutMillis": 5000
+          }
+        ]
+      }
+    }
+  ],
+  "shutdown": {
+    "build": {
+      "attempt": "26b429acc6f35858c00fb3f5cbc20582",
+      "guestInstance": {
+        "bootId": "c4c2587f-fb3a-41f4-b31b-2607df940192",
+        "initStartTicks": "213392",
+        "pidNamespace": "4026532304"
+      },
+      "id": "930993233abfb663a6f66cd237f1363e",
+      "reason": "build-complete",
+      "state": "reaped"
+    },
+    "cleanShutdown": true,
+    "dataRetained": true,
+    "guestInstance": {
+      "bootId": "c4c2587f-fb3a-41f4-b31b-2607df940192",
+      "initStartTicks": "213392",
+      "pidNamespace": "4026532304"
+    },
+    "node": "lsf-e79705aa6bd0f812",
+    "profile": "local-experimental-v1",
+    "providers": [],
+    "readiness": {
+      "activationReady": true,
+      "authenticated": true,
+      "profile": "local-experimental-v1",
+      "schemaVersion": "latent.native-readiness.v1"
+    },
+    "reaped": true,
+    "state": "stopped"
+  },
+  "retainedWorkspace": "test-watch-1d0023",
+  "previousSuccessfulAttempt": {
+    "passed": true,
+    "seconds": 177.961,
+    "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained",
+    "retainedWorkspace": "test-watch-8e7c74",
+    "subsequentChange": "Cleanup now attempts owned node shutdown even if stopping the separately owned Invoke fails."
+  },
+  "failedAttempts": [
+    {
+      "failure": "slow-build-not-reaped",
+      "cause": "Probe expected the short reason superseded; the actual reaped status correctly records guest-build-superseded.",
+      "actualBuildStatus": {
+        "attempt": "121ce206c9b09ce506bbcafc81f18946",
+        "guestInstance": {
+          "bootId": "c4c2587f-fb3a-41f4-b31b-2607df940192",
+          "initStartTicks": "148523",
+          "pidNamespace": "4026532454"
+        },
+        "id": "833a0db59f04b13ef7971070580bbd66",
+        "reason": "guest-build-superseded",
+        "state": "reaped"
+      },
+      "inflightOldRevisionRetained": true,
+      "compilerErrorPreservedB": true,
+      "malformedOutputPreservedB": true,
+      "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained",
+      "retainedWorkspace": "test-watch-788361",
+      "originalOperationReplayed": false
+    }
+  ]
+}
