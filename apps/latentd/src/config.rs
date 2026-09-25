@@ -45,7 +45,7 @@ pub use model::{
 };
 pub use providers::{
     BlobInstallation, ConfiguredProviders, HostBinding, HttpInstallation, ProviderIdentity,
-    ProviderSecretFile,
+    ProviderSecretFile, SecretInstallation,
 };
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;

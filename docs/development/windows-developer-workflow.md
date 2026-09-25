@@ -381,6 +381,20 @@ shutdown, while live handles and work must be zero. Explicit owned-workspace
 purge removes that retained test data. Portable hosts reject required blob cases
 before executing any selected scenario.
 
+A secret fixture selects only public development references, for example
+`{"secrets":{"references":[{"name":"dev-allowed"},{"name":"dev-expired","expired":true}]}}`.
+The explicit test setup generates a separate private 64-byte value for each
+reference and workspace. Values, file paths and environment sources cannot be
+supplied in the fixture. Existing values are never silently rotated or replaced;
+a changed selection or value fails closed. Declare `real-provider` with the
+configuration digest and require `scoped-secret-fixture`. The production local
+secret provider receives named, protected files and exact reference policies.
+An `expired` entry uses a past system-clock deadline; it does not change any
+clock. Public receipts carry references and outcomes, with no secret bytes or
+secret-value digests. Shutdown observes released in-memory generations and
+references; retained private files follow the owned-workspace purge lifecycle.
+Required secret fixtures cannot execute on the portable host.
+
 ## Editor tasks and compiler locations
 
 The [optional terminal devcontainer](../component-development/devcontainer.md)
@@ -710,6 +724,26 @@ maintained Rust application tool bundle, public scenario contract and enforced
 admission path as the other application probes. Existing Rust developer CI owns
 the run and retains its public receipts.
 
+The [secret source observation](./secret-fixture-source-observation.json) records
+nine authored cases and a retained restart on the signed/enforced Linux node.
+Cold/warm reads return only the generated value's length. Expired and ungranted
+references return typed errors, an abandoned value is followed by fresh-state
+success, and denied policy is followed by a successful read. Both shutdowns
+reported zero retained secret generations, references and live provider
+resources. The owned successful workspace was purged. The run does not claim
+access to another workspace or an existing provider credential: its ungranted
+reference cases test the narrower configured reference restriction.
+The same rebuilt node also passed the six HTTP cases, retained restart and six
+Linux portable comparisons with zero retained HTTP credential generations.
+An earlier regression setup exceeded the existing Unix socket path bound and
+failed before node-start dispatch; a new workspace under a shorter private home
+completed the run. That failed setup remains recorded with its private data.
+
+Run `python tools/dev_secret_fixture_probe.py --payload TOOL_PREFIX --source-node
+SOURCE_NODE --output NEW_DIRECTORY` as the Linux test owner. The existing Rust
+developer job executes it. Public source receipts contain no secret values or
+value digests; final authenticated Windows qualification remains separate.
+
 `tools/dev_node_fault_probe.py` is a contributor fault-injection harness, separate
 from the shipped helper. Run it only as the explicitly selected `test-` workspace's
 unprivileged Linux owner, with its exact helper path and SHA-256. It requires the
@@ -740,7 +774,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate

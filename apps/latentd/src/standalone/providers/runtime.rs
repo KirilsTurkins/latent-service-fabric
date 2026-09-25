@@ -29,6 +29,8 @@ use crate::config::{NodeSettings, ProviderIdentity};
 mod http;
 #[path = "scalar.rs"]
 mod scalar;
+#[path = "secrets.rs"]
+mod secrets;
 #[path = "startup.rs"]
 mod startup;
 
@@ -37,6 +39,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     pools: Arc<ProviderPools>,
     io: Arc<IoRuntime>,
     secrets: Option<latent_secrets::LocalSecretStore>,
+    guest_secrets: Option<latent_secrets::LocalSecretStore>,
     blobs: Option<Arc<LocalBlobStore>>,
     clocks: Vec<ProviderRegistration>,
     descriptors: Vec<ProviderDescriptor>,
@@ -82,13 +85,14 @@ impl ProviderRuntime {
             pools,
             io,
             secrets: None,
+            guest_secrets: None,
             blobs: None,
             clocks: Vec::with_capacity(2),
-            descriptors: Vec::with_capacity(5),
+            descriptors: Vec::with_capacity(6),
         };
         let deadline = Instant::now() + Duration::from_secs(30);
         let installed = tokio::time::timeout_at(deadline.into(), async {
-            let mut providers = Vec::with_capacity(5);
+            let mut providers = Vec::with_capacity(6);
             for (installation, monotonic) in
                 [(&config.clock_monotonic, true), (&config.clock_wall, false)]
             {
@@ -141,6 +145,12 @@ impl ProviderRuntime {
                 owner.blobs = Some(store);
                 providers.push(owner.record(&blob.identity, provider.reference()));
                 owner.runtime.install_blobs(Arc::new(provider))?;
+            }
+            if let Some(config) = &config.secrets {
+                let (provider, store) = secrets::install(&owner.pools, config, deadline).await?;
+                owner.guest_secrets = Some(store);
+                providers.push(owner.record(&config.identity, provider.reference()));
+                owner.runtime.install_secrets(Arc::new(provider))?;
             }
             deployments
                 .activate_configured_bindings(
@@ -197,6 +207,9 @@ impl ProviderRuntime {
         if let Some(secrets) = &self.secrets {
             secrets.close();
         }
+        if let Some(secrets) = &self.guest_secrets {
+            secrets.close();
+        }
         if let Some(blobs) = &self.blobs {
             blobs.close();
         }
@@ -208,6 +221,16 @@ impl ProviderRuntime {
     ) -> Result<ProviderShutdownReport, PlatformError> {
         self.retire();
         let pools = self.pools.shutdown(deadline).await?;
+        let mut secret_generations = 0;
+        let mut secret_references = 0;
+        let mut secrets_closed = true;
+        for store in [&self.secrets, &self.guest_secrets].into_iter().flatten() {
+            store.close();
+            let snapshot = store.snapshot().map_err(|_| unavailable())?;
+            secret_generations += snapshot.retained_generations;
+            secret_references += snapshot.references;
+            secrets_closed &= snapshot.closed && !snapshot.loading;
+        }
         let broker = self.runtime.broker().snapshot();
         let io = self.io.snapshot();
         let blob = self
@@ -218,6 +241,9 @@ impl ProviderRuntime {
             .map_err(|_| unavailable())?
             .unwrap_or_default();
         let clean = pools.is_clean()
+            && secrets_closed
+            && secret_generations == 0
+            && secret_references == 0
             && broker.sessions == 0
             && broker.handles == 0
             && broker.calls == 0
@@ -250,6 +276,8 @@ impl ProviderRuntime {
             blob_stages: blob.stages,
             blob_handles: blob.handles,
             blob_work: blob.active_work,
+            secret_generations,
+            secret_references,
         })
     }
 }

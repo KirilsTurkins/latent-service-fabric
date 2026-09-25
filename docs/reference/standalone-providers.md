@@ -3,8 +3,8 @@
 The opt-in `providers` object installs the existing bounded HTTP and immutable
 local-blob providers in the standalone node. Explicit `clockMonotonic`, `clockWall`
 and `random` installations also enable the maintained activation-clock and
-OS-entropy providers. It does not install a guest secret
-provider, streaming HTTP, S3, events, or an invented provider profile. The
+OS-entropy providers. Explicit `secrets` installs the protected local guest-secret
+provider. Streaming HTTP, S3 and events have no installation entry here. The
 [configuration schema](../../schemas/node-providers.schema.json) describes the
 closed input. This example is the provider section of a protected node file:
 
@@ -51,6 +51,24 @@ nor public configuration digests, CLI outputs, guest imports, or diagnostics.
 The shared workflow writes a clearly public test-only credential, not a real
 credential. Production credentials must be supplied by the operator.
 
+Guest secrets use a separate `secrets` entry with `identity`, a protected
+`directory` and one to eight `references`. Each reference contains a public
+`reference`, a relative single-file `file` name and optional unsigned
+`expiresAtUnixMillis`. Relative directories anchor to the node configuration
+file; parent traversal and duplicate reference/file selections are rejected.
+Inline values, environment sources and provider-credential purposes are not
+accepted. Startup checks private storage and loads file bytes through the
+existing local-secret store before readiness. `check-config` never reads them.
+
+Bind `latent:secrets/reader@0.1.0` to the configured service and use the actual
+`protected-local-secrets-v1` descriptor in the public provider-binding policy.
+Guest disclosure still requires explicit reference-scoped policy and deployment
+grants. Files are limited to 4096 bytes, eight references and 32768 reserved
+bytes per generation, with at most two retained generations. Expiry uses the
+system clock. Values and value digests are excluded from the provider identity.
+This entry adds no separate listener, background refresh or ambient credential
+discovery. Reload requires explicit node lifecycle management.
+
 The node's bounded `ready` record includes actual installed descriptors:
 `id`, `tenant`, `service`, `capability`, `profile`, `configurationDigest`, and
 decimal-string `configurationEpoch`. Use those exact descriptors when applying
@@ -63,7 +81,8 @@ Host bindings are durably established once. Restart requires the exact same
 definitions and reattaches live providers without changing catalog bytes,
 deployment revisions or route generations. Changed or missing bootstrap
 definitions fail closed; this profile does not silently migrate bindings.
-Shutdown retires capabilities and reports actual pool, broker, I/O and blob
+Shutdown retires capabilities and reports actual pool, broker, I/O, blob and
+retained secret-generation/reference
 reclamation counters. A failed or incomplete cleanup is not reported as clean.
 
 Combining the resident rollout worker with capability policy/provider work

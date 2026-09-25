@@ -7,6 +7,10 @@ use serde::{Deserialize, Deserializer};
 
 use super::{invalid, NodeConfig};
 
+#[path = "providers/secrets.rs"]
+mod secrets;
+pub use secrets::SecretInstallation;
+
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ConfiguredProviders {
@@ -15,6 +19,8 @@ pub struct ConfiguredProviders {
     pub http: Option<HttpInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub blob: Option<BlobInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub secrets: Option<SecretInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub clock_monotonic: Option<ScalarInstallation>,
     #[serde(default, deserialize_with = "present")]
@@ -101,6 +107,7 @@ pub(super) fn derive(
         || providers.format_version != 1
         || (providers.http.is_none()
             && providers.blob.is_none()
+            && providers.secrets.is_none()
             && providers.clock_monotonic.is_none()
             && providers.clock_wall.is_none()
             && providers.random.is_none())
@@ -148,6 +155,23 @@ pub(super) fn derive(
             return Err(invalid("providers.identity"));
         }
     }
+    if let Some(secrets) = &providers.secrets {
+        secrets.validate()?;
+        for identity in [
+            providers.http.as_ref().map(|v| &v.identity),
+            providers.blob.as_ref().map(|v| &v.identity),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            if identity.id == secrets.identity.id
+                || (identity.tenant == secrets.identity.tenant
+                    && identity.service == secrets.identity.service)
+            {
+                return Err(invalid("providers.identity"));
+            }
+        }
+    }
     for scalar in [
         &providers.clock_monotonic,
         &providers.clock_wall,
@@ -193,6 +217,7 @@ impl ConfiguredProviders {
             let installed = match binding.contract.as_str() {
                 "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
+                "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),
                 "latent:clock/monotonic@0.1.0" => self.clock_monotonic.as_ref().map(|v| &v.identity),
                 "latent:clock/wall@0.1.0" => self.clock_wall.as_ref().map(|v| &v.identity),
                 "latent:random/random@0.1.0" => self.random.as_ref().map(|v| &v.identity),
@@ -222,6 +247,9 @@ impl ConfiguredProviders {
 }
 
 pub(super) fn anchor(config: &mut ConfiguredProviders, parent: &Path) -> Result<(), PlatformError> {
+    if let Some(secrets) = &mut config.secrets {
+        secrets.anchor(parent)?;
+    }
     if let Some(directory) = config
         .http
         .as_mut()
