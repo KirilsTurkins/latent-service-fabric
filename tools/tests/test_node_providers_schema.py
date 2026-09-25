@@ -84,6 +84,17 @@ class NodeProvidersSchema(unittest.TestCase):
             changed["metrics"]["descriptors"] = descriptors
             self.assertFalse(VALIDATOR.is_valid(changed))
 
+    def test_local_service_configuration_has_no_remote_or_publication_grant_override(self):
+        value = self.example()
+        value["localService"] = {"identity": {"id": "local", "tenant": "examples", "service": "examples/callee", "epoch": 1},
+                                 "deployment": "dev-callee", "contract": "examples:callee/api@1.0.0"}
+        VALIDATOR.validate(value)
+        for key, invalid in (("deployment", ""), ("contract", "latent:service/invoke@0.1.0"),
+                             ("endpoint", "https://foreign"), ("publication", "implicit-grant")):
+            changed = copy.deepcopy(value)
+            changed["localService"][key] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed))
+
 
 if __name__ == "__main__":
     unittest.main()

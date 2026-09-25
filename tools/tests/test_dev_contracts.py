@@ -433,6 +433,28 @@ class EditorDiagnostics(unittest.TestCase):
 
 
 class ScenarioReports(unittest.TestCase):
+    def test_native_rejection_preserves_only_a_bounded_static_code(self):
+        from subprocess import CompletedProcess
+        for code, allowed in (("http-fixture-port-unavailable", True), ("x" * 97, False),
+                              ("credential=private-value\n", False), ({"secret": "private"}, False)):
+            response = CompletedProcess([], 2, common.encode({"code": code, "message": "private"}), b"private")
+            with self.assertRaisesRegex(common.DevError, "portable-host-rejected-input") as failure:
+                portable.runtime_result(response, {"runtimeProfile": "standard-v1"}, b"component")
+            self.assertEqual(failure.exception.diagnostics,
+                [{"stage": "native-portable-host", "code": code}] if allowed else [])
+
+    def test_native_result_requires_success_and_exact_component_profile_environment(self):
+        from subprocess import CompletedProcess
+        value = {"schemaVersion": "latent.dev.portable-result.v1", "environment": "portable",
+                 "productionNode": False, "component": common.digest(b"component"), "runtimeProfile": "standard-v1"}
+        request = {"runtimeProfile": "standard-v1"}
+        self.assertEqual(portable.runtime_result(CompletedProcess([], 0, common.encode(value)), request, b"component"), value)
+        for changed, status in ((value, 2), ({**value, "component": common.digest(b"other")}, 0),
+                ({**value, "runtimeProfile": "other"}, 0), ({**value, "environment": "node"}, 0),
+                ({**value, "productionNode": True}, 0), ([], 0)):
+            with self.assertRaisesRegex(common.DevError, "portable-host-rejected-input"):
+                portable.runtime_result(CompletedProcess([], status, common.encode(changed)), request, b"component")
+
     def test_platform_error_codes_survive_reports_and_unexpected_success_is_a_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

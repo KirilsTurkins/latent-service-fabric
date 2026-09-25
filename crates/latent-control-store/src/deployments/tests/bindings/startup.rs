@@ -102,3 +102,18 @@ fn startup_cannot_silently_replace_durable_bindings_or_install_foreign_provider_
     assert_eq!(reopened.binding_version().unwrap(), versions);
     assert_eq!(reopened.binding_inventory().2, 0);
 }
+
+#[test]
+fn configured_startup_does_not_accept_arbitrary_local_adapter_registrations() {
+    let fixture = Fixture::new();
+    let mut installed = providers(&fixture.provider);
+    installed[0].local_deployment = Some(latent_core::DeploymentId("clock-provider".into()));
+    assert!(run(fixture.store.activate_configured_bindings(
+        vec![definition()],
+        fixture.broker.clone(),
+        installed,
+        BindingLimits::default(),
+    ))
+    .is_err());
+    assert!(fixture.store.binding_definitions().unwrap().is_empty());
+}

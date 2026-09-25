@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "latent.dev.http-port-regression-observation.v1",
+  "sourceCommit": "36341147b1a650fbd4e472ef35e683f39c05f2ae",
+  "publisherAuthenticated": false,
+  "cleanHost": false,
+  "qualificationComplete": false,
+  "failedCi": {
+    "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36111474696/job/108004062615",
+    "failure": "portable-host-rejected-input",
+    "fixturePort": 49759,
+    "exactNativeFailureCodeAvailableInOriginalCi": false
+  },
+  "localReproduction": {
+    "platform": "native-windows-x86_64",
+    "sourceBuiltHostSha256": "sha256:af4ea2f14234bada33abc5a8e89a3f094ffb6f0e7789ba2bd2bd31c47991c4d9",
+    "sameCiFixture": true,
+    "nativeReturnCode": 2,
+    "nativeFailure": "http-fixture-port-unavailable",
+    "windowsExcludedTcpRange": [
+      49728,
+      49827
+    ],
+    "inference": "The Linux-selected ephemeral port is not a portable fixture choice; the same input fails before execution on this Windows host."
+  },
+  "correctedLocalExperiment": {
+    "port": 18753,
+    "passed": true,
+    "change": "Only the explicit fixture port, scenario URL inputs and their fixture identity changed; compiled component bytes stayed identical.",
+    "artifacts": {
+      "capsule": "sha256:abffb2932c784de28270d1ddccec38411fd14a776d5cf81a541ea049298ec5e6",
+      "component": "sha256:4d68e70028d00ca0e27b12826bdb8009b15fc0c98ab31649ad14d732a24a6c30",
+      "contracts": "sha256:e3fbe9a47cc1bdf6dbf659e823b2f716ca1d29f5dedf01a696ebfeda312efc63"
+    },
+    "cases": [
+      {
+        "id": "cold",
+        "category": "success",
+        "status": "passed",
+        "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0"
+      },
+      {
+        "id": "warm",
+        "category": "success",
+        "status": "passed",
+        "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0"
+      },
+      {
+        "id": "head",
+        "category": "success",
+        "status": "passed",
+        "payloadSha256": "sha256:4d83a1f3e47b09a57f011d4bd69c80eaaed35d7122fbd598fca53a56f2f82d95"
+      },
+      {
+        "id": "path-denied",
+        "category": "success",
+        "status": "passed",
+        "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60"
+      },
+      {
+        "id": "policy-denied",
+        "category": "success",
+        "status": "passed",
+        "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60"
+      },
+      {
+        "id": "after-denial",
+        "category": "success",
+        "status": "passed",
+        "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0"
+      }
+    ],
+    "authenticatedPeerRequests": 4,
+    "cleanup": "owned-native-host-reaped",
+    "nativeReceiptSha256": "sha256:b6a3deec696e37f3ede17d24b5ecd5799d90831e9575e3182cc6cddb03545d71",
+    "linuxDifferential": "pending-fresh-CI-with-identical-explicit-port-inputs"
+  },
+  "implementation": {
+    "portOwnership": "Bind the explicit fixture port and fail closed if unavailable; do not rewrite URLs or contact another peer.",
+    "diagnostics": "Retain only a bounded static native rejection code, never stderr or free-form messages.",
+    "failedAttemptRetention": "Windows portable receipts, including HTTP and metrics, upload even when a later check fails."
+  }
+}

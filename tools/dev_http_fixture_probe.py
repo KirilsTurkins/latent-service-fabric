@@ -21,6 +21,11 @@ from tools.dev_node_application_probe import run as run_node
 from tools.dev_workflow import build, paths, portable, project, snapshot, state
 from tools.dev_workflow.common import decode, digest, encode, require
 
+# This exact fixture is transported unchanged between Linux and Windows. Linux
+# ephemeral ports can fall inside Windows/Hyper-V reserved ranges, so the shared
+# test owns an explicit non-ephemeral port and fails closed if it is occupied.
+HTTP_FIXTURE_PORT = 18753
+
 WORLD = """package examples:greeting@1.0.0;
 interface api { send: async func(head: bool, url: string) -> u64; }
 world service { import latent:http/client@0.2.0; export api; }
@@ -67,7 +72,7 @@ def author(payload: Path, destination: Path) -> tuple[dict, dict]:
     http.mkdir(parents=True)
     paths.write_new(http / "package.wit", paths.read(app, "vendor/lsf/wit/platform/http-v2/package.wit"))
     with socket.socket() as available:
-        available.bind(("127.0.0.1", 0))
+        available.bind(("127.0.0.1", HTTP_FIXTURE_PORT))
         port = available.getsockname()[1]
     fixtures = {"http": {"port": port, "exchanges": [{"method": method, "path": "/fixture",
         "requestBody": base64.b64encode(b"payload").decode(), "status": 200,

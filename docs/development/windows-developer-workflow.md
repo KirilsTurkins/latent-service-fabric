@@ -185,6 +185,26 @@ does not grant capabilities. Each scenario's explicit grants become scoped
 policies through the public operator API and a confirmed deployment generation.
 Policy recovery looks up the original operation and checks the current policy's
 scope, document and receipt; unknown or changed policies never trigger replay.
+An explicit `localService` fixture builds one additional project from beneath the
+caller's source snapshot. Its closed selection contains `project` (relative
+directory), `recipeSha256` (the exact `project.trust_identity` of that project's
+descriptor), `service`, `deployment` and exported `contract`. Review that recipe
+before passing it to `prepare-test --fixtures`: fixture consent authorizes this
+additional pinned build. Preparation allows at most 900 seconds for that build
+and 150 seconds for verification/signing/configuration, with one fixed callee and
+the same bounded build-cache limits as the caller.
+
+The caller and callee are signed together under one private short-lived policy,
+then published and deployed separately through the ordinary operator APIs. Both
+run on the same node with two cells, one live child per parent and depth two.
+Declare `real-provider`, bind the fixture configuration digest and require
+`local-service-fixture`. A scenario grant permits only the callee's exact
+service/publication. The fixture is unavailable on the portable host. Status
+reports a pending callee operation separately; `dev recover` queries that
+original operation if the caller has none pending. It never repeats publication,
+deployment or Invoke after an unknown result. Cleanup requires the owned node
+to stop and refuses callee build attempts with unconfirmed process cleanup.
+
 The runner compares each invocation with the generation selected for that case.
 The `signed-fixture` option calls the pinned language bundle's maintained
 `capsule-test-signer` utility. It verifies the actual build observation, produces
@@ -365,6 +385,31 @@ record request counts before and after execution. Comparisons require identical
 public fixture data and completed exchanges on both hosts; they do not equate a
 controlled loopback peer with an external-service qualification.
 
+An event fixture uses the same explicit setup command with a file such as
+`{"events":{"port":43128,"exchanges":[{"topic":"dev.example","payload":"b2s=","mode":"ack"}]}}`.
+Declare `controlled-peer`, bind its configuration digest and require
+`immediate-event-fixture`. The capsule must declare outbound operations and
+grant `latent:events/publisher@0.2.0`. The production NATS publisher connects
+through TLS to an owned loopback protocol peer. This fixture does not establish
+live JetStream broker or consumer-processing qualification.
+
+The pinned bundle's fixture utility generates a private TLS key and certificate;
+setup generates a separate private token. Both remain in the owned workspace,
+are checked on retained restart and are removed by explicit owned purge.
+No ambient OpenSSL executable, broker, network discovery or user credential is
+needed. Public receipts exclude private key/token bytes and their value digests.
+
+Select at most sixteen exact topic/payload exchanges, with modes `ack`,
+`duplicate`, `drop-ack`, `wrong-stream`, `malformed-ack` or `no-responders`.
+Payloads are canonical base64, at most 32 KiB each; the fixture is at most
+192 KiB. Peer ownership is bounded to four simultaneous connections, 128 total
+connections and publishes, 128 commands per connection, two seconds per partial
+frame and 900 seconds per start. TLS and authentication precede publication.
+The supervisor owns and closes every socket. The guest's production provider
+returns `uncertain` after a lost or invalid acknowledgement and never resends it.
+Before/after per-topic receive counts expose accidental duplicate sends.
+Portable hosts reject required event fixtures before running selected cases.
+
 A blob fixture selects `{"blob":{"namespace":"dev-blobs"}}` through the same
 explicit `prepare-test` command. Declare its dependency as `real-provider`, bind
 the configuration digest and require `immutable-blob-fixture`. This installs the
@@ -394,6 +439,15 @@ An `expired` entry uses a past system-clock deadline; it does not change any
 clock. Public receipts carry references and outcomes, with no secret bytes or
 secret-value digests. Shutdown observes released in-memory generations and
 references; retained private files follow the owned-workspace purge lifecycle.
+
+Explicit `purge` also removes the owned HTTP authorization file, event TLS key
+and authorization material, and generated secret fixture files. Before removing
+runtime or build state, it checks every fixture directory for private ownership,
+recognized bounded files and safe paths. Unknown files, links, changed inputs or
+an unrelated owner stop cleanup. Interrupted fixture preparation is covered by
+the same checks. `down` retains these files for a later restart; purge returns
+the names of removed fixture directories and preserves author sources and other
+workspaces.
 Required secret fixtures cannot execute on the portable host.
 
 A metrics fixture selects `{"metrics":[{"name":"dev.calls","kind":"counter","unit":"1","labels":[{"key":"region","values":["east"]}],"histogramUpperBounds":[]}]}`.
@@ -794,13 +848,110 @@ mode records a separate actor's intent and applies observed preconditions. The
 unknown mode prepares an undispatched intent and tests honest non-replay; it does
 not establish receipt expiration. The harness never marks qualification complete.
 
+The [local-service source observation](./local-service-fixture-source-observation.json)
+records fourteen authored caller scenarios and one retained-restart invocation.
+The distinct caller and callee packages were built outside the checkout, signed
+together and deployed through public APIs to one Linux node. Calls covered
+cold/warm state, declared errors, denied service/tenant/contract/route/function,
+denied policy, a child trap, recovery and two fresh child activations. The callee
+publication and deployment survived restart unchanged. Both shutdowns released
+all live provider resources, the callee compiler was confirmed reaped and the
+successful private workspace was purged.
+
+The initial zero-child-call-budget attempt retained an original Invoke after a
+transport failure and UNKNOWN lookup. Its workspace and uncertain operation are
+preserved without replay. A later successful run preceded the final compiler
+status/cancellation integration; both that run and the final source identities
+are recorded. These observations do not qualify cross-workspace access, the
+portable host, authenticated final candidates or a clean Windows host.
+
+The [event source observation](./event-fixture-source-observation.json) records
+sixteen authored scenarios and one retained-restart invocation through the
+production NATS provider and an authenticated TLS protocol peer. Cases cover
+cold/warm success, duplicate receipts, unknown/invalid topics, invalid events,
+policy denial, lost acknowledgement, wrong stream, malformed acknowledgement,
+no responders and recovery with a new permitted event. Each uncertain case
+reached the peer exactly once. Both shutdowns closed every peer socket and
+released provider work and secret generations. The private workspace was purged.
+
+Two source-tool preparation failures were rejected before compilation or node
+startup and remain recorded. The final receipt identifies the actual node,
+helper, signer and tool inventory. Run `tools/dev_event_fixture_probe.py` for
+this contributor check; the existing Rust CI owner retains its receipts. This
+does not qualify a live broker, native portable events, final authenticated
+candidates or a clean Windows host.
+
+The focused contributor command is `python tools/dev_local_service_fixture_probe.py
+--payload TOOL_PREFIX --source-node SOURCE_NODE --output NEW_DIRECTORY` as the
+Linux test owner. The existing Rust developer job executes the same command and
+retains its public receipts.
+
+The [workspace isolation observation](./workspace-isolation-source-observation.json)
+records 22 actual invocations across two overlapping signed/enforced nodes owned
+by one unprivileged Linux account. Distinct guest results, publications,
+credentials, activation catalogs and generated secret files remained separate.
+Each node denied the other workspace's credentials and secret reference. A
+stopped and restarted workspace left the other node callable with its deployment
+unchanged. Excluded author credentials never entered the source snapshots.
+
+An actual completed activation was observed before and after its configured
+three-second receipt retention expired. Recovery retained the original intent
+and rejected a new mutation; the other workspace remained usable. Neither the
+clock nor the receipt store was edited. Both nodes stopped cleanly with all live
+provider/secret counters zero. The private workspaces and expired intent remain
+available for inspection. The first run's incorrect newline in expected public
+result bytes is preserved alongside the successful run.
+
+Run `tools/dev_workspace_isolation_probe.py` with the same payload, source-node
+and new-output arguments for this maintained CI check. It does not qualify
+separate WSL users, owned purge or final authenticated clean-host installation.
+
+The first combined CI run correctly rejected GitHub's inherited runner-home ACLs
+before starting the isolation node. Installed-helper probes now reuse the existing
+dedicated-account CI wrapper: it creates a private passwd home on the ephemeral
+runner, leaves runner ACLs and installer policy unchanged, and exports only bounded
+public receipts. Actual local runs through this wrapper passed both isolation and
+watch; their private accounts remain retained with the disposable test container.
+
+The [watch failure observation](./watch-failure-source-observation.json) records
+the real controller handling three committed revisions. An invocation selected
+on A remained running after B committed and returned a cancellation receipt
+pinned to A; subsequent calls returned B with fresh guest state. B's exact build
+was prepared before A started and revalidated from the source/tool/recipe cache
+when the edit was observed. Compiler failure and malformed component output left
+B callable and correctly identified it as the current deployment.
+
+Two rapid edits during a deliberately slow owned recipe cancelled and reaped
+only that original build and its child. The watcher deployed the latest edit,
+then exposed an intentionally failed focused test while keeping that new
+deployment live. Four retained build attempts stayed within the declared bound.
+An explicit public-API revocation of A followed by one generation-checked restore
+attempt returned `permission-denied`; the current deployment remained callable.
+The node and recipe/Invoke processes were reaped. Private state and the first
+run's incorrect expectation of a shortened cleanup reason remain retained.
+
+The [fuel regression observation](./watch-fuel-regression-observation.json)
+retains a later CI failure: the CPU-spinning A invocation consumed its full
+10 billion fuel allowance in 19 seconds, before B committed. The fixture now
+uses the supported component executor's cooperative async yield. Its complete
+189-second source run observed A running on both sides of B's commit, then
+cancelled A once with its original revision and 25,397,392 fuel consumed. Fuel,
+wall-time and process limits are unchanged. The intermediate bare-pending-future
+experiment trapped and remains recorded as a failed attempt.
+
+The Rust CI job runs `tools/dev_watch_fixture_probe.py` with the same payload,
+source-node and new-output arguments. These are source observations through the
+direct Linux helper, with explicitly trusted local admission. They still require
+repetition through final authenticated Windows/WSL packages and do not claim a
+clean host, VM-disconnect recovery or rendered newcomer/editor review.
+
 | Child | Remaining Windows acceptance |
 | --- | --- |
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
-| #564 | Complete malformed/admission failure, rapid edits, in-flight revision, revocation and expired-receipt cases; repeat the observed source watch/recovery schedule with final authenticated packages. |
-| #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |
+| #564 | Repeat the observed source watch failures, rapid edits, in-flight revision, revocation, recovery and actual expired-receipt schedules with final authenticated Windows/WSL packages; complete VM-disconnect recovery. |
+| #565 | Complete the remaining failure/isolation matrix; qualify the integrated fixtures and scenarios with all six languages. |
 | #566 | Verified final native distribution and the remaining provider/failure differential; all six languages have source tutorial comparisons, and Rust has shared node/native clock evidence. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
 | #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
@@ -814,7 +965,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate

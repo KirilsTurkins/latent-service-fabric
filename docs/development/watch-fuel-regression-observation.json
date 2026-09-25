@@ -1,0 +1,1024 @@
+{
+  "schemaVersion": "latent.dev.watch-fuel-regression-observation.v1",
+  "observedUtc": "2026-09-25",
+  "sourceParent": "c1e7957200a7eacc790f2d034918389154793386",
+  "sourceDirty": true,
+  "publisherAuthenticated": false,
+  "cleanHost": false,
+  "qualificationComplete": false,
+  "probeSources": {
+    "tools/dev_watch_fixture_probe.py": "sha256:ceed3aa9f423c043348545257f71438da463056480546608fea59605f41eeb09",
+    "tools/dev_watch_fixture_inputs.py": "sha256:7a7f48b13ad74a15e83afb996b65e98cc295e7723074cdc55fac27ee5e5a40fa",
+    "tools/dev_watch_inflight.py": "sha256:9f9add2e9bdc49cca63c41f0f6e858a8f8444ccbac83ec9ee5b864b02398f14a",
+    "tools/dev_watch_revocation.py": "sha256:48ab983bfe03bc5c9043085475fcc5e7b6d1d5c72fe960572ef9209558afafdb"
+  },
+  "unchangedLimits": {
+    "cpuFuel": 10000000000,
+    "wallTimeLimitMillis": 120000,
+    "invokeProcessSeconds": 125,
+    "probeSeconds": 900
+  },
+  "failedAttempts": [
+    {
+      "kind": "exact-source-github-ci",
+      "run": 36116522054,
+      "job": 108011810567,
+      "sourceCommit": "c1e7957200a7eacc790f2d034918389154793386",
+      "receiptSha256": "sha256:457f4ba654816d84b9060100cbcbf39f6925df4014d02c6a34c5ac607153387d",
+      "failure": "unexpected-watch-failure",
+      "inflight": {
+        "activationId": "qualification-454853dc6c10a83786ba207ce2d453ad",
+        "afterSwitch": {
+          "category": "success",
+          "command": "activation get",
+          "data": {
+            "activationId": "qualification-454853dc6c10a83786ba207ce2d453ad",
+            "finalConsumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "10000000000",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "1114112",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "19066559"
+            },
+            "lastUpdatedUnixMillis": "1790328663767",
+            "metadata": {
+              "release": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+              "revision": "revision-v1:sha256:8a65608039117ac9a83e5910abd3013a979b00a6182aecb0c2746bf5fbb1b1bf",
+              "route-generation": "1"
+            },
+            "phase": "running",
+            "terminalAtUnixMillis": "1790328663767",
+            "terminalOutcome": {
+              "error": {
+                "code": "resource-exhausted",
+                "details": [],
+                "message": "The platform reported a failure.",
+                "retryable": false
+              },
+              "kind": "platform-failure"
+            },
+            "terminalState": "resource_exhausted"
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "beforeEdit": {
+          "category": "success",
+          "command": "activation get",
+          "data": {
+            "activationId": "qualification-454853dc6c10a83786ba207ce2d453ad",
+            "finalConsumption": null,
+            "lastUpdatedUnixMillis": "1790328644701",
+            "metadata": {
+              "release": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+              "revision": "revision-v1:sha256:8a65608039117ac9a83e5910abd3013a979b00a6182aecb0c2746bf5fbb1b1bf",
+              "route-generation": "1"
+            },
+            "phase": "running",
+            "terminalAtUnixMillis": null,
+            "terminalOutcome": null,
+            "terminalState": null
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "cancelCalls": 1,
+        "cancellation": {
+          "category": "success",
+          "command": "activation cancel",
+          "data": {
+            "activationId": "qualification-454853dc6c10a83786ba207ce2d453ad",
+            "disposition": "already_terminal",
+            "terminalState": "resource_exhausted"
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "invokeCalls": 1,
+        "result": {
+          "category": "platform-failure",
+          "command": "invoke",
+          "data": {
+            "activationId": "qualification-454853dc6c10a83786ba207ce2d453ad",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "10000000000",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "1114112",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "19066559"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:ef65cd77d706e772ee80840e07e9042673459d9794d41e54d3abee3027929173",
+              "releaseDigest": "sha256:aaefa9fe1202fac4b40fe5e2d05d3a1ef3c379ab3a895ff8d9ba59867f5cccb9",
+              "revisionId": "revision-v1:sha256:8a65608039117ac9a83e5910abd3013a979b00a6182aecb0c2746bf5fbb1b1bf",
+              "routeGeneration": "1"
+            },
+            "terminalState": "resource_exhausted"
+          },
+          "error": {
+            "code": "resource-exhausted",
+            "details": [],
+            "message": "The platform reported a failure.",
+            "retryable": false
+          },
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        }
+      },
+      "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained"
+    },
+    {
+      "kind": "supporting-source-linux-container",
+      "change": "bare-Rust-pending-future",
+      "receiptSha256": "sha256:00411b68319a5f4158a732bf0643fe66ea83bed8ebd83b98650aaddf82c6665b",
+      "failure": "unexpected-watch-failure",
+      "inflight": {
+        "activationId": "qualification-ae080a1ebcec69195fb3cebaaaffc8cb",
+        "cancelCalls": 1,
+        "cancellation": {
+          "category": "success",
+          "command": "activation cancel",
+          "data": {
+            "activationId": "qualification-ae080a1ebcec69195fb3cebaaaffc8cb",
+            "disposition": "already_terminal",
+            "terminalState": "guest_trap"
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "invokeCalls": 1,
+        "result": {
+          "category": "platform-failure",
+          "command": "invoke",
+          "data": {
+            "activationId": "qualification-ae080a1ebcec69195fb3cebaaaffc8cb",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "925",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "1179648",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "1895"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:77982f9e2821ed8168ba63a91a5e13c0b1c2ba9be37b76dfa19559d84f18d1ab",
+              "releaseDigest": "sha256:79cb921a0f6a7fa9c09d216736f664c2960f6690d3ae999ea9c9ab0c7d0f5d01",
+              "revisionId": "revision-v1:sha256:3e3f1b33e426de0c1bc87ee95d3feb9375c692ea8ac62556c80f7308e1588b2a",
+              "routeGeneration": "1"
+            },
+            "terminalState": "guest_trap"
+          },
+          "error": {
+            "code": "guest-trap",
+            "details": [],
+            "message": "The platform reported a failure.",
+            "retryable": false
+          },
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        }
+      },
+      "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained"
+    }
+  ],
+  "corrected": {
+    "change": "cooperative-wit-bindgen-0.62.0-yield-async-until-explicit-cancellation",
+    "receiptSha256": "sha256:16c1c52bf0b0d97776ae36901bdc71b45ebd982258c993b3c1a330927dd8bf54",
+    "passed": true,
+    "seconds": 189.483,
+    "container": "lsf-dev559-watch-yield-20260925",
+    "uid": 23001,
+    "network": "none",
+    "runtimeBinaries": {
+      "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+      "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "latentd": "sha256:cb5ba1774c2bd089f0cd452aaa574feffc6c61cc6e7adaf0cbc6d3796febf649"
+    },
+    "helperSha256": "sha256:ecba30258af023453d88b3b6bf74a4b99cea2618957a8e8811fd8e1cfdf201bc",
+    "engine": {
+      "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "wasmtimeVersion": "47.0.4"
+    },
+    "fixtureTools": {
+      "inventory": "sha256:2bf2d280cb6ad8349e21c3b562de49f275a19a418273fd102578470230a04f67",
+      "originalInventory": "sha256:bf05bf4f9ad5247045274603a6d2378a5f4766c57449babae3455371cdb9cd02",
+      "path": "/build/dev559-event-tools2/payload",
+      "signer": "sha256:8a19b2937ad3128a99e4f01eba4282ab4eb7598deeca75b7888cb5749253762f",
+      "signerSource": {
+        "crates/latent-policy/examples/capsule_authoring.rs": "sha256:dda65679ac86ed297d6ecd206a59312ecb61e0737fe0135d5902484667db6844",
+        "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs": "sha256:700359fb9391632991892c5a517cdb9f8c736a5ce098757ddcca0647aa5a89e9"
+      }
+    },
+    "inflight": {
+      "activationId": "qualification-b6a771a3da677d2fd87daadab521c115",
+      "afterSwitch": {
+        "category": "success",
+        "command": "activation get",
+        "data": {
+          "activationId": "qualification-b6a771a3da677d2fd87daadab521c115",
+          "finalConsumption": null,
+          "lastUpdatedUnixMillis": "1790329923953",
+          "metadata": {
+            "release": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+            "revision": "revision-v1:sha256:abd4dfa6f2f046b04caf6f1ceebd48ccc92647bda67c014932e0892cdaeb7a93",
+            "route-generation": "1"
+          },
+          "phase": "running",
+          "terminalAtUnixMillis": null,
+          "terminalOutcome": null,
+          "terminalState": null
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "beforeEdit": {
+        "category": "success",
+        "command": "activation get",
+        "data": {
+          "activationId": "qualification-b6a771a3da677d2fd87daadab521c115",
+          "finalConsumption": null,
+          "lastUpdatedUnixMillis": "1790329923953",
+          "metadata": {
+            "release": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+            "revision": "revision-v1:sha256:abd4dfa6f2f046b04caf6f1ceebd48ccc92647bda67c014932e0892cdaeb7a93",
+            "route-generation": "1"
+          },
+          "phase": "running",
+          "terminalAtUnixMillis": null,
+          "terminalOutcome": null,
+          "terminalState": null
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "cancelCalls": 1,
+      "cancellation": {
+        "category": "success",
+        "command": "activation cancel",
+        "data": {
+          "activationId": "qualification-b6a771a3da677d2fd87daadab521c115",
+          "disposition": "accepted",
+          "terminalState": null
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "invokeCalls": 1,
+      "oldRevisionRetained": true,
+      "result": {
+        "category": "platform-failure",
+        "command": "invoke",
+        "data": {
+          "activationId": "qualification-b6a771a3da677d2fd87daadab521c115",
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "25397392",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1179648",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "6285887"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:01ca3459b2c22d6f4c1d99deb126b1cb5bedf5075bd087e262a8bb1d20a150f9",
+            "releaseDigest": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+            "revisionId": "revision-v1:sha256:abd4dfa6f2f046b04caf6f1ceebd48ccc92647bda67c014932e0892cdaeb7a93",
+            "routeGeneration": "1"
+          },
+          "terminalState": "cancelled"
+        },
+        "error": {
+          "code": "cancelled",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      }
+    },
+    "deployments": [
+      {
+        "attempt": "e643fb69bff591b0f62bc39a720c1a2f",
+        "buildKey": "sha256:dcdf7f9878ed8072835600031d8f16536201f0fbd241b56443227275b98e8f0a",
+        "componentDigest": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+        "deployment": "my-greeting",
+        "generation": "1",
+        "operation": "dev-0f594ecbd3a2c13e79b035891422e332",
+        "publication": "publication:sha256:01ca3459b2c22d6f4c1d99deb126b1cb5bedf5075bd087e262a8bb1d20a150f9",
+        "publicationInput": "sha256:42629c8722d92f2c03ea2e25ab0ec72293c18f9334a4ebff7e5eeb3a1cffa279",
+        "source": "sha256:9f2a27ded98888afd9d610714a108253cf22a11b4b397eedea8f797d7f777b98"
+      },
+      {
+        "attempt": "01f97af0b230dced362bedb8e85fa596",
+        "buildKey": "sha256:6ae71be47b3e0ca04f6f65490d96f255e6f2e4287fe0fc48419fc34dcd06a8d2",
+        "componentDigest": "sha256:5f4bb85d83ec5f47a2fbefeb7818061ebf2d5b8fa63350c7d342a6ec34e1a52f",
+        "deployment": "my-greeting",
+        "generation": "2",
+        "operation": "dev-b74d5f3e87adeecac9376bf2e0bda589",
+        "publication": "publication:sha256:96ac07cd981586952d3b7bc5a00a71a43fff1b302e72c15245824d04c2c739ce",
+        "publicationInput": "sha256:3c44140381c824600d437e3aec65dfbb4d1188cc3c7be58bf828bcec3f849db7",
+        "source": "sha256:5b11c07e74dcc91274206985c9743f81a94a4fc63f980c73e39529069ee29f88"
+      },
+      {
+        "attempt": "1e751fb16baa5fa64079fe14be9b3347",
+        "buildKey": "sha256:75961a3480a675eb4e3379289638e3fe41c487ad14b49a4fa34dd778cfab92d0",
+        "componentDigest": "sha256:ccf931d9857dc5cfc81e88f38d27c626bc700086effcc474599df6d767f394fc",
+        "deployment": "my-greeting",
+        "generation": "3",
+        "operation": "dev-888c7ba418fbc4f227e055b953d08c41",
+        "publication": "publication:sha256:052bb3bf0aabff13d46b4e7d4040d100aaa0b5391e1468f13c8c92baf604fe2a",
+        "publicationInput": "sha256:0919fe7a1cdcd68e1d8da49cfe6296b94db693d4a08f32c02a98fbc3665ff38e",
+        "source": "sha256:c2be2c19250d851ccc97878af8234eafb608ab8522e394fb2bb4e262ea4d56f6"
+      }
+    ],
+    "observations": {
+      "afterRevokedRestore": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "dev-bd465b1f5484e3cae0bd067e527b2c5e",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "33",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1114112",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "1841"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "lsf-c71b40eca3cd2769:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "5",
+            "data": "WzUwMV0=",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:052bb3bf0aabff13d46b4e7d4040d100aaa0b5391e1468f13c8c92baf604fe2a",
+            "releaseDigest": "sha256:ccf931d9857dc5cfc81e88f38d27c626bc700086effcc474599df6d767f394fc",
+            "revisionId": "revision-v1:sha256:1eefddcd511f09b28be780c10c77a2297aef1a01ecbbeac4d3c1864b71a2ff1f",
+            "routeGeneration": "3"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "bValue": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "dev-0c6de7ba1c398f233072bc2994220cdb",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "33",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1114112",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "2492"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "lsf-c71b40eca3cd2769:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "5",
+            "data": "WzIwMV0=",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:96ac07cd981586952d3b7bc5a00a71a43fff1b302e72c15245824d04c2c739ce",
+            "releaseDigest": "sha256:5f4bb85d83ec5f47a2fbefeb7818061ebf2d5b8fa63350c7d342a6ec34e1a52f",
+            "revisionId": "revision-v1:sha256:803ad369413d8b7783c655c2e35aa7f1fa439a58efe3d6a3aea1817ef62d3356",
+            "routeGeneration": "2"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "compiler-error": {
+        "callableB": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "dev-bed27e5a2f99e6a881684d1356af8d91",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "33",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "1114112",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "1968"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "lsf-c71b40eca3cd2769:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "5",
+              "data": "WzIwMV0=",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:96ac07cd981586952d3b7bc5a00a71a43fff1b302e72c15245824d04c2c739ce",
+              "releaseDigest": "sha256:5f4bb85d83ec5f47a2fbefeb7818061ebf2d5b8fa63350c7d342a6ec34e1a52f",
+              "revisionId": "revision-v1:sha256:803ad369413d8b7783c655c2e35aa7f1fa439a58efe3d6a3aea1817ef62d3356",
+              "routeGeneration": "2"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "event": {
+          "code": "guest-build-failed-last-deployment-retained",
+          "currentDeployment": {
+            "attempt": "01f97af0b230dced362bedb8e85fa596",
+            "buildKey": "sha256:6ae71be47b3e0ca04f6f65490d96f255e6f2e4287fe0fc48419fc34dcd06a8d2",
+            "componentDigest": "sha256:5f4bb85d83ec5f47a2fbefeb7818061ebf2d5b8fa63350c7d342a6ec34e1a52f",
+            "deployment": "my-greeting",
+            "generation": "2",
+            "operation": "dev-b74d5f3e87adeecac9376bf2e0bda589",
+            "publication": "publication:sha256:96ac07cd981586952d3b7bc5a00a71a43fff1b302e72c15245824d04c2c739ce",
+            "publicationInput": "sha256:3c44140381c824600d437e3aec65dfbb4d1188cc3c7be58bf828bcec3f849db7",
+            "source": "sha256:5b11c07e74dcc91274206985c9743f81a94a4fc63f980c73e39529069ee29f88"
+          },
+          "diagnostics": [
+            {
+              "code": "",
+              "column": 6,
+              "hostPath": "/build/dev559-node-homes/wa5/host-watch-d9f24c/Author spaces-\u00fc/app/src/lib.rs",
+              "line": 22,
+              "message": "expected one of `!` or `::`, found `is`",
+              "path": "app/src/lib.rs",
+              "severity": "error"
+            }
+          ],
+          "event": "edit-failed",
+          "phase": "build",
+          "rollbackPerformed": false,
+          "source": "sha256:2aefd90a87954956b38d2f451f0347195d387152772d7c8efa9463e09ac0b608",
+          "uncertain": false,
+          "workspace": "test-watch-d2613e"
+        }
+      },
+      "inflight": {
+        "activationId": "qualification-b6a771a3da677d2fd87daadab521c115",
+        "afterSwitch": {
+          "category": "success",
+          "command": "activation get",
+          "data": {
+            "activationId": "qualification-b6a771a3da677d2fd87daadab521c115",
+            "finalConsumption": null,
+            "lastUpdatedUnixMillis": "1790329923953",
+            "metadata": {
+              "release": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+              "revision": "revision-v1:sha256:abd4dfa6f2f046b04caf6f1ceebd48ccc92647bda67c014932e0892cdaeb7a93",
+              "route-generation": "1"
+            },
+            "phase": "running",
+            "terminalAtUnixMillis": null,
+            "terminalOutcome": null,
+            "terminalState": null
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "beforeEdit": {
+          "category": "success",
+          "command": "activation get",
+          "data": {
+            "activationId": "qualification-b6a771a3da677d2fd87daadab521c115",
+            "finalConsumption": null,
+            "lastUpdatedUnixMillis": "1790329923953",
+            "metadata": {
+              "release": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+              "revision": "revision-v1:sha256:abd4dfa6f2f046b04caf6f1ceebd48ccc92647bda67c014932e0892cdaeb7a93",
+              "route-generation": "1"
+            },
+            "phase": "running",
+            "terminalAtUnixMillis": null,
+            "terminalOutcome": null,
+            "terminalState": null
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "cancelCalls": 1,
+        "cancellation": {
+          "category": "success",
+          "command": "activation cancel",
+          "data": {
+            "activationId": "qualification-b6a771a3da677d2fd87daadab521c115",
+            "disposition": "accepted",
+            "terminalState": null
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "invokeCalls": 1,
+        "oldRevisionRetained": true,
+        "result": {
+          "category": "platform-failure",
+          "command": "invoke",
+          "data": {
+            "activationId": "qualification-b6a771a3da677d2fd87daadab521c115",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "25397392",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "1179648",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "6285887"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:01ca3459b2c22d6f4c1d99deb126b1cb5bedf5075bd087e262a8bb1d20a150f9",
+              "releaseDigest": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+              "revisionId": "revision-v1:sha256:abd4dfa6f2f046b04caf6f1ceebd48ccc92647bda67c014932e0892cdaeb7a93",
+              "routeGeneration": "1"
+            },
+            "terminalState": "cancelled"
+          },
+          "error": {
+            "code": "cancelled",
+            "details": [],
+            "message": "The platform reported a failure.",
+            "retryable": false
+          },
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        }
+      },
+      "malformed": {
+        "callableB": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "dev-0726b6a4d1060c92e5df58e8f39e41ea",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "33",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "1114112",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "1716"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "lsf-c71b40eca3cd2769:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "5",
+              "data": "WzIwMV0=",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:96ac07cd981586952d3b7bc5a00a71a43fff1b302e72c15245824d04c2c739ce",
+              "releaseDigest": "sha256:5f4bb85d83ec5f47a2fbefeb7818061ebf2d5b8fa63350c7d342a6ec34e1a52f",
+              "revisionId": "revision-v1:sha256:803ad369413d8b7783c655c2e35aa7f1fa439a58efe3d6a3aea1817ef62d3356",
+              "routeGeneration": "2"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "event": {
+          "code": "build-output-is-not-component-model",
+          "currentDeployment": {
+            "attempt": "01f97af0b230dced362bedb8e85fa596",
+            "buildKey": "sha256:6ae71be47b3e0ca04f6f65490d96f255e6f2e4287fe0fc48419fc34dcd06a8d2",
+            "componentDigest": "sha256:5f4bb85d83ec5f47a2fbefeb7818061ebf2d5b8fa63350c7d342a6ec34e1a52f",
+            "deployment": "my-greeting",
+            "generation": "2",
+            "operation": "dev-b74d5f3e87adeecac9376bf2e0bda589",
+            "publication": "publication:sha256:96ac07cd981586952d3b7bc5a00a71a43fff1b302e72c15245824d04c2c739ce",
+            "publicationInput": "sha256:3c44140381c824600d437e3aec65dfbb4d1188cc3c7be58bf828bcec3f849db7",
+            "source": "sha256:5b11c07e74dcc91274206985c9743f81a94a4fc63f980c73e39529069ee29f88"
+          },
+          "diagnostics": [],
+          "event": "edit-failed",
+          "phase": "build",
+          "rollbackPerformed": false,
+          "source": "sha256:5e0938ea24c51e8407997eb97ae09c4c78fb40ab7466348476bc4ad3a5c6588d",
+          "uncertain": false,
+          "workspace": "test-watch-d2613e"
+        }
+      },
+      "postDeployFailureStillLive": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "dev-f0624599452e6e83505caf81c1556762",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "33",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1114112",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "1583"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "lsf-c71b40eca3cd2769:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "5",
+            "data": "WzUwMV0=",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:052bb3bf0aabff13d46b4e7d4040d100aaa0b5391e1468f13c8c92baf604fe2a",
+            "releaseDigest": "sha256:ccf931d9857dc5cfc81e88f38d27c626bc700086effcc474599df6d767f394fc",
+            "revisionId": "revision-v1:sha256:1eefddcd511f09b28be780c10c77a2297aef1a01ecbbeac4d3c1864b71a2ff1f",
+            "routeGeneration": "3"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "rapidEdits": {
+        "build": {
+          "attempt": "fa3b94ba97372b59d13d9beeeb047009",
+          "guestInstance": {
+            "bootId": "17629591-f3d7-4093-b030-166b299c7cff",
+            "initStartTicks": "86578",
+            "pidNamespace": "4026532295"
+          },
+          "id": "12f96d6aa3a8cbbf01944289c3d0a591",
+          "reason": null,
+          "state": "running"
+        },
+        "childPid": 4496,
+        "cleanup": {
+          "attempt": "fa3b94ba97372b59d13d9beeeb047009",
+          "guestInstance": {
+            "bootId": "17629591-f3d7-4093-b030-166b299c7cff",
+            "initStartTicks": "86578",
+            "pidNamespace": "4026532295"
+          },
+          "id": "12f96d6aa3a8cbbf01944289c3d0a591",
+          "reason": "guest-build-superseded",
+          "state": "reaped"
+        },
+        "delay": "owned-recipe-child-before-rust-compiler",
+        "intermediate": "sha256:47bea94384778d0bd5515305c66a7581edcb91bb396eb0a93f71b221127f3559",
+        "lastWorkingValue": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "dev-9cbbf6f34eb4324f61c0c5b9af759eb5",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "33",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "1114112",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "1695"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "lsf-c71b40eca3cd2769:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "5",
+              "data": "WzIwMV0=",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:96ac07cd981586952d3b7bc5a00a71a43fff1b302e72c15245824d04c2c739ce",
+              "releaseDigest": "sha256:5f4bb85d83ec5f47a2fbefeb7818061ebf2d5b8fa63350c7d342a6ec34e1a52f",
+              "revisionId": "revision-v1:sha256:803ad369413d8b7783c655c2e35aa7f1fa439a58efe3d6a3aea1817ef62d3356",
+              "routeGeneration": "2"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "latest": "sha256:c2be2c19250d851ccc97878af8234eafb608ab8522e394fb2bb4e262ea4d56f6",
+        "maximumDelaySeconds": 30
+      },
+      "revokedRestore": {
+        "controllerDeploymentUnchanged": true,
+        "original": {
+          "category": "success",
+          "command": "release lifecycle",
+          "data": {
+            "status": {
+              "eligibility": "RELEASE_LIVE_ELIGIBILITY_ELIGIBLE",
+              "eligibilityReason": "RELEASE_ELIGIBILITY_REASON_LOCAL_ELIGIBLE",
+              "record": {
+                "actor": {
+                  "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+                  "subject": "installation-operator"
+                },
+                "componentDigest": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+                "evidenceRevisionDigest": null,
+                "generation": "1",
+                "observedAtUnixMillis": "1790329923392",
+                "operationId": "dev-d893e5b473f8b7fe84d50fb90c4734fa",
+                "packageDigest": null,
+                "policy": null,
+                "publication": {
+                  "id": "publication:sha256:01ca3459b2c22d6f4c1d99deb126b1cb5bedf5075bd087e262a8bb1d20a150f9",
+                  "tenant": "examples"
+                },
+                "reason": "RELEASE_LIFECYCLE_REASON_ADMITTED",
+                "state": "RELEASE_LIFECYCLE_STATE_ADMITTED",
+                "tenant": "examples"
+              }
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "restore": {
+          "category": "platform-failure",
+          "command": "deployment apply",
+          "data": {
+            "auditAck": {
+              "attemptSequence": "15",
+              "status": "durable"
+            },
+            "recovery": {
+              "deploymentId": "my-greeting",
+              "expectedGeneration": "3",
+              "expectedStateVersion": "3",
+              "family": "deployment",
+              "operationId": "qualification-209c4fe97e102df7c0aa5de694c119f1",
+              "tenant": "examples"
+            }
+          },
+          "error": {
+            "code": "permission-denied",
+            "details": [],
+            "message": "The platform reported a failure.",
+            "retryable": false
+          },
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "restoreCalls": 1,
+        "revoke": {
+          "category": "success",
+          "command": "release revoke",
+          "data": {
+            "auditAck": {
+              "attemptSequence": "13",
+              "status": "AUDIT_ACK_STATUS_DURABLE"
+            },
+            "operation": {
+              "action": "RELEASE_LIFECYCLE_ACTION_REVOKE",
+              "actor": {
+                "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+                "subject": "installation-operator"
+              },
+              "componentDigest": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+              "disposition": "RELEASE_OPERATION_DISPOSITION_COMMITTED",
+              "expectedGeneration": "1",
+              "observedAtUnixMillis": "1790330043263",
+              "operationId": "qualification-68dbebd0118779d8f4d8801ff4cf9ccf",
+              "packageManifestDigest": null,
+              "policy": null,
+              "publication": {
+                "id": "publication:sha256:01ca3459b2c22d6f4c1d99deb126b1cb5bedf5075bd087e262a8bb1d20a150f9",
+                "tenant": "examples"
+              },
+              "reason": "RELEASE_LIFECYCLE_REASON_OPERATOR_REVOCATION",
+              "record": {
+                "actor": {
+                  "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+                  "subject": "installation-operator"
+                },
+                "componentDigest": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+                "evidenceRevisionDigest": null,
+                "generation": "2",
+                "observedAtUnixMillis": "1790330043263",
+                "operationId": "qualification-68dbebd0118779d8f4d8801ff4cf9ccf",
+                "packageDigest": null,
+                "policy": null,
+                "publication": {
+                  "id": "publication:sha256:01ca3459b2c22d6f4c1d99deb126b1cb5bedf5075bd087e262a8bb1d20a150f9",
+                  "tenant": "examples"
+                },
+                "reason": "RELEASE_LIFECYCLE_REASON_OPERATOR_REVOCATION",
+                "state": "RELEASE_LIFECYCLE_STATE_REVOKED",
+                "tenant": "examples"
+              },
+              "requestDigest": "sha256:bb8042da96c19ba66e5447ccf0b24645050623d6eb3b3e457ffb3e2d1ac04b44",
+              "tenant": "examples"
+            },
+            "recovery": {
+              "expectedGeneration": "1",
+              "family": "release",
+              "operationId": "qualification-68dbebd0118779d8f4d8801ff4cf9ccf",
+              "publication": {
+                "id": "publication:sha256:01ca3459b2c22d6f4c1d99deb126b1cb5bedf5075bd087e262a8bb1d20a150f9",
+                "tenant": "examples"
+              },
+              "tenant": "examples"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "revokeCalls": 1,
+        "revoked": {
+          "category": "success",
+          "command": "release lifecycle",
+          "data": {
+            "status": {
+              "eligibility": "RELEASE_LIVE_ELIGIBILITY_DENIED",
+              "eligibilityReason": "RELEASE_ELIGIBILITY_REASON_REVOKED",
+              "record": {
+                "actor": {
+                  "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+                  "subject": "installation-operator"
+                },
+                "componentDigest": "sha256:148b4b464d5e3cb0380af7f99b7d315d65e9d322379ab31caa7620c27f72a753",
+                "evidenceRevisionDigest": null,
+                "generation": "2",
+                "observedAtUnixMillis": "1790330043263",
+                "operationId": "qualification-68dbebd0118779d8f4d8801ff4cf9ccf",
+                "packageDigest": null,
+                "policy": null,
+                "publication": {
+                  "id": "publication:sha256:01ca3459b2c22d6f4c1d99deb126b1cb5bedf5075bd087e262a8bb1d20a150f9",
+                  "tenant": "examples"
+                },
+                "reason": "RELEASE_LIFECYCLE_REASON_OPERATOR_REVOCATION",
+                "state": "RELEASE_LIFECYCLE_STATE_REVOKED",
+                "tenant": "examples"
+              }
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "serverDeploymentUnchanged": true,
+        "statePreconditionRefreshedForRetry": false
+      }
+    },
+    "retention": {
+      "attempts": 4,
+      "maximumAttempts": 4,
+      "ownedBytes": 1557499540
+    },
+    "shutdown": {
+      "build": {
+        "attempt": "1e751fb16baa5fa64079fe14be9b3347",
+        "guestInstance": {
+          "bootId": "17629591-f3d7-4093-b030-166b299c7cff",
+          "initStartTicks": "86578",
+          "pidNamespace": "4026532295"
+        },
+        "id": "d6e83ee6bf45cbdc5389214c42012afb",
+        "reason": "build-complete",
+        "state": "reaped"
+      },
+      "cleanShutdown": true,
+      "dataRetained": true,
+      "guestInstance": {
+        "bootId": "17629591-f3d7-4093-b030-166b299c7cff",
+        "initStartTicks": "86578",
+        "pidNamespace": "4026532295"
+      },
+      "node": "lsf-c71b40eca3cd2769",
+      "profile": "local-experimental-v1",
+      "providers": [],
+      "readiness": {
+        "activationReady": true,
+        "authenticated": true,
+        "profile": "local-experimental-v1",
+        "schemaVersion": "latent.native-readiness.v1"
+      },
+      "reaped": true,
+      "state": "stopped"
+    },
+    "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained"
+  },
+  "limitations": [
+    "Supporting source-built Linux run, not final installed-candidate or Windows/WSL qualification.",
+    "Uses the previously recorded source node/helper and Rust tool payload; exact identities are retained.",
+    "B was compiled before A; the watch edit still revalidates its exact source/tool/recipe cache entry.",
+    "Failed and successful private workspaces remain retained; no purge is claimed.",
+    "Fresh CI must repeat the complete schedule with binaries and payloads built from the final commit."
+  ]
+}

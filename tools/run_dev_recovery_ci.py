@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Give the installed-helper recovery probe a fresh account on ephemeral CI."""
+"""Give installed-helper probes a fresh private account on ephemeral CI."""
 from __future__ import annotations
 
 import argparse
@@ -20,17 +20,22 @@ from tools.dev_workflow.common import decode, encode, require
 from tools.native_runtime import files
 
 
-def run(payload: Path, supplied: Path, output: Path):
+PROBES = {"recovery": "dev_recovery_fixture_probe.py",
+          "isolation": "dev_workspace_isolation_probe.py", "watch": "dev_watch_fixture_probe.py"}
+
+
+def run(payload: Path, supplied: Path, output: Path, probe: str = "recovery"):
+    require(probe in PROBES, "unknown-installed-helper-ci-probe")
     require(sys.platform == "linux" and os.geteuid() == 0
             and os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("RUNNER_OS") == "Linux",
             "fresh-recovery-account-only-on-ephemeral-linux-ci")
     require(not output.exists(), "new-recovery-ci-output-required")
     # The helper deliberately selects the passwd home, never an environment
     # override. Do not alter the runner's home, account or inherited ACLs.
-    home = Path(tempfile.mkdtemp(prefix="lsf-recovery-ci-", dir="/tmp"))
+    home = Path(tempfile.mkdtemp(prefix="lsf-" + probe + "-ci-", dir="/tmp"))
     with files.directory(home, {0}):
         pass
-    name = "lsf-recovery-" + secrets.token_hex(4)
+    name = "lsf-" + probe + "-" + secrets.token_hex(4)
     subprocess.run(["/usr/sbin/useradd", "--system", "--user-group", "--no-create-home",
                     "--home-dir", str(home), "--shell", "/usr/sbin/nologin", name], check=True, timeout=30)
     account = pwd.getpwnam(name)
@@ -50,7 +55,7 @@ def run(payload: Path, supplied: Path, output: Path):
     result = None
     try:
         result = process.run(["/usr/sbin/runuser", "-u", name, "--", str(Path(sys.executable).resolve()),
-            "-B", str(staged / "tools/dev_recovery_fixture_probe.py"), "--payload", str(home / "payload"),
+            "-B", str(staged / "tools" / PROBES[probe]), "--payload", str(home / "payload"),
             "--source-node", str(home / "source-node"), "--output", str(public)],
             home, timeout=1000, graceful=15, maximum=262144)
     finally:
@@ -61,7 +66,7 @@ def run(payload: Path, supplied: Path, output: Path):
             for path in public.glob("*.json"):
                 raw = files.read(path, 4 * 1024 * 1024, owners={0, account.pw_uid})
                 (output / path.name).write_bytes(raw)
-        (output / "ci-account.json").write_bytes(encode({"purpose": "ephemeral-source-recovery-probe",
+        (output / "ci-account.json").write_bytes(encode({"purpose": "ephemeral-source-" + probe + "-probe",
             "privatePasswdHome": True, "dedicatedUnprivilegedAccount": True,
             "runnerAclChanged": False, "cleanup": "private-intent-retained-until-runner-teardown"}))
     if result.returncode:
@@ -69,12 +74,13 @@ def run(payload: Path, supplied: Path, output: Path):
         raise SystemExit(result.returncode)
     report = decode((output / "observation.json").read_bytes(), 4 * 1024 * 1024)
     require(report["passed"] is True, "recovery-ci-probe-failed")
-    print("Installed-helper recovery passed under a fresh unprivileged CI account")
+    print("Installed-helper " + probe + " passed under a fresh unprivileged CI account")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("payload", "source-node", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--probe", choices=sorted(PROBES), default="recovery")
     args = parser.parse_args()
-    run(args.payload.resolve(strict=True), args.source_node.resolve(strict=True), args.output.absolute())
+    run(args.payload.resolve(strict=True), args.source_node.resolve(strict=True), args.output.absolute(), args.probe)

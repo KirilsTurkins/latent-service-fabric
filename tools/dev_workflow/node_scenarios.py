@@ -88,12 +88,18 @@ def run(root, arguments, *, deadline: float | None = None):
             supported.add("random")
         if "http" in installed:
             supported.add("buffered-http-fixture")
+        if "events" in installed:
+            supported.add("immediate-event-fixture")
         if "blob" in installed:
             supported.add("immutable-blob-fixture")
         if "secrets" in installed:
             supported.add("scoped-secret-fixture")
         if "metrics" in installed:
             supported.add("metrics")
+        if "localService" in installed:
+            from . import local_service_fixture
+            fixture_runtime["localService"] = local_service_fixture.observe(root, cli)
+            supported.add("local-service-fixture")
     fixture_profile = state.load(root, "test-profile.json") if installed is not None else {}
     fixtures = fixture_profile.get("fixtures")
     initialized = node_fixtures.initialized(source, cases, fixtures, fixture_runtime, installed)
@@ -108,14 +114,14 @@ def run(root, arguments, *, deadline: float | None = None):
         "profile": node["securityProfile"], "os": "linux", "architecture": platform.machine(), "kernel": platform.release()},
         supported=supported,
         initialized_fixtures=initialized, execution_controls=controls, expected_revision=lambda: revision)
-    if "http" in fixture_runtime:
+    for peer in (name for name in ("http", "events") if name in fixture_runtime):
         actual = service.request(root, "status")
-        after = actual.get("fixtures", {}).get("http", {})
+        after = actual.get("fixtures", {}).get(peer, {})
         require(actual.get("state") == "ready" and after.get("state") == "ready"
                 and after.get("failure") is None
-                and after.get("configurationSha256") == fixture_runtime["http"]["configurationSha256"],
-                "http-fixture-execution-not-confirmed")
-        report["identity"]["fixtureRuntimeAfter"] = {"http": after}
+                and after.get("configurationSha256") == fixture_runtime[peer]["configurationSha256"],
+                peer + "-fixture-execution-not-confirmed")
+        report["identity"].setdefault("fixtureRuntimeAfter", {})[peer] = after
     pending = journal.read()["pending"]
     if any(item.get("recovery", {}).get("clientCleanup") == "unconfirmed" for item in report["results"]):
         report["cleanup"] = "client-cleanup-unconfirmed-node-retained"

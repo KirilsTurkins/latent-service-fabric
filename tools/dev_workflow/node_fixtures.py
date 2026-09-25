@@ -10,7 +10,7 @@ from .common import decode, digest, encode, members, require
 
 
 def validate(value: dict) -> dict:
-    members(value, set(), {"clock", "http", "blob", "secrets", "metrics"})
+    members(value, set(), {"clock", "http", "blob", "secrets", "metrics", "localService", "events"})
     require(value and len(encode(value)) <= 256 * 1024, "node-fixture-byte-limit")
     if "clock" in value:
         clock = members(value["clock"], {"monotonicNanos", "wallUnixMillis"})
@@ -20,6 +20,9 @@ def validate(value: dict) -> dict:
     if "http" in value:
         from . import http_fixture
         http_fixture.validate(value["http"])
+    if "events" in value:
+        from . import event_fixture
+        event_fixture.validate(value["events"])
     if "blob" in value:
         from . import blob_fixture
         blob_fixture.validate(value["blob"])
@@ -29,6 +32,9 @@ def validate(value: dict) -> dict:
     if "metrics" in value:
         from . import metric_fixture
         metric_fixture.validate(value["metrics"])
+    if "localService" in value:
+        from . import local_service_fixture
+        local_service_fixture.validate(value["localService"])
     return value
 
 
@@ -71,7 +77,7 @@ def initialized(source: Path, cases: list[dict], selected: dict | None, runtime:
             requested = decode(raw, 256 * 1024)
             # Other adapter fixtures remain explicitly unsupported by the
             # common runner until a node implementation has initialized them.
-            if not isinstance(requested, dict) or set(requested) not in ({"clock"}, {"http"}, {"blob"}, {"secrets"}, {"metrics"}):
+            if not isinstance(requested, dict) or set(requested) not in ({"clock"}, {"http"}, {"blob"}, {"secrets"}, {"metrics"}, {"localService"}, {"events"}):
                 continue
             validate(requested)
             if selected is None or any(selected.get(key) != value for key, value in requested.items()):
@@ -90,11 +96,23 @@ def initialized(source: Path, cases: list[dict], selected: dict | None, runtime:
                 from . import metric_fixture
                 if metric_fixture.initialized(providers):
                     result.add(fixture["id"])
+            if "localService" in requested and fixture["kind"] == "real-provider":
+                from . import local_service_fixture
+                if local_service_fixture.initialized(requested["localService"], providers):
+                    result.add(fixture["id"])
             if "http" in requested and fixture["kind"] == "controlled-peer":
                 actual = (runtime or {}).get("http", {})
                 if (actual.get("state") == "ready" and actual.get("kind") == "controlled-peer"
                         and actual.get("authentication") == "private-provider-credential"
                         and actual.get("configurationSha256") == digest(encode(requested["http"]))
+                        and actual.get("failure") is None):
+                    result.add(fixture["id"])
+            if "events" in requested and fixture["kind"] == "controlled-peer":
+                actual = (runtime or {}).get("events", {})
+                if (actual.get("state") == "ready" and actual.get("kind") == "controlled-peer"
+                        and actual.get("authentication") == "private-tls-provider-credential"
+                        and actual.get("liveBroker") is False
+                        and actual.get("configurationSha256") == digest(encode(requested["events"]))
                         and actual.get("failure") is None):
                     result.add(fixture["id"])
     return result

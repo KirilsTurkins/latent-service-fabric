@@ -29,7 +29,7 @@ const TENANT: &str = "examples";
 // Production proof-age limits, revocation and currentness checks are unchanged.
 const DEMO_VALIDITY_SECONDS: u64 = 1800;
 
-fn write(path: &Path, bytes: &[u8]) -> Result<()> {
+pub(super) fn write(path: &Path, bytes: &[u8]) -> Result<()> {
     if bytes.len() > 4 * 1024 * 1024 {
         return Err("demo document byte limit".into());
     }
@@ -45,7 +45,7 @@ fn write(path: &Path, bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
-fn directory(path: &Path) -> Result<()> {
+pub(super) fn directory(path: &Path) -> Result<()> {
     fs::create_dir(path)?;
     #[cfg(unix)]
     {

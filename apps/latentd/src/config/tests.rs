@@ -8,6 +8,8 @@ mod budgets;
 mod connection_limits;
 mod development;
 mod engine;
+mod events;
+mod local_service;
 mod metrics;
 mod providers;
 mod renderer;
