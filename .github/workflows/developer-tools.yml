@@ -5,6 +5,11 @@ on:
     branches: ['feat/559-*']
     paths-ignore:
       - .github/workflows/developer-platform-preflight.yml
+      - .github/workflows/developer-packaged-qualification.yml
+      - tools/dev_packaged_*.py
+      - tools/prepare_dev_packaged_probe.py
+      - tools/tests/test_dev_packaged_probe.py
+      - packaging/dev/qualification-trusted-root.jsonl
       - tools/ci/commands.json
       - docs/**
   pull_request:

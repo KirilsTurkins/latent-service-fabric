@@ -1,0 +1,56 @@
+# Packaged developer qualification
+
+The `Packaged developer qualification` workflow stages a small test conductor on
+a fresh Windows x86-64 runner. The application runs the authenticated native
+frontend, WSL image, native Linux runtime and six language tool bundles. The
+Windows job does not check out LSF or compile its runtime. The runner image has
+preinstalled development tools; the frontend receives a restricted environment
+whose PATH contains only Windows System32. Python runs the separate conductor.
+
+This lane is manual. Its inputs are the complete, independently approved
+developer/runtime publisher policies and their successful exact-source candidate
+workflow run IDs. The maintainer must approve those policies before selecting
+`policy_approved`. The conductor does not grant publishing authority. Its support
+job rejects unsuccessful, unfinished, wrong-workflow or wrong-source candidate
+runs. Candidate signatures and inventories are still verified before use.
+
+The support artifact contains only the qualification scripts and independent
+verification inputs. GitHub CLI 2.96.0 archives are pinned to the digests recorded
+by the official [GitHub CLI release](https://github.com/cli/cli/releases/tag/v2.96.0).
+The separately provisioned Sigstore trusted root is retained in
+`packaging/dev/qualification-trusted-root.jsonl`, SHA-256
+`65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c`.
+It is the independent root used for the earlier approved candidate verification;
+it is not selected from a candidate archive. Changing this input requires review.
+
+The current schedule verifies the frontend before executing it, rejects a wrong
+target and a tampered archive, imports only its owned WSL image, and creates
+separate Linux users for the six language-owned greeting projects. It installs
+the selected runtime and compiler tools, rejects an untrusted build recipe,
+builds real components, starts signed/enforced test nodes, deploys and executes
+the common success and declared-error cases. A retained Rust workspace remains
+callable while subsequent workspaces stop and purge. Restart uses the retained
+deployment without a new publication. Purge retains the authored source trees.
+
+Each command has bounded output and a deadline. The schedule admits at most
+190 completed commands, 4 MiB stdout and 256 KiB stderr per command, 1,800 seconds
+per command, and 7,200 seconds for the schedule. A public receipt is at most
+16 MiB. Only the public observation and selected input identities are uploaded;
+private workspace credentials and uncertain intent are not artifact inputs.
+Failures stop the schedule without replaying a mutation or invocation. Cleanup
+uses the recorded public workspace API, and an unconfirmed remote termination
+remains explicitly unconfirmed. Private failed state remains until the ephemeral
+runner is discarded.
+
+This is qualification scaffolding until a completed run is linked. Its receipt
+deliberately keeps `qualificationComplete: false`: the full watch, transport-loss,
+security/failure, native portable, direct Linux, SSH, devcontainer and rendered
+newcomer/editor schedules still need their actual packaged evidence before
+issue #569 or epic #559 can close. The successful
+[hosted WSL preflight](hosted-wsl-preflight-observation.json) proves that the
+Windows runner can execute WSL2; it does not supply those missing receipts.
+
+The seven fast conductor regressions exercise archive traversal/alias/device/link
+rejection, modified member bytes, output flooding, finite process deadlines and
+the actual Windows DACL of the newly created conductor directory.
+They run on Windows and Linux and do not count as installed-product evidence.
