@@ -56,6 +56,16 @@ def node_campaign(api, config, helper_sha, *, backend_config=None, project_paren
     return observations
 
 
+def require_same_artifacts(node, portable):
+    # Node reports also retain deployment, evidence and package-source hashes.
+    # The portable host consumes exactly these three exported public artifacts.
+    shared = {'capsule', 'component', 'contracts'}
+    require(node['os'] == 'linux' and portable['productionNode'] is False
+        and set(portable['artifacts']) == shared
+        and all(node['artifacts'].get(key) == portable['artifacts'][key] for key in shared),
+        'same-byte-real-node-native-comparison-required')
+
+
 def portable_campaign(api, observations, bundle):
     for kind, item in observations.items():
         arguments = ['test', '--workspace', 'test-portable-' + kind, '--environment', 'portable',
@@ -65,9 +75,7 @@ def portable_campaign(api, observations, bundle):
         actual = item['portable'] = api.call(*arguments, *selected, timeout=330)
         require(actual['passed'] and actual['cleanup'] == 'owned-native-host-reaped'
             and actual['selection'] == item['sharedSelection'], 'packaged-native-closed-profile-failed')
-        left, right = item['tests']['identity'], actual['identity']
-        require(left['os'] == 'linux' and right['productionNode'] is False
-            and left['artifacts'] == right['artifacts'], 'same-byte-real-node-native-comparison-required')
+        require_same_artifacts(item['tests']['identity'], actual['identity'])
         keys = ('id', 'inputSha256', 'category', 'payloadSha256', 'fixtures', 'execution', 'platformCodes')
         node_rows = [row for row in item['tests']['results'] if row['id'] in item['sharedSelection']]
         require(len(node_rows) == len(actual['results']) and all(

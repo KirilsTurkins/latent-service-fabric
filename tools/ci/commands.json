@@ -4289,6 +4289,7 @@
       "PackagedProbe.test_failed_start_retains_actual_events_without_replaying_start",
       "PackagedProbe.test_linux_exact_entrypoint_is_executable_and_private",
       "PackagedProbe.test_linux_target_requires_its_own_entrypoint",
+      "PackagedProbe.test_native_comparison_requires_all_three_exported_artifacts",
       "PackagedProbe.test_output_flood_is_bounded_and_owned_child_is_reaped",
       "PackagedProbe.test_required_unsupported_report_remains_a_non_success",
       "PackagedProbe.test_ssh_observer_selects_only_the_two_explicit_unprivileged_accounts",
