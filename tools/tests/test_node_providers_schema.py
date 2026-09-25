@@ -53,6 +53,22 @@ class NodeProvidersSchema(unittest.TestCase):
         invalid["bindings"][0]["contract"] = "latent:http/streaming-client@0.1.0"
         self.assertFalse(VALIDATOR.is_valid(invalid))
 
+    def test_guest_secrets_only_accept_bounded_file_references_and_no_plaintext(self):
+        value = self.example()
+        value["secrets"] = {"identity": {"id": "secrets", "tenant": "examples", "service": "secrets-host", "epoch": 1},
+            "directory": "private-guest-secrets", "references": [{"reference": "dev-test", "file": "value", "expiresAtUnixMillis": 1}]}
+        VALIDATOR.validate(value)
+        for field, invalid in (("file", "../escape"), ("file", ".."), ("file", "ambient@env"),
+                               ("expiresAtUnixMillis", None), ("expiresAtUnixMillis", True),
+                               ("environment", "HOME"), ("value", "private-canary")):
+            changed = copy.deepcopy(value)
+            changed["secrets"]["references"][0][field] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        for references in ([], value["secrets"]["references"] * 9):
+            changed = copy.deepcopy(value)
+            changed["secrets"]["references"] = references
+            self.assertFalse(VALIDATOR.is_valid(changed))
+
 
 if __name__ == "__main__":
     unittest.main()

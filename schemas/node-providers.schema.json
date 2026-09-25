@@ -2,14 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://latent.dev/schemas/node-providers.schema.json",
   "title": "Optional standalone bounded capability providers",
-  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations and aggregate reservations. Installs only maintained HTTP, local-blob, activation-clock and OS-entropy profiles; it grants no guest authority.",
+  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations and aggregate reservations. Installs only maintained HTTP, local-blob, protected-local-secret, activation-clock and OS-entropy profiles; it grants no guest authority.",
   "type": "object",
   "additionalProperties": false,
   "required": ["formatVersion", "bindings"],
-  "anyOf": [{"required": ["http"]}, {"required": ["blob"]}, {"required": ["clockMonotonic"]}, {"required": ["clockWall"]}, {"required": ["random"]}],
+  "anyOf": [{"required": ["http"]}, {"required": ["blob"]}, {"required": ["secrets"]}, {"required": ["clockMonotonic"]}, {"required": ["clockWall"]}, {"required": ["random"]}],
   "properties": {
     "formatVersion": {"type": "integer", "const": 1},
     "http": {"$ref": "#/$defs/http"},
+    "secrets": {"$ref": "#/$defs/secrets"},
     "clockMonotonic": {"$ref": "#/$defs/scalar"},
     "clockWall": {"$ref": "#/$defs/scalar"},
     "random": {"$ref": "#/$defs/scalar"},
@@ -25,12 +26,27 @@
           "name": {"$ref": "#/$defs/token"}, "tenant": {"$ref": "#/$defs/token"},
           "consumerService": {"$ref": "#/$defs/token"}, "providerService": {"$ref": "#/$defs/token"},
           "providerBinding": {"$ref": "#/$defs/token"}, "route": {"$ref": "#/$defs/token"},
-          "contract": {"enum": ["latent:http/client@0.2.0", "latent:blob/blob@0.2.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0"]}
+          "contract": {"enum": ["latent:http/client@0.2.0", "latent:blob/blob@0.2.0", "latent:secrets/reader@0.1.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0"]}
         }
       }
     }
   },
   "$defs": {
+    "secrets": {
+      "type": "object", "additionalProperties": false, "required": ["identity", "directory", "references"],
+      "properties": {
+        "identity": {"$ref": "#/$defs/identity"},
+        "directory": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "references": {"type": "array", "minItems": 1, "maxItems": 8, "items": {
+          "type": "object", "additionalProperties": false, "required": ["reference", "file"],
+          "properties": {
+            "reference": {"$ref": "#/$defs/token"},
+            "file": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9_.-]+$", "not": {"enum": [".", ".."]}},
+            "expiresAtUnixMillis": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615}
+          }
+        }}
+      }
+    },
     "scalar": {
       "type": "object", "additionalProperties": false, "required": ["identity"],
       "properties": {"identity": {"$ref": "#/$defs/identity"}}

@@ -167,6 +167,13 @@ def supervise(root: Path) -> int:
             redactions = [item["token"] for item in node_config["credentials"]]
             if (root / "test-profile.json").exists():
                 selected = state.load(root, "test-profile.json")
+                selected_secrets = (selected.get("fixtures") or {}).get("secrets")
+                if selected_secrets is not None:
+                    from . import secret_fixture
+                    require(profile == "local-experimental-v1"
+                            and selected["configurationSha256"] == digest(paths.read(layout.node.parent, layout.node.name)),
+                            "secret-fixture-node-configuration-changed")
+                    redactions.extend(raw.decode("ascii") for raw in secret_fixture.values(root, selected_secrets))
                 fixture = (selected.get("fixtures") or {}).get("http")
                 if fixture is not None:
                     from .http_peer import Peer

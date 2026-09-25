@@ -7880,7 +7880,10 @@
         "standalone::transport::tests::shutdown::already_panicked_server_is_joined_without_repolling_its_handle",
         "standalone::transport::tests::shutdown::timed_out_server_is_aborted_and_joined_before_returning_failure",
         "standalone::transport::tests::web_preparation::only_exact_web_control_paths_get_separate_bounded_transport_waits",
-        "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication"
+        "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication",
+        "config::tests::providers::secret_input_rejects_plaintext_environment_and_unknown_authority",
+        "config::tests::providers::secret_bindings_require_the_actual_provider_service_and_tenant",
+        "config::tests::providers::secret_paths_and_reference_limits_are_validated_without_loading_values"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -7943,7 +7946,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 222,
+      "minimumCases": 225,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

@@ -14,10 +14,12 @@ def provider_shutdown(record):
     """Export only the bounded public resource counters, never arbitrary node data."""
     report = record.get("report")
     value = report.get("providers") if isinstance(report, dict) else None
+    extra = ("secretGenerations", "secretReferences") if isinstance(value, dict) and any(
+        key in value for key in ("secretGenerations", "secretReferences")) else ()
     if (isinstance(value, dict) and type(value.get("clean")) is bool
             and all(type(value.get(key)) is int and 0 <= value[key] <= 18446744073709551615
-                    for key in PROVIDER_COUNTERS)):
-        return {key: value[key] for key in ("clean", *PROVIDER_COUNTERS)}
+                    for key in (*PROVIDER_COUNTERS, *extra))):
+        return {key: value[key] for key in ("clean", *PROVIDER_COUNTERS, *extra)}
     return None
 
 

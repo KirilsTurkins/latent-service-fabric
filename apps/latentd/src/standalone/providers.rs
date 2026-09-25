@@ -41,4 +41,6 @@ pub struct ProviderShutdownReport {
     pub blob_stages: usize,
     pub blob_handles: usize,
     pub blob_work: usize,
+    pub secret_generations: usize,
+    pub secret_references: usize,
 }

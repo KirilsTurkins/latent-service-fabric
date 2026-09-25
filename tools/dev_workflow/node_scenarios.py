@@ -90,6 +90,8 @@ def run(root, arguments, *, deadline: float | None = None):
             supported.add("buffered-http-fixture")
         if "blob" in installed:
             supported.add("immutable-blob-fixture")
+        if "secrets" in installed:
+            supported.add("scoped-secret-fixture")
     fixture_profile = state.load(root, "test-profile.json") if installed is not None else {}
     fixtures = fixture_profile.get("fixtures")
     initialized = node_fixtures.initialized(source, cases, fixtures, fixture_runtime, installed)
