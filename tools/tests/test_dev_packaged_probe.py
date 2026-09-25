@@ -161,6 +161,49 @@ class PackagedProbe(unittest.TestCase):
         finally:
             child.abort_controller()
 
+    def test_ssh_observer_selects_only_the_two_explicit_unprivileged_accounts(self):
+        from types import SimpleNamespace
+        from tools.dev_packaged_guest import guest_argv
+        workspace = self.root / 'test-packaged-rust'
+        workspace.mkdir()
+        config = {'kind': 'ssh', 'host': '127.0.0.1', 'port': 2222, 'ssh': '/usr/bin/ssh',
+                  'knownHosts': '/private/known_hosts', 'identityFile': '/private/identity'}
+        for user in ('lsfremote', 'lsfqa', 'root', 'unrelated'):
+            (workspace / 'backend.json').write_text(json.dumps({**config, 'user': user}))
+            item = {'workspace': workspace.name, 'user': user}
+            if user in {'root', 'unrelated'}:
+                with self.assertRaisesRegex(ProbeFailure, 'owned-loopback-ssh-observer-target'):
+                    guest_argv(SimpleNamespace(state=self.root), item, ['/usr/bin/id'])
+            else:
+                command = guest_argv(SimpleNamespace(state=self.root), item, ['/usr/bin/id'])
+                self.assertIn(user + '@127.0.0.1', command)
+                self.assertIn('StrictHostKeyChecking=yes', command)
+                self.assertIn('IdentitiesOnly=yes', command)
+
+    def test_failed_start_retains_actual_events_without_replaying_start(self):
+        from tools.dev_packaged_windows import Frontend
+        report = {'commands': []}
+        frontend = Frontend(Path(sys.executable), self.root, report)
+        response = {'schemaVersion': 'latent.dev.result.v1', 'code': 'backend-start-failed', 'uncertain': True}
+        script = ('from pathlib import Path;import sys;Path("starts").write_text("once");'
+                  'print(' + repr(json.dumps(response)) + ');sys.exit(5)')
+        child = Command([sys.executable, '-I', '-B', '-c', script], self.root, environment(self.root))
+        frontend.command = lambda *_: child
+        try:
+            with self.assertRaisesRegex(ProbeFailure, 'foreground-ended-before-required-event'):
+                frontend.start('test-packaged-rust')
+            self.assertEqual(report['startupFailures']['test-packaged-rust']['events'], [response])
+            self.assertEqual((self.root / 'starts').read_text(), 'once')
+            self.assertEqual(report['startupFailures']['test-packaged-rust']['process']['exitCode'], 5)
+            stopped = {'state': 'stopped', 'reaped': True, 'cleanShutdown': False}
+            frontend.call = lambda *_: stopped
+            self.assertEqual(frontend.down('test-packaged-rust'), stopped)
+            self.assertFalse(frontend.running)
+            self.assertEqual(report['commands'][-1]['exitCode'], 5)
+            self.assertEqual(report['startupFailures']['test-packaged-rust']['events'], [response])
+        finally:
+            child.abort_controller()
+
 
 if __name__ == '__main__':
     unittest.main()

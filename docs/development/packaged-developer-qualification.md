@@ -140,7 +140,18 @@ builds/deploys/tests and recovers original lost-response identities over SSH, ge
 watch and compiler failure, restarts retained state and explicitly purges the
 node workspace. Both exact containers are stopped and inspected; authored
 source and the private home volume remain until runner teardown. The extra
-client schedule is bounded to 1,800 seconds and its peer to 3,600 seconds.
+client schedule is bounded to 2,400 seconds and its peer to 4,800 seconds.
+The peer exposes two explicitly selected SSH users. The client runs a second
+installed Rust node while the first remains ready, verifies mutual home-directory
+denial and distinct node identities, and invokes the first node's original
+deployment after the companion stops and is purged. The five-workspace client
+schedule preserves the individual application/build deadlines. The Linux job's
+160-minute ceiling also includes its separate direct/SSH campaign and OS image
+builds; it is an emergency bound, not a performance claim.
+The [two-user OS setup observation](devcontainer-isolation-os-observation.json)
+confirms both actual SSH logins and mutual home denial using an unexecuted
+helper placeholder. It records setup only; the installed-node assertions still
+require the independently approved candidate campaign.
 This tests the terminal container path on Linux; it is separate from a rendered
 editor walkthrough and from the earlier Windows Docker Desktop source receipt.
 
@@ -157,6 +168,11 @@ Failures stop the schedule without replaying a mutation or invocation. Cleanup
 uses the recorded public workspace API, and an unconfirmed remote termination
 remains explicitly unconfirmed. Private failed state remains until the ephemeral
 runner is discarded.
+When an installation loses its backend response, a separate read-only observer
+may retain input-file sizes and completion markers from that owned guest user.
+It reads no credential contents and never changes the original uncertain result
+or repeats the installation. Failed startup events and controller exit status
+are retained separately from a subsequent confirmed node-reaping result.
 
 The Linux container has an 8 GiB memory limit, two CPUs and 512 processes.
 Its eight independently installed node workspaces share a 3,600-second outer
@@ -206,7 +222,15 @@ The original Rust node stopped cleanly. The C installation's private state
 remained on the disposable runner until teardown. The cause is under
 investigation, and this receipt does not count as a successful C installation.
 
-The twelve fast conductor regressions exercise archive traversal/alias/device/link
+A [local Windows diagnostic](packaged-c-install-local-observation.json) subsequently
+installed the unchanged approved C tools while its signed Rust node remained
+ready, then reaped the Rust node with a clean shutdown. This attempt did not
+reproduce the hosted transport loss; it is not a clean-host or complete language
+qualification. Its first local setup hit the Windows path-length limit in a
+deeply nested custom controller directory. A fresh, shorter state path succeeded
+without changing the host's global path setting or reusing the partial cache.
+
+The fourteen fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and
 bounded stdin with receipt redaction, plus the actual Windows DACL of the newly
 created conductor directory. A required unsupported-case report must retain its

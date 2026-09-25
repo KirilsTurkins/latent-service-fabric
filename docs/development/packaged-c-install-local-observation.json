@@ -1,0 +1,57 @@
+{
+  "applicationPackagesUnmodified": true,
+  "cToolsPublisherAuthenticated": true,
+  "cleanHost": false,
+  "commands": [
+    {
+      "command": "install",
+      "seconds": 74.555,
+      "workspace": "test-packaged-rust"
+    },
+    {
+      "command": "install-tools",
+      "seconds": 282.789,
+      "workspace": "test-packaged-rust"
+    },
+    {
+      "command": "build",
+      "seconds": 225.801,
+      "workspace": "test-packaged-rust"
+    },
+    {
+      "command": "install",
+      "seconds": 55.336,
+      "workspace": "test-packaged-c"
+    },
+    {
+      "command": "install-tools",
+      "seconds": 113.369,
+      "workspace": "test-packaged-c"
+    }
+  ],
+  "initialLocalAttempt": {
+    "code": "invalid-or-unavailable-input-inspect-doctor",
+    "correction": "new-private-state-root-at-a-shorter-path-no-global-setting-change",
+    "firstMissingExpandedPathCharacters": 260,
+    "maximumExpandedPathCharacters": 289,
+    "operation": "acquire-rust-template-bundle",
+    "partialCachePreserved": true,
+    "passed": false,
+    "receiptSha256": "sha256:46fe566b755ead7c4336173dd035d9c3f69c703d5031c2fffbb21ff0635bd99a",
+    "uncertain": false,
+    "windowsLongPathsEnabled": false
+  },
+  "meaning": "the-original-hosted-c-transport-failure-did-not-reproduce-in-this-local-attempt",
+  "passed": true,
+  "privateDiagnosticDistributionsRetained": true,
+  "publiclyPublished": false,
+  "qualificationComplete": false,
+  "receiptSha256": "sha256:bf0db99c914021ff7848754ed347a5a993313918f21c4b3f754173922664362a",
+  "rustNodeCleanShutdown": true,
+  "rustNodeReadyAfterCInstall": true,
+  "rustNodeReaped": true,
+  "rustSignedTestsPassed": true,
+  "schemaVersion": "latent.dev.packaged-c-install-diagnostic-observation.v1",
+  "seconds": 827.01,
+  "sourceCommit": "f5d556d3d154253b0cda2d3bb2076f9e4268540b"
+}

@@ -3423,7 +3423,7 @@
       "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
     },
     "tools/prepare_dev_packaged_probe.py": {
-      "sha256": "e801cbba43244523df2e834d5f3c4edb38f151c7fe8fbdd59bc331d77eb8bea1"
+      "sha256": "36f12dfdd3d5aebc0bbe13f18b36e079401930839cf03d90b82b0e106b1d5b4a"
     },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
@@ -4286,10 +4286,12 @@
       "PackagedProbe.test_conductor_protects_only_its_new_windows_directory",
       "PackagedProbe.test_deadline_does_not_replay_the_command",
       "PackagedProbe.test_exact_inventory_extracts_without_executing_any_member",
+      "PackagedProbe.test_failed_start_retains_actual_events_without_replaying_start",
       "PackagedProbe.test_linux_exact_entrypoint_is_executable_and_private",
       "PackagedProbe.test_linux_target_requires_its_own_entrypoint",
       "PackagedProbe.test_output_flood_is_bounded_and_owned_child_is_reaped",
       "PackagedProbe.test_required_unsupported_report_remains_a_non_success",
+      "PackagedProbe.test_ssh_observer_selects_only_the_two_explicit_unprivileged_accounts",
       "PackagedProbe.test_staged_conductors_load_without_source_checkout_imports",
       "PackagedProbe.test_symlink_rejects_before_creation",
       "PackagedProbe.test_traversal_device_and_unicode_aliases_reject_before_creation"
@@ -6986,7 +6988,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-packaged-qualification.yml": "60d97ae453cb1eb8b32681ffeceae5c13c0edec0243617ea2ee1af7d0a7c1c85",
+    ".github/workflows/developer-packaged-qualification.yml": "df5ffcaa35b59e5e8c86e4030b0ae77a67d892388f46282ac4c1f889c724931a",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "0e6d62e17694c75b231822f019e772de7b89f9563fd35a32f2e3800956cbc409",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",

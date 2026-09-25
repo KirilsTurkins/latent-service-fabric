@@ -42,6 +42,27 @@ if mode=='audit':
         try:list((Path('/home')/other).iterdir())
         except PermissionError:result['otherWorkspaceHomeDenied']=True
         else:raise AssertionError('other workspace home readable')
+elif mode=='install-progress':
+    result={'user':account.pw_name,'toolSelectionPresent':(root/'tool-selection.json').is_file(),'assets':[]}
+    cache=root/'assets'
+    if cache.exists():
+        assert not cache.is_symlink()
+        slots=list(cache.iterdir());assert len(slots)<=8
+        for slot in slots:
+            assert re.fullmatch(r'[a-f0-9]{64}',slot.name) and not slot.is_symlink()
+            manifest=document(slot/'transfer.json');assert len(manifest['files'])<=64
+            files=[]
+            for entry in manifest['files']:
+                name=entry['path'];parts=name.split('/')
+                assert len(parts)==2 and parts[0] in {'release','trust'} and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._+-]*',parts[1])
+                path=slot/name;assert not path.is_symlink() and not path.parent.is_symlink()
+                assert type(entry['size']) is int and 0<=entry['size']<=1073741824
+                actual=None
+                if path.exists():
+                    info=path.lstat();assert stat.S_ISREG(info.st_mode) and info.st_nlink==1
+                    actual=info.st_size
+                files.append({'name':name,'expectedBytes':entry['size'],'actualBytes':actual})
+            result['assets'].append({'identity':slot.name,'complete':(slot/'complete.json').is_file(),'files':files})
 elif mode=='journal':
     journal=document(root/'operations.json');pending=journal['pending']
     result={'pending':None if pending is None else {'id':pending['id'],'kind':pending['kind']},
@@ -87,7 +108,7 @@ def guest_argv(api, item, guest):
         require(os.name == 'posix' and config['python'] == '/usr/local/bin/python3.13', 'owned-linux-observer-target')
         return guest
     else:
-        require(config['kind'] == 'ssh' and config['user'] == item['user'] == 'lsfremote'
+        require(config['kind'] == 'ssh' and config['user'] == item['user'] in {'lsfremote', 'lsfqa'}
                 and config['host'] == '127.0.0.1' and config['port'] == 2222
                 and config['ssh'] == '/usr/bin/ssh', 'owned-loopback-ssh-observer-target')
         return [config['ssh'], '-F', '/dev/null', '-T', '-a', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes',
@@ -95,7 +116,7 @@ def guest_argv(api, item, guest):
                 '-o', 'PermitLocalCommand=no', '-o', 'ProxyCommand=none', '-o', 'ConnectTimeout=10',
                 '-o', 'ConnectionAttempts=1', '-o', 'GlobalKnownHostsFile=/dev/null',
                 '-o', 'UserKnownHostsFile=' + config['knownHosts'], '-i', config['identityFile'],
-                '-p', '2222', 'lsfremote@127.0.0.1', ' '.join(shlex.quote(part) for part in guest)]
+                '-p', '2222', item['user'] + '@127.0.0.1', ' '.join(shlex.quote(part) for part in guest)]
 
 
 def observe(api, item, mode, *arguments):
@@ -106,7 +127,7 @@ def observe(api, item, mode, *arguments):
     try:
         require(command.finish(30) == 0, 'owned-guest-public-observation-failed')
         result = json.loads(command.raw())
-        if mode == 'audit':
+        if mode in {'audit', 'install-progress'}:
             require(result['user'] == item['user'], 'guest-observer-user-mismatch')
         return result
     finally:
@@ -114,6 +135,15 @@ def observe(api, item, mode, *arguments):
             command.abort_controller()
         finally:
             api.report['commands'].append({**command.receipt(), 'purpose': 'read-only-owned-guest-observation'})
+
+
+def installation_progress(api, workspace):
+    backend = read_json(api.state / workspace / 'backend.json')
+    user = backend.get('user')
+    if backend['kind'] == 'linux':
+        import pwd
+        user = pwd.getpwuid(os.getuid()).pw_name
+    return observe(api, {'workspace': workspace, 'user': user}, 'install-progress')
 
 
 def export(api, item, *, suffix=''):

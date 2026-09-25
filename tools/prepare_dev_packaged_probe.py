@@ -23,7 +23,8 @@ CONDUCTORS = ('dev_packaged_probe', 'dev_packaged_process', 'dev_packaged_bootst
     'dev_packaged_guest', 'dev_packaged_watch', 'dev_packaged_linux', 'dev_packaged_linux_host',
     'dev_packaged_linux_entry', 'dev_packaged_recovery', 'dev_packaged_wsl_lifecycle', 'dev_node_fault_probe',
     'dev_packaged_container_host', 'dev_packaged_container_peer', 'dev_packaged_container_client',
-    'dev_packaged_failures', 'dev_failure_case_inputs', 'dev_clock_case_inputs', 'dev_packaged_security')
+    'dev_packaged_failures', 'dev_failure_case_inputs', 'dev_clock_case_inputs', 'dev_packaged_security',
+    'dev_packaged_isolation')
 
 
 def checked(condition, code):

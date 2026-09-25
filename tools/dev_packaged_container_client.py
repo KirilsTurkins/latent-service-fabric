@@ -13,6 +13,7 @@ if __package__ in {None, ''}:
     from dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
     from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source, negative_bundles
     from dev_packaged_watch import campaign as watch_campaign
+    from dev_packaged_isolation import campaign as isolation_campaign
     from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from dev_packaged_failures import node_campaign
 else:
@@ -20,6 +21,7 @@ else:
     from .dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
     from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source, negative_bundles
     from .dev_packaged_watch import campaign as watch_campaign
+    from .dev_packaged_isolation import campaign as isolation_campaign
     from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from .dev_packaged_failures import node_campaign
 
@@ -60,6 +62,7 @@ def run():
         deploy_with_lost_responses(api, config, item)
         verify_language(api, item)
         invoke_with_lost_response(api, config, item)
+        isolation_campaign(api, config, item, config['linuxHelperSha256'], home / 'ssh-isolation-backend.json')
         report['editor'] = api.call('editor', '--workspace', item['workspace'], '--project', item['project'],
                                    '--frontend', executable)
         tasks = read_json(Path(item['project']) / '.vscode/tasks.json')

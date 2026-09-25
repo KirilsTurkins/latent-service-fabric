@@ -14,7 +14,8 @@ import time
 def main():
     assert os.getuid() == 0
     remote = pwd.getpwnam('lsfremote')
-    assert remote.pw_uid == 23002
+    companion = pwd.getpwnam('lsfqa')
+    assert remote.pw_uid == 23002 and companion.pw_uid == 23001
     home = Path('/qualification-client-home')
     assert home.is_dir() and not list(home.iterdir()), 'new empty client volume required'
     home.chmod(0o700)
@@ -43,13 +44,14 @@ def main():
     for destination in (key, host):
         subprocess.run(['/usr/bin/ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', str(destination)],
                        check=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, timeout=15)
-    authorized = Path(remote.pw_dir) / '.ssh'
-    authorized.mkdir(mode=0o700)
-    public = authorized / 'authorized_keys'
-    public.write_bytes(key.with_suffix('.pub').read_bytes())
-    for path in (authorized, public):
-        path.chmod(0o700 if path.is_dir() else 0o600)
-        os.chown(path, remote.pw_uid, remote.pw_gid)
+    for account in (remote, companion):
+        authorized = Path(account.pw_dir) / '.ssh'
+        authorized.mkdir(mode=0o700)
+        public = authorized / 'authorized_keys'
+        public.write_bytes(key.with_suffix('.pub').read_bytes())
+        for path in (authorized, public):
+            path.chmod(0o700 if path.is_dir() else 0o600)
+            os.chown(path, account.pw_uid, account.pw_gid)
     known = ssh / 'known_hosts'
     known.write_text('[127.0.0.1]:2222 ' + host.with_suffix('.pub').read_text(), encoding='utf-8')
     for path in (ssh, key, key.with_suffix('.pub'), known):
@@ -66,14 +68,15 @@ def main():
     backend = {'kind': 'ssh', 'host': '127.0.0.1', 'port': 2222, 'user': 'lsfremote', 'ssh': '/usr/bin/ssh',
         'helperSha256': selected['linuxHelperSha256'], 'identityFile': str(client_home / '.ssh/identity'),
         'knownHosts': str(client_home / '.ssh/known_hosts')}
-    for name, value in (('ssh-backend.json', backend), ('selected-inputs.json', selected)):
+    for name, value in (('ssh-backend.json', backend),
+                        ('ssh-isolation-backend.json', {**backend, 'user': 'lsfqa'}), ('selected-inputs.json', selected)):
         path = home / name
         path.write_text(json.dumps(value), encoding='utf-8')
         path.chmod(0o600)
         os.chown(path, 10001, 10001)
     settings = runtime / 'sshd_config'
     settings.write_text('Port 2222\nListenAddress 127.0.0.1\nHostKey ' + str(host) + '\n'
-        'PidFile /run/lsf-devcontainer-peer/sshd.pid\nAllowUsers lsfremote\nPermitRootLogin no\n'
+        'PidFile /run/lsf-devcontainer-peer/sshd.pid\nAllowUsers lsfremote lsfqa\nPermitRootLogin no\n'
         'PasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitEmptyPasswords no\nUsePAM no\n'
         'PubkeyAuthentication yes\nStrictModes yes\nAuthorizedKeysFile .ssh/authorized_keys\n'
         'DisableForwarding yes\nPermitTTY no\nLogLevel ERROR\n', encoding='utf-8')
@@ -98,10 +101,11 @@ def main():
                 time.sleep(0.05)
         ready = home / 'peer-ready.json'
         ready.write_text(json.dumps({'ready': True, 'clientUid': 10001, 'serverUid': remote.pw_uid,
+            'companionUid': companion.pw_uid,
             'listener': '127.0.0.1:2222', 'hostKeySha256': hashlib.sha256(host.with_suffix('.pub').read_bytes()).hexdigest()}))
         ready.chmod(0o600)
         os.chown(ready, 10001, 10001)
-        until = time.monotonic() + 3600
+        until = time.monotonic() + 4800
         while not stopping and time.monotonic() < until:
             assert server.poll() is None
             time.sleep(0.2)

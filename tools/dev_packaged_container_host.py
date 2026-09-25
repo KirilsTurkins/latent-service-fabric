@@ -49,7 +49,7 @@ def run(config, linux_output, output):
     began = time.monotonic()
     report = {'schemaVersion': 'latent.dev.packaged-devcontainer-host.v1', 'passed': False,
         'qualificationComplete': False, 'sourceCommit': config['sourceCommit'], 'commands': [], 'cleanup': 'not-started',
-        'limits': {'hostCommands': 64, 'clientSeconds': 1800, 'peerSeconds': 3600, 'clientMemoryBytes': 2147483648}}
+        'limits': {'hostCommands': 64, 'clientSeconds': 2400, 'peerSeconds': 4800, 'clientMemoryBytes': 2147483648}}
     peer = client = label = None
 
     def call(argv, seconds, *, allowed=(0,)):
@@ -158,9 +158,23 @@ def run(config, linux_output, output):
         report['container'] = {'id': client, 'user': observed['Config']['User'], 'image': observed['Image'],
             'privileged': host['Privileged'], 'capDrop': host['CapDrop'], 'securityOpt': host['SecurityOpt'],
             'network': host['NetworkMode'], 'mounts': [{key: row[key] for key in ('Type', 'Destination', 'RW')} for row in mounts]}
-        call([node, cli, 'exec', '--container-id', client, '--workspace-folder', project,
+        # This process conducts five separate installed workspaces. Its outer
+        # budget is independent of each application's unchanged command limit.
+        driver = Command([node, cli, 'exec', '--container-id', client, '--workspace-folder', project,
             '--config', selected_config, '--user-data-folder', cli_state, '/usr/local/bin/python3.13', '-I', '-B',
-            '/home/latent-dev/inputs/support/dev_packaged_container_client.py'], 1800)
+            '/home/latent-dev/inputs/support/dev_packaged_container_client.py'], output, environment(output))
+        try:
+            deadline = time.monotonic() + 2400
+            while driver.child.poll() is None:
+                require(not driver.limit.is_set(), 'devcontainer-conductor-output-limit')
+                require(time.monotonic() < deadline, 'devcontainer-conductor-schedule-deadline')
+                time.sleep(1)
+            require(driver.finish(5) == 0, 'devcontainer-conductor-failed')
+        finally:
+            try:
+                driver.abort_controller()
+            finally:
+                report['commands'].append(driver.receipt())
         call(['docker', 'cp', client + ':/home/latent-dev/qualification/observation.json', str(output / 'observation.json')], 30)
         require(read_json(output / 'observation.json', 16 * 1024 * 1024)['passed'] is True, 'actual-devcontainer-schedule-failed')
         report['passed'] = True
