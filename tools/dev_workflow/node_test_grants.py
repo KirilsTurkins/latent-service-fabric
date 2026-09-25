@@ -12,9 +12,10 @@ def selection(root, descriptor, publication, execution, installed, client, journ
     operators = [item for item in node["credentials"] if item["tenant"] == descriptor["tenant"] and item["role"] == "operator"]
     require(len(operators) == 1, "test-requires-exact-scoped-operator")
     from tools.guest_runtime_profiles import RUNTIME
-    from . import blob_fixture, http_fixture, metric_fixture, secret_fixture
+    from . import blob_fixture, http_fixture, local_service_fixture, metric_fixture, secret_fixture
     profiles = {**RUNTIME, "http": http_fixture.PROVIDER, "blob": blob_fixture.PROVIDER,
-                "secrets": secret_fixture.PROVIDER, "metrics": metric_fixture.PROVIDER}
+                "secrets": secret_fixture.PROVIDER, "metrics": metric_fixture.PROVIDER,
+                "localService": local_service_fixture.PROVIDER}
     grants = []
     for capability in sorted(execution["grants"]):
         name, entry = by_capability[capability]
@@ -50,6 +51,11 @@ def selection(root, descriptor, publication, execution, installed, client, journ
             fixture = metric_fixture.validate(state.load(root, "test-profile.json")["fixtures"]["metrics"])
             policy["rules"][0].update(resources={"kind": "telemetry", "names": [entry["name"] for entry in fixture]},
                 ceiling={"operations": 1, "inputBytes": 32768, "outputBytes": 1, "wallTimeMillis": 5000})
+        if kind == "service":
+            dependency = local_service_fixture.observe(root, client)
+            policy["rules"][0].update(resources={"kind": "service", "services": [dependency["fixture"]["service"]],
+                "publications": [dependency["deployment"]["publication"]]},
+                ceiling={"operations": 8, "inputBytes": 65536, "outputBytes": 65536, "wallTimeMillis": 5000})
         identity = "dev-runtime-" + digest(encode(policy))[7:39]
         policy_operations.apply(root, client, journal, identity, "policy", policy)
         grants.append({"capability": capability, "policy": identity})

@@ -26,6 +26,8 @@ use crate::config::{NodeSettings, ProviderIdentity};
 
 #[path = "http.rs"]
 mod http;
+#[path = "local_service.rs"]
+mod local_service;
 #[path = "scalar.rs"]
 mod scalar;
 #[path = "secrets.rs"]
@@ -41,7 +43,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
     blobs: Option<Arc<LocalBlobStore>>,
-    clocks: Vec<ProviderRegistration>,
+    registrations: Vec<ProviderRegistration>,
     descriptors: Vec<ProviderDescriptor>,
 }
 
@@ -86,12 +88,12 @@ impl ProviderRuntime {
             guest_secrets: None,
             metrics: None,
             blobs: None,
-            clocks: Vec::with_capacity(2),
-            descriptors: Vec::with_capacity(7),
+            registrations: Vec::with_capacity(3),
+            descriptors: Vec::with_capacity(8),
         };
         let deadline = Instant::now() + Duration::from_secs(30);
         let installed = tokio::time::timeout_at(deadline.into(), async {
-            let mut providers = Vec::with_capacity(7);
+            let mut providers = Vec::with_capacity(8);
             for (installation, monotonic) in
                 [(&config.clock_monotonic, true), (&config.clock_wall, false)]
             {
@@ -99,7 +101,7 @@ impl ProviderRuntime {
                     let registration =
                         scalar::clock(&broker, installation.identity.epoch, monotonic)?;
                     providers.push(owner.record(&installation.identity, registration.reference()));
-                    owner.clocks.push(registration);
+                    owner.registrations.push(registration);
                 }
             }
             if let Some(installation) = &config.random {
@@ -167,6 +169,14 @@ impl ProviderRuntime {
                 owner.metrics = Some(provider.clone());
                 owner.runtime.install_metrics(provider)?;
             }
+            if let Some(config) = &config.local_service {
+                let registration = local_service::install(&broker, config)?;
+                let mut provider = owner.record(&config.identity, registration.reference());
+                provider.local_deployment =
+                    Some(latent_core::DeploymentId(config.deployment.clone()));
+                providers.push(provider);
+                owner.registrations.push(registration);
+            }
             deployments
                 .activate_configured_bindings(
                     config.definitions()?,
@@ -225,8 +235,8 @@ impl ProviderRuntime {
 
     pub fn retire(&self) {
         self.runtime.retire();
-        for clock in &self.clocks {
-            clock.retire();
+        for registration in &self.registrations {
+            registration.retire();
         }
         self.pools.retire();
         if let Some(secrets) = &self.secrets {

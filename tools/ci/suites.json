@@ -1456,7 +1456,8 @@
         "deployments::tests::versioned::versioned_apply_compares_caller_preconditions_and_returns_normalized_committed_state",
         "deployments::tests::weighting_is_deterministic_order_independent_and_restart_stable",
         "http_routes::tests::exact_publication_selector_survives_manifest_codec_and_canonical_matching",
-        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny"
+        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny",
+        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations"
       ],
       "expectedIgnored": [
         "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set"
@@ -1467,7 +1468,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 245,
+      "minimumCases": 246,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [
@@ -7888,7 +7889,10 @@
         "config::tests::metrics::metrics_contracts_require_a_matching_configured_provider",
         "config::tests::metrics::metrics_descriptor_validation_starts_no_exporter_and_rejects_reserved_unbounded_or_ambiguous_inputs",
         "standalone::start::tests::telemetry::provider_bootstrap_transfers_the_same_exporter_to_the_running_node",
-        "standalone::start::tests::telemetry::changed_exporter_limits_reject_composition_and_join_the_bootstrap_owner"
+        "standalone::start::tests::telemetry::changed_exporter_limits_reject_composition_and_join_the_bootstrap_owner",
+        "config::tests::local_service::local_dispatcher_preserves_exact_provider_target_and_isolated_mode",
+        "config::tests::local_service::local_dispatcher_rejects_foreign_scope_self_calls_and_invalid_targets",
+        "config::tests::local_service::local_dispatcher_protected_configuration_rejects_ambiguous_provider_identity"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -7951,7 +7955,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 229,
+      "minimumCases": 232,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

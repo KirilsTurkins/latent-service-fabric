@@ -185,6 +185,26 @@ does not grant capabilities. Each scenario's explicit grants become scoped
 policies through the public operator API and a confirmed deployment generation.
 Policy recovery looks up the original operation and checks the current policy's
 scope, document and receipt; unknown or changed policies never trigger replay.
+An explicit `localService` fixture builds one additional project from beneath the
+caller's source snapshot. Its closed selection contains `project` (relative
+directory), `recipeSha256` (the exact `project.trust_identity` of that project's
+descriptor), `service`, `deployment` and exported `contract`. Review that recipe
+before passing it to `prepare-test --fixtures`: fixture consent authorizes this
+additional pinned build. Preparation allows at most 900 seconds for that build
+and 150 seconds for verification/signing/configuration, with one fixed callee and
+the same bounded build-cache limits as the caller.
+
+The caller and callee are signed together under one private short-lived policy,
+then published and deployed separately through the ordinary operator APIs. Both
+run on the same node with two cells, one live child per parent and depth two.
+Declare `real-provider`, bind the fixture configuration digest and require
+`local-service-fixture`. A scenario grant permits only the callee's exact
+service/publication. The fixture is unavailable on the portable host. Status
+reports a pending callee operation separately; `dev recover` queries that
+original operation if the caller has none pending. It never repeats publication,
+deployment or Invoke after an unknown result. Cleanup requires the owned node
+to stop and refuses callee build attempts with unconfirmed process cleanup.
+
 The runner compares each invocation with the generation selected for that case.
 The `signed-fixture` option calls the pinned language bundle's maintained
 `capsule-test-signer` utility. It verifies the actual build observation, produces
@@ -794,13 +814,35 @@ mode records a separate actor's intent and applies observed preconditions. The
 unknown mode prepares an undispatched intent and tests honest non-replay; it does
 not establish receipt expiration. The harness never marks qualification complete.
 
+The [local-service source observation](./local-service-fixture-source-observation.json)
+records fourteen authored caller scenarios and one retained-restart invocation.
+The distinct caller and callee packages were built outside the checkout, signed
+together and deployed through public APIs to one Linux node. Calls covered
+cold/warm state, declared errors, denied service/tenant/contract/route/function,
+denied policy, a child trap, recovery and two fresh child activations. The callee
+publication and deployment survived restart unchanged. Both shutdowns released
+all live provider resources, the callee compiler was confirmed reaped and the
+successful private workspace was purged.
+
+The initial zero-child-call-budget attempt retained an original Invoke after a
+transport failure and UNKNOWN lookup. Its workspace and uncertain operation are
+preserved without replay. A later successful run preceded the final compiler
+status/cancellation integration; both that run and the final source identities
+are recorded. These observations do not qualify cross-workspace access, the
+portable host, authenticated final candidates or a clean Windows host.
+
+The focused contributor command is `python tools/dev_local_service_fixture_probe.py
+--payload TOOL_PREFIX --source-node SOURCE_NODE --output NEW_DIRECTORY` as the
+Linux test owner. The existing Rust developer job executes the same command and
+retains its public receipts.
+
 | Child | Remaining Windows acceptance |
 | --- | --- |
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
 | #564 | Complete malformed/admission failure, rapid edits, in-flight revision, revocation and expired-receipt cases; repeat the observed source watch/recovery schedule with final authenticated packages. |
-| #565 | Complete provider fixtures and actual failure/cancellation/restart cases for all six languages. |
+| #565 | Complete bounded event fixtures and the remaining failure/isolation matrix; qualify the integrated fixtures and scenarios with all six languages. |
 | #566 | Verified final native distribution and the remaining provider/failure differential; all six languages have source tutorial comparisons, and Rust has shared node/native clock evidence. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
 | #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
@@ -814,7 +856,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate

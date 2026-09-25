@@ -56,6 +56,7 @@ pub(super) fn admission(
             }
         }
     }
+    local_service_principals(config, &mut tenants)?;
     let policy = NodeAdmissionPolicy {
         budget_ceiling: budget(config, capacity.maximum_memory),
         limits,
@@ -134,6 +135,42 @@ fn quota(config: &NodeConfig, capacity: &Capacity) -> Result<QuotaLimits, Platfo
             .checked_mul(capacity.maximum_memory)
             .ok_or_else(|| invalid("cells.maximumMemoryBytes"))?,
     })
+}
+
+fn local_service_principals(
+    config: &NodeConfig,
+    tenants: &mut BTreeMap<TenantId, TenantAdmissionPolicy>,
+) -> Result<(), PlatformError> {
+    let Some(providers) = &config.providers else {
+        return Ok(());
+    };
+    let Some(local) = &providers.local_service else {
+        return Ok(());
+    };
+    let definitions = providers.definitions()?;
+    let tenant_id = TenantId(local.identity.tenant.clone());
+    let tenant = tenants
+        .get_mut(&tenant_id)
+        .ok_or_else(|| invalid("providers.localService.tenant"))?;
+    for binding in definitions {
+        if binding.manifest.mode == latent_manifest::BindingMode::IsolatedLocal {
+            let subject = InvocationPrincipal::local_service_subject(
+                &tenant_id,
+                &binding.manifest.consumer.service,
+            );
+            if subject.len() > IDENTIFIER_BYTES {
+                return Err(invalid("providers.localService.consumer"));
+            }
+            tenant.allowed_subjects.insert(subject);
+            if !tenant
+                .allowed_principal_kinds
+                .contains(&PrincipalKind::Service)
+            {
+                tenant.allowed_principal_kinds.push(PrincipalKind::Service);
+            }
+        }
+    }
+    Ok(())
 }
 
 pub(super) fn budget(config: &NodeConfig, memory: u64) -> ResourceBudget {

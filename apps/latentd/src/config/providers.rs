@@ -13,6 +13,9 @@ pub use secrets::SecretInstallation;
 #[path = "providers/metrics.rs"]
 mod metrics;
 pub use metrics::MetricsInstallation;
+#[path = "providers/local_service.rs"]
+mod local_service;
+pub use local_service::LocalServiceInstallation;
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -26,6 +29,8 @@ pub struct ConfiguredProviders {
     pub secrets: Option<SecretInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub metrics: Option<MetricsInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub local_service: Option<LocalServiceInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub clock_monotonic: Option<ScalarInstallation>,
     #[serde(default, deserialize_with = "present")]
@@ -114,6 +119,7 @@ pub(super) fn derive(
             && providers.blob.is_none()
             && providers.secrets.is_none()
             && providers.metrics.is_none()
+            && providers.local_service.is_none()
             && providers.clock_monotonic.is_none()
             && providers.clock_wall.is_none()
             && providers.random.is_none())
@@ -181,6 +187,9 @@ pub(super) fn derive(
     if let Some(metrics) = &providers.metrics {
         metrics.validate()?;
     }
+    if let Some(local) = &providers.local_service {
+        local.validate_installation(providers)?;
+    }
     for scalar in [
         &providers.clock_monotonic,
         &providers.clock_wall,
@@ -228,6 +237,7 @@ impl ConfiguredProviders {
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
                 "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),
                 "latent:telemetry/custom@0.1.0" => self.metrics.as_ref().map(|v| &v.identity),
+                "latent:service/invoke@0.1.0" => self.local_service.as_ref().map(|v| &v.identity),
                 "latent:clock/monotonic@0.1.0" => self.clock_monotonic.as_ref().map(|v| &v.identity),
                 "latent:clock/wall@0.1.0" => self.clock_wall.as_ref().map(|v| &v.identity),
                 "latent:random/random@0.1.0" => self.random.as_ref().map(|v| &v.identity),
@@ -240,16 +250,26 @@ impl ConfiguredProviders {
             if let Some(route) = &binding.route {
                 consumer["route"] = serde_json::json!(route);
             }
+            let (provider, mode, allowed) = if binding.contract == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY {
+                let local = self.local_service.as_ref().ok_or_else(|| invalid("providers.localService"))?;
+                local.validate()?;
+                if binding.consumer_service == local.identity.service {
+                    return Err(invalid("providers.localService.selfBinding"));
+                }
+                (serde_json::json!({"service":local.identity.service,"contract":local.contract,"route":local.deployment}),
+                    "isolated-local", BindingMode::IsolatedLocal)
+            } else {
+                (serde_json::json!({"service":binding.provider_service,"contract":binding.contract}), "host", BindingMode::Host)
+            };
             let document = serde_json::json!({"apiVersion":latent_manifest::MANIFEST_API_VERSION,
                 "kind":"Binding","metadata":{"name":binding.name,"tenant":binding.tenant},
-                "spec":{"consumer":consumer,"provider":{"service":binding.provider_service,
-                    "contract":binding.contract},"mode":"host"}});
+                "spec":{"consumer":consumer,"provider":provider,"mode":mode}});
             let bytes = serde_json::to_vec(&document).map_err(|_| invalid("providers.bindings"))?;
             Ok(BindingDefinition {
                 manifest: JsonManifestCodec::default().decode_binding(&bytes)
                     .map_err(|_| invalid("providers.bindings"))?,
                 provider_binding_id: binding.provider_binding.clone(),
-                allowed_modes: vec![BindingMode::Host],
+                allowed_modes: vec![allowed],
                 restriction_json: br#"{"operations":[]}"#.to_vec(),
             })
         }).collect()

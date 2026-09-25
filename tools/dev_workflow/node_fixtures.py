@@ -10,7 +10,7 @@ from .common import decode, digest, encode, members, require
 
 
 def validate(value: dict) -> dict:
-    members(value, set(), {"clock", "http", "blob", "secrets", "metrics"})
+    members(value, set(), {"clock", "http", "blob", "secrets", "metrics", "localService"})
     require(value and len(encode(value)) <= 256 * 1024, "node-fixture-byte-limit")
     if "clock" in value:
         clock = members(value["clock"], {"monotonicNanos", "wallUnixMillis"})
@@ -29,6 +29,9 @@ def validate(value: dict) -> dict:
     if "metrics" in value:
         from . import metric_fixture
         metric_fixture.validate(value["metrics"])
+    if "localService" in value:
+        from . import local_service_fixture
+        local_service_fixture.validate(value["localService"])
     return value
 
 
@@ -71,7 +74,7 @@ def initialized(source: Path, cases: list[dict], selected: dict | None, runtime:
             requested = decode(raw, 256 * 1024)
             # Other adapter fixtures remain explicitly unsupported by the
             # common runner until a node implementation has initialized them.
-            if not isinstance(requested, dict) or set(requested) not in ({"clock"}, {"http"}, {"blob"}, {"secrets"}, {"metrics"}):
+            if not isinstance(requested, dict) or set(requested) not in ({"clock"}, {"http"}, {"blob"}, {"secrets"}, {"metrics"}, {"localService"}):
                 continue
             validate(requested)
             if selected is None or any(selected.get(key) != value for key, value in requested.items()):
@@ -89,6 +92,10 @@ def initialized(source: Path, cases: list[dict], selected: dict | None, runtime:
             if "metrics" in requested and fixture["kind"] == "real-provider":
                 from . import metric_fixture
                 if metric_fixture.initialized(providers):
+                    result.add(fixture["id"])
+            if "localService" in requested and fixture["kind"] == "real-provider":
+                from . import local_service_fixture
+                if local_service_fixture.initialized(requested["localService"], providers):
                     result.add(fixture["id"])
             if "http" in requested and fixture["kind"] == "controlled-peer":
                 actual = (runtime or {}).get("http", {})

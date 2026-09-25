@@ -5,7 +5,7 @@ import copy
 from pathlib import Path
 
 from tools.guest_runtime_profiles import profiles
-from . import blob_fixture, metric_fixture, paths, secret_fixture, state
+from . import blob_fixture, local_service_fixture, metric_fixture, paths, secret_fixture, state
 from .common import decode, digest, encode, require
 
 
@@ -38,6 +38,10 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
             selected["secrets"] = secret_fixture.PROVIDER
         if "metrics" in fixtures:
             selected["metrics"] = metric_fixture.PROVIDER
+        if "localService" in fixtures:
+            require(root is not None and fixtures["localService"]["service"] != descriptor["service"],
+                    "distinct-local-service-workspace-required")
+            selected["localService"] = local_service_fixture.PROVIDER
     value["budgetProfile"] = {"mode": "phase3", "maximumOutboundRequests": 8,
                               "maximumBlobReadBytes": 65536, "maximumBlobWriteBytes": 65536}
     value["capabilityPolicies"] = {"formatVersion": 1, "maximumControlJobs": 2,
@@ -45,6 +49,10 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
                   "maximumReadOwners": 64, "maximumPageRecords": 16}}
     value["cells"] = [{"class": "standard", "capacity": 1, "queueCapacity": 2,
         "maximumMemoryBytes": 134217728 if descriptor["language"] in {"dotnet", "typescript"} else 67108864}]
+    if "localService" in selected:
+        value["cells"][0].update(capacity=2, queueCapacity=4)
+        value["budgetProfile"].update(maximumChildCalls=16, maximumDepth=2,
+                                      maximumLiveDescendants=2, maximumLiveChildren=1)
     value.setdefault("execution", {}).update(maximumWallTimeMillis=120000, maximumCpuFuel=10000000000)
     value.setdefault("engine", {})["javaGuest"] = descriptor["language"] == "java"
     value["audit"].update(records=4096, diskBytes=67108864)
@@ -53,6 +61,8 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
         for name, (capability, _profile, _operation, _kind) in selected.items():
             provider_service = {"blob": blob_fixture.SERVICE, "secrets": secret_fixture.SERVICE,
                                 "metrics": metric_fixture.SERVICE}.get(name, "runtime-host")
+            if name == "localService":
+                provider_service = fixtures["localService"]["service"]
             value["providers"][name] = {"identity": {"id": name, "tenant": descriptor["tenant"],
                 "service": provider_service, "epoch": 1}}
             if name == "http":
@@ -63,6 +73,8 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
                 value["providers"][name].update(secret_fixture.installation(root, fixtures["secrets"]))
             if name == "metrics":
                 value["providers"][name]["descriptors"] = metric_fixture.validate(fixtures["metrics"])
+            if name == "localService":
+                value["providers"][name].update({key: fixtures[name][key] for key in ("deployment", "contract")})
             value["providers"]["bindings"].append({"name": "dev-" + name,
                 "tenant": descriptor["tenant"], "consumerService": descriptor["service"],
                 "providerService": provider_service, "contract": capability, "providerBinding": "dev-" + name})
@@ -86,6 +98,11 @@ def prepare(root: Path, descriptor: dict, *, consent: bool, admission: str = "tr
         require(state.load(root, "operations.json")["pending"] is None, "recover-original-operation-before-test-setup")
     runtime = root / "runtime"
     with state.lock(root, "supervisor.lock"), state.lock(runtime, "run.lock"):
+        if fixtures is not None and "localService" in fixtures:
+            node_fixtures.validate(fixtures)
+            require(admission == "signed-fixture" and tool_root is not None,
+                    "local-fixture-requires-signed-pair-and-pinned-tools")
+            local_service_fixture.prepare(root, descriptor, tool_root, fixtures["localService"])
         signing = None
         if admission == "signed-fixture":
             from . import node_test_signing
@@ -140,6 +157,8 @@ def installed(root: Path, descriptor: dict, status: dict) -> dict:
         entry = rows[0]
         provider_service = {"blob": blob_fixture.SERVICE, "secrets": secret_fixture.SERVICE,
                             "metrics": metric_fixture.SERVICE}.get(name, "runtime-host")
+        if name == "localService":
+            provider_service = profile["fixtures"][name]["service"]
         require(entry.get("tenant") == descriptor["tenant"] and entry.get("service") == provider_service
                 and entry.get("capability") == capability and entry.get("profile") == provider_profile
                 and entry.get("configurationEpoch") == "1", "test-provider-installation-scope")

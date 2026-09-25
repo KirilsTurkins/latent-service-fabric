@@ -2,16 +2,21 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://latent.dev/schemas/node-providers.schema.json",
   "title": "Optional standalone bounded capability providers",
-  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations, metric descriptor uniqueness and histogram ordering, and aggregate reservations. Installs only maintained HTTP, local-blob, protected-local-secret, custom-metric, activation-clock and OS-entropy profiles; it grants no guest authority.",
+  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations, metric descriptor uniqueness and histogram ordering, and aggregate reservations. Installs only maintained HTTP, local-blob, protected-local-secret, custom-metric, isolated-local-service, activation-clock and OS-entropy profiles; it grants no guest authority.",
   "type": "object",
   "additionalProperties": false,
   "required": ["formatVersion", "bindings"],
-  "anyOf": [{"required": ["http"]}, {"required": ["blob"]}, {"required": ["secrets"]}, {"required": ["metrics"]}, {"required": ["clockMonotonic"]}, {"required": ["clockWall"]}, {"required": ["random"]}],
+  "anyOf": [{"required": ["http"]}, {"required": ["blob"]}, {"required": ["secrets"]}, {"required": ["metrics"]}, {"required": ["localService"]}, {"required": ["clockMonotonic"]}, {"required": ["clockWall"]}, {"required": ["random"]}],
   "properties": {
     "formatVersion": {"type": "integer", "const": 1},
     "http": {"$ref": "#/$defs/http"},
     "secrets": {"$ref": "#/$defs/secrets"},
     "metrics": {"$ref": "#/$defs/metrics"},
+    "localService": {
+      "type": "object", "additionalProperties": false, "required": ["identity", "deployment", "contract"],
+      "properties": {"identity": {"$ref": "#/$defs/identity"}, "deployment": {"$ref": "#/$defs/token"},
+        "contract": {"$ref": "#/$defs/token", "not": {"const": "latent:service/invoke@0.1.0"}}}
+    },
     "clockMonotonic": {"$ref": "#/$defs/scalar"},
     "clockWall": {"$ref": "#/$defs/scalar"},
     "random": {"$ref": "#/$defs/scalar"},
@@ -27,7 +32,7 @@
           "name": {"$ref": "#/$defs/token"}, "tenant": {"$ref": "#/$defs/token"},
           "consumerService": {"$ref": "#/$defs/token"}, "providerService": {"$ref": "#/$defs/token"},
           "providerBinding": {"$ref": "#/$defs/token"}, "route": {"$ref": "#/$defs/token"},
-          "contract": {"enum": ["latent:http/client@0.2.0", "latent:blob/blob@0.2.0", "latent:secrets/reader@0.1.0", "latent:telemetry/custom@0.1.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0"]}
+          "contract": {"enum": ["latent:http/client@0.2.0", "latent:blob/blob@0.2.0", "latent:secrets/reader@0.1.0", "latent:telemetry/custom@0.1.0", "latent:service/invoke@0.1.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0"]}
         }
       }
     }

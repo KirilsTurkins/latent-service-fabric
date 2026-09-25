@@ -399,12 +399,9 @@ impl ProviderCall {
         let session = &self.work.as_ref().expect("affine call").session;
         let source = &session.plan.target;
         latent_core::InvocationPrincipal {
-            subject: format!(
-                "service:{}:{}:{}:{}",
-                source.tenant.0.len(),
-                source.tenant.0,
-                source.service.0.len(),
-                source.service.0
+            subject: latent_core::InvocationPrincipal::local_service_subject(
+                &source.tenant,
+                &source.service,
             ),
             kind: latent_core::PrincipalKind::Service,
             tenant: Some(tenant),

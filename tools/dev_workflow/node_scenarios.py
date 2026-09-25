@@ -94,6 +94,10 @@ def run(root, arguments, *, deadline: float | None = None):
             supported.add("scoped-secret-fixture")
         if "metrics" in installed:
             supported.add("metrics")
+        if "localService" in installed:
+            from . import local_service_fixture
+            fixture_runtime["localService"] = local_service_fixture.observe(root, cli)
+            supported.add("local-service-fixture")
     fixture_profile = state.load(root, "test-profile.json") if installed is not None else {}
     fixtures = fixture_profile.get("fixtures")
     initialized = node_fixtures.initialized(source, cases, fixtures, fixture_runtime, installed)

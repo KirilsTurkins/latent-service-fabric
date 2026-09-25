@@ -44,6 +44,8 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
     except (FileNotFoundError, ConnectionRefusedError):
         status = state.load(root, "lifecycle.json") if (root / "lifecycle.json").exists() else {"state": "stopped"}
     require(status["state"] in {"stopped", "purged"}, "stop-and-confirm-cleanup-before-purge")
+    from . import local_service_fixture
+    local_service_fixture.purge(root)
     builds = root / "builds"
     if builds.exists():
         from . import build_cache
