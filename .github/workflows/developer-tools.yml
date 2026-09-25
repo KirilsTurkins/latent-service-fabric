@@ -36,6 +36,7 @@ on:
       - tools/dev_metric_fixture_probe.py
       - tools/dev_local_service_fixture_probe.py
       - tools/dev_event_fixture_probe.py
+      - tools/dev_workspace_isolation_probe.py
       - tools/run_dev_metric_portable.py
       - tools/run_dev_http_portable.py
       - apps/latentd/src/config/**
@@ -171,7 +172,16 @@ jobs:
           python tools/dev_metric_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output "$RUNNER_TEMP/dev-metric-fixtures"
           python tools/dev_local_service_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-local-service-fixtures"
           python tools/dev_event_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-event-fixtures"
+          python tools/dev_workspace_isolation_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-workspace-isolation"
           sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_dev_recovery_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-recovery-fixtures"
+      - name: Retain actual workspace isolation and expired original receipt observations
+        if: always() && matrix.language == 'rust'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: developer-workspace-isolation-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-workspace-isolation/
+          if-no-files-found: warn
+          retention-days: 7
       - name: Retain authenticated immediate-event protocol and cleanup receipts
         if: always() && matrix.language == 'rust'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

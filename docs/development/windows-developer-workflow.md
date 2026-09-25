@@ -877,12 +877,32 @@ The focused contributor command is `python tools/dev_local_service_fixture_probe
 Linux test owner. The existing Rust developer job executes the same command and
 retains its public receipts.
 
+The [workspace isolation observation](./workspace-isolation-source-observation.json)
+records 22 actual invocations across two overlapping signed/enforced nodes owned
+by one unprivileged Linux account. Distinct guest results, publications,
+credentials, activation catalogs and generated secret files remained separate.
+Each node denied the other workspace's credentials and secret reference. A
+stopped and restarted workspace left the other node callable with its deployment
+unchanged. Excluded author credentials never entered the source snapshots.
+
+An actual completed activation was observed before and after its configured
+three-second receipt retention expired. Recovery retained the original intent
+and rejected a new mutation; the other workspace remained usable. Neither the
+clock nor the receipt store was edited. Both nodes stopped cleanly with all live
+provider/secret counters zero. The private workspaces and expired intent remain
+available for inspection. The first run's incorrect newline in expected public
+result bytes is preserved alongside the successful run.
+
+Run `tools/dev_workspace_isolation_probe.py` with the same payload, source-node
+and new-output arguments for this maintained CI check. It does not qualify
+separate WSL users, owned purge or final authenticated clean-host installation.
+
 | Child | Remaining Windows acceptance |
 | --- | --- |
 | #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
 | #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
 | #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
-| #564 | Complete malformed/admission failure, rapid edits, in-flight revision, revocation and expired-receipt cases; repeat the observed source watch/recovery schedule with final authenticated packages. |
+| #564 | Complete malformed/admission failure, rapid edits, in-flight revision and revocation cases; repeat the observed source watch/recovery and actual expired-receipt schedules with final authenticated packages. |
 | #565 | Complete the remaining failure/isolation matrix; qualify the integrated fixtures and scenarios with all six languages. |
 | #566 | Verified final native distribution and the remaining provider/failure differential; all six languages have source tutorial comparisons, and Rust has shared node/native clock evidence. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
