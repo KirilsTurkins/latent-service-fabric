@@ -479,11 +479,18 @@ independently approved exact-commit identity policy, independent Sigstore roots
 and a pinned GitHub verifier. Attestation alone is not approval or qualification.
 
 The manual [platform preflight](../../.github/workflows/developer-platform-preflight.yml)
-checks a fresh Windows 2025 runner's actual WSL2 system environment and kernel.
+checks a fresh Windows 2025 runner's actual WSL2 environment and kernel using an
+exactly named disposable Ubuntu distribution, pinned to Canonical's published
+SHA-256. It validates registry ownership before stopping and unregistering it.
 It uses no source checkout, compiler or LSF candidate and retains bounded failed
-observations. Its only automatic trigger is the explicitly named qualification
+observations. The first attempt found WSL installed but no registered distribution,
+so starting the system environment alone could not observe an actual kernel.
+Its only automatic trigger is the explicitly named qualification
 branch when that workflow changes. A successful preflight identifies a possible
 host for the packaged schedule; it does not count as application qualification.
+Documentation, CI inventory and preflight-only pushes do not rebuild every guest
+bundle; explicit candidate dispatch and application-source changes retain their
+existing build lanes.
 
 The first native Windows build ran `dev doctor` outside the checkout with Python
 removed from `PATH`. Its receipt is an unsigned contributor build, not an
