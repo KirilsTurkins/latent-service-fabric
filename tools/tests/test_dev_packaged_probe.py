@@ -200,6 +200,55 @@ class PackagedProbe(unittest.TestCase):
                 self.assertIn('StrictHostKeyChecking=yes', command)
                 self.assertIn('IdentitiesOnly=yes', command)
 
+    def test_modified_watch_probe_cannot_start_a_guest_command(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.dev_packaged_watch_observer import Observer, SOURCES
+        from tools.dev_packaged_process import digest
+        workspace = self.root / 'test-packaged-rust-watch'
+        workspace.mkdir()
+        helper_sha = 'sha256:' + '1' * 64
+        (workspace / 'backend.json').write_text(json.dumps({'kind': 'linux', 'helperSha256': helper_sha}))
+        pins = {}
+        for name in SOURCES:
+            path = self.root / name
+            path.write_bytes(b'raise AssertionError("must never execute")\n')
+            pins[name] = digest(path)
+        config = {'faultProbe': str(self.root / 'dev_node_fault_probe.py'), 'watchProbeSha256': pins}
+        item = {'workspace': workspace.name, 'profile': {'admission': 'trusted-local'}, 'helperSha256': helper_sha}
+        api = SimpleNamespace(state=self.root)
+        Observer(api, config, item)
+        for name in SOURCES:
+            path = self.root / name
+            original = path.read_bytes()
+            path.write_bytes(original + b'# altered after selection\n')
+            try:
+                with self.subTest(source=name), patch('tools.dev_packaged_watch_observer.Command') as spawn:
+                    with self.assertRaisesRegex(ProbeFailure, 'separate-reviewed-watch-conductor-required'):
+                        Observer(api, config, item).start('retention')
+                    spawn.assert_not_called()
+            finally:
+                path.write_bytes(original)
+
+    @unittest.skipUnless(sys.platform == 'linux', 'actual unprivileged Linux helper authentication required')
+    def test_watch_guest_rejects_changed_installed_helper_before_import(self):
+        from tools.prepare_dev_packaged_probe import ROOT
+        helper = self.root / 'helper.pyz'
+        marker = self.root / 'unexpected-import'
+        with zipfile.ZipFile(helper, 'w') as archive:
+            archive.writestr('tools/__init__.py', 'from pathlib import Path;Path(' + repr(str(marker)) + ').touch()')
+        helper.chmod(0o600)
+        child = Command([sys.executable, '-I', '-B', ROOT / 'tools/dev_packaged_watch_guest.py',
+            '--helper', helper, '--helper-sha256', 'sha256:' + '0' * 64,
+            '--workspace', 'test-packaged-rust-watch', '--mode', 'retention'],
+            self.root, environment(self.root), input_bytes=b'{}')
+        try:
+            self.assertEqual(child.finish(5), 1)
+            self.assertIn(b'installed-helper-digest-mismatch', child.raw(1))
+            self.assertFalse(marker.exists())
+        finally:
+            child.abort_controller()
+
     def test_failed_start_retains_actual_events_without_replaying_start(self):
         from tools.dev_packaged_windows import Frontend
         report = {'commands': []}
