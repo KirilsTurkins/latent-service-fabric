@@ -180,8 +180,17 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
         else:
             from dev_packaged_failures import author
         author(project, case_set)
+    security = {}
+    if language == 'rust' and case_set is None:
+        if __package__:
+            from .dev_packaged_security import descriptors, source_paths
+        else:
+            from dev_packaged_security import descriptors, source_paths
+        security['descriptors'] = descriptors(api, workspace, project)
     api.call('build', '--workspace', workspace, '--project', project, rejection={'workspace-recipe-trust-required'})
     api.call('trust', '--workspace', workspace, '--project', project)
+    if language == 'rust' and case_set is None:
+        security['sourcePaths'] = source_paths(api, workspace, project)
     built = api.call('build', '--workspace', workspace, '--project', project, timeout=1200)
     fixtures = ['--fixtures', project / 'tests/clock-zero.json'] if case_set == 'clock' else []
     profile = api.call('prepare-test', '--workspace', workspace, '--consent-test-fixtures',
@@ -192,7 +201,7 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
         for path in [*project.glob('tests/*.json'), *project.glob('app/wit/deps/clock/*.wit')]:
             authored[path.relative_to(project).as_posix()] = digest(path)
     return {'workspace': workspace, 'user': owned['user'], 'project': str(project), 'helperSha256': helper_sha,
-            'build': built, 'profile': profile, 'tools': selected, 'authoredSource': authored}
+            'build': built, 'profile': profile, 'tools': selected, 'authoredSource': authored, 'sourceRejections': security}
 
 
 def verify_language(api, item):

@@ -35,6 +35,13 @@ and exclusion of an authored `.env` file from synchronized snapshots. Restart
 uses the retained deployment without a new publication. Purge preserves every
 recorded authored file by digest.
 
+Before each backend's initial Rust build, the installed frontend rejects an
+unknown descriptor field, incompatible ABI and a traversal input root. After
+explicit recipe trust it rejects two distinct Unicode-equivalent source names
+and an actual hard-linked source file; Unix clients also exercise an actual
+symbolic link. The conductor restores the exact descriptor bytes and removes
+only its individually created path fixtures before the valid build proceeds.
+
 For the first Rust deployment, a separately staged and digest-checked conductor
 discards one actual successful release response, then one deployment response.
 It imports the authenticated installed helper and calls the actual operator CLI.
