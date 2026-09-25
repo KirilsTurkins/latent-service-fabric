@@ -12,6 +12,10 @@ workspace = true
 
 [dependencies]
 base64.workspace = true
+getrandom = "=0.4.3"
+subtle = "=2.6.1"
+socket2 = "=0.6.5"
+zeroize = { version = "=1.9.0", features = ["alloc"] }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

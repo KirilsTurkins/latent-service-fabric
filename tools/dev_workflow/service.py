@@ -17,7 +17,7 @@ from tools.native_runtime import checks
 from tools.native_runtime.common import InstallError
 from tools.native_runtime.layout import Layout
 from . import paths, process, state
-from .common import DevError, MAX_LOG, decode, encode, require
+from .common import DevError, MAX_LOG, decode, digest, encode, require
 from .node_output import NodeOutput
 
 
@@ -148,6 +148,7 @@ def supervise(root: Path) -> int:
     selector = selectors.DefaultSelector()
     reaped = False
     output = None
+    http_peer_owner = None
     selected_socket = socket_path(root)
     node_config = decode(paths.read(layout.node.parent, layout.node.name))
     profile = node_config["securityProfile"]
@@ -163,12 +164,27 @@ def supervise(root: Path) -> int:
         server.setblocking(False)
         selector.register(server, selectors.EVENT_READ, "control")
         try:
+            redactions = [item["token"] for item in node_config["credentials"]]
+            if (root / "test-profile.json").exists():
+                selected = state.load(root, "test-profile.json")
+                fixture = (selected.get("fixtures") or {}).get("http")
+                if fixture is not None:
+                    from .http_peer import Peer
+                    require(root.name.startswith("test-") and profile == "local-experimental-v1"
+                            and selected["configurationSha256"] == digest(paths.read(layout.node.parent, layout.node.name)),
+                            "http-fixture-node-configuration-changed")
+                    http_peer_owner = Peer(root, fixture, selector)
+                    # Neither node diagnostics nor public fixture receipts may
+                    # disclose the operator-injected provider credential.
+                    secret = http_peer_owner.authorization.decode("ascii")
+                    redactions.extend((secret, secret.removeprefix("Bearer ")))
+                    current["fixtures"] = {"http": http_peer_owner.observation()}
             binary = checks.current(layout) / "bin/latentd"
             owner.process = subprocess.Popen([str(binary), "serve", "--config", str(layout.node)],
                 cwd=layout.data, env=process.environment(), stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, start_new_session=True,
                 preexec_fn=parent_death)
-            output = NodeOutput(owner.process, [item["token"] for item in node_config["credentials"]])
+            output = NodeOutput(owner.process, redactions)
             # The bounded installer readiness probe checks node identity, credentials,
             # profile, pressure availability and admission-ready state.
             current["readiness"] = checks.readiness(layout, timeout=120)
@@ -180,7 +196,13 @@ def supervise(root: Path) -> int:
                 if owner.exited():
                     raise DevError("owned-node-exited")
                 require(output.failure is None, "node-output-read-failed")
+                if http_peer_owner is not None:
+                    http_peer_owner.check()
+                    current["fixtures"]["http"] = http_peer_owner.observation()
                 for key, _events in selector.select(timeout=0.2):
+                    if key.data == "http-fixture":
+                        http_peer_owner.event(key, _events)
+                        continue
                     connection, _address = server.accept()
                     with connection:
                         try:
@@ -200,11 +222,16 @@ def supervise(root: Path) -> int:
                             # node process. In particular startup probes may
                             # time out while retained packages are verified.
                             continue
+                        if http_peer_owner is not None:
+                            http_peer_owner.check()
+                            current["fixtures"]["http"] = http_peer_owner.observation()
                         if operation == "logs":
                             # Only the node's structured bounded diagnostics are returned.
                             result = {**current, "logs": output.logs()}
                         elif operation == "down":
                             stopping = True
+                            if http_peer_owner is not None:
+                                current["fixtures"]["http"] = http_peer_owner.close()
                             os.kill(owner.process.pid, signal.SIGTERM)
                             until = time.monotonic() + 7
                             while not owner.exited() and time.monotonic() < until:
@@ -213,7 +240,8 @@ def supervise(root: Path) -> int:
                             reaped = True
                             output.finish()
                             current.update(state="stopped", reaped=True, dataRetained=True,
-                                cleanShutdown=owner.process.returncode == 0 and output.clean_stop)
+                                cleanShutdown=owner.process.returncode == 0 and output.clean_stop
+                                    and (http_peer_owner is None or http_peer_owner.failure is None))
                             state.atomic(root, "lifecycle.json", current)
                             result = current
                         else:
@@ -224,6 +252,8 @@ def supervise(root: Path) -> int:
                             # Keep a committed down disposition in the durable
                             # record even when its original response is lost.
                             pass
+                        if stopping:
+                            break
             return 0
         except BaseException as error:
             current["failure"] = (error.code if isinstance(error, DevError)
@@ -234,6 +264,8 @@ def supervise(root: Path) -> int:
             return 1
         finally:
             try:
+                if http_peer_owner is not None:
+                    current["fixtures"]["http"] = http_peer_owner.close()
                 owner.finish(time.monotonic() + 5)
                 reaped = True
                 if output:

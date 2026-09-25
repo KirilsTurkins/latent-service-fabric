@@ -278,7 +278,7 @@ The closed `latent.dev.portable-request.v1` import profile is:
 | `latent:clock/monotonic@0.1.0`, `latent:clock/wall@0.1.0` | Production authorization and accounting; system readings or explicit fixed guest readings |
 | `latent:random/random@0.1.0` | Production provider; system entropy or an explicitly selected repeatable byte fixture |
 | `latent:telemetry/custom@0.1.0` | Production metric provider, bounded declared metric/label sets and joined exporter |
-| `latent:http/client@0.2.0` | Production HTTP provider, one owned IPv4 loopback peer, exact approved methods/paths and reply bytes |
+| `latent:http/client@0.2.0` | Production HTTP provider, one owned authenticated IPv4 loopback peer, exact approved methods/paths and reply bytes |
 
 No implicit WASI, filesystem, environment, other socket, secret or cloud import is
 installed. Imported streaming/resource interfaces outside this table are rejected
@@ -297,8 +297,11 @@ A `controlled-peer` file contains `http`, with an explicit unprivileged `port` a
 up to 16 `exchanges`. Each exchange declares `method`, `path`, base64 `requestBody`,
 `status`, and base64 `responseBody` (each body at most 32 KiB). The host binds the
 port before installing the provider; an occupied port fails the request. HTTP
-redirects, ambient roots and credentials are disabled. Denied requests cannot
-reach the peer. The receipt identifies selected fixtures and their digest.
+redirects and ambient roots/credentials are disabled. A fresh private credential
+authenticates the owned peer; the production provider injects it for the exact
+fixture origin. Guest arguments and public reports contain no credential value.
+Denied requests cannot reach the peer. The receipt identifies selected fixtures,
+their digest, authenticated exchanges and completed provider cleanup.
 Fixture changes start a separate owned helper, preserve scenario order and never
 silently change an adjacent scenario's entropy or replies. At most eight such
 groups run in one selection. Shared scenario assertions remain byte-exact.
@@ -332,6 +335,34 @@ Verification rejects release authority for that artifact, and installation
 rejects system-wide, ordinary development and external-capsule destinations.
 Use a local directory such as `.lsf-dev/test-clock/runtime`. This does not
 authorize publication or supply an independently approved publisher policy.
+
+An HTTP fixture uses the same `prepare-test` command with a file containing
+`{"http":{"port":43127,"exchanges":[{"method":"GET","path":"/fixture","requestBody":"","status":200,"responseBody":"b2s="}]}}`.
+Choose an available unprivileged loopback port explicitly. Each node workspace
+keeps its own private provider credential and immutable fixture selection;
+changing the selection requires another disposable workspace. The node uses
+the production HTTP provider and local secret store. HTTP alone works with an
+ordinary compatible runtime; fixed clocks still require the development-test
+runtime. The capsule must declare a nonzero `outboundRequests` budget and the
+scenario must grant `latent:http/client@0.2.0` explicitly.
+
+The node supervisor binds the peer before node startup, checks its readiness,
+and owns all its sockets. It accepts at most four simultaneous connections and
+128 total connections, with a two-second request deadline and a 900-second
+lifetime per node start. Header storage is bounded to 8 KiB/32 headers, each
+request/reply body to 32 KiB, and the complete fixture to 192 KiB. A live listener
+on the selected port causes startup failure. Node shutdown closes the owned
+listener/connections; retained restart uses the same scoped credential. The
+native host owns one sequential peer with the same request count and time
+bounds. Its credential comes from system entropy independently of any guest
+entropy fixture and uses zeroizing storage for its owned secret value.
+
+Declare this dependency as `controlled-peer` with its configuration file and
+digest, and require `buffered-http-fixture`. The common runner accepts it only
+after the actual node reports the matching authenticated peer ready. Reports
+record request counts before and after execution. Comparisons require identical
+public fixture data and completed exchanges on both hosts; they do not equate a
+controlled loopback peer with an external-service qualification.
 
 ## Editor tasks and compiler locations
 
@@ -629,6 +660,22 @@ feed `python tools/run_dev_clock_portable.py --host NATIVE_WINDOWS_HOST
 Rust and Windows jobs execute these commands; no separate full workspace campaign
 is added.
 
+The [HTTP source observation](./http-fixture-source-observation.json) records six
+shared cases on a signed/enforced Linux node, Linux portable host and native
+Windows host: cold/warm GET, HEAD, denied path, denied policy and subsequent
+success. Four allowed requests reach each peer; denied requests do not. The
+node also invokes its retained deployment after restart. All 19 invocations
+completed with owned process/peer cleanup. The initial authored fixture declared
+zero outbound requests; the node correctly prevented all network calls. Its
+failed attempt is retained in the observation. These source runs do not qualify
+authenticated final packages or clean Windows/WSL installation.
+
+Run `python tools/dev_http_fixture_probe.py --payload TOOL_PREFIX --source-node
+SOURCE_NODE --portable-host NATIVE_HOST --output NEW_DIRECTORY` on Linux, then
+`python tools/run_dev_http_portable.py --host NATIVE_WINDOWS_HOST --inputs
+EXPORTED_DIRECTORY --output NEW_REPORT` on Windows. Both commands execute the
+same public scenario format and component bytes outside the checkout.
+
 `tools/dev_node_fault_probe.py` is a contributor fault-injection harness, separate
 from the shipped helper. Run it only as the explicitly selected `test-` workspace's
 unprivileged Linux owner, with its exact helper path and SHA-256. It requires the
@@ -659,7 +706,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate

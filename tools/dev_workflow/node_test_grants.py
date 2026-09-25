@@ -1,7 +1,7 @@
 """Publish narrowly scoped test policy data through the ordinary operator API."""
 from __future__ import annotations
 
-from . import paths, policy_operations
+from . import paths, policy_operations, state
 from .common import decode, digest, encode, require
 
 
@@ -12,10 +12,12 @@ def selection(root, descriptor, publication, execution, installed, client, journ
     operators = [item for item in node["credentials"] if item["tenant"] == descriptor["tenant"] and item["role"] == "operator"]
     require(len(operators) == 1, "test-requires-exact-scoped-operator")
     from tools.guest_runtime_profiles import RUNTIME
+    from . import http_fixture
+    profiles = {**RUNTIME, "http": http_fixture.PROVIDER}
     grants = []
     for capability in sorted(execution["grants"]):
         name, entry = by_capability[capability]
-        _capability, profile, operation, kind = RUNTIME[name]
+        _capability, profile, operation, kind = profiles[name]
         binding = {"formatVersion": 1, "tenant": descriptor["tenant"], "capability": capability,
             "providerProfile": profile, "configurationDigest": entry["configurationDigest"],
             "configurationEpoch": 1, "restriction": {"operations": [operation]}}
@@ -27,6 +29,11 @@ def selection(root, descriptor, publication, execution, installed, client, journ
             "operations": [operation], "resources": {"kind": kind},
             "ceiling": {"operations": 4096, "inputBytes": 8 if kind == "random" else 0,
                         "outputBytes": 32768, "wallTimeMillis": 5000}}]}
+        if kind == "http":
+            fixture = state.load(root, "test-profile.json")["fixtures"]["http"]
+            http_fixture.credential(root, fixture)
+            policy["rules"][0].update(resources=http_fixture.resources(fixture),
+                ceiling={"operations": 8, "inputBytes": 32768, "outputBytes": 65536, "wallTimeMillis": 5000})
         identity = "dev-runtime-" + digest(encode(policy))[7:39]
         policy_operations.apply(root, client, journal, identity, "policy", policy)
         grants.append({"capability": capability, "policy": identity})

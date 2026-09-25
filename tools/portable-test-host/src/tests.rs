@@ -101,3 +101,55 @@ fn guest_clock_fixture_cannot_select_an_external_capsule_profile() {
         .development_clock_readings
         .is_none());
 }
+
+#[tokio::test]
+async fn http_fixture_owns_private_authority_and_rejects_other_workspaces() {
+    use crate::http_fixture::{Exchange, Fixture, Peer};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    fn fixture() -> Fixture {
+        let probe = std::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0)).unwrap();
+        Fixture {
+            port: probe.local_addr().unwrap().port(),
+            exchanges: vec![Exchange {
+                method: "GET".into(),
+                path: "/fixture".into(),
+                request_body: String::new(),
+                status: 200,
+                response_body: "b3duZWQ=".into(),
+            }],
+        }
+    }
+    async fn request(fixture: &Fixture, authorization: &str) -> Vec<u8> {
+        let mut stream =
+            tokio::net::TcpStream::connect((std::net::Ipv4Addr::LOCALHOST, fixture.port))
+                .await
+                .unwrap();
+        stream.write_all(format!("GET /fixture HTTP/1.1\r\nHost: 127.0.0.1:{}\r\nAuthorization: {authorization}\r\n\r\n", fixture.port).as_bytes()).await.unwrap();
+        let mut reply = Vec::new();
+        tokio::time::timeout(
+            std::time::Duration::from_secs(3),
+            stream.read_to_end(&mut reply),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        reply
+    }
+    let first = fixture();
+    let mut peer = Peer::start(&first).unwrap();
+    let mut other = Peer::start(&fixture()).unwrap();
+    assert_ne!(peer.authorization(), other.authorization());
+    assert!(Peer::start(&first).is_err());
+    let rejected = request(&first, other.authorization()).await;
+    assert!(rejected.starts_with(b"HTTP/1.1 401"));
+    assert!(!rejected.windows(5).any(|value| value == b"owned"));
+    let accepted = request(&first, peer.authorization()).await;
+    assert!(accepted.ends_with(b"owned"));
+    assert_eq!(peer.shutdown().await.unwrap(), 1);
+    assert_eq!(other.shutdown().await.unwrap(), 0);
+    assert!(
+        tokio::net::TcpStream::connect((std::net::Ipv4Addr::LOCALHOST, first.port))
+            .await
+            .is_err()
+    );
+}
