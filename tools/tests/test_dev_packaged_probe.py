@@ -1,6 +1,7 @@
 """Qualification bootstrap rejects altered archives and bounds its own children."""
 from pathlib import Path
 import hashlib
+import json
 import os
 import sys
 import tempfile
@@ -117,6 +118,25 @@ class PackagedProbe(unittest.TestCase):
         with self.assertRaisesRegex(ProbeFailure, 'conductor-input-byte-limit'):
             Command([sys.executable, '-c', 'raise AssertionError("never starts")'],
                     self.root, environment(self.root), input_bytes=b'x' * (2 * 1024 * 1024 + 1))
+
+    def test_required_unsupported_report_remains_a_non_success(self):
+        from tools.dev_packaged_windows import Frontend
+        report = {'commands': []}
+        frontend = Frontend(Path(sys.executable), self.root, report)
+        response = {'schemaVersion': 'latent.dev.result.v1', 'code': 'required-tests-failed',
+                    'result': {'passed': False, 'cleanup': 'no-native-host-started'}}
+        def command(exit_code):
+            return Command([sys.executable, '-I', '-B', '-c',
+                'import sys;print(' + repr(json.dumps(response)) + ');sys.exit(' + str(exit_code) + ')'],
+                self.root, environment(self.root))
+        frontend.command = lambda *_: command(3)
+        with self.assertRaisesRegex(ProbeFailure, 'frontend-command-failed-test'):
+            frontend.call('test')
+        self.assertFalse(frontend.call('test', expected_test_failure=True)['passed'])
+        frontend.command = lambda *_: command(0)
+        with self.assertRaisesRegex(ProbeFailure, 'expected-required-test-failure-missing'):
+            frontend.call('test', expected_test_failure=True)
+        self.assertEqual(len(report['commands']), 3)
 
 
 if __name__ == '__main__':

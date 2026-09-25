@@ -65,6 +65,23 @@ compares case identities, outcomes and payload digests with the Linux-node
 results. This export is an explicitly labeled read-only qualification observer;
 it does not compile, deploy or invoke an application in place of the frontend.
 
+Two further Rust workspaces use the same authored failure and clock cases as
+the maintained source probes. Their stimulus writers use only the standard
+library and produce byte-identical source, WIT, fixture and scenario files.
+The packaged frontend builds and signs each project in its own WSL user and
+node. The failure schedule covers cold/warm fresh state, declared error, trap,
+fuel and memory exhaustion, deadline, actual running cancellation, recovery
+after each failure, and retained restart. The explicit zero-clock fixture
+covers cold/warm readings, denied capability and fresh recovery.
+
+After WSL purge, the native Windows host executes the same exported component
+bytes and shared scenarios, including the documented node/native resource-code
+differences. A required live-node cancellation scenario must reject the portable
+selection before any native invocation. A separate native cancellation-before-
+start case exercises the portable host's declared support; it is never counted
+as running-node cancellation. These additional workspaces are purged separately
+and their original authored sources remain intact.
+
 A separate manual Linux lane uses a fresh Ubuntu 24.04 OS container with the
 same pinned OS/Python inputs as the managed image, plus pinned OpenSSH packages.
 It checks that host compilers and SDKs are absent before installing any guest
@@ -136,10 +153,11 @@ The [final source campaign](final-source-campaign-observation.json) records the
 separate successful isolation, watch and recovery source probes and their failed
 predecessors. Those observations likewise do not replace installed-candidate runs.
 
-The ten fast conductor regressions exercise archive traversal/alias/device/link
+The eleven fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and
 bounded stdin with receipt redaction, plus the actual Windows DACL of the newly
-created conductor directory. They also
+created conductor directory. A required unsupported-case report must retain its
+non-success exit and cannot be accepted by an ordinary passing-test call. They also
 require the correct native entrypoint and private executable modes on Linux.
 They run on Windows and Linux and do not count as installed-product evidence.
 The [OS setup observation](qualification-os-smoke-observation.json) additionally

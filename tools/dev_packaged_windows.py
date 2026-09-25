@@ -42,7 +42,7 @@ class Frontend:
         require(time.monotonic() < self.deadline, 'qualification-schedule-deadline')
         return Command([self.executable, '--state-root', self.state, 'dev', *arguments], self.root, self.env)
 
-    def call(self, *arguments, timeout=90, rejection=None):
+    def call(self, *arguments, timeout=90, rejection=None, expected_test_failure=False):
         process = self.command(*arguments)
         receipt = {}
         try:
@@ -55,6 +55,10 @@ class Frontend:
                 require(code == 2 and result.get('code') in rejection and result.get('uncertain') is False,
                         'expected-certain-rejection-missing')
                 return result
+            if expected_test_failure:
+                require(arguments[0] == 'test' and code == 3 and result.get('code') == 'required-tests-failed'
+                        and result.get('result', {}).get('passed') is False, 'expected-required-test-failure-missing')
+                return result['result']
             require(code == 0 and result.get('code') == 'success', 'frontend-command-failed-' + arguments[0])
             return result['result']
         finally:
@@ -139,8 +143,10 @@ def inputs(api, config, language, index):
     return runtime_path, tools_path
 
 
-def prepare(api, config, language, index, helper_sha, *, backend_config=None, project_parent=None):
-    workspace = 'test-packaged-' + language
+def prepare(api, config, language, index, helper_sha, *, backend_config=None, project_parent=None, case_set=None):
+    require(case_set in {None, 'failure', 'clock'} and (case_set is None or language == 'rust'), 'closed-authored-case-set')
+    suffix = '' if case_set is None else '-' + case_set
+    workspace = 'test-packaged-' + language + suffix
     if backend_config is None:
         owned = api.call('wsl-workspace', '--workspace', workspace, '--helper-sha256', helper_sha)
     else:
@@ -164,17 +170,27 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
     manifest = read_json(template_root / template['path'] / 'template.json')
     identity = 'sha256:' + hashlib.sha256((json.dumps(manifest, sort_keys=True,
         separators=(',', ':'), ensure_ascii=True, allow_nan=False) + '\n').encode()).hexdigest()
-    project = (project_parent or api.root) / ('Author spaces-\u00fc ' + language)
+    project = (project_parent or api.root) / ('Author spaces-\u00fc ' + language + suffix)
     api.call('init', project, '--bundle', cached['bundle'], '--template', relative, '--template-sha256', identity)
     sentinel = project / 'app/.env'
     sentinel.write_text('QUALIFICATION_EXCLUDED_CREDENTIAL=never-synchronize-this-marker\n', encoding='utf-8')
+    if case_set is not None:
+        if __package__:
+            from .dev_packaged_failures import author
+        else:
+            from dev_packaged_failures import author
+        author(project, case_set)
     api.call('build', '--workspace', workspace, '--project', project, rejection={'workspace-recipe-trust-required'})
     api.call('trust', '--workspace', workspace, '--project', project)
     built = api.call('build', '--workspace', workspace, '--project', project, timeout=1200)
+    fixtures = ['--fixtures', project / 'tests/clock-zero.json'] if case_set == 'clock' else []
     profile = api.call('prepare-test', '--workspace', workspace, '--consent-test-fixtures',
-                       '--admission', 'signed-fixture', '--tool-root', selected['directory'], timeout=120)
+                       '--admission', 'signed-fixture', '--tool-root', selected['directory'], *fixtures, timeout=120)
     authored = {entry['path']: digest(project / entry['path']) for entry in manifest['snapshot']['files']}
     authored.update({'latent.project.json': digest(project / 'latent.project.json'), 'app/.env': digest(sentinel)})
+    if case_set is not None:
+        for path in [*project.glob('tests/*.json'), *project.glob('app/wit/deps/clock/*.wit')]:
+            authored[path.relative_to(project).as_posix()] = digest(path)
     return {'workspace': workspace, 'user': owned['user'], 'project': str(project), 'helperSha256': helper_sha,
             'build': built, 'profile': profile, 'tools': selected, 'authoredSource': authored}
 
@@ -262,6 +278,11 @@ def run(config, output):
         retained['shutdownAfterRestart'] = api.down(retained['workspace'])
         retained['purge'] = api.call('purge', '--workspace', retained['workspace'], '--confirm-workspace', retained['workspace'], timeout=120)
         retained['authoredSourceAfterPurge'] = preserved_source(retained)
+        if __package__:
+            from .dev_packaged_failures import node_campaign, portable_campaign
+        else:
+            from dev_packaged_failures import node_campaign, portable_campaign
+        report['closedProfile'] = node_campaign(api, config, inventory['helperSha256'])
         report['distroPurge'] = api.call('wsl-purge', '--confirm-distribution', report['provision']['distribution'], timeout=180)
         report['distroAfterPurge'] = api.call('wsl-status')
         require(report['distroAfterPurge']['registered'] is False, 'portable-stage-still-has-owned-wsl-distribution')
@@ -274,6 +295,7 @@ def run(config, output):
             common = lambda result: [(case['id'], case['status'], case['category'], case['payloadSha256'])
                                      for case in result['results']]
             require(common(item['portable']) == common(item['tests']), 'native-and-linux-common-outcomes-differ')
+        portable_campaign(api, report['closedProfile'], report['frontend']['bundle'])
         report['portableExecution'] = 'native-windows-after-owned-wsl-distribution-purge'
         report.update(passed=True, cleanup='owned-workspaces-and-distribution-purged-author-source-retained')
     except BaseException as error:

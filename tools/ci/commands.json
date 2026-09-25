@@ -3372,13 +3372,13 @@
       "sha256": "a6db24af71eac4ade98f70e1441ad981f58b2fb33ed3526fc20c1b8ec39a314f"
     },
     "tools/dev_clock_fixture_probe.py": {
-      "sha256": "307493b05e171bf2cd2980d205be69363592ddea199944806650da7367135ef4"
+      "sha256": "ea109be19982af9357c7917d902508c6df4e04bd56017a9448c629f402c17f6b"
     },
     "tools/dev_event_fixture_probe.py": {
       "sha256": "f64f6c0cb748c3f8d39b519938b5ad6301bb3978a4e11ed1f45ddecd0c620950"
     },
     "tools/dev_failure_fixture_probe.py": {
-      "sha256": "debeb0ea617f5d8eef93ee4b1ef8552bbf5cd30b96c2d684f9960d39cbd6a9a9"
+      "sha256": "1c22391f7ba064415113b4733b8c6f3a02aa3ac3fb7eed518206e5e2a1c60063"
     },
     "tools/dev_http_fixture_probe.py": {
       "sha256": "b482cb9d53bdb1b594ce061c4d14f2f8b5d05f79516a233c34403f982e02a05c"
@@ -3423,7 +3423,7 @@
       "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
     },
     "tools/prepare_dev_packaged_probe.py": {
-      "sha256": "92ec92f90afccbbf34c994db437afc8c3070270aa263bbaed9adc7f98c6493cc"
+      "sha256": "0bc5c48082bc2c500bb7d3b5b32a228d7bed4bd789716a944f0aad6b3882f461"
     },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
@@ -4287,6 +4287,7 @@
       "PackagedProbe.test_linux_exact_entrypoint_is_executable_and_private",
       "PackagedProbe.test_linux_target_requires_its_own_entrypoint",
       "PackagedProbe.test_output_flood_is_bounded_and_owned_child_is_reaped",
+      "PackagedProbe.test_required_unsupported_report_remains_a_non_success",
       "PackagedProbe.test_symlink_rejects_before_creation",
       "PackagedProbe.test_traversal_device_and_unicode_aliases_reject_before_creation"
     ],
