@@ -37,9 +37,9 @@ class Inflight:
         while time.monotonic() < until:
             value = self.cli.lookup("invoke", self.activation)
             if value["category"] == "success":
+                self.report["beforeEdit"] = value
                 require(value["data"].get("terminalState") is None, "old-invocation-ended-before-source-edit")
                 if value["data"].get("phase") == "running":
-                    self.report["beforeEdit"] = value
                     return
             else:
                 require(value["category"] == "not-found" and value["outcomeKnown"] is True,
