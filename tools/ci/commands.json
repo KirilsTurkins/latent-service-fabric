@@ -3592,7 +3592,7 @@
       "sha256": "19a9c1c469cdf4ec6fd26b7d882ad979107f91e66ae50bcb72fb74d6890ea7ba"
     },
     "tools/validate_docs.py": {
-      "sha256": "4531a92caad3894828444a35d565efce16a1b42d617aaab02e14598e8be1984d"
+      "sha256": "3105122aa3ad1ed226384e79c2b0d890d55afae487ee1405851abf6610bcf340"
     },
     "tools/validate_foundation.py": {
       "sha256": "c5af2d5733ff8af9cd38b86192584344709d717ae8bfa4becd284f895e29ac35"
@@ -6589,6 +6589,8 @@
       "TypeScriptControlWaitTests.test_uncertain_apply_remains_one_attempt_with_separate_bounded_diagnostics"
     ],
     "tools/tests/test_validate_docs.py": [
+      "DocumentationValidationTests.test_application_command_drift_is_rejected_without_executing_examples",
+      "DocumentationValidationTests.test_application_examples_follow_actual_frontend_and_language_owners",
       "DocumentationValidationTests.test_code_examples_are_not_links_or_headings",
       "DocumentationValidationTests.test_dangling_symlink_cannot_satisfy_tracked_link",
       "DocumentationValidationTests.test_duplicate_slug_collision_matches_github",

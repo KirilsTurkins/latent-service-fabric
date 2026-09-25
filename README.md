@@ -17,6 +17,12 @@ includes the commands and expected results. Then
 [create a capsule](docs/component-development/creating-a-capsule.md) or
 [call it from your application](docs/learn/use-a-client.mdx).
 
+With an independently approved developer candidate, follow
+[application development with packaged tools](docs/start/application-development.md)
+for Windows/WSL2, direct Linux, explicit SSH and native Windows capsule tests.
+This path keeps application source outside the LSF checkout and uses selected
+prebuilt runtime and compiler distributions.
+
 LSF is in alpha. Native binary publication is on hold; use the source walkthrough
 until an approved release is available. The historical `0.1.0-alpha.3` release is
 source-only. See [installation](docs/installation.md) for availability and host

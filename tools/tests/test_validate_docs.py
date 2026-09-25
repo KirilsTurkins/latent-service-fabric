@@ -24,6 +24,27 @@ role="img" aria-labelledby="title description">
 
 
 class DocumentationValidationTests(unittest.TestCase):
+    def test_application_examples_follow_actual_frontend_and_language_owners(self) -> None:
+        documents = {name: (validator.ROOT / name).read_text(encoding="utf-8") for name in validator.APPLICATION_GUIDES}
+        report = validator.application_guide_contracts(documents)
+        self.assertGreaterEqual(report["commands"], 25)
+        self.assertEqual(report["errors"], [])
+
+    def test_application_command_drift_is_rejected_without_executing_examples(self) -> None:
+        source = "docs/component-development/windows-application.md"
+        examples = {
+            "Invoke-LsfDev missing-command": "not a frontend command",
+            "Invoke-LsfDev build --workspace $Workspace --unknown-option value": "unknown option",
+            "Invoke-LsfDev invoke --workspace $Workspace --service service": "lacks --contract",
+            "Invoke-LsfDev test --workspace $Workspace --environment imaginary": "unsupported --environment",
+            '"$Frontend" dev test --workspace "$Workspace" \\\n  --environment imaginary': "unsupported --environment",
+            "Invoke-LsfDev init $Project --bundle $Bundle `\n  --template rust/greeting": "lacks --template-sha256",
+        }
+        for example, expected in examples.items():
+            with self.subTest(example=example):
+                report = validator.application_guide_contracts({source: "```powershell\n" + example + "\n```\n"})
+                self.assertTrue(any(expected in error for error in report["errors"]), report)
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

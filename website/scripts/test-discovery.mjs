@@ -88,6 +88,28 @@ try {
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
       assert.equal(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches), true);
       await page.setViewportSize({width: 1280, height: 900});
+      await page.goto(`${prefix}docs/start/`, {waitUntil: 'networkidle'});
+      await page.locator('main').getByRole('link', {name: 'Application development', exact: true}).click();
+      await page.waitForURL(`${prefix}docs/start/application-development/`);
+      await audit('application-choices');
+      const applicationPages = [
+        ['windows-application', 'Create and edit a Windows application'],
+        ['linux-workspace', 'Select a Linux development workspace'],
+        ['portable-tests', 'Run portable capsule tests on Windows'],
+      ];
+      for (const [slug, title] of applicationPages) {
+        await page.goto(`${prefix}docs/start/application-development/`, {waitUntil: 'networkidle'});
+        await page.locator(`main a[href*="/docs/component-development/${slug}/"]`).first().click();
+        await page.waitForURL(url => url.pathname === new URL(`${prefix}docs/component-development/${slug}/`).pathname);
+        assert.equal((await page.reload({waitUntil: 'networkidle'})).status(), 200);
+        await page.getByRole('heading', {level: 1, name: title, exact: true}).waitFor();
+        await audit(`${slug}-desktop`);
+        await page.setViewportSize({width: 390, height: 844});
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), slug);
+        await audit(`${slug}-mobile`);
+        await page.screenshot({path: path.join(output, `${variant}-${slug}-mobile.png`), fullPage: true});
+        await page.setViewportSize({width: 1280, height: 900});
+      }
       await page.goto(`${prefix}docs/component-development/creating-a-capsule/`, {waitUntil: 'networkidle'});
       const original = new URL(page.url()).pathname;
       const next = page.locator('.pagination-nav__link--next');
@@ -99,6 +121,7 @@ try {
       results.push({variant, sourceRevision: built.manifest.revision, search: built.search,
         firstGuide: true, selectedVersionSearch: true, queryUrl: true, noResults: true, missingVersion: true,
         filteredCatalogue: true, previousNext: true, directReload: true, keyboardSearch: true,
+        applicationGuides: applicationPages.map(([slug]) => slug),
         mobileWidth: 390, reflowWidth: 640, reducedMotion: true, externalRequests: 0, browserErrors: 0, accessibility});
     } finally { await context.close(); await server.close(); }
   }

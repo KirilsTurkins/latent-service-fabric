@@ -12,6 +12,7 @@ import posixpath
 import re
 import subprocess
 import sys
+import tomllib
 import unicodedata
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -19,8 +20,66 @@ from collections.abc import Iterable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(ROOT))
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 DEFINITION = re.compile(r"^ {0,3}\[([^]\n]+)\]:\s*(.*)$")
+APPLICATION_GUIDES = frozenset({"docs/start/application-development.md",
+    "docs/component-development/windows-application.md", "docs/component-development/linux-workspace.md",
+    "docs/component-development/portable-tests.md"})
+
+
+def application_guide_contracts(documents: dict[str, str]) -> dict:
+    """Check displayed command names/options against the actual frontend parser.
+
+    This static drift check does not execute shell examples or establish host
+    qualification. PowerShell syntax and the real walkthrough are separate checks.
+    """
+    from tools.dev_workflow.cli import parser
+    from tools.dev_workflow.project import LANGUAGES
+
+    frontend = parser()
+    groups = next(action for action in frontend._actions if isinstance(action, argparse._SubParsersAction))
+    commands = next(action for action in groups.choices["dev"]._actions
+                    if isinstance(action, argparse._SubParsersAction)).choices
+    errors, count = [], 0
+    for source, document in documents.items():
+        if source not in APPLICATION_GUIDES:
+            continue
+        for block in re.findall(r"^```(?:powershell|bash)\n(.*?)^```", document, re.M | re.S):
+            block = re.sub(r"[`\\]\n\s*", " ", block)
+            for line in block.splitlines():
+                match = re.search(r"\b(?:Invoke-LsfDev|dev)\s+([a-z][a-z-]*)(.*)", line)
+                if match is None:
+                    continue
+                command, arguments = match.groups()
+                count += 1
+                label = f"{source}: displayed dev {command}"
+                if command not in commands:
+                    errors.append(label + " is not a frontend command")
+                    continue
+                actions = commands[command]._actions
+                options = {option: action for action in actions for option in action.option_strings}
+                selected = set(re.findall(r"--[a-z][a-z0-9-]*", arguments))
+                for option in sorted(selected - options.keys()):
+                    errors.append(label + " has unknown option " + option)
+                for action in actions:
+                    if action.required and action.option_strings and not selected.intersection(action.option_strings):
+                        errors.append(label + " lacks " + action.option_strings[0])
+                for option in selected & options.keys():
+                    choices = options[option].choices
+                    literal = re.search(re.escape(option) + r"\s+['\"]?([a-zA-Z0-9][a-zA-Z0-9_.-]*)", arguments)
+                    if choices is not None and literal is not None and literal[1] not in choices:
+                        errors.append(label + " has unsupported " + option + " value " + literal[1])
+        if source == "docs/start/application-development.md":
+            languages = re.findall(r"^\| `([a-z]+)` \|", document, re.M)
+            if len(languages) != len(LANGUAGES) or set(languages) != set(LANGUAGES):
+                errors.append(source + ": language table differs from maintained template owners")
+        expected_rust = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))["toolchain"]["channel"]
+        for selected_rust in re.findall(r"cargo \+([0-9.]+) test", document):
+            if selected_rust != expected_rust:
+                errors.append(source + ": native business test differs from the pinned Rust toolchain")
+    return {"commands": count, "errors": errors}
 
 
 def tracked_files(root: Path) -> set[str]:
@@ -235,6 +294,7 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
             directories.add(parent)
             parent = posixpath.dirname(parent)
     documents: dict[str, str] = {}
+    application_guides: dict[str, str] = {}
     snapshots: set[str] = set()
     svgs: list[Path] = []
     for name in sorted(tracked):
@@ -252,6 +312,8 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
                 if not content.strip():
                     errors.append(f"{name}: empty Markdown document")
                 documents[name] = prose(content, name, errors)
+                if name in APPLICATION_GUIDES:
+                    application_guides[name] = content
                 if name.startswith("website/versioned_docs/"):
                     if registered_snapshot_document(root, name, tracked):
                         snapshots.add(name)
@@ -298,8 +360,10 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
                 except (OSError, ET.ParseError):
                     pass
     errors.extend(svg_errors(root, svgs, require_documents))
+    application = application_guide_contracts(application_guides) if application_guides else {"commands": 0, "errors": []}
+    errors.extend(application["errors"])
     return {"documents": len(documents), "versioned_documents": len(snapshots), "svgs": len(svgs), "local_links": checked_links,
-            "anchors": checked_anchors, "errors": errors}
+            "anchors": checked_anchors, "application_commands": application["commands"], "errors": errors}
 
 
 def main() -> int:
