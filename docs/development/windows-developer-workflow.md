@@ -906,6 +906,13 @@ Run `tools/dev_workspace_isolation_probe.py` with the same payload, source-node
 and new-output arguments for this maintained CI check. It does not qualify
 separate WSL users, owned purge or final authenticated clean-host installation.
 
+The first combined CI run correctly rejected GitHub's inherited runner-home ACLs
+before starting the isolation node. Installed-helper probes now reuse the existing
+dedicated-account CI wrapper: it creates a private passwd home on the ephemeral
+runner, leaves runner ACLs and installer policy unchanged, and exports only bounded
+public receipts. Actual local runs through this wrapper passed both isolation and
+watch; their private accounts remain retained with the disposable test container.
+
 The [watch failure observation](./watch-failure-source-observation.json) records
 the real controller handling three committed revisions. An invocation selected
 on A remained running after B committed and returned a cancellation receipt

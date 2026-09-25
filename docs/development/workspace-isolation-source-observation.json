@@ -901,5 +901,33 @@
       },
       "originalOperationReplayed": false
     }
-  ]
+  ],
+  "privateAccountWrapperObservation": {
+    "passed": true,
+    "seconds": 90.501,
+    "environment": "ephemeral-local-Linux-container-exercising-the-CI-account-wrapper",
+    "cleanHost": false,
+    "publisherAuthenticated": false,
+    "wrapperSha256": "sha256:a6916b7d4eaea62b85587428499113b14e404a1ef6329df9412ddfcdc1eab182",
+    "cleanup": "owned-nodes-reaped-private-original-intent-and-workspaces-retained",
+    "account": {
+      "cleanup": "private-intent-retained-until-runner-teardown",
+      "dedicatedUnprivilegedAccount": true,
+      "privatePasswdHome": true,
+      "purpose": "ephemeral-source-isolation-probe",
+      "runnerAclChanged": false
+    },
+    "privateContainerRetained": true
+  },
+  "initialCiAttempt": {
+    "passed": false,
+    "sourceCommit": "c0547eac90aea86d3adbae4ef31f1ce3a3924b7b",
+    "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36105564565/job/107977190924",
+    "code": "extended-acl-not-supported",
+    "phase": "prepare",
+    "seconds": 42.406,
+    "cause": "Runner passwd home has inherited ACLs; the native installer correctly refused it.",
+    "correction": "Use the existing dedicated private CI account wrapper; do not alter runner ACLs or installer policy.",
+    "originalOperationReplayed": false
+  }
 }
