@@ -64,6 +64,7 @@ def require_remote_tag(version: str, commit: str) -> None:
 
 
 def receipts(root: Path, manifest: dict) -> dict:
+    require("developmentTest" not in manifest, "development-test-artifact-is-not-a-release")
     reports = {}
     for profile in ("local-experimental-v1", "external-capsule-v1"):
         path = root / (profile + ".json")

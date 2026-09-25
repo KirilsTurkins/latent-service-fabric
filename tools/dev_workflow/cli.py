@@ -26,6 +26,10 @@ def parser() -> argparse.ArgumentParser:
     editor.add_argument("--project", type=Path, required=True)
     editor.add_argument("--frontend", type=Path, required=True, help="absolute path to the authenticated standalone frontend")
     editor.add_argument("--tool-root", help="explicit Linux guest tools; defaults to the installed workspace selection")
+    container = dev.add_parser("devcontainer", help="write opt-in container files from an authenticated Linux frontend bundle")
+    container.add_argument("--project", type=Path, required=True)
+    container.add_argument("--bundle", required=True)
+    container.add_argument("--consent-files", action="store_true", help="write reviewed files; never build or start a container")
     configure = dev.add_parser("connect", help="select a separately provisioned owned backend")
     configure.add_argument("--workspace", required=True)
     configure.add_argument("--backend-config", type=Path, required=True)
@@ -59,6 +63,7 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--workspace", required=True)
         if name == "prepare-test":
             command.add_argument("--consent-test-fixtures", action="store_true")
+            command.add_argument("--fixtures", type=Path, help="explicit reviewed node fixture configuration")
             command.add_argument("--admission", choices=("trusted-local", "signed-fixture"), required=True)
             command.add_argument("--tool-root", help="Linux pinned tool inventory containing the reviewed test signer")
         if name == "install":
@@ -165,6 +170,10 @@ def dispatch(args) -> dict:
             return wsl.doctor()
         return {"host": sys.platform, "architecture": platform.machine(), "nodeReadiness": "not-checked"}
     root = _root(args.state_root)
+    if args.command == "devcontainer":
+        from .devcontainer import generate
+        require(len(args.bundle) == 64 and all(c in "0123456789abcdef" for c in args.bundle), "bundle-id-required")
+        return generate(args.project.absolute(), root / "bundles" / args.bundle, consent=args.consent_files)
     if args.command == "editor":
         from .editor import generate
         return generate(args.project.absolute(), args.frontend.absolute(), root, args.workspace, args.tool_root)
@@ -295,8 +304,13 @@ def dispatch(args) -> dict:
         if args.command == "prepare-test":
             require(args.workspace.startswith("test-") and args.consent_test_fixtures,
                     "explicit-disposable-test-fixture-consent-required")
+            fixtures = {}
+            if args.fixtures:
+                from .node_fixtures import validate
+                path = args.fixtures.absolute()
+                fixtures = {"fixtures": validate(decode(paths.read(path.parent, path.name, 4096), 4096))}
             return connection.call("prepare-test", {"consent": args.consent_test_fixtures,
-                "admission": args.admission, **({"toolRoot": args.tool_root} if args.tool_root else {})}, timeout=90)
+                "admission": args.admission, **({"toolRoot": args.tool_root} if args.tool_root else {}), **fixtures}, timeout=90)
         return connection.call(args.command, {})
 
 

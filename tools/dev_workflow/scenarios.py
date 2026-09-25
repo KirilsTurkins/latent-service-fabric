@@ -12,7 +12,7 @@ from . import paths
 from .common import DevError, MAX_DOCUMENT, decode, digest, encode, identifier, integer, members, require
 
 OUTCOMES = {"success", "declared-error", "platform-failure", "transport-failure"}
-NODE_ONLY = {"authentication", "deployment", "restart", "pressure", "compiler-isolation", "protected-files", "native-cache"}
+NODE_ONLY = {"authentication", "deployment", "restart", "pressure", "compiler-isolation", "protected-files", "native-cache", "running-cancellation"}
 PORTABLE = {"context", "log", "clock", "random", "metrics", "buffered-http-fixture", "fresh-state", "fuel", "memory"}
 
 
@@ -32,13 +32,18 @@ def validate(value: dict, environment: str) -> dict:
         for key in ("service", "contract", "function", "mediaType"):
             require(isinstance(case[key], str) and 0 < len(case[key]) <= 512 and "\0" not in case[key], "scenario-selector")
         paths.relative(case["input"])
-        expected = members(case["expect"], {"category"}, {"payload", "platformCode"})
+        expected = members(case["expect"], {"category"}, {"payload", "platformCode", "platformCodes"})
         require(expected["category"] in OUTCOMES, "scenario-expected-outcome")
+        if "platformCodes" in expected:
+            codes = members(expected["platformCodes"], {"node", "portable"})
+            require("platformCode" not in expected and expected["category"] == "platform-failure"
+                    and all(isinstance(code, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,100}", code)
+                            for code in codes.values()), "scenario-platform-codes")
         if "payload" in expected:
             paths.relative(expected["payload"])
         require(type(case["required"]) is bool, "scenario-required-flag")
         if "execution" in case:
-            execution = members(case["execution"], {"grants"}, {"fuel", "memoryBytes", "cancelBeforeStart", "deniedCapabilities"})
+            execution = members(case["execution"], {"grants"}, {"fuel", "memoryBytes", "cancelBeforeStart", "cancelWhenRunning", "deniedCapabilities"})
             require(isinstance(execution["grants"], list) and len(execution["grants"]) <= 32
                     and all(isinstance(item, str) and 0 < len(item) <= 512 for item in execution["grants"])
                     and len(set(execution["grants"])) == len(execution["grants"]),
@@ -52,6 +57,10 @@ def validate(value: dict, environment: str) -> dict:
                 require(isinstance(execution[key], str) and re.fullmatch(r"[1-9][0-9]{0,10}", execution[key]),
                         "scenario-budget-format")
             require(type(execution.get("cancelBeforeStart", False)) is bool, "scenario-cancellation-format")
+            require(type(execution.get("cancelWhenRunning", False)) is bool, "scenario-cancellation-format")
+            if execution.get("cancelWhenRunning", False):
+                require(not execution.get("cancelBeforeStart", False)
+                        and "running-cancellation" in case["requires"], "scenario-running-cancellation-required")
         integer(case["timeoutMillis"], 1, 30000)
         if "nodeTimeoutMillis" in case:
             integer(case["nodeTimeoutMillis"], 1, 120000)
@@ -174,6 +183,11 @@ def run_prepared(prepared: list, unsupported: dict, environment: str, adapter, i
         code = code if isinstance(code, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,100}", code) else None
         if "platformCode" in case["expect"]:
             matched &= code == case["expect"]["platformCode"]
+        if "platformCodes" in case["expect"]:
+            matched &= code == case["expect"]["platformCodes"][environment]
+        cancellation = result.get("data", {}).get("cancellation")
+        if case.get("execution", {}).get("cancelWhenRunning", False):
+            matched &= isinstance(cancellation, dict) and cancellation.get("confirmed") is True
         status = "passed" if matched else "failed"
         required_failed |= not matched
         results.append({"id": case["id"], "status": status, "required": case["required"],
@@ -188,6 +202,10 @@ def run_prepared(prepared: list, unsupported: dict, environment: str, adapter, i
         recovery = result.get("data", {}).get("recovery")
         if recovery is not None:
             results[-1]["recovery"] = recovery
+        if cancellation is not None:
+            results[-1]["cancellation"] = cancellation
+        if "platformCodes" in case["expect"]:
+            results[-1]["platformCodes"] = dict(case["expect"]["platformCodes"])
     return {"schemaVersion": "latent.dev.test-report.v1", "environment": environment,
             "identity": identity, "selection": [case["id"] for case, _raw, _expected in prepared], "results": results,
             "passed": not required_failed, "cleanup": "adapter-must-confirm",

@@ -43,7 +43,8 @@ def stage_runtime(root: Path, supplied: Path) -> dict:
     return record
 
 
-def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path) -> dict:
+def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path, *,
+        fixtures: dict | None = None, selection: list[str] | None = None) -> dict:
     require(os.name == "posix" and os.geteuid() != 0 and root.name.startswith("test-"),
             "explicit-unprivileged-test-workspace-required")
     require(not output.exists(), "new-source-node-report-required")
@@ -60,13 +61,13 @@ def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path)
         report["runtime"] = stage_runtime(root, supplied)
         report["phase"] = "signed-test-profile"
         report["profile"] = node_test_profile.prepare(root, descriptor, consent=True,
-                                                      admission="signed-fixture", tool_root=tools)
+                                                      admission="signed-fixture", tool_root=tools, fixtures=fixtures)
         report["phase"] = "node-start"
         report["startup"] = service.start(root, supplied / "helper.pyz")
         report["phase"] = "publish-deploy"
         helper.deploy(root, deadline=deadline)
         report["phase"] = "common-scenarios"
-        report["tests"] = node_scenarios.run(root, {"environment": "node", "selection": []}, deadline=deadline)
+        report["tests"] = node_scenarios.run(root, {"environment": "node", "selection": selection or []}, deadline=deadline)
         state.atomic(output, "node-tests.json", report["tests"])
         require(report["tests"]["passed"], "source-node-application-scenarios-failed")
         selected = state.load(root, "last-deployment.json")

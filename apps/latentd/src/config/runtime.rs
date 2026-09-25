@@ -45,6 +45,10 @@ pub(super) fn wasmtime(
         invocation_log_maximum_bytes: 16 * 1024,
         ..WasmtimeConfig::default()
     };
+    #[cfg(feature = "development-test-node")]
+    if let Some(fixtures) = &config.development_test {
+        runtime.development_clock_readings = Some(fixtures.clock_readings(config)?);
+    }
     if runtime.instance_allocator == InstanceAllocator::Pooling {
         // Capacity has passed checked aggregation across every cell class.
         // Keep the inactive on-demand pool setting at its historical default.

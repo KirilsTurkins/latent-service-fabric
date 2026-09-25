@@ -19,6 +19,16 @@ import stat
 import sys
 
 
+def mutation(arguments) -> tuple:
+    # Client.control supplies its finite RPC allowance before the subcommand.
+    # Inspect only that known prefix; never search arbitrary argument values.
+    if arguments[:1] == ("--rpc-timeout-ms",):
+        arguments = arguments[2:]
+    if arguments[:2] in {("release", "publish"), ("release", "publish-package"), ("deployment", "apply")}:
+        return tuple(arguments[:2])
+    return ("invoke",) if arguments[:1] == ("invoke",) else ()
+
+
 def run(args) -> dict:
     if sys.platform != "linux" or os.geteuid() == 0:
         raise ValueError("unprivileged Linux workspace owner required")
@@ -29,7 +39,8 @@ def run(args) -> dict:
         raise ValueError("exact helper and explicit test workspace required")
     for path in (helper_path, *helper_path.parents):
         metadata = path.lstat()
-        if (metadata.st_uid not in {0, os.geteuid()} or metadata.st_mode & 0o022
+        sticky_root = metadata.st_uid == 0 and stat.S_ISDIR(metadata.st_mode) and metadata.st_mode & stat.S_ISVTX
+        if (metadata.st_uid not in {0, os.geteuid()} or metadata.st_mode & 0o022 and not sticky_root
                 or stat.S_ISLNK(metadata.st_mode)):
             raise ValueError("helper ownership or path protection failed")
     with helper_path.open("rb") as stream:
@@ -87,8 +98,8 @@ def run(args) -> dict:
             pending = journal.begin("release", {"expectedGeneration": "0", "qualification": "never-dispatched"})
         return {**identity, "injection": "prepared-intent-never-dispatched", "pending": pending,
                 "remoteMutationCalls": 0, "recoveryAttempted": False, "expiredReceiptTested": False}
-    selected = {"release": ("release", "publish"), "deployment": ("deployment", "apply"),
-                "invoke": ("invoke",)}[args.kind]
+    selected = {"release": {("release", "publish"), ("release", "publish-package")},
+                "deployment": {("deployment", "apply")}, "invoke": {("invoke",)}}[args.kind]
     arguments = {}
     if args.kind == "invoke":
         arguments = common.decode(sys.stdin.buffer.read(1500001), 1500000)
@@ -97,11 +108,11 @@ def run(args) -> dict:
     mutations = []
 
     def discard_response(self, *arguments, **options):
-        if (arguments[:2] in {("release", "publish"), ("release", "publish-package"), ("deployment", "apply")}
-                or arguments[:1] == ("invoke",)):
-            mutations.append(arguments[:2] if arguments[0] != "invoke" else ("invoke",))
+        command = mutation(arguments)
+        if command:
+            mutations.append(command)
         result = original(self, *arguments, **options)
-        if arguments[:len(selected)] != selected:
+        if command not in selected:
             return result
         common.require(not dispatched, "fault-probe-dispatched-more-than-once")
         common.require(result["outcomeKnown"] and result["category"] == "success",

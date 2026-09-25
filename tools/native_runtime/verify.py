@@ -24,6 +24,8 @@ CANDIDATE_WORKFLOW = ".github/workflows/native-runtime.yml"
 PREDICATE = "https://slsa.dev/provenance/v1"
 PLATFORM = {"osId": "ubuntu", "osVersion": "24.04", "minimumKernel": "6.8",
             "minimumGlibc": "2.39", "cpuFeatures": ["sse2"], "pythonMinimum": "3.12"}
+DEVELOPMENT_TEST = {"formatVersion": 1, "purpose": "disposable-development-tests",
+                    "features": ["latentd/development-test-node"], "fixtures": ["guest-clock-v1"]}
 REQUIRED = {"bin/latent", "bin/latentd", "bin/latent-aot-compiler", "lsf-install.pyz",
             "systemd/lsf.service", "config/local-experimental-v1.json",
             "config/external-capsule-v1.json", "LICENSE", "NOTICE", "INSTALL.md",
@@ -47,9 +49,13 @@ def relative(value: str) -> str:
 
 
 def manifest(value: dict, selected: str) -> dict:
-    require(set(value) == {"schemaVersion", "version", "sourceCommit", "target", "toolchain",
+    require(set(value) - {"developmentTest"} == {"schemaVersion", "version", "sourceCommit", "target", "toolchain",
                            "engine", "platform", "compatibility", "archive", "bootstrap", "files"},
             "release-manifest-members")
+    if "developmentTest" in value:
+        fixture = value["developmentTest"]
+        require(isinstance(fixture, dict) and type(fixture.get("formatVersion")) is int
+                and fixture == DEVELOPMENT_TEST, "development-test-candidate-profile")
     require(value["schemaVersion"] == "latent.native-release.v1" and value["version"] == version(selected),
             "release-version-mismatch")
     require(isinstance(value["sourceCommit"], str) and SOURCE.fullmatch(value["sourceCommit"]),
@@ -128,6 +134,11 @@ def publisher_policy(value: dict, selected: str, allow_candidate: bool = False) 
 def publisher_id(policy: dict) -> str:
     identity = {name: policy[name] for name in ("repository", "workflow", "purpose")}
     return hashlib.sha256(encode({**identity, "issuer": ISSUER})).hexdigest()
+
+
+def development_publisher(metadata: dict, policy: dict) -> None:
+    require("developmentTest" not in metadata or policy["purpose"] == "candidate",
+            "development-test-artifact-is-not-a-release")
 
 
 def verification_command(verifier: str, checksums: Path, attestation: Path, roots: Path, policy: dict) -> list[str]:
@@ -221,6 +232,7 @@ def release(root: Path, selected: str, trust: PublisherTrust):
             descriptors[name] = descriptor
         data = os.read(descriptors["release.json"], 1_048_577)
         metadata = manifest(document(data), selected)
+        development_publisher(metadata, policy)
         require(metadata["sourceCommit"] == policy["sourceCommit"], "attested-release-source-mismatch")
         for entry in (metadata["archive"], metadata["bootstrap"]):
             require(entry["sha256"] == expected[entry["name"]]

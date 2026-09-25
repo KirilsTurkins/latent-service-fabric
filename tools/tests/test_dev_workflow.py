@@ -208,5 +208,96 @@ class ForegroundOwnership(unittest.TestCase):
                 pass
 
 
+class DevcontainerOwnership(unittest.TestCase):
+    def fixture(self, root):
+        from tools.dev_workflow import devcontainer
+        cache = root / ("a" * 64)
+        cache.mkdir(mode=0o700)
+        entries = []
+        for name in ("bin/latent-dev", "bin/latent-portable-test-host", "bin/_internal/library.so", "helper.pyz",
+                     "python-inventory.json", "build-provenance.json", "licenses/terms.txt", "sbom.spdx.json"):
+            path = cache / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            raw = ("public test bytes: " + name).encode()
+            path.write_bytes(raw)
+            entries.append({"path": name, "sha256": common.digest(raw), "size": len(raw), "executable": name.startswith("bin/")})
+        selected = {"schemaVersion": "latent.dev.bundle.v1", "version": "0.1.0-alpha.4", "sourceCommit": "b" * 40,
+            "target": "linux-x86_64", "hostAbi": common.HOST_ABI, "protocol": common.PROTOCOL,
+            "archive": {"name": "fixture.zip", "sha256": "sha256:" + cache.name, "size": 1}, "files": entries,
+            "licenses": ["licenses/terms.txt"], "sbom": "sbom.spdx.json"}
+        (cache / "verified-bundle.json").write_bytes(common.encode(selected))
+        project = root / "project with spaces"
+        project.mkdir(mode=0o700)
+        return devcontainer, cache, project
+
+    def test_container_generation_requires_consent_and_preserves_existing_configuration(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            module, cache, project = self.fixture(Path(temporary))
+            with self.assertRaisesRegex(common.DevError, "consent-required"):
+                module.generate(project, cache, consent=False)
+            self.assertFalse((project / ".devcontainer").exists())
+            (project / ".devcontainer").mkdir()
+            selected = project / ".devcontainer/devcontainer.json"
+            selected.write_bytes(b"existing user configuration")
+            with self.assertRaisesRegex(common.DevError, "existing-devcontainer-preserved"):
+                module.generate(project, cache, consent=True)
+            self.assertEqual(selected.read_bytes(), b"existing user configuration")
+
+    def test_container_generation_copies_only_verified_bytes_and_executes_no_commands(self):
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            module, cache, project = self.fixture(Path(temporary))
+            (cache / ".env").write_bytes(b"private-unlisted-fixture")
+            with patch.object(subprocess, "run", side_effect=AssertionError("generation must not execute a command")):
+                result = module.generate(project, cache, consent=True)
+            directory = project / ".devcontainer"
+            config = json.loads((directory / "devcontainer.json").read_bytes())
+            self.assertEqual(result["state"], "prepared")
+            self.assertFalse(result["automaticExecution"])
+            self.assertFalse((directory / "verified/.env").exists())
+            self.assertEqual((directory / "verified/bin/_internal/library.so").read_bytes(),
+                             (cache / "bin/_internal/library.so").read_bytes())
+            self.assertNotIn("--privileged", config["runArgs"])
+            self.assertIn("--cap-drop=ALL", config["runArgs"])
+            self.assertFalse(any("socket" in mount or "source=/," in mount for mount in config["mounts"]))
+            self.assertFalse(any(key.endswith("Command") for key in config))
+            self.assertEqual(config["userEnvProbe"], "none")
+            self.assertEqual(config["containerEnv"]["SSH_AUTH_SOCK"], "/dev/null")
+            self.assertEqual(config["forwardPorts"], [])
+            self.assertEqual((directory / ".gitignore").read_bytes(), b"/*\n!/.gitignore\n")
+
+    def test_generated_tools_and_container_ownership_never_enter_guest_source_snapshots(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            module, cache, project = self.fixture(Path(temporary))
+            module.generate(project, cache, consent=True)
+            (project / "src").mkdir()
+            (project / "src/main.txt").write_bytes(b"capsule source\r\n")
+            record, content = snapshot.observe(project, ["src", ".devcontainer"])
+            self.assertEqual([entry["path"] for entry in record["files"]], ["src/main.txt"])
+            self.assertEqual(content, {"src/main.txt": b"capsule source\r\n"})
+
+    def test_container_generation_rejects_tampering_before_writing_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            module, cache, project = self.fixture(Path(temporary))
+            (cache / "bin/latent-dev").write_bytes(b"untrusted executable")
+            with self.assertRaisesRegex(common.DevError, "verified-bundle-cache-changed"):
+                module.generate(project, cache, consent=True)
+            self.assertFalse((project / ".devcontainer").exists())
+
+    def test_changed_cache_during_copy_retains_incomplete_owner_without_runnable_configuration(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            module, cache, project = self.fixture(Path(temporary))
+            verify = module.bundle.verify_cache
+            def changed(*args, **kwargs):
+                verify(*args, **kwargs)
+                (cache / "bin/latent-dev").write_bytes(b"changed after first verification")
+            with patch.object(module.bundle, "verify_cache", side_effect=changed):
+                with self.assertRaisesRegex(common.DevError, "devcontainer-bundle-changed"):
+                    module.generate(project, cache, consent=True)
+            self.assertEqual(state.load(project / ".devcontainer", "ownership.json")["state"], "preparing")
+            self.assertFalse((project / ".devcontainer/devcontainer.json").exists())
+            self.assertFalse((project / ".devcontainer/Dockerfile").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

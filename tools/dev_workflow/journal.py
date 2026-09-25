@@ -110,13 +110,22 @@ class Journal:
         elif pending["kind"] == "invoke":
             require(result.get("category") == "success", "original-activation-receipt-unavailable-no-replay")
             require(data.get("activationId") == pending["id"], "recovered-activation-identity")
-            require(data.get("phase") == "terminal" and data.get("terminalState") in {
+            # Public status retains the last lifecycle phase (for example
+            # running); completion is a separate terminal state, never a phase.
+            require(data.get("phase") in {"received", "resolved", "admitted", "queued", "materializing", "running",
+                                          "suspended", "preparing_commit", "committed", "effects_pending"}
+                    and data.get("terminalState") in {
                 "completed", "rejected", "cancelled", "deadline_exceeded", "resource_exhausted",
                 "guest_trap", "state_conflict", "dependency_failed", "platform_failed"},
                     "activation-cleanup-not-terminal")
             outcome = data.get("terminalOutcome")
+            completed_at = data.get("terminalAtUnixMillis")
             require(isinstance(outcome, dict) and outcome.get("kind") in {"success", "declared-error", "platform-failure"}
-                    and isinstance(data.get("finalConsumption"), dict), "activation-terminal-outcome-required")
+                    and isinstance(data.get("finalConsumption"), dict)
+                    and isinstance(completed_at, str) and re.fullmatch(r"0|[1-9][0-9]{0,19}", completed_at)
+                    and int(completed_at) <= 18446744073709551615
+                    and (data["terminalState"] == "completed") == (outcome["kind"] in {"success", "declared-error"}),
+                    "activation-terminal-outcome-required")
             result = {**result, "category": outcome["kind"]}
         else:
             disposition = data.get("lookup", data.get("disposition", ""))

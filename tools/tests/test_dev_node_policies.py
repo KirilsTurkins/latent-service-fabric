@@ -9,7 +9,113 @@ import time
 import unittest
 from unittest.mock import Mock, patch
 
-from tools.dev_workflow import common, effects, journal, node_test_profile, policy_operations, scenarios, state
+from tools.dev_workflow import common, effects, journal, node_cancellation, node_fixtures, node_test_profile, policy_operations, scenarios, state
+
+
+class RunningCancellation(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name) / "test-cancellation"
+        self.root.mkdir(mode=0o700)
+        self.cli = Mock()
+        self.observer = node_cancellation.Cancellation(self.root, self.cli, "original", time.monotonic() + 60)
+
+    def running(self, **changes):
+        return {"category": "success", "outcomeKnown": True,
+                "data": {"activationId": "original", "phase": "running", "terminalState": None, **changes}}
+
+    def cancelled(self):
+        return {"category": "platform-failure", "outcomeKnown": True, "error": {"code": "cancelled"},
+                "data": {"activationId": "original", "terminalState": "cancelled"}}
+
+    def test_cancel_requires_observed_running_and_terminal_original_result(self):
+        def call(*arguments, **_options):
+            if arguments[3] == "get":
+                return self.running()
+            prepared = state.load(self.root, "test-cancellation.json")
+            self.assertEqual(prepared["disposition"], "prepared-original-cancel")
+            self.assertEqual(prepared["activationId"], "original")
+            return {"category": "success", "outcomeKnown": True,
+                    "data": {"activationId": "original", "disposition": "accepted"}}
+        self.cli.call.side_effect = call
+        self.observer.check()
+        for _ in range(4):
+            self.observer.check()
+        self.assertEqual(self.cli.call.call_count, 2)
+        self.assertEqual(self.cli.call.call_args_list[1].args[2:5], ("activation", "cancel", "original"))
+        self.assertFalse(self.observer.report["confirmed"])
+        self.assertTrue(self.observer.finish(self.cancelled())["confirmed"])
+
+    def test_lost_cancel_response_keeps_intent_and_never_dispatches_again(self):
+        self.cli.call.side_effect = [self.running(), common.DevError("owned-process-command-deadline")]
+        with self.assertRaises(common.DevError):
+            self.observer.check()
+        self.observer.check()
+        report = self.observer.finish(self.cancelled())
+        self.assertFalse(report["confirmed"])
+        self.assertEqual(report["disposition"], "cancel-response-unavailable-no-replay")
+        self.assertEqual(self.cli.call.call_count, 2)
+        self.assertEqual(state.load(self.root, "test-cancellation.json"), report)
+
+    def test_terminal_or_wrong_activation_is_never_cancelled(self):
+        self.cli.call.return_value = self.running(terminalState="completed")
+        self.observer.check()
+        self.assertEqual(self.cli.call.call_count, 1)
+        self.assertFalse(self.observer.finish(self.cancelled())["confirmed"])
+        self.observer = node_cancellation.Cancellation(self.root, self.cli, "original", time.monotonic() + 60)
+        self.cli.call.return_value = self.running(activationId="someone-else")
+        with self.assertRaisesRegex(common.DevError, "status-unconfirmed"):
+            self.observer.check()
+        self.assertEqual(self.cli.call.call_count, 2)
+
+    def test_unknown_status_allows_only_bounded_reads_of_original_identity(self):
+        self.cli.call.return_value = {"category": "not-found", "outcomeKnown": False, "data": {}}
+        with patch('tools.dev_workflow.node_cancellation.time.monotonic', return_value=1):
+            self.observer.deadline = 10
+            for _ in range(80):
+                self.observer.next_read = 0
+                self.observer.check()
+        self.assertEqual(self.cli.call.call_count, 64)
+        self.assertTrue(all(call.args[2:] == ("activation", "get", "original") for call in self.cli.call.call_args_list))
+        self.assertEqual(self.observer.report["cancelCalls"], 0)
+        self.assertFalse(self.observer.finish(self.cancelled())["confirmed"])
+
+    def test_cancel_accepted_is_not_confirmation_of_terminal_cleanup(self):
+        self.observer.report.update(runningObserved=True, cancelCalls=1, disposition="accepted")
+        for mutation in (
+            lambda result: result.update(outcomeKnown=False),
+            lambda result: result["data"].update(activationId="different"),
+            lambda result: result["data"].update(terminalState="deadline_exceeded"),
+            lambda result: result.update(category="success"),
+        ):
+            result = self.cancelled()
+            mutation(result)
+            self.assertFalse(self.observer.finish(result)["confirmed"])
+
+    def test_deadline_before_running_does_not_send_cancel(self):
+        self.observer.deadline = 0
+        self.observer.check()
+        self.cli.call.assert_not_called()
+        self.assertFalse(self.observer.finish(self.cancelled())["confirmed"])
+
+    def test_shared_contract_requires_explicit_node_only_cancellation(self):
+        case = {"id": "cancel", "service": "a/b", "contract": "a:b/c@1.0.0", "function": "spin",
+                "input": "input.json", "mediaType": "application/json", "expect": {"category": "platform-failure"},
+                "requires": ["running-cancellation"], "timeoutMillis": 5000, "required": True, "fixtures": [],
+                "execution": {"grants": [], "cancelWhenRunning": True}}
+        document = {"schemaVersion": "latent.dev.scenarios.v1", "scenarios": [case]}
+        (self.root / "input.json").write_bytes(b"[]")
+        _, unsupported = scenarios.prepare(document, self.root, "portable", [],
+            supported=scenarios.PORTABLE, execution_controls=True)
+        self.assertIn("running-cancellation", unsupported["cancel"]["missing"])
+        adapter = Mock(return_value=self.cancelled())
+        result = scenarios.run(document, self.root, "node", [], adapter, {},
+                               supported={"running-cancellation"}, execution_controls=True)
+        self.assertFalse(result["passed"], "matching cancelled result alone cannot prove the requested trigger")
+        case["execution"]["cancelBeforeStart"] = True
+        with self.assertRaisesRegex(common.DevError, "running-cancellation-required"):
+            scenarios.validate(document, "node")
 
 
 class PolicyRecovery(unittest.TestCase):
@@ -95,8 +201,9 @@ class TestProfile(unittest.TestCase):
         self.signer = signer.start()
         self.addCleanup(signer.stop)
 
-    def prepare(self, root, descriptor, *, consent):
-        return node_test_profile.prepare(root, descriptor, consent=consent, admission="signed-fixture", tool_root=Path("/tools"))
+    def prepare(self, root, descriptor, *, consent, fixtures=None):
+        return node_test_profile.prepare(root, descriptor, consent=consent, admission="signed-fixture",
+                                         tool_root=Path("/tools"), fixtures=fixtures)
 
     def fixture(self, root):
         for directory in (root, root / "runtime", root / "runtime/config"):
@@ -153,6 +260,77 @@ class TestProfile(unittest.TestCase):
                 self.prepare(root, descriptor, consent=True)
             result = self.prepare(root, descriptor, consent=True)
             self.assertEqual(result["configurationSha256"], common.digest((root / "runtime/config/node.json").read_bytes()))
+
+    def test_selected_fixture_requires_binary_confirmation_before_replacing_configuration(self):
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "test-clock"
+            original, descriptor = self.fixture(root)
+            selected = {"clock": {"monotonicNanos": "0", "wallUnixMillis": "18446744073709551615"}}
+            before = (root / "runtime/config/node.json").read_bytes()
+            with patch("tools.native_runtime.checks.current", return_value=root / "runtime/release"), \
+                    patch.object(node_fixtures.process, "run", return_value=SimpleNamespace(returncode=2, stdout=b"")):
+                with self.assertRaisesRegex(common.DevError, "does-not-support"):
+                    self.prepare(root, descriptor, consent=True, fixtures=selected)
+            self.assertEqual((root / "runtime/config/node.json").read_bytes(), before)
+            self.assertFalse((root / "test-profile-plan.json").exists())
+
+            def confirm(argv, cwd, **kwargs):
+                proposed = common.decode(Path(argv[-1]).read_bytes())
+                self.assertEqual((root / "runtime/config/node.json").read_bytes(), before)
+                self.assertEqual(proposed["credentials"], original["credentials"])
+                return SimpleNamespace(returncode=0, stdout=common.encode({
+                    "schemaVersion": "latent.standalone.config-check.v1", "profile": "local-experimental-v1",
+                    "protectedCredentialFile": True, "developmentGuestClock": selected["clock"]}))
+            with patch("tools.native_runtime.checks.current", return_value=root / "runtime/release"), \
+                    patch.object(node_fixtures.process, "run", side_effect=confirm) as check:
+                receipt = self.prepare(root, descriptor, consent=True, fixtures=selected)
+                self.assertEqual(self.prepare(root, descriptor, consent=True, fixtures=selected), receipt)
+                check.assert_called_once()
+            self.assertEqual(receipt["fixtures"], selected)
+            self.assertEqual(receipt["fixtureCheck"]["configurationSha256"], receipt["configurationSha256"])
+            self.assertFalse(list(root.glob(".fixture-check-*")))
+            self.assertNotIn(b"private-test-canary", common.encode(receipt))
+            with self.assertRaisesRegex(common.DevError, "fixture-selection-changed"):
+                self.prepare(root, descriptor, consent=True)
+            self.assertEqual(state.load(root / "runtime/config", "node.json")["developmentTest"]["guestClock"], selected["clock"])
+
+    def test_invalid_or_unsigned_fixture_selection_starts_no_signer_and_keeps_configuration(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "test-clock"
+            _original, descriptor = self.fixture(root)
+            before = (root / "runtime/config/node.json").read_bytes()
+            for reading in (0, None, True, "", "01", "-1", "1.0", "18446744073709551616"):
+                with self.subTest(reading=reading), self.assertRaises(common.DevError):
+                    self.prepare(root, descriptor, consent=True,
+                                 fixtures={"clock": {"monotonicNanos": "0", "wallUnixMillis": reading}})
+            with self.assertRaisesRegex(common.DevError, "signed-test-admission"):
+                node_test_profile.prepare(root, {**descriptor, "language": "rust"}, consent=True,
+                    fixtures={"clock": {"monotonicNanos": "0", "wallUnixMillis": "1"}})
+            self.signer.assert_not_called()
+            self.assertEqual((root / "runtime/config/node.json").read_bytes(), before)
+
+    def test_only_matching_initialized_fixture_bytes_can_satisfy_scenarios(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            selected = {"clock": {"monotonicNanos": "0", "wallUnixMillis": "18446744073709551615"}}
+            raw = common.encode(selected)
+            (root / "clock.json").write_bytes(raw)
+            fixture = {"id": "clock", "kind": "test-adapter", "configuration": "clock.json",
+                       "identity": common.digest(raw)}
+            cases = [{"fixtures": [fixture]}]
+            self.assertEqual(node_fixtures.initialized(root, cases, selected), {"clock"})
+            self.assertEqual(node_fixtures.initialized(root, cases, None), set())
+            changed = copy.deepcopy(selected)
+            changed["clock"]["wallUnixMillis"] = "1"
+            self.assertEqual(node_fixtures.initialized(root, cases, changed), set())
+            (root / "clock.json").write_bytes(common.encode(changed))
+            with self.assertRaisesRegex(common.DevError, "fixture-identity"):
+                node_fixtures.initialized(root, cases, selected)
+            unknown = common.encode({"futureAdapter": {}})
+            (root / "clock.json").write_bytes(unknown)
+            fixture["identity"] = common.digest(unknown)
+            self.assertEqual(node_fixtures.initialized(root, cases, selected), set())
 
 
 class ScenarioTargets(unittest.TestCase):
@@ -386,6 +564,40 @@ class NodePortableComparison(unittest.TestCase):
         self.assertFalse(result["qualificationComplete"])
         self.assertIn("deployment", result["portableExcludedChecks"])
 
+    def test_only_declared_reviewed_resource_code_differences_can_compare(self):
+        from tools.compare_dev_node_portable import compare
+        for code in ("fuel-exhausted", "memory-exhausted"):
+            node, portable = self.reports()
+            mapping = {"node": "resource-exhausted", "portable": code}
+            node["results"][0].update(category="platform-failure", platformCode="resource-exhausted", platformCodes=mapping)
+            portable["results"][0].update(category="platform-failure", platformCode=code, platformCodes=dict(mapping))
+            self.assertEqual(compare(node, portable)["results"][0]["platformCodes"], mapping)
+            portable["results"][0]["platformCode"] = "guest-trap"
+            with self.assertRaisesRegex(common.DevError, "code-difference-not-reviewed"):
+                compare(node, portable)
+            node["results"][0]["platformCodes"]["portable"] = "guest-trap"
+            portable["results"][0]["platformCodes"]["portable"] = "guest-trap"
+            with self.assertRaisesRegex(common.DevError, "code-difference-not-reviewed"):
+                compare(node, portable)
+
+    def test_clock_comparison_requires_actual_matching_fixture_and_explicit_native_host(self):
+        from tools.compare_dev_node_portable import compare
+        node, portable = self.reports()
+        reading = {"monotonicNanos": "0", "wallUnixMillis": "18446744073709551615"}
+        node["identity"]["fixtureConfiguration"] = {"clock": reading}
+        node["identity"]["fixtureCheck"] = {"guestClock": reading, "ordinaryNodeClock": "unchanged"}
+        run = portable["identity"]["runtime"]["runs"][0]
+        run.update(fixtures={"clock": reading}, clock="fixed-guest-readings-fixture",
+                   controlClock="system-clock-nondeterministic")
+        self.assertTrue(compare(node, portable)["guestClockCompared"])
+        run["os"] = "linux"
+        with self.assertRaisesRegex(common.DevError, "native-platform"):
+            compare(node, portable)
+        self.assertEqual(compare(node, portable, native_os="linux")["nativeOs"], "linux")
+        run["fixtures"] = {"clock": {**reading, "wallUnixMillis": "0"}}
+        with self.assertRaisesRegex(common.DevError, "fixture-selection"):
+            compare(node, portable, native_os="linux")
+
     def test_native_report_cannot_replace_node_or_change_component_outcome_or_cleanup(self):
         from tools.compare_dev_node_portable import compare
         for mutation in (lambda n, p: n.update(environment="portable"),
@@ -444,6 +656,15 @@ class SourceNodeProbe(unittest.TestCase):
 
 
 class InvocationRecovery(unittest.TestCase):
+    def test_fault_probe_selects_signed_control_calls_without_matching_argument_data(self):
+        from tools.dev_node_fault_probe import mutation
+        for prefix in ((), ("--rpc-timeout-ms", "5000")):
+            for command in (("release", "publish"), ("release", "publish-package"), ("deployment", "apply"), ("invoke",)):
+                self.assertEqual(mutation(prefix + command + ("arbitrary-path",)), command)
+        for command in (("release", "operation", "invoke"), ("deployment", "get", "apply"),
+                        ("--config", "release", "publish-package"), ("package", "check", "invoke")):
+            self.assertEqual(mutation(command), ())
+
     def test_unconfirmed_client_cleanup_retains_intent_and_starts_no_other_process(self):
         from tools.dev_workflow import node_invocation
         with tempfile.TemporaryDirectory() as temporary:
@@ -468,7 +689,7 @@ class InvocationRecovery(unittest.TestCase):
             def lookup(*arguments, **kwargs):
                 self.assertEqual(arguments[-3:], ("activation", "get", calls[0]))
                 return {"category": "success", "outcomeKnown": True, "data": {
-                    "activationId": calls[0], "phase": "terminal", "terminalState": "guest_trap",
+                    "activationId": calls[0], "phase": "running", "terminalState": "guest_trap", "terminalAtUnixMillis": "1234",
                     "terminalOutcome": {"kind": "platform-failure"}, "finalConsumption": {"cpuFuel": "1"}}}
             client = Mock()
             client.call.side_effect = lookup
@@ -480,6 +701,27 @@ class InvocationRecovery(unittest.TestCase):
             self.assertEqual(result["data"]["recovery"]["outcome"], "platform-failure")
             self.assertIsNone(controller.read()["pending"])
             self.assertEqual(controller.read()["history"][-1]["category"], "platform-failure")
+
+    def test_lifecycle_phase_alone_and_partial_or_contradictory_terminals_cannot_settle(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            controller = journal.Journal(Path(temporary), "node", "examples")
+            pending = controller.begin("invoke", {})
+            valid = {"category": "success", "outcomeKnown": True, "data": {
+                "activationId": pending["id"], "phase": "running", "terminalState": "completed",
+                "terminalOutcome": {"kind": "success"}, "finalConsumption": {"cpuFuel": "1"},
+                "terminalAtUnixMillis": "1234"}}
+            for change in ({"terminalState": None}, {"phase": "terminal"}, {"phase": "future"},
+                           {"terminalAtUnixMillis": None}, {"terminalAtUnixMillis": "18446744073709551616"},
+                           {"finalConsumption": None}, {"terminalOutcome": None},
+                           {"terminalOutcome": {"kind": "platform-failure"}}, {"terminalState": "cancelled"}):
+                value = copy.deepcopy(valid)
+                value["data"].update(change)
+                with self.assertRaises(common.DevError) as caught:
+                    controller.recover(lambda *_: value)
+                self.assertTrue(caught.exception.uncertain)
+                self.assertEqual(controller.read()["pending"], pending)
+            self.assertEqual(controller.recover(lambda *_: valid)["category"], "success")
+            self.assertIsNone(controller.read()["pending"])
 
     def test_unknown_receipt_retains_original_and_forbids_new_invocation(self):
         from tools.dev_workflow import node_invocation

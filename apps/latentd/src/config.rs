@@ -5,6 +5,8 @@ mod audit;
 mod budgets;
 mod capability_policies;
 mod derive;
+#[cfg(feature = "development-test-node")]
+mod development;
 mod engine;
 pub(crate) mod http;
 mod input;
@@ -30,6 +32,8 @@ pub use aot::{AotCacheConfig, AotImageConfig, AotProcessConfig, IsolatedAotConfi
 pub use audit::AuditConfig;
 pub use budgets::BudgetConfig;
 pub use capability_policies::CapabilityPolicyConfig;
+#[cfg(feature = "development-test-node")]
+pub use development::DevelopmentTestConfig;
 pub use http::{
     HttpAuthentication, HttpIngressConfig, HttpIngressLimits, HttpOrigin, HttpTransport,
 };

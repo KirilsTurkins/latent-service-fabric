@@ -13,12 +13,18 @@ def scope(descriptor: dict) -> dict:
     return {name: descriptor[name] for name in ("language", "tenant", "service")}
 
 
-def configuration(original: dict, descriptor: dict) -> tuple[dict, dict]:
+def configuration(original: dict, descriptor: dict, fixtures: dict | None = None) -> tuple[dict, dict]:
     require(original["securityProfile"] == "local-experimental-v1", "test-profile-requires-local-installation")
     require(descriptor["tenant"] == "examples" and "providers" not in original,
             "test-profile-will-not-replace-existing-providers")
-    selected = profiles(descriptor["language"]) if descriptor["language"] in {"java", "dotnet", "go"} else {}
+    selected = dict(profiles(descriptor["language"])) if descriptor["language"] in {"java", "dotnet", "go"} else {}
     value = copy.deepcopy(original)
+    if fixtures is not None:
+        from . import node_fixtures
+        from tools.guest_runtime_profiles import RUNTIME
+        require("developmentTest" not in original, "test-profile-will-not-replace-existing-fixtures")
+        value["developmentTest"] = node_fixtures.configuration(fixtures)
+        selected.update({name: RUNTIME[name] for name in ("clockMonotonic", "clockWall")})
     value["budgetProfile"] = {"mode": "phase3", "maximumOutboundRequests": 8,
                               "maximumBlobReadBytes": 65536, "maximumBlobWriteBytes": 65536}
     value["capabilityPolicies"] = {"formatVersion": 1, "maximumControlJobs": 2,
@@ -41,11 +47,15 @@ def configuration(original: dict, descriptor: dict) -> tuple[dict, dict]:
 
 
 def prepare(root: Path, descriptor: dict, *, consent: bool, admission: str = "trusted-local",
-            tool_root: Path | None = None) -> dict:
+            tool_root: Path | None = None, fixtures: dict | None = None) -> dict:
     require(consent is True and root.name.startswith("test-"), "explicit-disposable-test-fixture-consent-required")
     require(admission in {"trusted-local", "signed-fixture"}, "explicit-test-admission-required")
     require(admission == "signed-fixture" or descriptor["language"] not in {"java", "dotnet", "go"},
             "managed-runtime-bindings-require-signed-fixture-package")
+    if fixtures is not None:
+        from . import node_fixtures
+        node_fixtures.validate(fixtures)
+        require(admission == "signed-fixture", "node-fixtures-require-signed-test-admission")
     lifecycle = state.load(root, "lifecycle.json") if (root / "lifecycle.json").exists() else {"state": "stopped"}
     require(lifecycle["state"] == "stopped", "stop-test-node-before-profile-configuration")
     require(not (root / "last-deployment.json").exists(), "prepare-test-profile-before-first-deployment")
@@ -63,17 +73,19 @@ def prepare(root: Path, descriptor: dict, *, consent: bool, admission: str = "tr
             plan = state.load(root, "test-profile-plan.json")
             require(plan["scope"] == scope(descriptor) and plan["admission"] == admission,
                     "test-profile-is-owned-by-another-project")
+            require(plan.get("fixtures") == fixtures, "test-fixture-selection-changed")
             require(digest(raw) == plan["after"] or "configuration" in plan and digest(raw) == plan["before"],
                     "test-node-configuration-changed")
         else:
             original = decode(raw)
             require(original["dataDirectory"] == str(runtime / "data"), "test-node-data-owner")
-            value, selected = configuration(original, descriptor)
+            value, selected = configuration(original, descriptor, fixtures)
             if signing is not None:
                 value["supplyChain"] = {"mode": "enforced", "policyFile": str(root / "test-signing/policy.json")}
+            fixture_check = node_fixtures.check_configuration(root, value) if fixtures is not None else None
             plan = {"scope": scope(descriptor), "before": digest(raw), "after": digest(encode(value)),
                     "configuration": value, "providers": selected, "profile": value["securityProfile"],
-                    "admission": admission, "signing": signing}
+                    "admission": admission, "signing": signing, "fixtures": fixtures, "fixtureCheck": fixture_check}
             # This plan contains the existing private node configuration and
             # stays in the private workspace. It is never included in a report.
             state.atomic(root, "test-profile-plan.json", plan)
@@ -83,6 +95,8 @@ def prepare(root: Path, descriptor: dict, *, consent: bool, admission: str = "tr
             "providers": plan["providers"], "profile": plan["profile"],
             "admission": plan["admission"], "signing": plan["signing"],
             "capabilitiesGranted": False, "state": "configured-node-stopped"}
+        if fixtures is not None:
+            receipt.update(fixtures=fixtures, fixtureCheck=plan["fixtureCheck"])
         state.atomic(root, "test-profile.json", receipt)
         # Recovery no longer needs another copy of the node's private tokens.
         state.atomic(root, "test-profile-plan.json", {key: value for key, value in plan.items() if key != "configuration"})

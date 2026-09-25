@@ -4,7 +4,7 @@ from __future__ import annotations
 import platform
 import time
 
-from . import build, node_invocation, node_test_grants, node_test_profile, node_tests, paths, scenarios, service, state
+from . import build, node_cancellation, node_fixtures, node_invocation, node_test_grants, node_test_profile, node_tests, paths, scenarios, service, state
 from .common import decode, digest, members, require
 
 
@@ -56,32 +56,46 @@ def run(root, arguments, *, deadline: float | None = None):
             if execution is not None and key in execution:
                 budget[target] = int(execution[key])
         state.atomic(root, "test-budget.json", budget)
-        return node_invocation.execute(cli, journal, {"case": case["id"], "inputSha256": digest(raw), "expectedRevision": revision},
-            lambda activation: cli.call("invoke", "--service", case["service"], "--contract", case["contract"],
+        cancellation = None
+        def call(activation):
+            nonlocal cancellation
+            if execution is not None and execution.get("cancelWhenRunning", False):
+                cancellation = node_cancellation.Cancellation(root, cli, activation, deadline)
+            return cli.call("invoke", "--service", case["service"], "--contract", case["contract"],
                 "--function", case["function"], "--input", path, "--media-type", case["mediaType"], "--activation-id", activation,
                 "--budget", root / "test-budget.json", "--budget-profile", "phase3" if installed is not None else "phase1",
-                "--rpc-timeout-ms", str(case["timeoutMillis"] + 1000), timeout=case["timeoutMillis"] / 1000 + 5), deadline)
+                "--rpc-timeout-ms", str(case["timeoutMillis"] + 1000), timeout=case["timeoutMillis"] / 1000 + 5,
+                check=cancellation.check if cancellation is not None else None)
+        result = node_invocation.execute(cli, journal,
+            {"case": case["id"], "inputSha256": digest(raw), "expectedRevision": revision}, call, deadline)
+        if cancellation is not None:
+            result["data"]["cancellation"] = cancellation.finish(result)
+        return result
     layout, current = installation(root)
     node = decode(paths.read(layout.node.parent, layout.node.name))
     signing = None
     if (root / "test-signing-receipt.json").exists():
         from .node_test_signing import selected
         signing = selected(root, build_receipt)
-    supported = {"context", "log", "fresh-state", "fuel", "memory"}
+    supported = {"context", "log", "fresh-state", "fuel", "memory", "running-cancellation"}
     if installed is not None:
         if any(name.startswith("clock") for name in installed):
             supported.add("clock")
         if "random" in installed:
             supported.add("random")
+    fixture_profile = state.load(root, "test-profile.json") if installed is not None else {}
+    fixtures = fixture_profile.get("fixtures")
+    initialized = node_fixtures.initialized(source, cases, fixtures)
     report = scenarios.run({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": cases}, source, "node",
         arguments["selection"], invoke, {"source": build_receipt["source"], "artifacts": build_receipt["artifacts"],
         "deployment": deployed, "expectedRevision": revision, "hostAbi": descriptor["hostAbi"],
-        "package": build_receipt["package"], "fixtureProviders": installed or {},
+        "package": build_receipt["package"], "fixtureProviders": installed or {}, "fixtureConfiguration": fixtures,
+        "fixtureCheck": fixture_profile.get("fixtureCheck"),
         "admission": node["supplyChain"]["mode"], "testSigning": signing,
         "runtime": decode(paths.read(current, "release-source.json")), "node": node["nodeId"],
         "profile": node["securityProfile"], "os": "linux", "architecture": platform.machine(), "kernel": platform.release()},
         supported=supported,
-        execution_controls=controls, expected_revision=lambda: revision)
+        initialized_fixtures=initialized, execution_controls=controls, expected_revision=lambda: revision)
     pending = journal.read()["pending"]
     if any(item.get("recovery", {}).get("clientCleanup") == "unconfirmed" for item in report["results"]):
         report["cleanup"] = "client-cleanup-unconfirmed-node-retained"

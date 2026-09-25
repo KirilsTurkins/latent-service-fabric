@@ -185,6 +185,8 @@ def assemble(output: Path, source: Path, identity: dict, assets: dict[str, Path 
                 "compatibility": compatibility, "files": inventory,
                 "archive": {"name": name, "sha256": files.digest(output / name), "size": (output / name).stat().st_size},
                 "bootstrap": {"name": "lsf-install.pyz", "sha256": hashlib.sha256(installer).hexdigest(), "size": len(installer)}}
+    if "developmentTest" in identity:
+        manifest["developmentTest"] = identity["developmentTest"]
     verify.manifest(manifest, identity["version"])
     (output / "release.json").write_bytes(encode(manifest))
     sums = "".join(files.digest(output / path) + "  " + path + "\n"

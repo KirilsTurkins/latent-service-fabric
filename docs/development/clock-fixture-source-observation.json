@@ -1,0 +1,739 @@
+{
+  "cleanHost": false,
+  "failedAttempts": [
+    {
+      "failure": "new UID could not traverse the existing private shared ancestor",
+      "nodeStarted": false,
+      "phase": "source-harness-setup"
+    },
+    {
+      "failure": "clock imports required explicit generated bindings",
+      "nodeStarted": false,
+      "phase": "authored-component-build"
+    },
+    {
+      "failure": "older retained host rejected the current request",
+      "nodeCleanup": "confirmed",
+      "phase": "portable-execution"
+    },
+    {
+      "failure": "nested output parent was not private; fixed by explicit owned directory creation",
+      "nodeCleanup": "confirmed",
+      "phase": "report-write"
+    }
+  ],
+  "fixtures": {
+    "maximum": {
+      "component": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+      "configuration": {
+        "clock": {
+          "monotonicNanos": "18446744073709551615",
+          "wallUnixMillis": "18446744073709551615"
+        }
+      },
+      "firstResults": [
+        {
+          "category": "success",
+          "id": "clock-maximum-cold",
+          "payloadSha256": "sha256:9831e504a22677ee1e811c64da5325dce65dc82ab8cfc8a4490dd2be6fe05105",
+          "platformCode": null,
+          "status": "passed",
+          "targetMatches": true
+        },
+        {
+          "category": "success",
+          "id": "clock-maximum-warm",
+          "payloadSha256": "sha256:9831e504a22677ee1e811c64da5325dce65dc82ab8cfc8a4490dd2be6fe05105",
+          "platformCode": null,
+          "status": "passed",
+          "targetMatches": true
+        },
+        {
+          "category": "platform-failure",
+          "id": "clock-maximum-denied",
+          "payloadSha256": null,
+          "platformCode": "guest-trap",
+          "status": "passed",
+          "targetMatches": true
+        },
+        {
+          "category": "success",
+          "id": "clock-maximum-fresh",
+          "payloadSha256": "sha256:9831e504a22677ee1e811c64da5325dce65dc82ab8cfc8a4490dd2be6fe05105",
+          "platformCode": null,
+          "status": "passed",
+          "targetMatches": true
+        }
+      ],
+      "fixtureCheck": {
+        "configurationSha256": "sha256:28b07b5279b703873dd26124a56d11f08ec10e8e14b00d33d76ed74fe806be59",
+        "guestClock": {
+          "monotonicNanos": "18446744073709551615",
+          "wallUnixMillis": "18446744073709551615"
+        },
+        "ordinaryNodeClock": "unchanged"
+      },
+      "helperSha256": "sha256:62f91d4da7c3ba52375572ed1900ff0692d1f4447f698303c7ea00e836be73b8",
+      "kernel": "6.18.33.2-microsoft-standard-WSL2",
+      "linuxComparison": {
+        "artifacts": {
+          "capsule": "sha256:d6afe724367f102b8d404cfe2ee47fdf0a7dcafabae11bd4027acf9f48aa904e",
+          "component": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+          "contracts": "sha256:d55be943e7359ae45761cd95aee8a12189800e3d3f1a953897a10384b3039be8"
+        },
+        "guestClockCompared": true,
+        "nativeOs": "linux",
+        "nodeAdmission": "enforced",
+        "nodeProfile": "local-experimental-v1",
+        "nodeReportSha256": "sha256:425000bb4e341031930265d1e26a1a9b13691c048d409f6e2ec4ad25ea7e46d2",
+        "passed": true,
+        "portableExcludedChecks": [
+          "authentication",
+          "compiler-isolation",
+          "deployment",
+          "native-cache",
+          "pressure",
+          "protected-files",
+          "restart"
+        ],
+        "portableReportSha256": "sha256:c46408418ba88dbf8a989b3f6cd59921c11f63da9c1e7eb3762c0b75f21f4ac5",
+        "qualificationComplete": false,
+        "results": [
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-maximum.json",
+                "id": "clock-maximum",
+                "identity": "sha256:d054ed6109111eaed558f020f20828e6b65070210beffa867db37970cd8d9c65",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-maximum-cold",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:9831e504a22677ee1e811c64da5325dce65dc82ab8cfc8a4490dd2be6fe05105",
+            "platformCode": null
+          },
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-maximum.json",
+                "id": "clock-maximum",
+                "identity": "sha256:d054ed6109111eaed558f020f20828e6b65070210beffa867db37970cd8d9c65",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-maximum-warm",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:9831e504a22677ee1e811c64da5325dce65dc82ab8cfc8a4490dd2be6fe05105",
+            "platformCode": null
+          },
+          {
+            "category": "platform-failure",
+            "execution": {
+              "deniedCapabilities": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ],
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-maximum.json",
+                "id": "clock-maximum",
+                "identity": "sha256:d054ed6109111eaed558f020f20828e6b65070210beffa867db37970cd8d9c65",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-maximum-denied",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": null,
+            "platformCode": "guest-trap"
+          },
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-maximum.json",
+                "id": "clock-maximum",
+                "identity": "sha256:d054ed6109111eaed558f020f20828e6b65070210beffa867db37970cd8d9c65",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-maximum-fresh",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:9831e504a22677ee1e811c64da5325dce65dc82ab8cfc8a4490dd2be6fe05105",
+            "platformCode": null
+          }
+        ],
+        "reviewedDifferences": [
+          "node-only-publication-admission-and-routing",
+          "host-os-and-architecture",
+          "bounded-cold-node-preparation-deadline",
+          "system-clock-and-entropy-not-compared"
+        ],
+        "schemaVersion": "latent.dev.node-portable-comparison.v1",
+        "scope": "selected-typed-application-values",
+        "selection": [
+          "clock-maximum-cold",
+          "clock-maximum-warm",
+          "clock-maximum-denied",
+          "clock-maximum-fresh"
+        ]
+      },
+      "node": "lsf-cc2c53f912818637",
+      "nodeAdmission": "enforced",
+      "nodeCleanup": "owned-node-and-client-processes-reaped",
+      "nodeProfile": "local-experimental-v1",
+      "nodeSeconds": 11.94,
+      "retainedDeployment": {
+        "attempt": "9523392d3286f3535e8e08e7be8f3bd3",
+        "buildKey": "sha256:ebea1605e8a34af1decea0630f5de1662411509bd747fe270d50ff603703ddef",
+        "componentDigest": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+        "deployment": "my-greeting",
+        "generation": "5",
+        "operation": "dev-f88af6ba3fd58c7ed6d8fef70a6096cb",
+        "publication": "publication:sha256:80dc7d5366120b3a38cc95b9e9c71fd36b2e486831e209170044073095e849e6",
+        "publicationInput": "sha256:70e37f2c9ad037f38c16e472c9cfacdb156f48dbacd33a8165e01bd8936cd238",
+        "source": "sha256:ca642c3cde1288be92b288c6d934ae301ab894e0252007597afddedb6ef8e005"
+      },
+      "retainedResults": [
+        {
+          "category": "success",
+          "id": "clock-maximum-cold",
+          "payloadSha256": "sha256:9831e504a22677ee1e811c64da5325dce65dc82ab8cfc8a4490dd2be6fe05105",
+          "status": "passed",
+          "targetMatches": true
+        }
+      ],
+      "runtimeBinaries": {
+        "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+        "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+        "latentd": "sha256:bc4854092697838ef4257184b5d3bc409dc1366055f1ed846d987834679c2e45"
+      },
+      "selection": [
+        "clock-maximum-cold",
+        "clock-maximum-warm",
+        "clock-maximum-denied",
+        "clock-maximum-fresh"
+      ],
+      "windowsCleanup": "owned-native-host-reaped",
+      "windowsComparison": {
+        "artifacts": {
+          "capsule": "sha256:d6afe724367f102b8d404cfe2ee47fdf0a7dcafabae11bd4027acf9f48aa904e",
+          "component": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+          "contracts": "sha256:d55be943e7359ae45761cd95aee8a12189800e3d3f1a953897a10384b3039be8"
+        },
+        "guestClockCompared": true,
+        "nativeOs": "windows",
+        "nodeAdmission": "enforced",
+        "nodeProfile": "local-experimental-v1",
+        "nodeReportSha256": "sha256:425000bb4e341031930265d1e26a1a9b13691c048d409f6e2ec4ad25ea7e46d2",
+        "passed": true,
+        "portableExcludedChecks": [
+          "authentication",
+          "compiler-isolation",
+          "deployment",
+          "native-cache",
+          "pressure",
+          "protected-files",
+          "restart"
+        ],
+        "portableReportSha256": "sha256:c249b3eb11c18e6d46b5c0a2f28cccb6a56684d651a83269c1722416567afb88",
+        "qualificationComplete": false,
+        "results": [
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-maximum.json",
+                "id": "clock-maximum",
+                "identity": "sha256:d054ed6109111eaed558f020f20828e6b65070210beffa867db37970cd8d9c65",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-maximum-cold",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:9831e504a22677ee1e811c64da5325dce65dc82ab8cfc8a4490dd2be6fe05105",
+            "platformCode": null
+          },
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-maximum.json",
+                "id": "clock-maximum",
+                "identity": "sha256:d054ed6109111eaed558f020f20828e6b65070210beffa867db37970cd8d9c65",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-maximum-warm",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:9831e504a22677ee1e811c64da5325dce65dc82ab8cfc8a4490dd2be6fe05105",
+            "platformCode": null
+          },
+          {
+            "category": "platform-failure",
+            "execution": {
+              "deniedCapabilities": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ],
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-maximum.json",
+                "id": "clock-maximum",
+                "identity": "sha256:d054ed6109111eaed558f020f20828e6b65070210beffa867db37970cd8d9c65",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-maximum-denied",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": null,
+            "platformCode": "guest-trap"
+          },
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-maximum.json",
+                "id": "clock-maximum",
+                "identity": "sha256:d054ed6109111eaed558f020f20828e6b65070210beffa867db37970cd8d9c65",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-maximum-fresh",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:9831e504a22677ee1e811c64da5325dce65dc82ab8cfc8a4490dd2be6fe05105",
+            "platformCode": null
+          }
+        ],
+        "reviewedDifferences": [
+          "node-only-publication-admission-and-routing",
+          "host-os-and-architecture",
+          "bounded-cold-node-preparation-deadline",
+          "system-clock-and-entropy-not-compared"
+        ],
+        "schemaVersion": "latent.dev.node-portable-comparison.v1",
+        "scope": "selected-typed-application-values",
+        "selection": [
+          "clock-maximum-cold",
+          "clock-maximum-warm",
+          "clock-maximum-denied",
+          "clock-maximum-fresh"
+        ]
+      }
+    },
+    "zero": {
+      "component": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+      "configuration": {
+        "clock": {
+          "monotonicNanos": "0",
+          "wallUnixMillis": "0"
+        }
+      },
+      "firstResults": [
+        {
+          "category": "success",
+          "id": "clock-zero-cold",
+          "payloadSha256": "sha256:ea7d9c9267e727d11478f428caa7d2ee67da09240fcf165470606a60f8bfa9d4",
+          "platformCode": null,
+          "status": "passed",
+          "targetMatches": true
+        },
+        {
+          "category": "success",
+          "id": "clock-zero-warm",
+          "payloadSha256": "sha256:ea7d9c9267e727d11478f428caa7d2ee67da09240fcf165470606a60f8bfa9d4",
+          "platformCode": null,
+          "status": "passed",
+          "targetMatches": true
+        },
+        {
+          "category": "platform-failure",
+          "id": "clock-zero-denied",
+          "payloadSha256": null,
+          "platformCode": "guest-trap",
+          "status": "passed",
+          "targetMatches": true
+        },
+        {
+          "category": "success",
+          "id": "clock-zero-fresh",
+          "payloadSha256": "sha256:ea7d9c9267e727d11478f428caa7d2ee67da09240fcf165470606a60f8bfa9d4",
+          "platformCode": null,
+          "status": "passed",
+          "targetMatches": true
+        }
+      ],
+      "fixtureCheck": {
+        "configurationSha256": "sha256:2f67d0b42914a181e75b4037736a2e413644a31ebc968e111a11a80dcf155891",
+        "guestClock": {
+          "monotonicNanos": "0",
+          "wallUnixMillis": "0"
+        },
+        "ordinaryNodeClock": "unchanged"
+      },
+      "helperSha256": "sha256:62f91d4da7c3ba52375572ed1900ff0692d1f4447f698303c7ea00e836be73b8",
+      "kernel": "6.18.33.2-microsoft-standard-WSL2",
+      "linuxComparison": {
+        "artifacts": {
+          "capsule": "sha256:d6afe724367f102b8d404cfe2ee47fdf0a7dcafabae11bd4027acf9f48aa904e",
+          "component": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+          "contracts": "sha256:d55be943e7359ae45761cd95aee8a12189800e3d3f1a953897a10384b3039be8"
+        },
+        "guestClockCompared": true,
+        "nativeOs": "linux",
+        "nodeAdmission": "enforced",
+        "nodeProfile": "local-experimental-v1",
+        "nodeReportSha256": "sha256:85fbe2dafc519994dec9ce39c3722a3e508dc17d4401bb8685c4ec6be8764b86",
+        "passed": true,
+        "portableExcludedChecks": [
+          "authentication",
+          "compiler-isolation",
+          "deployment",
+          "native-cache",
+          "pressure",
+          "protected-files",
+          "restart"
+        ],
+        "portableReportSha256": "sha256:d10a49cabfb2d972b05c4abf3d52fa9b9518819f9e65631e5ea40917f4dcf2b0",
+        "qualificationComplete": false,
+        "results": [
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-zero.json",
+                "id": "clock-zero",
+                "identity": "sha256:60237ec98bb5eba4619da2f87677d812d149c241440b5117582add972ffbb93e",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-zero-cold",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:ea7d9c9267e727d11478f428caa7d2ee67da09240fcf165470606a60f8bfa9d4",
+            "platformCode": null
+          },
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-zero.json",
+                "id": "clock-zero",
+                "identity": "sha256:60237ec98bb5eba4619da2f87677d812d149c241440b5117582add972ffbb93e",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-zero-warm",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:ea7d9c9267e727d11478f428caa7d2ee67da09240fcf165470606a60f8bfa9d4",
+            "platformCode": null
+          },
+          {
+            "category": "platform-failure",
+            "execution": {
+              "deniedCapabilities": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ],
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-zero.json",
+                "id": "clock-zero",
+                "identity": "sha256:60237ec98bb5eba4619da2f87677d812d149c241440b5117582add972ffbb93e",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-zero-denied",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": null,
+            "platformCode": "guest-trap"
+          },
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-zero.json",
+                "id": "clock-zero",
+                "identity": "sha256:60237ec98bb5eba4619da2f87677d812d149c241440b5117582add972ffbb93e",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-zero-fresh",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:ea7d9c9267e727d11478f428caa7d2ee67da09240fcf165470606a60f8bfa9d4",
+            "platformCode": null
+          }
+        ],
+        "reviewedDifferences": [
+          "node-only-publication-admission-and-routing",
+          "host-os-and-architecture",
+          "bounded-cold-node-preparation-deadline",
+          "system-clock-and-entropy-not-compared"
+        ],
+        "schemaVersion": "latent.dev.node-portable-comparison.v1",
+        "scope": "selected-typed-application-values",
+        "selection": [
+          "clock-zero-cold",
+          "clock-zero-warm",
+          "clock-zero-denied",
+          "clock-zero-fresh"
+        ]
+      },
+      "node": "lsf-98aa1020e534372f",
+      "nodeAdmission": "enforced",
+      "nodeCleanup": "owned-node-and-client-processes-reaped",
+      "nodeProfile": "local-experimental-v1",
+      "nodeSeconds": 12.163,
+      "retainedDeployment": {
+        "attempt": "6fe46d0244f46710201f170e3c4cfab0",
+        "buildKey": "sha256:ebea1605e8a34af1decea0630f5de1662411509bd747fe270d50ff603703ddef",
+        "componentDigest": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+        "deployment": "my-greeting",
+        "generation": "5",
+        "operation": "dev-998cbbbca2e72dd83226d88371c8291a",
+        "publication": "publication:sha256:80dc7d5366120b3a38cc95b9e9c71fd36b2e486831e209170044073095e849e6",
+        "publicationInput": "sha256:70e37f2c9ad037f38c16e472c9cfacdb156f48dbacd33a8165e01bd8936cd238",
+        "source": "sha256:ca642c3cde1288be92b288c6d934ae301ab894e0252007597afddedb6ef8e005"
+      },
+      "retainedResults": [
+        {
+          "category": "success",
+          "id": "clock-zero-cold",
+          "payloadSha256": "sha256:ea7d9c9267e727d11478f428caa7d2ee67da09240fcf165470606a60f8bfa9d4",
+          "status": "passed",
+          "targetMatches": true
+        }
+      ],
+      "runtimeBinaries": {
+        "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+        "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+        "latentd": "sha256:bc4854092697838ef4257184b5d3bc409dc1366055f1ed846d987834679c2e45"
+      },
+      "selection": [
+        "clock-zero-cold",
+        "clock-zero-warm",
+        "clock-zero-denied",
+        "clock-zero-fresh"
+      ],
+      "windowsCleanup": "owned-native-host-reaped",
+      "windowsComparison": {
+        "artifacts": {
+          "capsule": "sha256:d6afe724367f102b8d404cfe2ee47fdf0a7dcafabae11bd4027acf9f48aa904e",
+          "component": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+          "contracts": "sha256:d55be943e7359ae45761cd95aee8a12189800e3d3f1a953897a10384b3039be8"
+        },
+        "guestClockCompared": true,
+        "nativeOs": "windows",
+        "nodeAdmission": "enforced",
+        "nodeProfile": "local-experimental-v1",
+        "nodeReportSha256": "sha256:85fbe2dafc519994dec9ce39c3722a3e508dc17d4401bb8685c4ec6be8764b86",
+        "passed": true,
+        "portableExcludedChecks": [
+          "authentication",
+          "compiler-isolation",
+          "deployment",
+          "native-cache",
+          "pressure",
+          "protected-files",
+          "restart"
+        ],
+        "portableReportSha256": "sha256:c8409dab29c6ca98c0c445d282f8a219335a82f08b9e35781fc39d8d84fd957e",
+        "qualificationComplete": false,
+        "results": [
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-zero.json",
+                "id": "clock-zero",
+                "identity": "sha256:60237ec98bb5eba4619da2f87677d812d149c241440b5117582add972ffbb93e",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-zero-cold",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:ea7d9c9267e727d11478f428caa7d2ee67da09240fcf165470606a60f8bfa9d4",
+            "platformCode": null
+          },
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-zero.json",
+                "id": "clock-zero",
+                "identity": "sha256:60237ec98bb5eba4619da2f87677d812d149c241440b5117582add972ffbb93e",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-zero-warm",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:ea7d9c9267e727d11478f428caa7d2ee67da09240fcf165470606a60f8bfa9d4",
+            "platformCode": null
+          },
+          {
+            "category": "platform-failure",
+            "execution": {
+              "deniedCapabilities": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ],
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-zero.json",
+                "id": "clock-zero",
+                "identity": "sha256:60237ec98bb5eba4619da2f87677d812d149c241440b5117582add972ffbb93e",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-zero-denied",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": null,
+            "platformCode": "guest-trap"
+          },
+          {
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0"
+              ]
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/clock-zero.json",
+                "id": "clock-zero",
+                "identity": "sha256:60237ec98bb5eba4619da2f87677d812d149c241440b5117582add972ffbb93e",
+                "kind": "test-adapter"
+              }
+            ],
+            "id": "clock-zero-fresh",
+            "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "payloadSha256": "sha256:ea7d9c9267e727d11478f428caa7d2ee67da09240fcf165470606a60f8bfa9d4",
+            "platformCode": null
+          }
+        ],
+        "reviewedDifferences": [
+          "node-only-publication-admission-and-routing",
+          "host-os-and-architecture",
+          "bounded-cold-node-preparation-deadline",
+          "system-clock-and-entropy-not-compared"
+        ],
+        "schemaVersion": "latent.dev.node-portable-comparison.v1",
+        "scope": "selected-typed-application-values",
+        "selection": [
+          "clock-zero-cold",
+          "clock-zero-warm",
+          "clock-zero-denied",
+          "clock-zero-fresh"
+        ]
+      }
+    }
+  },
+  "linuxReceiptSha256": "sha256:ce8da74edb2eb30ac65fb2412fded31457fd72e04d60e6c2e94f43ebca59b1e8",
+  "ordinaryNodeClock": "unchanged",
+  "passed": true,
+  "publisherAuthenticated": false,
+  "qualificationComplete": false,
+  "remaining": [
+    "authenticated final candidate qualification",
+    "clean Windows/WSL host",
+    "other provider fixtures and full failure matrix"
+  ],
+  "schemaVersion": "latent.dev.clock-fixture-source-observation.v1",
+  "scope": "authored Rust capsule with enforced test-package admission on local-experimental-v1",
+  "selectedValues": [
+    "0",
+    "18446744073709551615"
+  ],
+  "sourceCommit": "e212bcc800ec0939715c2ee92de8e581e8ee69d4",
+  "sourceDirty": true,
+  "windowsHostSha256": "sha256:6674ca8ada67edeeba1d8ec19c6dad376f3277ebecdaaf8305d4a66de70c1e3d",
+  "windowsReceiptSha256": "sha256:0f12b7b3dd73587552b43c39aa4cdf6b84fbbbfe32876e35cb658021978a1a0b"
+}

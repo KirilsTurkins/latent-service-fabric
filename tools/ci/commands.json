@@ -640,6 +640,16 @@
       "workflow": ".github/workflows/developer-tools.yml",
       "workingDirectory": "."
     },
+    ".github/workflows/developer-tools.yml:guest-tools:Compare explicit clock fixtures on signed nodes and the Linux portable host": {
+      "job": "guest-tools",
+      "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
+      "name": "Compare explicit clock fixtures on signed nodes and the Linux portable host",
+      "run": "cargo --config .cargo/managed-guest.toml build --locked -p latent-portable-test-host\npython -c \"import shutil; shutil.copy2('target/debug/latent-portable-test-host','target/dev-tools/clock-host')\"\npython tools/dev_clock_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-clock-fixtures\"\npython tools/dev_failure_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-failure-fixtures\"\nsudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_dev_recovery_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-recovery-fixtures\"",
+      "shell": "default",
+      "stepIf": "matrix.language == 'rust'",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
     ".github/workflows/developer-tools.yml:guest-tools:Compile actual projects with isolated tools and separate operator packaging": {
       "job": "guest-tools",
       "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
@@ -785,6 +795,26 @@
       "jobIf": "success()",
       "name": "Build native portable host and maintained compiled Rust guests",
       "run": "cargo build -p latent-portable-test-host --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_echo_capsule.py --output-dir target/dev-echo\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build -p latent-toolchain-smoke --example generic-capsule --target wasm32-unknown-unknown --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_portable_dev_guests.py --output target/dev-providers\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-tools.yml:windows:Compare actual native Windows clocks and denial with the signed Linux node": {
+      "job": "windows",
+      "jobIf": "success()",
+      "name": "Compare actual native Windows clocks and denial with the signed Linux node",
+      "run": "python tools/run_dev_clock_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-clock-fixtures --output target/dev-portable-clock-comparison.json",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-tools.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-tools.yml:windows:Compare native Windows failures and fresh state with the signed Linux node": {
+      "job": "windows",
+      "jobIf": "success()",
+      "name": "Compare native Windows failures and fresh state with the signed Linux node",
+      "run": "python tools/run_dev_failure_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-failure-fixtures --output target/dev-portable-failure-comparison.json",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -1354,7 +1384,7 @@
       "job": "candidate",
       "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
       "name": "Build exact-source unsigned candidate",
-      "run": "cd \"$NATIVE_WORKSPACE\"\nversion=\"$NATIVE_VERSION\"\npython3 tools/build_native_runtime.py --commit \"$GITHUB_SHA\" --version \"$version\" --output \"$PWD/target/native-release\"",
+      "run": "cd \"$NATIVE_WORKSPACE\"\nversion=\"$NATIVE_VERSION\"\nfixture_args=()\nif [ \"$DEVELOPMENT_TEST_NODE\" = true ]; then fixture_args=(--development-test-node); fi\npython3 tools/build_native_runtime.py --commit \"$GITHUB_SHA\" --version \"$version\" --output \"$PWD/target/native-release\" \"${fixture_args[@]}\"",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/native-runtime.yml",
@@ -1432,7 +1462,7 @@
     },
     ".github/workflows/native-runtime.yml:native-vm:Boot clean native guest, invoke, reboot, retain and purge": {
       "job": "native-vm",
-      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "jobIf": "${{ !cancelled() && !inputs.development_test_node && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
       "name": "Boot clean native guest, invoke, reboot, retain and purge",
       "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/run_native_vm.py --release-directory \"$PWD/target/native-candidate\" \\\n  --trusted-root \"$NATIVE_TRUST/trusted_root.jsonl\" --verifier \"$(readlink -f \"$(command -v gh)\")\" \\\n  --version \"$NATIVE_VERSION\" --commit \"$NATIVE_ARTIFACT_COMMIT\" --source-ref \"$NATIVE_ARTIFACT_REF\" \\\n  --purpose candidate --profile \"$NATIVE_PROFILE\" --fixture-helper \"$PWD/target/native-test-tools/fixture-helper\" \\\n  --output \"$PWD/target/native-vm/$NATIVE_PROFILE.json\"",
       "shell": "default",
@@ -1442,7 +1472,7 @@
     },
     ".github/workflows/native-runtime.yml:native-vm:Prepare private exact-source host workspace without changing runner ACLs": {
       "job": "native-vm",
-      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "jobIf": "${{ !cancelled() && !inputs.development_test_node && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
       "name": "Prepare private exact-source host workspace without changing runner ACLs",
       "run": "python3 tools/prepare_native_workspace.py",
       "shell": "default",
@@ -1452,7 +1482,7 @@
     },
     ".github/workflows/native-runtime.yml:native-vm:Provision host QEMU and independent verification trust": {
       "job": "native-vm",
-      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "jobIf": "${{ !cancelled() && !inputs.development_test_node && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
       "name": "Provision host QEMU and independent verification trust",
       "run": "sudo apt-get update\nsudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client\nif test -c /dev/kvm; then sudo setfacl -m \"u:$(id -un):rw\" /dev/kvm; fi\ngh --version\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"",
       "shell": "default",
@@ -1462,7 +1492,7 @@
     },
     ".github/workflows/native-runtime.yml:native-vm:Select exact real candidate artifact, independent of test-harness revision": {
       "job": "native-vm",
-      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "jobIf": "${{ !cancelled() && !inputs.development_test_node && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
       "name": "Select exact real candidate artifact, independent of test-harness revision",
       "run": "python3 tools/select_native_vm_artifact.py",
       "shell": "default",
@@ -2967,8 +2997,8 @@
     },
     ".github/workflows/native-runtime.yml:candidate:Build exact-source unsigned candidate": {
       "after": ".github/workflows/native-runtime.yml:candidate:Build exact-source unsigned candidate",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "Ordinary runtime candidates retain both existing VM profiles. The explicit disposable-test candidate records its feature in authenticated metadata, runs through the developer node/portable fixture owner, and cannot satisfy native release qualification."
     },
     ".github/workflows/native-runtime.yml:candidate:Build separately authenticated public-only VM fixture helper": {
       "after": ".github/workflows/native-runtime.yml:candidate:Build separately authenticated public-only VM fixture helper",
@@ -3007,23 +3037,23 @@
     },
     ".github/workflows/native-runtime.yml:native-vm:Boot clean native guest, invoke, reboot, retain and purge": {
       "after": ".github/workflows/native-runtime.yml:native-vm:Boot clean native guest, invoke, reboot, retain and purge",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "Ordinary runtime candidates retain both existing VM profiles. The explicit disposable-test candidate records its feature in authenticated metadata, runs through the developer node/portable fixture owner, and cannot satisfy native release qualification."
     },
     ".github/workflows/native-runtime.yml:native-vm:Prepare private exact-source host workspace without changing runner ACLs": {
       "after": ".github/workflows/native-runtime.yml:native-vm:Prepare private exact-source host workspace without changing runner ACLs",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "Ordinary runtime candidates retain both existing VM profiles. The explicit disposable-test candidate records its feature in authenticated metadata, runs through the developer node/portable fixture owner, and cannot satisfy native release qualification."
     },
     ".github/workflows/native-runtime.yml:native-vm:Provision host QEMU and independent verification trust": {
       "after": ".github/workflows/native-runtime.yml:native-vm:Provision host QEMU and independent verification trust",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "Ordinary runtime candidates retain both existing VM profiles. The explicit disposable-test candidate records its feature in authenticated metadata, runs through the developer node/portable fixture owner, and cannot satisfy native release qualification."
     },
     ".github/workflows/native-runtime.yml:native-vm:Select exact real candidate artifact, independent of test-harness revision": {
       "after": ".github/workflows/native-runtime.yml:native-vm:Select exact real candidate artifact, independent of test-harness revision",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "Ordinary runtime candidates retain both existing VM profiles. The explicit disposable-test candidate records its feature in authenticated metadata, runs through the developer node/portable fixture owner, and cannot satisfy native release qualification."
     },
     ".github/workflows/phase1-controlled-comparison.yml:comparison:Build the unchanged historical control": {
       "after": ".github/workflows/phase1-controlled-comparison.yml:comparison:Build the unchanged historical control",
@@ -3164,7 +3194,7 @@
       "sha256": "b86e895abc7baf6f191c6ce2cf059f14d754c933c5d2f59bb6a75693a9ebf0b8"
     },
     "tools/build_dev_guest_tools.py": {
-      "sha256": "13c62254e939b9ff55c0c661245d3cd09b30234bb21397124fbe5763342fef05"
+      "sha256": "dc9a22a4e7316a6967e8584a1e601939478b41cca5fb82fc933d2acbd679dbd7"
     },
     "tools/build_dev_rootfs.py": {
       "sha256": "b118f20a188b1a737fb3b335c399b566ca2c5c4f741767738e8cbceb5d1a8a37"
@@ -3176,7 +3206,7 @@
       "sha256": "0fc418c9dce391c402562b01e303abe71d45a6ee6e8046ba5008a9ea16667570"
     },
     "tools/build_native_runtime.py": {
-      "sha256": "8aa6e2df82afe7f69c4acc7ae4ddddcc339b0ee16681cfa0984df90623aa4732"
+      "sha256": "dc66e6adb1cf346d5169ea046f8087c581a09e348ed6b51710166f62fe2c55f6"
     },
     "tools/build_phase1_historical_control.sh": {
       "sha256": "db11d256e0ffad91e60d7ca6cc48693e73463f31ffdad5c82464656f24f99cf9"
@@ -3238,6 +3268,12 @@
     "tools/compare_portable_guest_tests.py": {
       "sha256": "53d331d99878fa00a54a160c89ac2bbb629558364b0719352aa1409666c9656e"
     },
+    "tools/dev_clock_fixture_probe.py": {
+      "sha256": "307493b05e171bf2cd2980d205be69363592ddea199944806650da7367135ef4"
+    },
+    "tools/dev_failure_fixture_probe.py": {
+      "sha256": "debeb0ea617f5d8eef93ee4b1ef8552bbf5cd30b96c2d684f9960d39cbd6a9a9"
+    },
     "tools/docs_pages.py": {
       "sha256": "9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"
     },
@@ -3254,7 +3290,7 @@
       "sha256": "5b44bb8ee33f2d0b2466afa6a38b990fb1358fbd9818061b392ef960b535eca1"
     },
     "tools/native_release_gate.py": {
-      "sha256": "422d2f5ed37378b20b001dcbde435ee16e68679becf64582bf062e8722ad4a46"
+      "sha256": "8cf200f963e3c49c5bdcec0c9ad06bc93cbc82375daa0aba3fa860348ed71964"
     },
     "tools/phase0_build_environment.sh": {
       "sha256": "16266aee2b730aac007d2ef6b7e5a74f8ce7391c69a0ffc1849011f30884414d"
@@ -3313,8 +3349,17 @@
     "tools/run_dev_build_cache_tests.py": {
       "sha256": "7664b879113ad53073ba342eea41af3b7d6bb64b38a8443c7a573761162c1a85"
     },
+    "tools/run_dev_clock_portable.py": {
+      "sha256": "0d54e0da68594e187c3ff866e512ae57785524796c88237f1ffffcce67df185d"
+    },
+    "tools/run_dev_failure_portable.py": {
+      "sha256": "13c37e3b2036a4a2bf7cb58ef475eda5c33656226c65741d2754946f1d2c2152"
+    },
     "tools/run_dev_guest_tools_tests.py": {
       "sha256": "73074d091d249186c7d787286b67ab8556b4c8966191d4454617dc8c87190c12"
+    },
+    "tools/run_dev_recovery_ci.py": {
+      "sha256": "f91fef2e0cff8f53661fa3bfb5ad77c8e38f996f9c45aa02aba6d3514fa746ab"
     },
     "tools/run_native_vm.py": {
       "sha256": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12"
@@ -4017,18 +4062,29 @@
     "tools/tests/test_dev_node_policies.py": [
       "ControllerProvenance.test_actual_packaging_extends_unsigned_observation_and_preserves_compiler_bytes",
       "InvocationRecovery.test_enforced_restart_requires_confirmed_cleanup_and_observes_clock_lease",
+      "InvocationRecovery.test_fault_probe_selects_signed_control_calls_without_matching_argument_data",
+      "InvocationRecovery.test_lifecycle_phase_alone_and_partial_or_contradictory_terminals_cannot_settle",
       "InvocationRecovery.test_lost_result_recovers_original_terminal_without_claiming_typed_output",
       "InvocationRecovery.test_socket_backlog_retries_only_connect_before_sending_one_command",
       "InvocationRecovery.test_unconfirmed_client_cleanup_retains_intent_and_starts_no_other_process",
       "InvocationRecovery.test_unknown_receipt_retains_original_and_forbids_new_invocation",
+      "NodePortableComparison.test_clock_comparison_requires_actual_matching_fixture_and_explicit_native_host",
       "NodePortableComparison.test_different_denial_policies_cannot_count_as_the_same_scenario",
       "NodePortableComparison.test_exact_values_match_with_explicit_node_only_exclusions",
       "NodePortableComparison.test_native_report_cannot_replace_node_or_change_component_outcome_or_cleanup",
+      "NodePortableComparison.test_only_declared_reviewed_resource_code_differences_can_compare",
       "NodePortableComparison.test_policy_changes_keep_the_expected_revision_for_each_case",
       "PolicyRecovery.test_existing_unowned_or_changed_policy_is_never_applied",
       "PolicyRecovery.test_lookup_queries_current_document_only_after_retained_operation",
       "PolicyRecovery.test_lost_apply_looks_up_original_and_records_before_clearing_intent",
       "PolicyRecovery.test_unknown_wrong_scope_and_changed_current_policy_retain_original",
+      "RunningCancellation.test_cancel_accepted_is_not_confirmation_of_terminal_cleanup",
+      "RunningCancellation.test_cancel_requires_observed_running_and_terminal_original_result",
+      "RunningCancellation.test_deadline_before_running_does_not_send_cancel",
+      "RunningCancellation.test_lost_cancel_response_keeps_intent_and_never_dispatches_again",
+      "RunningCancellation.test_shared_contract_requires_explicit_node_only_cancellation",
+      "RunningCancellation.test_terminal_or_wrong_activation_is_never_cancelled",
+      "RunningCancellation.test_unknown_status_allows_only_bounded_reads_of_original_identity",
       "ScenarioTargets.test_cold_node_allowance_is_explicit_and_does_not_change_portable_deadline",
       "ScenarioTargets.test_control_wait_uses_language_allowance_and_original_deadline_without_retry",
       "ScenarioTargets.test_each_policy_switch_requires_the_current_invocation_revision",
@@ -4040,8 +4096,11 @@
       "ScenarioTargets.test_unknown_or_failed_adapter_stops_subsequent_calls_and_redacts_exception",
       "SourceNodeProbe.test_uncertain_staging_keeps_an_explicit_private_cleanup_record",
       "TestProfile.test_interrupted_configuration_resumes_only_exact_before_or_after_bytes",
+      "TestProfile.test_invalid_or_unsigned_fixture_selection_starts_no_signer_and_keeps_configuration",
+      "TestProfile.test_only_matching_initialized_fixture_bytes_can_satisfy_scenarios",
       "TestProfile.test_profile_requires_explicit_test_scope_and_preserves_credentials",
-      "TestProfile.test_running_owner_and_existing_provider_configuration_are_preserved"
+      "TestProfile.test_running_owner_and_existing_provider_configuration_are_preserved",
+      "TestProfile.test_selected_fixture_requires_binary_confirmation_before_replacing_configuration"
     ],
     "tools/tests/test_dev_tool_install.py": [
       "GuestTools.test_changed_completed_payload_is_rejected_and_not_implicitly_repaired",
@@ -4078,6 +4137,11 @@
       "WatchTransitions.test_untrusted_build_is_actionable_before_tools_or_backend_are_used"
     ],
     "tools/tests/test_dev_workflow.py": [
+      "DevcontainerOwnership.test_changed_cache_during_copy_retains_incomplete_owner_without_runnable_configuration",
+      "DevcontainerOwnership.test_container_generation_copies_only_verified_bytes_and_executes_no_commands",
+      "DevcontainerOwnership.test_container_generation_rejects_tampering_before_writing_files",
+      "DevcontainerOwnership.test_container_generation_requires_consent_and_preserves_existing_configuration",
+      "DevcontainerOwnership.test_generated_tools_and_container_ownership_never_enter_guest_source_snapshots",
       "Documents.test_duplicate_and_unknown_fields_are_rejected",
       "Documents.test_protocol_target_abi_and_response_association",
       "Documents.test_unknown_remote_outcome_is_not_success",
@@ -4318,6 +4382,8 @@
       "LifecycleTests.test_unsupported_upgrade_is_refused_before_mutation_and_allowed_pair_is_exact",
       "ManifestTests.test_complete_fixture_inventory_and_exact_version",
       "ManifestTests.test_dependency_inventory_retains_lowercase_published_license_files",
+      "ManifestTests.test_development_fixture_metadata_is_closed_and_never_release_authority",
+      "ManifestTests.test_development_runtime_cannot_modify_normal_or_system_installations",
       "ManifestTests.test_duplicate_documents_and_oversized_inputs",
       "ManifestTests.test_elf_loader_is_the_same_glibc_prerequisite_not_an_unbounded_library_allowlist",
       "ManifestTests.test_exact_publisher_policy_and_no_implicit_candidate_trust",
@@ -6709,14 +6775,14 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-tools.yml": "abab47e2b6cdb170e1d1503deeeebe516343f12720206c4476d6e75a0ff67fe4",
+    ".github/workflows/developer-tools.yml": "a03b05eedf525ef63303318352551287eb8a9dd6da05e9a8f8c72e9b414b5791",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
     ".github/workflows/go-guest.yml": "bb0a8f048724248e33fe72ebb9f153c0e82184cf8d7f99f53be05cfb97c8919e",
     ".github/workflows/java-guest-feasibility.yml": "6c1814b442abf741dc4dceb6ab707cf87b3cc161090a3b5b7a62c9334dc3f872",
     ".github/workflows/native-runtime-release.yml": "0ddcac65ea869a5d56d6351d10af2593f5ad11c05cdbbf35938c5f1f36c4b1c5",
-    ".github/workflows/native-runtime.yml": "e720cfa4a8be48b69ab60544a6393ec4fd4037c3765ce52207b8739ac0c9dc96",
+    ".github/workflows/native-runtime.yml": "aaa3cc7c233e375286fd463592d4b23ff05c6cc014eea60175ee708dbd19471f",
     ".github/workflows/phase1-controlled-comparison.yml": "c55e5be5118fae0a0267850dc39d702af82fc27063ea28337091fb4b8466b434",
     ".github/workflows/phase1-measurements.yml": "1ba2ad12540189d6a28319f7b5396b94758eaf48d7a199c1462ddedd0c77779e",
     ".github/workflows/rust-capsule-authoring.yml": "a69b8d1ac076990c1e197203b807f306005df327bc1b4c6fee87b6b40ba199fb",
