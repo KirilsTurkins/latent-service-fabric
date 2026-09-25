@@ -208,8 +208,14 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
         else:
             from dev_packaged_failures import author
         author(project, case_set)
+    if watch_project:
+        if __package__:
+            from .dev_watch_case_inputs import edit, populate
+        else:
+            from dev_watch_case_inputs import edit, populate
+        populate(project, read_json(project / 'latent.project.json'))
     security = {}
-    if language == 'rust' and case_set is None:
+    if language == 'rust' and case_set is None and not watch_project:
         if __package__:
             from .dev_packaged_security import descriptors, source_paths
         else:
@@ -220,8 +226,15 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
         security['crlfSourceSha256'] = digest(source)
     api.call('build', '--workspace', workspace, '--project', project, rejection={'workspace-recipe-trust-required'})
     api.call('trust', '--workspace', workspace, '--project', project)
-    if language == 'rust' and case_set is None:
+    if language == 'rust' and case_set is None and not watch_project:
         security['sourcePaths'] = source_paths(api, workspace, project)
+    warm_b = None
+    if watch_project:
+        # Warm exactly B before A starts. The actual watch edit must still
+        # transfer and revalidate those same source, recipe and tool bytes.
+        edit(project, 201)
+        warm_b = api.call('build', '--workspace', workspace, '--project', project, timeout=1200)
+        edit(project, 101)
     built = api.call('build', '--workspace', workspace, '--project', project, timeout=1200)
     fixtures = ['--fixtures', project / 'tests/clock-zero.json'] if case_set == 'clock' else []
     admission = 'trusted-local' if watch_project else 'signed-fixture'
@@ -233,8 +246,15 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
     if case_set is not None:
         for path in [*project.glob('tests/*.json'), *project.glob('app/wit/deps/clock/*.wit')]:
             authored[path.relative_to(project).as_posix()] = digest(path)
-    return {'workspace': workspace, 'user': owned['user'], 'project': str(project), 'helperSha256': helper_sha,
+    if watch_project:
+        for name in ('app/qualification_recipe.py', 'app/qualification-mode.txt',
+                     'tests/value-input.json', 'tests/value-expected.json'):
+            authored[name] = digest(project / name)
+    result = {'workspace': workspace, 'user': owned['user'], 'project': str(project), 'helperSha256': helper_sha,
             'build': built, 'profile': profile, 'tools': selected, 'authoredSource': authored, 'sourceRejections': security}
+    if watch_project:
+        result['watchWarmB'] = warm_b
+    return result
 
 
 def verify_language(api, item):
