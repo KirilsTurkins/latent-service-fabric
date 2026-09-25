@@ -50,6 +50,24 @@ compares case identities, outcomes and payload digests with the Linux-node
 results. This export is an explicitly labeled read-only qualification observer;
 it does not compile, deploy or invoke an application in place of the frontend.
 
+A separate manual Linux lane uses a fresh Ubuntu 24.04 OS container with the
+same pinned OS/Python inputs as the managed image, plus pinned OpenSSH packages.
+It checks that host compilers and SDKs are absent before installing any guest
+tools. Independently authenticated frontend/helper files are copied into the
+image without executing them during image construction. The running schedule
+has Docker network mode `none`; all runtime/tool inputs are preprovisioned and
+the explicit SSH connection uses loopback, a dedicated second Linux account,
+and a newly generated host key provisioned through the conductor. Neither its
+management RPC listener nor SSH is published on the Docker host.
+
+That lane exercises one maintained Rust project through direct Linux and SSH,
+including real build/deploy/test, retained restart, repeated stop/purge and
+source preservation. Direct Linux also executes watch A/B and compiler failure.
+SSH rejects a wrong host key and helper digest, then checks that a concurrent
+start cannot replace or stop the existing node. The Windows/WSL lane owns the
+six-language matrix. This Linux OS-container observation is distinct from the
+Windows WSL2 host and the opt-in editor devcontainer path.
+
 Each command has bounded output and a deadline. The schedule admits at most
 190 completed commands, 4 MiB stdout and 256 KiB stderr per command, 1,800 seconds
 per command, and 7,200 seconds for the schedule. A public receipt is at most
@@ -59,6 +77,12 @@ Failures stop the schedule without replaying a mutation or invocation. Cleanup
 uses the recorded public workspace API, and an unconfirmed remote termination
 remains explicitly unconfirmed. Private failed state remains until the ephemeral
 runner is discarded.
+
+The Linux container has an 8 GiB memory limit, two CPUs and 512 processes.
+Its outer schedule wait is bounded to 1,800 seconds after a 1,200-second OS image
+build allowance; its internal emergency ceiling is 7,200 seconds. On failure,
+the exact container identity and private state are retained until runner
+teardown; an unconfirmed container stop is reported as unconfirmed.
 
 This is qualification scaffolding until a completed run is linked. Its receipt
 deliberately keeps `qualificationComplete: false`: the full watch, transport-loss,
@@ -71,7 +95,12 @@ The [final source campaign](final-source-campaign-observation.json) records the
 separate successful isolation, watch and recovery source probes and their failed
 predecessors. Those observations likewise do not replace installed-candidate runs.
 
-The seven fast conductor regressions exercise archive traversal/alias/device/link
+The nine fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and
-the actual Windows DACL of the newly created conductor directory.
+the actual Windows DACL of the newly created conductor directory. They also
+require the correct native entrypoint and private executable modes on Linux.
 They run on Windows and Linux and do not count as installed-product evidence.
+The [OS setup observation](qualification-os-smoke-observation.json) additionally
+records an actual disconnected-container SSH handshake between UIDs 23001 and
+23002 with host compilers absent. It uses a harmless helper placeholder and runs
+no LSF candidate, so it validates provisioning only.

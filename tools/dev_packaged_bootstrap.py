@@ -19,7 +19,8 @@ else:
 REPOSITORY = 'KirilsTurkins/latent-service-fabric'
 
 
-def authenticate(config, temporary):
+def authenticate(config, temporary, *, target='windows-x86_64'):
+    require(target in {'windows-x86_64', 'linux-x86_64'}, 'closed-frontend-bootstrap-target')
     trust = config['trust']
     policy = read_json(trust['developerPolicy'])
     require(policy == config['approvedDeveloperPolicy'], 'independent-approved-policy-mismatch')
@@ -34,7 +35,7 @@ def authenticate(config, temporary):
     require(digest(trust['hostVerifier']) == trust['hostVerifierSha256']
             and digest(trust['guestVerifier']) == trust['guestVerifierSha256']
             and digest(trust['trustedRoot']) == trust['trustedRootSha256'], 'independent-verification-input-changed')
-    root = Path(config['artifacts']['windows'])
+    root = Path(config['artifacts']['windows' if target == 'windows-x86_64' else 'linux'])
     command = Command([trust['hostVerifier'], 'attestation', 'verify', root / 'SHA256SUMS',
         '--bundle', root / 'attestation.json', '--custom-trusted-root', trust['trustedRoot'],
         '--repo', REPOSITORY, '--hostname', 'github.com', '--cert-identity',
@@ -51,7 +52,7 @@ def authenticate(config, temporary):
         command.abort_controller()
     manifest = read_json(root / 'developer-bundle.json')
     require(manifest['sourceCommit'] == config['sourceCommit'] and manifest['version'] == config['version']
-            and manifest['target'] == 'windows-x86_64' and manifest['schemaVersion'] == 'latent.dev.bundle.v1'
+            and manifest['target'] == target and manifest['schemaVersion'] == 'latent.dev.bundle.v1'
             and manifest['hostAbi'] == 'lsf-host-abi-phase3-v4' and manifest['protocol'] == 'latent.dev.protocol.v1',
             'frontend-identity-or-target')
     archive = manifest['archive']
@@ -67,6 +68,9 @@ def authenticate(config, temporary):
 def extract(root, manifest, destination):
     deadline = time.monotonic() + 300
     require(not destination.exists(), 'new-frontend-directory-required')
+    target = manifest.get('target', 'windows-x86_64')
+    require(target in {'windows-x86_64', 'linux-x86_64'}, 'closed-frontend-bootstrap-target')
+    executable = 'bin/latent-dev.exe' if target == 'windows-x86_64' else 'bin/latent-dev'
     entries = manifest['files']
     require(0 < len(entries) <= 4096, 'frontend-inventory-bound')
     files, aliases = {}, set()
@@ -86,8 +90,8 @@ def extract(root, manifest, destination):
         total += entry['size']
         files[name] = entry
         aliases.add(unicodedata.normalize('NFC', name).casefold())
-    require(total <= 2 * 1024**3 and 'bin/latent-dev.exe' in files
-            and files['bin/latent-dev.exe']['executable'] is True, 'frontend-expanded-byte-bound')
+    require(total <= 2 * 1024**3 and executable in files
+            and files[executable]['executable'] is True, 'frontend-expanded-byte-bound')
     require(not any('/'.join(name.split('/')[:n]).casefold() in aliases for name in files
                     for n in range(1, len(name.split('/')))), 'frontend-file-directory-collision')
     with zipfile.ZipFile(root / manifest['archive']['name']) as archive:
@@ -112,4 +116,6 @@ def extract(root, manifest, destination):
                     output.write(chunk)
             require(count == files[member.filename]['size']
                     and 'sha256:' + checksum.hexdigest() == files[member.filename]['sha256'], 'frontend-expanded-member-digest')
-    return destination / 'bin/latent-dev.exe'
+            if os.name == 'posix':
+                path.chmod(0o700 if files[member.filename]['executable'] else 0o600)
+    return destination / executable

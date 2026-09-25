@@ -64,6 +64,22 @@ class PackagedProbe(unittest.TestCase):
         with self.assertRaisesRegex(ProbeFailure, 'frontend-expanded-member-digest'):
             extract(self.root, self.bundle(['bin/latent-dev.exe'], changed=True), self.root / 'installed')
 
+    def test_linux_target_requires_its_own_entrypoint(self):
+        manifest = self.bundle(['bin/latent-dev.exe'])
+        manifest['target'] = 'linux-x86_64'
+        with self.assertRaisesRegex(ProbeFailure, 'frontend-expanded-byte-bound'):
+            extract(self.root, manifest, self.root / 'installed')
+        self.assertFalse((self.root / 'installed').exists())
+
+    @unittest.skipUnless(os.name == 'posix', 'actual executable modes required')
+    def test_linux_exact_entrypoint_is_executable_and_private(self):
+        manifest = self.bundle(['bin/latent-dev', 'helper.pyz'])
+        manifest['target'] = 'linux-x86_64'
+        manifest['files'][0]['executable'] = True
+        selected = extract(self.root, manifest, self.root / 'installed')
+        self.assertEqual(selected.stat().st_mode & 0o777, 0o700)
+        self.assertEqual((selected.parent.parent / 'helper.pyz').stat().st_mode & 0o777, 0o600)
+
     def test_output_flood_is_bounded_and_owned_child_is_reaped(self):
         child = Command([sys.executable, '-I', '-B', '-c',
             'import sys,time;sys.stdout.buffer.write(b"x"*5000000);sys.stdout.flush();time.sleep(10)'],

@@ -630,6 +630,26 @@
       "workflow": ".github/workflows/developer-packaged-qualification.yml",
       "workingDirectory": "."
     },
+    ".github/workflows/developer-packaged-qualification.yml:linux:Download only selected Linux, Rust and native candidates": {
+      "job": "linux",
+      "jobIf": "success()",
+      "name": "Download only selected Linux, Rust and native candidates",
+      "run": "python3 -B - <<'PY'\nfrom pathlib import Path\nimport json, os, re, subprocess\nsupport = Path(os.environ['RUNNER_TEMP']) / 'packaged-support'\nselected = json.loads((support / 'selection.json').read_bytes())\nsha = selected['sourceCommit']\nassert re.fullmatch(r'[a-f0-9]{40}', sha)\ntarget = Path(os.environ['RUNNER_TEMP']) / 'packaged-candidates'\ntarget.mkdir()\nselected['artifacts'] = {}\nfor name, kind, artifact in (\n    ('linux', 'developer', 'developer-linux-candidate-' + sha),\n    ('rust', 'developer', 'developer-rust-tools-candidate-' + sha),\n    ('native', 'runtime', 'native-runtime-candidate-development-test-' + sha)):\n    destination = target / name\n    subprocess.run(['gh', 'run', 'download', str(selected['candidateRuns'][kind]['id']),\n        '--repo', 'KirilsTurkins/latent-service-fabric', '--name', artifact, '--dir', str(destination)],\n        check=True, timeout=300)\n    selected['artifacts'][name] = str(destination)\n(support / 'gh-linux').chmod(0o700)\nselected['trust'] = {\n    'developerPolicy': str(support / 'developer-policy.json'),\n    'runtimePolicy': str(support / 'runtime-policy.json'),\n    'trustedRoot': str(support / 'trusted_root.jsonl'),\n    'trustedRootSha256': selected['verificationInputs']['trustedRootSha256'],\n    'hostVerifier': str(support / 'gh-linux'), 'guestVerifier': str(support / 'gh-linux'),\n    'hostVerifierSha256': selected['verificationInputs']['verifierSha256']['linux'],\n    'guestVerifierSha256': selected['verificationInputs']['verifierSha256']['linux']}\n(support / 'inputs.json').write_text(json.dumps(selected), encoding='utf-8')\nPY",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-packaged-qualification.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/developer-packaged-qualification.yml:linux:Run the authenticated packages in a clean compiler-free disconnected Ubuntu container": {
+      "job": "linux",
+      "jobIf": "success()",
+      "name": "Run the authenticated packages in a clean compiler-free disconnected Ubuntu container",
+      "run": "cd \"$RUNNER_TEMP/packaged-support\"\npython3 -I -B dev_packaged_linux_host.py --inputs inputs.json --output \"$RUNNER_TEMP/packaged-linux\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/developer-packaged-qualification.yml",
+      "workingDirectory": "."
+    },
     ".github/workflows/developer-packaged-qualification.yml:support:Stage only conductor, pinned verifier and independent trust files": {
       "job": "support",
       "jobIf": "github.event_name == 'workflow_dispatch' && inputs.policy_approved && github.repository == 'KirilsTurkins/latent-service-fabric'",
@@ -3393,7 +3413,7 @@
       "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
     },
     "tools/prepare_dev_packaged_probe.py": {
-      "sha256": "5e0ecf310126ec56648e8c9a42af02570cb14e25cc7fabd35571d87941028628"
+      "sha256": "e7db13341bb229a46b4e9cd1296006802a0bf71b2031c26d42e137d85463ba61"
     },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
@@ -4253,6 +4273,8 @@
       "PackagedProbe.test_conductor_protects_only_its_new_windows_directory",
       "PackagedProbe.test_deadline_does_not_replay_the_command",
       "PackagedProbe.test_exact_inventory_extracts_without_executing_any_member",
+      "PackagedProbe.test_linux_exact_entrypoint_is_executable_and_private",
+      "PackagedProbe.test_linux_target_requires_its_own_entrypoint",
       "PackagedProbe.test_output_flood_is_bounded_and_owned_child_is_reaped",
       "PackagedProbe.test_symlink_rejects_before_creation",
       "PackagedProbe.test_traversal_device_and_unicode_aliases_reject_before_creation"
@@ -6949,9 +6971,9 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-packaged-qualification.yml": "dbf889861aa99932583391bd9a483c3a654b95b85eb9b4055fa714621256007f",
+    ".github/workflows/developer-packaged-qualification.yml": "1707cb2c640b76e4bc6a600b83af76e1f384862f554e53fe478d6202b0d81554",
     ".github/workflows/developer-platform-preflight.yml": "c9f626723bbaa6873ab483871fa4c8feab3c68b7b739bf7a0c34e8687eb61e77",
-    ".github/workflows/developer-tools.yml": "4fc4e89a345937c96a7ec675fec068c797b6c148e96ce86fd191a95fcb3f0720",
+    ".github/workflows/developer-tools.yml": "1af678a8b38f7fa833661048248c843739476fbf7e8c16d6bd65b0abe918f81e",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",

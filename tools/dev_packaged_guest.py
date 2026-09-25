@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 
 if __package__:
     from .dev_packaged_process import Command, digest, read_json, require
@@ -61,16 +62,33 @@ print(json.dumps(result,sort_keys=True))
 
 def observe(api, item, mode, *arguments):
     config = read_json(api.state / item['workspace'] / 'backend.json')
-    require(config['kind'] == 'wsl2' and config['user'] == item['user']
-            and re.fullmatch(r'LSF-Dev-[a-f0-9]{16}', config['distribution'])
-            and re.fullmatch(r'lsfd-[a-f0-9]{12}', item['user']), 'owned-wsl-observer-target')
     require(len(api.report['commands']) < 190, 'qualification-command-count-limit')
-    command = Command([Path(os.environ['SystemRoot']) / 'System32/wsl.exe', '--distribution', config['distribution'],
-        '--user', item['user'], '--exec', '/usr/local/bin/python3.13', '-I', '-B', '-c', OBSERVER,
-        item['workspace'], mode, *arguments], api.root, api.env)
+    guest = ['/usr/local/bin/python3.13', '-I', '-B', '-c', OBSERVER, item['workspace'], mode, *arguments]
+    if config['kind'] == 'wsl2':
+        require(config['user'] == item['user'] and re.fullmatch(r'LSF-Dev-[a-f0-9]{16}', config['distribution'])
+                and re.fullmatch(r'lsfd-[a-f0-9]{12}', item['user']), 'owned-wsl-observer-target')
+        argv = [Path(os.environ['SystemRoot']) / 'System32/wsl.exe', '--distribution', config['distribution'],
+                '--user', item['user'], '--exec', *guest]
+    elif config['kind'] == 'linux':
+        require(os.name == 'posix' and config['python'] == '/usr/local/bin/python3.13', 'owned-linux-observer-target')
+        argv = guest
+    else:
+        require(config['kind'] == 'ssh' and config['user'] == item['user'] == 'lsfremote'
+                and config['host'] == '127.0.0.1' and config['port'] == 2222
+                and config['ssh'] == '/usr/bin/ssh', 'owned-loopback-ssh-observer-target')
+        argv = [config['ssh'], '-F', '/dev/null', '-T', '-a', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes',
+                '-o', 'IdentitiesOnly=yes', '-o', 'ForwardAgent=no', '-o', 'ClearAllForwardings=yes',
+                '-o', 'PermitLocalCommand=no', '-o', 'ProxyCommand=none', '-o', 'ConnectTimeout=10',
+                '-o', 'ConnectionAttempts=1', '-o', 'GlobalKnownHostsFile=/dev/null',
+                '-o', 'UserKnownHostsFile=' + config['knownHosts'], '-i', config['identityFile'],
+                '-p', '2222', 'lsfremote@127.0.0.1', ' '.join(shlex.quote(part) for part in guest)]
+    command = Command(argv, api.root, api.env)
     try:
-        require(command.finish(30) == 0, 'owned-wsl-public-observation-failed')
-        return json.loads(command.raw())
+        require(command.finish(30) == 0, 'owned-guest-public-observation-failed')
+        result = json.loads(command.raw())
+        if mode == 'audit':
+            require(result['user'] == item['user'], 'guest-observer-user-mismatch')
+        return result
     finally:
         try:
             command.abort_controller()

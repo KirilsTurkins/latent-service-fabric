@@ -67,7 +67,10 @@
       "code": "windows-state-acl-too-broad",
       "candidateInstalled": false,
       "correction": "use-cpython-3.13-private-directory-creation-without-extra-icacls-grants",
-      "correctedCiResult": "pending"
+      "correctedCiResult": "passed",
+      "correctedSourceCommit": "4c4b417fcebc564f4d9461629f36d946e1611818",
+      "correctedWindowsJob": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36115191523/job/108007514517",
+      "correctedLinuxJob": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36115191523/job/108007514178"
     }
   ]
 }

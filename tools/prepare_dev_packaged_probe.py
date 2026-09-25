@@ -62,8 +62,10 @@ def main():
                 and run['path'] == '.github/workflows/' + workflow, 'successful-exact-candidate-workflow-required')
         runs[kind] = {'id': int(number), 'url': run['html_url'], 'sourceCommit': source, 'conclusion': run['conclusion']}
     for name in ('dev_packaged_probe', 'dev_packaged_process', 'dev_packaged_bootstrap', 'dev_packaged_windows',
-                 'dev_packaged_guest', 'dev_packaged_watch'):
+                 'dev_packaged_guest', 'dev_packaged_watch', 'dev_packaged_linux', 'dev_packaged_linux_host',
+                 'dev_packaged_linux_entry'):
         shutil.copyfile(ROOT / 'tools' / (name + '.py'), target / (name + '.py'))
+    shutil.copyfile(ROOT / 'packaging/dev/qualification.Dockerfile', target / 'qualification.Dockerfile')
     root = ROOT / 'packaging/dev/qualification-trusted-root.jsonl'
     checked(hashlib.sha256(root.read_bytes()).hexdigest() == TRUSTED_ROOT_SHA, 'independent-trust-root-changed')
     shutil.copyfile(root, target / 'trusted_root.jsonl')

@@ -27,6 +27,7 @@ on:
       - tools/dev_packaged_*.py
       - tools/prepare_dev_packaged_probe.py
       - tools/tests/test_dev_packaged_probe.py
+      - packaging/dev/qualification.Dockerfile
 
 permissions:
   contents: read
@@ -137,6 +138,66 @@ jobs:
           name: packaged-windows-observation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/packaged-observation/observation.json
+            ${{ runner.temp }}/packaged-support/selection.json
+          if-no-files-found: error
+          retention-days: 7
+
+  linux:
+    name: Actual packaged direct Linux and explicit SSH schedule
+    needs: support
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: packaged-qualification-support
+          path: ${{ runner.temp }}/packaged-support
+      - name: Download only selected Linux, Rust and native candidates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B - <<'PY'
+          from pathlib import Path
+          import json, os, re, subprocess
+          support = Path(os.environ['RUNNER_TEMP']) / 'packaged-support'
+          selected = json.loads((support / 'selection.json').read_bytes())
+          sha = selected['sourceCommit']
+          assert re.fullmatch(r'[a-f0-9]{40}', sha)
+          target = Path(os.environ['RUNNER_TEMP']) / 'packaged-candidates'
+          target.mkdir()
+          selected['artifacts'] = {}
+          for name, kind, artifact in (
+              ('linux', 'developer', 'developer-linux-candidate-' + sha),
+              ('rust', 'developer', 'developer-rust-tools-candidate-' + sha),
+              ('native', 'runtime', 'native-runtime-candidate-development-test-' + sha)):
+              destination = target / name
+              subprocess.run(['gh', 'run', 'download', str(selected['candidateRuns'][kind]['id']),
+                  '--repo', 'KirilsTurkins/latent-service-fabric', '--name', artifact, '--dir', str(destination)],
+                  check=True, timeout=300)
+              selected['artifacts'][name] = str(destination)
+          (support / 'gh-linux').chmod(0o700)
+          selected['trust'] = {
+              'developerPolicy': str(support / 'developer-policy.json'),
+              'runtimePolicy': str(support / 'runtime-policy.json'),
+              'trustedRoot': str(support / 'trusted_root.jsonl'),
+              'trustedRootSha256': selected['verificationInputs']['trustedRootSha256'],
+              'hostVerifier': str(support / 'gh-linux'), 'guestVerifier': str(support / 'gh-linux'),
+              'hostVerifierSha256': selected['verificationInputs']['verifierSha256']['linux'],
+              'guestVerifierSha256': selected['verificationInputs']['verifierSha256']['linux']}
+          (support / 'inputs.json').write_text(json.dumps(selected), encoding='utf-8')
+          PY
+      - name: Run the authenticated packages in a clean compiler-free disconnected Ubuntu container
+        run: |
+          cd "$RUNNER_TEMP/packaged-support"
+          python3 -I -B dev_packaged_linux_host.py --inputs inputs.json --output "$RUNNER_TEMP/packaged-linux"
+      - name: Retain bounded public Linux success or failure receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: packaged-linux-observation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/packaged-linux/host-observation.json
+            ${{ runner.temp }}/packaged-linux/observation.json
             ${{ runner.temp }}/packaged-support/selection.json
           if-no-files-found: error
           retention-days: 7

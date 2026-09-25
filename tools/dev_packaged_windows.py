@@ -109,6 +109,15 @@ def negative_bundles(api, config):
         stream.seek(0)
         stream.write(bytes([original[0] ^ 1]))
     acquire(api, config, copied, 'windows-x86_64', rejection={'developer-archive-digest'})
+    untrusted = api.root / 'untrusted-publisher-policy.json'
+    write_json(untrusted, {**config['approvedDeveloperPolicy'], 'sourceRef': 'refs/heads/not-the-approved-source'})
+    trust = config['trust']
+    api.call('acquire', '--bundle-directory', source, '--publisher-policy', untrusted,
+        '--trusted-root', trust['trustedRoot'], '--verifier', trust['hostVerifier'],
+        '--verifier-sha256', trust['hostVerifierSha256'], '--version', config['version'],
+        '--target', 'windows-x86_64', '--allow-candidate', timeout=180,
+        rejection={'developer-publisher-attestation-rejected'})
+    require(not any((api.state / 'bundles').glob('*/verified-bundle.json')), 'rejected-candidate-became-usable')
 
 
 def inputs(api, config, language, index):
@@ -125,9 +134,17 @@ def inputs(api, config, language, index):
     return runtime_path, tools_path
 
 
-def prepare(api, config, language, index, helper_sha):
+def prepare(api, config, language, index, helper_sha, *, backend_config=None):
     workspace = 'test-packaged-' + language
-    owned = api.call('wsl-workspace', '--workspace', workspace, '--helper-sha256', helper_sha)
+    if backend_config is None:
+        owned = api.call('wsl-workspace', '--workspace', workspace, '--helper-sha256', helper_sha)
+    else:
+        selected_backend = read_json(backend_config)
+        require(selected_backend['kind'] in {'linux', 'ssh'} and selected_backend['helperSha256'] == helper_sha,
+                'explicit-qualification-backend-required')
+        api.call('connect', '--workspace', workspace, '--backend-config', backend_config)
+        import pwd
+        owned = {'user': selected_backend.get('user', pwd.getpwuid(os.getuid()).pw_name)}
     runtime, tools = inputs(api, config, language, index)
     api.call('install', '--workspace', workspace, '--runtime-inputs', runtime, timeout=1200)
     selected = api.call('install-tools', '--workspace', workspace, '--tool-inputs', tools, timeout=1800)
