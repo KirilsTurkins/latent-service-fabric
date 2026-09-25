@@ -974,7 +974,7 @@ clean host, VM-disconnect recovery or rendered newcomer/editor review.
 | #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
 | #564 | Repeat the observed source watch failures, rapid edits, in-flight revision, revocation, recovery and actual expired-receipt schedules with final authenticated Windows/WSL packages; complete VM-disconnect recovery. |
 | #565 | Complete the remaining failure/isolation matrix; qualify the integrated fixtures and scenarios with all six languages. |
-| #566 | Verified final native distribution and the remaining provider/failure differential; all six languages have source tutorial comparisons, and Rust has shared node/native clock evidence. |
+| #566 | [Native Windows scope passed](native-windows-qualification.md): authenticated distribution, six languages, closed failures/clock, unsupported-required rejection and exact-source provider/node comparisons. |
 | #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
 | #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
 
