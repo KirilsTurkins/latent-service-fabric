@@ -93,6 +93,8 @@ class PackagedProbe(unittest.TestCase):
             child.abort_controller()
         self.assertLessEqual(len(child.raw()), 4194304)
         self.assertIsNotNone(child.child.returncode)
+        self.assertFalse(any(thread.is_alive() for thread in child.threads))
+        self.assertTrue(child.child.stdout.closed and child.child.stderr.closed)
 
     def test_deadline_does_not_replay_the_command(self):
         script = 'from pathlib import Path;import time;p=Path("effects");p.write_text("once");time.sleep(10)'

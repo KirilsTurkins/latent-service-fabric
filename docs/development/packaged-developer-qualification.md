@@ -197,6 +197,15 @@ inputs, exercised path/trust rejections, and reached the unchanged 900-second
 build deadline. Its exact container stopped. This failure is retained for
 diagnosis and is not counted as a passing Linux build or complete qualification.
 
+The [second Windows attempt](packaged-candidate-c-install-attempt-observation.json)
+again passed the signed Rust build, tests and original operation recovery. With
+that node still running, it created a distinct C user and installed its runtime,
+then lost the backend connection during C tool installation after 36.49 seconds.
+The frontend preserved an uncertain outcome; the operation was not replayed.
+The original Rust node stopped cleanly. The C installation's private state
+remained on the disposable runner until teardown. The cause is under
+investigation, and this receipt does not count as a successful C installation.
+
 The twelve fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and
 bounded stdin with receipt redaction, plus the actual Windows DACL of the newly
