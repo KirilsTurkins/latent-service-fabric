@@ -4168,6 +4168,7 @@
       "EditorDiagnostics.test_crlf_unicode_locations_match_host_files_and_ignore_outside_inputs",
       "EditorDiagnostics.test_process_tasks_do_not_start_automatically_or_replace_editor_configuration",
       "EditorDiagnostics.test_real_failed_compiler_preserves_last_build_and_maps_diagnostics",
+      "EditorDiagnostics.test_watch_diagnostic_batches_finish_on_failure_success_and_untrusted_input",
       "NodeTestIdentity.test_concurrent_deployment_is_rejected_before_invocation",
       "NodeTestIdentity.test_confirmed_target_uses_the_observed_route_generation",
       "NodeTestIdentity.test_identical_output_from_another_revision_cannot_pass",

@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from . import paths
+from . import diagnostics, paths
 from .common import identifier, require
 
 PATTERN = r"^LSF (.*):([0-9]+):([0-9]+): (error|warning|info) ([A-Za-z0-9_-]*): (.*)$"
@@ -44,6 +44,10 @@ def configuration(frontend: Path, state_root: Path, workspace: str, tool_root: s
               "runOptions": {"instanceLimit": 1, "runOn": "default"},
               "presentation": {"reveal": "always", "panel": "dedicated", "clear": False, "echo": True}}
              for label, args in commands.items()]
+    watch = next(task for task in tasks if task["label"] == "LSF: watch")
+    watch["isBackground"] = True
+    watch["problemMatcher"] = [{**matcher, "background": {"activeOnStart": False,
+        "beginsPattern": "^" + diagnostics.BUILD_START + "$", "endsPattern": "^" + diagnostics.BUILD_END + "$"}}]
     inputs = [("lsfDestination", "New project directory (must not exist)"), ("lsfBundle", "Already authenticated template bundle ID"),
               ("lsfTemplate", "Language-owned template name"), ("lsfTemplateSha", "Exact template manifest SHA-256"),
               ("lsfTestWorkspace", "Separately provisioned test- workspace name")]

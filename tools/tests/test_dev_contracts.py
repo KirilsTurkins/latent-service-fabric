@@ -362,6 +362,59 @@ class WslOwnership(unittest.TestCase):
 
 
 class EditorDiagnostics(unittest.TestCase):
+    def test_watch_diagnostic_batches_finish_on_failure_success_and_untrusted_input(self):
+        from contextlib import redirect_stderr
+        import io
+        import re
+        from tools.dev_workflow import build_client, diagnostics, editor
+        with tempfile.TemporaryDirectory(prefix="lsf editor-") as temporary:
+            root = Path(temporary)
+            workspace, source = root / "controller", root / "project"
+            paths.new_directory(workspace)
+            paths.new_directory(source)
+            paths.new_directory(source / "src")
+            selected = descriptor()
+            paths.write_new(source / "latent.project.json", common.encode(selected))
+            paths.write_new(source / "src/fail.rs", b"invalid source\r\n")
+            state.atomic(workspace, "trust.json", {"project": str(source), "recipe": project.trust_identity(selected)})
+            calls = []
+            failure = common.DevError("guest-build-failed-last-deployment-retained", diagnostics=[{
+                "path": "src/fail.rs", "line": 1, "column": 2, "severity": "error", "code": "E100", "message": "controlled failure"}])
+            class Connection:
+                fail = True
+                def call(self, operation, arguments, **options):
+                    calls.append(operation)
+                    if operation == "build" and self.fail:
+                        raise failure
+                    return {"diagnostics": []}
+            connection = Connection()
+            output = io.StringIO()
+            with redirect_stderr(output), self.assertRaises(common.DevError) as raised:
+                build_client.run(workspace, connection, source, "/reviewed/tools", editor_diagnostics=True)
+            self.assertIs(raised.exception, failure)
+            configured = editor.configuration(root / "frontend.exe", workspace, "test-editor", None)
+            task = next(task for task in configured["tasks"] if task["label"] == "LSF: watch")
+            self.assertTrue(task["isBackground"])
+            matcher = task["problemMatcher"][0]
+            lines = output.getvalue().splitlines()
+            self.assertIsNotNone(re.fullmatch(matcher["background"]["beginsPattern"], lines[0]))
+            self.assertIsNotNone(re.fullmatch(matcher["pattern"]["regexp"], lines[1]))
+            self.assertIsNotNone(re.fullmatch(matcher["background"]["endsPattern"], lines[2]))
+            self.assertEqual(calls, ["snapshot", "build"])
+            connection.fail = False
+            output = io.StringIO()
+            with redirect_stderr(output):
+                build_client.run(workspace, connection, source, "/reviewed/tools", editor_diagnostics=True)
+            self.assertEqual(output.getvalue().splitlines(), [diagnostics.BUILD_START, diagnostics.BUILD_END])
+            state.atomic(workspace, "trust.json", {"project": str(source), "recipe": "sha256:" + "0" * 64})
+            before = list(calls)
+            for enabled in (True, False):
+                output = io.StringIO()
+                with redirect_stderr(output), self.assertRaisesRegex(common.DevError, "workspace-recipe-trust-required"):
+                    build_client.run(workspace, connection, source, None, editor_diagnostics=enabled)
+                self.assertEqual(output.getvalue().splitlines(), [diagnostics.BUILD_START, diagnostics.BUILD_END] if enabled else [])
+            self.assertEqual(calls, before)
+
     def test_crlf_unicode_locations_match_host_files_and_ignore_outside_inputs(self):
         from tools.dev_workflow import diagnostics, editor
         import re

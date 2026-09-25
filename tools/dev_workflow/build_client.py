@@ -56,6 +56,19 @@ def cancel_and_confirm(connection, selected: str) -> None:
 
 def run(workspace: Path, connection, source: Path, tool_root: str | None, *, editor_diagnostics: bool = False,
         selected: tuple[str, str] | None = None) -> dict:
+    # A long-running editor task needs a completed diagnostic batch even when
+    # compilation fails. These markers do not authorize or retry any operation.
+    if editor_diagnostics:
+        print(diagnostics.BUILD_START, file=sys.stderr, flush=True)
+    try:
+        return _run(workspace, connection, source, tool_root, editor_diagnostics=editor_diagnostics, selected=selected)
+    finally:
+        if editor_diagnostics:
+            print(diagnostics.BUILD_END, file=sys.stderr, flush=True)
+
+
+def _run(workspace: Path, connection, source: Path, tool_root: str | None, *, editor_diagnostics: bool,
+         selected: tuple[str, str] | None) -> dict:
     require(source is not None, "explicit-project-required")
     source = source.absolute()
     descriptor, _raw_identity = project.load(source)

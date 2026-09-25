@@ -10,6 +10,8 @@ from . import paths
 from .common import integer, members, require
 
 MAX_DIAGNOSTICS = 32
+BUILD_START = "LSF build-start"
+BUILD_END = "LSF build-end"
 ANSI = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))")
 COLON = re.compile(r"^(.*?):([0-9]+)(?::([0-9]+))?:\s*(?:(error|warning|note|fatal error)(?:\s+([A-Za-z0-9_-]+))?:\s*)?(.*)$")
 PARENS = re.compile(r"^(.*?)\(([0-9]+),([0-9]+)\):\s*(error|warning)\s*([A-Za-z0-9_-]*):\s*(.*)$")
