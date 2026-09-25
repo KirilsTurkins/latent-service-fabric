@@ -33,7 +33,7 @@ from tools.build_process import run_bounded_result
 mode=Path('qualification-mode.txt').read_text().strip()
 if mode=='slow':
     child="import os,time;from pathlib import Path;Path('../build-cache/qualification-ready.txt').write_text(str(os.getpid()));time.sleep(30)"
-    run_bounded_result([sys.executable,'-I','-c',child],cwd=Path.cwd(),env=dict(os.environ),timeout_seconds=35,max_output_bytes=4096)
+    run_bounded_result([sys.executable,'-I','-B','-c',child],cwd=Path.cwd(),env=dict(os.environ),timeout_seconds=35,max_output_bytes=4096)
 result=run_bounded_result([sys.executable,'-I','-B',*sys.argv[1:]],cwd=Path.cwd(),env=dict(os.environ),timeout_seconds=120,max_output_bytes=262144)
 sys.stdout.buffer.write(result.stdout); sys.stderr.buffer.write(result.stderr)
 if result.returncode==0 and mode=='malformed':
