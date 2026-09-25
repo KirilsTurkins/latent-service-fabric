@@ -1,0 +1,95 @@
+name: Developer platform preflight
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/559-hosted-qualification]
+    paths: [.github/workflows/developer-platform-preflight.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: developer-platform-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-wsl:
+    name: Observe actual WSL2 on a fresh Windows runner
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - name: Observe the preinstalled host and start only the WSL system environment
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+          $Output = Join-Path $env:RUNNER_TEMP 'developer-platform-preflight'
+          New-Item -ItemType Directory -Path $Output | Out-Null
+          function Observe-Wsl([string[]]$CommandArguments) {
+              $Start = [Diagnostics.ProcessStartInfo]::new()
+              $Start.FileName = Join-Path $env:SystemRoot 'System32/wsl.exe'
+              $Start.UseShellExecute = $false
+              $Start.CreateNoWindow = $true
+              $Start.RedirectStandardOutput = $true
+              $Start.RedirectStandardError = $true
+              foreach ($Argument in $CommandArguments) { $Start.ArgumentList.Add($Argument) }
+              $Process = [Diagnostics.Process]::new()
+              $Process.StartInfo = $Start
+              $Timer = [Diagnostics.Stopwatch]::StartNew()
+              try {
+                  if (-not $Process.Start()) { throw 'WSL observer did not start.' }
+                  $Stdout = $Process.StandardOutput.ReadToEndAsync()
+                  $Stderr = $Process.StandardError.ReadToEndAsync()
+                  $Completed = $Process.WaitForExit(30000)
+                  if (-not $Completed) {
+                      $Process.Kill($true)
+                      if (-not $Process.WaitForExit(5000)) { throw 'Owned observer cleanup unconfirmed.' }
+                  }
+                  $Text = $Stdout.GetAwaiter().GetResult().Replace([string][char]0, '').Trim()
+                  $ErrorText = $Stderr.GetAwaiter().GetResult().Replace([string][char]0, '').Trim()
+                  if ($Text.Length -gt 32768 -or $ErrorText.Length -gt 32768) { throw 'Observer output bound exceeded.' }
+                  return [ordered]@{ arguments=$CommandArguments; exitCode=$Process.ExitCode;
+                      deadlineExceeded=(-not $Completed); seconds=[math]::Round($Timer.Elapsed.TotalSeconds,3);
+                      stdout=$Text; stderr=$ErrorText; observerReaped=$true }
+              } finally { $Process.Dispose() }
+          }
+          $Os = Get-CimInstance Win32_OperatingSystem
+          $Computer = Get-CimInstance Win32_ComputerSystem
+          $Report = [ordered]@{
+              schemaVersion='latent.dev.hosted-platform-preflight.v1'; passed=$false;
+              observedUtc=[DateTime]::UtcNow.ToString('o'); sourceCommit=$env:GITHUB_SHA;
+              runnerImage=$env:ImageOS; runnerImageVersion=$env:ImageVersion;
+              osVersion=$Os.Version; osBuild=$Os.BuildNumber; architecture=$Os.OSArchitecture;
+              hypervisorPresent=$Computer.HypervisorPresent;
+              freeDiskBytes=(Get-PSDrive -Name C).Free;
+              sourceCheckoutUsed=$false; runtimeCompiled=$false; candidateInstalled=$false;
+              qualificationComplete=$false; observations=[ordered]@{};
+              cleanup='observers-reaped-system-environment-left-to-ephemeral-runner-disposal'
+          }
+          try {
+              $Report.observations.version = Observe-Wsl @('--version')
+              $Report.observations.status = Observe-Wsl @('--status')
+              $Report.observations.distributions = Observe-Wsl @('--list','--verbose')
+              $Guest = Observe-Wsl @('--system','--exec','uname','-s','-r','-m')
+              $Report.observations.systemGuest = $Guest
+              if ($Guest.deadlineExceeded -or $Guest.exitCode -ne 0 -or
+                  $Guest.stdout -notmatch '^Linux (\d+)\.(\d+)\.[^ ]+ x86_64$') {
+                  throw 'Actual x86-64 WSL2 system environment was not observed.'
+              }
+              if ([int]$Matches[1] -lt 6 -or ([int]$Matches[1] -eq 6 -and [int]$Matches[2] -lt 8)) {
+                  throw 'Observed WSL2 kernel is below the runtime minimum.'
+              }
+              $Report.passed = $true
+          } finally {
+              $Report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $Output 'observation.json') -Encoding utf8
+          }
+          Write-Output 'Actual hosted WSL2 preflight passed; packaged workflow qualification remains separate.'
+      - name: Retain the bounded host observation including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: developer-platform-preflight-${{ github.sha }}
+          path: ${{ runner.temp }}/developer-platform-preflight/
+          if-no-files-found: error
+          retention-days: 7
