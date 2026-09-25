@@ -23,7 +23,7 @@ on:
       platform:
         description: Fresh platform schedule to execute with the approved candidates
         type: choice
-        options: [all, windows, linux]
+        options: [all, windows, windows-recovery, linux]
         default: all
         required: true
   push:
@@ -85,7 +85,7 @@ jobs:
   windows:
     name: Actual packaged Windows and WSL2 schedule
     needs: support
-    if: inputs.platform == 'all' || inputs.platform == 'windows'
+    if: inputs.platform == 'all' || inputs.platform == 'windows' || inputs.platform == 'windows-recovery'
     runs-on: windows-2025
     timeout-minutes: 150
     steps:
@@ -132,6 +132,7 @@ jobs:
           $Selection.faultProbe = Join-Path $Support 'dev_node_fault_probe.py'
           $Selection | ConvertTo-Json -Depth 15 | Set-Content (Join-Path $Support 'inputs.json') -Encoding utf8
       - name: Exercise packaged frontend with host SDKs and Python absent from its PATH
+        if: inputs.platform != 'windows-recovery'
         shell: pwsh
         run: |
           $Support = Join-Path $env:RUNNER_TEMP 'packaged-support'
@@ -139,6 +140,15 @@ jobs:
           Set-Location $Support
           python -I -B dev_packaged_probe.py --inputs (Join-Path $Support 'inputs.json') --output $Observation
           if ($LASTEXITCODE -ne 0) { throw 'Packaged schedule failed; retain the original attempt.' }
+      - name: Observe actual receipt expiry and conflicting actors without replay
+        if: inputs.platform == 'all' || inputs.platform == 'windows-recovery'
+        shell: pwsh
+        run: |
+          $Support = Join-Path $env:RUNNER_TEMP 'packaged-support'
+          $Observation = Join-Path $env:RUNNER_TEMP 'packaged-recovery'
+          Set-Location $Support
+          python -I -B dev_packaged_recovery_windows.py --inputs (Join-Path $Support 'inputs.json') --output $Observation
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged recovery failed; retain the original operation intent.' }
       - name: Retain bounded public success or failure receipts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -146,6 +156,7 @@ jobs:
           name: packaged-windows-observation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/packaged-observation/observation.json
+            ${{ runner.temp }}/packaged-recovery/observation.json
             ${{ runner.temp }}/packaged-support/selection.json
           if-no-files-found: error
           retention-days: 7

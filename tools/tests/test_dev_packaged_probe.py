@@ -161,6 +161,51 @@ class PackagedProbe(unittest.TestCase):
         with self.assertRaises(ProbeFailure):
             require_same_artifacts(node, {**portable, 'artifacts': {**shared, 'unexpected': 'not-exported'}})
 
+    def test_uncertain_recovery_is_preserved_and_never_accepted_as_success(self):
+        from tools.dev_packaged_windows import Frontend
+        report = {'commands': []}
+        frontend = Frontend(Path(sys.executable), self.root, report)
+        code = 'original-operation-unknown-or-expired-no-replay'
+        response = {'schemaVersion': 'latent.dev.result.v1', 'code': code, 'uncertain': True}
+        def selected(value, status):
+            frontend.command = lambda *_: Command([sys.executable, '-I', '-B', '-c',
+                'import sys;print(' + repr(json.dumps(value)) + ');sys.exit(' + str(status) + ')'],
+                self.root, environment(self.root))
+        selected(response, 5)
+        with self.assertRaisesRegex(ProbeFailure, 'frontend-command-failed-recover'):
+            frontend.call('recover')
+        self.assertEqual(frontend.call('recover', expected_uncertain={code}), response)
+        for value, status in ((response, 0), ({**response, 'uncertain': False}, 5),
+                              ({**response, 'code': 'unrelated-transport-error'}, 5)):
+            selected(value, status)
+            with self.assertRaisesRegex(ProbeFailure, 'expected-uncertain-outcome-missing'):
+                frontend.call('recover', expected_uncertain={code})
+        self.assertEqual(len(report['commands']), 5)
+
+    def test_second_recovery_accepts_status_metadata_without_replaying(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.dev_packaged_recovery import recover
+        pending = {'id': 'original-operation', 'kind': 'release'}
+        journal = {'pending': None, 'history': [pending]}
+        result = {'outcomeKnown': True, 'category': 'success', 'data': {'receipt': {'operationId': pending['id']}}}
+        responses = iter(({'code': 'recover-original-operation-before-new-mutation'}, result,
+                          {'state': 'no-pending-operation', 'workflow': {'pending': None}}))
+        calls = []
+        def call(*args, **kwargs):
+            calls.append((args, kwargs))
+            return next(responses)
+        with patch('tools.dev_packaged_recovery.observe', side_effect=[{'pending': pending}, journal, journal]):
+            observed = recover(SimpleNamespace(call=call), {'workspace': 'test-packaged-rust'}, {'pending': pending})
+        self.assertFalse(observed['effectReplay'])
+        self.assertEqual([args[0] for args, _ in calls], ['deploy', 'recover', 'recover'])
+        self.assertIn('expected_uncertain', calls[0][1])
+        with patch('tools.dev_packaged_recovery.observe', side_effect=[{'pending': pending}, journal,
+                   {'pending': None, 'history': [pending, pending]}]):
+            responses = iter(({}, result, {'state': 'no-pending-operation'}))
+            with self.assertRaisesRegex(ProbeFailure, 'second-recovery-replayed-or-changed-journal'):
+                recover(SimpleNamespace(call=call), {'workspace': 'test-packaged-rust'}, {'pending': pending})
+
     def test_staged_conductors_load_without_source_checkout_imports(self):
         from tools.prepare_dev_packaged_probe import CONDUCTORS, ROOT
         for name in CONDUCTORS:
@@ -230,6 +275,28 @@ class PackagedProbe(unittest.TestCase):
             finally:
                 path.write_bytes(original)
 
+    def test_modified_recovery_probe_cannot_start_a_guest_command(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.dev_packaged_authority import call
+        from tools.dev_packaged_process import digest
+        workspace = self.root / 'test-packaged-rust-expiry'
+        workspace.mkdir()
+        helper_sha = 'sha256:' + '1' * 64
+        distribution = 'LSF-Dev-' + '2' * 16
+        (workspace / 'backend.json').write_text(json.dumps({'kind': 'wsl2', 'helperSha256': helper_sha,
+                                                           'distribution': distribution}))
+        source = self.root / 'dev_packaged_recovery_guest.py'
+        source.write_bytes(b'raise AssertionError("must never execute")\n')
+        config = {'faultProbe': str(self.root / 'dev_node_fault_probe.py'), 'recoveryProbeSha256': digest(source)}
+        api = SimpleNamespace(state=self.root, report={'commands': [], 'provision': {'distribution': distribution}})
+        item = {'workspace': workspace.name, 'helperSha256': helper_sha}
+        source.write_bytes(source.read_bytes() + b'# changed after approval\n')
+        with patch('tools.dev_packaged_authority.Command') as spawn:
+            with self.assertRaisesRegex(ProbeFailure, 'separate-reviewed-recovery-conductor-required'):
+                call(api, config, item, 'configure-expiry')
+            spawn.assert_not_called()
+
     @unittest.skipUnless(sys.platform == 'linux', 'actual unprivileged Linux helper authentication required')
     def test_watch_guest_rejects_changed_installed_helper_before_import(self):
         from tools.prepare_dev_packaged_probe import ROOT
@@ -241,6 +308,25 @@ class PackagedProbe(unittest.TestCase):
         child = Command([sys.executable, '-I', '-B', ROOT / 'tools/dev_packaged_watch_guest.py',
             '--helper', helper, '--helper-sha256', 'sha256:' + '0' * 64,
             '--workspace', 'test-packaged-rust-watch', '--mode', 'retention'],
+            self.root, environment(self.root), input_bytes=b'{}')
+        try:
+            self.assertEqual(child.finish(5), 1)
+            self.assertIn(b'installed-helper-digest-mismatch', child.raw(1))
+            self.assertFalse(marker.exists())
+        finally:
+            child.abort_controller()
+
+    @unittest.skipUnless(sys.platform == 'linux', 'actual unprivileged Linux helper authentication required')
+    def test_recovery_guest_rejects_changed_installed_helper_before_import(self):
+        from tools.prepare_dev_packaged_probe import ROOT
+        helper = self.root / 'helper.pyz'
+        marker = self.root / 'unexpected-import'
+        with zipfile.ZipFile(helper, 'w') as archive:
+            archive.writestr('tools/__init__.py', 'from pathlib import Path;Path(' + repr(str(marker)) + ').touch()')
+        helper.chmod(0o600)
+        child = Command([sys.executable, '-I', '-B', ROOT / 'tools/dev_packaged_recovery_guest.py',
+            '--helper', helper, '--helper-sha256', 'sha256:' + '0' * 64,
+            '--workspace', 'test-packaged-rust-expiry', '--mode', 'configure-expiry'],
             self.root, environment(self.root), input_bytes=b'{}')
         try:
             self.assertEqual(child.finish(5), 1)

@@ -172,6 +172,29 @@ require the independently approved candidate campaign.
 This tests the terminal container path on Linux; it is separate from a rendered
 editor walkthrough and from the earlier Windows Docker Desktop source receipt.
 
+The `windows-recovery` selection runs a separate installed-package campaign in
+a fresh owned WSL distribution. Its two Rust workspaces have distinct Linux
+users and node identities. One configures the node's supported three-second
+terminal retention before its first start, discards one real successful Invoke
+response, observes its original terminal receipt, and waits for actual expiry.
+The other rejects wrong-token and wrong-tenant requests and observes a separate
+actor's committed deployment. The public frontend must preserve that actor's
+generation and retain the original UNKNOWN operation intent. Both unresolved
+workspaces must reject new mutations without replay. While the first workspace
+is unresolved, the second must still invoke its original deployment.
+
+The expiry observer verifies the installed helper's digest before importing it
+and uses the separately hashed response-loss conductor. It does not change the
+host clock or edit receipt storage. Recovery still exits with an uncertain
+result; a successful qualification receipt means the expected uncertainty and
+no-replay assertions passed. The public shutdown reaps both owned nodes, then
+only the recorded owned distribution is stopped and its registration checked.
+Private original intents remain until runner teardown. The `all` selection
+includes this campaign after the ordinary Windows/WSL and native schedule.
+Ordinary lost-response recovery additionally checks blocked new mutations and
+a second public recovery with no journal change. These assertions require a
+completed installed-package run before being counted as qualification evidence.
+
 Each command has bounded output and a deadline. The schedule admits at most
 360 completed commands per backend, reserving the last 24 for status, recovery
 and cleanup, 4 MiB stdout and 256 KiB stderr per command, 1,800 seconds

@@ -42,7 +42,9 @@ class Frontend:
         require(time.monotonic() < self.deadline, 'qualification-schedule-deadline')
         return Command([self.executable, '--state-root', self.state, 'dev', *arguments], self.root, self.env)
 
-    def call(self, *arguments, timeout=90, rejection=None, expected_test_failure=False):
+    def call(self, *arguments, timeout=90, rejection=None, expected_test_failure=False, expected_uncertain=None):
+        require(sum((rejection is not None, expected_test_failure, expected_uncertain is not None)) <= 1,
+                'one-explicit-frontend-outcome-expectation')
         process = self.command(*arguments)
         receipt = {}
         try:
@@ -62,6 +64,10 @@ class Frontend:
             if rejection is not None:
                 require(code == 2 and result.get('code') in rejection and result.get('uncertain') is False,
                         'expected-certain-rejection-missing')
+                return result
+            if expected_uncertain is not None:
+                require(code == 5 and result.get('uncertain') is True and result.get('code') in expected_uncertain,
+                        'expected-uncertain-outcome-missing')
                 return result
             if expected_test_failure:
                 require(arguments[0] == 'test' and code == 3 and result.get('code') == 'required-tests-failed'
@@ -169,11 +175,14 @@ def inputs(api, config, language, index):
 
 
 def prepare(api, config, language, index, helper_sha, *, backend_config=None, project_parent=None, case_set=None,
-            watch_project=False):
+            watch_project=False, recovery_case=None):
     require(case_set in {None, 'failure', 'clock'} and (case_set is None or language == 'rust'), 'closed-authored-case-set')
     require(type(watch_project) is bool and (not watch_project or language == 'rust' and case_set is None),
             'trusted-local-watch-requires-separate-provider-free-rust-project')
-    suffix = '-watch' if watch_project else '' if case_set is None else '-' + case_set
+    require(recovery_case in {None, 'expiry', 'unknown'}
+        and (recovery_case is None or language == 'rust' and case_set is None and not watch_project),
+        'closed-separate-recovery-project')
+    suffix = '-watch' if watch_project else '-' + recovery_case if recovery_case else '' if case_set is None else '-' + case_set
     workspace = 'test-packaged-' + language + suffix
     if backend_config is None:
         owned = api.call('wsl-workspace', '--workspace', workspace, '--helper-sha256', helper_sha)
@@ -215,7 +224,7 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
             from dev_watch_case_inputs import edit, populate
         populate(project, read_json(project / 'latent.project.json'))
     security = {}
-    if language == 'rust' and case_set is None and not watch_project:
+    if language == 'rust' and case_set is None and not watch_project and recovery_case is None:
         if __package__:
             from .dev_packaged_security import descriptors, source_paths
         else:
@@ -226,7 +235,7 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
         security['crlfSourceSha256'] = digest(source)
     api.call('build', '--workspace', workspace, '--project', project, rejection={'workspace-recipe-trust-required'})
     api.call('trust', '--workspace', workspace, '--project', project)
-    if language == 'rust' and case_set is None and not watch_project:
+    if language == 'rust' and case_set is None and not watch_project and recovery_case is None:
         security['sourcePaths'] = source_paths(api, workspace, project)
     warm_b = None
     if watch_project:
@@ -236,6 +245,14 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
         warm_b = api.call('build', '--workspace', workspace, '--project', project, timeout=1200)
         edit(project, 101)
     built = api.call('build', '--workspace', workspace, '--project', project, timeout=1200)
+    retention = None
+    if recovery_case == 'expiry':
+        if __package__:
+            from .dev_packaged_authority import call as recovery_observation
+        else:
+            from dev_packaged_authority import call as recovery_observation
+        retention = recovery_observation(api, config, {'workspace': workspace, 'user': owned['user'],
+            'helperSha256': helper_sha}, 'configure-expiry')
     fixtures = ['--fixtures', project / 'tests/clock-zero.json'] if case_set == 'clock' else []
     admission = 'trusted-local' if watch_project else 'signed-fixture'
     profile = api.call('prepare-test', '--workspace', workspace, '--consent-test-fixtures',
@@ -254,6 +271,8 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None, pr
             'build': built, 'profile': profile, 'tools': selected, 'authoredSource': authored, 'sourceRejections': security}
     if watch_project:
         result['watchWarmB'] = warm_b
+    if retention is not None:
+        result['receiptRetention'] = retention
     return result
 
 
