@@ -134,9 +134,9 @@ impl CustomMetricRegistry {
         input: CustomMetricInput<'_>,
     ) -> Result<MetricSelection, E> {
         self.live()?;
-        if !config::token(source.tenant, 128)
-            || !config::token(source.service, 128)
-            || !config::token(source.revision, 128)
+        if !config::source_identity(source.tenant)
+            || !config::source_identity(source.service)
+            || !config::source_identity(source.revision)
             || !config::name(input.name)
             || !config::token(input.unit, 16)
             || !input.value.is_finite()
@@ -234,7 +234,7 @@ impl CustomMetricRegistry {
         let descriptor = &self.config.tenants[selected.tenant].metrics[selected.descriptor];
         if ![source.tenant, source.service, source.revision]
             .iter()
-            .all(|s| config::token(s, 128))
+            .all(|s| config::source_identity(s))
             || selection_digest(&self.digest, source, &descriptor.name, selected.labels)
                 != selected.digest
         {

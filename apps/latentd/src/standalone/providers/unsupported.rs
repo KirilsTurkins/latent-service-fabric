@@ -1,13 +1,12 @@
 use std::{sync::Arc, time::Instant};
 
 use latent_artifacts::DirectoryArtifactRepository;
-use latent_audit::AuditHandle;
 use latent_capabilities::broker::ActivationCapabilityRuntime;
 use latent_control_store::DirectoryDeploymentRepository;
-use latent_core::{ActivationClock, PlatformError, PlatformErrorCode};
+use latent_core::{PlatformError, PlatformErrorCode};
 use latent_policy::capability::PolicyStore;
 
-use super::{ProviderDescriptor, ProviderShutdownReport};
+use super::{ProviderDescriptor, ProviderServices, ProviderShutdownReport};
 use crate::config::NodeSettings;
 
 pub(in crate::standalone) struct ProviderRuntime {
@@ -20,15 +19,20 @@ impl ProviderRuntime {
         _artifacts: &Arc<DirectoryArtifactRepository>,
         _deployments: &Arc<DirectoryDeploymentRepository>,
         _policies: Arc<PolicyStore>,
-        _audit: AuditHandle,
-        _clock: Arc<dyn ActivationClock>,
-        _control: tokio::runtime::Handle,
+        _services: ProviderServices,
     ) -> Result<Self, PlatformError> {
         Err(unsupported())
     }
 
     pub fn descriptors(&self) -> &[ProviderDescriptor] {
         &[]
+    }
+
+    pub fn metric_observation(
+        &self,
+        _sink: &latent_telemetry::StructuredLocalSink,
+    ) -> Result<Option<super::MetricObservation>, PlatformError> {
+        Err(unsupported())
     }
 
     pub fn retire(&self) {

@@ -18,6 +18,8 @@ pub struct ShutdownReport {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub providers: Option<super::ProviderShutdownReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<super::providers::MetricObservation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub http: Option<super::http::HttpSnapshot>,
     pub clean: bool,
     pub active_connections: usize,
@@ -299,6 +301,14 @@ impl StandaloneNode {
         } else if let Ok(report) = &mut report {
             report.telemetry_flushed = true;
             report.telemetry_retained_entries = self.sink.snapshot().entries;
+            if let Some(providers) = &self.providers {
+                match providers.metric_observation(&self.sink) {
+                    Ok(observation) => report.metrics = observation,
+                    Err(error) => {
+                        failure.get_or_insert(error);
+                    }
+                }
+            }
         }
         // Inventory, manager, and backend are the remaining runtime owners. Their
         // destruction precedes the factory's unique-owner shutdown barrier.
@@ -381,6 +391,7 @@ impl StandaloneNode {
             live_temporary_buffers: backend.live_temporary_buffers,
             live_cancellation_probes: backend.live_cancellation_probes,
             telemetry_retained_entries: 0,
+            metrics: None,
             telemetry_flushed: false,
             epoch_helper_joined: false,
             compiler: self.backend.compiler_snapshot(),

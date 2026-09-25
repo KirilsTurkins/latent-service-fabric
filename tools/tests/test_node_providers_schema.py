@@ -69,6 +69,21 @@ class NodeProvidersSchema(unittest.TestCase):
             changed["secrets"]["references"] = references
             self.assertFalse(VALIDATOR.is_valid(changed))
 
+    def test_metrics_preserve_the_closed_bounded_descriptor_contract(self):
+        value = self.example()
+        value["metrics"] = {"identity": {"id": "metrics", "tenant": "examples", "service": "metric-host", "epoch": 1},
+            "descriptors": [{"name": "dev.calls", "kind": "counter", "unit": "1", "labels": [], "histogramUpperBounds": []}]}
+        VALIDATOR.validate(value)
+        for field, invalid in (("name", "LATENT.internal"), ("kind", "unknown"), ("histogramUpperBounds", [1]),
+                               ("labels", [{"key": "region", "values": ["east", "east"]}]), ("exporter", "https://ambient")):
+            changed = copy.deepcopy(value)
+            changed["metrics"]["descriptors"][0][field] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        for descriptors in ([], value["metrics"]["descriptors"] * 17):
+            changed = copy.deepcopy(value)
+            changed["metrics"]["descriptors"] = descriptors
+            self.assertFalse(VALIDATOR.is_valid(changed))
+
 
 if __name__ == "__main__":
     unittest.main()

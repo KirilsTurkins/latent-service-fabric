@@ -12,8 +12,9 @@ def selection(root, descriptor, publication, execution, installed, client, journ
     operators = [item for item in node["credentials"] if item["tenant"] == descriptor["tenant"] and item["role"] == "operator"]
     require(len(operators) == 1, "test-requires-exact-scoped-operator")
     from tools.guest_runtime_profiles import RUNTIME
-    from . import blob_fixture, http_fixture, secret_fixture
-    profiles = {**RUNTIME, "http": http_fixture.PROVIDER, "blob": blob_fixture.PROVIDER, "secrets": secret_fixture.PROVIDER}
+    from . import blob_fixture, http_fixture, metric_fixture, secret_fixture
+    profiles = {**RUNTIME, "http": http_fixture.PROVIDER, "blob": blob_fixture.PROVIDER,
+                "secrets": secret_fixture.PROVIDER, "metrics": metric_fixture.PROVIDER}
     grants = []
     for capability in sorted(execution["grants"]):
         name, entry = by_capability[capability]
@@ -45,6 +46,10 @@ def selection(root, descriptor, publication, execution, installed, client, journ
             policy["rules"][0].update(resources={"kind": "secrets", "references": [
                 entry["name"] for entry in fixture["references"]]},
                 ceiling={"operations": 8, "inputBytes": 4096, "outputBytes": 32768, "wallTimeMillis": 5000})
+        if kind == "telemetry":
+            fixture = metric_fixture.validate(state.load(root, "test-profile.json")["fixtures"]["metrics"])
+            policy["rules"][0].update(resources={"kind": "telemetry", "names": [entry["name"] for entry in fixture]},
+                ceiling={"operations": 1, "inputBytes": 32768, "outputBytes": 1, "wallTimeMillis": 5000})
         identity = "dev-runtime-" + digest(encode(policy))[7:39]
         policy_operations.apply(root, client, journal, identity, "policy", policy)
         grants.append({"capability": capability, "policy": identity})

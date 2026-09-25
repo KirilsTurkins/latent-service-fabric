@@ -4520,14 +4520,15 @@
         "pipeline::tests::redacted_short_strings_with_large_retained_allocations_are_rejected",
         "pipeline::tests::shutdown_deadline_aborts_export_and_closes_retained_handles",
         "pipeline::tests::sink_errors_and_constructor_poll_and_drop_panics_are_isolated",
-        "pipeline::tests::strict_mode_reports_full_invalid_and_closed_without_waiting"
+        "pipeline::tests::strict_mode_reports_full_invalid_and_closed_without_waiting",
+        "custom::registry::tests::validation::real_node_revision_ids_preserve_exact_source_attributes_without_relaxing_guest_names"
       ],
       "expectedIgnored": [],
       "id": "latent-telemetry.lib.latent-telemetry",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-telemetry/Cargo.toml",
-      "minimumCases": 57,
+      "minimumCases": 58,
       "mode": "libtest",
       "package": "latent-telemetry",
       "platforms": [
@@ -7883,7 +7884,11 @@
         "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication",
         "config::tests::providers::secret_input_rejects_plaintext_environment_and_unknown_authority",
         "config::tests::providers::secret_bindings_require_the_actual_provider_service_and_tenant",
-        "config::tests::providers::secret_paths_and_reference_limits_are_validated_without_loading_values"
+        "config::tests::providers::secret_paths_and_reference_limits_are_validated_without_loading_values",
+        "config::tests::metrics::metrics_contracts_require_a_matching_configured_provider",
+        "config::tests::metrics::metrics_descriptor_validation_starts_no_exporter_and_rejects_reserved_unbounded_or_ambiguous_inputs",
+        "standalone::start::tests::telemetry::provider_bootstrap_transfers_the_same_exporter_to_the_running_node",
+        "standalone::start::tests::telemetry::changed_exporter_limits_reject_composition_and_join_the_bootstrap_owner"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -7946,7 +7951,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 225,
+      "minimumCases": 229,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

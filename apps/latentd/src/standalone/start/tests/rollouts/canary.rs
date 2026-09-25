@@ -331,7 +331,7 @@ pub(super) async fn invoke(endpoint: &str, activation: String) -> invocation::In
 async fn canary_compose_rejects_a_different_clock_before_activation_services() {
     let directory = TempDir::new().unwrap();
     let mut settings = configured(&directory);
-    let catalogs = Catalogs::open_with_control_and_clock(
+    let mut catalogs = Catalogs::open_with_control_and_clock(
         &settings,
         &tokio::runtime::Handle::current(),
         Arc::new(Clock::new()),
@@ -341,7 +341,7 @@ async fn canary_compose_rejects_a_different_clock_before_activation_services() {
     assert_eq!(
         super::super::super::super::StandaloneNode::compose(
             &mut settings,
-            &catalogs,
+            &mut catalogs,
             Arc::new(Clock::new())
         )
         .err()

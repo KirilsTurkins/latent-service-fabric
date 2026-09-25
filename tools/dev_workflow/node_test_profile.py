@@ -5,7 +5,7 @@ import copy
 from pathlib import Path
 
 from tools.guest_runtime_profiles import profiles
-from . import blob_fixture, paths, secret_fixture, state
+from . import blob_fixture, metric_fixture, paths, secret_fixture, state
 from .common import decode, digest, encode, require
 
 
@@ -36,6 +36,8 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
         if "secrets" in fixtures:
             require(root is not None, "secret-fixture-workspace-required")
             selected["secrets"] = secret_fixture.PROVIDER
+        if "metrics" in fixtures:
+            selected["metrics"] = metric_fixture.PROVIDER
     value["budgetProfile"] = {"mode": "phase3", "maximumOutboundRequests": 8,
                               "maximumBlobReadBytes": 65536, "maximumBlobWriteBytes": 65536}
     value["capabilityPolicies"] = {"formatVersion": 1, "maximumControlJobs": 2,
@@ -49,7 +51,8 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
     if selected:
         value["providers"] = {"formatVersion": 1, "bindings": []}
         for name, (capability, _profile, _operation, _kind) in selected.items():
-            provider_service = {"blob": blob_fixture.SERVICE, "secrets": secret_fixture.SERVICE}.get(name, "runtime-host")
+            provider_service = {"blob": blob_fixture.SERVICE, "secrets": secret_fixture.SERVICE,
+                                "metrics": metric_fixture.SERVICE}.get(name, "runtime-host")
             value["providers"][name] = {"identity": {"id": name, "tenant": descriptor["tenant"],
                 "service": provider_service, "epoch": 1}}
             if name == "http":
@@ -58,6 +61,8 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
                 value["providers"][name].update(blob_fixture.validate(fixtures["blob"]))
             if name == "secrets":
                 value["providers"][name].update(secret_fixture.installation(root, fixtures["secrets"]))
+            if name == "metrics":
+                value["providers"][name]["descriptors"] = metric_fixture.validate(fixtures["metrics"])
             value["providers"]["bindings"].append({"name": "dev-" + name,
                 "tenant": descriptor["tenant"], "consumerService": descriptor["service"],
                 "providerService": provider_service, "contract": capability, "providerBinding": "dev-" + name})
@@ -133,7 +138,8 @@ def installed(root: Path, descriptor: dict, status: dict) -> dict:
         rows = [entry for entry in actual if entry.get("id") == name]
         require(len(rows) == 1, "test-provider-installation-identity")
         entry = rows[0]
-        provider_service = {"blob": blob_fixture.SERVICE, "secrets": secret_fixture.SERVICE}.get(name, "runtime-host")
+        provider_service = {"blob": blob_fixture.SERVICE, "secrets": secret_fixture.SERVICE,
+                            "metrics": metric_fixture.SERVICE}.get(name, "runtime-host")
         require(entry.get("tenant") == descriptor["tenant"] and entry.get("service") == provider_service
                 and entry.get("capability") == capability and entry.get("profile") == provider_profile
                 and entry.get("configurationEpoch") == "1", "test-provider-installation-scope")

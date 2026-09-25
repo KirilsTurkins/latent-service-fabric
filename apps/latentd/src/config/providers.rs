@@ -10,6 +10,9 @@ use super::{invalid, NodeConfig};
 #[path = "providers/secrets.rs"]
 mod secrets;
 pub use secrets::SecretInstallation;
+#[path = "providers/metrics.rs"]
+mod metrics;
+pub use metrics::MetricsInstallation;
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -21,6 +24,8 @@ pub struct ConfiguredProviders {
     pub blob: Option<BlobInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub secrets: Option<SecretInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub metrics: Option<MetricsInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub clock_monotonic: Option<ScalarInstallation>,
     #[serde(default, deserialize_with = "present")]
@@ -108,6 +113,7 @@ pub(super) fn derive(
         || (providers.http.is_none()
             && providers.blob.is_none()
             && providers.secrets.is_none()
+            && providers.metrics.is_none()
             && providers.clock_monotonic.is_none()
             && providers.clock_wall.is_none()
             && providers.random.is_none())
@@ -172,6 +178,9 @@ pub(super) fn derive(
             }
         }
     }
+    if let Some(metrics) = &providers.metrics {
+        metrics.validate()?;
+    }
     for scalar in [
         &providers.clock_monotonic,
         &providers.clock_wall,
@@ -218,6 +227,7 @@ impl ConfiguredProviders {
                 "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
                 "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),
+                "latent:telemetry/custom@0.1.0" => self.metrics.as_ref().map(|v| &v.identity),
                 "latent:clock/monotonic@0.1.0" => self.clock_monotonic.as_ref().map(|v| &v.identity),
                 "latent:clock/wall@0.1.0" => self.clock_wall.as_ref().map(|v| &v.identity),
                 "latent:random/random@0.1.0" => self.random.as_ref().map(|v| &v.identity),

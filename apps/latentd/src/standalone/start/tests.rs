@@ -22,6 +22,8 @@ mod policies;
 mod provider_startup;
 #[cfg(target_os = "linux")]
 mod rollouts;
+#[cfg(target_os = "linux")]
+mod telemetry;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod trust_currentness;
 
@@ -72,13 +74,17 @@ async fn local_and_observed_open_reject_enforced_mode_before_creating_storage() 
 async fn compose_rejects_local_catalogs_under_enforced_settings() {
     let directory = TempDir::new().unwrap();
     let mut settings = settings(&directory);
-    let catalogs = Catalogs::open(&settings).await.unwrap();
+    let mut catalogs = Catalogs::open(&settings).await.unwrap();
     enforce(&mut settings);
     assert_eq!(
-        super::StandaloneNode::compose(&mut settings, &catalogs, Arc::new(SystemActivationClock))
-            .err()
-            .unwrap()
-            .code,
+        super::StandaloneNode::compose(
+            &mut settings,
+            &mut catalogs,
+            Arc::new(SystemActivationClock)
+        )
+        .err()
+        .unwrap()
+        .code,
         PlatformErrorCode::PermissionDenied
     );
 }
@@ -95,10 +101,14 @@ async fn compose_rejects_mixed_local_catalog_owners_before_starting_services() {
     let other = Catalogs::open(&other_settings).await.unwrap();
     catalogs.deployments = other.deployments;
     assert_eq!(
-        super::StandaloneNode::compose(&mut settings, &catalogs, Arc::new(SystemActivationClock))
-            .err()
-            .unwrap()
-            .code,
+        super::StandaloneNode::compose(
+            &mut settings,
+            &mut catalogs,
+            Arc::new(SystemActivationClock)
+        )
+        .err()
+        .unwrap()
+        .code,
         PlatformErrorCode::PermissionDenied
     );
 }
