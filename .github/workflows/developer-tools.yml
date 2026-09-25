@@ -4,7 +4,7 @@ on:
   push:
     # Qualification consumes separately approved candidates; conductor changes
     # have their own contracts and must not rebuild six compiler distributions.
-    branches: ['feat/559-*', '!feat/559-packaged-qualification']
+    branches: ['feat/559-*', '!feat/559-preflight-ready', '!feat/559-packaged-qualification']
     paths-ignore:
       - .github/workflows/developer-platform-preflight.yml
       - .github/workflows/developer-packaged-qualification.yml
