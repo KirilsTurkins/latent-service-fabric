@@ -35,6 +35,13 @@ and exclusion of an authored `.env` file from synchronized snapshots. Restart
 uses the retained deployment without a new publication. Purge preserves every
 recorded authored file by digest.
 
+The retained Rust workspace also runs the packaged watch command. The conductor
+edits the greeting from A to B, waits for B's real deployment and focused test,
+then introduces a compiler error and invokes the still-selected B publication.
+It explicitly restores valid B source, reuses its checked build, and restarts
+the retained B deployment. This author action is recorded separately from any
+automatic rollback, which the controller does not perform.
+
 The conductor exports only the three public build files in bounded chunks from
 their exact owned build attempt, rechecking each complete file's recorded
 digest. After all nodes and the owned WSL distribution are purged, it executes
@@ -60,6 +67,9 @@ newcomer/editor schedules still need their actual packaged evidence before
 issue #569 or epic #559 can close. The successful
 [hosted WSL preflight](hosted-wsl-preflight-observation.json) proves that the
 Windows runner can execute WSL2; it does not supply those missing receipts.
+The [final source campaign](final-source-campaign-observation.json) records the
+separate successful isolation, watch and recovery source probes and their failed
+predecessors. Those observations likewise do not replace installed-candidate runs.
 
 The seven fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and

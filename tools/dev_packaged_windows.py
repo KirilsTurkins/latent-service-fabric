@@ -1,24 +1,24 @@
 """Actual packaged frontend/WSL schedule; no source-built helper or node imports."""
 from __future__ import annotations
 
-import csv
 import hashlib
-import io
 import json
 import os
 from pathlib import Path
 import platform
-import re
 import shutil
+import sys
 import time
 
 if __package__:
     from .dev_packaged_bootstrap import authenticate, extract
     from .dev_packaged_guest import observe, export
+    from .dev_packaged_watch import run as watch_schedule
     from .dev_packaged_process import Command, ProbeFailure, digest, environment, read_json, require, write_json
 else:
     from dev_packaged_bootstrap import authenticate, extract
     from dev_packaged_guest import observe, export
+    from dev_packaged_watch import run as watch_schedule
     from dev_packaged_process import Command, ProbeFailure, digest, environment, read_json, require, write_json
 
 LANGUAGES = ('rust', 'c', 'java', 'dotnet', 'go', 'typescript')
@@ -58,9 +58,12 @@ class Frontend:
             finally:
                 self.report['commands'].append({**process.receipt(), **receipt})
 
-    def start(self, workspace):
+    def start(self, workspace, *, project=None, selection=None):
         require(workspace not in self.running, 'foreground-already-owned')
-        process = self.command('up', '--workspace', workspace)
+        arguments = ['up', '--workspace', workspace]
+        if project is not None:
+            arguments.extend(['--watch', '--project', project, '--test-select', selection])
+        process = self.command(*arguments)
         self.running[workspace] = process
         ready = process.until(lambda event: event.get('event') == 'ready', 210)['result']
         require(ready.get('state') == 'ready', 'authenticated-readiness-required')
@@ -80,21 +83,11 @@ class Frontend:
 
 
 def make_private(root):
+    # CPython 3.13 creates the private Windows DACL atomically for mode 0700,
+    # exactly as the shipped frontend does. Additional icacls grants can
+    # introduce account aliases rejected by its deliberately closed policy.
+    require(sys.version_info >= (3, 13), 'conductor-python-3-13-required-for-private-windows-creation')
     root.mkdir(mode=0o700)
-    command = Command([str(Path(os.environ['SystemRoot']) / 'System32/whoami.exe'), '/user', '/fo', 'csv', '/nh'],
-                      root, environment(root))
-    try:
-        require(command.finish(10) == 0, 'windows-owner-observation')
-        sid = next(csv.reader(io.StringIO(command.raw().decode('utf-8', errors='replace'))))[1]
-        require(re.fullmatch(r'S-1-\d+(?:-\d+){1,15}', sid), 'windows-owner-sid')
-    finally:
-        command.abort_controller()
-    command = Command([str(Path(os.environ['SystemRoot']) / 'System32/icacls.exe'), root, '/inheritance:r',
-        '/grant:r', f'*{sid}:(OI)(CI)F', '*S-1-5-18:(OI)(CI)F', '*S-1-5-32-544:(OI)(CI)F'], root, environment(root))
-    try:
-        require(command.finish(10) == 0, 'private-conductor-directory-acl')
-    finally:
-        command.abort_controller()
 
 
 def acquire(api, config, directory, target, *, rejection=None):
@@ -219,6 +212,7 @@ def run(config, output):
             item = report['languages'][language] = prepare(api, config, language, index, inventory['helperSha256'])
             verify_language(api, item)
             if retained is None:
+                watch_schedule(api, item)
                 retained = item
                 continue
             require(item['user'] != retained['user'], 'separate-wsl-users-required')

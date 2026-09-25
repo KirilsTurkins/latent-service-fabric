@@ -78,10 +78,11 @@ def observe(api, item, mode, *arguments):
             api.report['commands'].append({**command.receipt(), 'purpose': 'read-only-owned-guest-observation'})
 
 
-def export(api, item):
+def export(api, item, *, suffix=''):
     project = Path(item['project'])
     descriptor = read_json(project / 'latent.project.json')
-    root = api.root / (item['workspace'] + '-public-artifacts')
+    require(suffix in {'', '-revision-b'}, 'closed-public-artifact-export-slot')
+    root = api.root / (item['workspace'] + '-public-artifacts' + suffix)
     root.mkdir(mode=0o700)
     retained = {}
     for key in ('component', 'capsule', 'contracts'):

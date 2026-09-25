@@ -82,12 +82,12 @@ class Command:
         lines = self.raw().split(b'\n')[:-1]
         return [json.loads(line) for line in lines if line.strip()]
 
-    def until(self, predicate, seconds):
+    def until(self, predicate, seconds, *, after=0):
         require(0 < seconds <= 1800, 'conductor-command-deadline-limit')
         deadline = time.monotonic() + seconds
         while True:
             require(not self.limit.is_set(), 'conductor-output-limit')
-            for event in self.events():
+            for event in self.events()[after:]:
                 if predicate(event):
                     return event
             require(self.child.poll() is None, 'foreground-ended-before-required-event')

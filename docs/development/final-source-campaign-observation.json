@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "latent.dev.source-campaign-observation.v1",
+  "sourceCommit": "36341147b1a650fbd4e472ef35e683f39c05f2ae",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36111474696/job/107995683890",
+  "publisherAuthenticatedInstallation": false,
+  "cleanHostQualification": false,
+  "qualificationComplete": false,
+  "probes": {
+    "watch": {
+      "observationSha256": "05a09fef23b231a21c6ee1f8bef6d8e276c8cd3b0777db8f09e1d597ebac3c46",
+      "schemaVersion": "latent.dev.watch-source-probe.v1",
+      "passed": true,
+      "seconds": 256.656,
+      "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained",
+      "phase": "complete",
+      "account": {
+        "cleanup": "private-intent-retained-until-runner-teardown",
+        "dedicatedUnprivilegedAccount": true,
+        "privatePasswdHome": true,
+        "purpose": "ephemeral-source-watch-probe",
+        "runnerAclChanged": false
+      }
+    },
+    "isolation": {
+      "observationSha256": "f610511cf1af081c3473ffd7548a9fa00ae78c22cb7cd8a6974a5f19c2da25cc",
+      "schemaVersion": "latent.dev.workspace-isolation-source-probe.v1",
+      "passed": true,
+      "seconds": 111.997,
+      "cleanup": "owned-nodes-reaped-private-original-intent-and-workspaces-retained",
+      "phase": "complete",
+      "account": {
+        "cleanup": "private-intent-retained-until-runner-teardown",
+        "dedicatedUnprivilegedAccount": true,
+        "privatePasswdHome": true,
+        "purpose": "ephemeral-source-isolation-probe",
+        "runnerAclChanged": false
+      }
+    },
+    "recovery": {
+      "observationSha256": "3b79e5112bc88c7648c88004df0ef59d5a24f018ffe887656d7c2e843c112b79",
+      "schemaVersion": "latent.dev.recovery-source-probe.v1",
+      "passed": true,
+      "seconds": 57.988,
+      "cleanup": "owned-processes-reaped-private-state-retained",
+      "phase": "complete",
+      "account": {
+        "cleanup": "private-intent-retained-until-runner-teardown",
+        "dedicatedUnprivilegedAccount": true,
+        "privatePasswdHome": true,
+        "purpose": "ephemeral-source-recovery-probe",
+        "runnerAclChanged": false
+      }
+    }
+  },
+  "priorFailures": [
+    {
+      "sourceCommit": "b6a333cce024dfe8c517ff3bb39a83fc9ce7c855",
+      "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36108792863/job/107987306336",
+      "code": "guest-tool-unrecorded-directory",
+      "correction": "slow-child-python-bytecode-disabled",
+      "sourceReceipt": "watch-failure-source-observation.json"
+    },
+    {
+      "kind": "qualification-conductor-only",
+      "sourceCommit": "feee0949b5a34ada27b8bd6d253184c34f01e037",
+      "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36114321031/job/108004708002",
+      "code": "windows-state-acl-too-broad",
+      "candidateInstalled": false,
+      "correction": "use-cpython-3.13-private-directory-creation-without-extra-icacls-grants",
+      "correctedCiResult": "pending"
+    }
+  ]
+}
