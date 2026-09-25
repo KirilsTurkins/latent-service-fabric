@@ -1107,5 +1107,81 @@
       "runnerAclChanged": false
     },
     "privateContainerRetained": true
+  },
+  "packagedCompilerCiFailure": {
+    "sourceCommit": "b6a333cce024dfe8c517ff3bb39a83fc9ce7c855",
+    "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36108792863/job/107987306336",
+    "observationSha256": "d1c9d85e4e209c55c286420d411e103d939bdc0aab8d3e0343c3ef5c2c24907a",
+    "observation": {
+      "schemaVersion": "latent.dev.watch-source-probe.v1",
+      "passed": false,
+      "phase": "watch",
+      "failure": "unexpected-watch-failure",
+      "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained",
+      "seconds": 193.394,
+      "retainedWorkspace": "test-watch-0b4d70"
+    },
+    "events": [
+      {
+        "event": "deployed"
+      },
+      {
+        "event": "post-deploy-tests",
+        "rollbackPerformed": false
+      },
+      {
+        "event": "deployed"
+      },
+      {
+        "event": "post-deploy-tests",
+        "rollbackPerformed": false
+      },
+      {
+        "event": "edit-failed",
+        "phase": "build",
+        "code": "guest-build-failed-last-deployment-retained",
+        "uncertain": false,
+        "rollbackPerformed": false
+      },
+      {
+        "event": "edit-failed",
+        "phase": "build",
+        "code": "build-output-is-not-component-model",
+        "uncertain": false,
+        "rollbackPerformed": false
+      },
+      {
+        "event": "build-superseded",
+        "phase": "build",
+        "code": "guest-build-superseded",
+        "uncertain": false,
+        "rollbackPerformed": false
+      },
+      {
+        "event": "edit-failed",
+        "phase": "build",
+        "code": "guest-tool-unrecorded-directory",
+        "uncertain": false,
+        "rollbackPerformed": false
+      }
+    ],
+    "finalWorkingPublication": "publication:sha256:34718ab9ce0e9232f397e859300be12e3b57d3020235c3d822a221f99769adbe",
+    "correction": "Keep bytecode generation disabled in the deliberately slow Python child, as in the parent recipe and compiler. The next build must still reject any unrecorded tool directory.",
+    "isolatedPythonBytecodeExperiment": [
+      {
+        "flags": [
+          "-I"
+        ],
+        "createdBytecodeDirectory": true
+      },
+      {
+        "flags": [
+          "-I",
+          "-B"
+        ],
+        "createdBytecodeDirectory": false
+      }
+    ],
+    "correctedCiVerification": "pending"
   }
 }
