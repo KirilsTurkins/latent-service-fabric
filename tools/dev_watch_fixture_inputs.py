@@ -5,7 +5,7 @@ from tools.dev_workflow import paths, project
 from tools.dev_workflow.common import decode, encode, require
 
 WORLD = """package examples:greeting@1.0.0;
-interface api { value: func() -> u32; spin: func() -> u32; }
+interface api { value: func() -> u32; spin: async func() -> u32; }
 world service { export api; }
 """
 COMPONENT = """#[cfg(target_arch = "wasm32")]
@@ -18,9 +18,12 @@ mod component {
             assert_eq!(ENTERED.fetch_add(1, core::sync::atomic::Ordering::Relaxed), 0);
             MARKER
         }
-        fn spin() -> u32 {
-            let mut value = std::hint::black_box(18446744073709551557u64);
-            loop { value = std::hint::black_box(value.wrapping_mul(17) / std::hint::black_box(3)); }
+        async fn spin() -> u32 {
+            // Yield through the supported component executor until the test
+            // cancels this identity. A CPU-only loop can exhaust its finite
+            // fuel before the deployment switch on a faster host. A bare
+            // pending future has no registered wakeup and traps instead.
+            loop { wit_bindgen::yield_async().await; }
         }
     }
     export!(Capsule);

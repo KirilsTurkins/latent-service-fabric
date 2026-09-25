@@ -952,6 +952,15 @@ attempt returned `permission-denied`; the current deployment remained callable.
 The node and recipe/Invoke processes were reaped. Private state and the first
 run's incorrect expectation of a shortened cleanup reason remain retained.
 
+The [fuel regression observation](./watch-fuel-regression-observation.json)
+retains a later CI failure: the CPU-spinning A invocation consumed its full
+10 billion fuel allowance in 19 seconds, before B committed. The fixture now
+uses the supported component executor's cooperative async yield. Its complete
+189-second source run observed A running on both sides of B's commit, then
+cancelled A once with its original revision and 25,397,392 fuel consumed. Fuel,
+wall-time and process limits are unchanged. The intermediate bare-pending-future
+experiment trapped and remains recorded as a failed attempt.
+
 The Rust CI job runs `tools/dev_watch_fixture_probe.py` with the same payload,
 source-node and new-output arguments. These are source observations through the
 direct Linux helper, with explicitly trusted local admission. They still require
