@@ -18,7 +18,8 @@ RUN rm -rf /usr/local/lib/python3.13/site-packages /usr/local/bin/pip* \
     && useradd --uid 23001 --create-home --shell /bin/bash lsfqa \
     && useradd --uid 23002 --create-home --shell /bin/bash lsfremote \
     && chmod 0700 /home/lsfqa /home/lsfremote \
-    && passwd -d lsfremote
+    && passwd -d lsfremote \
+    && passwd -d lsfqa
 FROM prerequisites
 # This helper was independently authenticated and extracted before image build.
 # It is copied here, and will execute only as the dedicated unprivileged users.

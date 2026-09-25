@@ -12,14 +12,14 @@ import time
 
 if __package__:
     from .dev_packaged_bootstrap import authenticate, extract
-    from .dev_packaged_guest import observe, export
+    from .dev_packaged_guest import observe, export, installation_progress
     from .dev_packaged_watch import campaign as watch_campaign
     from .dev_packaged_process import MAX_COMMANDS, Command, ProbeFailure, digest, environment, read_json, require, write_json
     from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
     from .dev_packaged_wsl_lifecycle import restart_owned_distribution
 else:
     from dev_packaged_bootstrap import authenticate, extract
-    from dev_packaged_guest import observe, export
+    from dev_packaged_guest import observe, export, installation_progress
     from dev_packaged_watch import campaign as watch_campaign
     from dev_packaged_process import MAX_COMMANDS, Command, ProbeFailure, digest, environment, read_json, require, write_json
     from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
@@ -51,6 +51,14 @@ class Frontend:
             require(events and all(event.get('schemaVersion') == 'latent.dev.result.v1' for event in events), 'frontend-output-schema')
             result = events[-1]
             receipt['response'] = result
+            if arguments[0] in {'install', 'install-tools'} and result.get('code') == 'backend-transport-lost-status-required':
+                # Read transfer sizes and completion markers only. The original
+                # uncertain operation is never repeated or labeled resolved.
+                try:
+                    workspace = arguments[arguments.index('--workspace') + 1]
+                    receipt['guestInstallationObservation'] = installation_progress(self, workspace)
+                except BaseException as error:
+                    receipt['guestInstallationObservation'] = {'failure': type(error).__name__, 'outcomeStillUncertain': True}
             if rejection is not None:
                 require(code == 2 and result.get('code') in rejection and result.get('uncertain') is False,
                         'expected-certain-rejection-missing')
@@ -74,7 +82,17 @@ class Frontend:
             arguments.extend(['--watch', '--project', project, '--test-select', selection])
         process = self.command(*arguments)
         self.running[workspace] = process
-        ready = process.until(lambda event: event.get('event') == 'ready', 210)['result']
+        try:
+            ready = process.until(lambda event: event.get('event') == 'ready', 210)['result']
+        except BaseException:
+            cleanup_failure = None
+            try:
+                process.abort_controller()
+            except BaseException as error:
+                cleanup_failure = type(error).__name__
+            self.report.setdefault('startupFailures', {})[workspace] = {
+                'events': process.events(), 'process': process.receipt(), 'controllerCleanupFailure': cleanup_failure}
+            raise
         require(ready.get('state') == 'ready', 'authenticated-readiness-required')
         return ready
 
@@ -84,8 +102,11 @@ class Frontend:
         process = self.running.pop(workspace, None)
         if process is not None:
             try:
-                require(process.finish(30) == 0, 'foreground-shutdown-failed')
+                code = process.finish(30)
                 self.report['commands'].append({**process.receipt(), 'events': process.events()})
+                failed = self.report.get('startupFailures', {}).get(workspace)
+                require(code == 0 or failed is not None and failed['process']['exitCode'] == code,
+                        'foreground-shutdown-failed')
             finally:
                 process.abort_controller()
         return result
