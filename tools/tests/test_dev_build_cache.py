@@ -85,6 +85,34 @@ class BuildAttempts(unittest.TestCase):
         self.assertEqual(build_cache.owner(attempt)["state"], "failed")
         self.assertFalse((self.root / "last-build.json").exists())
 
+    def test_slow_usage_scan_leaves_time_for_build_progress(self):
+        clock = [10.0]
+        scans = []
+        def slow_usage(directory):
+            self.assertEqual(directory, self.root)
+            scans.append(clock[0])
+            clock[0] += 0.8  # A measured scan can exceed the polling interval.
+            return 31509, 519254887
+        with patch.object(build_cache.time, "monotonic", side_effect=lambda: clock[0]), \
+                patch.object(build_cache, "usage", side_effect=slow_usage):
+            check = build_cache.monitor(self.root)
+            check()
+            for _ in range(100):
+                check()  # Hash/validation progress between resource observations.
+            self.assertEqual(scans, [10.0])
+            clock[0] += 0.49
+            check()
+            self.assertEqual(scans, [10.0])
+            clock[0] += 0.02
+            check()
+            self.assertEqual(len(scans), 2)
+
+    def test_usage_scan_failure_is_not_hidden_by_polling(self):
+        with patch.object(build_cache.time, "monotonic", return_value=10.0), \
+                patch.object(build_cache, "usage", side_effect=common.DevError("build-cache-byte-limit")):
+            with self.assertRaisesRegex(common.DevError, "build-cache-byte-limit"):
+                build_cache.monitor(self.root)()
+
     def test_reaped_deadline_can_be_cleaned_without_claiming_remote_outcome(self):
         self.inputs(b"import time\ntime.sleep(60)\n")
         self.descriptor["build"]["timeoutSeconds"] = 1

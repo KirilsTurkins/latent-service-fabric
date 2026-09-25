@@ -138,5 +138,8 @@ def monitor(directory: Path):
         now = time.monotonic()
         if now - previous >= 0.5:
             usage(directory)
-            previous = now
+            # A large retained tree can take longer than the polling interval.
+            # Measure the gap from completion so consecutive hash callbacks do
+            # not rescan the entire tree and consume the build's finite budget.
+            previous = time.monotonic()
     return check
