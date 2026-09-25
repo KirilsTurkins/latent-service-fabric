@@ -10,9 +10,26 @@ import re
 import time
 
 from . import bundle, paths, process, project, scenarios, state
-from .common import HOST_ABI, decode, digest, encode, members, require
+from .common import DevError, HOST_ABI, decode, digest, encode, members, require
 
 SUPPORTED = scenarios.PORTABLE
+
+
+def runtime_result(completed, request: dict, component: bytes) -> dict:
+    runtime = decode(completed.stdout, 4 * 1024 * 1024)
+    valid = (isinstance(runtime, dict) and completed.returncode == 0
+        and runtime.get("schemaVersion") == "latent.dev.portable-result.v1"
+        and runtime.get("environment") == "portable" and runtime.get("productionNode") is False
+        and runtime.get("component") == digest(component)
+        and runtime.get("runtimeProfile") == request["runtimeProfile"])
+    if not valid:
+        # The maintained native host returns static failure codes. Never copy
+        # arbitrary stderr, payloads or free-form messages into diagnostics.
+        code = runtime.get("code") if isinstance(runtime, dict) else None
+        diagnostics = ([{"stage": "native-portable-host", "code": code}]
+            if isinstance(code, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,95}", code) else [])
+        raise DevError("portable-host-rejected-input", diagnostics=diagnostics)
+    return runtime
 
 
 def fixture_inputs(source: Path, fixtures: list[dict]) -> dict | None:
@@ -110,11 +127,7 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
         completed = process.run([str(executable)], source, stdin=raw,
             timeout=min(remaining, 120 + sum(case["timeoutMillis"] for case in calls) / 1000),
             maximum=4 * 1024 * 1024)
-        runtime = decode(completed.stdout, 4 * 1024 * 1024)
-        require(completed.returncode == 0 and runtime.get("schemaVersion") == "latent.dev.portable-result.v1"
-                and runtime.get("environment") == "portable" and runtime.get("productionNode") is False
-                and runtime.get("component") == digest(content["component"])
-                and runtime.get("runtimeProfile") == request["runtimeProfile"], "portable-host-rejected-input")
+        runtime = runtime_result(completed, request, content["component"])
         require(isinstance(runtime.get("results"), list)
                 and [item["id"] for item in runtime["results"]] == [item["id"] for item in calls], "portable-result-association")
         require(all(item.get("cleanup") == "reusable" for item in runtime["results"]), "portable-cleanup-unconfirmed")

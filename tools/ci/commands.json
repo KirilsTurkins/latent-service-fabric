@@ -3301,7 +3301,7 @@
       "sha256": "debeb0ea617f5d8eef93ee4b1ef8552bbf5cd30b96c2d684f9960d39cbd6a9a9"
     },
     "tools/dev_http_fixture_probe.py": {
-      "sha256": "6b966d84700ef466288613860723859e44f98505b631449bcfd9c8f5b5b3b8c7"
+      "sha256": "b482cb9d53bdb1b594ce061c4d14f2f8b5d05f79516a233c34403f982e02a05c"
     },
     "tools/dev_local_service_fixture_probe.py": {
       "sha256": "782fb84d2bc672931b7b112fc1d7581f803060ec4c31fa53e77e4cea712c4302"
@@ -3397,7 +3397,7 @@
       "sha256": "73074d091d249186c7d787286b67ab8556b4c8966191d4454617dc8c87190c12"
     },
     "tools/run_dev_http_portable.py": {
-      "sha256": "2843b13c9970287c0a3cad6dffc863ad17769f635dcbd6ea38bb9e862c3e41f6"
+      "sha256": "54550250e8f97a40db7ae737cb2029f70d8a20c61854835ef7738173cd2744a9"
     },
     "tools/run_dev_metric_portable.py": {
       "sha256": "e558a72c68a577f5a649cb39b0a00c47add62196324bea0a70d1d8e97ced777e"
@@ -4102,6 +4102,8 @@
       "ScenarioReports.test_arbitrary_candidate_policy_is_not_runtime_release_approval",
       "ScenarioReports.test_clock_fixture_preserves_u64_and_rejects_invalid_readings_before_execution",
       "ScenarioReports.test_missing_qualification_never_passes",
+      "ScenarioReports.test_native_rejection_preserves_only_a_bounded_static_code",
+      "ScenarioReports.test_native_result_requires_success_and_exact_component_profile_environment",
       "ScenarioReports.test_node_declared_error_payload_is_asserted_as_exact_bytes",
       "ScenarioReports.test_platform_error_codes_survive_reports_and_unexpected_success_is_a_failure",
       "ScenarioReports.test_portable_fixture_identity_and_kind_are_checked_before_execution",
@@ -6884,7 +6886,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-tools.yml": "563622fdeeae3e885ae2c83f11ee636728d7d074bbf8aa8af736c43a83cec3cd",
+    ".github/workflows/developer-tools.yml": "5ae956ee470e5ea9b237b390d5091327b6d85ba92caece59e1fdb60cf86e8f22",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",

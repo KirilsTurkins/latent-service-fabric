@@ -41,6 +41,7 @@ def run(host: Path, inputs: Path, output: Path) -> dict:
             report.update(passed=True, cleanup="owned-native-host-and-peer-reaped")
         except (DevError, OSError, ValueError) as error:
             report["failure"] = error.code if isinstance(error, DevError) else type(error).__name__
+            report["diagnostics"] = error.diagnostics if isinstance(error, DevError) else []
             raise
         finally:
             output.write_bytes(encode(report))
