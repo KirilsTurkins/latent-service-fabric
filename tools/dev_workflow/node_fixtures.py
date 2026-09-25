@@ -10,12 +10,16 @@ from .common import decode, digest, encode, members, require
 
 
 def validate(value: dict) -> dict:
-    members(value, {"clock"})
-    require(len(encode(value)) <= 4096, "node-fixture-byte-limit")
-    clock = members(value["clock"], {"monotonicNanos", "wallUnixMillis"})
-    require(all(isinstance(reading, str) and re.fullmatch(r"0|[1-9][0-9]{0,19}", reading)
-                and int(reading) <= 18446744073709551615 for reading in clock.values()),
-            "invalid-guest-clock-fixture")
+    members(value, set(), {"clock", "http"})
+    require(value and len(encode(value)) <= 256 * 1024, "node-fixture-byte-limit")
+    if "clock" in value:
+        clock = members(value["clock"], {"monotonicNanos", "wallUnixMillis"})
+        require(all(isinstance(reading, str) and re.fullmatch(r"0|[1-9][0-9]{0,19}", reading)
+                    and int(reading) <= 18446744073709551615 for reading in clock.values()),
+                "invalid-guest-clock-fixture")
+    if "http" in value:
+        from . import http_fixture
+        http_fixture.validate(value["http"])
     return value
 
 
@@ -40,26 +44,35 @@ def check_configuration(root: Path, value: dict) -> dict:
     require(report.get("schemaVersion") == "latent.standalone.config-check.v1"
             and report.get("profile") == "local-experimental-v1"
             and report.get("protectedCredentialFile") is True
-            and report.get("developmentGuestClock") == value["developmentTest"]["guestClock"],
+            and report.get("developmentGuestClock") == value.get("developmentTest", {}).get("guestClock"),
             "node-development-fixture-not-confirmed")
     return {"configurationSha256": digest(encode(value)),
-            "guestClock": report["developmentGuestClock"], "ordinaryNodeClock": "unchanged"}
+            "guestClock": report.get("developmentGuestClock"), "ordinaryNodeClock": "unchanged"}
 
 
-def initialized(source: Path, cases: list[dict], selected: dict | None) -> set[str]:
+def initialized(source: Path, cases: list[dict], selected: dict | None, runtime: dict | None = None) -> set[str]:
     result = set()
     for case in cases:
         for fixture in case["fixtures"]:
-            if fixture["kind"] != "test-adapter" or "configuration" not in fixture:
+            if fixture["kind"] not in {"test-adapter", "controlled-peer"} or "configuration" not in fixture:
                 continue
-            raw = paths.read(source, fixture["configuration"], 4096)
+            raw = paths.read(source, fixture["configuration"], 256 * 1024)
             require(digest(raw) == fixture["identity"], "node-fixture-identity")
-            requested = decode(raw, 4096)
+            requested = decode(raw, 256 * 1024)
             # Other adapter fixtures remain explicitly unsupported by the
             # common runner until a node implementation has initialized them.
-            if not isinstance(requested, dict) or set(requested) != {"clock"}:
+            if not isinstance(requested, dict) or set(requested) not in ({"clock"}, {"http"}):
                 continue
             validate(requested)
-            if selected is not None and requested == selected:
+            if selected is None or any(selected.get(key) != value for key, value in requested.items()):
+                continue
+            if "clock" in requested and fixture["kind"] == "test-adapter":
                 result.add(fixture["id"])
+            if "http" in requested and fixture["kind"] == "controlled-peer":
+                actual = (runtime or {}).get("http", {})
+                if (actual.get("state") == "ready" and actual.get("kind") == "controlled-peer"
+                        and actual.get("authentication") == "private-provider-credential"
+                        and actual.get("configurationSha256") == digest(encode(requested["http"]))
+                        and actual.get("failure") is None):
+                    result.add(fixture["id"])
     return result

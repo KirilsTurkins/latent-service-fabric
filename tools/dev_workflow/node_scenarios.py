@@ -20,8 +20,11 @@ def run(root, arguments, *, deadline: float | None = None):
     cli, journal = client(root, deadline=deadline)
     deployed, revision, current_grants = node_tests.target(root, descriptor, build_receipt, cli)
     installed = None
+    fixture_runtime = {}
     if (root / "test-profile.json").exists():
-        installed = node_test_profile.installed(root, descriptor, service.request(root, "status"))
+        actual = service.request(root, "status")
+        installed = node_test_profile.installed(root, descriptor, actual)
+        fixture_runtime = actual.get("fixtures", {})
     cases = []
     for name in descriptor["scenarios"]:
         cases.extend(scenarios.validate(decode(paths.read(source, name)), "node")["scenarios"])
@@ -83,19 +86,30 @@ def run(root, arguments, *, deadline: float | None = None):
             supported.add("clock")
         if "random" in installed:
             supported.add("random")
+        if "http" in installed:
+            supported.add("buffered-http-fixture")
     fixture_profile = state.load(root, "test-profile.json") if installed is not None else {}
     fixtures = fixture_profile.get("fixtures")
-    initialized = node_fixtures.initialized(source, cases, fixtures)
+    initialized = node_fixtures.initialized(source, cases, fixtures, fixture_runtime)
     report = scenarios.run({"schemaVersion": "latent.dev.scenarios.v1", "scenarios": cases}, source, "node",
         arguments["selection"], invoke, {"source": build_receipt["source"], "artifacts": build_receipt["artifacts"],
         "deployment": deployed, "expectedRevision": revision, "hostAbi": descriptor["hostAbi"],
         "package": build_receipt["package"], "fixtureProviders": installed or {}, "fixtureConfiguration": fixtures,
         "fixtureCheck": fixture_profile.get("fixtureCheck"),
+        "fixtureRuntime": fixture_runtime,
         "admission": node["supplyChain"]["mode"], "testSigning": signing,
         "runtime": decode(paths.read(current, "release-source.json")), "node": node["nodeId"],
         "profile": node["securityProfile"], "os": "linux", "architecture": platform.machine(), "kernel": platform.release()},
         supported=supported,
         initialized_fixtures=initialized, execution_controls=controls, expected_revision=lambda: revision)
+    if "http" in fixture_runtime:
+        actual = service.request(root, "status")
+        after = actual.get("fixtures", {}).get("http", {})
+        require(actual.get("state") == "ready" and after.get("state") == "ready"
+                and after.get("failure") is None
+                and after.get("configurationSha256") == fixture_runtime["http"]["configurationSha256"],
+                "http-fixture-execution-not-confirmed")
+        report["identity"]["fixtureRuntimeAfter"] = {"http": after}
     pending = journal.read()["pending"]
     if any(item.get("recovery", {}).get("clientCleanup") == "unconfirmed" for item in report["results"]):
         report["cleanup"] = "client-cleanup-unconfirmed-node-retained"

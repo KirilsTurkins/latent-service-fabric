@@ -51,12 +51,26 @@ def compare(node: dict, portable: dict, *, native_os: str = "windows") -> dict:
     if left.get("fixtureConfiguration") is not None:
         from tools.dev_workflow import node_fixtures
         fixture = node_fixtures.validate(left["fixtureConfiguration"])
-        require(left.get("fixtureCheck", {}).get("guestClock") == fixture["clock"]
+        if "clock" in fixture:
+            require(left.get("fixtureCheck", {}).get("guestClock") == fixture["clock"]
                 and left["fixtureCheck"].get("ordinaryNodeClock") == "unchanged"
                 and all(run.get("fixtures", {}).get("clock") == fixture["clock"]
                         and run.get("clock") == "fixed-guest-readings-fixture"
                         and run.get("controlClock") == "system-clock-nondeterministic" for run in runs),
-                "comparison-actual-guest-clock-fixture-selection")
+                    "comparison-actual-guest-clock-fixture-selection")
+        if "http" in fixture:
+            before = left.get("fixtureRuntime", {}).get("http", {})
+            after = left.get("fixtureRuntimeAfter", {}).get("http", {})
+            require(before.get("configurationSha256") == digest(encode(fixture["http"]))
+                    and after.get("configurationSha256") == before["configurationSha256"]
+                    and before.get("authentication") == after.get("authentication") == "private-provider-credential"
+                    and before.get("state") == after.get("state") == "ready"
+                    and after.get("failure") is None
+                    and after.get("completedRequests", 0) > before.get("completedRequests", 0)
+                    and all(run.get("fixtures", {}).get("http") == fixture["http"]
+                            and run.get("httpFixtureAuthentication") == "private-provider-credential"
+                            and run.get("httpFixtureRequests", 0) > 0 for run in runs),
+                    "comparison-actual-authenticated-http-fixture-selection")
     rows = []
     for actual, native in zip(node["results"], portable["results"]):
         sha(actual.get("inputSha256"))
@@ -93,7 +107,8 @@ def compare(node: dict, portable: dict, *, native_os: str = "windows") -> dict:
         "nodeReportSha256": digest(encode(node)), "portableReportSha256": digest(encode(portable)),
         "artifacts": right["artifacts"], "selection": node["selection"], "results": rows,
         "nodeProfile": left["profile"], "nodeAdmission": left["admission"],
-        "nativeOs": native_os, "guestClockCompared": left.get("fixtureConfiguration") is not None,
+        "nativeOs": native_os, "guestClockCompared": "clock" in (left.get("fixtureConfiguration") or {}),
+        "httpFixtureCompared": "http" in (left.get("fixtureConfiguration") or {}),
         "reviewedDifferences": ["node-only-publication-admission-and-routing", "host-os-and-architecture",
             "bounded-cold-node-preparation-deadline", "system-clock-and-entropy-not-compared"]
             + (["node-public-resource-code-and-portable-engine-detail"] if any("platformCodes" in row for row in rows) else []),

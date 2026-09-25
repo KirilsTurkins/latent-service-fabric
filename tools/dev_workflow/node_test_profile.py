@@ -13,7 +13,7 @@ def scope(descriptor: dict) -> dict:
     return {name: descriptor[name] for name in ("language", "tenant", "service")}
 
 
-def configuration(original: dict, descriptor: dict, fixtures: dict | None = None) -> tuple[dict, dict]:
+def configuration(original: dict, descriptor: dict, fixtures: dict | None = None, *, root: Path | None = None) -> tuple[dict, dict]:
     require(original["securityProfile"] == "local-experimental-v1", "test-profile-requires-local-installation")
     require(descriptor["tenant"] == "examples" and "providers" not in original,
             "test-profile-will-not-replace-existing-providers")
@@ -23,8 +23,14 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
         from . import node_fixtures
         from tools.guest_runtime_profiles import RUNTIME
         require("developmentTest" not in original, "test-profile-will-not-replace-existing-fixtures")
-        value["developmentTest"] = node_fixtures.configuration(fixtures)
-        selected.update({name: RUNTIME[name] for name in ("clockMonotonic", "clockWall")})
+        node_fixtures.validate(fixtures)
+        if "clock" in fixtures:
+            value["developmentTest"] = node_fixtures.configuration(fixtures)
+            selected.update({name: RUNTIME[name] for name in ("clockMonotonic", "clockWall")})
+        if "http" in fixtures:
+            from . import http_fixture
+            require(root is not None, "http-fixture-workspace-required")
+            selected["http"] = http_fixture.PROVIDER
     value["budgetProfile"] = {"mode": "phase3", "maximumOutboundRequests": 8,
                               "maximumBlobReadBytes": 65536, "maximumBlobWriteBytes": 65536}
     value["capabilityPolicies"] = {"formatVersion": 1, "maximumControlJobs": 2,
@@ -40,6 +46,8 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
         for name, (capability, _profile, _operation, _kind) in selected.items():
             value["providers"][name] = {"identity": {"id": name, "tenant": descriptor["tenant"],
                 "service": "runtime-host", "epoch": 1}}
+            if name == "http":
+                value["providers"][name].update(http_fixture.installation(root, fixtures["http"]))
             value["providers"]["bindings"].append({"name": "dev-" + name,
                 "tenant": descriptor["tenant"], "consumerService": descriptor["service"],
                 "providerService": "runtime-host", "contract": capability, "providerBinding": "dev-" + name})
@@ -79,7 +87,7 @@ def prepare(root: Path, descriptor: dict, *, consent: bool, admission: str = "tr
         else:
             original = decode(raw)
             require(original["dataDirectory"] == str(runtime / "data"), "test-node-data-owner")
-            value, selected = configuration(original, descriptor, fixtures)
+            value, selected = configuration(original, descriptor, fixtures, root=root)
             if signing is not None:
                 value["supplyChain"] = {"mode": "enforced", "policyFile": str(root / "test-signing/policy.json")}
             fixture_check = node_fixtures.check_configuration(root, value) if fixtures is not None else None

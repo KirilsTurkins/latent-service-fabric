@@ -308,7 +308,7 @@ def dispatch(args) -> dict:
             if args.fixtures:
                 from .node_fixtures import validate
                 path = args.fixtures.absolute()
-                fixtures = {"fixtures": validate(decode(paths.read(path.parent, path.name, 4096), 4096))}
+                fixtures = {"fixtures": validate(decode(paths.read(path.parent, path.name, 256 * 1024), 256 * 1024))}
             return connection.call("prepare-test", {"consent": args.consent_test_fixtures,
                 "admission": args.admission, **({"toolRoot": args.tool_root} if args.tool_root else {}), **fixtures}, timeout=90)
         return connection.call(args.command, {})

@@ -7,8 +7,8 @@ use latent_capabilities::broker::{
     ActivationCapabilityBroker,
 };
 use latent_http::{
-    HttpAddressPolicy, HttpDestination, HttpLimits, HttpProvider, HttpProviderConfig,
-    HttpResolution,
+    HttpAddressPolicy, HttpCredential, HttpDestination, HttpLimits, HttpProvider,
+    HttpProviderConfig, HttpResolution,
 };
 use latent_policy::capability::HttpOrigin;
 use serde_json::json;
@@ -102,7 +102,11 @@ pub(super) fn install(
                 redirect_destinations: vec![],
             }],
         },
-        &[],
+        &[HttpCredential {
+            destination: 0,
+            name: "authorization",
+            value: peer.authorization(),
+        }],
     )
     .map_err(|_| "portable-http-provider")?;
     let methods = fixture
