@@ -364,6 +364,23 @@ record request counts before and after execution. Comparisons require identical
 public fixture data and completed exchanges on both hosts; they do not equate a
 controlled loopback peer with an external-service qualification.
 
+A blob fixture selects `{"blob":{"namespace":"dev-blobs"}}` through the same
+explicit `prepare-test` command. Declare its dependency as `real-provider`, bind
+the configuration digest and require `immutable-blob-fixture`. This installs the
+production Linux immutable-blob provider in the private test workspace, with a
+separate provider service identity and a policy restricted to this namespace.
+The capsule must explicitly budget outbound operations and blob read/write
+bytes. Fixture configuration supplies no host path, ambient files or grants.
+
+Use guest APIs to create and seal test data. Blobs persist across a retained
+node restart. Writer/reader handles and component chunks retain their normal
+activation ownership; abandoning a writer does not publish its bytes. The
+provider bounds durable stages at 16 and reclaims a retired stage when admitting
+another writer at capacity. Charged durable stages may remain after a clean
+shutdown, while live handles and work must be zero. Explicit owned-workspace
+purge removes that retained test data. Portable hosts reject required blob cases
+before executing any selected scenario.
+
 ## Editor tasks and compiler locations
 
 The [optional terminal devcontainer](../component-development/devcontainer.md)
@@ -676,6 +693,23 @@ SOURCE_NODE --portable-host NATIVE_HOST --output NEW_DIRECTORY` on Linux, then
 EXPORTED_DIRECTORY --output NEW_REPORT` on Windows. Both commands execute the
 same public scenario format and component bytes outside the checkout.
 
+The [blob source observation](./blob-fixture-source-observation.json) records 27
+authored cases on the signed/enforced Linux node and a retained read after
+restart without writing the object again. Cases cover cold seal, warm read,
+denial, closed handles, dropped/abandoned chunks, abandoned writers and admission
+beyond the 16-stage limit. Both shutdowns reported zero live provider resources;
+16 bounded durable stages remained charged until the owned test workspace was
+purged. The first attempt passed its ten invocations but failed an incorrect
+probe assertion that durable stages must be zero; that failed attempt and its
+retained private workspace are recorded separately. This is source integration,
+with no portable-blob, authenticated final-candidate or clean-host claim.
+
+Run `python tools/dev_blob_fixture_probe.py --payload TOOL_PREFIX --source-node
+SOURCE_NODE --output NEW_DIRECTORY` as the Linux test owner. It uses the same
+maintained Rust application tool bundle, public scenario contract and enforced
+admission path as the other application probes. Existing Rust developer CI owns
+the run and retains its public receipts.
+
 `tools/dev_node_fault_probe.py` is a contributor fault-injection harness, separate
 from the shipped helper. Run it only as the explicitly selected `test-` workspace's
 unprivileged Linux owner, with its exact helper path and SHA-256. It requires the
@@ -706,7 +740,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate

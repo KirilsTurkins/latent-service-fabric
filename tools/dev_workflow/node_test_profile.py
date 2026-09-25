@@ -31,6 +31,9 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
             from . import http_fixture
             require(root is not None, "http-fixture-workspace-required")
             selected["http"] = http_fixture.PROVIDER
+        if "blob" in fixtures:
+            from . import blob_fixture
+            selected["blob"] = blob_fixture.PROVIDER
     value["budgetProfile"] = {"mode": "phase3", "maximumOutboundRequests": 8,
                               "maximumBlobReadBytes": 65536, "maximumBlobWriteBytes": 65536}
     value["capabilityPolicies"] = {"formatVersion": 1, "maximumControlJobs": 2,
@@ -44,13 +47,16 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
     if selected:
         value["providers"] = {"formatVersion": 1, "bindings": []}
         for name, (capability, _profile, _operation, _kind) in selected.items():
+            provider_service = blob_fixture.SERVICE if name == "blob" else "runtime-host"
             value["providers"][name] = {"identity": {"id": name, "tenant": descriptor["tenant"],
-                "service": "runtime-host", "epoch": 1}}
+                "service": provider_service, "epoch": 1}}
             if name == "http":
                 value["providers"][name].update(http_fixture.installation(root, fixtures["http"]))
+            if name == "blob":
+                value["providers"][name].update(blob_fixture.validate(fixtures["blob"]))
             value["providers"]["bindings"].append({"name": "dev-" + name,
                 "tenant": descriptor["tenant"], "consumerService": descriptor["service"],
-                "providerService": "runtime-host", "contract": capability, "providerBinding": "dev-" + name})
+                "providerService": provider_service, "contract": capability, "providerBinding": "dev-" + name})
     return value, {name: list(profile) for name, profile in selected.items()}
 
 
@@ -123,7 +129,9 @@ def installed(root: Path, descriptor: dict, status: dict) -> dict:
         rows = [entry for entry in actual if entry.get("id") == name]
         require(len(rows) == 1, "test-provider-installation-identity")
         entry = rows[0]
-        require(entry.get("tenant") == descriptor["tenant"] and entry.get("service") == "runtime-host"
+        from . import blob_fixture
+        provider_service = blob_fixture.SERVICE if name == "blob" else "runtime-host"
+        require(entry.get("tenant") == descriptor["tenant"] and entry.get("service") == provider_service
                 and entry.get("capability") == capability and entry.get("profile") == provider_profile
                 and entry.get("configurationEpoch") == "1", "test-provider-installation-scope")
         from .common import sha

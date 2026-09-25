@@ -5,12 +5,28 @@ import threading
 
 from .common import MAX_LOG, decode, require
 
+PROVIDER_COUNTERS = ("controlOwners", "connections", "pendingRequests", "runningRequests", "workers",
+                    "cleanupJobs", "failedCleanup", "sessions", "handles", "calls", "results", "ioCalls",
+                    "ioRetainedBytes", "blobStages", "blobHandles", "blobWork")
+
+
+def provider_shutdown(record):
+    """Export only the bounded public resource counters, never arbitrary node data."""
+    report = record.get("report")
+    value = report.get("providers") if isinstance(report, dict) else None
+    if (isinstance(value, dict) and type(value.get("clean")) is bool
+            and all(type(value.get(key)) is int and 0 <= value[key] <= 18446744073709551615
+                    for key in PROVIDER_COUNTERS)):
+        return {key: value[key] for key in ("clean", *PROVIDER_COUNTERS)}
+    return None
+
 
 class NodeOutput:
     def __init__(self, child, tokens):
         self.child, self.tokens = child, tokens
         self.retained = bytearray()
         self.clean_stop, self.failure = False, None
+        self.provider_shutdown = None
         self.started = None
         self.startup = threading.Event()
         self.lock = threading.Lock()
@@ -24,6 +40,7 @@ class NodeOutput:
                 if (record.get("schemaVersion") == "latent.standalone.status.v1"
                         and record.get("event") == "stopped" and record.get("clean") is True):
                     self.clean_stop = True
+                    self.provider_shutdown = provider_shutdown(record)
                 if (record.get("schemaVersion") == "latent.standalone.status.v1"
                         and record.get("event") in {"ready", "started"}):
                     with self.lock:

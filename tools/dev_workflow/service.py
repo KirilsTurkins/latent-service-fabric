@@ -242,6 +242,8 @@ def supervise(root: Path) -> int:
                             current.update(state="stopped", reaped=True, dataRetained=True,
                                 cleanShutdown=owner.process.returncode == 0 and output.clean_stop
                                     and (http_peer_owner is None or http_peer_owner.failure is None))
+                            if output.provider_shutdown is not None:
+                                current["providerShutdown"] = output.provider_shutdown
                             state.atomic(root, "lifecycle.json", current)
                             result = current
                         else:
