@@ -68,3 +68,28 @@ def restart_owned_distribution(api, item):
     require(restarted['guestInstance'] != before['guestInstance'], 'actual-guest-namespace-did-not-change')
     result.update(restarted=restarted, passed=True)
     return result
+
+
+def stop_owned_distribution(api):
+    """Stop the exact owned VM while retaining unresolved private operation intents."""
+    require(not api.running, 'all-owned-nodes-must-be-reaped-before-distro-stop')
+    require(len(api.report['commands']) < MAX_COMMANDS - 2, 'qualification-command-count-limit')
+    owner = registration(api)
+    require(owner['distribution'] == api.report['provision']['distribution'], 'original-qualified-distro-required')
+    executable = Path(os.environ['SystemRoot']) / 'System32/wsl.exe'
+    for arguments in (['--terminate', owner['distribution']], ['--list', '--running', '--quiet']):
+        command = Command([executable, *arguments], api.root, api.env)
+        try:
+            require(command.finish(60) == 0, 'owned-distro-stop-observation-failed')
+            if arguments[0] == '--list':
+                raw = command.raw()
+                names = raw.decode('utf-16-le' if b'\x00' in raw else 'utf-8').strip('\ufeff').splitlines()
+                require(len(names) <= 64 and owner['distribution'] not in {name.strip() for name in names},
+                        'owned-distro-still-running')
+        finally:
+            try:
+                command.abort_controller()
+            finally:
+                api.report['commands'].append({**command.receipt(), 'purpose': 'retain-private-intents-stop-owned-distro'})
+    require(registration(api) == owner, 'private-distro-identity-changed-during-stop')
+    return {'owner': owner, 'running': False, 'privateStateRetained': True, 'globalWslShutdown': False}

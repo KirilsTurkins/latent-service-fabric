@@ -68,12 +68,29 @@ first deployment. The greeting and provider-fixture workspaces retain their
 separately selected signed admission for their entire lifetimes. The short-lived
 signing fixture is bound to one build and cannot authorize an edited component;
 watch never changes that policy or silently signs new source. The conductor
-edits the greeting from A to B, waits for B's real deployment and focused test,
-then introduces a compiler error and invokes the still-selected B publication.
-It explicitly restores valid B source, reuses its checked build, and restarts
-the retained B deployment. This author action is recorded separately from any
-automatic rollback, which the controller does not perform.
-The watch workspace then stops and purges through its own recorded identity.
+uses the same authored numeric revisions as the source qualification. It warms
+B's exact build before starting A, observes a real A invocation running, edits
+to B and requires the watch controller to revalidate the cached B build. The
+original invocation must remain running across the committed switch and retain
+A's publication when explicitly cancelled once. New focused tests and invocations
+must select B.
+
+Compiler errors and malformed output must leave B callable. A slow recipe
+exposes its owned child identity; rapid edits must cancel and reap that child,
+then deploy only the latest revision. A deliberately wrong test expectation
+must produce a visible focused failure while that latest revision remains live.
+The conductor then revokes A and attempts one preconditioned restore, requiring
+known rejection and unchanged current deployment. Retained restart must invoke
+the latest revision again. It leaves the deliberate author edits intact and
+purges only its own workspace. Build retention and deployment order are checked.
+
+The small guest observers verify the installed helper's digest and protected
+path before importing it. Reviewed invocation and revocation probes have
+separate source hashes bound to the conductor selection; their imports resolve
+to that installed helper. The host controller drives the public packaged watch
+command, and original invocation/revocation intents prevent automatic replay.
+These extended cases require a fresh installed-package result before they count
+as completed qualification.
 
 The conductor exports only the three public build files in bounded chunks from
 their exact owned build attempt, rechecking each complete file's recorded
@@ -154,6 +171,29 @@ helper placeholder. It records setup only; the installed-node assertions still
 require the independently approved candidate campaign.
 This tests the terminal container path on Linux; it is separate from a rendered
 editor walkthrough and from the earlier Windows Docker Desktop source receipt.
+
+The `windows-recovery` selection runs a separate installed-package campaign in
+a fresh owned WSL distribution. Its two Rust workspaces have distinct Linux
+users and node identities. One configures the node's supported three-second
+terminal retention before its first start, discards one real successful Invoke
+response, observes its original terminal receipt, and waits for actual expiry.
+The other rejects wrong-token and wrong-tenant requests and observes a separate
+actor's committed deployment. The public frontend must preserve that actor's
+generation and retain the original UNKNOWN operation intent. Both unresolved
+workspaces must reject new mutations without replay. While the first workspace
+is unresolved, the second must still invoke its original deployment.
+
+The expiry observer verifies the installed helper's digest before importing it
+and uses the separately hashed response-loss conductor. It does not change the
+host clock or edit receipt storage. Recovery still exits with an uncertain
+result; a successful qualification receipt means the expected uncertainty and
+no-replay assertions passed. The public shutdown reaps both owned nodes, then
+only the recorded owned distribution is stopped and its registration checked.
+Private original intents remain until runner teardown. The `all` selection
+includes this campaign after the ordinary Windows/WSL and native schedule.
+Ordinary lost-response recovery additionally checks blocked new mutations and
+a second public recovery with no journal change. These assertions require a
+completed installed-package run before being counted as qualification evidence.
 
 Each command has bounded output and a deadline. The schedule admits at most
 360 completed commands per backend, reserving the last 24 for status, recovery
@@ -253,7 +293,7 @@ Dockerfile paths, and retains bounded structured CLI failures. Configuration
 parsing succeeded locally; a fresh installed devcontainer campaign is still
 required. Neither correction replaces the original failed receipt.
 
-The fifteen fast conductor regressions exercise archive traversal/alias/device/link
+The seventeen fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and
 bounded stdin with receipt redaction, plus the actual Windows DACL of the newly
 created conductor directory. A required unsupported-case report must retain its

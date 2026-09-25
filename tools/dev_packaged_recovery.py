@@ -13,7 +13,7 @@ else:
 
 
 def inject(api, config, item, kind, arguments=None):
-    require(kind in {'release', 'deployment', 'invoke'}, 'closed-packaged-fault-kind')
+    require(kind in {'release', 'deployment', 'invoke', 'concurrent', 'unknown'}, 'closed-packaged-fault-kind')
     require(len(api.report['commands']) < MAX_COMMANDS - 24, 'qualification-command-count-limit')
     backend = read_json(api.state / item['workspace'] / 'backend.json')
     require(backend['kind'] in {'wsl2', 'linux', 'ssh'}
@@ -35,6 +35,15 @@ def inject(api, config, item, kind, arguments=None):
     try:
         require(command.finish(330) == 0, 'packaged-fault-injection-failed-inspect-original-intent')
         result = json.loads(command.raw())
+        if kind == 'concurrent':
+            require(result['injection'] == 'separate-actor-committed-deployment' and result['remoteMutationCalls'] == 1
+                and int(result['serverGeneration']) == int(result['controllerGeneration']) + 1,
+                'one-separate-actor-deployment-required')
+            return result
+        if kind == 'unknown':
+            require(result['injection'] == 'prepared-intent-never-dispatched' and result['remoteMutationCalls'] == 0
+                and result['pending']['kind'] == 'release', 'actual-never-dispatched-unknown-intent-required')
+            return result
         require(result['injection'] == 'discarded-real-successful-response' and result['selectedMutationCalls'] == 1
                 and result['remoteMutationCalls'] == 1 and result['pending']['kind'] == kind
                 and result['discarded']['id'] == result['pending']['id'], 'one-original-committed-operation-required')
@@ -51,6 +60,8 @@ def recover(api, item, injected):
     identity = injected['pending']['id']
     kind = injected['pending']['kind']
     require(pending['pending'] == {'id': identity, 'kind': kind}, 'original-pending-identity-changed')
+    blocked = api.call('deploy', '--workspace', item['workspace'],
+                      expected_uncertain={'recover-original-operation-before-new-mutation'})
     result = api.call('recover', '--workspace', item['workspace'], timeout=120)
     require(result['outcomeKnown'] is True and result['category'] == 'success', 'original-recovery-not-confirmed')
     if kind == 'invoke':
@@ -61,7 +72,11 @@ def recover(api, item, injected):
     journal = observe(api, item, 'journal')
     require(journal['pending'] is None and sum(row == {'id': identity, 'kind': kind} for row in journal['history']) == 1,
             'original-operation-not-settled-exactly-once')
+    again = api.call('recover', '--workspace', item['workspace'])
+    require(again.get('state') == 'no-pending-operation' and observe(api, item, 'journal') == journal,
+            'second-recovery-replayed-or-changed-journal')
     return {'injection': injected, 'recovery': result, 'journal': journal,
+            'blockedNewMutation': blocked, 'secondRecovery': again,
             'lookup': 'public-packaged-recover-original-id', 'effectReplay': False}
 
 

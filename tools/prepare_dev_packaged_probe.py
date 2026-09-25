@@ -24,7 +24,9 @@ CONDUCTORS = ('dev_packaged_probe', 'dev_packaged_process', 'dev_packaged_bootst
     'dev_packaged_linux_entry', 'dev_packaged_recovery', 'dev_packaged_wsl_lifecycle', 'dev_node_fault_probe',
     'dev_packaged_container_host', 'dev_packaged_container_peer', 'dev_packaged_container_client',
     'dev_packaged_failures', 'dev_failure_case_inputs', 'dev_clock_case_inputs', 'dev_packaged_security',
-    'dev_packaged_isolation')
+    'dev_packaged_isolation', 'dev_packaged_watch_guest', 'dev_packaged_watch_observer',
+    'dev_watch_case_inputs', 'dev_watch_inflight', 'dev_watch_revocation', 'dev_packaged_authority',
+    'dev_packaged_recovery_guest', 'dev_packaged_recovery_windows')
 
 
 def checked(condition, code):
@@ -107,6 +109,9 @@ def main():
         'verificationInputs': {'verifierSha256': verifiers, 'trustedRootSha256': 'sha256:' + TRUSTED_ROOT_SHA},
         'candidateRuns': runs, 'conductorSourceCommit': os.environ['GITHUB_SHA'],
         'faultProbeSha256': 'sha256:' + hashlib.sha256((target / 'dev_node_fault_probe.py').read_bytes()).hexdigest(),
+        'recoveryProbeSha256': 'sha256:' + hashlib.sha256((target / 'dev_packaged_recovery_guest.py').read_bytes()).hexdigest(),
+        'watchProbeSha256': {name: 'sha256:' + hashlib.sha256((target / name).read_bytes()).hexdigest()
+            for name in ('dev_packaged_watch_guest.py', 'dev_watch_inflight.py', 'dev_watch_revocation.py')},
         'devcontainerCli': {'version': '0.89.0', 'archiveSha512Base64': CLI_SHA512}}
     (target / 'selection.json').write_text(json.dumps(plan, indent=2) + '\n', encoding='utf-8')
     print('Prepared separate conductor and exact candidate verification inputs:', source)
