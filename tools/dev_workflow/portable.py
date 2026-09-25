@@ -18,7 +18,7 @@ SUPPORTED = scenarios.PORTABLE
 def fixture_inputs(source: Path, fixtures: list[dict]) -> dict | None:
     selected = {}
     for fixture in fixtures:
-        if fixture["kind"] not in {"test-adapter", "controlled-peer"} or "configuration" not in fixture:
+        if fixture["kind"] not in {"test-adapter", "controlled-peer", "real-provider"} or "configuration" not in fixture:
             return None
         raw = paths.read(source, fixture["configuration"], 256 * 1024)
         require(digest(raw) == fixture["identity"], "portable-fixture-identity")
@@ -27,6 +27,10 @@ def fixture_inputs(source: Path, fixtures: list[dict]) -> dict | None:
                 "portable-fixture-configuration")
         require(not selected.keys() & value.keys(), "duplicate-portable-provider-fixture")
         require((fixture["kind"] == "controlled-peer") == (set(value) == {"http"}), "portable-fixture-kind")
+        require(fixture["kind"] != "real-provider" or set(value) == {"metrics"}, "portable-real-provider-fixture-kind")
+        if "metrics" in value:
+            from . import metric_fixture
+            metric_fixture.validate(value["metrics"])
         if "clock" in value:
             clock = members(value["clock"], {"monotonicNanos", "wallUnixMillis"})
             require(all(isinstance(reading, str) and re.fullmatch(r"0|[1-9][0-9]{0,19}", reading)

@@ -293,6 +293,7 @@ operation; these guest limits are not compiler or whole-process RSS containment.
 A scenario fixture may include `configuration`, a relative project file, and its
 exact `sha256:` digest in `identity`. A `test-adapter` file contains `clock`, `entropy`
 (base64 bytes, 1–4096 bytes) or `metrics` (up to 16 production metric descriptors).
+A shared node/native metrics dependency uses `real-provider` with only `metrics`.
 A `controlled-peer` file contains `http`, with an explicit unprivileged `port` and
 up to 16 `exchanges`. Each exchange declares `method`, `path`, base64 `requestBody`,
 `status`, and base64 `responseBody` (each body at most 32 KiB). The host binds the
@@ -394,6 +395,24 @@ clock. Public receipts carry references and outcomes, with no secret bytes or
 secret-value digests. Shutdown observes released in-memory generations and
 references; retained private files follow the owned-workspace purge lifecycle.
 Required secret fixtures cannot execute on the portable host.
+
+A metrics fixture selects `{"metrics":[{"name":"dev.calls","kind":"counter","unit":"1","labels":[{"key":"region","values":["east"]}],"histogramUpperBounds":[]}]}`.
+Declare `real-provider`, bind the configuration digest and require `metrics`.
+The stopped test node installs the production metric provider with its existing
+shared telemetry exporter. Actual startup must report the matching provider;
+declaring a fixture cannot count as initialization. Each scenario needs an
+explicit grant, with a policy restricted to the selected metric names and the
+actual per-call cost, including one Boolean output byte. The provider separately
+bounds cumulative observations and record bytes per activation; a per-call
+policy ceiling is not a cumulative activation limit.
+
+`dev down` returns bounded actual metric exports after the exporter joins: name,
+unit and exact floating-point value bits, with no source or guest labels. The
+exported name starts with `latent.application.`. Queue bytes, accepted/captured
+counts, truncation and sink-loss counters make missing data visible. Node/native
+comparison requires the same descriptor bytes, typed results, exact exports and
+confirmed exporter/queue cleanup. A truncated observation cannot pass this
+comparison. Runtime catalog series remain bounded metadata until owner drop.
 
 ## Editor tasks and compiler locations
 
@@ -744,6 +763,27 @@ SOURCE_NODE --output NEW_DIRECTORY` as the Linux test owner. The existing Rust
 developer job executes it. Public source receipts contain no secret values or
 value digests; final authenticated Windows qualification remains separate.
 
+The [metric source observation](./metric-fixture-source-observation.json) records
+nine shared authored cases on the signed/enforced node, Linux portable host and
+native Windows host, plus a retained-node invocation: 28 invocations and 19
+captured metric records. Cold/warm emissions, invalid name/label/kind, denied
+policy, subsequent success and two observations in one fresh activation retain
+exact typed values and metric value bits. Both node shutdowns and native hosts
+joined their exporter and drained queued bytes, without truncation or sink loss.
+
+The first run exposed rejection of the node's canonical revision IDs by the
+production metrics registry; source validation now preserves those exact IDs.
+Two further failed attempts retain a zero-output-byte fixture policy and an
+incorrect probe assumption about per-call ceilings. These records are distinct
+from the passing run. This bounded comparison does not qualify queue saturation,
+rate pressure, final authenticated packages or a clean Windows host.
+
+Run `python tools/dev_metric_fixture_probe.py --payload TOOL_PREFIX --source-node
+SOURCE_NODE --portable-host NATIVE_HOST --output NEW_DIRECTORY` on Linux, then
+`python tools/run_dev_metric_portable.py --host NATIVE_WINDOWS_HOST --inputs
+EXPORTED_DIRECTORY --output NEW_REPORT` on Windows. Existing Rust and Windows
+developer jobs execute the probes and retain the public component and receipts.
+
 `tools/dev_node_fault_probe.py` is a contributor fault-injection harness, separate
 from the shipped helper. Run it only as the explicitly selected `test-` workspace's
 unprivileged Linux owner, with its exact helper path and SHA-256. It requires the
@@ -774,7 +814,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate

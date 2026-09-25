@@ -1,6 +1,47 @@
 use super::*;
 
 #[tokio::test]
+async fn real_node_revision_ids_preserve_exact_source_attributes_without_relaxing_guest_names() {
+    let (registry, sink, handle, runtime, _) = fixture(config());
+    let revision = format!("revision-v1:sha256:{}", "0".repeat(64));
+    let source = CustomMetricSource {
+        tenant: "a",
+        service: "examples:service/v1@1",
+        revision: &revision,
+    };
+    assert_eq!(
+        registry.try_emit(source, input(MetricKind::Counter, 2.0, &[])),
+        Ok(true)
+    );
+    handle.flush().await.unwrap();
+    let records = sink.records();
+    let TelemetryRecord::CustomMetric(metric) = &records[0] else {
+        panic!("custom metric")
+    };
+    assert_eq!(metric.point().attributes["latent.revision"], revision);
+    assert_eq!(metric.point().attributes["latent.service"], source.service);
+    for invalid in ["", "revision\nforged", "revision\"forged", &"r".repeat(129)] {
+        let changed = CustomMetricSource {
+            revision: invalid,
+            ..source
+        };
+        assert!(matches!(
+            registry.inspect(changed, input(MetricKind::Counter, 1.0, &[])),
+            Err(E::InvalidName)
+        ));
+    }
+    let mut guest = input(MetricKind::Counter, 1.0, &[]);
+    guest.name = "requests:forged";
+    assert!(matches!(
+        registry.inspect(source, guest),
+        Err(E::InvalidName)
+    ));
+    registry.retire();
+    runtime.shutdown().await.unwrap();
+    assert_eq!(registry.snapshot().unwrap().queued_bytes, 0);
+}
+
+#[tokio::test]
 async fn selections_cannot_move_between_registries_or_trusted_sources_or_survive_retirement() {
     let (a, _, ah, ar, _) = fixture(config());
     let (b, _, _, br, _) = fixture(config());

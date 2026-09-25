@@ -71,6 +71,13 @@ def compare(node: dict, portable: dict, *, native_os: str = "windows") -> dict:
                             and run.get("httpFixtureAuthentication") == "private-provider-credential"
                             and run.get("httpFixtureRequests", 0) > 0 for run in runs),
                     "comparison-actual-authenticated-http-fixture-selection")
+        if "metrics" in fixture:
+            from tools.dev_workflow import metric_fixture
+            exported = metric_fixture.reclaimed(left.get("fixtureShutdown", {}).get("metrics"))
+            require(len(runs) == 1 and runs[0].get("fixtures", {}).get("metrics") == fixture["metrics"]
+                    and exported["accepted"] > 0
+                    and metric_fixture.reclaimed(runs[0].get("metrics")) == exported,
+                    "comparison-actual-metric-exports")
     rows = []
     for actual, native in zip(node["results"], portable["results"]):
         sha(actual.get("inputSha256"))
@@ -109,6 +116,7 @@ def compare(node: dict, portable: dict, *, native_os: str = "windows") -> dict:
         "nodeProfile": left["profile"], "nodeAdmission": left["admission"],
         "nativeOs": native_os, "guestClockCompared": "clock" in (left.get("fixtureConfiguration") or {}),
         "httpFixtureCompared": "http" in (left.get("fixtureConfiguration") or {}),
+        "metricsCompared": "metrics" in (left.get("fixtureConfiguration") or {}),
         "reviewedDifferences": ["node-only-publication-admission-and-routing", "host-os-and-architecture",
             "bounded-cold-node-preparation-deadline", "system-clock-and-entropy-not-compared"]
             + (["node-public-resource-code-and-portable-engine-detail"] if any("platformCodes" in row for row in rows) else []),

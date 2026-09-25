@@ -338,9 +338,7 @@ pub async fn run(request: Request) -> Result<Value, &'static str> {
         }
     }
     providers.shutdown().await?;
-    let metrics = providers.metrics.as_ref().map(|provider| {
-        let s = provider.snapshot(); json!({"accepted":s.accepted,"attempted":s.attempted,"invalid":s.invalid,"exhausted":s.exhausted})
-    });
+    let metrics = providers.metric_observation()?;
     Ok(
         json!({"schemaVersion":"latent.dev.portable-result.v1","environment":"portable",
         "trust":"controlled-development-test", "productionNode":false,"category":"success",
@@ -348,7 +346,7 @@ pub async fn run(request: Request) -> Result<Value, &'static str> {
         "clock":if request.fixtures.clock.is_some() { "fixed-guest-readings-fixture" } else { "system-clock-nondeterministic" },
         "controlClock":"system-clock-nondeterministic", "entropy":providers.entropy,
         "fixtures":{"sha256":fixture_digest.0,"random":request.fixtures.entropy.is_some(),
-            "clock":request.fixtures.clock,"metrics": !request.fixtures.metrics.is_empty(),"http":request.fixtures.http},
+            "clock":request.fixtures.clock,"metrics": request.fixtures.metrics,"http":request.fixtures.http},
         "httpFixtureAuthentication":if request.fixtures.http.is_some() { Some("private-provider-credential") } else { None },
         "httpFixtureRequests": providers.http_requests,"metrics":metrics,
         "component":artifact.descriptor.release_digest.0,"os":std::env::consts::OS,"architecture":std::env::consts::ARCH,

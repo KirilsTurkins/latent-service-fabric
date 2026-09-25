@@ -3,9 +3,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::{ProviderDescriptor, ProviderShutdownReport};
+use super::{ProviderDescriptor, ProviderServices, ProviderShutdownReport};
 use latent_artifacts::DirectoryArtifactRepository;
-use latent_audit::AuditHandle;
 use latent_blobs::{
     local::{LocalBlobLimits, LocalBlobStore},
     provider::LocalBlobProvider,
@@ -20,7 +19,7 @@ use latent_control_store::{
     bindings::{BindingLimits, ConfiguredBindingProvider},
     DirectoryDeploymentRepository,
 };
-use latent_core::{ActivationClock, PlatformError, PlatformErrorCode, ServiceId, TenantId};
+use latent_core::{PlatformError, PlatformErrorCode, ServiceId, TenantId};
 use latent_policy::capability::PolicyStore;
 
 use crate::config::{NodeSettings, ProviderIdentity};
@@ -40,6 +39,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     io: Arc<IoRuntime>,
     secrets: Option<latent_secrets::LocalSecretStore>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
+    metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
     blobs: Option<Arc<LocalBlobStore>>,
     clocks: Vec<ProviderRegistration>,
     descriptors: Vec<ProviderDescriptor>,
@@ -55,25 +55,23 @@ impl ProviderRuntime {
         artifacts: &Arc<DirectoryArtifactRepository>,
         deployments: &Arc<DirectoryDeploymentRepository>,
         policies: Arc<PolicyStore>,
-        audit: AuditHandle,
-        clock: Arc<dyn ActivationClock>,
-        control: tokio::runtime::Handle,
+        services: ProviderServices,
     ) -> Result<Self, PlatformError> {
         let config = settings.providers.as_ref().ok_or_else(unavailable)?;
         let broker = Arc::new(
             ActivationCapabilityBroker::new(
                 artifacts.lifecycle_authority(),
                 policies,
-                clock,
+                services.clock,
                 CapabilityBrokerLimits::default(),
             )?
-            .with_audit(audit, true)?,
+            .with_audit(services.audit, true)?,
         );
         let io = Arc::new(IoRuntime::new(IoLimits::default())?);
         let pools = Arc::new(ProviderPools::new(
             broker.clone(),
             io.clone(),
-            control,
+            services.control,
             ProviderPoolLimits::default(),
         )?);
         let runtime = Arc::new(ActivationCapabilityRuntime::new(
@@ -86,13 +84,14 @@ impl ProviderRuntime {
             io,
             secrets: None,
             guest_secrets: None,
+            metrics: None,
             blobs: None,
             clocks: Vec::with_capacity(2),
-            descriptors: Vec::with_capacity(6),
+            descriptors: Vec::with_capacity(7),
         };
         let deadline = Instant::now() + Duration::from_secs(30);
         let installed = tokio::time::timeout_at(deadline.into(), async {
-            let mut providers = Vec::with_capacity(6);
+            let mut providers = Vec::with_capacity(7);
             for (installation, monotonic) in
                 [(&config.clock_monotonic, true), (&config.clock_wall, false)]
             {
@@ -152,6 +151,22 @@ impl ProviderRuntime {
                 providers.push(owner.record(&config.identity, provider.reference()));
                 owner.runtime.install_secrets(Arc::new(provider))?;
             }
+            if let Some(config) = &config.metrics {
+                let provider = latent_capabilities::broker::metrics::MetricProvider::install(
+                    &broker,
+                    services.telemetry.ok_or_else(unavailable)?,
+                    config.identity.epoch,
+                    config.configuration(),
+                    latent_capabilities::broker::metrics::MetricActivationLimits {
+                        maximum_observations: 32,
+                        maximum_series: 16,
+                        maximum_record_bytes: 1024 * 1024,
+                    },
+                )?;
+                providers.push(owner.record(&config.identity, provider.reference()));
+                owner.metrics = Some(provider.clone());
+                owner.runtime.install_metrics(provider)?;
+            }
             deployments
                 .activate_configured_bindings(
                     config.definitions()?,
@@ -198,6 +213,16 @@ impl ProviderRuntime {
         &self.descriptors
     }
 
+    pub fn metric_observation(
+        &self,
+        sink: &latent_telemetry::StructuredLocalSink,
+    ) -> Result<Option<super::MetricObservation>, PlatformError> {
+        self.metrics
+            .as_ref()
+            .map(|provider| super::metrics::observe(provider, sink))
+            .transpose()
+    }
+
     pub fn retire(&self) {
         self.runtime.retire();
         for clock in &self.clocks {
@@ -209,6 +234,9 @@ impl ProviderRuntime {
         }
         if let Some(secrets) = &self.guest_secrets {
             secrets.close();
+        }
+        if let Some(metrics) = &self.metrics {
+            metrics.retire();
         }
         if let Some(blobs) = &self.blobs {
             blobs.close();

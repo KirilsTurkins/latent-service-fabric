@@ -268,7 +268,7 @@ async fn missing_or_foreign_policy_owner_is_rejected_before_service_composition(
     let policy = catalogs.policies.take();
     assert!(super::super::StandaloneNode::compose(
         &mut settings,
-        &catalogs,
+        &mut catalogs,
         Arc::new(SystemActivationClock)
     )
     .is_err());
@@ -282,7 +282,7 @@ async fn missing_or_foreign_policy_owner_is_rejected_before_service_composition(
     catalogs.policies = other_catalogs.policies.take();
     assert!(super::super::StandaloneNode::compose(
         &mut settings,
-        &catalogs,
+        &mut catalogs,
         Arc::new(SystemActivationClock)
     )
     .is_err());

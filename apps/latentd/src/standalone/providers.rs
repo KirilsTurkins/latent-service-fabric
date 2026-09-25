@@ -1,4 +1,13 @@
 use serde::Serialize;
+mod metrics;
+pub use metrics::MetricObservation;
+
+pub(in crate::standalone) struct ProviderServices {
+    pub audit: latent_audit::AuditHandle,
+    pub clock: std::sync::Arc<dyn latent_core::ActivationClock>,
+    pub control: tokio::runtime::Handle,
+    pub telemetry: Option<latent_telemetry::TelemetryHandle>,
+}
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod runtime;

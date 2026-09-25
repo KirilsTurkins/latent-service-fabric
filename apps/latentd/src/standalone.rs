@@ -13,6 +13,7 @@ mod providers;
 mod rollouts;
 mod shutdown;
 mod start;
+mod telemetry;
 pub mod transport;
 
 use std::net::SocketAddr;

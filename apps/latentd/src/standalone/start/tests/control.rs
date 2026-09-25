@@ -97,13 +97,14 @@ async fn enforced_control_reuse_rejects_a_different_activation_clock_without_can
         policies: None,
         capabilities: None,
         providers: None,
+        telemetry: None,
         clock,
     };
     assert!(catalogs.deployments.canary_hub().is_none());
     assert_eq!(
         super::super::StandaloneNode::compose(
             &mut settings,
-            &catalogs,
+            &mut catalogs,
             Arc::new(latent_core::SystemActivationClock),
         )
         .err()

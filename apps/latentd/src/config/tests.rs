@@ -8,6 +8,7 @@ mod budgets;
 mod connection_limits;
 mod development;
 mod engine;
+mod metrics;
 mod providers;
 mod renderer;
 mod security;

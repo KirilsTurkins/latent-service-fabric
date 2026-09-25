@@ -2,15 +2,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://latent.dev/schemas/node-providers.schema.json",
   "title": "Optional standalone bounded capability providers",
-  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations and aggregate reservations. Installs only maintained HTTP, local-blob, protected-local-secret, activation-clock and OS-entropy profiles; it grants no guest authority.",
+  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations, metric descriptor uniqueness and histogram ordering, and aggregate reservations. Installs only maintained HTTP, local-blob, protected-local-secret, custom-metric, activation-clock and OS-entropy profiles; it grants no guest authority.",
   "type": "object",
   "additionalProperties": false,
   "required": ["formatVersion", "bindings"],
-  "anyOf": [{"required": ["http"]}, {"required": ["blob"]}, {"required": ["secrets"]}, {"required": ["clockMonotonic"]}, {"required": ["clockWall"]}, {"required": ["random"]}],
+  "anyOf": [{"required": ["http"]}, {"required": ["blob"]}, {"required": ["secrets"]}, {"required": ["metrics"]}, {"required": ["clockMonotonic"]}, {"required": ["clockWall"]}, {"required": ["random"]}],
   "properties": {
     "formatVersion": {"type": "integer", "const": 1},
     "http": {"$ref": "#/$defs/http"},
     "secrets": {"$ref": "#/$defs/secrets"},
+    "metrics": {"$ref": "#/$defs/metrics"},
     "clockMonotonic": {"$ref": "#/$defs/scalar"},
     "clockWall": {"$ref": "#/$defs/scalar"},
     "random": {"$ref": "#/$defs/scalar"},
@@ -26,12 +27,42 @@
           "name": {"$ref": "#/$defs/token"}, "tenant": {"$ref": "#/$defs/token"},
           "consumerService": {"$ref": "#/$defs/token"}, "providerService": {"$ref": "#/$defs/token"},
           "providerBinding": {"$ref": "#/$defs/token"}, "route": {"$ref": "#/$defs/token"},
-          "contract": {"enum": ["latent:http/client@0.2.0", "latent:blob/blob@0.2.0", "latent:secrets/reader@0.1.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0"]}
+          "contract": {"enum": ["latent:http/client@0.2.0", "latent:blob/blob@0.2.0", "latent:secrets/reader@0.1.0", "latent:telemetry/custom@0.1.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0"]}
         }
       }
     }
   },
   "$defs": {
+    "metricName": {
+      "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z][A-Za-z0-9_.]*$",
+      "not": {"pattern": "^(?:[Ll][Aa][Tt][Ee][Nn][Tt]|[Oo][Tt][Ee][Ll]|[Hh][Oo][Ss][Tt])"}
+    },
+    "metrics": {
+      "type": "object", "additionalProperties": false, "required": ["identity", "descriptors"],
+      "properties": {
+        "identity": {"$ref": "#/$defs/identity"},
+        "descriptors": {"type": "array", "minItems": 1, "maxItems": 16, "items": {
+          "type": "object", "additionalProperties": false,
+          "required": ["name", "kind", "unit", "labels", "histogramUpperBounds"],
+          "properties": {
+            "name": {"$ref": "#/$defs/metricName"},
+            "kind": {"enum": ["counter", "up-down-counter", "gauge", "histogram"]},
+            "unit": {"type": "string", "minLength": 1, "maxLength": 16, "pattern": "^[A-Za-z0-9_./-]+$"},
+            "labels": {"type": "array", "maxItems": 8, "items": {
+              "type": "object", "additionalProperties": false, "required": ["key", "values"],
+              "properties": {
+                "key": {"$ref": "#/$defs/metricName", "maxLength": 32},
+                "values": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true,
+                  "items": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[!-~]+$"}}
+              }
+            }},
+            "histogramUpperBounds": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"type": "number"}}
+          },
+          "if": {"properties": {"kind": {"const": "histogram"}}},
+          "else": {"properties": {"histogramUpperBounds": {"maxItems": 0}}}
+        }}
+      }
+    },
     "secrets": {
       "type": "object", "additionalProperties": false, "required": ["identity", "directory", "references"],
       "properties": {

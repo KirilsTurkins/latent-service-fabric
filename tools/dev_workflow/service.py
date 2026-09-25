@@ -251,6 +251,8 @@ def supervise(root: Path) -> int:
                                     and (http_peer_owner is None or http_peer_owner.failure is None))
                             if output.provider_shutdown is not None:
                                 current["providerShutdown"] = output.provider_shutdown
+                            if output.metrics is not None:
+                                current["metrics"] = output.metrics
                             state.atomic(root, "lifecycle.json", current)
                             result = current
                         else:

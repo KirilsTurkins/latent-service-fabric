@@ -67,6 +67,7 @@ pub struct Providers {
     pub entropy: &'static str,
     pub metrics: Option<Arc<MetricProvider>>,
     exporter: Option<TelemetryRuntime>,
+    metric_sink: Option<Arc<StructuredLocalSink>>,
     _policies: Arc<PolicyStore>,
     _builtins: Vec<latent_capabilities::broker::ProviderRegistration>,
     http: Option<http::Installed>,
@@ -153,6 +154,7 @@ impl Providers {
             &json!({"kind":"random"}),
         )?);
         let mut exporter = None;
+        let mut metric_sink = None;
         let mut metrics = None;
         if !fixtures.metrics.is_empty() {
             let sink = Arc::new(
@@ -160,7 +162,7 @@ impl Providers {
                     .map_err(|_| "portable-metric-sink")?,
             );
             let (handle, worker) =
-                TelemetryRuntime::spawn(TelemetryPipelineConfig::default(), sink)
+                TelemetryRuntime::spawn(TelemetryPipelineConfig::default(), sink.clone())
                     .map_err(|_| "portable-metric-worker")?;
             let config = CustomMetricsConfig {
                 limits: CustomMetricLimits::default(),
@@ -186,6 +188,7 @@ impl Providers {
                 &["emit-metric"], &json!({"kind":"telemetry","names":fixtures.metrics.iter().map(|item| &item.name).collect::<Vec<_>>()}))?);
             metrics = Some(provider);
             exporter = Some(worker);
+            metric_sink = Some(sink);
         }
         let http = fixtures
             .http
@@ -221,6 +224,7 @@ impl Providers {
             entropy,
             metrics,
             exporter,
+            metric_sink,
             _policies: policies,
             _builtins: builtins,
             http,
@@ -239,8 +243,51 @@ impl Providers {
         Ok(())
     }
 
+    pub fn metric_observation(&self) -> Result<Option<Value>, &'static str> {
+        let Some(provider) = &self.metrics else {
+            return Ok(None);
+        };
+        if self.exporter.is_some() {
+            return Err("portable-metrics-exporter-not-joined");
+        }
+        let snapshot = provider.snapshot();
+        let registry = provider
+            .registry()
+            .snapshot()
+            .map_err(|_| "portable-metrics-snapshot")?;
+        if !registry.retired || registry.queued_bytes != 0 {
+            return Err("portable-metrics-queue-not-reclaimed");
+        }
+        let sink = self
+            .metric_sink
+            .as_ref()
+            .ok_or("portable-metrics-sink-unavailable")?;
+        let mut count = 0;
+        let mut records = Vec::with_capacity(16);
+        for record in sink.records() {
+            if let latent_telemetry::TelemetryRecord::CustomMetric(metric) = record {
+                count += 1;
+                if records.len() == 16 {
+                    records.remove(0);
+                }
+                let point = metric.point();
+                records.push(json!({"name":point.name,"unit":point.unit,"valueBits":format!("{:016x}",point.value.to_bits())}));
+            }
+        }
+        let retained = sink.snapshot();
+        Ok(Some(
+            json!({"accepted":snapshot.accepted,"attempted":snapshot.attempted,"invalid":snapshot.invalid,
+            "exhausted":snapshot.exhausted,"unavailable":snapshot.unavailable,"queuedBytes":registry.queued_bytes,
+            "retired":registry.retired,"capturedRecords":count,"truncated":count>records.len(),
+            "sinkEvictedEntries":retained.evicted_entries,"sinkDroppedOversized":retained.dropped_oversized,"records":records}),
+        ))
+    }
+
     pub async fn shutdown(&mut self) -> Result<(), &'static str> {
         self.check_idle()?;
+        if let Some(provider) = &self.metrics {
+            provider.retire();
+        }
         if let Some(http) = &mut self.http {
             self.http_requests = http.shutdown().await?;
         }

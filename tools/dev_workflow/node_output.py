@@ -29,6 +29,7 @@ class NodeOutput:
         self.retained = bytearray()
         self.clean_stop, self.failure = False, None
         self.provider_shutdown = None
+        self.metrics = None
         self.started = None
         self.startup = threading.Event()
         self.lock = threading.Lock()
@@ -43,6 +44,10 @@ class NodeOutput:
                         and record.get("event") == "stopped" and record.get("clean") is True):
                     self.clean_stop = True
                     self.provider_shutdown = provider_shutdown(record)
+                    metrics = record.get("report", {}).get("metrics")
+                    if metrics is not None:
+                        from .metric_fixture import observation
+                        self.metrics = observation(metrics)
                 if (record.get("schemaVersion") == "latent.standalone.status.v1"
                         and record.get("event") in {"ready", "started"}):
                     with self.lock:

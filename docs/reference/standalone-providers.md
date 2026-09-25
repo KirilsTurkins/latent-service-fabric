@@ -69,6 +69,29 @@ system clock. Values and value digests are excluded from the provider identity.
 This entry adds no separate listener, background refresh or ambient credential
 discovery. Reload requires explicit node lifecycle management.
 
+Custom metrics use a `metrics` entry containing `identity` and one to sixteen
+`descriptors`. Each descriptor declares `name`, `kind` (`counter`,
+`up-down-counter`, `gauge` or `histogram`), `unit`, bounded `labels` (each with
+`key` and allowed `values`) and `histogramUpperBounds`. The ordinary registry
+rejects reserved names, duplicate descriptors/labels/values and nonfinite or
+unordered histogram bounds. `check-config` validates this data without starting
+an exporter. Bind `latent:telemetry/custom@0.1.0` with the actual
+`custom-metrics-v1` provider descriptor and explicit metric-name policies.
+
+The provider shares the node's existing telemetry owner. It adds no exporter
+thread or remote destination. Its one configured tenant is limited to 32 series,
+128 observations per second and 65536 queued bytes; each activation is limited
+to 32 observations, 16 series and 1 MiB of record bytes, further restricted by
+its policy and fuel budget. Source identities accept the node's canonical
+`revision-v1:sha256:...` values without changing guest metric-name rules.
+
+After provider retirement and exporter shutdown, the bounded stopped report
+includes metric attempt/outcome counters, queue bytes, sink loss counters and
+up to sixteen captured records containing only exported name, unit and exact
+floating-point value bits. Exported names retain the `latent.application.`
+prefix. Source/guest labels and other diagnostics are omitted. Truncation and
+sink loss are explicit; a finite retained series catalog is not a live exporter.
+
 The node's bounded `ready` record includes actual installed descriptors:
 `id`, `tenant`, `service`, `capability`, `profile`, `configurationDigest`, and
 decimal-string `configurationEpoch`. Use those exact descriptors when applying

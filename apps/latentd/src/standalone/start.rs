@@ -19,8 +19,7 @@ use latent_wire::management::{
 use super::{
     error, load, observations, transport, ActivationClock, Arc, LocalActivationManager,
     LocalQuotaProvider, LocalScheduler, PlatformError, PlatformErrorCode, RuntimeThreads,
-    SharedActivationObserver, StandaloneNode, StructuredLocalSink, TelemetryRuntime,
-    WasmtimeComponentEngineFactory,
+    SharedActivationObserver, StandaloneNode, WasmtimeComponentEngineFactory,
 };
 use crate::config::NodeSettings;
 
@@ -40,10 +39,28 @@ pub(super) struct Catalogs {
     policies: Option<super::policies::PolicyRuntime>,
     capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
     providers: Option<Box<super::providers::ProviderRuntime>>,
+    telemetry: Option<Box<super::telemetry::TelemetryOwner>>,
     clock: Arc<dyn ActivationClock>,
 }
 
 impl Catalogs {
+    fn telemetry(
+        &mut self,
+        settings: &NodeSettings,
+    ) -> Result<
+        (
+            latent_telemetry::TelemetryHandle,
+            Arc<latent_telemetry::StructuredLocalSink>,
+        ),
+        PlatformError,
+    > {
+        if self.telemetry.is_none() {
+            self.telemetry = Some(super::telemetry::TelemetryOwner::start(settings)?);
+        }
+        let owner = self.telemetry.as_ref().expect("owned telemetry");
+        Ok((owner.handle.clone(), owner.sink.clone()))
+    }
+
     fn validate_composition(
         &self,
         settings: &NodeSettings,
@@ -69,6 +86,10 @@ impl Catalogs {
             )?;
         }
         if !self.profile.matches(settings)
+            || self
+                .telemetry
+                .as_ref()
+                .is_some_and(|owner| !owner.matches(settings))
             || settings.supply_chain.is_enforced() != self.supply_chain.is_some()
             || settings.audit.is_some() != self.audit.is_some()
             || settings.rollouts.is_some() != self.rollouts.is_some()
@@ -153,6 +174,7 @@ impl Catalogs {
             policies: None,
             capabilities: None,
             providers: None,
+            telemetry: None,
             clock: Arc::new(SystemActivationClock),
         })
     }
@@ -226,6 +248,7 @@ impl Catalogs {
         let mut rollouts = None;
         let mut policies = None;
         let mut providers = None;
+        let mut telemetry = None;
         let opened = async {
             let artifacts = Arc::new(if let Some(authority) = &supply_chain {
                 let authority: Arc<dyn latent_artifacts::AdmissionAuthority> =
@@ -324,6 +347,13 @@ impl Catalogs {
                 .await?;
             }
             if settings.providers.is_some() {
+                if settings
+                    .providers
+                    .as_ref()
+                    .is_some_and(|providers| providers.metrics.is_some())
+                {
+                    telemetry = Some(super::telemetry::TelemetryOwner::start(settings)?);
+                }
                 providers = Some(Box::new(
                     super::providers::ProviderRuntime::open(
                         settings,
@@ -335,9 +365,12 @@ impl Catalogs {
                             .handle()
                             .store()
                             .clone(),
-                        audit.as_ref().ok_or_else(mode_error)?.handle(),
-                        clock.clone(),
-                        runtime.ok_or_else(mode_error)?.clone(),
+                        super::providers::ProviderServices {
+                            audit: audit.as_ref().ok_or_else(mode_error)?.handle(),
+                            clock: clock.clone(),
+                            control: runtime.ok_or_else(mode_error)?.clone(),
+                            telemetry: telemetry.as_ref().map(|owner| owner.handle.clone()),
+                        },
                     )
                     .await?,
                 ));
@@ -355,6 +388,9 @@ impl Catalogs {
                 }
                 if let Some(rollouts) = &rollouts {
                     let _ = rollouts.shutdown(settings.shutdown_grace).await;
+                }
+                if let Some(telemetry) = telemetry.take() {
+                    let _ = telemetry.runtime.shutdown().await;
                 }
                 if let Some(control) = control.take() {
                     let _ = control.shutdown(settings.shutdown_grace).await;
@@ -380,6 +416,7 @@ impl Catalogs {
             policies,
             capabilities: providers.as_ref().map(|owner| owner.runtime.clone()),
             providers,
+            telemetry,
             clock,
         })
     }
@@ -433,7 +470,7 @@ impl StandaloneNode {
         threads: RuntimeThreads,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
-        let mut node = match Self::compose(&mut settings, &catalogs, clock) {
+        let mut node = match Self::compose(&mut settings, &mut catalogs, clock) {
             Ok(node) => node,
             Err(failure) => {
                 if let Some(providers) = &catalogs.providers {
@@ -443,6 +480,9 @@ impl StandaloneNode {
                 }
                 if let Some(rollouts) = &catalogs.rollouts {
                     let _ = rollouts.shutdown(settings.shutdown_grace).await;
+                }
+                if let Some(telemetry) = catalogs.telemetry.take() {
+                    let _ = telemetry.runtime.shutdown().await;
                 }
                 if let Some(control) = catalogs.control.take() {
                     let _ = control.shutdown(settings.shutdown_grace).await;
@@ -654,7 +694,7 @@ impl StandaloneNode {
 
     fn compose(
         settings: &mut NodeSettings,
-        catalogs: &Catalogs,
+        catalogs: &mut Catalogs,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
         catalogs.validate_composition(settings, &clock)?;
@@ -662,9 +702,7 @@ impl StandaloneNode {
             .node
             .attributes
             .extend(catalogs.profile.attributes());
-        let sink = Arc::new(StructuredLocalSink::new(settings.local_sink)?);
-        let (telemetry, telemetry_runtime) =
-            TelemetryRuntime::spawn(settings.telemetry, sink.clone())?;
+        let (telemetry, sink) = catalogs.telemetry(settings)?;
         let observer = Arc::new(SharedActivationObserver::new(
             telemetry.clone(),
             settings.observer.clone(),
@@ -737,7 +775,7 @@ impl StandaloneNode {
                 clock.deadline_diagnostic_observer().cloned(),
             )?),
             sampler: None,
-            telemetry_runtime: Some(telemetry_runtime),
+            telemetry_runtime: Some(catalogs.telemetry.take().expect("owned telemetry").runtime),
             factory: Some(factory),
             load,
             inventory: Arc::new(observations::InventorySlot::new()),

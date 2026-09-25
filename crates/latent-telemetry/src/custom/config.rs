@@ -60,6 +60,13 @@ pub(super) fn token(value: &str, maximum: usize) -> bool {
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || b"_.-/".contains(&b))
 }
+pub(super) fn source_identity(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"_.:/@-".contains(&b))
+}
 pub(super) fn name(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 64
@@ -77,7 +84,8 @@ fn fail() -> CustomMetricError {
     CustomMetricError::InvalidName
 }
 impl CustomMetricsConfig {
-    pub(super) fn validate(&self) -> Result<(), CustomMetricError> {
+    /// Check the closed registry contract without opening an exporter or retaining series.
+    pub fn validate(&self) -> Result<(), CustomMetricError> {
         let l = self.limits;
         if !(1..=1024).contains(&l.maximum_series)
             || !(1..=l.maximum_series).contains(&l.maximum_series_per_tenant)
@@ -96,7 +104,7 @@ impl CustomMetricsConfig {
         let mut metadata = self.tenants.capacity() * size_of::<TenantMetricsPolicy>();
         let mut descriptors = 0;
         for (i, tenant) in self.tenants.iter().enumerate() {
-            if !token(&tenant.tenant, 128)
+            if !source_identity(&tenant.tenant)
                 || tenant.tenant.capacity() > 128
                 || tenant.metrics.is_empty()
                 || tenant.metrics.len() > 32
