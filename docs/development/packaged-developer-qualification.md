@@ -1,5 +1,10 @@
 # Packaged developer qualification
 
+The [native Windows qualification](native-windows-qualification.md) records the
+completed Windows/WSL and native schedule at approved source `0cb5cf08`, including
+all six languages and the closed failure/clock differential. It supplies #566's
+evidence while the remaining epic gates stay separately tracked.
+
 The `Packaged developer qualification` workflow stages a small test conductor on
 a fresh Windows x86-64 runner and a disconnected Linux OS container. The Windows application runs the authenticated native
 frontend, WSL image, native Linux runtime and six language tool bundles. The
