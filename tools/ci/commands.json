@@ -624,7 +624,7 @@
       "job": "contracts",
       "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Exercise controller boundaries and actual owned subprocesses",
-      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_build_process",
+      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -4122,6 +4122,14 @@
       "EventFixtureTests.test_private_material_is_owned_exactly_and_never_recreated_on_tamper",
       "EventFixtureTests.test_selected_fixture_requires_live_owned_tls_peer_evidence"
     ],
+    "tools/tests/test_dev_fixture_cleanup.py": [
+      "FixturePurge.test_changed_material_and_foreign_purpose_cannot_reuse_purge_preflight",
+      "FixturePurge.test_confirmation_and_stopped_state_are_required_before_private_cleanup",
+      "FixturePurge.test_count_and_byte_bounds_and_wrong_workspace_reject_before_deletion",
+      "FixturePurge.test_links_and_nonprivate_files_fail_without_touching_their_targets",
+      "FixturePurge.test_purge_removes_complete_and_partial_private_fixtures_and_is_idempotent",
+      "FixturePurge.test_unknown_later_fixture_entry_rejects_before_any_build_or_credential_deletion"
+    ],
     "tools/tests/test_dev_http_fixture.py": [
       "HttpFixture.test_changed_selection_and_credential_are_not_silently_rotated",
       "HttpFixture.test_fixture_needs_matching_running_peer_observation",
@@ -6659,6 +6667,7 @@
     "tools/tests/test_dev_build_cache.py",
     "tools/tests/test_dev_contracts.py",
     "tools/tests/test_dev_event_fixture.py",
+    "tools/tests/test_dev_fixture_cleanup.py",
     "tools/tests/test_dev_http_fixture.py",
     "tools/tests/test_dev_local_service_fixture.py",
     "tools/tests/test_dev_metric_fixture.py",
@@ -6878,7 +6887,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-tools.yml": "617b252b71b8a4b56973e3afdaf105e014928e329a2f4d59df36a50f1c6deab9",
+    ".github/workflows/developer-tools.yml": "cd8e9ca06af06f597d06cbfd325acb8930b2ccf5be72ce0bae46afb81c851108",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",

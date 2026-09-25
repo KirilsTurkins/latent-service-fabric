@@ -439,6 +439,15 @@ An `expired` entry uses a past system-clock deadline; it does not change any
 clock. Public receipts carry references and outcomes, with no secret bytes or
 secret-value digests. Shutdown observes released in-memory generations and
 references; retained private files follow the owned-workspace purge lifecycle.
+
+Explicit `purge` also removes the owned HTTP authorization file, event TLS key
+and authorization material, and generated secret fixture files. Before removing
+runtime or build state, it checks every fixture directory for private ownership,
+recognized bounded files and safe paths. Unknown files, links, changed inputs or
+an unrelated owner stop cleanup. Interrupted fixture preparation is covered by
+the same checks. `down` retains these files for a later restart; purge returns
+the names of removed fixture directories and preserves author sources and other
+workspaces.
 Required secret fixtures cannot execute on the portable host.
 
 A metrics fixture selects `{"metrics":[{"name":"dev.calls","kind":"counter","unit":"1","labels":[{"key":"region","values":["east"]}],"histogramUpperBounds":[]}]}`.
@@ -917,7 +926,7 @@ authorized by this work.
 ## Contributor verification
 
 ```powershell
-python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_build_process
+python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process
 python tools/latent_dev.py dev doctor
 python -m pip install --require-hashes -r tools/dev-frontend-windows.lock
 python tools/build_dev_frontend.py --output target/dev-candidate
