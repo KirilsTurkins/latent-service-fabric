@@ -478,6 +478,13 @@ Pull-request runs remain unsigned. Offline verification additionally requires an
 independently approved exact-commit identity policy, independent Sigstore roots
 and a pinned GitHub verifier. Attestation alone is not approval or qualification.
 
+The manual [platform preflight](../../.github/workflows/developer-platform-preflight.yml)
+checks a fresh Windows 2025 runner's actual WSL2 system environment and kernel.
+It uses no source checkout, compiler or LSF candidate and retains bounded failed
+observations. Its only automatic trigger is the explicitly named qualification
+branch when that workflow changes. A successful preflight identifies a possible
+host for the packaged schedule; it does not count as application qualification.
+
 The first native Windows build ran `dev doctor` outside the checkout with Python
 removed from `PATH`. Its receipt is an unsigned contributor build, not an
 authenticated candidate or a clean-host application workflow. Focused Windows
