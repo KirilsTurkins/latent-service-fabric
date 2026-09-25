@@ -546,6 +546,14 @@ Documentation, CI inventory and preflight-only pushes do not rebuild every guest
 bundle; explicit candidate dispatch and application-source changes retain their
 existing build lanes.
 
+An [actual hosted preflight](./hosted-wsl-preflight-observation.json) passed on
+September 25: Windows Server 2025 build 26100.33296, WSL 2.7.13 and the booted
+`6.18.33.2-microsoft-standard-WSL2` x86-64 kernel. Its pinned Ubuntu image was
+imported, observed, stopped and unregistered after exact registry/path checks.
+The first failed attempt is retained. This supplies an available fresh Windows
+runner for further testing, without claiming LSF package qualification or general
+support guarantees for nested virtualization.
+
 The first native Windows build ran `dev doctor` outside the checkout with Python
 removed from `PATH`. Its receipt is an unsigned contributor build, not an
 authenticated candidate or a clean-host application workflow. Focused Windows
