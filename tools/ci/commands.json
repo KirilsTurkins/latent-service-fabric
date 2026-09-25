@@ -634,7 +634,7 @@
       "job": "contracts",
       "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Exercise controller boundaries and actual owned subprocesses",
-      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_build_process",
+      "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -654,7 +654,7 @@
       "job": "guest-tools",
       "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
       "name": "Compare explicit clock fixtures on signed nodes and the Linux portable host",
-      "run": "cargo --config .cargo/managed-guest.toml build --locked -p latent-portable-test-host\npython -c \"import shutil; shutil.copy2('target/debug/latent-portable-test-host','target/dev-tools/clock-host')\"\npython tools/dev_clock_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-clock-fixtures\"\npython tools/dev_failure_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-failure-fixtures\"\npython tools/dev_http_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-http-fixtures\"\npython tools/dev_blob_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-blob-fixtures\"\npython tools/dev_secret_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-secret-fixtures\"\npython tools/dev_metric_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-metric-fixtures\"\nsudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_dev_recovery_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-recovery-fixtures\"",
+      "run": "cargo --config .cargo/managed-guest.toml build --locked -p latent-portable-test-host\npython -c \"import shutil; shutil.copy2('target/debug/latent-portable-test-host','target/dev-tools/clock-host')\"\npython tools/dev_clock_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-clock-fixtures\"\npython tools/dev_failure_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-failure-fixtures\"\npython tools/dev_http_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-http-fixtures\"\npython tools/dev_blob_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-blob-fixtures\"\npython tools/dev_secret_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-secret-fixtures\"\npython tools/dev_metric_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-metric-fixtures\"\npython tools/dev_local_service_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-local-service-fixtures\"\npython tools/dev_event_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-event-fixtures\"\nsudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_dev_recovery_ci.py --probe isolation --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-workspace-isolation\"\nsudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_dev_recovery_ci.py --probe watch --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-watch-fixtures\"\nsudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_dev_recovery_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-recovery-fixtures\"",
       "shell": "default",
       "stepIf": "matrix.language == 'rust'",
       "workflow": ".github/workflows/developer-tools.yml",
@@ -3304,11 +3304,17 @@
     "tools/dev_clock_fixture_probe.py": {
       "sha256": "307493b05e171bf2cd2980d205be69363592ddea199944806650da7367135ef4"
     },
+    "tools/dev_event_fixture_probe.py": {
+      "sha256": "f64f6c0cb748c3f8d39b519938b5ad6301bb3978a4e11ed1f45ddecd0c620950"
+    },
     "tools/dev_failure_fixture_probe.py": {
       "sha256": "debeb0ea617f5d8eef93ee4b1ef8552bbf5cd30b96c2d684f9960d39cbd6a9a9"
     },
     "tools/dev_http_fixture_probe.py": {
-      "sha256": "6b966d84700ef466288613860723859e44f98505b631449bcfd9c8f5b5b3b8c7"
+      "sha256": "b482cb9d53bdb1b594ce061c4d14f2f8b5d05f79516a233c34403f982e02a05c"
+    },
+    "tools/dev_local_service_fixture_probe.py": {
+      "sha256": "782fb84d2bc672931b7b112fc1d7581f803060ec4c31fa53e77e4cea712c4302"
     },
     "tools/dev_metric_fixture_probe.py": {
       "sha256": "f7da242490441004127873ee5d032104e29ac78dcb12d15b97504df2855281c9"
@@ -3401,13 +3407,13 @@
       "sha256": "73074d091d249186c7d787286b67ab8556b4c8966191d4454617dc8c87190c12"
     },
     "tools/run_dev_http_portable.py": {
-      "sha256": "2843b13c9970287c0a3cad6dffc863ad17769f635dcbd6ea38bb9e862c3e41f6"
+      "sha256": "54550250e8f97a40db7ae737cb2029f70d8a20c61854835ef7738173cd2744a9"
     },
     "tools/run_dev_metric_portable.py": {
       "sha256": "e558a72c68a577f5a649cb39b0a00c47add62196324bea0a70d1d8e97ced777e"
     },
     "tools/run_dev_recovery_ci.py": {
-      "sha256": "f91fef2e0cff8f53661fa3bfb5ad77c8e38f996f9c45aa02aba6d3514fa746ab"
+      "sha256": "a6916b7d4eaea62b85587428499113b14e404a1ef6329df9412ddfcdc1eab182"
     },
     "tools/run_native_vm.py": {
       "sha256": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12"
@@ -4106,6 +4112,8 @@
       "ScenarioReports.test_arbitrary_candidate_policy_is_not_runtime_release_approval",
       "ScenarioReports.test_clock_fixture_preserves_u64_and_rejects_invalid_readings_before_execution",
       "ScenarioReports.test_missing_qualification_never_passes",
+      "ScenarioReports.test_native_rejection_preserves_only_a_bounded_static_code",
+      "ScenarioReports.test_native_result_requires_success_and_exact_component_profile_environment",
       "ScenarioReports.test_node_declared_error_payload_is_asserted_as_exact_bytes",
       "ScenarioReports.test_platform_error_codes_survive_reports_and_unexpected_success_is_a_failure",
       "ScenarioReports.test_portable_fixture_identity_and_kind_are_checked_before_execution",
@@ -4115,6 +4123,22 @@
       "Transports.test_ssh_identity_options_and_constant_command",
       "WslOwnership.test_recovery_observes_original_registration_and_user_nonce_without_reimport"
     ],
+    "tools/tests/test_dev_event_fixture.py": [
+      "EventFixtureTests.test_closed_bounded_scope_rejects_wildcards_external_endpoints_and_private_values",
+      "EventFixtureTests.test_connect_rejects_wrong_token_before_accepting_any_publish",
+      "EventFixtureTests.test_failed_selector_registration_closes_the_owned_tls_socket",
+      "EventFixtureTests.test_peer_counts_received_publish_once_before_dropping_ack",
+      "EventFixtureTests.test_private_material_is_owned_exactly_and_never_recreated_on_tamper",
+      "EventFixtureTests.test_selected_fixture_requires_live_owned_tls_peer_evidence"
+    ],
+    "tools/tests/test_dev_fixture_cleanup.py": [
+      "FixturePurge.test_changed_material_and_foreign_purpose_cannot_reuse_purge_preflight",
+      "FixturePurge.test_confirmation_and_stopped_state_are_required_before_private_cleanup",
+      "FixturePurge.test_count_and_byte_bounds_and_wrong_workspace_reject_before_deletion",
+      "FixturePurge.test_links_and_nonprivate_files_fail_without_touching_their_targets",
+      "FixturePurge.test_purge_removes_complete_and_partial_private_fixtures_and_is_idempotent",
+      "FixturePurge.test_unknown_later_fixture_entry_rejects_before_any_build_or_credential_deletion"
+    ],
     "tools/tests/test_dev_http_fixture.py": [
       "HttpFixture.test_changed_selection_and_credential_are_not_silently_rotated",
       "HttpFixture.test_fixture_needs_matching_running_peer_observation",
@@ -4123,6 +4147,14 @@
       "HttpFixture.test_other_workspace_has_distinct_credential_and_cannot_contact_peer",
       "HttpFixture.test_partial_unauthenticated_request_times_out_without_stopping_owned_peer",
       "HttpFixture.test_unauthenticated_client_receives_no_fixture_and_valid_client_still_works"
+    ],
+    "tools/tests/test_dev_local_service_fixture.py": [
+      "LocalServiceFixture.test_callee_cancellation_routes_only_to_the_exact_owned_build_identity",
+      "LocalServiceFixture.test_explicit_recipe_and_same_node_target_cannot_select_remote_or_ambient_inputs",
+      "LocalServiceFixture.test_group_signing_binds_both_distinct_component_identities_and_the_entire_inventory",
+      "LocalServiceFixture.test_pending_callee_operation_is_visible_and_cannot_be_treated_as_deployed",
+      "LocalServiceFixture.test_provider_scope_and_declared_kind_are_required_for_fixture_initialization",
+      "LocalServiceFixture.test_two_cells_and_explicit_child_budget_only_follow_a_selected_local_fixture"
     ],
     "tools/tests/test_dev_metric_fixture.py": [
       "MetricFixture.test_node_requires_matching_real_provider_and_native_uses_identical_descriptors",
@@ -4505,6 +4537,7 @@
     "tools/tests/test_node_providers_schema.py": [
       "NodeProvidersSchema.test_documented_blob_and_shared_real_workflow_http_configuration",
       "NodeProvidersSchema.test_guest_secrets_only_accept_bounded_file_references_and_no_plaintext",
+      "NodeProvidersSchema.test_local_service_configuration_has_no_remote_or_publication_grant_override",
       "NodeProvidersSchema.test_metrics_preserve_the_closed_bounded_descriptor_contract",
       "NodeProvidersSchema.test_null_unknown_future_profiles_and_path_escape_are_rejected"
     ],
@@ -6642,7 +6675,10 @@
     "tools/tests/test_dev_blob_fixture.py",
     "tools/tests/test_dev_build_cache.py",
     "tools/tests/test_dev_contracts.py",
+    "tools/tests/test_dev_event_fixture.py",
+    "tools/tests/test_dev_fixture_cleanup.py",
     "tools/tests/test_dev_http_fixture.py",
+    "tools/tests/test_dev_local_service_fixture.py",
     "tools/tests/test_dev_metric_fixture.py",
     "tools/tests/test_dev_node_policies.py",
     "tools/tests/test_dev_secret_fixture.py",
@@ -6861,7 +6897,7 @@
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
-    ".github/workflows/developer-tools.yml": "cbbef82bf30c66edb7f150d58388a60d38bd9d56e6681b37745c49e182302fc6",
+    ".github/workflows/developer-tools.yml": "239845fff19d55bc16d81a5a34553da9d11f2ab94afe7fc4928a89a30f616679",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",

@@ -44,8 +44,8 @@ pub use model::{
     SupplyChainConfig, TelemetryConfig, WorkerConfig,
 };
 pub use providers::{
-    BlobInstallation, ConfiguredProviders, HostBinding, HttpInstallation, ProviderIdentity,
-    ProviderSecretFile, SecretInstallation,
+    BlobInstallation, ConfiguredProviders, HostBinding, HttpInstallation, LocalServiceInstallation,
+    ProviderIdentity, ProviderSecretFile, SecretInstallation,
 };
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;

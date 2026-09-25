@@ -4,7 +4,10 @@ The opt-in `providers` object installs the existing bounded HTTP and immutable
 local-blob providers in the standalone node. Explicit `clockMonotonic`, `clockWall`
 and `random` installations also enable the maintained activation-clock and
 OS-entropy providers. Explicit `secrets` installs the protected local guest-secret
-provider. Streaming HTTP, S3 and events have no installation entry here. The
+provider. `metrics` shares the node's telemetry exporter, and `localService`
+selects a bounded local caller/callee binding. `events` installs the maintained
+TLS NATS immediate publisher. Streaming HTTP and S3 have no installation entry
+here. The
 [configuration schema](../../schemas/node-providers.schema.json) describes the
 closed input. This example is the provider section of a protected node file:
 
@@ -92,6 +95,41 @@ floating-point value bits. Exported names retain the `latent.application.`
 prefix. Source/guest labels and other diagnostics are omitted. Truncation and
 sink loss are explicit; a finite retained series catalog is not a live exporter.
 
+The optional `localService` entry selects one local deployment through the
+existing `lsf-local-service-invocation-v1` dispatcher. It contains `identity`
+(whose service is the callee), `deployment` and the callee's exported `contract`.
+An explicit consumer binding uses `latent:service/invoke@0.1.0`; its configured
+provider service must match the entry. This compiles an `isolated-local` binding
+to the exact configured deployment and contract. Self-bindings, foreign binding
+tenants, ambiguous provider identities and remote endpoints are rejected.
+
+Only configured consumer services acquire their canonical node-derived service
+subjects in tenant admission. Child calls carry service identity without the
+operator's administrator claims. The binding compiler verifies the caller ABI,
+callee exports, exact publication eligibility and current route; policies and
+deployment grants still have to permit the selected callee publication. No
+per-capsule worker, listener, VM or persistent guest instance is installed.
+Configure a nonzero `maximumChildCalls` and enough cell capacity for parent and
+child; delegation remains bounded by the existing depth, descendant and parent
+budget rules. Startup does not publish or deploy either component.
+
+An `events` entry contains `identity`, `configuration`, `credentialDirectory`,
+`credentialReference` and `credentialFile`. Configuration uses the maintained
+`latent_nats::NatsConfig`: one explicit IPv4 peer and TLS server name, approved
+roots, one to sixteen exact tenant/topic/subject/stream mappings, a stable
+idempotency namespace and finite payload/timeout limits. Every mapping must
+belong to the configured tenant. Nonpublic peers require explicit approval;
+wildcards, discovered servers and ambient credentials are unavailable.
+
+The protected local-secret store binds token authentication to the exact tenant,
+provider ID, TLS server name and port. Neither the token nor its value digest
+enters the provider descriptor. Bind `latent:events/publisher@0.2.0` and the
+actual `nats-jetstream-publish-v1` descriptor, then grant only approved logical
+topics. Installation grants no publish authority. A missing or invalid reply
+after a possible publish is `uncertain` and is never automatically replayed.
+The existing shared provider pool owns connections and work; shutdown closes
+the credential generation and checks that live resource counters are zero.
+
 The node's bounded `ready` record includes actual installed descriptors:
 `id`, `tenant`, `service`, `capability`, `profile`, `configurationDigest`, and
 decimal-string `configurationEpoch`. Use those exact descriptors when applying
@@ -100,7 +138,7 @@ Installation alone grants no consumer authority. Deployment grants, current
 policy, binding restrictions, publication admission, budgets and provider
 currentness still apply independently.
 
-Host bindings are durably established once. Restart requires the exact same
+Configured bindings are durably established once. Restart requires the exact same
 definitions and reattaches live providers without changing catalog bytes,
 deployment revisions or route generations. Changed or missing bootstrap
 definitions fail closed; this profile does not silently migrate bindings.

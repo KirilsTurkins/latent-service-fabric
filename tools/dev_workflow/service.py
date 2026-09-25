@@ -149,6 +149,7 @@ def supervise(root: Path) -> int:
     reaped = False
     output = None
     http_peer_owner = None
+    event_peer_owner = None
     selected_socket = socket_path(root)
     node_config = decode(paths.read(layout.node.parent, layout.node.name))
     profile = node_config["securityProfile"]
@@ -186,6 +187,15 @@ def supervise(root: Path) -> int:
                     secret = http_peer_owner.authorization.decode("ascii")
                     redactions.extend((secret, secret.removeprefix("Bearer ")))
                     current["fixtures"] = {"http": http_peer_owner.observation()}
+                fixture = (selected.get("fixtures") or {}).get("events")
+                if fixture is not None:
+                    from .event_peer import Peer
+                    require(root.name.startswith("test-") and profile == "local-experimental-v1"
+                            and selected["configurationSha256"] == digest(paths.read(layout.node.parent, layout.node.name)),
+                            "event-fixture-node-configuration-changed")
+                    event_peer_owner = Peer(root, fixture, selector)
+                    redactions.append(event_peer_owner.authorization.decode("ascii"))
+                    current.setdefault("fixtures", {})["events"] = event_peer_owner.observation()
             binary = checks.current(layout) / "bin/latentd"
             owner.process = subprocess.Popen([str(binary), "serve", "--config", str(layout.node)],
                 cwd=layout.data, env=process.environment(), stdin=subprocess.DEVNULL,
@@ -206,9 +216,15 @@ def supervise(root: Path) -> int:
                 if http_peer_owner is not None:
                     http_peer_owner.check()
                     current["fixtures"]["http"] = http_peer_owner.observation()
+                if event_peer_owner is not None:
+                    event_peer_owner.check()
+                    current["fixtures"]["events"] = event_peer_owner.observation()
                 for key, _events in selector.select(timeout=0.2):
                     if key.data == "http-fixture":
                         http_peer_owner.event(key, _events)
+                        continue
+                    if key.data == "event-fixture":
+                        event_peer_owner.event(key, _events)
                         continue
                     connection, _address = server.accept()
                     with connection:
@@ -232,6 +248,9 @@ def supervise(root: Path) -> int:
                         if http_peer_owner is not None:
                             http_peer_owner.check()
                             current["fixtures"]["http"] = http_peer_owner.observation()
+                        if event_peer_owner is not None:
+                            event_peer_owner.check()
+                            current["fixtures"]["events"] = event_peer_owner.observation()
                         if operation == "logs":
                             # Only the node's structured bounded diagnostics are returned.
                             result = {**current, "logs": output.logs()}
@@ -239,6 +258,8 @@ def supervise(root: Path) -> int:
                             stopping = True
                             if http_peer_owner is not None:
                                 current["fixtures"]["http"] = http_peer_owner.close()
+                            if event_peer_owner is not None:
+                                current["fixtures"]["events"] = event_peer_owner.close()
                             os.kill(owner.process.pid, signal.SIGTERM)
                             until = time.monotonic() + 7
                             while not owner.exited() and time.monotonic() < until:
@@ -248,7 +269,8 @@ def supervise(root: Path) -> int:
                             output.finish()
                             current.update(state="stopped", reaped=True, dataRetained=True,
                                 cleanShutdown=owner.process.returncode == 0 and output.clean_stop
-                                    and (http_peer_owner is None or http_peer_owner.failure is None))
+                                    and (http_peer_owner is None or http_peer_owner.failure is None)
+                                    and (event_peer_owner is None or event_peer_owner.failure is None))
                             if output.provider_shutdown is not None:
                                 current["providerShutdown"] = output.provider_shutdown
                             if output.metrics is not None:
@@ -277,6 +299,8 @@ def supervise(root: Path) -> int:
             try:
                 if http_peer_owner is not None:
                     current["fixtures"]["http"] = http_peer_owner.close()
+                if event_peer_owner is not None:
+                    current["fixtures"]["events"] = event_peer_owner.close()
                 owner.finish(time.monotonic() + 5)
                 reaped = True
                 if output:

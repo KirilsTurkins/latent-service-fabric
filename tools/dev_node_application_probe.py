@@ -101,12 +101,16 @@ def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path,
                         "source-node-owned-cleanup-unconfirmed")
                 report["shutdown"] = down
             pending = state.load(root, "operations.json")["pending"] if (root / "operations.json").exists() else None
+            from tools.dev_workflow.local_service_fixture import pending_operation
+            dependency_pending = pending_operation(root)
+            if (root / "local-service-build.json").exists():
+                report["pendingDependencyOperation"] = dependency_pending
             report["pendingOperation"] = {key: pending[key] for key in ("kind", "id", "requestDigest")} if pending else None
             if pending and (root / "last-operation-observation.json").exists():
                 observation = state.load(root, "last-operation-observation.json")
                 if observation["id"] == pending["id"] and observation["kind"] == pending["kind"]:
                     report["operationObservation"] = observation
-            if uncertain or pending or report.get("tests", {}).get("cleanup") == "client-cleanup-unconfirmed-node-retained":
+            if uncertain or pending or dependency_pending or report.get("tests", {}).get("cleanup") == "client-cleanup-unconfirmed-node-retained":
                 report.update(passed=False, cleanup="unconfirmed-private-workspace-retained")
             else:
                 report["cleanup"] = "owned-node-and-client-processes-reaped"

@@ -1,0 +1,827 @@
+{
+  "schemaVersion": "latent.dev.local-service-source-observation.v1",
+  "publisherAuthenticated": false,
+  "cleanHost": false,
+  "qualificationComplete": false,
+  "boundary": "Authored Rust caller and callee built outside the checkout; separate signed packages on one actual Linux node. No portable local-service or final Windows qualification.",
+  "runtime": {
+    "binaries": {
+      "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+      "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "latentd": "sha256:76f3bed7b979ea763f3a98e195697ba8e7f3ac2fc07c2d31a48472268f6d4766"
+    },
+    "buildProfile": {
+      "compiledBinary": "latentd",
+      "debugInfo": 0,
+      "features": [
+        "latentd/development-test-node"
+      ],
+      "incremental": false,
+      "name": "dev",
+      "retainedOperatorAndAotSource": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30"
+        },
+        "path": "/build/dev559-clock-kit2"
+      }
+    },
+    "controllerSourceCommit": "18aa31ff0ca785526fd870fb174d48874e6eea6c",
+    "controllerSourceDirty": true,
+    "engine": {
+      "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "wasmtimeVersion": "47.0.4"
+    },
+    "fixtureProbeSha256": "sha256:782fb84d2bc672931b7b112fc1d7581f803060ec4c31fa53e77e4cea712c4302",
+    "helperSha256": "sha256:3e3f960d7525392d5d843ab4f43e6d89966ad30ea5113f00c23e37f83bc61de9",
+    "nodeSources": {
+      "apps/latentd/src/config/policy.rs": "sha256:9bac97ad02271e4229016764606a65125e4e5e39289d46e91d582ce462cf3fca",
+      "apps/latentd/src/config/providers.rs": "sha256:dadc13bf073b3f78605d6cf96e2d0ae9c5d000cba3c8efa152eb700a78e173ea",
+      "apps/latentd/src/config/providers/local_service.rs": "sha256:d83e144167e106b5b7f74bfabedacdbb30df425b513a23605ec245a922551663",
+      "apps/latentd/src/standalone/providers/local_service.rs": "sha256:98ac0e090e154103817f971d9d86fad57d7d0acd47c5b994ccff30ab5da262fb",
+      "apps/latentd/src/standalone/providers/runtime.rs": "sha256:9dcff037eb2e5720dd9d69a46c8317f56719bd3bf062dfebf2ed07d32b840e07",
+      "crates/latent-capabilities/src/broker/work.rs": "sha256:522919f312360ff9446d5351fcaac2a99578651db185090285a5057b193e0330",
+      "crates/latent-control-store/src/deployments/bindings/startup.rs": "sha256:382d7145e206ad7eaef51500d834d94472087bb2a6ca5b293daeaac1b1cb66b2",
+      "crates/latent-core/src/identity.rs": "sha256:3b6afbc56a274205f07a3947afc0d21b6227c81360848f3dbd1ddf5f2080ca2f"
+    },
+    "publisherAuthenticated": false,
+    "purpose": "source-application-node-tests",
+    "sourceCommit": "18aa31ff0ca785526fd870fb174d48874e6eea6c",
+    "sourceDirty": true,
+    "version": "0.1.0-alpha.4"
+  },
+  "profile": "local-experimental-v1",
+  "admission": "signed-fixture",
+  "fixtures": {
+    "localService": {
+      "contract": "examples:callee/api@1.0.0",
+      "deployment": "local-callee",
+      "project": "callee",
+      "recipeSha256": "sha256:298270b58c43680c39def6b7a94a322f9c3d298c294a7c9e2cb7005874da879b",
+      "service": "examples/local-callee"
+    }
+  },
+  "signing": {
+    "attempt": "97da3dbd579e5e45bf16cd4eddeebea8",
+    "component": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+    "dependencies": [
+      {
+        "attempt": "c6d399de3fea8a477cdf73e671f69e5d",
+        "component": "sha256:10a7d6fa9af75eb6c8ae187f7ef33e2e866cad1ac67457c257e33e96da951c86",
+        "source": "sha256:f5bdec3155313eb1514dbac0e92b8a61d1de2193622669d65b53d38d5c18b3ed"
+      }
+    ],
+    "dependencyPackages": [
+      {
+        "attempt": "c6d399de3fea8a477cdf73e671f69e5d",
+        "component": "sha256:10a7d6fa9af75eb6c8ae187f7ef33e2e866cad1ac67457c257e33e96da951c86",
+        "name": "local-callee",
+        "packageDigest": "sha256:b46b3599bd454e2be700c79cf38e048ed6d31449b5bd1d66ed6753abe753e161",
+        "source": "sha256:f5bdec3155313eb1514dbac0e92b8a61d1de2193622669d65b53d38d5c18b3ed"
+      }
+    ],
+    "expiresAtUnixSeconds": 1790317380,
+    "inventory": "sha256:6b1c03d95b01c0cb2874fd29e37adc323616d3aee13ecc816934889d083fc341",
+    "name": "local-caller",
+    "packageDigest": "sha256:70e7da8d5ab418cd998c795c075f77cf9334493280223b01800eb0f26141d377",
+    "policySha256": "sha256:e445644eaa5658473d1feda2392973b9f20f2eda0aa92f50d3a70a3fee10b5d3",
+    "signer": "sha256:96162b792023201d38971c7f836d8a6158045dec65d1d72a0b9c419479b3392d",
+    "source": "sha256:c21bb0ddf86d9a2fa6e6aad94172f01c59e6cff8e4d982fa603c86ee7a274cb3",
+    "toolInventory": "sha256:d77d6240a78404c9718e3e06f2e05869066d7c571486c2f08823ce2d49dc5c43",
+    "trust": "isolated-short-lived-demo-only"
+  },
+  "caller": {
+    "attempt": "97da3dbd579e5e45bf16cd4eddeebea8",
+    "buildKey": "sha256:472b857e51ba8adfa1b19b12c735a2aa99bd55b85aaa5c096305827e62f12c52",
+    "componentDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+    "deployment": "local-caller",
+    "generation": "6",
+    "operation": "dev-d4a88c9febb2aeea436a297d7e9736c2",
+    "publication": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+    "publicationInput": "sha256:3614b641260efbae16081c67a15223862fe1ec50fd23baf279ee8cf07cc9d4cd",
+    "source": "sha256:c21bb0ddf86d9a2fa6e6aad94172f01c59e6cff8e4d982fa603c86ee7a274cb3"
+  },
+  "callee": {
+    "artifacts": {
+      "capsule": "sha256:48d5526cada42a823be3c4904349b989ee3c538e1be530b093acd0764b8eb6d4",
+      "component": "sha256:10a7d6fa9af75eb6c8ae187f7ef33e2e866cad1ac67457c257e33e96da951c86",
+      "contracts": "sha256:a3dea8102a5d58d47cefe4aa3bbab5f7089993ff667ba38974a2531aed64ec09",
+      "deployment": "sha256:43994a829eca172dd80a4a9b5997ca4aedd41382942109ee60962dca14eb68ad",
+      "evidence": "sha256:c54430f6de58f48f22610d56057ff81054c5a32d5b061c72af07fd1e4baaa8c7",
+      "packageSource": "sha256:95840ed585937b83bffd2519c8d72664da3be201456a5861c3c7b4c28aa14f9b"
+    },
+    "deployment": {
+      "attempt": "c6d399de3fea8a477cdf73e671f69e5d",
+      "buildKey": "sha256:662d99a7ef8171365d8ef0c6c8ccad2930f5014edfac3b4513536e1dad6bbd5b",
+      "componentDigest": "sha256:10a7d6fa9af75eb6c8ae187f7ef33e2e866cad1ac67457c257e33e96da951c86",
+      "deployment": "local-callee",
+      "generation": "2",
+      "operation": "dev-70221a3571c00a8d21d230fc50546f8b",
+      "publication": "publication:sha256:bdd5f0d31ce883317dc84cf317b2f0753e8cc653b8d7b71214031015c9dc90d7",
+      "publicationInput": "sha256:3aa3af8a4bd21c3cc1fcaa710dfbff60eb444dd7feee7431169617a38bf93f18",
+      "source": "sha256:f5bdec3155313eb1514dbac0e92b8a61d1de2193622669d65b53d38d5c18b3ed"
+    },
+    "expectedRevision": {
+      "publicationId": "publication:sha256:bdd5f0d31ce883317dc84cf317b2f0753e8cc653b8d7b71214031015c9dc90d7",
+      "releaseDigest": "sha256:10a7d6fa9af75eb6c8ae187f7ef33e2e866cad1ac67457c257e33e96da951c86",
+      "routeGeneration": "3"
+    },
+    "fixture": {
+      "contract": "examples:callee/api@1.0.0",
+      "deployment": "local-callee",
+      "project": "callee",
+      "recipeSha256": "sha256:298270b58c43680c39def6b7a94a322f9c3d298c294a7c9e2cb7005874da879b",
+      "service": "examples/local-callee"
+    },
+    "package": {
+      "componentDigest": "sha256:10a7d6fa9af75eb6c8ae187f7ef33e2e866cad1ac67457c257e33e96da951c86",
+      "executionAuthorized": false,
+      "kind": "capsule",
+      "layerBytes": "25739",
+      "layers": 6,
+      "name": "local-callee",
+      "packageDigest": "sha256:d4f407615cdc43c10b520ea82419326aa4b1423aa72f5d1550a0acd60ba13fe4",
+      "sbomInventoryDigest": null,
+      "trustEvaluated": false,
+      "version": "1.0.0",
+      "webBuildOutputs": null
+    },
+    "source": "sha256:f5bdec3155313eb1514dbac0e92b8a61d1de2193622669d65b53d38d5c18b3ed"
+  },
+  "cases": [
+    {
+      "id": "cold",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "activationId": "dev-dc9c126306a8c136728a2360d1fd3752",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "4"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "4"
+      }
+    },
+    {
+      "id": "warm",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "activationId": "dev-59a9446baf47e4e984d6b6312006fcfb",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "4"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "4"
+      }
+    },
+    {
+      "id": "declared-error",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+      "activationId": "dev-f65d0e7d35e19172e0a5c25bbfcf70e3",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "4"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "4"
+      }
+    },
+    {
+      "id": "wrong-service",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "activationId": "dev-2f925cd93990414c7384721c8369691d",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "4"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "4"
+      }
+    },
+    {
+      "id": "wrong-tenant",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "activationId": "dev-64fc52a4f65e5b3fa9c8e54d39e3e3d7",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "4"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "4"
+      }
+    },
+    {
+      "id": "wrong-contract",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "activationId": "dev-bca990ba189eccc76b813fdfdb5eb209",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "4"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "4"
+      }
+    },
+    {
+      "id": "wrong-route",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "activationId": "dev-a30ccfe57c9c453f6074146c291a8094",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "4"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "4"
+      }
+    },
+    {
+      "id": "wrong-function",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "activationId": "dev-0ea18d23aa286750434137f698f0f7dd",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "4"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "4"
+      }
+    },
+    {
+      "id": "policy-denied",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "activationId": "dev-9c84af5fd9a0780f63488cd4b0c884ce",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:07c451db4810837a6657b5e27877a2c5eba9d2cc41b8d7fff37ca0fa3d0188fc",
+        "routeGeneration": "5"
+      }
+    },
+    {
+      "id": "after-denial",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "activationId": "dev-afe69e5a4acd906a26b3b8da2dfd53f2",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "6"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "6"
+      }
+    },
+    {
+      "id": "child-trap",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:614c38a4fe853d409710a29b6c7559f5d0d794d8aa95ca462fba2cdd56b7ca73",
+      "activationId": "dev-c1498eff7e36dbbd41bedc8aff5e079a",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "6"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "6"
+      }
+    },
+    {
+      "id": "after-trap",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "activationId": "dev-0776dc168a59fe19d1b7a98da326e679",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "6"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "6"
+      }
+    },
+    {
+      "id": "two-fresh-children",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:d84b3924a4632843b814026aea9e5a0b9ca493193899fc26bb0203cbbe3fdc50",
+      "activationId": "dev-6be3e241a6b6a408ca21bc0e24a1ad04",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "6"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "6"
+      }
+    },
+    {
+      "id": "after-two",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "activationId": "dev-7a883c343f5146052fffca40a9607618",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "6"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "6"
+      }
+    }
+  ],
+  "retainedCases": [
+    {
+      "id": "cold",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "activationId": "dev-d3316999d288171997024a9e3372d188",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "routeGeneration": "6"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:34091e777cb540859422dd3d7cac231591b58b5f3079544618def22d911326e4",
+        "releaseDigest": "sha256:30895f7fc5f5ef201329ccca0a603b5d4db4209efb12050292727e0540781342",
+        "revisionId": "revision-v1:sha256:88b6bb4e1708e15f03aa70654a60ac465e09917502d7a5f61347d6a6c489d240",
+        "routeGeneration": "6"
+      }
+    }
+  ],
+  "calleeCompiler": {
+    "attempt": "c6d399de3fea8a477cdf73e671f69e5d",
+    "guestInstance": {
+      "bootId": "28eb7e81-bf5d-4c75-8a0b-db4011478c3d",
+      "initStartTicks": "143819",
+      "pidNamespace": "4026532404"
+    },
+    "id": "4ea15bce011cd43bad08c0e6878917c2",
+    "reason": "build-complete",
+    "state": "reaped"
+  },
+  "shutdownBeforeRestart": {
+    "cleanShutdown": true,
+    "dataRetained": true,
+    "guestInstance": {
+      "bootId": "28eb7e81-bf5d-4c75-8a0b-db4011478c3d",
+      "initStartTicks": "143819",
+      "pidNamespace": "4026532404"
+    },
+    "node": "lsf-cf43e7dae2ea08ca",
+    "profile": "local-experimental-v1",
+    "providerShutdown": {
+      "blobHandles": 0,
+      "blobStages": 0,
+      "blobWork": 0,
+      "calls": 0,
+      "clean": true,
+      "cleanupJobs": 0,
+      "connections": 0,
+      "controlOwners": 0,
+      "failedCleanup": 0,
+      "handles": 0,
+      "ioCalls": 0,
+      "ioRetainedBytes": 0,
+      "pendingRequests": 0,
+      "results": 0,
+      "runningRequests": 0,
+      "secretGenerations": 0,
+      "secretReferences": 0,
+      "sessions": 0,
+      "workers": 0
+    },
+    "providers": [
+      {
+        "capability": "latent:service/invoke@0.1.0",
+        "configurationDigest": "sha256:ed49563685251cabe52e8f91c92617c9d798c9b001aeb38a35ca0b58a667ab16",
+        "configurationEpoch": "1",
+        "id": "localService",
+        "profile": "lsf-local-service-invocation-v1",
+        "service": "examples/local-callee",
+        "tenant": "examples"
+      }
+    ],
+    "readiness": {
+      "activationReady": true,
+      "authenticated": true,
+      "profile": "local-experimental-v1",
+      "schemaVersion": "latent.native-readiness.v1"
+    },
+    "reaped": true,
+    "state": "stopped"
+  },
+  "shutdown": {
+    "cleanShutdown": true,
+    "dataRetained": true,
+    "guestInstance": {
+      "bootId": "28eb7e81-bf5d-4c75-8a0b-db4011478c3d",
+      "initStartTicks": "143819",
+      "pidNamespace": "4026532404"
+    },
+    "node": "lsf-cf43e7dae2ea08ca",
+    "profile": "local-experimental-v1",
+    "providerShutdown": {
+      "blobHandles": 0,
+      "blobStages": 0,
+      "blobWork": 0,
+      "calls": 0,
+      "clean": true,
+      "cleanupJobs": 0,
+      "connections": 0,
+      "controlOwners": 0,
+      "failedCleanup": 0,
+      "handles": 0,
+      "ioCalls": 0,
+      "ioRetainedBytes": 0,
+      "pendingRequests": 0,
+      "results": 0,
+      "runningRequests": 0,
+      "secretGenerations": 0,
+      "secretReferences": 0,
+      "sessions": 0,
+      "workers": 0
+    },
+    "providers": [
+      {
+        "capability": "latent:service/invoke@0.1.0",
+        "configurationDigest": "sha256:ed49563685251cabe52e8f91c92617c9d798c9b001aeb38a35ca0b58a667ab16",
+        "configurationEpoch": "1",
+        "id": "localService",
+        "profile": "lsf-local-service-invocation-v1",
+        "service": "examples/local-callee",
+        "tenant": "examples"
+      }
+    ],
+    "readiness": {
+      "activationReady": true,
+      "authenticated": true,
+      "profile": "local-experimental-v1",
+      "schemaVersion": "latent.native-readiness.v1"
+    },
+    "reaped": true,
+    "state": "stopped"
+  },
+  "cleanup": "owned-node-and-client-processes-reaped-private-pair-workspace-purged",
+  "passed": true,
+  "parentInvocations": 15,
+  "priorSuccessfulRun": {
+    "runtime": {
+      "binaries": {
+        "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+        "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+        "latentd": "sha256:76f3bed7b979ea763f3a98e195697ba8e7f3ac2fc07c2d31a48472268f6d4766"
+      },
+      "buildProfile": {
+        "compiledBinary": "latentd",
+        "debugInfo": 0,
+        "features": [
+          "latentd/development-test-node"
+        ],
+        "incremental": false,
+        "name": "dev",
+        "retainedOperatorAndAotSource": {
+          "binaries": {
+            "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+            "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30"
+          },
+          "path": "/build/dev559-clock-kit2"
+        }
+      },
+      "controllerSourceCommit": "18aa31ff0ca785526fd870fb174d48874e6eea6c",
+      "controllerSourceDirty": true,
+      "engine": {
+        "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+        "hostAbiProfile": "lsf-host-abi-phase3-v4",
+        "wasmtimeVersion": "47.0.4"
+      },
+      "fixtureProbeSha256": "sha256:1ad1c84bb863495ce859984d019175f817c0d1b35dee8e69d4fd46b0a08e60a9",
+      "helperSha256": "sha256:25b7055c57bfca46bddfc12024bfa2c52f950357929f4e75d402fc9fccec524a",
+      "nodeSources": {
+        "apps/latentd/src/config/policy.rs": "sha256:9bac97ad02271e4229016764606a65125e4e5e39289d46e91d582ce462cf3fca",
+        "apps/latentd/src/config/providers.rs": "sha256:dadc13bf073b3f78605d6cf96e2d0ae9c5d000cba3c8efa152eb700a78e173ea",
+        "apps/latentd/src/config/providers/local_service.rs": "sha256:d83e144167e106b5b7f74bfabedacdbb30df425b513a23605ec245a922551663",
+        "apps/latentd/src/standalone/providers/local_service.rs": "sha256:98ac0e090e154103817f971d9d86fad57d7d0acd47c5b994ccff30ab5da262fb",
+        "apps/latentd/src/standalone/providers/runtime.rs": "sha256:9dcff037eb2e5720dd9d69a46c8317f56719bd3bf062dfebf2ed07d32b840e07",
+        "crates/latent-capabilities/src/broker/work.rs": "sha256:522919f312360ff9446d5351fcaac2a99578651db185090285a5057b193e0330",
+        "crates/latent-control-store/src/deployments/bindings/startup.rs": "sha256:382d7145e206ad7eaef51500d834d94472087bb2a6ca5b293daeaac1b1cb66b2",
+        "crates/latent-core/src/identity.rs": "sha256:3b6afbc56a274205f07a3947afc0d21b6227c81360848f3dbd1ddf5f2080ca2f"
+      },
+      "publisherAuthenticated": false,
+      "purpose": "source-application-node-tests",
+      "sourceCommit": "18aa31ff0ca785526fd870fb174d48874e6eea6c",
+      "sourceDirty": true,
+      "version": "0.1.0-alpha.4"
+    },
+    "cases": 15,
+    "cleanup": "owned-node-and-client-processes-reaped-private-pair-workspace-purged",
+    "boundary": "Passed before adding explicit callee compiler status and cancellation routing."
+  },
+  "failedAttempts": [
+    {
+      "reason": "The initial fixture left maximumChildCalls at its zero default. The original Invoke produced a transport failure and UNKNOWN lookup; it was retained without replay. A new workspace used an explicit child-call ceiling and configured consumer service admission.",
+      "runtime": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "latentd": "sha256:39c27db45710dbab0126ce4e123133cecd752e92fb759b012f7ecbafd7329de2"
+        },
+        "buildProfile": {
+          "compiledBinary": "latentd",
+          "debugInfo": 0,
+          "features": [
+            "latentd/development-test-node"
+          ],
+          "incremental": false,
+          "name": "dev",
+          "retainedOperatorAndAotSource": {
+            "binaries": {
+              "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+              "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30"
+            },
+            "path": "/build/dev559-clock-kit2"
+          }
+        },
+        "controllerSourceCommit": "18aa31ff0ca785526fd870fb174d48874e6eea6c",
+        "controllerSourceDirty": true,
+        "engine": {
+          "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "hostAbiProfile": "lsf-host-abi-phase3-v4",
+          "wasmtimeVersion": "47.0.4"
+        },
+        "fixtureProbeSha256": "sha256:8823bb17b9552c67ccb63a3065022528e1c1e6efd393947c254ce22263c1ddd0",
+        "helperSha256": "sha256:f947663785a94139189e3d48578cdd25ba0edd66c955b6db80d24cca964c1e51",
+        "nodeSources": {
+          "apps/latentd/src/config/providers.rs": "sha256:dadc13bf073b3f78605d6cf96e2d0ae9c5d000cba3c8efa152eb700a78e173ea",
+          "apps/latentd/src/config/providers/local_service.rs": "sha256:d83e144167e106b5b7f74bfabedacdbb30df425b513a23605ec245a922551663",
+          "apps/latentd/src/standalone/providers/local_service.rs": "sha256:98ac0e090e154103817f971d9d86fad57d7d0acd47c5b994ccff30ab5da262fb",
+          "apps/latentd/src/standalone/providers/runtime.rs": "sha256:9dcff037eb2e5720dd9d69a46c8317f56719bd3bf062dfebf2ed07d32b840e07",
+          "crates/latent-control-store/src/deployments/bindings/startup.rs": "sha256:382d7145e206ad7eaef51500d834d94472087bb2a6ca5b293daeaac1b1cb66b2"
+        },
+        "publisherAuthenticated": false,
+        "purpose": "source-application-node-tests",
+        "sourceCommit": "18aa31ff0ca785526fd870fb174d48874e6eea6c",
+        "sourceDirty": true,
+        "version": "0.1.0-alpha.4"
+      },
+      "cases": [
+        {
+          "id": "cold",
+          "status": "failed",
+          "category": "transport-failure",
+          "platformCode": "original-invocation-result-unavailable",
+          "payloadSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "activationId": "dev-432588337d83c10e4ea6f92a06fc0167",
+          "outcomeKnown": false,
+          "expectedRevision": {
+            "publicationId": "publication:sha256:9d4abcdba73e75c7cedb32e126170577c6aa6aaa14b3f0694e269f70a02be6f4",
+            "releaseDigest": "sha256:89967cab52c4193adb5a66369d84aeb47d6f3d5e6ad212339db9a996b6296402",
+            "routeGeneration": "4"
+          },
+          "resolvedRevision": null,
+          "recovery": {
+            "clientCleanup": "owned-client-reaped",
+            "disposition": "unknown-retained-original",
+            "queries": 1
+          }
+        },
+        {
+          "id": "warm",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "declared-error",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "wrong-service",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "wrong-tenant",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "wrong-contract",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "wrong-route",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "wrong-function",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "policy-denied",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "after-denial",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "child-trap",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "after-trap",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "two-fresh-children",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        },
+        {
+          "id": "after-two",
+          "status": "not-run",
+          "reason": "earlier-outcome-unknown-no-new-invocation"
+        }
+      ],
+      "cleanup": "unconfirmed-private-workspace-retained",
+      "pendingOperation": {
+        "id": "dev-432588337d83c10e4ea6f92a06fc0167",
+        "kind": "invoke",
+        "requestDigest": "sha256:6d511f6c2552f581f64dcaf12bf4d84e044032117e6a6b2ad66725df5d1b6c06"
+      },
+      "operationObservation": {
+        "category": "transport-failure",
+        "code": "rpc-failed",
+        "id": "dev-432588337d83c10e4ea6f92a06fc0167",
+        "kind": "invoke",
+        "outcomeKnown": false,
+        "requestDispatched": true,
+        "resultSha256": "sha256:e43cd41bd58d6b11ab3041831f24478aee0bc3b204042f13464c867626030dc2"
+      },
+      "shutdown": {
+        "cleanShutdown": true,
+        "dataRetained": true,
+        "guestInstance": {
+          "bootId": "28eb7e81-bf5d-4c75-8a0b-db4011478c3d",
+          "initStartTicks": "70881",
+          "pidNamespace": "4026532386"
+        },
+        "node": "lsf-aa30ce0a6f310daf",
+        "profile": "local-experimental-v1",
+        "providerShutdown": {
+          "blobHandles": 0,
+          "blobStages": 0,
+          "blobWork": 0,
+          "calls": 0,
+          "clean": true,
+          "cleanupJobs": 0,
+          "connections": 0,
+          "controlOwners": 0,
+          "failedCleanup": 0,
+          "handles": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "pendingRequests": 0,
+          "results": 0,
+          "runningRequests": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "sessions": 0,
+          "workers": 0
+        },
+        "providers": [
+          {
+            "capability": "latent:service/invoke@0.1.0",
+            "configurationDigest": "sha256:ed49563685251cabe52e8f91c92617c9d798c9b001aeb38a35ca0b58a667ab16",
+            "configurationEpoch": "1",
+            "id": "localService",
+            "profile": "lsf-local-service-invocation-v1",
+            "service": "examples/local-callee",
+            "tenant": "examples"
+          }
+        ],
+        "readiness": {
+          "activationReady": true,
+          "authenticated": true,
+          "profile": "local-experimental-v1",
+          "schemaVersion": "latent.native-readiness.v1"
+        },
+        "reaped": true,
+        "state": "stopped"
+      },
+      "retainedPrivateWorkspace": "/build/dev559-node-homes/ls1/tmp/lsf-local-hyanjs5p"
+    }
+  ]
+}

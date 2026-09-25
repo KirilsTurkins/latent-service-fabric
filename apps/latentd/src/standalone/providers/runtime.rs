@@ -24,8 +24,12 @@ use latent_policy::capability::PolicyStore;
 
 use crate::config::{NodeSettings, ProviderIdentity};
 
+#[path = "events.rs"]
+mod events;
 #[path = "http.rs"]
 mod http;
+#[path = "local_service.rs"]
+mod local_service;
 #[path = "scalar.rs"]
 mod scalar;
 #[path = "secrets.rs"]
@@ -39,9 +43,10 @@ pub(in crate::standalone) struct ProviderRuntime {
     io: Arc<IoRuntime>,
     secrets: Option<latent_secrets::LocalSecretStore>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
+    event_secrets: Option<latent_secrets::LocalSecretStore>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
     blobs: Option<Arc<LocalBlobStore>>,
-    clocks: Vec<ProviderRegistration>,
+    registrations: Vec<ProviderRegistration>,
     descriptors: Vec<ProviderDescriptor>,
 }
 
@@ -84,14 +89,15 @@ impl ProviderRuntime {
             io,
             secrets: None,
             guest_secrets: None,
+            event_secrets: None,
             metrics: None,
             blobs: None,
-            clocks: Vec::with_capacity(2),
-            descriptors: Vec::with_capacity(7),
+            registrations: Vec::with_capacity(3),
+            descriptors: Vec::with_capacity(9),
         };
         let deadline = Instant::now() + Duration::from_secs(30);
         let installed = tokio::time::timeout_at(deadline.into(), async {
-            let mut providers = Vec::with_capacity(7);
+            let mut providers = Vec::with_capacity(9);
             for (installation, monotonic) in
                 [(&config.clock_monotonic, true), (&config.clock_wall, false)]
             {
@@ -99,7 +105,7 @@ impl ProviderRuntime {
                     let registration =
                         scalar::clock(&broker, installation.identity.epoch, monotonic)?;
                     providers.push(owner.record(&installation.identity, registration.reference()));
-                    owner.clocks.push(registration);
+                    owner.registrations.push(registration);
                 }
             }
             if let Some(installation) = &config.random {
@@ -145,6 +151,12 @@ impl ProviderRuntime {
                 providers.push(owner.record(&blob.identity, provider.reference()));
                 owner.runtime.install_blobs(Arc::new(provider))?;
             }
+            if let Some(config) = &config.events {
+                let (provider, store) = events::install(&owner.pools, config, deadline).await?;
+                owner.event_secrets = Some(store);
+                providers.push(owner.record(&config.identity, provider.reference()));
+                owner.runtime.install_events(Arc::new(provider))?;
+            }
             if let Some(config) = &config.secrets {
                 let (provider, store) = secrets::install(&owner.pools, config, deadline).await?;
                 owner.guest_secrets = Some(store);
@@ -166,6 +178,14 @@ impl ProviderRuntime {
                 providers.push(owner.record(&config.identity, provider.reference()));
                 owner.metrics = Some(provider.clone());
                 owner.runtime.install_metrics(provider)?;
+            }
+            if let Some(config) = &config.local_service {
+                let registration = local_service::install(&broker, config)?;
+                let mut provider = owner.record(&config.identity, registration.reference());
+                provider.local_deployment =
+                    Some(latent_core::DeploymentId(config.deployment.clone()));
+                providers.push(provider);
+                owner.registrations.push(registration);
             }
             deployments
                 .activate_configured_bindings(
@@ -225,14 +245,17 @@ impl ProviderRuntime {
 
     pub fn retire(&self) {
         self.runtime.retire();
-        for clock in &self.clocks {
-            clock.retire();
+        for registration in &self.registrations {
+            registration.retire();
         }
         self.pools.retire();
         if let Some(secrets) = &self.secrets {
             secrets.close();
         }
         if let Some(secrets) = &self.guest_secrets {
+            secrets.close();
+        }
+        if let Some(secrets) = &self.event_secrets {
             secrets.close();
         }
         if let Some(metrics) = &self.metrics {
@@ -252,7 +275,10 @@ impl ProviderRuntime {
         let mut secret_generations = 0;
         let mut secret_references = 0;
         let mut secrets_closed = true;
-        for store in [&self.secrets, &self.guest_secrets].into_iter().flatten() {
+        for store in [&self.secrets, &self.guest_secrets, &self.event_secrets]
+            .into_iter()
+            .flatten()
+        {
             store.close();
             let snapshot = store.snapshot().map_err(|_| unavailable())?;
             secret_generations += snapshot.retained_generations;

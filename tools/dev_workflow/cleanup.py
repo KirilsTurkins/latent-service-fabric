@@ -44,6 +44,12 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
     except (FileNotFoundError, ConnectionRefusedError):
         status = state.load(root, "lifecycle.json") if (root / "lifecycle.json").exists() else {"state": "stopped"}
     require(status["state"] in {"stopped", "purged"}, "stop-and-confirm-cleanup-before-purge")
+    from . import fixture_cleanup
+    # Validate every private fixture before deleting any owned runtime or build
+    # state. Reject an existing foreign file or link before the first removal.
+    fixtures = fixture_cleanup.plan(root)
+    from . import local_service_fixture
+    local_service_fixture.purge(root)
     builds = root / "builds"
     if builds.exists():
         from . import build_cache
@@ -77,5 +83,7 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
         require(root.name.startswith("test-") and (root / "test-signing-intent.json").exists(), "test-signing-owner-required")
         paths.read(root, "test-signing-intent.json")
         files.remove_tree(root / "test-signing", maximum=8192)
+    removed_fixtures = fixture_cleanup.purge(root, fixtures)
     state.atomic(root, "lifecycle.json", {"state": "purged", "dataRetained": False, "reaped": True})
-    return {"workspace": workspace, "state": "purged", "runtime": receipt, "sourceTreeRetained": True}
+    return {"workspace": workspace, "state": "purged", "runtime": receipt, "sourceTreeRetained": True,
+            "fixtureDirectoriesRemoved": removed_fixtures}

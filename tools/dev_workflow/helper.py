@@ -31,8 +31,11 @@ def installation(root: Path):
     return layout, checks.current(layout)
 
 
-def client(root: Path, *, deadline: float | None = None) -> tuple[Client, Journal]:
-    layout, current = installation(root)
+def client(root: Path, *, deadline: float | None = None, runtime_root: Path | None = None) -> tuple[Client, Journal]:
+    if runtime_root is not None:
+        from .local_service_fixture import CHILD
+        require(root == runtime_root / CHILD, "local-dependency-runtime-owner-required")
+    layout, current = installation(runtime_root or root)
     config = decode(paths.read(layout.node.parent, layout.node.name))
     return Client(current / "bin/latent", layout.client, root, deadline=deadline), Journal(root, config["nodeId"], "examples",
         settle=lambda operation, result: effects.settle(root, operation, result))
@@ -88,29 +91,42 @@ def sync(root: Path, arguments: dict) -> dict:
     return {"snapshot": record["identity"], "sourceBytes": record["bytes"], "files": len(record["files"])}
 
 
-def deploy(root: Path, *, test_grants: list | None = None, deadline: float | None = None) -> dict:
+def deploy(root: Path, *, test_grants: list | None = None, deadline: float | None = None,
+           runtime_root: Path | None = None, signing_root: Path | None = None) -> dict:
     import time
     deadline = min(deadline if deadline is not None else float("inf"), time.monotonic() + MAX_DEPLOY_SECONDS)
     saved = state.load(root, "project.json")
     source, receipt = build.accepted(root, saved)
     descriptor = saved["descriptor"]
-    cli, journal = client(root, deadline=deadline)
+    require((runtime_root is None) == (signing_root is None), "local-dependency-signing-owner-required")
+    if runtime_root is not None:
+        from .local_service_fixture import CHILD, signing_input
+        require(root == runtime_root / CHILD and signing_root == runtime_root,
+                "local-dependency-runtime-owner-required")
+        signing_input(runtime_root)
+    cli, journal = client(root, deadline=deadline, runtime_root=runtime_root)
     artifacts = descriptor["artifacts"]
     from . import build_artifacts, build_cache
     require(paths.digest_file(cli.binary.parent, cli.binary.name, 268435456)[0] == receipt["packager"],
             "runtime-packager-changed-rebuild-required")
     require(build_artifacts.package(cli.binary, source, artifacts, min(time.monotonic() + 30, deadline or float("inf")),
             build_cache.monitor(source.parent), cached=True) == receipt["package"], "built-package-modified-before-deploy")
-    node = decode(paths.read(root / "runtime/config", "node.json"))
+    node = decode(paths.read((runtime_root or root) / "runtime/config", "node.json"))
     signing = None
-    if (root / "test-signing-receipt.json").exists():
-        from .node_test_signing import selected
-        signing = selected(root, receipt)
-        require(node["supplyChain"] == {"mode": "enforced", "policyFile": str(root / "test-signing/policy.json")},
+    signer = signing_root or root
+    if (signer / "test-signing-receipt.json").exists():
+        from .node_test_signing import selected, dependency_selected
+        signing = dependency_selected(signer, receipt) if signing_root is not None else selected(root, receipt)
+        require(node["supplyChain"] == {"mode": "enforced", "policyFile": str(signer / "test-signing/policy.json")},
                 "signed-test-profile-changed")
     require(descriptor["tenant"] == "examples", "project-tenant-does-not-match-workspace-credential")
     if journal.read()["pending"] is not None:
         raise DevError("recover-original-operation-before-new-mutation", uncertain=True)
+    if runtime_root is None and (root / "local-service-build.json").exists():
+        from . import local_service_fixture
+        if not (root / local_service_fixture.CHILD / "last-deployment.json").exists():
+            local_service_fixture.deploy(root, deadline=deadline)
+        local_service_fixture.observe(root, cli)
     prior = state.load(root, "last-publication.json") if (root / "last-publication.json").exists() else None
     publication_input = digest(encode({"mode": node["supplyChain"]["mode"],
         "package": signing["packageDigest"] if signing else receipt["package"]["packageDigest"],
@@ -127,8 +143,8 @@ def deploy(root: Path, *, test_grants: list | None = None, deadline: float | Non
         publication = successful(published)["release"]["publication"]["id"]
     else:
         require("packageRoot" in artifacts and "evidence" in artifacts, "signed-package-handoff-required")
-        package_root = root / "test-signing" / signing["name"] / "package" if signing else source / artifacts["packageRoot"]
-        evidence = root / "test-signing" / signing["name"] / "evidence/index.json" if signing else source / artifacts["evidence"]
+        package_root = signer / "test-signing" / signing["name"] / "package" if signing else source / artifacts["packageRoot"]
+        evidence = signer / "test-signing" / signing["name"] / "evidence/index.json" if signing else source / artifacts["evidence"]
         published = journal.execute("release", release_intent,
             lambda operation: cli.control(descriptor["language"], "release", "publish-package", package_root,
                 "--evidence", evidence, "--operation-id", operation, "--expected-generation", "0"))
@@ -172,7 +188,11 @@ def dispatch(request: dict) -> dict:
         return build_control.status(root)
     if operation == "cancel-build":
         members(arguments, {"buildId", "reason"})
-        return build_control.cancel(root, arguments["buildId"], arguments["reason"])
+        result = build_control.cancel(root, arguments["buildId"], arguments["reason"])
+        from .local_service_fixture import CHILD
+        if not result["accepted"] and (root / CHILD / "project.json").exists():
+            return build_control.cancel(root / CHILD, arguments["buildId"], arguments["reason"])
+        return result
     if operation in {"status", "logs", "down", "up"}:
         from . import service
         members(arguments, set())
@@ -181,12 +201,17 @@ def dispatch(request: dict) -> dict:
                 return service.start(root, Path(sys.argv[0]).absolute())
         if operation == "down":
             build_control.stop(root)
+            from .local_service_fixture import CHILD
+            if (root / CHILD / "project.json").exists():
+                build_control.stop(root / CHILD)
         try:
             result = service.request(root, operation)
         except (FileNotFoundError, ConnectionRefusedError):
             result = service.disconnected(root)
         if operation == "down":
             result["build"] = build_control.wait_stopped(root)
+            if (root / CHILD / "project.json").exists():
+                result["localServiceBuild"] = build_control.wait_stopped(root / CHILD)
         if operation == "status":
             from .workflow_status import observe
             result["workflow"] = observe(root)
@@ -230,6 +255,13 @@ def dispatch(request: dict) -> dict:
             members(arguments, set())
             cli, journal = client(root)
             if journal.read()["pending"] is None:
+                from . import local_service_fixture
+                dependency = root / local_service_fixture.CHILD
+                if (root / "local-service-build.json").exists() and (dependency / "operations.json").exists():
+                    local_service_fixture.signing_input(root)
+                    child_cli, child_journal = client(dependency, runtime_root=root)
+                    if child_journal.read()["pending"] is not None:
+                        return {"dependency": "localService", "result": child_journal.recover(child_cli.lookup)}
                 from .workflow_status import observe
                 return {"state": "no-pending-operation", "workflow": observe(root)}
             return journal.recover(cli.lookup)

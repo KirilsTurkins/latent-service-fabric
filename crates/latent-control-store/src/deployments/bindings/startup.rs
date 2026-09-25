@@ -30,7 +30,13 @@ impl DirectoryDeploymentRepository {
             || providers.iter().any(|provider| {
                 !model::token(&provider.tenant.0)
                     || !model::token(&provider.service.0)
-                    || provider.local_deployment.is_some()
+                    || provider.local_deployment.as_ref().is_some_and(|id| {
+                        !model::token(&id.0)
+                            || provider.reference.capability()
+                                != latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY
+                            || provider.reference.profile()
+                                != latent_capabilities::broker::LOCAL_SERVICE_INVOCATION_PROFILE
+                    })
             })
         {
             return Err(denied());
