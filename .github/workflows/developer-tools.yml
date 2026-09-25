@@ -2,7 +2,7 @@ name: Developer tools
 
 on:
   push:
-    branches: ['feat/559-*']
+    branches: ['feat/559-*', '!feat/559-preflight-ready']
     paths-ignore:
       - .github/workflows/developer-platform-preflight.yml
       - tools/ci/commands.json

@@ -6860,8 +6860,8 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-platform-preflight.yml": "c9f626723bbaa6873ab483871fa4c8feab3c68b7b739bf7a0c34e8687eb61e77",
-    ".github/workflows/developer-tools.yml": "8df1a89f49f3ba48f49fd721890fa7598c0417efba23154cb779819462c243b4",
+    ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
+    ".github/workflows/developer-tools.yml": "cbbef82bf30c66edb7f150d58388a60d38bd9d56e6681b37745c49e182302fc6",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
     ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",

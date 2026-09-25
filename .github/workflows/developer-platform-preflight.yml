@@ -3,7 +3,7 @@ name: Developer platform preflight
 on:
   workflow_dispatch:
   push:
-    branches: [feat/559-hosted-qualification]
+    branches: [feat/559-hosted-qualification, feat/559-preflight-ready]
     paths: [.github/workflows/developer-platform-preflight.yml]
 
 permissions:
