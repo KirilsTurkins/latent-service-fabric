@@ -664,7 +664,7 @@
       "job": "windows",
       "jobIf": "success()",
       "name": "Download only selected exact-source candidate inputs",
-      "run": "$ErrorActionPreference = 'Stop'\n$Support = Join-Path $env:RUNNER_TEMP 'packaged-support'\n$Selection = Get-Content (Join-Path $Support 'selection.json') -Raw | ConvertFrom-Json -AsHashtable\n$Artifacts = Join-Path $env:RUNNER_TEMP 'packaged-candidates'\nNew-Item -ItemType Directory -Path $Artifacts | Out-Null\n$Sha = $Selection.sourceCommit\nif ($Sha -notmatch '^[a-f0-9]{40}$') { throw 'Exact candidate source required.' }\n$Names = [ordered]@{ windows=\"developer-windows-candidate-$Sha\"; wsl=\"developer-wsl-candidate-$Sha\" }\nforeach ($Language in @('rust','c','java','dotnet','go','typescript')) {\n    $Names[$Language] = \"developer-$Language-tools-candidate-$Sha\"\n}\n$Selection.artifacts = @{}\nforeach ($Name in $Names.Keys) {\n    $Destination = Join-Path $Artifacts $Name\n    & gh run download $Selection.candidateRuns.developer.id --repo KirilsTurkins/latent-service-fabric --name $Names[$Name] --dir $Destination\n    if ($LASTEXITCODE -ne 0) { throw \"Candidate download failed: $Name\" }\n    $Selection.artifacts[$Name] = $Destination\n}\n$Destination = Join-Path $Artifacts 'native'\n& gh run download $Selection.candidateRuns.runtime.id --repo KirilsTurkins/latent-service-fabric --name \"native-runtime-candidate-development-test-$Sha\" --dir $Destination\nif ($LASTEXITCODE -ne 0) { throw 'Native candidate download failed.' }\n$Selection.artifacts.native = $Destination\n$Selection.trust = @{\n    developerPolicy=(Join-Path $Support 'developer-policy.json'); runtimePolicy=(Join-Path $Support 'runtime-policy.json');\n    trustedRoot=(Join-Path $Support 'trusted_root.jsonl'); trustedRootSha256=$Selection.verificationInputs.trustedRootSha256;\n    hostVerifier=(Join-Path $Support 'gh.exe'); hostVerifierSha256=$Selection.verificationInputs.verifierSha256.windows;\n    guestVerifier=(Join-Path $Support 'gh-linux'); guestVerifierSha256=$Selection.verificationInputs.verifierSha256.linux\n}\n$Selection | ConvertTo-Json -Depth 15 | Set-Content (Join-Path $Support 'inputs.json') -Encoding utf8",
+      "run": "$ErrorActionPreference = 'Stop'\n$Support = Join-Path $env:RUNNER_TEMP 'packaged-support'\n$Selection = Get-Content (Join-Path $Support 'selection.json') -Raw | ConvertFrom-Json -AsHashtable\n$Artifacts = Join-Path $env:RUNNER_TEMP 'packaged-candidates'\nNew-Item -ItemType Directory -Path $Artifacts | Out-Null\n$Sha = $Selection.sourceCommit\nif ($Sha -notmatch '^[a-f0-9]{40}$') { throw 'Exact candidate source required.' }\n$Names = [ordered]@{ windows=\"developer-windows-candidate-$Sha\"; wsl=\"developer-wsl-candidate-$Sha\" }\nforeach ($Language in @('rust','c','java','dotnet','go','typescript')) {\n    $Names[$Language] = \"developer-$Language-tools-candidate-$Sha\"\n}\n$Selection.artifacts = @{}\nforeach ($Name in $Names.Keys) {\n    $Destination = Join-Path $Artifacts $Name\n    & gh run download $Selection.candidateRuns.developer.id --repo KirilsTurkins/latent-service-fabric --name $Names[$Name] --dir $Destination\n    if ($LASTEXITCODE -ne 0) { throw \"Candidate download failed: $Name\" }\n    $Selection.artifacts[$Name] = $Destination\n}\n$Destination = Join-Path $Artifacts 'native'\n& gh run download $Selection.candidateRuns.runtime.id --repo KirilsTurkins/latent-service-fabric --name \"native-runtime-candidate-development-test-$Sha\" --dir $Destination\nif ($LASTEXITCODE -ne 0) { throw 'Native candidate download failed.' }\n$Selection.artifacts.native = $Destination\n$Selection.trust = @{\n    developerPolicy=(Join-Path $Support 'developer-policy.json'); runtimePolicy=(Join-Path $Support 'runtime-policy.json');\n    trustedRoot=(Join-Path $Support 'trusted_root.jsonl'); trustedRootSha256=$Selection.verificationInputs.trustedRootSha256;\n    hostVerifier=(Join-Path $Support 'gh.exe'); hostVerifierSha256=$Selection.verificationInputs.verifierSha256.windows;\n    guestVerifier=(Join-Path $Support 'gh-linux'); guestVerifierSha256=$Selection.verificationInputs.verifierSha256.linux\n}\n$Selection.faultProbe = Join-Path $Support 'dev_node_fault_probe.py'\n$Selection | ConvertTo-Json -Depth 15 | Set-Content (Join-Path $Support 'inputs.json') -Encoding utf8",
       "shell": "pwsh",
       "stepIf": "success()",
       "workflow": ".github/workflows/developer-packaged-qualification.yml",
@@ -3413,7 +3413,7 @@
       "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
     },
     "tools/prepare_dev_packaged_probe.py": {
-      "sha256": "e7db13341bb229a46b4e9cd1296006802a0bf71b2031c26d42e137d85463ba61"
+      "sha256": "9ffb7c42dd2e659e084c1db2f970b88c115eea738177ba9158f0f82c95354317"
     },
     "tools/prepare_native_workspace.py": {
       "sha256": "5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"
@@ -4269,6 +4269,7 @@
       "TestProfile.test_selected_fixture_requires_binary_confirmation_before_replacing_configuration"
     ],
     "tools/tests/test_dev_packaged_probe.py": [
+      "PackagedProbe.test_bounded_binary_stdin_reaches_only_the_owned_child",
       "PackagedProbe.test_changed_bytes_never_return_an_executable",
       "PackagedProbe.test_conductor_protects_only_its_new_windows_directory",
       "PackagedProbe.test_deadline_does_not_replay_the_command",
@@ -6971,7 +6972,7 @@
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "ecbdeafb5bd9fee2fd0804b2fedd03953dbba236e1857e3af50fadda2c675f0f",
-    ".github/workflows/developer-packaged-qualification.yml": "1707cb2c640b76e4bc6a600b83af76e1f384862f554e53fe478d6202b0d81554",
+    ".github/workflows/developer-packaged-qualification.yml": "5cf481d93d7f82debf636f0df6a16ef90e9dd04fa3e2d0c47e1ce4b55a3a5b4f",
     ".github/workflows/developer-platform-preflight.yml": "c9f626723bbaa6873ab483871fa4c8feab3c68b7b739bf7a0c34e8687eb61e77",
     ".github/workflows/developer-tools.yml": "1af678a8b38f7fa833661048248c843739476fbf7e8c16d6bd65b0abe918f81e",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",

@@ -103,6 +103,21 @@ class PackagedProbe(unittest.TestCase):
         self.assertEqual((self.root / 'effects').read_text(), 'once')
         self.assertIsNotNone(child.child.returncode)
 
+    def test_bounded_binary_stdin_reaches_only_the_owned_child(self):
+        payload = b'private-test-input\x00' * 1024
+        child = Command([sys.executable, '-I', '-B', '-c',
+            'import hashlib,sys;print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())'],
+            self.root, environment(self.root), input_bytes=payload)
+        try:
+            self.assertEqual(child.finish(5), 0)
+            self.assertEqual(child.raw().strip().decode(), hashlib.sha256(payload).hexdigest())
+            self.assertNotIn('private-test-input', str(child.receipt()))
+        finally:
+            child.abort_controller()
+        with self.assertRaisesRegex(ProbeFailure, 'conductor-input-byte-limit'):
+            Command([sys.executable, '-c', 'raise AssertionError("never starts")'],
+                    self.root, environment(self.root), input_bytes=b'x' * (2 * 1024 * 1024 + 1))
+
 
 if __name__ == '__main__':
     unittest.main()

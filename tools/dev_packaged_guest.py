@@ -7,9 +7,9 @@ import re
 import shlex
 
 if __package__:
-    from .dev_packaged_process import Command, digest, read_json, require
+    from .dev_packaged_process import MAX_COMMANDS, Command, digest, read_json, require
 else:
-    from dev_packaged_process import Command, digest, read_json, require
+    from dev_packaged_process import MAX_COMMANDS, Command, digest, read_json, require
 
 # This observer never loads application recipes or credential contents. It runs
 # as the selected workspace user, and exports only the three public build files.
@@ -41,6 +41,10 @@ if mode=='audit':
         try:list((Path('/home')/other).iterdir())
         except PermissionError:result['otherWorkspaceHomeDenied']=True
         else:raise AssertionError('other workspace home readable')
+elif mode=='journal':
+    journal=document(root/'operations.json');pending=journal['pending']
+    result={'pending':None if pending is None else {'id':pending['id'],'kind':pending['kind']},
+        'history':[{'id':row['id'],'kind':row['kind']} for row in journal['history']]}
 elif mode=='artifact':
     key,attempt,offset=options;assert key in {'component','capsule','contracts'} and re.fullmatch(r'[a-f0-9]{32}',attempt)
     receipt=document(root/'last-build.json')['receipt'];assert receipt['attempt']==attempt
@@ -49,7 +53,7 @@ elif mode=='artifact':
     parent=root/'builds'/attempt/'source';path=parent
     for part in relative.split('/'):
         path=path/part;assert not path.is_symlink()
-    info=path.lstat();assert stat.S_ISREG(info.st_mode) and info.st_nlink==1 and 0<info.st_size<=16777216
+    info=path.lstat();assert stat.S_ISREG(info.st_mode) and info.st_nlink==1 and 0<info.st_size<=(16777216 if key=='component' else 1048576)
     with path.open('rb') as stream:checksum='sha256:'+hashlib.file_digest(stream,'sha256').hexdigest()
     assert checksum==receipt['artifacts'][key]
     offset=int(offset);assert 0<=offset<info.st_size
@@ -62,7 +66,7 @@ print(json.dumps(result,sort_keys=True))
 
 def observe(api, item, mode, *arguments):
     config = read_json(api.state / item['workspace'] / 'backend.json')
-    require(len(api.report['commands']) < 190, 'qualification-command-count-limit')
+    require(len(api.report['commands']) < MAX_COMMANDS - 24, 'qualification-command-count-limit')
     guest = ['/usr/local/bin/python3.13', '-I', '-B', '-c', OBSERVER, item['workspace'], mode, *arguments]
     if config['kind'] == 'wsl2':
         require(config['user'] == item['user'] and re.fullmatch(r'LSF-Dev-[a-f0-9]{16}', config['distribution'])

@@ -6,8 +6,11 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import tempfile
 import threading
 import time
+
+MAX_COMMANDS = 360
 
 
 class ProbeFailure(Exception):
@@ -50,14 +53,21 @@ def environment(temporary):
 
 class Command:
     """Bound stdout, stderr and ownership to the actual process handle we created."""
-    def __init__(self, argv, cwd, env):
+    def __init__(self, argv, cwd, env, *, input_bytes=None):
         self.started = time.monotonic()
         self.argv = [str(item) for item in argv]
         self.limit = threading.Event()
         self.lock = threading.Lock()
         self.outputs = [bytearray(), bytearray()]
-        self.child = subprocess.Popen(self.argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        require(input_bytes is None or isinstance(input_bytes, bytes) and len(input_bytes) <= 2 * 1024 * 1024,
+                'conductor-input-byte-limit')
+        with tempfile.TemporaryFile() as source:
+            if input_bytes is not None:
+                source.write(input_bytes)
+                source.seek(0)
+            self.child = subprocess.Popen(self.argv, cwd=cwd, env=env,
+                stdin=subprocess.DEVNULL if input_bytes is None else source,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.threads = []
         for index, stream, maximum in ((0, self.child.stdout, 4 * 1024 * 1024),
                                        (1, self.child.stderr, 256 * 1024)):

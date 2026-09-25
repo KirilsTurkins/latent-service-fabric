@@ -14,12 +14,16 @@ if __package__:
     from .dev_packaged_bootstrap import authenticate, extract
     from .dev_packaged_guest import observe, export
     from .dev_packaged_watch import run as watch_schedule
-    from .dev_packaged_process import Command, ProbeFailure, digest, environment, read_json, require, write_json
+    from .dev_packaged_process import MAX_COMMANDS, Command, ProbeFailure, digest, environment, read_json, require, write_json
+    from .dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
+    from .dev_packaged_wsl_lifecycle import restart_owned_distribution
 else:
     from dev_packaged_bootstrap import authenticate, extract
     from dev_packaged_guest import observe, export
     from dev_packaged_watch import run as watch_schedule
-    from dev_packaged_process import Command, ProbeFailure, digest, environment, read_json, require, write_json
+    from dev_packaged_process import MAX_COMMANDS, Command, ProbeFailure, digest, environment, read_json, require, write_json
+    from dev_packaged_recovery import deploy_with_lost_responses, invoke_with_lost_response
+    from dev_packaged_wsl_lifecycle import restart_owned_distribution
 
 LANGUAGES = ('rust', 'c', 'java', 'dotnet', 'go', 'typescript')
 
@@ -33,7 +37,8 @@ class Frontend:
         self.deadline = time.monotonic() + 7200
 
     def command(self, *arguments):
-        require(len(self.report['commands']) < 190, 'qualification-command-count-limit')
+        limit = MAX_COMMANDS if arguments[0] in {'down', 'status', 'recover'} else MAX_COMMANDS - 24
+        require(len(self.report['commands']) < limit, 'qualification-command-count-limit')
         require(time.monotonic() < self.deadline, 'qualification-schedule-deadline')
         return Command([self.executable, '--state-root', self.state, 'dev', *arguments], self.root, self.env)
 
@@ -170,15 +175,17 @@ def prepare(api, config, language, index, helper_sha, *, backend_config=None):
                        '--admission', 'signed-fixture', '--tool-root', selected['directory'], timeout=120)
     authored = {entry['path']: digest(project / entry['path']) for entry in manifest['snapshot']['files']}
     authored.update({'latent.project.json': digest(project / 'latent.project.json'), 'app/.env': digest(sentinel)})
-    return {'workspace': workspace, 'user': owned['user'], 'project': str(project),
+    return {'workspace': workspace, 'user': owned['user'], 'project': str(project), 'helperSha256': helper_sha,
             'build': built, 'profile': profile, 'tools': selected, 'authoredSource': authored}
 
 
 def verify_language(api, item):
     name = item['workspace']
-    item['startup'] = api.start(name)
+    if 'startup' not in item:
+        item['startup'] = api.start(name)
     item['doctor'] = api.call('doctor', '--workspace', name)
-    item['deployment'] = api.call('deploy', '--workspace', name, timeout=180)
+    if 'deployment' not in item:
+        item['deployment'] = api.call('deploy', '--workspace', name, timeout=180)
     item['tests'] = api.call('test', '--workspace', name, '--environment', 'node', timeout=330)
     require(item['tests']['passed'] and all(case['status'] == 'passed' for case in item['tests']['results']), 'language-required-case-failed')
     require({'success', 'declared-error'} <= {case['category'] for case in item['tests']['results']}, 'success-and-declared-error-required')
@@ -210,7 +217,7 @@ def run(config, output):
     report = {'schemaVersion': 'latent.dev.packaged-windows-probe.v1', 'passed': False, 'qualificationComplete': False,
         'sourceCommit': config['sourceCommit'], 'host': {'osVersion': platform.version(), 'architecture': platform.machine()},
         'sourceCheckoutUsedByApplication': False, 'runtimeCompiled': False, 'commands': [], 'languages': {},
-        'cleanup': 'not-started', 'limits': {'commands': 190, 'stdoutBytesPerCommand': 4194304,
+        'cleanup': 'not-started', 'limits': {'commands': MAX_COMMANDS, 'reservedCleanupCommands': 24, 'stdoutBytesPerCommand': 4194304,
             'stderrBytesPerCommand': 262144, 'receiptBytes': 16777216, 'maximumCommandSeconds': 1800,
             'scheduleSeconds': 7200}}
     api = None
@@ -227,8 +234,11 @@ def run(config, output):
         retained = None
         for index, language in enumerate(LANGUAGES):
             item = report['languages'][language] = prepare(api, config, language, index, inventory['helperSha256'])
+            if retained is None:
+                deploy_with_lost_responses(api, config, item)
             verify_language(api, item)
             if retained is None:
+                invoke_with_lost_response(api, config, item)
                 watch_schedule(api, item)
                 retained = item
                 continue
@@ -243,6 +253,8 @@ def run(config, output):
             item['purge'] = api.call('purge', '--workspace', item['workspace'], '--confirm-workspace', item['workspace'], timeout=120)
             item['authoredSourceAfterPurge'] = preserved_source(item)
             write_json(output / 'observation.json', report)
+        retained['actualWslLifecycle'] = restart_owned_distribution(api, retained)
+        retained['afterActualWslRestart'] = retained_invocation(api, retained)
         retained['shutdown'] = api.down(retained['workspace'])
         retained['restart'] = api.start(retained['workspace'])
         retained['statusAfterRestart'] = api.call('status', '--workspace', retained['workspace'])

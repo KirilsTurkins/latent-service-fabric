@@ -11,12 +11,12 @@ import time
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from dev_packaged_bootstrap import authenticate, extract
-    from dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
+    from dev_packaged_process import MAX_COMMANDS, ProbeFailure, digest, read_json, require, write_json
     from dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
     from dev_packaged_watch import run as watch
 else:
     from .dev_packaged_bootstrap import authenticate, extract
-    from .dev_packaged_process import ProbeFailure, digest, read_json, require, write_json
+    from .dev_packaged_process import MAX_COMMANDS, ProbeFailure, digest, read_json, require, write_json
     from .dev_packaged_windows import Frontend, acquire, prepare, verify_language, retained_invocation, preserved_source
     from .dev_packaged_watch import run as watch
 
@@ -48,7 +48,7 @@ def run(config, output):
         'sourceCommit': config['sourceCommit'], 'sourceCheckoutUsedByApplication': False, 'runtimeCompiled': False,
         'environment': 'fresh-ubuntu-24.04-os-container-with-network-none', 'kernel': platform.release(),
         'osRelease': Path('/etc/os-release').read_text(), 'backends': {},
-        'cleanup': 'not-started', 'limits': {'scheduleSeconds': 7200, 'commandsPerBackend': 190}}
+        'cleanup': 'not-started', 'limits': {'scheduleSeconds': 7200, 'commandsPerBackend': MAX_COMMANDS}}
     api = None
     try:
         report['absentHostCompilers'] = [name for name in ('gcc', 'g++', 'clang', 'rustc', 'cargo', 'dotnet', 'javac', 'go', 'node')

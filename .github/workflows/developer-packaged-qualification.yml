@@ -122,6 +122,7 @@ jobs:
               hostVerifier=(Join-Path $Support 'gh.exe'); hostVerifierSha256=$Selection.verificationInputs.verifierSha256.windows;
               guestVerifier=(Join-Path $Support 'gh-linux'); guestVerifierSha256=$Selection.verificationInputs.verifierSha256.linux
           }
+          $Selection.faultProbe = Join-Path $Support 'dev_node_fault_probe.py'
           $Selection | ConvertTo-Json -Depth 15 | Set-Content (Join-Path $Support 'inputs.json') -Encoding utf8
       - name: Exercise packaged frontend with host SDKs and Python absent from its PATH
         shell: pwsh

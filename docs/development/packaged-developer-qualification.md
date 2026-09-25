@@ -1,7 +1,7 @@
 # Packaged developer qualification
 
 The `Packaged developer qualification` workflow stages a small test conductor on
-a fresh Windows x86-64 runner. The application runs the authenticated native
+a fresh Windows x86-64 runner and a disconnected Linux OS container. The Windows application runs the authenticated native
 frontend, WSL image, native Linux runtime and six language tool bundles. The
 Windows job does not check out LSF or compile its runtime. The runner image has
 preinstalled development tools; the frontend receives a restricted environment
@@ -34,6 +34,21 @@ check private credential permissions, rejection of the other workspace's home,
 and exclusion of an authored `.env` file from synchronized snapshots. Restart
 uses the retained deployment without a new publication. Purge preserves every
 recorded authored file by digest.
+
+For the first Rust deployment, a separately staged and digest-checked conductor
+discards one actual successful release response, then one deployment response.
+It imports the authenticated installed helper and calls the actual operator CLI.
+The packaged `recover` command must resolve each original journal identity
+exactly once. The same schedule discards one successful invocation response and
+requires its original terminal receipt. It never repeats the accepted effect.
+The observer reads only journal identities and kinds, not credential contents.
+
+After the other five workspaces are stopped and purged, the conductor verifies
+the retained distribution's Windows registry identity, terminates only that
+owned distribution, and joins its original foreground controller. Resuming it
+must observe a changed guest namespace, confirmed process reaping and an
+unclean shutdown. Restart must retain the existing deployment and execute it.
+The schedule never shuts down WSL globally.
 
 The retained Rust workspace also runs the packaged watch command. The conductor
 edits the greeting from A to B, waits for B's real deployment and focused test,
@@ -69,9 +84,13 @@ six-language matrix. This Linux OS-container observation is distinct from the
 Windows WSL2 host and the opt-in editor devcontainer path.
 
 Each command has bounded output and a deadline. The schedule admits at most
-190 completed commands, 4 MiB stdout and 256 KiB stderr per command, 1,800 seconds
+360 completed commands per backend, reserving the last 24 for status, recovery
+and cleanup, 4 MiB stdout and 256 KiB stderr per command, 1,800 seconds
 per command, and 7,200 seconds for the schedule. A public receipt is at most
-16 MiB. Only the public observation and selected input identities are uploaded;
+16 MiB. Optional stdin is bounded to 2 MiB and never copied into command
+arguments or receipts. Public component exports are at most 16 MiB, with
+capsule and contract documents at most 1 MiB each. Only the public observation
+and selected input identities are uploaded;
 private workspace credentials and uncertain intent are not artifact inputs.
 Failures stop the schedule without replaying a mutation or invocation. Cleanup
 uses the recorded public workspace API, and an unconfirmed remote termination
@@ -95,9 +114,10 @@ The [final source campaign](final-source-campaign-observation.json) records the
 separate successful isolation, watch and recovery source probes and their failed
 predecessors. Those observations likewise do not replace installed-candidate runs.
 
-The nine fast conductor regressions exercise archive traversal/alias/device/link
+The ten fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and
-the actual Windows DACL of the newly created conductor directory. They also
+bounded stdin with receipt redaction, plus the actual Windows DACL of the newly
+created conductor directory. They also
 require the correct native entrypoint and private executable modes on Linux.
 They run on Windows and Linux and do not count as installed-product evidence.
 The [OS setup observation](qualification-os-smoke-observation.json) additionally

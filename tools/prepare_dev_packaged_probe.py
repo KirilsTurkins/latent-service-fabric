@@ -63,7 +63,7 @@ def main():
         runs[kind] = {'id': int(number), 'url': run['html_url'], 'sourceCommit': source, 'conclusion': run['conclusion']}
     for name in ('dev_packaged_probe', 'dev_packaged_process', 'dev_packaged_bootstrap', 'dev_packaged_windows',
                  'dev_packaged_guest', 'dev_packaged_watch', 'dev_packaged_linux', 'dev_packaged_linux_host',
-                 'dev_packaged_linux_entry'):
+                 'dev_packaged_linux_entry', 'dev_packaged_recovery', 'dev_packaged_wsl_lifecycle', 'dev_node_fault_probe'):
         shutil.copyfile(ROOT / 'tools' / (name + '.py'), target / (name + '.py'))
     shutil.copyfile(ROOT / 'packaging/dev/qualification.Dockerfile', target / 'qualification.Dockerfile')
     root = ROOT / 'packaging/dev/qualification-trusted-root.jsonl'
@@ -93,7 +93,8 @@ def main():
         'approvedDeveloperPolicy': selected['developer'], 'approvedRuntimePolicy': selected['runtime'],
         'consentProvisionAndInstall': True, 'independentPolicyApproved': True,
         'verificationInputs': {'verifierSha256': verifiers, 'trustedRootSha256': 'sha256:' + TRUSTED_ROOT_SHA},
-        'candidateRuns': runs, 'conductorSourceCommit': os.environ['GITHUB_SHA']}
+        'candidateRuns': runs, 'conductorSourceCommit': os.environ['GITHUB_SHA'],
+        'faultProbeSha256': 'sha256:' + hashlib.sha256((target / 'dev_node_fault_probe.py').read_bytes()).hexdigest()}
     (target / 'selection.json').write_text(json.dumps(plan, indent=2) + '\n', encoding='utf-8')
     print('Prepared separate conductor and exact candidate verification inputs:', source)
 
