@@ -57,13 +57,19 @@ export function exampleNodes(bundle, request, {includeVerification = true} = {})
   }
   return nodes;
 }
-export function remarkExamples({bundle, documentVersion, includeVerification = true}) {
+export function remarkExamples({bundle, documentVersion, includeVerification = true, interactive = false}) {
   return tree => {
     function transform(parent) {
       if (!parent.children) return;
       parent.children = parent.children.flatMap(node => {
         const request = reference(node);
-        if (request) return exampleNodes(bundle, {...request, documentVersion}, {includeVerification});
+        if (request) {
+          if (!interactive) return exampleNodes(bundle, {...request, documentVersion}, {includeVerification});
+          resolveExample(bundle, {...request, documentVersion});
+          return [{type: 'mdxJsxFlowElement', name: 'CodeExample',
+            attributes: Object.entries({...request, documentVersion}).map(([name, value]) => ({type: 'mdxJsxAttribute', name, value})),
+            children: []}];
+        }
         const component = componentRequest(node);
         if (component) {
           resolveExample(bundle, {...component, documentVersion});
