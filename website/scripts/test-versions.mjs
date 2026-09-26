@@ -30,6 +30,17 @@ const cleanups = [];
 try {
   run('git', ['clone', '--quiet', '--shared', '--no-checkout', '-c', 'core.longpaths=true', repositoryRoot, checkout], repositoryRoot);
   run('git', ['checkout', '--quiet', '--detach', revision], checkout);
+  // The publication build above covers every real release. Keep the separate
+  // two-version browser fixture independent of the number of maintained releases
+  // without raising the production snapshot limit or changing published bytes.
+  assert.equal(fs.realpathSync(checkout), path.join(fs.realpathSync(owner), 'repository'));
+  const publicationPaths = ['versioned_docs', 'versioned_assets', 'versioned_examples',
+    'versioned_manifests', 'versioned_sidebars', 'versions.json'].map(name => `website/${name}`);
+  for (const relative of publicationPaths) {
+    const destination = path.join(checkout, relative);
+    assert.equal(fs.realpathSync(destination), destination, 'Fixture cleanup must stay inside its new clone');
+  }
+  run('git', ['rm', '--quiet', '-r', '--', ...publicationPaths], checkout);
   const f = fixture({after: callback => cleanups.push(callback)}, ['rust', 'go']);
   f.write('.gitignore', 'website/.generated/\n');
   f.write('docs/fixture.md', '# Synthetic fixture owner\n\n## Fixture owner instructions\n\nUI regression only; no runtime support or execution claim.\n');
