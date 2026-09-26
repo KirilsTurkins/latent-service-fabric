@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <Version>0.1.0-alpha.4</Version>
     <RuntimeFrameworkVersion>8.0.31</RuntimeFrameworkVersion>
     <RollForward>Disable</RollForward>
     <ImplicitUsings>enable</ImplicitUsings>
