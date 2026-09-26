@@ -21,6 +21,8 @@ GUIDES = {
     'rollout-uncertain-recovery': ['docs/learn/deliver-and-recover-a-capsule.md', 'docs/how-to/operate-and-contribute.md'],
 }
 NEW_GUIDES = ('docs/start/index.md', 'docs/start/first-node.md',
+              'docs/start/developer-setup.md', 'docs/component-development/linux-workspace.md',
+              'docs/component-development/packaged-languages.md',
               'docs/learn/author-your-first-capsule.md', 'docs/how-to/operate-and-contribute.md',
               'docs/development/core-guide-validation.md')
 
@@ -70,13 +72,14 @@ class CoreGuides(unittest.TestCase):
 
     def test_real_guest_region_is_referenced_without_copying_implementation(self):
         guide = (ROOT / 'docs/learn/author-your-first-capsule.md').read_text(encoding='utf-8')
-        self.assertEqual(guide.count('<!-- lsf-example: guest/rust-echo echo -->'), 1)
+        self.assertEqual(guide.count('<!-- lsf-example: guest/tutorial-greeting capsule -->'), 1)
         # Prose may explain the implementation; only a pasted implementation
         # would bypass the maintained source-region extraction.
         for language, source in fences(guide):
-            if language == 'rust':
-                self.assertNotIn('impl Guest for EchoCapsule', source)
-        self.assertTrue((ROOT / 'examples/guides/rust-echo/example.json').is_file())
+            self.assertNotIn(language, {'rust', 'c', 'typescript', 'go', 'java', 'csharp'})
+        example = json.loads((ROOT / 'examples/guides/tutorial-greeting/example.json').read_text(encoding='utf-8'))
+        self.assertEqual({variant['language'] for variant in example['variants']},
+                         {'rust', 'c', 'typescript', 'go', 'java', 'csharp'})
 
     def test_learning_sequence_links_are_present_and_bounded(self):
         first = (ROOT / 'docs/start/first-node.md').read_text(encoding='utf-8')
@@ -96,9 +99,9 @@ class CoreGuides(unittest.TestCase):
             for language, source in fences((ROOT / name).read_text(encoding='utf-8')):
                 if language != 'bash':
                     continue
-                result = subprocess.run(['bash', '-n'], input=source.encode(),
+                result = subprocess.run([shutil.which('bash'), '-n'], input=source.encode(),
                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
-                self.assertEqual(result.returncode, 0, name)
+                self.assertEqual(result.returncode, 0, name + ': ' + result.stderr.decode(errors='replace'))
                 checked += 1
         self.assertGreaterEqual(checked, 8)
 
