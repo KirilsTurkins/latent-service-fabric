@@ -24,10 +24,12 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: 797ecfe1eecfac08b8c18b7782aa3305cc0cdb19
+          ref: a15511d47a1fd661c4cd4a494076660b080f1520
           path: validation
           persist-credentials: false
-          sparse-checkout: pr605-validation.patch.z64
+          sparse-checkout: |
+            pr605-validation.patch.z64
+            pr605-start-delta.patch.z64
           sparse-checkout-cone-mode: false
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -45,27 +47,27 @@ jobs:
           workspaces: source
           key: pr605-materialization-validation
           cache-on-failure: true
-      - name: Apply the exact reviewed patch and preserve source boundaries
+      - name: Apply exact reviewed source patches
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/pr605-evidence"
           exec > >(tee "$RUNNER_TEMP/pr605-evidence/preflight.log") 2>&1
           python - <<'PY'
           import base64, hashlib, pathlib, subprocess, zlib
-          raw = zlib.decompress(base64.b64decode(pathlib.Path('../validation/pr605-validation.patch.z64').read_bytes()))
-          assert hashlib.sha256(raw).hexdigest() == '04e11a0b3e1bfc9b362f3afdc5d56cfdcbf0828722ed6023df15724a7a301108'
-          subprocess.run(['git', 'apply', '--index', '-'], input=raw, check=True)
-          path = pathlib.Path('crates/latent-wasmtime/src/backend/readiness/tests/materialization.rs')
-          text = path.read_text()
-          assert text.startswith('use std::future::Future;\n')
-          path.write_text(text.removeprefix('use std::future::Future;\n'))
+          for name, checksum in [('pr605-validation.patch.z64', '04e11a0b3e1bfc9b362f3afdc5d56cfdcbf0828722ed6023df15724a7a301108'), ('pr605-start-delta.patch.z64', 'a2695a0e9004b92b7296a027753e3af679f87fcf6e5ab7c8d6eb0b1e396efce6')]:
+              encoded = pathlib.Path('../validation', name).read_text()
+              if name == 'pr605-start-delta.patch.z64':
+                  encoded = encoded.replace('LS6a6r', 'LS6r')
+              raw = zlib.decompress(base64.b64decode(encoded))
+              assert hashlib.sha256(raw).hexdigest() == checksum, name
+              subprocess.run(['git', 'apply', '--index', '-'], input=raw, check=True)
           PY
           cargo fmt --all
           git diff --check
           python -m pip install -r tools/requirements.lock
           python tools/ci_coverage.py
           python tools/validate_repository.py
-      - name: Reproduce the real busy fence against the original synchronous materialization
+      - name: Reproduce both original authority-busy failures deterministically
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -73,34 +75,38 @@ jobs:
           root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr605-evidence'
           ownership = pathlib.Path('crates/latent-wasmtime/src/backend/readiness/ownership.rs')
           backend = pathlib.Path('crates/latent-wasmtime/src/backend.rs')
-          original = {p: p.read_bytes() for p in (ownership, backend)}
-          try:
-              ownership.write_bytes(subprocess.check_output(['git', 'show', 'HEAD:' + str(ownership)]))
-              text = backend.read_text()
-              start = text.index('    fn materialize_ready_with_wait')
-              end = text.index('    fn backend_id', start)
-              backend.write_text(text[:start] + text[end:])
-              case = 'backend::readiness::tests::materialization::busy_materialization_retains_exact_readiness_and_materializes_once_after_release'
-              with (root / 'red.log').open('wb') as log:
-                  run = subprocess.run(['cargo', '--config', '.cargo/managed-guest.toml', 'test', '--locked', '-p', 'latent-wasmtime', '--lib', '--all-features', case, '--', '--exact', '--nocapture'], stdout=log, stderr=subprocess.STDOUT, timeout=900)
-              output = (root / 'red.log').read_text()
-              print(output[-12000:])
-              assert run.returncode != 0 and case + ' ... FAILED' in output and 'assertion failed' in output, 'require deterministic assertion failure, not compilation failure'
-          finally:
-              for path, raw in original.items(): path.write_bytes(raw)
+          owned = pathlib.Path('crates/latent-wasmtime/src/backend/owned.rs')
+          original = {p: p.read_bytes() for p in (ownership, backend, owned)}
+          cases = [('materialization', 'backend::readiness::tests::materialization::busy_materialization_retains_exact_readiness_and_materializes_once_after_release'), ('start', 'backend::readiness::tests::invocation::busy_activation_start_retains_original_owner_and_executes_guest_once')]
+          for name, case in cases:
+              try:
+                  if name == 'materialization':
+                      ownership.write_bytes(subprocess.check_output(['git', 'show', 'HEAD:' + str(ownership)]))
+                      text = backend.read_text()
+                      start, end = text.index('    fn materialize_ready_with_wait'), text.index('    fn backend_id')
+                      backend.write_text(text[:start] + text[end:])
+                  else:
+                      owned.write_bytes(subprocess.check_output(['git', 'show', 'HEAD:' + str(owned)]))
+                  path = root / ('red-' + name + '.log')
+                  with path.open('wb') as log:
+                      run = subprocess.run(['cargo', '--config', '.cargo/managed-guest.toml', 'test', '--locked', '-p', 'latent-wasmtime', '--lib', '--all-features', case, '--', '--exact', '--nocapture'], stdout=log, stderr=subprocess.STDOUT, timeout=900)
+                  output = path.read_text()
+                  print(output[-10000:])
+                  assert run.returncode != 0 and case + ' ... FAILED' in output and 'assertion failed' in output, 'require assertion failure, not build failure'
+              finally:
+                  for path, raw in original.items(): path.write_bytes(raw)
           PY
-      - name: Validate Rust lint and all affected host suites
+      - name: Validate Rust lint and all affected suites
         run: |
           set -euo pipefail
           evidence="$RUNNER_TEMP/pr605-evidence"
-          # These packages use the workspace warning policy, not the separate
-          # warnings-as-errors package selection in tools/ci_cargo.py.
           cargo --config .cargo/managed-guest.toml clippy --locked -p latent-executor -p latent-node -p latent-wasmtime --lib --tests --all-features --no-deps 2>&1 | tee "$evidence/clippy.log"
           cargo --config .cargo/managed-guest.toml test --locked -p latent-executor --lib --all-features -- --test-threads=1 2>&1 | tee "$evidence/executor.log"
           cargo --config .cargo/managed-guest.toml test --locked -p latent-node --lib --all-features -- --test-threads=1 2>&1 | tee "$evidence/node-lib.log"
           cargo --config .cargo/managed-guest.toml test --locked -p latent-node --test activation_lifecycle --all-features -- --test-threads=1 2>&1 | tee "$evidence/node-lifecycle.log"
           cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib --all-features -- --test-threads=1 2>&1 | tee "$evidence/wasmtime-lib.log"
-      - name: Verify exact Rust discovery and unchanged Python coverage inventory
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test admission -- --test-threads=1 2>&1 | tee "$evidence/admission.log"
+      - name: Verify exact Rust discovery and unchanged CI coverage
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -126,14 +132,14 @@ jobs:
           python -m unittest tools.tests.test_ci_coverage tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery
           python tools/ci_coverage.py
           python tools/validate_docs.py
-      - name: Retrieve the exact compiled Go inputs from the failed run
+      - name: Retrieve exact Go components from the failed run
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           gh run download 36248963899 --repo "$GITHUB_REPOSITORY" --name go-guest-upstream-2445bdecf6055661f5ba17b49757e4151bef3341 --dir "$RUNNER_TEMP/go-inputs"
           test -f "$RUNNER_TEMP/go-inputs/go-capsule-authoring/sdk-guests/SDK-BUILD.json"
-      - name: Execute all ten Go SDK tests and repeat nested cold and warm service calls
+      - name: Execute Go SDK suite and eight independent nested service repetitions
         run: |
           set -euo pipefail
           evidence="$RUNNER_TEMP/pr605-evidence"
@@ -143,7 +149,7 @@ jobs:
           for attempt in 1 2 3 4 5 6 7 8; do
             cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test guest_sdk service::typed_service_outcomes_use_node_admission_and_reused_cells -- --ignored --exact --test-threads=1 --show-output 2>&1 | tee "$evidence/go-service-$attempt.log"
           done
-      - name: Create a validated source-only commit without moving the PR branch
+      - name: Create validated source-only commit without moving the PR
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -157,7 +163,7 @@ jobs:
           parent = 'cd10d3a0319ce9c158bf0819cabccbce35f385b1'
           assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == parent
           names = subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True).splitlines()
-          expected = {'crates/latent-executor/src/lib.rs', 'crates/latent-executor/src/preparation_read_wait/tests.rs', 'crates/latent-node/src/activation_manager/preparation.rs', 'crates/latent-node/src/activation_manager/run.rs', 'crates/latent-node/src/budgeted_execution.rs', 'crates/latent-node/src/budgeted_execution/tests/preparation_wait.rs', 'crates/latent-node/tests/activation_lifecycle/backend.rs', 'crates/latent-node/tests/activation_lifecycle/preparation.rs', 'crates/latent-wasmtime/src/backend.rs', 'crates/latent-wasmtime/src/backend/readiness.rs', 'crates/latent-wasmtime/src/backend/readiness/ownership.rs', 'crates/latent-wasmtime/src/backend/readiness/tests.rs', 'crates/latent-wasmtime/src/backend/readiness/tests/materialization.rs', 'tools/ci/suites.json'}
+          expected = {'crates/latent-executor/src/lib.rs', 'crates/latent-executor/src/preparation_read_wait/tests.rs', 'crates/latent-node/src/activation_manager/preparation.rs', 'crates/latent-node/src/activation_manager/run.rs', 'crates/latent-node/src/budgeted_execution.rs', 'crates/latent-node/src/budgeted_execution/tests/preparation_wait.rs', 'crates/latent-node/tests/activation_lifecycle/backend.rs', 'crates/latent-node/tests/activation_lifecycle/preparation.rs', 'crates/latent-wasmtime/src/backend.rs', 'crates/latent-wasmtime/src/backend/owned.rs', 'crates/latent-wasmtime/src/backend/start.rs', 'crates/latent-wasmtime/src/services.rs', 'crates/latent-wasmtime/src/backend/readiness.rs', 'crates/latent-wasmtime/src/backend/readiness/ownership.rs', 'crates/latent-wasmtime/src/backend/readiness/wait.rs', 'crates/latent-wasmtime/src/backend/readiness/tests.rs', 'crates/latent-wasmtime/src/backend/readiness/tests/fixture.rs', 'crates/latent-wasmtime/src/backend/readiness/tests/materialization.rs', 'crates/latent-wasmtime/src/backend/readiness/tests/invocation.rs', 'tools/ci/suites.json'}
           assert set(names) == expected, names
           assert not subprocess.check_output(['git', 'diff', '--name-only']).strip()
           base = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/'
@@ -172,7 +178,7 @@ jobs:
               entries.append({'path': name, 'type': 'blob', 'mode': '100644', 'sha': blob})
           base_tree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip()
           tree = post('trees', {'base_tree': base_tree, 'tree': entries})['sha']
-          message = 'fix(runtime): retain readiness across bounded materialization currentness waits\n\nWait only on the final pure currentness observation before consuming the original ready pin once. Preserve synchronous fail-closed callers, original grants, node deadline/cancellation/transport ownership and final activation-start checks.\n\nReproduce the production authority-busy race deterministically, cover pin cleanup and revoked/expired grants, and register all 11 new Rust tests. Validate the complete Go SDK runtime suite and repeated nested service calls using the exact failed-run guest components.\nRefs #605.'
+          message = 'fix(runtime): bound pre-guest currentness contention without replay\n\nRetain original readiness during the final materialization read and the original prepared use through guarded activation start. Use explicit node timers, preserve original grants and deadlines, and acknowledge cancellation without creating a Store. Never repeat compilation, instance acquisition or guest execution.\n\nReproduce both production authority-busy races deterministically and register all 18 new Rust regression cases. Validate affected host suites, exact CI discovery, the complete Go SDK suite and eight independent nested-service repetitions using the failed-run guest components.\nRefs #605.'
           commit = post('commits', {'message': message, 'tree': tree, 'parents': [parent]})
           receipt = {'commit': commit['sha'], 'parent': parent, 'tree': tree, 'files': hashes, 'validationRun': os.environ['GITHUB_RUN_ID']}
           pathlib.Path(os.environ['RUNNER_TEMP'], 'pr605-evidence', 'validated-commit.json').write_text(json.dumps(receipt, indent=2) + '\n')
