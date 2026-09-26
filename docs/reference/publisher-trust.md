@@ -8,8 +8,8 @@ native AOT loading. Those remain separate admission and execution boundaries.
 
 The library supports capsule, browser-assets and SSR package subjects from the
 [package format](../protocol/package-format.md). The [packager](../component-development/packaging.md)
-checks supplied component semantics separately. Existing locally trusted Phase 1
-publication remains supported in that mode. Signature production uses the host
+checks supplied component semantics separately. Explicit `trusted-local`
+publication remains available for controlled local use. Signature production uses the host
 library API described here. The [operator CLI](../phase-2-operator-workflows.md)
 transfers supplied signatures and performs local diagnostic verification; its
 package build command does not sign or create provenance.
@@ -21,7 +21,7 @@ config bytes. It validates their format and association, then hashes the origina
 manifest bytes. The subject contains the OCI manifest media type, its canonical
 SHA-256 package digest and exact size. Config and layer descriptors transitively
 bind the component and package metadata. Changing metadata while keeping the same
-component produces a different signed package. A legacy `ReleaseDigest` remains
+component produces a different signed package. `ReleaseDigest` remains
 a component identity and cannot substitute for this subject.
 
 The closed LSF v1 profile uses Ed25519 with the

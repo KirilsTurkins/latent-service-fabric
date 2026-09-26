@@ -1,12 +1,8 @@
 # Resource budgets, deadlines, and cancellation
 
-This page describes the default Phase 1 profile. The explicit
-[Phase 3 profile and conserved descendant budgets](descendant-budgets.md) add
+This page describes basic execution accounting, the default budget profile. The
+[capability profile and conserved descendant budgets](descendant-budgets.md) add
 child/outbound/blob counters while preserving the defaults documented here.
-
-Issue [#6](https://github.com/KirilsTurkins/latent-service-fabric/issues/6)
-implements the executable semantics behind the hardened contracts from issue
-[#36](https://github.com/KirilsTurkins/latent-service-fabric/issues/36).
 
 ## Budget representation
 
@@ -24,16 +20,16 @@ Reusable capsule, deployment, and node data contains no absolute deadline.
 Consequently, a persisted deployment cannot become invalid merely because wall
 clock time passes. A caller absolute deadline remains invocation-scoped.
 
-Phase 1 actively enforces:
+Basic execution accounting enforces:
 
 - CPU fuel;
 - peak linear memory;
 - wall deadline; and
 - host log bytes.
 
-Child calls, outbound requests, state/blob bytes, and effects retain stable
-counter fields for compatibility, but their Phase 1 effective grants and
-terminal consumption are always zero. A caller request with non-zero capacity
+Child calls, outbound requests, state/blob bytes, and effects have counter
+fields, but the basic profile requires their effective grants and
+terminal consumption to be zero. A caller request with non-zero capacity
 for one of these dimensions is rejected as `invalid-argument`; a backend that
 reports non-zero terminal consumption for one is treated as an internal
 accounting failure.
@@ -62,12 +58,12 @@ time. An absolute deadline that has already expired, or a duration that cannot
 be represented by the process monotonic clock, is rejected before a wrapped
 activation manager is invoked.
 
-The [local activation manager](../activation-lifecycle.md) owns Phase 1 admission,
+The [local activation manager](../activation-lifecycle.md) owns admission,
 execution, cancellation, and finalization directly. It supplies one shared ledger
 to the backend and capabilities and also finalizes on dropped or panicking work.
 Do not wrap it in another budget/lifecycle owner.
 
-`BudgetedActivationManager` remains a compatibility integration seam. It performs admission
+`BudgetedActivationManager` supplies accounting for a custom wrapped manager. It performs admission
 before delegating to the wrapped manager, replaces the envelope budget/deadline
 with the effective grant, installs activation-keyed accounting and cancellation
 registrations, applies cancellation-over-deadline terminal precedence, freezes
@@ -158,12 +154,12 @@ terminal publication wins, a racing cancellation returns
 registration is intentionally not durable and is removed after terminal
 publication and accounting finalization.
 
-## Phase boundary
+## Unsupported features
 
 This implementation does not provide tenant billing, a distributed quota
 ledger, cluster-wide budgets, durable cancellation or state/effect providers.
-Parent-to-child delegation is available through the explicit Phase 3 accounting
-profile; the default Phase 1 profile continues to reject later counters.
+Parent-to-child delegation is available through the explicit capability accounting
+profile; the default basic profile rejects capability counter grants.
 
 ## Validation
 
@@ -177,13 +173,12 @@ cargo test -p latent-node --all-targets --locked
 
 Required CI also checks canonical formatting, the complete workspace at the
 current toolchain and MSRV, Clippy, generated bindings, repository contracts,
-SDK surfaces and retained historical evidence. Phase 0 executable collectors
-are retired; maintained runtime checks remain required in the
+SDK surfaces and retained historical evidence. Maintained runtime checks run in the
 [CI lanes](../testing/ci-lanes.md).
 
 The tests cover deadline boundaries, conservative clock sampling, reusable
 relative ceilings, deterministic intersection and effective-deadline
-properties, every Phase 1-enforced dimension, concurrent consume races,
+properties, every enforced budget dimension, concurrent consume races,
 reservation/finalization races, reservation-inclusive terminal reports,
 manager-level report reconciliation with unresolved reservations, peak memory,
 deadline-overrun finalization, exactly-once terminal snapshots,

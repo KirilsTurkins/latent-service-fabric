@@ -92,7 +92,7 @@ The inventory describes these package inputs; it does not assert a complete
 transitive dependency inventory. The helper contains no fixed private keys,
 trusted-local admission switch or injectable eligibility proof.
 
-The separately approved [guest build profiles](../reference/build-provenance.md#phase-3-guest-recipes)
+The separately approved [guest build profiles](../reference/build-provenance.md#guest-build-recipes)
 identify explicit worktree inputs. Their revision is a source-inventory hash,
 not a Git commit claim. Existing echo builder approvals do not authorize them.
 For an application, inspect its package and configure real publisher/builder

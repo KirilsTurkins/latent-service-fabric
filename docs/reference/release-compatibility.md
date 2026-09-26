@@ -1,6 +1,6 @@
 # Release and runtime compatibility
 
-Phase 2 checks both whether a capsule can run on this node and whether a candidate
+LSF checks both whether a capsule can run on this node and whether a candidate
 preserves the supported contract of an older package. These are separate decisions.
 [Package admission](package-admission.md) still requires current publisher,
 builder, SBOM and tenant policy. A compatibility report carries no signing,

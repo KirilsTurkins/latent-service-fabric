@@ -1,10 +1,10 @@
 # Exact web release admission
 
 The directory catalog admits signed browser and SSR packages using independent
-tenant-scoped publication references. This implements Phase 3 #225 and
+tenant-scoped publication references, following
 [ADR-0038](../../adr/0038-admit-web-packages-with-componentless-publication-authority.md).
-The shared HTTP listener (#229), renderer adapter (#233), observed Angular build
-(#234), and public web management operations (#226) integrate this catalog API.
+The shared HTTP listener, renderer adapter, Angular builder and public web
+management operations integrate this catalog API.
 
 ## Package profile
 

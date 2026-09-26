@@ -1,5 +1,9 @@
 # Windows developer workflow qualification
 
+This records the earlier qualification source. The
+[selected release toolkit](../evidence/developer-toolkit-36262353069/README.md)
+has a later complete packaged qualification with its own original receipts.
+
 The Windows developer workflow is qualified for the scoped developer workloads
 at source `8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4`, using independently approved,
 authenticated nonpublishing candidates. [Run 36236145313](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36236145313)

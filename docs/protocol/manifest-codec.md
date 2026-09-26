@@ -1,6 +1,6 @@
 # Manifest codec and admission contract
 
-Status: Phase 1 normative contract for issue #3.
+This defines manifest decoding and semantic admission for the standalone node.
 
 ## Responsibilities
 
@@ -13,13 +13,13 @@ Status: Phase 1 normative contract for issue #3.
    canonical schema embedded from `schemas/`, converts it to the Rust domain
    model, and normalizes values used for indexing.
 2. `Phase1ManifestValidator` accepts Rust domain values. It enforces the
-   cross-field standalone Phase 1 rules that JSON Schema cannot express. It
+   cross-field standalone rules that JSON Schema cannot express. It
    does not read files, persist state, fetch artifacts, compile routes, or
    execute components.
 
 Admission code must run both layers. Structural decoding alone intentionally
-accepts schema-valid future-phase capsules such as the checked-in transactional
-counter example; semantic Phase 1 validation rejects their unsupported state
+accepts schema-valid proposed capsules such as the checked-in transactional
+counter example; semantic validation rejects their unsupported state
 model with a stable violation.
 
 ```rust
@@ -38,9 +38,9 @@ application binary or storage adapter.
 
 ## Supported resource documents
 
-The codec fully maps `Capsule` and `Deployment` documents required by Phase 1.
-It also losslessly maps `Binding`, all trigger kinds, and `Policy` documents so
-those contracts can evolve before their runtime behavior is implemented.
+The codec fully maps `Capsule`, `Deployment`, `Binding`, trigger and `Policy`
+documents. Runtime acceptance still depends on the selected supported profile;
+decoding a trigger does not install a provider or enable an unsupported trigger kind.
 Release-publish requests and compiled route snapshots remain API/persistence
 artifacts rather than manifest models; their checked-in examples continue to
 be validated directly against their schemas by `tools/validate_repository.py`.
@@ -99,7 +99,7 @@ only intentional open objects in the current contracts are:
 - capability-grant constraints, whose values are strings;
 - trigger `spec.configuration`, whose values may be arbitrary bounded JSON.
 
-The additive Phase 2 capsule compatibility profile defines optional `runtime`,
+The capsule compatibility profile defines optional `runtime`,
 `targetTriples` and `cpuFeatures` under the existing closed `compatibility`
 member. Omitted requirements preserve earlier canonical bytes. Older schemas
 reject these new fields instead of silently ignoring host requirements. See
@@ -108,7 +108,7 @@ reject these new fields instead of silently ignoring host requirements. See
 Every open object and every array nested below trigger configuration is subject
 to the same schema and parser cardinality ceiling. Trigger configuration is
 retained without numeric precision loss but normalized to canonical JSON values;
-it is not interpreted by Phase 1. Duplicate keys are rejected even inside open
+the codec does not execute it. Duplicate keys are rejected even inside open
 objects.
 
 ## Draft 2020-12 numeric semantics
@@ -182,11 +182,11 @@ a capsule, an absent deployment wall-time ceiling is wider than a finite
 capsule ceiling and is rejected; equal or smaller relative durations are
 accepted.
 
-Standalone Phase 1 admits only stateless Wasm Components. State read/write
+The standalone node admits only stateless Wasm Components. State read/write
 budgets must consequently be zero in both capsule and deployment resources.
 Other zero-valued resource dimensions remain valid exact denials.
 
-## Semantic Phase 1 rules
+## Semantic admission rules
 
 The validator enforces at least the following:
 
@@ -194,7 +194,7 @@ The validator enforces at least the following:
 - canonical bounded ASCII resource identifiers and versioned contract IDs;
 - `sha256:` plus 64 hexadecimal characters for release digests;
 - Semantic Version 2.0.0 component and minimum-fabric versions;
-- minimum fabric version no newer than the Phase 1 contract version `0.1.0`;
+- minimum fabric version no newer than the supported contract version `0.1.0`;
 - `wasm-component` backend and `stateless` state model;
 - nonzero call-depth bounds;
 - route weight in `1..=10000`;

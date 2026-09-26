@@ -1,6 +1,6 @@
 # Sealed activation capability broker
 
-`latent_capabilities::broker` implements the Phase 3 activation authority and
+`latent_capabilities::broker` implements activation authority and
 ownership boundary. The old cloneable handle/call DTOs remain descriptive. Only
 the broker's private plan, session, handle row and accepted call owners authorize
 provider work. This is the implementation of [#204](https://github.com/KirilsTurkins/latent-service-fabric/issues/204),
@@ -142,7 +142,8 @@ Its canonical async guest tests use a test-only provider. The [shared provider
 pools](provider-pools.md) add immutable configuration epochs, fair queues,
 connection reuse and bounded worker/cleanup ownership. The delivered
 [plan compiler](capability-bindings.md) and [local service adapter](local-service-invocation.md)
-support fresh child activations with exact publication authority. Concrete
-external providers remain their subsequent Phase 3 tickets. This
+support fresh child activations with exact publication authority. The
+[provider reference](../reference/standalone-providers.md) documents the concrete
+standalone and trusted embedding integrations. This
 boundary does not claim hostile multitenant qualification, durable outboxes,
 transactions or universal exactly-once external effects.
