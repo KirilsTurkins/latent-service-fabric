@@ -60,7 +60,7 @@ impl Inner {
         Ok((key, ready))
     }
 
-    pub(super) fn materialize(
+    pub(super) async fn materialize(
         &self,
         envelope: &ActivationEnvelope,
         control: &ActivationControl,
@@ -78,7 +78,20 @@ impl Inner {
             return Err(failure);
         }
         self.verify_preparation(ready.descriptor(), key)?;
-        let activation = self.dependencies.backend.materialize_ready(ready)?;
+        // Retain the assigned cell, original readiness and activation budget.
+        // Only the backend's pre-materialization currentness read may wait; no
+        // repository acquisition, materialization or guest call is replayed.
+        let read_wait = wait::Timer;
+        let activation = stage(
+            self.dependencies
+                .backend
+                .materialize_ready_with_wait(ready, &read_wait),
+            control.token(),
+            budget.deadline().monotonic(),
+            &self.clock,
+            control.transport(),
+        )
+        .await?;
         self.verify_preparation(activation.prepared.descriptor(), key)?;
         let imports = activation
             .imports

@@ -121,6 +121,36 @@ impl ExecutionBackend for WaitAware {
             ))
         })
     }
+    fn materialize_ready(&self, _: PreparedReadiness) -> Result<PreparedActivation, PlatformError> {
+        panic!("bridge cannot discard the materialization wait opt-in");
+    }
+    fn materialize_ready_with_wait<'a>(
+        &'a self,
+        ready: PreparedReadiness,
+        wait: &'a dyn PreparationReadWait,
+    ) -> BoxFuture<'a, Result<PreparedActivation, PlatformError>> {
+        assert!(std::ptr::addr_eq(
+            wait,
+            self.wait.as_ref() as &dyn PreparationReadWait
+        ));
+        self.calls.fetch_add(1, Ordering::Relaxed);
+        Box::pin(async move {
+            poll_fn(|_| {
+                if self.polls.fetch_add(1, Ordering::Relaxed) == 0 {
+                    Poll::Pending
+                } else {
+                    Poll::Ready(())
+                }
+            })
+            .await;
+            let (descriptor, imports, owner) = ready.into_parts::<Owner>().unwrap();
+            assert_eq!(descriptor, self.descriptor);
+            Ok(PreparedActivation {
+                prepared: PreparedUse::new(descriptor, owner),
+                imports,
+            })
+        })
+    }
     fn prepare<'a>(
         &'a self,
         _: &'a CapsuleArtifact,
@@ -189,6 +219,42 @@ fn dropping_wait_aware_readiness_reclaims_unpolled_and_pending_owners_once() {
         drop(future);
         assert_eq!(inner.calls.load(Ordering::Relaxed), 1);
         assert_eq!(inner.polls.load(Ordering::Relaxed), usize::from(poll_once));
+        assert_eq!(inner.drops.load(Ordering::Relaxed), 1);
+    }
+}
+
+#[test]
+fn wait_aware_materialization_forwards_exact_ready_owner_and_timer_without_replay() {
+    for polls in 0..=2 {
+        let inner = Arc::new(WaitAware::new());
+        let backend =
+            BudgetedExecutionBackend::new(inner.clone(), ActivationBudgetRegistry::default());
+        let ready = PreparedReadiness::new(
+            inner.descriptor.clone(),
+            vec![ContractId("exact-import".into())],
+            Owner(inner.drops.clone()),
+        );
+        let mut future = backend.materialize_ready_with_wait(ready, inner.wait.as_ref());
+        assert_eq!(inner.calls.load(Ordering::Relaxed), 1);
+        assert_eq!(inner.polls.load(Ordering::Relaxed), 0);
+        assert_eq!(inner.drops.load(Ordering::Relaxed), 0);
+        let mut context = Context::from_waker(Waker::noop());
+        if polls > 0 {
+            assert!(future.as_mut().poll(&mut context).is_pending());
+        }
+        if polls == 2 {
+            let Poll::Ready(result) = future.as_mut().poll(&mut context) else {
+                panic!("same owned future must complete")
+            };
+            let activation = result.unwrap();
+            assert_eq!(activation.prepared.descriptor(), &inner.descriptor);
+            assert_eq!(activation.imports, [ContractId("exact-import".into())]);
+            assert_eq!(inner.drops.load(Ordering::Relaxed), 0);
+            drop(activation);
+        }
+        drop(future);
+        assert_eq!(inner.calls.load(Ordering::Relaxed), 1);
+        assert_eq!(inner.polls.load(Ordering::Relaxed), polls);
         assert_eq!(inner.drops.load(Ordering::Relaxed), 1);
     }
 }

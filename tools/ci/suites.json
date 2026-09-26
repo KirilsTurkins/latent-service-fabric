@@ -1657,14 +1657,15 @@
         "prepared_readiness::tests::legacy_fallback_moves_original_owner_and_import_allocation",
         "prepared_use::tests::an_unpolled_future_and_unwind_drop_the_original_owner",
         "prepared_use::tests::ownership_survives_failed_downcast_and_is_released_exactly_once",
-        "tests::budget_dimensions_have_deterministic_interruption_mappings"
+        "tests::budget_dimensions_have_deterministic_interruption_mappings",
+        "preparation_read_wait::tests::default_materialization_wait_delegates_once_without_timer_or_replaying_failure"
       ],
       "expectedIgnored": [],
       "id": "latent-executor.lib.latent-executor",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-executor/Cargo.toml",
-      "minimumCases": 8,
+      "minimumCases": 9,
       "mode": "libtest",
       "package": "latent-executor",
       "platforms": [
@@ -2382,14 +2383,15 @@
         "journal::tests::registration_failure_leaves_no_journal_reservation_or_received_event",
         "journal::tests::tenant_queries_and_cancellation_never_expose_another_tenants_record",
         "journal::tests::terminal_eviction_and_monotonic_ttl_never_remove_active_records",
-        "journal::tests::unowned_append_is_rejected_without_changing_a_live_history"
+        "journal::tests::unowned_append_is_rejected_without_changing_a_live_history",
+        "budgeted_execution::tests::preparation_wait::wait_aware_materialization_forwards_exact_ready_owner_and_timer_without_replay"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 76,
+      "minimumCases": 77,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -2467,14 +2469,16 @@
         "transport_cleanup::unpolled_and_preparation_stops_do_not_start_or_reconstruct_work",
         "transport_cleanup_failures::backend_refusal_or_panic_keeps_quarantine_even_after_a_driven_disconnect",
         "transport_cleanup_failures::unacknowledged_disconnect_quarantines_after_the_original_grace",
-        "transport_cleanup_pool::transport_handoff_during_pool_disposition_keeps_its_original_owner_and_timer"
+        "transport_cleanup_pool::transport_handoff_during_pool_disposition_keeps_its_original_owner_and_timer",
+        "preparation::materialization_wait_obeys_original_cancellation_deadline_and_transport_stops",
+        "preparation::materialization_wait_retains_one_ready_owner_and_cell_without_repreparing"
       ],
       "expectedIgnored": [],
       "id": "latent-node.test.activation-lifecycle",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 60,
+      "minimumCases": 62,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -5623,7 +5627,21 @@
         "values::tests::scalars::floats_accept_explicit_special_values_and_reject_accidental_overflow",
         "values::tests::scalars::scalar_widths_unicode_and_lossless_decimal64",
         "values::tests::web::buffered_http_goldens_round_trip_through_the_actual_wit_type_plan",
-        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults"
+        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults",
+        "backend::readiness::tests::materialization::busy_materialization_retains_exact_readiness_and_materializes_once_after_release",
+        "backend::readiness::tests::materialization::dropping_unpolled_or_busy_materialization_reclaims_original_ready_pin",
+        "backend::readiness::tests::materialization::foreign_readiness_is_rejected_before_any_currentness_wait",
+        "backend::readiness::tests::materialization::materialization_busy_window_expires_without_instances_or_renewal",
+        "backend::readiness::tests::materialization::materialization_clock_expiry_is_terminal_without_renewing_or_waiting_again",
+        "backend::readiness::tests::materialization::materialization_does_not_upgrade_original_grant_after_policy_reverification",
+        "backend::readiness::tests::materialization::synchronous_materialization_remains_immediate_and_fail_closed_on_busy",
+        "backend::readiness::tests::invocation::activation_start_busy_window_expires_without_renewing_or_reexecuting",
+        "backend::readiness::tests::invocation::activation_start_wait_keeps_original_grant_after_reverification_and_expiry",
+        "backend::readiness::tests::invocation::activation_start_wait_observes_original_cancellation_and_deadline_before_guest_execution",
+        "backend::readiness::tests::invocation::busy_activation_start_retains_original_owner_and_executes_guest_once",
+        "backend::readiness::tests::invocation::foreign_or_mismatched_invocation_owner_is_rejected_before_waiting",
+        "backend::readiness::tests::invocation::timerless_activation_start_remains_immediate_and_fail_closed",
+        "backend::readiness::tests::invocation::unpolled_and_busy_invocation_drop_reclaims_the_materialized_owner_without_guest_work"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -5636,7 +5654,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 318,
+      "minimumCases": 332,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

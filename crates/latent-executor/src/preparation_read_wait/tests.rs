@@ -9,7 +9,7 @@ use latent_core::{PlatformError, PlatformErrorCode, PublicationId, ReleaseDigest
 use super::*;
 use crate::{
     CapsuleArtifact, ExecutionBackend, ExecutionCancellation, ExecutionRequest, GuestOutcome,
-    PreparationKey, PreparedComponent, PreparedReadiness,
+    PreparationKey, PreparedActivation, PreparedComponent, PreparedReadiness,
 };
 
 struct NeverWait;
@@ -123,6 +123,16 @@ impl ExecutionBackend for Legacy {
             .await
         })
     }
+    fn materialize_ready(
+        &self,
+        ready: PreparedReadiness,
+    ) -> Result<PreparedActivation, PlatformError> {
+        self.calls.fetch_add(1, Ordering::Relaxed);
+        let (descriptor, imports, _owner) = ready.into_parts::<Owner>().unwrap();
+        assert_eq!(descriptor.key, self.key);
+        assert!(imports.is_empty());
+        Err(original_error())
+    }
     fn prepare<'a>(
         &'a self,
         _: &'a CapsuleArtifact,
@@ -185,6 +195,38 @@ fn default_wait_api_preserves_unpolled_and_pending_future_ownership() {
         assert_eq!(backend.calls.load(Ordering::Relaxed), 1);
         assert_eq!(
             backend.polls.load(Ordering::Relaxed),
+            usize::from(poll_once)
+        );
+        assert_eq!(backend.drops.load(Ordering::Relaxed), 1);
+    }
+}
+
+#[test]
+fn default_materialization_wait_delegates_once_without_timer_or_replaying_failure() {
+    for poll_once in [false, true] {
+        let backend = Legacy::new();
+        let descriptor = PreparedComponent {
+            key: backend.key.clone(),
+            backend: "legacy".into(),
+            opaque_handle: "original".into(),
+            metadata: Default::default(),
+        };
+        let ready = PreparedReadiness::new(descriptor, vec![], Owner(backend.drops.clone()));
+        let mut future = backend.materialize_ready_with_wait(ready, &NeverWait);
+        assert_eq!(backend.calls.load(Ordering::Relaxed), 0);
+        assert_eq!(backend.drops.load(Ordering::Relaxed), 0);
+        if poll_once {
+            let Poll::Ready(result) = future
+                .as_mut()
+                .poll(&mut Context::from_waker(Waker::noop()))
+            else {
+                panic!("the default materialization must not wait");
+            };
+            assert_eq!(result.unwrap_err(), original_error());
+        }
+        drop(future);
+        assert_eq!(
+            backend.calls.load(Ordering::Relaxed),
             usize::from(poll_once)
         );
         assert_eq!(backend.drops.load(Ordering::Relaxed), 1);

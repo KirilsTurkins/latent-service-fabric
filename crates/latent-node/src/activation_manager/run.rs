@@ -219,7 +219,9 @@ impl Inner {
         }
         lifecycle.scheduled = Some(scheduled);
         lifecycle.advance(ActivationPhase::Materializing, Metadata::new())?;
-        let (prepared, imports) = self.materialize(&envelope, &control, &budget, &key, ready)?;
+        let (prepared, imports) = self
+            .materialize(&envelope, &control, &budget, &key, ready)
+            .await?;
         self.execute(envelope, lifecycle, control, budget, prepared, imports)
             .await
     }
