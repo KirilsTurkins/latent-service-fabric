@@ -8,8 +8,9 @@ authorized guide updates and release publication without another approval.
 Exact release-source CI and protected native publication have passed at
 `2d6cc2eafc0a17dfe573be4252fa49835bebbbd6`; the
 [native gate](development/native-release-gate.md) links the actual public assets
-and complete VM acceptance. Complete-site publication, public developer-tool
-download checks and final cutover remain acceptance work.
+and complete VM acceptance. Public developer-tool downloads also passed the
+six-language acquisition and example-creation check below. Complete-site
+publication and final cutover remain acceptance work.
 Security-monitoring activation #282, the actual Angular
 reference workflow #236 and static-site delivery #495/#496/#497 are complete.
 The Wiki is already disabled and its publishers are retired; final live-site
@@ -32,6 +33,67 @@ PR checkout and the development squash have identical Git trees. The
 retains the original security, six-client, browser, provider, publication,
 protected Angular, static-site and bounded resource results. Earlier receipts
 below keep their original execution identities and measurement scopes.
+
+## Final runtime integration
+
+The runtime release source is
+`2d6cc2eafc0a17dfe573be4252fa49835bebbbd6`, promoted by
+[PR #606](https://github.com/KirilsTurkins/latent-service-fabric/pull/606).
+Its Git tree equals the integrated development tree containing the six SDKs,
+packaged workflow, unified language selectors, SDK version updates and short
+setup commands. [Exact-source CI 36275367177](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36275367177)
+passed on the actual release commit.
+
+The independently reviewed supplemental release evidence retains 38 original
+JSON receipts and test logs from eight authenticated CI artifact families.
+Their bytes are unchanged. The index binds each file to its original Actions
+artifact ID and ZIP digest; the review records the checks and remaining limits.
+The [published archive](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.4/release-validation-0.1.0-alpha.4.zip) is
+`release-validation-0.1.0-alpha.4.zip`, SHA-256
+`80aa4c94db4529a5c6f43d2403e1d5bf9f51ce140fa700f2b1312087699dc0f2`.
+Its actual public bytes and GitHub asset digest were independently verified.
+This supplemental archive is separate from the native publisher's attested assets.
+
+| Boundary | Verified result at the release source |
+| --- | --- |
+| Registered runtime correctness | 177 registered targets and 2,889 active cases. Every registered active libtest name appears in the passing workspace log; both custom harness markers, supervisor case coverage, explicit doctests and signing compatibility were checked independently. Aggregate log pass counts are not an additional population of unique cases. |
+| Actual component/runtime conformance | All 19 bounded deterministic cases pass, including fresh stores, declared/platform failures, budgets, cancellation, isolation, routing, recovery and clean shutdown. Original historical completion fields and deferred evidence remain unchanged. |
+| Six network clients | Rust, C, TypeScript, Go, Java and C# each pass 18 shared real-node assertions. The receipts contain 54 distinct activation identities, six operation identities, 24 physically closed held requests and six cleanly reaped nodes. Guest authoring has separate packaged qualification. |
+| Security | The source-clean PR matrix passes 27 entries in 13 groups through 57 commands. Its recorded platform/threat and campaign exclusions remain explicit. |
+| Providers and management | All 19 selected real S3, Vault, NATS publication and NATS trigger cases pass with owned cleanup. The separate HTTP/blob management workflow makes 31 client commands and nine activations, checks grant revocation and retained selection across two clean node shutdowns. |
+| Renderer and browser boundaries | Eight renderer selections pass. Browser ingress observations retain their controlled Node SSR scope; public application component invocation is checked separately. They are not relabelled as actual Angular component rendering. |
+| Actual Angular component | The protected T1 node enforces admission and isolated AOT, renders the actual Angular build, checks tenant isolation, cancellation/disconnection, compatible staged rollout, selected-deployment CAS rollback and retained native cache across restart. Both nodes shut down cleanly. Reproducibility remains `not-checked`; declared dependency coverage remains incomplete. |
+| Static/CSR hosting | Exact-digest OCI transfer, two browser versions, deep-link refresh, client navigation, missing-file behavior, mounted redirects, cutover, rollback and revoked/foreign authority checks pass. All three snapshots have zero activation reservations and zero granted execution-cell leases. |
+| Publication and recovery | Four independent tenant publications share one component and two package corrections. Operator and offline workflows preserve selected routing across restart and registry outage, enforce revocation, and retain an uncertain operation as `UNKNOWN`. The original operation is not automatically replayed. |
+| Bounded dormant resources | The maintained 32-release/16-deployment/32-invocation profile passes with 12 OS samples and clean owned shutdown. Earlier resource campaigns retain their own measurements and environments. |
+
+Owned OCI and renderer negative controls deliberately retain failed outcomes
+after injected owner failures; the receipts and maintained validators confirm
+cleanup. A successful last child stage is not confused with the owner's injected
+failure. No large-scale, soak, new Harbor campaign or new full Angular-reference
+campaign is claimed. Those earlier evidence sets remain separate, as do native
+installed-bundle VM acceptance and public website delivery.
+
+## Published developer tools
+
+All 41 selected developer assets are attached to the final release. Their sizes
+and SHA-256 digests match the original authenticated selection at
+`cb00bf43e3f598e0f9d4bcaea2a4853d17dea8f4`. The
+[packaged qualification](evidence/developer-toolkit-36262353069/README.md)
+retains the real Windows/WSL2, native Windows portable, Linux, explicit SSH and
+development-container execution results and their exact language/profile scope.
+The standalone server archive has its separate final source above.
+
+The [public download check](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.4/developer-download-check-0.1.0-alpha.4.json)
+executed the maintained Windows download script, authenticated the released
+packages, and used the downloaded frontend to acquire each of the six toolkits
+and create greeting, word-count and shipping projects: 18 projects total.
+The original report is 3,765 bytes, SHA-256
+`20d615d5e7395e54f9d556555aa51f4d5bb085bdbe231f0116da3759ef3a32d9`.
+Its public bytes were independently verified. This supplemental observation
+checks the public acquisition path; it does not claim another compilation,
+node execution or WSL import. Actual runtime qualification remains in the
+original packaged reports.
 
 ## Repository execution review, September 23
 
@@ -99,8 +161,9 @@ dependency coverage. This review covers the declared Linux x86_64 T0/T1
 profiles; T2 guest-process containment and production certification remain
 outside it. At that historical checkpoint, guide review, site deployment and authoring were
 still pending. All six authoring tickets #544–#549 and developer workflow #559
-are now closed, and the maintainer has accepted the guide review. Fresh native
-publication, complete-site deployment and the final decision remain to be recorded.
+are now closed, and the maintainer has accepted the guide review. The final
+native publication and runtime integration are recorded above; complete-site
+deployment and the final decision remain to be recorded.
 
 ## Dependency and evidence closure
 
@@ -115,7 +178,7 @@ publication, complete-site deployment and the final decision remain to be record
 | Resource equation #239 | [Provider recovery](testing/phase3-resource-recovery.md), [renderer memory/storage](testing/phase3-resource-renderer.md), [event and child ownership](testing/phase3-resource-events.md), and OCI qualification. #376 merged after exact-head CI passed; #239 is closed. | Keep profile-specific measurements, failed attempts and unexported counters explicit. |
 | Angular application/reference #44/#236 | [Actual Angular reference workflow](testing/angular-reference-workflow.md): real signed two-build publication, public/authenticated browser delivery, DOM-reusing hydration, provider denial/cancellation, canary/revocation/restart/rollback and cleanup. #372 merged as `ffa90dc3f76f4bc589be63d313103fdb67fb5f1b`; both tickets are closed. | Preserve the restricted profile, unchecked reproducibility and declared incomplete dependency coverage. Guide review #361 is accepted and its ticket is closed. |
 | Static web extension #495/#496/#497 | [Contract PR #498](https://github.com/KirilsTurkins/latent-service-fabric/pull/498), [delivery PR #501](https://github.com/KirilsTurkins/latent-service-fabric/pull/501) and [CSR/static-generator workflow PR #502](https://github.com/KirilsTurkins/latent-service-fabric/pull/502) are merged; all three tickets are closed. #502 merged as `e4c9120b7d4c14220a4315bfd8e717505e37a5b4` after [CI run 35784029574](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35784029574) passed, including the actual OCI/browser qualification. | Preserve the final integrated static and SSR checks; human guide review remains separate. |
-| Native distribution #308 | [Authenticated alpha.4 rehearsal](evidence/native-upgrade-35821200294/README.md) passed both real VM profiles with complete acceptance, including genuine rc.2 upgrade, unsupported downgrade rejection, reboot, retained invocation and recovery/removal; local rootless evaluation also passed. The historical source and harness are `193d52c37635026de416feffd4a2dfd57d082451`. | The earlier premature tag was removed and run 35822633436 cancelled. Publication is now authorized after completion and promotion: qualify and publish the exact final release commit, preserving the historical rehearsal separately. |
+| Native distribution #308 | [Verified native release](development/native-release-gate.md) from `2d6cc2eafc0a17dfe573be4252fa49835bebbbd6`, exact-source CI and protected publisher 36278662081 passed. Both real VM profiles have complete acceptance and no gaps; public assets and attestations were independently verified. | The runtime tag remains immutable. Complete-site installation-guide publication is the remaining delivery check. The earlier rehearsal retains its original source and archive. |
 | Runbooks and guides #237/#357/#358/#359/#361 | Executed first-node, delivery, provider and six-client receipts are retained. [Guide execution PR #467](https://github.com/KirilsTurkins/latent-service-fabric/pull/467) merged after all 17 checks passed. | The maintainer review is accepted. Updated packaged setup steps, final native bundle/upgrade evidence and the published site remain to be verified. |
 | Six guest SDKs #544–#549 and developer workflow #559 | All tickets are closed. The [selected toolkit](evidence/developer-toolkit-36262353069/README.md) passed its complete five-entry packaged qualification at source `cb00bf43e3f598e0f9d4bcaea2a4853d17dea8f4`; separate six-language native tutorial comparisons retain 18 applications and 72 cases per platform. | Preserve the actual platform/language scope and original toolkit identities when attaching public assets. Native server qualification is separate. |
 | Finite documentation gate #345 | Foundation, theme, diagrams, examples, version binding, discovery and initial protected Pages publication are delivered. The [coverage contract](development/website.md#coverage-is-a-review-contract-not-a-page-counter) retains 27 required outcomes. | The 27-topic maintainer review is accepted with subsequent edits delegated. Publish the updated complete site, verify live routes and finish #356's content cutover. The Wiki and its publishers are already disabled. |

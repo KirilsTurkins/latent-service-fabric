@@ -88,9 +88,9 @@ the rc.2-to-alpha.4 upgrade with unsupported downgrade rejection. The local
 profile also exercised non-root foreground evaluation. This proof uses current
 storage formats; it introduces no obsolete reader or compatibility shim.
 
-The cancelled publication run must not be resumed. After the release-branch
-merge, a new run rebuilds and authenticates a new archive and reruns both profiles
-before the authorized protected publication proceeds.
+The cancelled publication run must not be resumed. The final release-branch
+merge was qualified independently by run 36278662081, which rebuilt and
+authenticated the new archive and reran both profiles before protected publication.
 Do not use the rehearsal archive's digest as the digest of a later rebuild or
 claim that a release exists from these nonpublishing receipts.
 

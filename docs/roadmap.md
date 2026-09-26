@@ -121,8 +121,9 @@ All six guest SDKs and the packaged developer workflow are implemented and
 qualified. The maintainer accepted the 27-topic guide review on September 26.
 The final runtime source has passed exact-source CI and protected native
 publication, including both complete VM profiles. The
-[completion gate](phase-3-gate-review.md) tracks the remaining public developer
-downloads, complete-site deployment and final acceptance decision.
+[completion gate](phase-3-gate-review.md) records the successful public
+six-language download and 18-project creation check. Complete-site deployment
+and the final acceptance decision remain.
 
 [Epic #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
 tracks the delivered capability and application-hosting implementation,
