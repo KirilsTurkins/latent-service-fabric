@@ -5,8 +5,12 @@
 Phase 3 completion declaration or runtime release. The implementation receipts
 below retain their original source and measurement identities. The maintainer confirmed the 27-topic guide review on September 26 and
 authorized guide updates and release publication without another approval.
-Fresh release-source qualification, public website deployment and native delivery
-remain acceptance work. Security-monitoring activation #282, the actual Angular
+Exact release-source CI and protected native publication have passed at
+`2d6cc2eafc0a17dfe573be4252fa49835bebbbd6`; the
+[native gate](development/native-release-gate.md) links the actual public assets
+and complete VM acceptance. Complete-site publication, public developer-tool
+download checks and final cutover remain acceptance work.
+Security-monitoring activation #282, the actual Angular
 reference workflow #236 and static-site delivery #495/#496/#497 are complete.
 The Wiki is already disabled and its publishers are retired; final live-site
 cutover checks remain separate from that

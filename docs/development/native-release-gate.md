@@ -2,19 +2,43 @@
 
 This is the maintainer gate for [native standalone installation](../installation.md)
 and [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
-**Publication is authorized after final release-source qualification.** On
-September 26 the maintainer accepted the guide review, requested the completed
-development-to-release promotion and publication, and delegated subsequent guide
-updates without another approval. The earlier premature
-`0.1.0-alpha.4` tag was removed on September 23, 2026, and publication run
-[35822633436](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35822633436)
-was cancelled before publication. No GitHub release or release assets existed.
-The version is reserved for completed Phase 3: finish all requirements, merge
-`development` into `release`, then create the tag on that reviewed release commit
-and qualify/publish its artifacts through the configured protected environment.
-The earlier rehearsal remains historical evidence for its original source.
-The release maintainer chooses the final reviewed commit and new version only
-after exact-head CI. Do not move the historical source-only `0.1.0-alpha.3` tag.
+
+**The native `0.1.0-alpha.4` release is published and independently verified.**
+[Promotion #606](https://github.com/KirilsTurkins/latent-service-fabric/pull/606)
+integrated the runtime at `2d6cc2eafc0a17dfe573be4252fa49835bebbbd6`.
+[Exact-source CI 36275367177](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36275367177)
+and [protected native release 36278662081](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36278662081)
+both passed. The maintainer's September 26 instruction authorized promotion,
+publication and subsequent guide corrections without another approval.
+
+The [public release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.4)
+contains the authenticated runtime bundle and original acceptance evidence.
+Independent verification checked all ten native public assets, the 466 archive
+entries, exact source and signer identities, the developer selection, and the
+public acceptance and VM attestations. The archive is
+`lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz`, 29,453,861 bytes, SHA-256
+`a823a3c5b06ee81a09e39053451e768ee7b22199e37c3b524f89843db7b045b3`.
+
+| Original public evidence | Qualified scope |
+| --- | --- |
+| [Native release acceptance](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.4/native-release-acceptance.json) | Actual release source, successful CI, archive identity, declared predecessor and both complete VM profiles. |
+| [Local experimental VM](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.4/local-experimental-v1.json) | Native systemd installation, repeat installation, real reboot, retained invocation, consistent stopped backup/restore, removal/reinstallation, scoped purge, rc.2 upgrade and unsupported downgrade rejection. The separate rootless run executes as UID 1000 without systemd. |
+| [External capsule VM](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.4/external-capsule-v1.json) | The same persistent lifecycle with enforced admission and isolated compilation, protected key rejection, and recovery of an interrupted unactivated installation without key replacement. |
+| [VM evidence attestation](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.4/VM-EVIDENCE.sigstore.json) | Publisher identity binding for the original acceptance and both VM receipts. |
+
+Both profiles report `acceptanceComplete:true`, empty `gaps`, changed boot IDs
+and successful guest phases. They authenticate the publisher before running
+downloaded bootstrap code; tampered, unsigned and wrong-repository/source inputs
+are rejected. The guests use only provisioned OS and verification prerequisites,
+with no guest package installation or container runtime. The node runs as its
+unprivileged service identity, and compiler children are reaped.
+
+The actual supported native upgrade pair is rc.2 source
+`a53b7b219a46f6ca91ae7bc7830669f8aa4bbe2e` to the final source above. Configuration,
+credentials, host keys and retained publication/deployment state survive the
+tested reinstalls and declared upgrade. This does not promise arbitrary alpha migrations or downgrade
+compatibility. Keep the final runtime tag and historical alpha tags immutable;
+later documentation publication has its own source identity.
 
 ## Current-format native foundation
 
