@@ -26,6 +26,15 @@ uses a node that only accepts connections from your own machine. A prebuilt
 installation release is being prepared; [installation](../installation.md)
 will explain that option when it is available.
 
+## Develop an application from selected packages
+
+For Windows/WSL2, direct Linux, an explicit SSH host or native Windows capsule
+tests, start with [Application development](application-development.md).
+That path uses independently approved candidate packages and generates private
+workspace credentials. It covers authoring, testing, edit/watch, recovery and
+cleanup without building LSF. Candidate access is a maintainer handoff until a
+public developer release is approved.
+
 ## Build something of your own
 
 After the first invocation, continue with

@@ -10,8 +10,13 @@ Linux engine 29.7.2, and Dev Container CLI 0.89.0 invoked from a terminal.
 The retained [source observation](../development/devcontainer-source-observation.json)
 covers packaged frontend startup and three real node starts over SSH, including
 authenticated readiness, retained identity, interruption and confirmed shutdown.
-Wrong host keys and helper digests were rejected before helper execution. Final
-publisher-authenticated candidate and clean-host qualification remain open.
+Wrong host keys and helper digests were rejected before helper execution.
+The later [authenticated packaged run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36182234076)
+also passed on a clean hosted Ubuntu client with Dev Container CLI 0.89.0 and a
+separate explicit SSH peer. It executed build, node tests, watch, lost-response
+recovery, isolated workspaces, retained restart and owned cleanup. This optional
+container path remains separate from the Windows newcomer walkthrough and final
+aggregate qualification.
 
 ## Prepare reviewed inputs
 
