@@ -5,10 +5,14 @@ import test from 'node:test';
 import sidebars from '../sidebars.ts';
 import {prepare} from '../lib/prepare.mjs';
 import {repositoryRoot} from '../lib/repository.mjs';
+import {buildSidebars} from '../lib/navigation.mjs';
+
+const flatten = entries => entries.flatMap(entry => entry.type === 'category' ? flatten(entry.items) : [entry]);
 
 test('Start leads to packaged application development and retains the source-node path', () => {
-  assert.deepEqual(sidebars.start.slice(0, 4).map(item => item.id),
-    ['start/index', 'start/application-development', 'start/developer-setup', 'start/first-node']);
+  assert.equal(sidebars.start[0].label, 'Your first application');
+  assert.deepEqual(flatten(sidebars.start).slice(0, 4).map(item => item.id),
+    ['start/index', 'start/application-development', 'start/developer-setup', 'start/development-workspace']);
   const expected = {
     start: ['start/index', 'start/application-development', 'start/developer-setup', 'start/first-node'],
     learn: ['learn/author-your-first-capsule', 'learn/deliver-and-recover-a-capsule'],
@@ -16,10 +20,27 @@ test('Start leads to packaged application development and retains the source-nod
   };
   for (const [group, ids] of Object.entries(expected)) {
     for (const id of ids) {
-      assert.ok(sidebars[group].some(item => item.type === 'doc' && item.id === id), id);
-      assert.ok(!sidebars.understand.some(item => item.type === 'doc' && item.id === id), id);
+      assert.ok(flatten(sidebars[group]).some(item => item.type === 'doc' && item.id === id), id);
+      assert.ok(!flatten(sidebars.understand).some(item => item.type === 'doc' && item.id === id), id);
     }
   }
+});
+
+test('task subsections preserve every current document once and separate compiler references', () => {
+  const pages = prepare().index.pages.filter(page => page.source.startsWith('docs/'));
+  const navigation = buildSidebars(pages);
+  const actual = Object.values(navigation).flatMap(flatten).filter(item => item.type === 'doc').map(item => item.id);
+  assert.equal(new Set(actual).size, actual.length);
+  assert.deepEqual([...actual].sort(), pages.map(page => page.id).sort());
+  for (const group of ['start', 'learn', 'howTo', 'reference', 'understand', 'contribute']) {
+    assert.ok(navigation[group].some(item => item.type === 'category'), group);
+  }
+  const profiles = navigation.reference.find(item => item.label === 'Capsule language profiles');
+  assert.equal(profiles.collapsed, true);
+  assert.deepEqual(profiles.items.map(item => item.id), ['rust', 'c', 'typescript', 'go', 'java', 'dotnet']
+    .map(language => `component-development/${language}-authoring`));
+  assert.ok(flatten(navigation.learn).every(item => !item.id?.endsWith('-authoring')));
+  assert.ok(!actual.some(id => /(?:windows-application|linux-workspace|packaged-languages)$/.test(id)));
 });
 
 test('core guide coverage resolves actual source-backed published routes', () => {

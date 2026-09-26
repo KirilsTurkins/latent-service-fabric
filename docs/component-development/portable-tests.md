@@ -7,7 +7,7 @@ production node and does not certify Linux isolation, admission or performance.
 
 [Get the developer tools](../start/developer-setup.md#windows-download-and-verify).
 The authenticated Windows developer bundle contains
-`latent-portable-test-host.exe`, plus your application project and its compiled
+`latent-portable-test-host.exe`, and its support files. Separately obtain your application project and its compiled
 component, capsule manifest and contracts. Use the exact three files produced
 by that application's build, preserving the paths listed under `artifacts` in
 `latent.project.json`. A build may run on a separately selected Linux/WSL/CI host;
@@ -21,20 +21,20 @@ different observations.
 ## Select the native host and application
 
 Use the authenticated frontend and independent verification inputs from
-[Windows step 1](windows-application.md#1-obtain-the-selected-inputs). Acquire the
+[working-terminal setup](../start/development-workspace.md#open-your-working-terminal). Acquire the
 Windows bundle into the private host cache, then explicitly request portable
 execution. `$Artifacts` is the root under which the descriptor's artifact paths
 exist; it is not a node state directory.
 
 ```powershell
-$PortableBundle = Invoke-LsfDev acquire --bundle-directory (Join-Path $Inputs 'windows') `
+$PortableBundle = (dev acquire --bundle-directory (Join-Path $Inputs 'windows') `
     --publisher-policy $DeveloperPolicy --trusted-root $TrustedRoot `
     --verifier $WindowsVerifier --verifier-sha256 $WindowsVerifierSha256 `
-    --version $Version --target windows-x86_64 --allow-candidate
+    --version $Version --target windows-x86_64 --allow-candidate | ConvertFrom-Json).result
 $Artifacts = 'C:\My application build'
-$Tests = Invoke-LsfDev test --workspace test-native-greeting --environment portable `
+$Tests = (dev test --workspace test-native-greeting --environment portable `
     --project $Project --artifacts $Artifacts --portable-bundle $PortableBundle.bundle `
-    --controlled-development
+    --controlled-development | ConvertFrom-Json).result
 $Tests.passed
 $Tests.results | Select-Object id, status, category
 ```
@@ -69,5 +69,5 @@ No requested node test silently runs here, and no unsupported portable import
 silently gains a production provider.
 
 Return to the [application development choices](../start/application-development.md)
-or the [Windows edit/watch walkthrough](windows-application.md) when a test needs
+or the [edit/watch walkthrough](../learn/deliver-and-recover-a-capsule.md) when a test needs
 the actual node lifecycle or recovery protocol.

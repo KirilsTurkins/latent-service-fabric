@@ -11,6 +11,11 @@ to publish it to a node and open it in a browser.
 
 ## 1. Prepare your tools
 
+Angular currently uses its dedicated application builder. The six capsule
+templates in `latent-dev` do not include an Angular project, so this walkthrough
+uses that builder and the node's operator commands. If you want a capsule
+without a web frontend, follow [Creating a capsule](creating-a-capsule.md).
+
 Use the source checkout from [Run your first node](../start/first-node.md).
 You also need Node 24.19.0 and npm 11.19.1. These examples use Angular 22.1.6;
 the repository's dependency lock selects the matching Angular compiler.

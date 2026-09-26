@@ -1,130 +1,129 @@
-# Update and restore a capsule
+# Edit, deploy and recover a capsule
 
-Change the greeting capsule from `Hello, Ada!` to `Welcome, Ada!`, deploy the
-new version, then restore the original. You will see that building a program
-and selecting the program that serves requests are separate steps.
+Change your greeting from `Hello, Ada!` to `Welcome, Ada!`, test the new answer,
+and see what happens when a build fails. Then restart the node and call the
+retained deployment. The development tools keep track of the published build
+and credentials for you.
 
 Complete [Creating a capsule](../component-development/creating-a-capsule.md)
-through step 6 first. Keep its node and terminal running. This guide uses the
-same `cli`, `field` and `answer` helpers, the `RESULTS` directory and the original
-`TUTORIAL_PACKAGES` directory. Leave `TUTORIAL_PACKAGES` pointing to the original
-build so it remains available for restoration.
+through the greeting's first invocation. Keep the working terminal, project and
+workspace. This guide uses its `dev` shortcut on Windows or Linux.
 
-## 1. Save the current deployment
+## 1. Choose the update path for your project
 
-```bash
-cp "$RESULTS/greeting-deployment.json" "$RESULTS/greeting-original.json"
-cp "$RESULTS/greeting-applied.json" "$RESULTS/greeting-before-update.json"
-CURRENT_GENERATION=$(field "$RESULTS/greeting-applied.json" data deployment generation)
-```
+The Rust and C provider-free tutorials use `trusted-local` admission for your own
+controlled code. They can use the existing workspace for build/deploy and watch.
+The automatic greeting exercise below uses Rust, whose source file is
+`app/src/lib.rs`. Its source and tests are explained in the shared capsule guide.
 
-The saved deployment names your original publication. The generation is the
-version of the deployment you last changed. Supplying it in the update prevents
-you from overwriting another person's intervening change.
+The other language tutorials use `signed-fixture`. Each fixture approves one
+accepted build for 30 minutes. You can edit their source normally, but a changed
+build needs a **new disposable workspace** and a fresh signed fixture. Keep the
+project folder, choose a new workspace in [setup](../start/development-workspace.md),
+install the same language tools there, then trust, build and prepare that project
+with `--admission signed-fixture`. Skip `dev init` because your project already
+exists. Start, deploy and test in that new workspace as in the capsule tutorial.
+Do not reuse or replace a fixture policy to authorize a changed build.
 
-## 2. Change and build the program
+## 2. Change the greeting and test it
 
-Open
-[`component.rs`](../../tools/toolchain-smoke/examples/tutorial_greeting/component.rs)
-and change `Hello, {name}!` to `Welcome, {name}!`. Build into a fresh directory:
+In your editor, change `Hello,` to `Welcome,` in your language's greeting source
+under `app`. Change the matching answers in `tests/0-expected.json` and
+`tests/1-expected.json`, preserving their JSON format. Update any native unit-test
+expectation beside the source too.
 
-```bash
-python3 tools/build_tutorial_capsules.py --output target/tutorial-capsules-welcome
-WELCOME_PACKAGE="$PWD/target/tutorial-capsules-welcome/greeting"
-```
-
-If you already built this version in the previous tutorial, skip the build
-command and set `WELCOME_PACKAGE` to that existing greeting directory.
-Otherwise wait for the three `Ready:` messages. The builder rebuilds all three
-examples; this walkthrough changes only the greeting deployment.
-
-The node still serves the original version. A source edit and build do not
-change its publication or routing.
-
-## 3. Publish the new version
+For the trusted-local workspace, run these commands in your original terminal.
+Your node remains running in the second terminal:
 
 ```bash
-cli release publish --manifest "$WELCOME_PACKAGE/capsule.json"     --component "$WELCOME_PACKAGE/component.wasm"     --contracts "$WELCOME_PACKAGE/contracts.json"     >"$RESULTS/greeting-welcome-published.json"
+dev build --workspace "$Workspace" --project "$Project"
+dev deploy --workspace "$Workspace"
+dev test --workspace "$Workspace" --environment node
 ```
 
-Prepare a deployment selecting the returned publication. This small script
-keeps the service name and other settings from your original deployment:
+Expect every required case to pass. Make the greeting call from the previous
+tutorial: it now returns `Welcome, Ada!`. Building alone does not switch the
+running deployment; `deploy` selects the accepted build for future requests.
+
+## 3. Watch edits automatically
+
+For the Rust trusted-local greeting, first stop the ordinary foreground session:
 
 ```bash
-python3 - "$RESULTS/greeting-original.json"     "$RESULTS/greeting-welcome-published.json" "$RESULTS/greeting-welcome.json" <<'PY'
-import json, sys
-deployment = json.load(open(sys.argv[1]))
-release = json.load(open(sys.argv[2]))["data"]["release"]
-deployment["spec"]["release"] = release["digest"]
-deployment["spec"]["publication"] = release["publication"]["id"]
-with open(sys.argv[3], "x") as output:
-    json.dump(deployment, output)
-PY
+dev down --workspace "$Workspace"
 ```
 
-## 4. Switch the deployment and call it
+In the second terminal, start watch with the same workspace and project. The
+commands below use the default setup paths; use your own values if you changed them.
+
+**If you use Windows (PowerShell):**
+
+```powershell
+& (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4/frontend/bin/latent-dev.exe') `
+    --state-root (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial') --editor-diagnostics `
+    dev up --workspace test-my-greeting --project "$env:USERPROFILE/Projects/My greeting" `
+    --watch --test-select greeting-0
+```
+
+**If you use Linux (Bash):**
 
 ```bash
-cli deployment apply "$RESULTS/greeting-welcome.json"     --expected-generation "$CURRENT_GENERATION"     >"$RESULTS/greeting-welcome-applied.json"
-WELCOME_GENERATION=$(field "$RESULTS/greeting-welcome-applied.json" data deployment generation)
-cli invoke --service examples/greeting --contract examples:greeting/api@1.0.0     --function greet --activation-id tutorial-welcome     --input "$TUTORIAL_PACKAGES/greeting/input.json"     >"$RESULTS/greeting-welcome-answer.json"
-answer "$RESULTS/greeting-welcome-answer.json"
+"$HOME/LSF-inputs-alpha4/frontend/bin/latent-dev" --state-root "$HOME/.latent-dev-tutorial" \
+    --editor-diagnostics dev up --workspace test-my-greeting --project "$HOME/Projects/My greeting" \
+    --watch --test-select greeting-0
 ```
 
-Expected: `[{"ok":"Welcome, Ada!"}]`.
+Wait for `deployed` and the focused test result. Change `Welcome,` back to `Hello,`
+in the two expected files, then in `app/src/lib.rs`. Save them. Watch builds and
+deploys the change and runs `greeting-0`. The next direct call returns `Hello, Ada!`.
+Run the full test command from step 2 whenever you want to check the remaining cases.
 
-The service name and function contract stayed the same. Only the selected
-publication changed. A request already in progress keeps its selected revision;
-new requests use the updated deployment.
+## 4. See a failed build keep the last working version
 
-If the generation conflicts, stop and inspect the current deployment with
-`cli deployment get tutorial-greeting`. Another change may have occurred. Do not
-remove the precondition or repeatedly increase the generation to force an update.
+Add an invalid Rust statement to `app/src/lib.rs` and save. Expect an error with
+the source location and an `edit-failed` event. Call the greeting again from your
+first terminal: the previous working `Hello, Ada!` deployment is still available.
 
-## 5. Restore the original version
+Remove the invalid statement and save. The next successful build clears the old
+compiler diagnostic. A failed focused test is different from a failed build:
+tests run after deployment, so a failed test is reported but does not automatically
+roll back the deployed program.
 
-Apply the saved original deployment, using the generation returned by the update:
+You can restore earlier behavior by restoring the earlier source and expected
+answers, then building, deploying and testing it. Production selection of an
+already published version is an operator task; see [managed rollbacks](../phase-2-rollback.md).
+
+## 5. Inspect an interruption
+
+After a lost response, sleep/resume or backend interruption, run:
 
 ```bash
-cli deployment apply "$RESULTS/greeting-original.json"     --expected-generation "$WELCOME_GENERATION"     >"$RESULTS/greeting-applied.json"
-cli invoke --service examples/greeting --contract examples:greeting/api@1.0.0     --function greet --activation-id tutorial-restored     --input "$TUTORIAL_PACKAGES/greeting/input.json"     >"$RESULTS/greeting-restored-answer.json"
-answer "$RESULTS/greeting-restored-answer.json"
+dev status --workspace "$Workspace"
+dev build-status --workspace "$Workspace"
+dev logs --workspace "$Workspace"
+dev recover --workspace "$Workspace"
 ```
 
-Expected: `[{"ok":"Hello, Ada!"}]`. Restoration creates another deployment
-generation; it does not turn back the node's history. The original publication
-must remain available and eligible. This local exercise does not use the staged
-rollout coordinator; [managed rollouts](../phase-2-rollouts.md) add staged
-traffic and retained operation recovery.
+Recovery asks for the result of the original operation. `no-pending-operation`
+means there is nothing pending. An unknown or expired receipt remains uncertain;
+do not repeat that deploy or invocation with a new identity. A newer deployment
+from another actor is not overwritten. Restore an unreachable connection before
+assuming either completion or shutdown.
 
-## If a response is lost
+## 6. Restart and keep your work
 
-A lost response does not prove that the update failed. Read
-`cli deployment get tutorial-greeting` and inspect the current selected
-publication and generation before choosing another action. That read shows
-current state, not a complete history of what happened.
+Stop watch with `dev down --workspace "$Workspace"`. In the second terminal,
+start ordinary `up` again using [the capsule tutorial's start command](../component-development/creating-a-capsule.md#4-start-deploy-and-test).
+Call the greeting without another deploy: the selected version is still there.
 
-This tutorial uses simple object-generation preconditions. For administrative
-changes needing an exact retained result, use
-[managed deployment operations](../phase-2-operator-workflows.md#managed-deployment-receipts)
-with a caller-retained operation ID and catalog state version. Query that original
-operation after a timeout. An unknown retained result must stay unknown; do not
-invent another operation ID to discover whether the first one committed.
+Finish with:
 
-For a lost invocation response, query the original activation ID. Repeating
-`invoke` could run the function again. See [client recovery](use-a-client.mdx).
+```bash
+dev down --workspace "$Workspace"
+dev status --workspace "$Workspace"
+```
 
-## Finish and continue
-
-The restored response is saved in `greeting-applied.json`, so the
-[three-capsule cleanup](../component-development/creating-a-capsule.md#8-clean-up)
-uses the current generation. Follow it to remove the deployments, then stop the
-[first node](../start/first-node.md#8-continue-or-stop) when finished.
-Your source still says `Welcome`; change it back if you want later builds to
-produce the original greeting.
-
-The local learning node accepts capsules you build yourself. For delivery between
-systems, continue with [packaging](../component-development/packaging.md),
-[publisher trust](../reference/publisher-trust.md) and
-[package admission](../reference/package-admission.md). Those steps add package
-verification and policy; uploading bytes alone does not establish trust.
+Expect `state: stopped`. Keep the workspace for later, or use the explicit
+[cleanup commands](../how-to/developer-commands.md#stop-and-remove-workspaces).
+For optional VS Code tasks, command options and common failures, keep the
+[developer command guide](../how-to/developer-commands.md) nearby.

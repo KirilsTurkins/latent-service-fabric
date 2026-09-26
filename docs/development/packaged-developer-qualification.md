@@ -209,7 +209,7 @@ a second public recovery with no journal change. These assertions require a
 completed installed-package run before being counted as qualification evidence.
 
 The Windows schedule first exercises the published
-[greeting walkthrough](../component-development/windows-application.md) in a new
+[greeting edit walkthrough](../learn/deliver-and-recover-a-capsule.md) in a new
 workspace, before the six-language and failure campaigns. Staging pins the guide
 bytes to the conductor commit. The installed frontend creates the maintained
 template, builds it, runs all three real-node cases and invokes `Hello, Ada!`.

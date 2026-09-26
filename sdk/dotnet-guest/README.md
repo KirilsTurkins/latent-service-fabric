@@ -1,6 +1,10 @@
 # C# guest SDK (experimental)
 
-Follow [Create your own C# capsule](../../docs/component-development/dotnet-authoring.md)
+For an application tutorial, use [Creating a compiler profile](../../docs/component-development/creating-a-capsule.md)
+and select your language. The language profile below describes compiler and
+custom packaging details.
+
+Follow [C# compiler profile](../../docs/component-development/dotnet-authoring.md)
 for an editable project outside the checkout, compilation, signed admission,
 publish/deploy/invoke, declared errors and cleanup. Client-side .NET RPC SDKs
 are separate and are not used to implement guest capabilities.

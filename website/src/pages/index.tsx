@@ -5,7 +5,7 @@ import Link from '@docusaurus/Link';
 const sections = [
   ['Start', '/docs/start/', 'Install the developer tools, create an application and run its tests.'],
   ['Learn', '/docs/component-development/creating-a-capsule/', 'Build a greeting service, a word counter and a shipping calculator.'],
-  ['How-to', '/docs/phase-2-operator-workflows/', 'Find delivery, rollout and recovery procedures.'],
+  ['How-to', '/docs/how-to/developer-commands/', 'Find development commands, node operations and recovery procedures.'],
   ['Reference', '/docs/reference/operator-cli/', 'Consult CLI, API, configuration and protocol references.'],
   ['Understand', '/docs/architecture/overview/', 'Learn how execution, permissions and resources fit together.'],
   ['Contribute', '/docs/contribute/', 'Set up a checkout, make a change, run checks and open a pull request.'],

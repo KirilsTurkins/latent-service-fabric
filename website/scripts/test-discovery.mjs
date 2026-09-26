@@ -69,8 +69,7 @@ try {
       assert.equal(await page.locator('[data-search-version]').count(), 0);
       await page.goto(`${prefix}guides/`, {waitUntil: 'networkidle'});
       await page.getByLabel('SDK language', {exact: true}).selectOption('Go');
-      assert.equal(await page.locator('[data-guide]').count(), 1);
-      assert.equal(await page.locator('[data-guide]').getAttribute('data-guide'), 'client-go');
+      assert.deepEqual((await page.locator('[data-guide]').evaluateAll(nodes => nodes.map(node => node.dataset.guide))).sort(), ['author-capsule', 'client-go']);
       await page.getByLabel('Topic', {exact: true}).selectOption('angular-browser');
       await page.getByRole('status').getByText(/No tasks match/).waitFor();
       await page.getByRole('link', {name: 'Clear filters', exact: true}).click();
@@ -93,23 +92,38 @@ try {
       await page.waitForURL(`${prefix}docs/start/application-development/`);
       await audit('application-choices');
       const applicationPages = [
-        ['windows-application', 'Create and edit a Windows application'],
-        ['linux-workspace', 'Select a Linux development workspace'],
-        ['portable-tests', 'Run portable capsule tests on Windows'],
+        ['start/development-workspace', 'Set up your development workspace'],
+        ['component-development/creating-a-capsule', 'Creating a capsule'],
+        ['learn/deliver-and-recover-a-capsule', 'Edit, deploy and recover a capsule'],
+        ['how-to/developer-commands', 'Developer commands'],
       ];
       for (const [slug, title] of applicationPages) {
         await page.goto(`${prefix}docs/start/application-development/`, {waitUntil: 'networkidle'});
-        await page.locator(`main a[href*="/docs/component-development/${slug}/"]`).first().click();
-        await page.waitForURL(url => url.pathname === new URL(`${prefix}docs/component-development/${slug}/`).pathname);
+        await page.locator(`main a[href*="/docs/${slug}/"]`).first().click();
+        await page.waitForURL(url => url.pathname === new URL(`${prefix}docs/${slug}/`).pathname);
         assert.equal((await page.reload({waitUntil: 'networkidle'})).status(), 200);
         await page.getByRole('heading', {level: 1, name: title, exact: true}).waitFor();
         await audit(`${slug}-desktop`);
         await page.setViewportSize({width: 390, height: 844});
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), slug);
         await audit(`${slug}-mobile`);
-        await page.screenshot({path: path.join(output, `${variant}-${slug}-mobile.png`), fullPage: true});
+        await page.screenshot({path: path.join(output, `${variant}-${slug.replaceAll('/', '-')}-mobile.png`), fullPage: true});
         await page.setViewportSize({width: 1280, height: 900});
       }
+      await page.goto(`${prefix}docs/component-development/creating-a-capsule/`, {waitUntil: 'networkidle'});
+      assert.equal(await page.locator('.theme-doc-sidebar-menu a[href*="-authoring/"]').count(), 0);
+      const greeting = page.locator('[data-example="guest/tutorial-greeting"]');
+      assert.equal(await greeting.getByRole('tab').count(), 6);
+      await greeting.getByRole('tab', {name: 'Go', exact: true}).click();
+      for (const name of ['greeting', 'word-count', 'shipping']) {
+        const example = page.locator(`[data-example="guest/tutorial-${name}"]`);
+        await example.locator('[role="tabpanel"]:visible [data-example-language="go"]').waitFor();
+      }
+      await page.reload({waitUntil: 'networkidle'});
+      await greeting.locator('[role="tabpanel"]:visible [data-example-language="go"]').waitFor();
+      await page.goto(`${prefix}docs/component-development/go-authoring/`, {waitUntil: 'networkidle'});
+      await page.locator('.theme-doc-sidebar-menu').getByText('Capsule language profiles', {exact: true}).waitFor();
+      assert.equal(await page.locator('.theme-doc-sidebar-menu a[href*="-authoring/"]').count(), 6);
       await page.goto(`${prefix}docs/component-development/creating-a-capsule/`, {waitUntil: 'networkidle'});
       const original = new URL(page.url()).pathname;
       const next = page.locator('.pagination-nav__link--next');

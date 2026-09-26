@@ -31,7 +31,7 @@ Select your language above this complete greeting example:
 The program trims the supplied name, rejects empty or excessive input, and
 returns the greeting. Open the matching source under `app` in the project
 created by `dev init`. Edit that source, then use `dev build` to compile it.
-The [Windows walkthrough](../component-development/windows-application.md)
+The [edit guide](deliver-and-recover-a-capsule.md)
 also shows a Rust watch session that changes `Hello,` to `Welcome,` and keeps
 the previous deployment working through a compiler error.
 
@@ -67,9 +67,9 @@ The greeting's real-node scenarios include:
 | `Ada` | `Hello, Ada!` | The function returned a successful result |
 | An empty name | A declared string error | The program rejected invalid input |
 
-Run `dev test --environment node` with your workspace as shown in the platform
-walkthrough. Expect all three greeting cases to pass, including the declared
-error. A test passes when the observed outcome matches its expectation; an
+Run `dev test --environment node` with your workspace as shown in the capsule
+walkthrough. Expect every greeting case to pass, including its declared-error
+cases. A test passes when the observed outcome matches its expectation; an
 expected application error is a useful successful test.
 
 A connection failure, denied capability or exhausted execution budget is a
@@ -78,12 +78,11 @@ Do not repeat a call whose response was lost: it may already have executed.
 
 ## 5. Try a different purpose
 
-[Build a packaged capsule in your language](../component-development/packaged-languages.md)
+[Creating a capsule](../component-development/creating-a-capsule.md)
 shows how to select the `word-count` or `shipping` template. Use a new project
-and disposable workspace for each example. [Creating a capsule](../component-development/creating-a-capsule.md)
-explains all three programs, displays their six-language implementations, and
-also provides the lower-level operator commands for running them together.
+and disposable workspace for each example. Switch language above an example to
+compare implementations while keeping the same contract and expected answers.
 
 Use `dev down` to stop your node while retaining its data. Use the explicit
-workspace purge from the platform guide when the disposable tutorial is finished.
+workspace purge from the [developer command guide](../how-to/developer-commands.md) when the disposable tutorial is finished.
 Your application source remains available for the next edit.

@@ -21,8 +21,9 @@ GUIDES = {
     'rollout-uncertain-recovery': ['docs/learn/deliver-and-recover-a-capsule.md', 'docs/how-to/operate-and-contribute.md'],
 }
 NEW_GUIDES = ('docs/start/index.md', 'docs/start/first-node.md',
-              'docs/start/developer-setup.md', 'docs/component-development/linux-workspace.md',
-              'docs/component-development/packaged-languages.md',
+              'docs/start/developer-setup.md', 'docs/start/development-workspace.md',
+              'docs/component-development/creating-a-capsule.md',
+              'docs/learn/deliver-and-recover-a-capsule.md', 'docs/how-to/developer-commands.md',
               'docs/learn/author-your-first-capsule.md', 'docs/how-to/operate-and-contribute.md',
               'docs/development/core-guide-validation.md')
 
