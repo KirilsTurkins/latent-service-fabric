@@ -100,10 +100,16 @@ fn defined(
         | Defined::Enum(_)
         | Defined::Own(_)
         | Defined::Borrow(_) => (),
-        Defined::List(ty) | Defined::Option(ty) | Defined::FixedLengthList(ty, _) => {
+        Defined::List { element: ty, .. }
+        | Defined::Option { ty, .. }
+        | Defined::FixedLengthList { element: ty, .. } => {
             value(*ty, types, budget, depth + 1)?;
         }
-        Defined::Map(key, item) => {
+        Defined::Map {
+            key,
+            value: item,
+            ..
+        } => {
             value(*key, types, budget, depth + 1)?;
             value(*item, types, budget, depth + 1)?;
         }
@@ -124,12 +130,12 @@ fn defined(
                 }
             }
         }
-        Defined::Result { ok, err } => {
+        Defined::Result { ok, err, .. } => {
             for ty in ok.iter().chain(err) {
                 value(*ty, types, budget, depth + 1)?;
             }
         }
-        Defined::Future(ty) | Defined::Stream(ty) => {
+        Defined::Future { ty, .. } | Defined::Stream { ty, .. } => {
             if let Some(ty) = ty {
                 value(*ty, types, budget, depth + 1)?;
             }
