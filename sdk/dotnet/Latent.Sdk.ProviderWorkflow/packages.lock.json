@@ -20,7 +20,7 @@
         "dependencies": {
           "Google.Protobuf": "[3.31.1, )",
           "Grpc.Core.Api": "[2.71.0, )",
-          "Latent.Sdk": "[0.1.0-alpha.3, )"
+          "Latent.Sdk": "[0.1.0-alpha.4, )"
         }
       }
     }

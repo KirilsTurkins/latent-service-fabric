@@ -48,7 +48,7 @@ class SdkGraphTests(unittest.TestCase):
 
     def nuget_fixture(self) -> tuple[dict, dict]:
         self.write("Client.csproj", '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework>'
-                   '</PropertyGroup><ItemGroup><PackageReference Include="Fixture.Protocol" Version="1.2.3" />'
+                   '<Version>0.1.0-alpha.4</Version></PropertyGroup><ItemGroup><PackageReference Include="Fixture.Protocol" Version="1.2.3" />'
                    '<ProjectReference Include="../Models/Models.csproj" /></ItemGroup></Project>')
         checksum = "A" * 86 + "=="
         lock = {"version": 1, "dependencies": {"net8.0": {
@@ -155,7 +155,7 @@ class SdkGraphTests(unittest.TestCase):
                 maven_packages(self.root, entry)
 
     def test_nuget_missing_transitive_changed_version_and_unreviewed_project_fail(self) -> None:
-        for failure in ("edge", "version", "checksum", "framework", "project"):
+        for failure in ("edge", "version", "checksum", "framework", "project", "project-version-expression", "project-version-range"):
             entry, lock = self.nuget_fixture()
             dependencies = lock["dependencies"]["net8.0"]
             if failure == "edge":
@@ -167,6 +167,11 @@ class SdkGraphTests(unittest.TestCase):
             elif failure == "framework":
                 lock["dependencies"]["net9.0"] = dependencies
                 del lock["dependencies"]["net8.0"]
+            elif failure.startswith("project-version-"):
+                project = self.root / "Client.csproj"
+                value = "$(UnreviewedVersion)" if failure.endswith("expression") else "[0.1.0, )"
+                project.write_text(project.read_text().replace("<Version>0.1.0-alpha.4</Version>",
+                                                              "<Version>" + value + "</Version>"))
             else:
                 dependencies["unreviewed"] = {"type": "Project"}
             self.write("packages.lock.json", lock)
