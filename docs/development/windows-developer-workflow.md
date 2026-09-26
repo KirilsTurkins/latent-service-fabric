@@ -5,7 +5,9 @@ On September 24, 2026, the maintainer removed Mac, Lima and Apple Silicon requir
 from the epic and its children. The active scope is Windows x86-64/WSL2, native
 Windows tests, Linux x86-64/direct, explicit SSH, and opt-in devcontainer tooling.
 Issue #562 was removed and closed as not planned; it is not an implemented feature.
-The eight active children remain open until their actual acceptance evidence exists.
+The [packaged platform handoff](packaged-platform-handoff.md) records the passing
+five-entry schedule. Build/watch/native children #563/#564/#566 are closed;
+editor/newcomer work and final combined review remain open under #568/#569.
 
 `latent-dev` is a separate executable. It does not replace `latent`, change the
 operator CLI's single-operation behavior, or enable a production Windows node.
@@ -26,9 +28,9 @@ An actual local source package ran as an unprivileged user in the pinned Ubuntu
 24.04 image, with no Python or LSF checkout in that image, no network and a
 non-ASCII installation path containing spaces. Its `dev doctor` result reported
 Linux without claiming node readiness. This establishes packaged frontend
-startup only; authenticated direct-Linux/SSH installation and lifecycle
-qualification remain required. The helper's selected interpreter requirements
-are described below.
+startup only. The later authenticated direct-Linux/SSH installation and lifecycle
+runs are recorded in the platform handoff. The helper's selected interpreter
+requirements are described below.
 
 ## Implemented controller contracts
 
@@ -120,8 +122,9 @@ are described below.
   reporting that their shutdown was interrupted. A lost connection in the same
   guest instance remains uncertain.
 
-These implementations still need the packaged integration runs below. An
-adapter unit test is not a WSL provisioning receipt.
+The packaged platform handoff supplies the later installed-artifact runs. The
+historical source observations below remain separately labeled; an adapter unit
+test is not a WSL provisioning receipt.
 
 ## Project, transfer and test boundaries
 
@@ -971,16 +974,16 @@ direct Linux helper, with explicitly trusted local admission. They still require
 repetition through final authenticated Windows/WSL packages and do not claim a
 clean host, VM-disconnect recovery or rendered newcomer/editor review.
 
-| Child | Remaining Windows acceptance |
+| Child | Current acceptance handoff |
 | --- | --- |
-| #560 | Independently approved exact-source developer policy; authenticated bundles; actual local/SSH lifecycle and failure receipts. |
-| #561 | Independently authenticated WSL image; actual provisioning, workspace isolation, stop/restart and purge schedule. |
-| #563 | Authenticate/install all six integrated language tool bundles through the Windows workflow and complete capability-denial qualification. |
-| #564 | Repeat the observed source watch failures, rapid edits, in-flight revision, revocation, recovery and actual expired-receipt schedules with final authenticated Windows/WSL packages; complete VM-disconnect recovery. |
-| #565 | Complete the remaining failure/isolation matrix; qualify the integrated fixtures and scenarios with all six languages. |
+| #560 | [Packaged schedule passed](packaged-platform-handoff.md): independent policy, authenticated bundles, actual direct/SSH lifecycle, rejection and recovery. |
+| #561 | [Packaged WSL schedule passed](packaged-platform-handoff.md): authenticated image, isolated users, exact source bytes, actual owned-VM interruption, retained restart and purge. |
+| #563 | Closed: all six authenticated owner recipes, node/native results and applicable capability denial/recovery passed. |
+| #564 | Closed: packaged watch ordering, compiler failure, in-flight revision, cancellation, revoked restore and expired/UNKNOWN/concurrent-actor recovery passed. |
+| #565 | [Packaged and source campaigns passed](packaged-platform-handoff.md): all six node templates, closed failures, real capability fixtures and isolated cleanup, with execution classes kept separate. |
 | #566 | [Native Windows scope passed](native-windows-qualification.md): authenticated distribution, six languages, closed failures/clock, unsupported-required rejection and exact-source provider/node comparisons. |
-| #568 | Complete editor/devcontainer integration and exercised newcomer walkthrough. |
-| #569 | Actual packaged Windows qualification and reviewed consolidated evidence. |
+| #568 | Devcontainer passed; finish final editor-fix candidate qualification and the clean-machine newcomer walkthrough. |
+| #569 | Five packaged entries passed; finish the editor/newcomer evidence and reviewed aggregate for the selected final identities. |
 
 `latent.dev.qualification.v1` rejects missing entries, mocks, cross-builds,
 wrong environments, unsupported required scenarios, incomplete language coverage
